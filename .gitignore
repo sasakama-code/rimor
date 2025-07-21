@@ -32,3 +32,7 @@ temp/
 
 # devlop docs
 docs/dev/
+
+# Claude Code
+CLAUDE.md
+.claude
