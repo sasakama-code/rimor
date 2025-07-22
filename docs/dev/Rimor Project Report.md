@@ -1,4 +1,4 @@
-# Remor Project Report v6 (静的解析中心のテスト品質監査システム設計レポート)
+# Rimor Project Report v6 (静的解析中心のテスト品質監査システム設計レポート)
 
 ## 第1章：エグゼクティブサマリー
 
