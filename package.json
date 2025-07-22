@@ -22,13 +22,15 @@
     "analyze": "npm run build && node dist/index.js analyze",
     "analyze:json": "npm run build && node dist/index.js analyze --format=json",
     "analyze:verbose": "npm run build && node dist/index.js analyze --verbose",
+    "analyze:src": "npm run build && node dist/index.js analyze ./src",
+    "analyze:src:json": "npm run build && node dist/index.js analyze ./src --format=json",
     "dev": "npm run build && npm run analyze",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
     "security-check": "npm audit && npm run build && npm test",
     "lint": "echo 'Lint機能は将来実装予定です'",
     "format": "echo 'Format機能は将来実装予定です'",
-    "full-check": "npm run security-check && npm run analyze ."
+    "full-check": "npm run security-check && npm run analyze:src"
   },
   "repository": {
     "type": "git",

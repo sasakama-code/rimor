@@ -10,7 +10,7 @@
   "plugins": {
     "test-existence": {
       "enabled": true,
-      "excludeFiles": ["index.ts", "types.ts", "config.ts", "cli.ts", "output.ts"]
+      "excludeFiles": ["index.ts", "types.ts", "config.ts", "cli.ts"]
     },
     "assertion-exists": {
       "enabled": true

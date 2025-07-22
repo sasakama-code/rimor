@@ -24,7 +24,7 @@ export class AnalyzeCommand {
     
     // 設定に基づいてプラグインを登録
     if (this.config.plugins['test-existence'].enabled) {
-      this.analyzer.registerPlugin(new TestExistencePlugin());
+      this.analyzer.registerPlugin(new TestExistencePlugin(this.config.plugins['test-existence']));
     }
     
     if (this.config.plugins['assertion-exists'].enabled) {

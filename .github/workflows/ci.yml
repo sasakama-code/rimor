@@ -39,21 +39,8 @@ jobs:
     - name: Run tests
       run: npm test
 
-    - name: Run Rimor self-analysis (experimental)
-      run: |
-        echo "🔍 Running Rimor self-analysis..."
-        if node dist/index.js analyze ./src --format=json > rimor-results.json 2>&1; then
-          echo "✅ Rimor analysis completed successfully"
-          if [ -f rimor-results.json ]; then
-            ISSUES=$(cat rimor-results.json | jq '.summary.issuesFound' 2>/dev/null || echo "unknown")
-            COVERAGE=$(cat rimor-results.json | jq '.summary.testCoverage' 2>/dev/null || echo "unknown")
-            echo "📊 Results: $ISSUES issues found, $COVERAGE% test coverage"
-          fi
-        else
-          echo "⚠️ Rimor analysis failed, continuing CI without quality gate"
-          echo "This is expected during initial CI setup phase"
-        fi
-      continue-on-error: true
+    - name: Run Rimor self-analysis (REQUIRED)
+      run: node dist/index.js analyze ./src --format=json > rimor-results.json
 
     - name: Upload Rimor results
       uses: actions/upload-artifact@v4
@@ -61,7 +48,32 @@ jobs:
       with:
         name: rimor-analysis-node-${{ matrix.node-version }}
         path: rimor-results.json
-        if-no-files-found: ignore
+
+    - name: Quality Gate - Test Coverage Check
+      run: |
+        echo "🔍 Checking quality standards..."
+        ISSUES=$(cat rimor-results.json | jq '.summary.issuesFound')
+        COVERAGE=$(cat rimor-results.json | jq '.summary.testCoverage')
+        echo "📊 Analysis Results:"
+        echo "   - Issues found: $ISSUES"
+        echo "   - Test coverage: $COVERAGE%"
+        
+        if [ "$ISSUES" -gt 0 ]; then
+          echo "❌ QUALITY GATE FAILED: $ISSUES test quality issues found"
+          echo "   Please fix all test quality issues before merging"
+          cat rimor-results.json | jq '.issues[]'
+          exit 1
+        fi
+        
+        if [ "$COVERAGE" -lt 80 ]; then
+          echo "❌ QUALITY GATE FAILED: Test coverage is $COVERAGE% (minimum: 80%)"
+          echo "   Please ensure adequate test coverage before merging"
+          exit 1
+        fi
+        
+        echo "✅ QUALITY GATE PASSED: All quality standards met"
+        echo "   - Zero test quality issues ✅"
+        echo "   - $COVERAGE% test coverage (≥80%) ✅"
 
   security:
     runs-on: ubuntu-latest
