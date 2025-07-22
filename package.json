@@ -4,7 +4,7 @@
   "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
   "main": "dist/index.js",
   "bin": {
-    "rimor": "./dist/index.js"
+    "rimor": "dist/index.js"
   },
   "files": [
     "dist/",
@@ -36,7 +36,16 @@
     "type": "git",
     "url": "git+https://github.com/sasakama-code/rimor.git"
   },
-  "keywords": ["test", "testing", "quality", "audit", "static-analysis", "plugin", "typescript", "linter"],
+  "keywords": [
+    "test",
+    "testing",
+    "quality",
+    "audit",
+    "static-analysis",
+    "plugin",
+    "typescript",
+    "linter"
+  ],
   "author": "sasakama-code",
   "engines": {
     "node": ">=14.0.0"
