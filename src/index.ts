@@ -1,16 +1,6 @@
 #!/usr/bin/env node
 import { Analyzer } from './core/analyzer';
-import { IPlugin, Issue } from './core/types';
-
-// 最小限のサンプルプラグイン
-class HelloPlugin implements IPlugin {
-  name = 'hello-plugin';
-  
-  async analyze(filePath: string): Promise<Issue[]> {
-    console.log(`Analyzing: ${filePath}`);
-    return [];
-  }
-}
+import { TestExistencePlugin } from './plugins/testExistence';
 
 async function main() {
   console.log('Hello Rimor!');
@@ -20,7 +10,7 @@ async function main() {
   console.log(`\nAnalyzing directory: ${targetPath}\n`);
   
   const analyzer = new Analyzer();
-  analyzer.registerPlugin(new HelloPlugin());
+  analyzer.registerPlugin(new TestExistencePlugin());
   
   const result = await analyzer.analyze(targetPath);
   
@@ -28,6 +18,13 @@ async function main() {
   console.log(`- Files analyzed: ${result.totalFiles}`);
   console.log(`- Issues found: ${result.issues.length}`);
   console.log(`- Execution time: ${result.executionTime}ms`);
+  
+  if (result.issues.length > 0) {
+    console.log(`\n🔍 Detected Issues:`);
+    result.issues.forEach((issue, index) => {
+      console.log(`${index + 1}. [${issue.severity.toUpperCase()}] ${issue.message}`);
+    });
+  }
 }
 
 main().catch(console.error);
