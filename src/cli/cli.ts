@@ -49,7 +49,7 @@ export class CLI {
       )
       .help('h')
       .alias('h', 'help')
-      .version('0.1.0')
+      .version('0.1.1')
       .example('$0', 'カレントディレクトリを分析')
       .example('$0 ./src', 'srcディレクトリを分析')
       .example('$0 --verbose', '詳細モードで分析')
