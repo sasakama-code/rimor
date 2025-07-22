@@ -22,13 +22,21 @@ export class CLI {
               describe: '詳細な出力を表示',
               type: 'boolean',
               default: false
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力フォーマット',
+              type: 'string',
+              choices: ['text', 'json'],
+              default: 'text'
             });
         },
         async (argv) => {
           const analyzeCommand = new AnalyzeCommand();
           await analyzeCommand.execute({
             path: argv.path,
-            verbose: argv.verbose
+            verbose: argv.verbose,
+            format: argv.format as 'text' | 'json'
           });
         }
       )
@@ -56,6 +64,7 @@ export class CLI {
       .version('0.1.0')
       .example('$0 analyze ./src', 'srcディレクトリを分析')
       .example('$0 analyze ./src --verbose', '詳細モードで分析')
+      .example('$0 analyze ./src --format=json', 'JSON形式で出力')
       .demandCommand(1, 'コマンドを指定してください')
       .strict()
       .parse();

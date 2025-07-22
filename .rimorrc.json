@@ -1,0 +1,23 @@
+{
+  "excludePatterns": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    "*.config.js",
+    "jest.config.js"
+  ],
+  "plugins": {
+    "test-existence": {
+      "enabled": true,
+      "excludeFiles": ["index.ts", "types.ts", "config.ts", "cli.ts", "output.ts"]
+    },
+    "assertion-exists": {
+      "enabled": true
+    }
+  },
+  "output": {
+    "format": "text",
+    "verbose": false
+  }
+}
