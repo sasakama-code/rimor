@@ -2,7 +2,16 @@
   "name": "rimor",
   "version": "0.1.0",
   "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "rimor": "./dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "directories": {
     "doc": "docs"
   },
@@ -23,13 +32,19 @@
     "url": "git+https://github.com/sasakama-code/rimor.git"
   },
   "keywords": ["test", "testing", "quality", "audit", "static-analysis", "plugin", "typescript", "linter"],
-  "author": "",
+  "author": "sasakama-code",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/sasakama-code/rimor/issues"
   },
   "homepage": "https://github.com/sasakama-code/rimor#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.15",

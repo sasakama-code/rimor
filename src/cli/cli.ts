@@ -8,14 +8,14 @@ export class CLI {
       .scriptName('rimor')
       .usage('$0 <command> [options]')
       .command(
-        'analyze <path>',
+        ['analyze [path]', '$0 [path]'],
         'テスト品質を分析します',
         (yargs) => {
           return yargs
             .positional('path', {
-              describe: '分析対象のディレクトリパス',
+              describe: '分析対象のディレクトリパス（デフォルト: カレントディレクトリ）',
               type: 'string',
-              demandOption: true
+              default: '.'
             })
             .option('verbose', {
               alias: 'v',
@@ -29,43 +29,33 @@ export class CLI {
               type: 'string',
               choices: ['text', 'json'],
               default: 'text'
+            })
+            .option('json', {
+              describe: 'JSON形式で出力（--format=json の短縮形）',
+              type: 'boolean',
+              default: false
             });
         },
         async (argv) => {
           const analyzeCommand = new AnalyzeCommand();
+          // --json フラグが指定された場合は format を json に上書き
+          const format = argv.json ? 'json' : argv.format;
           await analyzeCommand.execute({
-            path: argv.path,
+            path: argv.path || '.',
             verbose: argv.verbose,
-            format: argv.format as 'text' | 'json'
-          });
-        }
-      )
-      .command(
-        '$0 <path>',
-        'デフォルトコマンド（analyzeと同等）',
-        (yargs) => {
-          return yargs
-            .positional('path', {
-              describe: '分析対象のディレクトリパス',
-              type: 'string',
-              demandOption: true
-            });
-        },
-        async (argv) => {
-          const analyzeCommand = new AnalyzeCommand();
-          await analyzeCommand.execute({
-            path: argv.path,
-            verbose: false
+            format: format as 'text' | 'json'
           });
         }
       )
       .help('h')
       .alias('h', 'help')
       .version('0.1.0')
-      .example('$0 analyze ./src', 'srcディレクトリを分析')
-      .example('$0 analyze ./src --verbose', '詳細モードで分析')
-      .example('$0 analyze ./src --format=json', 'JSON形式で出力')
-      .demandCommand(1, 'コマンドを指定してください')
+      .example('$0', 'カレントディレクトリを分析')
+      .example('$0 ./src', 'srcディレクトリを分析')
+      .example('$0 --verbose', '詳細モードで分析')
+      .example('$0 --json', 'JSON形式で出力')
+      .example('$0 ./src --format=json', 'JSON形式で出力')
+      .demandCommand(0, 'オプション: コマンドなしでもカレントディレクトリを分析します')
       .strict()
       .parse();
   }

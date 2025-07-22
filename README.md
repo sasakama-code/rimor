@@ -13,6 +13,18 @@
 
 ## インストール
 
+### npm実行（推奨）
+
+```bash
+# インストール不要で即座実行
+npx rimor
+
+# 特定のディレクトリを分析
+npx rimor ./src
+```
+
+### ローカル開発用
+
 ```bash
 # プロジェクトのクローン
 git clone https://github.com/sasakama-code/rimor.git
@@ -27,14 +39,33 @@ npm run build
 
 ## 基本的な使用方法
 
-### コマンドライン実行
+### 基本コマンド
+
+```bash
+# カレントディレクトリを分析
+npx rimor
+
+# 特定のディレクトリを分析
+npx rimor ./src
+
+# 詳細モードで実行
+npx rimor --verbose
+
+# JSON形式で出力
+npx rimor --json
+
+# JSON形式で特定ディレクトリを分析
+npx rimor ./src --format=json
+
+# ヘルプの表示
+npx rimor --help
+```
+
+### 開発者向けコマンド（ローカル環境）
 
 ```bash
 # ディレクトリ全体の分析（推奨）
 npm run analyze ./src
-
-# 単一ファイルの分析
-npm run analyze ./src/index.ts
 
 # JSON形式で出力
 npm run analyze:json ./src
@@ -42,23 +73,14 @@ npm run analyze:json ./src
 # 詳細モードで実行
 npm run analyze:verbose ./src
 
-# 開発時の便利コマンド（プロジェクトルートを分析）
-npm run dev
-
 # 完全チェック（ビルド + テスト + 分析）
 npm run full-check
-
-# ヘルプの表示
-npm start --help
 ```
 
 ### 実行例
 
 ```bash
-$ npm run analyze ./src
-
-> rimor@0.1.0 analyze
-> npm run build && node dist/index.js analyze ./src
+$ npx rimor ./src
 
 🔍 Rimor テスト品質監査
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -72,6 +94,22 @@ $ npm run analyze ./src
 ❌ テスト不足: 1件
 📈 テストカバレッジ: 91%
 ⏱️  実行時間: 4ms
+```
+
+### CI/CD での使用例
+
+```bash
+# GitHub Actions での使用
+- name: Run Rimor test quality audit
+  run: npx rimor --json ./src > rimor-report.json
+
+# 結果を確認して失敗時は CI を停止
+- name: Check test quality
+  run: |
+    if [ $(cat rimor-report.json | jq '.summary.issuesFound') -gt 0 ]; then
+      echo "テスト品質の問題が発見されました"
+      exit 1
+    fi
 ```
 
 ## 設定ファイル
