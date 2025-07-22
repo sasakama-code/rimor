@@ -1,0 +1,15 @@
+{
+  "name": "sample-project-for-rimor-demo",
+  "version": "1.0.0",
+  "description": "Rimorデモ用のサンプルプロジェクト - 意図的にテスト不足の問題を含む",
+  "main": "src/calculator.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": ["demo", "sample", "testing"],
+  "author": "Rimor Demo",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
