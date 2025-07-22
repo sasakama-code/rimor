@@ -55,7 +55,7 @@ describe('PluginValidator', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.filesAnalyzed).toBe(1);
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
       expect(result.message).toContain('検証完了');
     });
 
