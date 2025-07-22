@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit
+
+    - name: Run lint check
+      run: npm run lint
+      continue-on-error: true  # MVP期間中はlintエラーでCIを止めない
+
+    - name: Build TypeScript
+      run: npm run build
+
+    - name: Run tests
+      run: npm test
+
+    - name: Run Rimor self-analysis
+      run: npm run analyze ./src --format=json > rimor-results.json
+
+    - name: Upload Rimor results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: rimor-analysis-node-${{ matrix.node-version }}
+        path: rimor-results.json
+
+    - name: Check test coverage quality
+      run: |
+        ISSUES=$(cat rimor-results.json | jq '.summary.issuesFound')
+        COVERAGE=$(cat rimor-results.json | jq '.summary.testCoverage')
+        echo "Found $ISSUES issues, test coverage: $COVERAGE%"
+        if [ "$ISSUES" -gt 10 ]; then
+          echo "Too many quality issues found ($ISSUES). Please improve test quality."
+          exit 1
+        fi
+        if [ "$COVERAGE" -lt 50 ]; then
+          echo "Test coverage too low ($COVERAGE%). Please add more tests."
+          exit 1
+        fi
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run comprehensive security check
+      run: npm run security-check
+
+    - name: Check for outdated packages
+      run: npm outdated || true
+
+  publish-dry-run:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
+
+    - name: Test npm package
+      run: npm pack --dry-run
