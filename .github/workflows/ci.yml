@@ -40,7 +40,7 @@ jobs:
       run: npm test
 
     - name: Run Rimor self-analysis
-      run: npm run analyze ./src --format=json > rimor-results.json
+      run: npm run build && node dist/index.js analyze ./src --format=json > rimor-results.json
 
     - name: Upload Rimor results
       uses: actions/upload-artifact@v4
