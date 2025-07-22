@@ -1,5 +1,6 @@
 import { Analyzer } from '../../core/analyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
+import { AssertionExistsPlugin } from '../../plugins/assertionExists';
 import { OutputFormatter } from '../output';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,7 +15,10 @@ export class AnalyzeCommand {
   
   constructor() {
     this.analyzer = new Analyzer();
+    
+    // 複数プラグインを登録
     this.analyzer.registerPlugin(new TestExistencePlugin());
+    this.analyzer.registerPlugin(new AssertionExistsPlugin());
   }
   
   async execute(options: AnalyzeOptions): Promise<void> {
@@ -27,11 +31,18 @@ export class AnalyzeCommand {
         process.exit(1);
       }
       
+      // 単一ファイル対応の確認
+      const stats = fs.statSync(targetPath);
+      if (stats.isFile()) {
+        console.log(OutputFormatter.info('単一ファイルモードで実行中...'));
+      }
+      
       console.log(OutputFormatter.header('Rimor テスト品質監査'));
       console.log(OutputFormatter.info(`分析対象: ${targetPath}`));
       
       if (options.verbose) {
         console.log(OutputFormatter.info('詳細モードで実行中...'));
+        console.log(OutputFormatter.info('利用プラグイン: TestExistencePlugin, AssertionExistsPlugin'));
       }
       
       const result = await this.analyzer.analyze(targetPath);

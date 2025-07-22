@@ -34,7 +34,7 @@ export class OutputFormatter {
     ].join('\n');
   }
   
-  static issueList(issues: Array<{severity: string, message: string}>): string {
+  static issueList(issues: Array<{severity: string, message: string, line?: number, file?: string}>): string {
     if (issues.length === 0) {
       return chalk.green('\n🎉 問題は見つかりませんでした！');
     }
@@ -42,7 +42,8 @@ export class OutputFormatter {
     const lines = [chalk.bold('\n🔍 検出された問題:')];
     issues.forEach((issue, index) => {
       const severity = issue.severity === 'error' ? '❌' : '⚠️';
-      lines.push(`${index + 1}. ${severity} ${issue.message}`);
+      const location = issue.line ? ` (行${issue.line})` : '';
+      lines.push(`${index + 1}. ${severity} ${issue.message}${location}`);
     });
     
     return lines.join('\n');

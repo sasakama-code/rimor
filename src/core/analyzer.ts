@@ -25,11 +25,24 @@ export class Analyzer {
     const allIssues: Issue[] = [];
     let fileCount = 0;
     
-    // すべてのファイルを探索（MVP: 簡易実装）
-    for await (const filePath of this.findAllFiles(targetPath)) {
-      fileCount++;
-      const issues = await this.pluginManager.runAll(filePath);
-      allIssues.push(...issues);
+    // 単一ファイルかディレクトリかを判定
+    const { stat } = await import('fs/promises');
+    const stats = await stat(targetPath).catch(() => null);
+    
+    if (stats?.isFile()) {
+      // 単一ファイルの場合
+      if (targetPath.endsWith('.ts') || targetPath.endsWith('.js')) {
+        fileCount = 1;
+        const issues = await this.pluginManager.runAll(targetPath);
+        allIssues.push(...issues);
+      }
+    } else {
+      // ディレクトリの場合（従来の処理）
+      for await (const filePath of this.findAllFiles(targetPath)) {
+        fileCount++;
+        const issues = await this.pluginManager.runAll(filePath);
+        allIssues.push(...issues);
+      }
     }
     
     const executionTime = Date.now() - startTime;
