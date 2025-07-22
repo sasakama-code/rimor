@@ -123,4 +123,4 @@ Rimorテスト品質監査ツールのMVP（Minimum Viable Product）版をリ�
 
 ### ライセンス
 
-ISC License - 詳細は LICENSE ファイルを参照
+MIT License - 詳細は LICENSE ファイルを参照

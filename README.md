@@ -213,7 +213,7 @@ npm run build && npm test
 
 ## ライセンス
 
-ISC License
+MIT License
 
 ## 貢献
 

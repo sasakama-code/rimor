@@ -24,7 +24,7 @@
   },
   "keywords": ["test", "testing", "quality", "audit", "static-analysis", "plugin", "typescript", "linter"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/sasakama-code/rimor/issues"
