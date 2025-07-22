@@ -39,6 +39,12 @@ jobs:
     - name: Run tests
       run: npm test
 
+    - name: Clean test artifacts before analysis
+      run: |
+        echo "🧹 Cleaning test-generated files..."
+        rm -rf src/plugins/generated/
+        echo "✅ Cleanup completed"
+
     - name: Run Rimor self-analysis (REQUIRED)
       run: node dist/index.js analyze ./src --format=json > rimor-results.json
 

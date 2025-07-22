@@ -44,6 +44,11 @@ export class TestExistencePlugin implements IPlugin {
       return true;
     }
     
+    // generatedディレクトリの除外（テスト生成ファイル）
+    if (filePath.includes('/generated/') || filePath.includes('\\generated\\')) {
+      return true;
+    }
+    
     // フォールバック: デフォルトの除外パターン
     const defaultExcludePatterns = [
       'index.ts', 'index.js',           // エントリーポイント
