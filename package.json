@@ -1,7 +1,7 @@
 {
   "name": "rimor",
   "version": "0.1.0",
-  "description": "テスト品質監査ツール（開発中）",
+  "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -9,13 +9,20 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "analyze": "npm run build && node dist/index.js analyze",
+    "analyze:json": "npm run build && node dist/index.js analyze --format=json",
+    "analyze:verbose": "npm run build && node dist/index.js analyze --verbose",
+    "dev": "npm run build && npm run analyze",
+    "lint": "echo 'Lint機能は将来実装予定です'",
+    "format": "echo 'Format機能は将来実装予定です'",
+    "full-check": "npm run build && npm test && npm run analyze ."
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sasakama-code/rimor.git"
   },
-  "keywords": [],
+  "keywords": ["test", "testing", "quality", "audit", "static-analysis", "plugin", "typescript", "linter"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
