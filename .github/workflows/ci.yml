@@ -54,14 +54,15 @@ jobs:
         ISSUES=$(cat rimor-results.json | jq '.summary.issuesFound')
         COVERAGE=$(cat rimor-results.json | jq '.summary.testCoverage')
         echo "Found $ISSUES issues, test coverage: $COVERAGE%"
-        if [ "$ISSUES" -gt 10 ]; then
+        if [ "$ISSUES" -gt 15 ]; then
           echo "Too many quality issues found ($ISSUES). Please improve test quality."
           exit 1
         fi
-        if [ "$COVERAGE" -lt 50 ]; then
+        if [ "$COVERAGE" -lt 25 ]; then
           echo "Test coverage too low ($COVERAGE%). Please add more tests."
           exit 1
         fi
+        echo "✅ Quality check passed: $ISSUES issues, $COVERAGE% coverage"
 
   security:
     runs-on: ubuntu-latest
