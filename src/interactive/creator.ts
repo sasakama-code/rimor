@@ -129,9 +129,12 @@ export class InteractiveCreator implements IInteractivePluginCreator {
   async savePlugin(plugin: GeneratedPlugin, name: string): Promise<void> {
     const pluginDir = path.join(process.cwd(), 'src', 'plugins', 'generated');
     
-    // ディレクトリが存在しない場合は作成
-    if (!fs.existsSync(pluginDir)) {
-      fs.mkdirSync(pluginDir, { recursive: true });
+    // ディレクトリが存在しない場合は作成（非同期版を使用）
+    try {
+      await fs.promises.access(pluginDir);
+    } catch {
+      // ディレクトリが存在しない場合、作成する
+      await fs.promises.mkdir(pluginDir, { recursive: true });
     }
 
     const fileName = `${name}.ts`;
