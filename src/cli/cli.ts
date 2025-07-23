@@ -34,6 +34,16 @@ export class CLI {
               describe: 'JSON形式で出力（--format=json の短縮形）',
               type: 'boolean',
               default: false
+            })
+            .option('performance', {
+              describe: 'パフォーマンス監視を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('show-performance-report', {
+              describe: 'パフォーマンスレポートを表示',
+              type: 'boolean',
+              default: false
             });
         },
         async (argv) => {
@@ -43,7 +53,9 @@ export class CLI {
           await analyzeCommand.execute({
             path: argv.path || '.',
             verbose: argv.verbose,
-            format: format as 'text' | 'json'
+            format: format as 'text' | 'json',
+            performance: argv.performance,
+            showPerformanceReport: argv['show-performance-report']
           });
         }
       )

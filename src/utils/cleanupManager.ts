@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { errorHandler } from './errorHandler';
+import { getMessage } from '../i18n/messages';
 
 export interface CleanupRule {
   pattern: string | RegExp;
@@ -18,19 +19,19 @@ export class CleanupManager {
   private readonly defaultRules: CleanupRule[] = [
     {
       pattern: /^src\/plugins\/generated\/saved-plugin\.ts$/,
-      reason: '不正なプラグインファイル（型エラーを含む自動生成ファイル）',
+      reason: getMessage('cleanup.reason.invalid_plugin'),
       enabled: true
     },
     // 安全性重視: 他のプラグインファイルは削除対象から除外
     // ユーザーが意図的に作成したファイルの削除を防ぐ
     {
       pattern: /\.tmp$/,
-      reason: '一時ファイル',
+      reason: getMessage('cleanup.reason.temp_file'),
       enabled: true
     },
     {
       pattern: /\.bak$/,
-      reason: 'バックアップファイル',
+      reason: getMessage('cleanup.reason.backup_file'),
       enabled: true
     }
   ];
@@ -49,24 +50,24 @@ export class CleanupManager {
    * @param projectRoot プロジェクトルートディレクトリ
    */
   async performStartupCleanup(projectRoot: string = process.cwd()): Promise<void> {
-    console.log('🧹 プロジェクト開始時クリーンアップを実行中...');
+    console.log(getMessage('cleanup.startup.running'));
     
     try {
       const cleanedFiles = await this.cleanupByRules(projectRoot);
       
       if (cleanedFiles.length > 0) {
-        console.log(`✅ ${cleanedFiles.length}個のファイルをクリーンアップしました`);
+        console.log(getMessage('cleanup.startup.completed', { count: cleanedFiles.length.toString() }));
         cleanedFiles.forEach(file => {
           console.log(`   - ${file.relativePath} (${file.reason})`);
         });
       } else {
-        console.log('✅ クリーンアップ対象ファイルはありませんでした');
+        console.log(getMessage('cleanup.startup.none_found'));
       }
     } catch (error) {
       errorHandler.handleError(
         error,
         undefined,
-        'プロジェクト開始時クリーンアップでエラーが発生しました',
+        getMessage('cleanup.startup.error'),
         { projectRoot },
         true
       );
@@ -87,7 +88,7 @@ export class CleanupManager {
       }
 
       fs.unlinkSync(absolutePath);
-      console.log(`🗑️  緊急削除: ${filePath} (${reason})`);
+      console.log(getMessage('cleanup.emergency.deleted', { filePath, reason }));
       return true;
     } catch (error) {
       errorHandler.handleFileError(error, filePath, 'delete');
@@ -108,10 +109,10 @@ export class CleanupManager {
     
     if (savedPluginError) {
       const savedPluginPath = 'src/plugins/generated/saved-plugin.ts';
-      console.log('⚠️  既知の問題ファイル（saved-plugin.ts）を検出しました');
+      console.log(getMessage('cleanup.error.known_file_detected'));
       return await this.emergencyDelete(
         savedPluginPath, 
-        'TypeScriptコンパイルエラーの原因（IPlugin型定義エラー - 自動生成された既知の問題ファイル）'
+        getMessage('cleanup.error.compile_cause')
       );
     }
 
@@ -119,9 +120,9 @@ export class CleanupManager {
     const pluginGeneratedMatch = errorMessage.match(/src\/plugins\/generated\/([^:]+\.ts)/);
     if (pluginGeneratedMatch) {
       const problematicFile = pluginGeneratedMatch[0];
-      console.log(`⚠️  プラグインファイルでコンパイルエラーを検出: ${problematicFile}`);
-      console.log('   💡 ユーザー作成ファイルの可能性があるため、自動削除は行いません');
-      console.log('   📝 ファイル内容を確認し、必要に応じて手動で修正または削除してください');
+      console.log(getMessage('cleanup.warning.plugin_compile_error', { file: problematicFile }));
+      console.log('   ' + getMessage('cleanup.warning.user_file_protection'));
+      console.log('   ' + getMessage('cleanup.instruction.manual_fix'));
       // 削除は行わず、falseを返す
       return false;
     }

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { CLI } from './cli/cli';
+import { getMessage } from './i18n/messages';
 
 async function main() {
   const cli = new CLI();
@@ -7,6 +8,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('CLI実行中にエラーが発生しました:', error);
+  console.error(getMessage('cli.execution_error'), error);
   process.exit(1);
 });

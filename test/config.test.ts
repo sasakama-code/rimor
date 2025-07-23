@@ -106,7 +106,7 @@ describe('ConfigLoader', () => {
     });
 
     it('should handle invalid JSON gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       
       fs.writeFileSync(path.join(tempDir, '.rimorrc.json'), '{invalid json}');
       
@@ -115,7 +115,7 @@ describe('ConfigLoader', () => {
       // Should fallback to default config
       expect(config.output.format).toBe('text');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('設定ファイルの読み込みに失敗しました')
+        expect.stringContaining('Invalid configuration file')
       );
       
       consoleSpy.mockRestore();

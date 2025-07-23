@@ -35,7 +35,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('missing-assertion');
     expect(result[0].severity).toBe('warning');
-    expect(result[0].message).toContain('アサーション（expect文など）が見つかりません');
+    expect(result[0].message).toContain('No assertions (expect statements) found');
   });
 
   test('should detect expect() assertions', async () => {

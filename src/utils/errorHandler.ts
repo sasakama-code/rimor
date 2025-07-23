@@ -1,7 +1,10 @@
 /**
  * 共通エラーハンドリングクラス
  * アプリケーション全体で統一されたエラー処理を提供
+ * v0.3.0: i18n対応により多言語エラーメッセージをサポート
  */
+
+import { getMessage, type MessageKey } from '../i18n/messages';
 
 export enum ErrorType {
   FILE_NOT_FOUND = 'FILE_NOT_FOUND',
@@ -81,7 +84,7 @@ export class ErrorHandler {
         return this.handleError(
           error,
           ErrorType.FILE_NOT_FOUND,
-          `ファイルが見つかりません: ${filePath}`,
+          getMessage('error.file.not_found', { filePath }),
           context,
           true
         );
@@ -91,7 +94,7 @@ export class ErrorHandler {
         return this.handleError(
           error,
           ErrorType.PERMISSION_DENIED,
-          `ファイルへのアクセス権限がありません: ${filePath}`,
+          getMessage('error.file.permission_denied', { filePath }),
           context,
           false
         );
@@ -101,7 +104,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.UNKNOWN,
-      `ファイル操作でエラーが発生しました: ${filePath}`,
+      getMessage('error.file.operation_failed', { filePath }),
       context,
       true
     );
@@ -120,7 +123,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.PLUGIN_ERROR,
-      `プラグイン「${pluginName}」でエラーが発生しました`,
+      getMessage('error.plugin.execution_failed', { pluginName }),
       context,
       true // プラグインエラーは通常回復可能
     );
@@ -139,8 +142,8 @@ export class ErrorHandler {
       error,
       ErrorType.INVALID_CONFIG,
       configPath 
-        ? `設定ファイルが不正です: ${configPath}`
-        : '設定が不正です',
+        ? getMessage('error.config.invalid_file', { configPath })
+        : getMessage('error.config.invalid_content'),
       context,
       true // 設定エラーはデフォルト設定で回復可能
     );
@@ -163,7 +166,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.PARSE_ERROR,
-      `${type}の解析でエラーが発生しました`,
+      getMessage('error.parse.failed', { type }),
       context,
       true
     );
@@ -181,7 +184,7 @@ export class ErrorHandler {
     return this.handleError(
       new Error(`Operation timed out: ${operation}`),
       ErrorType.TIMEOUT,
-      `操作がタイムアウトしました: ${operation} (${timeoutMs}ms)`,
+      getMessage('error.timeout.operation', { operation, timeoutMs: timeoutMs.toString() }),
       context,
       true
     );
@@ -232,19 +235,19 @@ export class ErrorHandler {
     
     switch (type) {
       case ErrorType.FILE_NOT_FOUND:
-        return `ファイルが見つかりません: ${baseMessage}`;
+        return getMessage('error.default.file_not_found', { message: baseMessage });
       case ErrorType.PERMISSION_DENIED:
-        return `アクセス権限がありません: ${baseMessage}`;
+        return getMessage('error.default.permission_denied', { message: baseMessage });
       case ErrorType.INVALID_CONFIG:
-        return `設定が不正です: ${baseMessage}`;
+        return getMessage('error.default.invalid_config', { message: baseMessage });
       case ErrorType.PLUGIN_ERROR:
-        return `プラグインエラー: ${baseMessage}`;
+        return getMessage('error.default.plugin_error', { message: baseMessage });
       case ErrorType.PARSE_ERROR:
-        return `解析エラー: ${baseMessage}`;
+        return getMessage('error.default.parse_error', { message: baseMessage });
       case ErrorType.TIMEOUT:
-        return `タイムアウト: ${baseMessage}`;
+        return getMessage('error.default.timeout', { message: baseMessage });
       default:
-        return `エラーが発生しました: ${baseMessage}`;
+        return getMessage('error.default.generic', { message: baseMessage });
     }
   }
   

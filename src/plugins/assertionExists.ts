@@ -3,6 +3,7 @@ import * as path from 'path';
 import { IPlugin, Issue } from '../core/types';
 import { TestPatterns } from '../utils/regexPatterns';
 import { RegexHelper } from '../utils/regexHelper';
+import { getMessage } from '../i18n/messages';
 
 export class AssertionExistsPlugin implements IPlugin {
   name = 'assertion-exists';
@@ -19,7 +20,7 @@ export class AssertionExistsPlugin implements IPlugin {
         return [{
           type: 'missing-assertion',
           severity: 'warning' as const,
-          message: `アサーション（expect文など）が見つかりません: ${filePath}`
+          message: getMessage('plugin.assertion.not_found', { filePath })
         }];
       }
       

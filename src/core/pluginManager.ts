@@ -7,6 +7,10 @@ export class PluginManager {
     this.plugins.push(plugin);
   }
   
+  getRegisteredPlugins(): IPlugin[] {
+    return [...this.plugins];
+  }
+  
   async runAll(filePath: string): Promise<Issue[]> {
     const results: Issue[] = [];
     
