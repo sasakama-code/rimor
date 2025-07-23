@@ -37,7 +37,13 @@ jobs:
       run: npm run build
 
     - name: Run tests
-      run: npm test
+      run: |
+        echo "🧪 Starting test execution..."
+        timeout 300 npm test || {
+          echo "❌ Tests failed or timed out after 5 minutes"
+          exit 1
+        }
+        echo "✅ Tests completed successfully"
 
     - name: Run Rimor self-analysis (REQUIRED)
       run: |

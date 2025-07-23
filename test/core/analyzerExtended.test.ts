@@ -233,4 +233,10 @@ describe('AnalyzerExtended', () => {
       expect(Array.isArray(summary.commonIssues)).toBe(true);
     });
   });
+
+  // CI環境での非同期ハンドル問題解決
+  afterAll(async () => {
+    // 非同期ファイル操作の完了を待機
+    await new Promise(resolve => setTimeout(resolve, 100));
+  });
 });

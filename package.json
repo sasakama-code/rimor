@@ -27,7 +27,7 @@
     "dev": "npm run build && npm run analyze",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
-    "security-check": "npm audit && npm run build && npm test",
+    "security-check": "npm audit && npm run build && timeout 300 npm test || (echo 'Tests timed out' && exit 1)",
     "lint": "echo 'Lint機能は将来実装予定です'",
     "format": "echo 'Format機能は将来実装予定です'",
     "full-check": "npm run security-check && npm run analyze:src"
