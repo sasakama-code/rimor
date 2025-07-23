@@ -1,0 +1,1 @@
+export class SavedPlugin implements IPlugin { /* test */ }
