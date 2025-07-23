@@ -28,7 +28,7 @@
     "dev": "npm run build && npm run analyze",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
-    "security-check": "npm audit && timeout 600 npm test || (echo 'Tests timed out after 10 minutes' && exit 1)",
+    "security-check": "node scripts/security-check.js",
     "lint": "echo 'ℹ️  Lint機能は将来実装予定です - MVP期間中はスキップ' && exit 0",
     "format": "echo 'Format機能は将来実装予定です'",
     "full-check": "npm run security-check && npm run analyze:src"
