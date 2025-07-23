@@ -29,14 +29,14 @@ jobs:
     - name: Run tests
       run: npm test
     
+    - name: Clean test artifacts before build
+      run: |
+        echo "🧹 Cleaning test-generated files before build..."
+        rm -rf src/plugins/generated/
+        echo "✅ Build cleanup completed"
+    
     - name: Build
       run: npm run build
-    
-    - name: Clean test artifacts before release
-      run: |
-        echo "🧹 Cleaning test-generated files before release..."
-        rm -rf src/plugins/generated/
-        echo "✅ Release cleanup completed"
     
     - name: Run quality check
       run: npm run analyze:src
