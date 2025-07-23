@@ -6,19 +6,11 @@ import {
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement
+  Improvement,
+  PluginResult
 } from './types';
 import { LegacyPluginAdapter } from '../plugins/migration/LegacyPluginAdapter';
 
-export interface PluginResult {
-  pluginId: string;
-  pluginName: string;
-  patterns: DetectionResult[];
-  qualityScore: QualityScore;
-  improvements: Improvement[];
-  executionTime: number;
-  error?: string;
-}
 
 export interface QualityAnalysisResult {
   pluginResults: PluginResult[];
