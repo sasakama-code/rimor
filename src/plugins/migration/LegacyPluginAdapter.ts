@@ -8,6 +8,7 @@ import {
   QualityScore, 
   Improvement 
 } from '../../core/types';
+import { getMessage } from '../../i18n/messages';
 
 export class LegacyPluginAdapter implements ITestQualityPlugin {
   public readonly id: string;
@@ -70,7 +71,7 @@ export class LegacyPluginAdapter implements ITestQualityPlugin {
         priority: 'medium',
         type: 'add',
         title: 'Legacy plugin compatibility issues',
-        description: 'レガシープラグインで検出された問題を解決してください',
+        description: getMessage('legacy.plugin.compatibility_issues'),
         location: {
           file: 'unknown',
           line: 1,

@@ -1,4 +1,5 @@
 import { Pattern, PluginMetadata } from './types';
+import { getMessage } from '../i18n/messages';
 
 /**
  * パターンからTypeScriptプラグインコードを生成
@@ -34,7 +35,7 @@ export class ${className} implements IPlugin {
     const content = await fs.readFile(filePath, 'utf-8');
     const issues: Issue[] = [];
 
-    ${patterns.length > 0 ? patternChecks : '// パターンが指定されていないため、チェックは実行されません'}
+    ${patterns.length > 0 ? patternChecks : getMessage('interactive.generator.no_patterns')}
 
     return issues;
   }

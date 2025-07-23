@@ -98,7 +98,53 @@ export type MessageKey =
   | 'plugin.structure.missing_setup'
   | 'plugin.structure.deep_nesting'
   | 'plugin.structure.inconsistent_naming'
-  | 'plugin.structure.large_file';
+  | 'plugin.structure.large_file'
+  // Core System Messages
+  | 'config.file.not_found'
+  | 'config.generated.warning'
+  | 'config.validation.warning'
+  | 'config.improvement.suggestion'
+  | 'config.plugin.auto_detection_failed'
+  | 'config.plugin.description.assertion_quality'
+  | 'config.plugin.description.test_completeness'
+  | 'config.plugin.description.test_structure'
+  // Cache System Messages
+  | 'cache.error.initialization'
+  | 'cache.error.read_failed'
+  | 'cache.error.save_failed'
+  | 'cache.error.delete_failed'
+  | 'cache.info.header'
+  | 'cache.info.cleared'
+  | 'cache.info.optimized'
+  | 'cache.info.already_optimized'
+  | 'cache.stats.header'
+  // Performance Monitor Messages
+  | 'performance.report.header'
+  | 'performance.report.separator'
+  // CLI Plugin Create Messages
+  | 'plugin_create.cli.generated_plugin'
+  | 'plugin_create.cli.usage_header'
+  | 'plugin_create.cli.interactive_description'
+  | 'plugin_create.cli.template_description'
+  | 'plugin_create.cli.from_description'
+  | 'plugin_create.cli.templates_header'
+  | 'plugin_create.cli.template.basic'
+  | 'plugin_create.cli.template.pattern_match'
+  | 'plugin_create.cli.template.async_await'
+  | 'plugin_create.cli.template.api_test'
+  | 'plugin_create.cli.template.validation'
+  // Interactive Creator Messages
+  | 'interactive.error.unknown_step'
+  | 'interactive.error.generic'
+  | 'interactive.generator.no_patterns'
+  // Legacy Plugin Messages
+  | 'legacy.plugin.compatibility_issues'
+  // Test Plugin Messages
+  | 'test_completeness.suggestion.comprehensive'
+  | 'test_completeness.action.add_cases'
+  // Utility Messages
+  | 'regex.error.global_flag_required'
+  | 'validation.error.invalid_plugin_code';
 
 export const messages = {
   ja: {
@@ -196,7 +242,53 @@ export const messages = {
     'plugin.structure.missing_setup': 'セットアップ・ティアダウンが不足しています',
     'plugin.structure.deep_nesting': 'ネストが深すぎます',
     'plugin.structure.inconsistent_naming': '命名が一貫していません',
-    'plugin.structure.large_file': 'テストファイルが大きすぎます'
+    'plugin.structure.large_file': 'テストファイルが大きすぎます',
+    // Core System Messages
+    'config.file.not_found': '設定ファイルが見つかりません。メタデータ駆動設定を生成中...',
+    'config.generated.warning': '生成された設定に問題があります: {errors}',
+    'config.validation.warning': '設定に関する警告: {warnings}',
+    'config.improvement.suggestion': '設定改善の提案: {suggestions}',
+    'config.plugin.auto_detection_failed': 'プラグイン自動検出に失敗しました。デフォルト設定を使用します。',
+    'config.plugin.description.assertion_quality': 'アサーション品質分析',
+    'config.plugin.description.test_completeness': 'テスト網羅性分析',
+    'config.plugin.description.test_structure': 'テスト構造分析',
+    // Cache System Messages
+    'cache.error.initialization': 'キャッシュ初期化中にエラーが発生しました',
+    'cache.error.read_failed': 'キャッシュファイル読み込み中にエラーが発生しました',
+    'cache.error.save_failed': 'キャッシュファイル保存中にエラーが発生しました',
+    'cache.error.delete_failed': 'キャッシュファイル削除中にエラーが発生しました',
+    'cache.info.header': '🗄️  キャッシュ情報:',
+    'cache.info.cleared': '✅ キャッシュをクリアしました',
+    'cache.info.optimized': '✅ キャッシュを最適化しました（{count}件のエントリを削除）',
+    'cache.info.already_optimized': '✅ キャッシュは既に最適化されています',
+    'cache.stats.header': '📊 キャッシュ統計:',
+    // Performance Monitor Messages
+    'performance.report.header': '📊 パフォーマンスレポート',
+    'performance.report.separator': '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    // CLI Plugin Create Messages
+    'plugin_create.cli.generated_plugin': '生成されたプラグイン:',
+    'plugin_create.cli.usage_header': '使用方法:',
+    'plugin_create.cli.interactive_description': '対話モードでプラグイン作成',
+    'plugin_create.cli.template_description': 'テンプレートからプラグイン作成',
+    'plugin_create.cli.from_description': '既存プラグインから派生作成',
+    'plugin_create.cli.templates_header': '利用可能なテンプレート:',
+    'plugin_create.cli.template.basic': '基本的なプラグインテンプレート',
+    'plugin_create.cli.template.pattern_match': 'パターンマッチングプラグイン',
+    'plugin_create.cli.template.async_await': '非同期テスト専用プラグイン',
+    'plugin_create.cli.template.api_test': 'APIテスト専用プラグイン',
+    'plugin_create.cli.template.validation': 'バリデーション専用プラグイン',
+    // Interactive Creator Messages
+    'interactive.error.unknown_step': 'システムエラー：不明なステップです。',
+    'interactive.error.generic': 'エラーが発生しました。もう一度お試しください。',
+    'interactive.generator.no_patterns': '// パターンが指定されていないため、チェックは実行されません',
+    // Legacy Plugin Messages
+    'legacy.plugin.compatibility_issues': 'レガシープラグインで検出された問題を解決してください',
+    // Test Plugin Messages
+    'test_completeness.suggestion.comprehensive': 'CRUD操作、エラーハンドリング、境界値テストなど、包括的なテストケースを追加してください',
+    'test_completeness.action.add_cases': 'テストケースの追加',
+    // Utility Messages
+    'regex.error.global_flag_required': 'グローバルフラグ(g)が設定されている正規表現が必要です',
+    'validation.error.invalid_plugin_code': 'プラグインコードが無効です'
   },
   en: {
     'plugin.create.welcome': '🧙 Rimor Plugin Creation Assistant',
@@ -293,7 +385,53 @@ export const messages = {
     'plugin.structure.missing_setup': 'Missing setup/teardown',
     'plugin.structure.deep_nesting': 'Too deeply nested',
     'plugin.structure.inconsistent_naming': 'Inconsistent naming',
-    'plugin.structure.large_file': 'Test file too large'
+    'plugin.structure.large_file': 'Test file too large',
+    // Core System Messages
+    'config.file.not_found': 'Configuration file not found. Generating metadata-driven configuration...',
+    'config.generated.warning': 'Issues found in generated configuration: {errors}',
+    'config.validation.warning': 'Configuration warnings: {warnings}',
+    'config.improvement.suggestion': 'Configuration improvement suggestions: {suggestions}',
+    'config.plugin.auto_detection_failed': 'Plugin auto-detection failed. Using default configuration.',
+    'config.plugin.description.assertion_quality': 'Assertion quality analysis',
+    'config.plugin.description.test_completeness': 'Test completeness analysis',
+    'config.plugin.description.test_structure': 'Test structure analysis',
+    // Cache System Messages
+    'cache.error.initialization': 'Error occurred during cache initialization',
+    'cache.error.read_failed': 'Error occurred while reading cache file',
+    'cache.error.save_failed': 'Error occurred while saving cache file',
+    'cache.error.delete_failed': 'Error occurred while deleting cache file',
+    'cache.info.header': '🗄️  Cache Information:',
+    'cache.info.cleared': '✅ Cache cleared',
+    'cache.info.optimized': '✅ Cache optimized ({count} entries removed)',
+    'cache.info.already_optimized': '✅ Cache is already optimized',
+    'cache.stats.header': '📊 Cache Statistics:',
+    // Performance Monitor Messages
+    'performance.report.header': '📊 Performance Report',
+    'performance.report.separator': '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    // CLI Plugin Create Messages
+    'plugin_create.cli.generated_plugin': 'Generated plugin:',
+    'plugin_create.cli.usage_header': 'Usage:',
+    'plugin_create.cli.interactive_description': 'Create plugin in interactive mode',
+    'plugin_create.cli.template_description': 'Create plugin from template',
+    'plugin_create.cli.from_description': 'Create plugin derived from existing plugin',
+    'plugin_create.cli.templates_header': 'Available templates:',
+    'plugin_create.cli.template.basic': 'Basic plugin template',
+    'plugin_create.cli.template.pattern_match': 'Pattern matching plugin',
+    'plugin_create.cli.template.async_await': 'Async/await test plugin',
+    'plugin_create.cli.template.api_test': 'API test plugin',
+    'plugin_create.cli.template.validation': 'Validation plugin',
+    // Interactive Creator Messages
+    'interactive.error.unknown_step': 'System error: Unknown step.',
+    'interactive.error.generic': 'An error occurred. Please try again.',
+    'interactive.generator.no_patterns': '// No patterns specified, check will not be executed',
+    // Legacy Plugin Messages
+    'legacy.plugin.compatibility_issues': 'Please resolve issues detected in legacy plugin',
+    // Test Plugin Messages
+    'test_completeness.suggestion.comprehensive': 'Please add comprehensive test cases including CRUD operations, error handling, edge cases, etc.',
+    'test_completeness.action.add_cases': 'Add test cases',
+    // Utility Messages
+    'regex.error.global_flag_required': 'Regular expression with global flag (g) is required',
+    'validation.error.invalid_plugin_code': 'Plugin code is invalid'
   }
 };
 

@@ -10,6 +10,7 @@ import {
   ValidationResult,
   IInteractivePluginCreator 
 } from './types';
+import { getMessage } from '../i18n/messages';
 import { PatternAnalyzer } from './analyzer';
 import { PluginGenerator } from './generator';
 import { PluginValidator } from './validator';
@@ -75,7 +76,7 @@ export class InteractiveCreator implements IInteractivePluginCreator {
           return {
             action: 'error',
             step: session.currentStep,
-            prompt: 'システムエラー：不明なステップです。',
+            prompt: getMessage('interactive.error.unknown_step'),
             error: `不明なステップ: ${session.currentStep}`
           };
       }
@@ -83,7 +84,7 @@ export class InteractiveCreator implements IInteractivePluginCreator {
       return {
         action: 'error',
         step: session.currentStep,
-        prompt: 'エラーが発生しました。もう一度お試しください。',
+        prompt: getMessage('interactive.error.generic'),
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
