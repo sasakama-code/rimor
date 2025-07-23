@@ -4,6 +4,7 @@ import * as readline from 'readline';
 import { InteractiveCreator } from '../../interactive/creator';
 import { Session, SessionStep, Pattern } from '../../interactive/types';
 import { OutputFormatter } from '../output';
+import { getMessage, getMessageLines } from '../../i18n/messages';
 
 export interface PluginCreateOptions {
   interactive?: boolean;
@@ -37,7 +38,9 @@ export class PluginCreateCommand {
         this.showHelp();
       }
     } catch (error) {
-      console.error(OutputFormatter.error(`プラグイン作成エラー: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      console.error(OutputFormatter.error(getMessage('plugin.create.error', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      })));
       process.exit(1);
     }
   }
@@ -46,11 +49,11 @@ export class PluginCreateCommand {
    * 対話モードの処理
    */
   private async handleInteractiveMode(): Promise<void> {
-    console.log(OutputFormatter.header('🧙 Rimorプラグイン作成アシスタント'));
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(OutputFormatter.header(getMessage('plugin.create.welcome')));
+    console.log(getMessage('plugin.create.welcome.subtitle'));
     console.log();
-    console.log('ようこそ！いくつかの質問に答えるだけで、');
-    console.log('カスタムプラグインを作成できます。');
+    const descriptionLines = getMessageLines('plugin.create.welcome.description');
+    descriptionLines.forEach(line => console.log(line));
     console.log();
 
     const session = await this.interactiveCreator.startSession();
@@ -83,7 +86,7 @@ export class PluginCreateCommand {
           break;
         }
         
-        console.log(OutputFormatter.success('✓ 入力を記録しました'));
+        console.log(OutputFormatter.success(getMessage('progress.recorded')));
       }
     } finally {
       rl.close();
@@ -96,13 +99,13 @@ export class PluginCreateCommand {
   private getPromptForStep(step: SessionStep): string {
     switch (step) {
       case SessionStep.PURPOSE:
-        return '? どのようなテスト品質をチェックしたいですか？\n> ';
+        return getMessage('prompt.purpose') + '\n> ';
       case SessionStep.PREVENTION_GOAL:
-        return '? このチェックは何を防ぐことを目的としていますか？\n> ';
+        return getMessage('prompt.prevention') + '\n> ';
       case SessionStep.GOOD_EXAMPLES:
-        return '? 良いテストの例を教えてください（スキップ可能）\n> ';
+        return getMessage('prompt.good_examples') + '\n> ';
       case SessionStep.BAD_EXAMPLES:
-        return '? 悪いテストの例を教えてください（スキップ可能）\n> ';
+        return getMessage('prompt.bad_examples') + '\n> ';
       default:
         return '> ';
     }
@@ -124,7 +127,7 @@ export class PluginCreateCommand {
    */
   private async generateAndSavePlugin(session: Session): Promise<void> {
     console.log();
-    console.log(OutputFormatter.info('✨ サンプルを分析中...'));
+    console.log(OutputFormatter.info(getMessage('plugin.create.analyzing')));
 
     const patterns = session.collectedData.patterns || [];
     const pluginName = this.generatePluginName(session);
@@ -134,7 +137,7 @@ export class PluginCreateCommand {
       description: session.collectedData.purpose || 'ユーザー生成プラグイン'
     });
 
-    console.log(OutputFormatter.success('✅ プラグインを生成しました'));
+    console.log(OutputFormatter.success(getMessage('plugin.create.generating')));
     console.log();
     console.log('生成されたプラグイン:');
     console.log(`- 名前: ${plugin.metadata.name}`);
@@ -144,18 +147,20 @@ export class PluginCreateCommand {
     // プラグインの保存
     await this.interactiveCreator.savePlugin(plugin, pluginName);
     console.log();
-    console.log(OutputFormatter.success(`🎉 プラグインを保存しました: src/plugins/generated/${pluginName}.ts`));
+    console.log(OutputFormatter.success(getMessage('plugin.create.success', {
+      path: `src/plugins/generated/${pluginName}.ts`
+    })));
   }
 
   /**
    * テンプレートモードの処理
    */
   private async handleTemplateMode(templateName: string): Promise<void> {
-    console.log(OutputFormatter.info(`テンプレート "${templateName}" からプラグインを作成中...`));
+    console.log(OutputFormatter.info(getMessage('plugin.create.template.creating', { template: templateName })));
 
     const templateCode = await this.createFromTemplate(templateName);
     if (!templateCode) {
-      console.error(OutputFormatter.error(`不明なテンプレート: ${templateName}`));
+      console.error(OutputFormatter.error(getMessage('plugin.create.template.unknown', { template: templateName })));
       return;
     }
 
@@ -176,11 +181,11 @@ export class PluginCreateCommand {
    * 既存プラグインからの作成
    */
   private async handleFromExistingMode(pluginName: string): Promise<void> {
-    console.log(OutputFormatter.info(`既存プラグイン "${pluginName}" からプラグインを作成中...`));
+    console.log(OutputFormatter.info(getMessage('plugin.create.existing.creating', { plugin: pluginName })));
 
     const baseCode = await this.createFromExistingPlugin(pluginName);
     if (!baseCode) {
-      console.error(OutputFormatter.error(`プラグインが見つかりません: ${pluginName}`));
+      console.error(OutputFormatter.error(getMessage('plugin.create.existing.notfound', { plugin: pluginName })));
       return;
     }
 
@@ -206,6 +211,12 @@ export class PluginCreateCommand {
         return this.getBasicTemplate();
       case 'pattern-match':
         return this.getPatternMatchTemplate();
+      case 'async-await':
+        return this.getAsyncAwaitTemplate();
+      case 'api-test':
+        return this.getApiTestTemplate();
+      case 'validation':
+        return this.getValidationTemplate();
       default:
         return null;
     }
@@ -293,6 +304,184 @@ export class PatternMatchPlugin implements IPlugin {
   }
 
   /**
+   * 非同期テスト専用テンプレートの取得
+   */
+  private getAsyncAwaitTemplate(): string {
+    return `import * as fs from 'fs';
+import { IPlugin, Issue } from '../core/types';
+
+/**
+ * 非同期テストパターンプラグイン
+ * async/awaitの適切な使用をチェック
+ * 
+ * 作成日: ${new Date().toISOString()}
+ * 作成方法: template (async-await)
+ */
+export class AsyncAwaitPlugin implements IPlugin {
+  name = 'async-await-plugin';
+
+  async analyze(filePath: string): Promise<Issue[]> {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const issues: Issue[] = [];
+
+    // async関数でawaitが使われているかチェック
+    const asyncFunctionRegex = /test\\s*\\(.*?,\\s*async\\s*\\(/g;
+    const awaitRegex = /await\\s+/g;
+    
+    const asyncMatches = content.match(asyncFunctionRegex);
+    const awaitMatches = content.match(awaitRegex);
+    
+    if (asyncMatches && asyncMatches.length > 0) {
+      if (!awaitMatches || awaitMatches.length === 0) {
+        issues.push({
+          type: 'missing-await',
+          severity: 'warning',
+          message: 'async関数内でawaitが使用されていません',
+          file: filePath
+        });
+      }
+    }
+
+    // Promiseが適切にawaitされているかチェック
+    if (content.includes('.then(') && content.includes('async')) {
+      issues.push({
+        type: 'promise-anti-pattern',
+        severity: 'warning',
+        message: 'async/await使用時は.then()ではなくawaitを使用してください',
+        file: filePath
+      });
+    }
+
+    return issues;
+  }
+}`;
+  }
+
+  /**
+   * APIテスト専用テンプレートの取得
+   */
+  private getApiTestTemplate(): string {
+    return `import * as fs from 'fs';
+import { IPlugin, Issue } from '../core/types';
+
+/**
+ * APIテストパターンプラグイン
+ * APIレスポンスの適切な検証をチェック
+ * 
+ * 作成日: ${new Date().toISOString()}
+ * 作成方法: template (api-test)
+ */
+export class ApiTestPlugin implements IPlugin {
+  name = 'api-test-plugin';
+
+  async analyze(filePath: string): Promise<Issue[]> {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const issues: Issue[] = [];
+
+    // HTTPステータスコードの検証をチェック
+    if (content.includes('response') && !content.includes('.status')) {
+      issues.push({
+        type: 'missing-status-check',
+        severity: 'warning',
+        message: 'APIレスポンスのステータスコード検証が不足しています',
+        file: filePath
+      });
+    }
+
+    // エラーレスポンスのテストをチェック
+    const hasErrorTest = content.includes('400') || content.includes('404') || 
+                        content.includes('500') || content.includes('error');
+    if (content.includes('api') && !hasErrorTest) {
+      issues.push({
+        type: 'missing-error-test',
+        severity: 'error',
+        message: 'APIエラーケースのテストが不足しています',
+        file: filePath
+      });
+    }
+
+    // レスポンスボディの検証をチェック
+    if (content.includes('response') && !content.includes('.body') && !content.includes('.data')) {
+      issues.push({
+        type: 'missing-body-validation',
+        severity: 'warning',
+        message: 'APIレスポンスボディの検証が不足しています',
+        file: filePath
+      });
+    }
+
+    return issues;
+  }
+}`;
+  }
+
+  /**
+   * バリデーション専用テンプレートの取得
+   */
+  private getValidationTemplate(): string {
+    return `import * as fs from 'fs';
+import { IPlugin, Issue } from '../core/types';
+
+/**
+ * バリデーションテストパターンプラグイン
+ * 入力値検証の適切なテストをチェック
+ * 
+ * 作成日: ${new Date().toISOString()}
+ * 作成方法: template (validation)
+ */
+export class ValidationPlugin implements IPlugin {
+  name = 'validation-plugin';
+
+  async analyze(filePath: string): Promise<Issue[]> {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const issues: Issue[] = [];
+
+    // 境界値テストをチェック
+    const hasBoundaryTest = content.includes('null') || content.includes('undefined') ||
+                           content.includes('empty') || content.includes('0') ||
+                           content.includes('negative');
+    
+    if (content.includes('validate') && !hasBoundaryTest) {
+      issues.push({
+        type: 'missing-boundary-test',
+        severity: 'error',
+        message: 'バリデーション関数の境界値テストが不足しています',
+        file: filePath
+      });
+    }
+
+    // 無効な入力値のテストをチェック
+    const hasInvalidTest = content.includes('invalid') || content.includes('wrong') ||
+                          content.includes('bad') || content.includes('error');
+    
+    if (content.includes('validate') && !hasInvalidTest) {
+      issues.push({
+        type: 'missing-invalid-input-test',
+        severity: 'warning',
+        message: '無効な入力値に対するテストが不足しています',
+        file: filePath
+      });
+    }
+
+    // 型チェックのテスト
+    const hasTypeTest = content.includes('typeof') || content.includes('instanceof') ||
+                       content.includes('string') || content.includes('number');
+    
+    if (content.includes('validate') && !hasTypeTest) {
+      issues.push({
+        type: 'missing-type-validation',
+        severity: 'warning',
+        message: '型バリデーションのテストが不足しています',
+        file: filePath
+      });
+    }
+
+    return issues;
+  }
+}`;
+  }
+
+  /**
    * プラグイン名の生成
    */
   private generatePluginName(session: Session): string {
@@ -318,6 +507,9 @@ export class PatternMatchPlugin implements IPlugin {
     console.log('利用可能なテンプレート:');
     console.log('  basic          基本的なプラグインテンプレート');
     console.log('  pattern-match  パターンマッチングプラグイン');
+    console.log('  async-await    非同期テスト専用プラグイン');
+    console.log('  api-test       APIテスト専用プラグイン');
+    console.log('  validation     バリデーション専用プラグイン');
     console.log();
   }
 }
