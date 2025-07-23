@@ -43,7 +43,13 @@ class MockNewPlugin implements ITestQualityPlugin {
         patternName: 'New Pattern',
         location: { file: 'test.ts', line: 1, column: 1, endLine: 1 },
         confidence: 0.9,
-        evidence: [{ type: 'code', description: 'Test evidence' }]
+        evidence: [{ 
+          type: 'code', 
+          description: 'Test evidence',
+          location: { file: 'test.ts', line: 1, column: 1 },
+          code: 'test code',
+          confidence: 0.9
+        }]
       }
     ];
   }
@@ -52,10 +58,12 @@ class MockNewPlugin implements ITestQualityPlugin {
     return {
       overall: 85,
       breakdown: {
-        test: 85
+        completeness: 85,
+        correctness: 85,
+        maintainability: 85
       },
       confidence: 0.9,
-      explanation: 'Good quality'
+      metadata: { explanation: 'Good quality' }
     };
   }
 
@@ -113,7 +121,7 @@ describe('PluginManagerExtended', () => {
     
     expect(result.pluginResults).toHaveLength(1);
     expect(result.pluginResults[0].pluginId).toBe('mock-new-plugin');
-    expect(result.pluginResults[0].patterns).toHaveLength(1);
+    expect(result.pluginResults[0].detectionResults).toHaveLength(1);
     expect(result.pluginResults[0].qualityScore.overall).toBe(85);
     expect(result.pluginResults[0].improvements).toHaveLength(1);
   });
@@ -126,8 +134,8 @@ describe('PluginManagerExtended', () => {
     
     expect(result.pluginResults).toHaveLength(1);
     expect(result.pluginResults[0].pluginId).toBe('legacy-adapter-mock-legacy');
-    expect(result.pluginResults[0].patterns).toHaveLength(1);
-    expect(result.pluginResults[0].patterns[0].patternId).toBe('legacy-issue-test-issue');
+    expect(result.pluginResults[0].detectionResults).toHaveLength(1);
+    expect(result.pluginResults[0].detectionResults[0].patternId).toBe('legacy-issue-test-issue');
   });
 
   it('should run both legacy and new plugins together', async () => {
@@ -166,9 +174,9 @@ describe('PluginManagerExtended', () => {
       evaluateQuality(_patterns: DetectionResult[]): QualityScore {
         return {
           overall: 100,
-          breakdown: {},
+          breakdown: { completeness: 50, correctness: 50, maintainability: 50 },
           confidence: 1.0,
-          explanation: 'Not applicable'
+          metadata: { explanation: 'Not applicable' }
         };
       }
 
@@ -210,9 +218,9 @@ describe('PluginManagerExtended', () => {
       evaluateQuality(_patterns: DetectionResult[]): QualityScore {
         return {
           overall: 100,
-          breakdown: {},
+          breakdown: { completeness: 50, correctness: 50, maintainability: 50 },
           confidence: 1.0,
-          explanation: 'Slow processing'
+          metadata: { explanation: 'Slow processing' }
         };
       }
 
@@ -251,9 +259,9 @@ describe('PluginManagerExtended', () => {
       evaluateQuality(_patterns: DetectionResult[]): QualityScore {
         return {
           overall: 0,
-          breakdown: {},
+          breakdown: { completeness: 50, correctness: 50, maintainability: 50 },
           confidence: 0,
-          explanation: 'Error occurred'
+          metadata: { explanation: 'Error occurred' }
         };
       }
 

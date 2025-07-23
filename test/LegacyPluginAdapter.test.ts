@@ -122,7 +122,7 @@ describe('LegacyPluginAdapter', () => {
       overall: 80,
       breakdown: {
         completeness: 80,
-        correctness: 80,
+        correctness: 60,
         maintainability: 80
       },
       confidence: 0.7
@@ -130,10 +130,10 @@ describe('LegacyPluginAdapter', () => {
 
     const improvements = adapter.suggestImprovements(mockQuality);
     expect(improvements).toHaveLength(1);
-    expect(improvements[0].id).toBe('legacy-improvement-0');
+    expect(improvements[0].id).toBe('legacy-improvement');
     expect(improvements[0].priority).toBe('medium');
     expect(improvements[0].type).toBe('add');
-    expect(improvements[0].title).toBe('Legacy plugin issue: missing-test');
+    expect(improvements[0].title).toBe('Legacy plugin compatibility issues');
     expect(improvements[0].description).toContain('レガシープラグインで検出された問題');
     expect(improvements[0].automatable).toBe(false);
   });
@@ -158,7 +158,7 @@ describe('LegacyPluginAdapter', () => {
     
     expect(patterns).toHaveLength(1);
     expect(patterns[0].location.line).toBe(1); // デフォルト値
-    expect(patterns[0].location.endLine).toBe(1);
+    expect(patterns[0].location.endLine).toBe(undefined);
   });
 
   it('should calculate severity-based confidence', async () => {

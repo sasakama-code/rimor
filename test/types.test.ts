@@ -26,7 +26,9 @@ describe('ITestQualityPlugin interface', () => {
         evidence: [{
           type: 'code',
           description: 'Test evidence',
-          codeSnippet: 'expect(true).toBe(true);'
+          location: { file: 'test.ts', line: 1, column: 1 },
+          code: 'expect(true).toBe(true);',
+          confidence: 0.9
         }]
       }];
     }
@@ -35,10 +37,12 @@ describe('ITestQualityPlugin interface', () => {
       return {
         overall: 80,
         breakdown: {
-          completeness: 80
+          completeness: 80,
+          correctness: 80,
+          maintainability: 80
         },
         confidence: 0.8,
-        explanation: 'Good quality test with room for improvement'
+        metadata: { explanation: 'Good quality test with room for improvement' }
       };
     }
 
@@ -124,7 +128,8 @@ describe('ITestQualityPlugin interface', () => {
       patternName: 'Test Pattern',
       location: {
         file: 'test.ts',
-        startLine: 1,
+        line: 1,
+        column: 1,
         endLine: 1
       },
       confidence: 0.9,
@@ -137,15 +142,15 @@ describe('ITestQualityPlugin interface', () => {
     expect(typeof quality.breakdown).toBe('object');
     expect(quality.confidence).toBeGreaterThanOrEqual(0);
     expect(quality.confidence).toBeLessThanOrEqual(1);
-    expect(typeof quality.explanation).toBe('string');
+    expect(typeof quality.metadata?.explanation).toBe('string');
   });
 
   it('should implement suggestImprovements method', () => {
     const mockQuality: QualityScore = {
       overall: 80,
-      breakdown: {},
+      breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
       confidence: 0.8,
-      explanation: 'Test quality'
+      metadata: { explanation: 'Test quality' }
     };
 
     const improvements = mockPlugin.suggestImprovements(mockQuality);
@@ -180,8 +185,9 @@ describe('DetectionResult type', () => {
       evidence: [{
         type: 'code',
         description: 'Code evidence',
-        codeSnippet: 'test code',
-        line: 1
+        location: { file: 'test.ts', line: 1, column: 1 },
+        code: 'test code',
+        confidence: 0.9
       }],
       metadata: {
         customProperty: 'value'
@@ -199,19 +205,12 @@ describe('QualityScore type', () => {
     const score: QualityScore = {
       overall: 85,
       breakdown: {
-        completeness: {
-          score: 90,
-          weight: 0.4,
-          issues: ['Missing edge case tests']
-        },
-        maintainability: {
-          score: 80,
-          weight: 0.6,
-          issues: []
-        }
+        completeness: 90,
+        correctness: 85,
+        maintainability: 80
       },
       confidence: 0.9,
-      explanation: 'High quality test with minor improvements needed'
+      metadata: { explanation: 'High quality test with minor improvements needed' }
     };
 
     expect(score.overall).toBe(85);
