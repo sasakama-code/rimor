@@ -55,16 +55,25 @@ jobs:
         fi
         echo "✅ Version match confirmed: $PACKAGE_VERSION"
     
-    - name: Verify npm authentication
+    - name: Debug and create npm authentication
       run: |
-        echo "🔐 Verifying npm authentication..."
-        echo "Registry: $(npm config get registry)"
-        echo "Auth config location: $NPM_CONFIG_USERCONFIG"
-        cat $NPM_CONFIG_USERCONFIG
+        echo "🔍 Debugging NPM_TOKEN format..."
+        echo "Token length: ${#NPM_TOKEN}"
+        echo "Token prefix: ${NPM_TOKEN:0:8}..."
+        echo "Token suffix: ...${NPM_TOKEN: -8}"
+        
+        echo "🔐 Creating direct .npmrc authentication..."
+        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+        
+        echo "📝 Verifying .npmrc content:"
+        cat ~/.npmrc | sed 's/npm_[a-zA-Z0-9_]*\{8\}/npm_[REDACTED]/g'
+        
+        echo "🔐 Testing npm authentication..."
         npm whoami
         echo "✅ Authentication verified"
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     
     - name: Publish to npm
       run: |
@@ -73,7 +82,7 @@ jobs:
         npm publish --access public --verbose
         echo "✅ Package published successfully"
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     
     - name: Create GitHub Release
       uses: actions/create-release@v1
