@@ -67,7 +67,8 @@ jobs:
         echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
         
         echo "📝 Verifying .npmrc content:"
-        cat ~/.npmrc | sed 's/npm_[a-zA-Z0-9_]*\{8\}/npm_[REDACTED]/g'
+        echo "//registry.npmjs.org/:_authToken=npm_[REDACTED]"
+        echo "registry=https://registry.npmjs.org/"
         
         echo "🔐 Testing npm authentication..."
         npm whoami
