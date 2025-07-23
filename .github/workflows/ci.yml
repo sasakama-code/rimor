@@ -39,12 +39,6 @@ jobs:
     - name: Run tests
       run: npm test
 
-    - name: Clean test artifacts before analysis
-      run: |
-        echo "🧹 Cleaning test-generated files..."
-        rm -rf src/plugins/generated/
-        echo "✅ Cleanup completed"
-
     - name: Run Rimor self-analysis (REQUIRED)
       run: |
         echo "🔍 Running Rimor self-analysis..."
@@ -102,6 +96,12 @@ jobs:
         echo "✅ QUALITY GATE PASSED: All quality standards met"
         echo "   - Zero test quality issues ✅"
         echo "   - $COVERAGE% test coverage (≥80%) ✅"
+
+    - name: Clean test artifacts after analysis
+      run: |
+        echo "🧹 Cleaning test-generated files..."
+        rm -rf src/plugins/generated/
+        echo "✅ Cleanup completed"
 
   security:
     runs-on: ubuntu-latest
