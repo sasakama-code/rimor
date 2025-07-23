@@ -149,7 +149,7 @@ export class CachedAnalyzer {
   async showCacheInfo(): Promise<void> {
     const info = this.cacheManager.getDetailedInfo();
     
-    console.log('\n🗄️  キャッシュ情報:');
+    console.log('\n' + getMessage('cache.info.header'));
     console.log(`  有効: ${info.options.enabled ? 'Yes' : 'No'}`);
     console.log(`  エントリ数: ${info.statistics.totalEntries}`);
     console.log(`  ヒット率: ${(info.statistics.hitRatio * 100).toFixed(1)}%`);
@@ -170,7 +170,7 @@ export class CachedAnalyzer {
    */
   async clearCache(): Promise<void> {
     await this.cacheManager.invalidateAll();
-    console.log('✅ キャッシュをクリアしました');
+    console.log(getMessage('cache.info.cleared'));
   }
   
   /**
@@ -185,9 +185,9 @@ export class CachedAnalyzer {
     const cleaned = beforeStats.totalEntries - afterStats.totalEntries;
     
     if (cleaned > 0) {
-      console.log(`✅ キャッシュを最適化しました（${cleaned}件のエントリを削除）`);
+      console.log(getMessage('cache.info.optimized', { count: cleaned.toString() }));
     } else {
-      console.log('✅ キャッシュは既に最適化されています');
+      console.log(getMessage('cache.info.already_optimized'));
     }
   }
   
@@ -331,7 +331,7 @@ export class CachedAnalyzer {
   }
   
   private logCacheStatistics(cacheStats: CachedAnalysisResult['cacheStats'], totalFiles: number): void {
-    console.log('\n📊 キャッシュ統計:');
+    console.log('\n' + getMessage('cache.stats.header'));
     console.log(`  対象ファイル: ${totalFiles}`);
     console.log(`  キャッシュヒット: ${cacheStats.cacheHits}`);
     console.log(`  キャッシュミス: ${cacheStats.cacheMisses}`);

@@ -10,6 +10,7 @@ import * as crypto from 'crypto';
 import { Issue } from './types';
 import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
+import { getMessage } from '../i18n/messages';
 
 export interface CacheEntry {
   filePath: string;
@@ -111,7 +112,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        'キャッシュ初期化中にエラーが発生しました',
+        getMessage('cache.error.initialization'),
         { cacheDirectory: this.options.cacheDirectory },
         true
       );
@@ -482,7 +483,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        'キャッシュファイル読み込み中にエラーが発生しました',
+        getMessage('cache.error.read_failed'),
         { cacheFilePath: this.cacheFilePath },
         true
       );
@@ -505,7 +506,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        'キャッシュファイル保存中にエラーが発生しました',
+        getMessage('cache.error.save_failed'),
         { cacheFilePath: this.cacheFilePath },
         true
       );
@@ -521,7 +522,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        'キャッシュファイル削除中にエラーが発生しました',
+        getMessage('cache.error.delete_failed'),
         { cacheFilePath: this.cacheFilePath },
         true
       );

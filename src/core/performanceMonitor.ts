@@ -150,8 +150,8 @@ export class PerformanceMonitor {
    * パフォーマンスレポートの表示
    */
   displayReport(report: PerformanceReport, verbose: boolean = false): void {
-    console.log('\n📊 パフォーマンスレポート');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('\n' + getMessage('performance.report.header'));
+    console.log(getMessage('performance.report.separator'));
     
     // 総合統計
     console.log(`⏱️  総実行時間: ${report.totalMetrics.processingTime}ms`);

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { GeneratedPlugin, ValidationResult } from './types';
 import { IPlugin, Issue } from '../core/types';
+import { getMessage } from '../i18n/messages';
 
 /**
  * 生成されたプラグインの検証システム
@@ -141,7 +142,7 @@ export class PluginValidator {
   async createPluginInstance(code: string, pluginName: string): Promise<IPlugin> {
     const validation = this.validatePluginCode(code);
     if (!validation.isValid) {
-      throw new Error(validation.error || 'プラグインコードが無効です');
+      throw new Error(validation.error || getMessage('validation.error.invalid_plugin_code'));
     }
 
     // モックプラグインインスタンスを返す

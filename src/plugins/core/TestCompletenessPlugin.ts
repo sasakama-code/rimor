@@ -140,8 +140,8 @@ export class TestCompletenessPlugin extends BasePlugin {
         'completeness',
         'high',
         'add',
-        'テストケースの追加',
-        'CRUD操作、エラーハンドリング、境界値テストなど、包括的なテストケースを追加してください',
+        getMessage('test_completeness.action.add_cases'),
+        getMessage('test_completeness.suggestion.comprehensive'),
         this.createCodeLocation('unknown', 1, 1),
         { scoreImprovement: 30, effortMinutes: 60 }
       ));

@@ -139,7 +139,7 @@ export class PluginCreateCommand {
 
     console.log(OutputFormatter.success(getMessage('plugin.create.generating')));
     console.log();
-    console.log('生成されたプラグイン:');
+    console.log(getMessage('plugin_create.cli.generated_plugin'));
     console.log(`- 名前: ${plugin.metadata.name}`);
     console.log(`- 説明: ${plugin.metadata.description}`);
     console.log(`- パターン数: ${plugin.metadata.patterns.length}`);
@@ -499,17 +499,17 @@ export class ValidationPlugin implements IPlugin {
   private showHelp(): void {
     console.log(OutputFormatter.header('Rimor プラグイン作成'));
     console.log();
-    console.log('使用方法:');
-    console.log('  rimor plugin create --interactive     対話モードでプラグイン作成');
-    console.log('  rimor plugin create --template basic  テンプレートからプラグイン作成');
-    console.log('  rimor plugin create --from plugin-name 既存プラグインから派生作成');
+    console.log(getMessage('plugin_create.cli.usage_header'));
+    console.log('  rimor plugin create --interactive     ' + getMessage('plugin_create.cli.interactive_description'));
+    console.log('  rimor plugin create --template basic  ' + getMessage('plugin_create.cli.template_description'));
+    console.log('  rimor plugin create --from plugin-name ' + getMessage('plugin_create.cli.from_description'));
     console.log();
-    console.log('利用可能なテンプレート:');
-    console.log('  basic          基本的なプラグインテンプレート');
-    console.log('  pattern-match  パターンマッチングプラグイン');
-    console.log('  async-await    非同期テスト専用プラグイン');
-    console.log('  api-test       APIテスト専用プラグイン');
-    console.log('  validation     バリデーション専用プラグイン');
+    console.log(getMessage('plugin_create.cli.templates_header'));
+    console.log('  basic          ' + getMessage('plugin_create.cli.template.basic'));
+    console.log('  pattern-match  ' + getMessage('plugin_create.cli.template.pattern_match'));
+    console.log('  async-await    ' + getMessage('plugin_create.cli.template.async_await'));
+    console.log('  api-test       ' + getMessage('plugin_create.cli.template.api_test'));
+    console.log('  validation     ' + getMessage('plugin_create.cli.template.validation'));
     console.log();
   }
 }
