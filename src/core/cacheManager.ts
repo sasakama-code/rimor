@@ -10,7 +10,6 @@ import * as crypto from 'crypto';
 import { Issue } from './types';
 import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
-import { getMessage } from '../i18n/messages';
 
 export interface CacheEntry {
   filePath: string;
