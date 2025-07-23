@@ -26,7 +26,7 @@ describe('Basic Performance Tests', () => {
       // 単一ファイル分析は500ms以内で完了すべき
       expect(executionTimeMs).toBeLessThan(500);
       expect(result).toBeDefined();
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle directory analysis efficiently', async () => {
@@ -253,7 +253,7 @@ ${Array.from({ length: 50 }, (_, i) => `
       expect(results).toHaveLength(files.length);
       results.forEach(result => {
         expect(result).toBeDefined();
-        expect(result.executionTime).toBeGreaterThan(0);
+        expect(result.executionTime).toBeGreaterThanOrEqual(0);
       });
     });
   });

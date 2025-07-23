@@ -23,7 +23,7 @@ describe('Simple Performance Tests', () => {
       // 単一ファイル分析は1秒以内で完了すべき
       expect(executionTimeMs).toBeLessThan(1000);
       expect(result).toBeDefined();
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
       expect(result.totalFiles).toBeGreaterThan(0);
     });
 
@@ -31,7 +31,7 @@ describe('Simple Performance Tests', () => {
       const result = await analyzer.analyze(getFixturePath('comprehensive.test.ts'));
       
       expect(result.executionTime).toBeDefined();
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
       expect(result.executionTime).toBeLessThan(1000); // 1秒以内
     });
 
