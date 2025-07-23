@@ -93,7 +93,8 @@ describe('InteractiveCreator Integration Tests', () => {
       const validation = await creator.validatePlugin(plugin, [testFile]);
       expect(validation.isValid).toBe(true);
       expect(validation.filesAnalyzed).toBe(1);
-      expect(validation.executionTime).toBeGreaterThan(0);
+      // CI環境では実行時間が0になる可能性があるため、0以上で検証
+      expect(validation.executionTime).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle skip inputs correctly', async () => {
