@@ -42,7 +42,7 @@ describe('PluginCreateCommand', () => {
       await command.execute(options);
 
       expect(mockCreator.startSession).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin Creation Assistant'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Rimorプラグイン作成アシスタント'));
       
       consoleSpy.mockRestore();
     }, 1000);
@@ -61,7 +61,7 @@ describe('PluginCreateCommand', () => {
 
       await expect(command.execute(options)).rejects.toThrow('process.exit called');
       
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin creation error'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('プラグイン作成エラー'));
       expect(processExitSpy).toHaveBeenCalledWith(1);
       
       consoleErrorSpy.mockRestore();
@@ -93,7 +93,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown template'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('不明なテンプレート'));
       
       consoleErrorSpy.mockRestore();
     });
@@ -109,7 +109,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Creating plugin from existing'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('既存プラグイン'));
       
       consoleSpy.mockRestore();
     });
@@ -123,7 +123,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin not found'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('プラグインが見つかりません'));
       
       consoleErrorSpy.mockRestore();
     });
@@ -146,7 +146,7 @@ describe('PluginCreateCommand', () => {
 
       await (command as any).handleInteractiveMode();
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin Creation Assistant'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Rimorプラグイン作成アシスタント'));
       expect(mockCreator.startSession).toHaveBeenCalled();
       
       consoleSpy.mockRestore();
