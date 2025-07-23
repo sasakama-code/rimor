@@ -55,69 +55,9 @@ jobs:
         }
         echo "✅ Tests completed successfully"
 
-    - name: Run Rimor self-analysis (OPTIONAL)
-      continue-on-error: true
-      run: |
-        echo "🔍 Running Rimor self-analysis..."
-        
-        # 基本的なCI環境確認
-        echo "📋 CI Environment: Node.js $(node --version), NPM $(npm --version)"
-        
-        # Rimor実行（簡素化版）
-        echo "🚀 Executing Rimor analysis..."
-        if node dist/index.js analyze ./src --format=json > rimor-results.json 2>&1; then
-          echo "✅ Rimor analysis completed successfully"
-          cat rimor-results.json
-        else
-          echo "⚠️  Rimor analysis failed, creating minimal fallback..."
-          # 最小限のフォールバック
-          echo '{"summary":{"totalFiles":0,"issuesFound":0,"testCoverage":100,"executionTime":0},"issues":[],"config":{"targetPath":"./src","enabledPlugins":["fallback"],"format":"json"}}' > rimor-results.json
-          echo "📄 Fallback results created (assuming success for CI continuation)"
-        fi
+    - name: Run quality check
+      run: npm run analyze:src
 
-    - name: Upload Rimor results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: rimor-analysis-node-${{ matrix.node-version }}
-        path: rimor-results.json
-
-    - name: Quality Gate - Test Coverage Check
-      continue-on-error: true
-      run: |
-        echo "🔍 Checking quality standards..."
-        
-        # 簡素化されたファイル確認
-        if [ ! -f rimor-results.json ]; then
-          echo "⚠️  rimor-results.json not found - creating default"
-          echo '{"summary":{"totalFiles":0,"issuesFound":0,"testCoverage":100,"executionTime":0},"issues":[],"config":{"targetPath":"./src","enabledPlugins":["default"],"format":"json"}}' > rimor-results.json
-        fi
-        
-        # Install jq if not available
-        if ! command -v jq &> /dev/null; then
-          echo "Installing jq..."
-          sudo apt-get update && sudo apt-get install -y jq
-        fi
-        
-        # 簡素化されたJSON解析
-        ISSUES=$(cat rimor-results.json | jq -r '.summary.issuesFound // 0' 2>/dev/null || echo "0")
-        COVERAGE=$(cat rimor-results.json | jq -r '.summary.testCoverage // 100' 2>/dev/null || echo "100")
-        
-        echo "📊 Analysis Results:"
-        echo "   - Issues found: $ISSUES"
-        echo "   - Test coverage: $COVERAGE%"
-        
-        # MVP期間中は非常に緩い基準で継続
-        if [ "$ISSUES" -gt 10 ]; then
-          echo "⚠️  Many quality issues found ($ISSUES), but continuing for MVP"
-        fi
-        
-        if [ "$COVERAGE" -lt 50 ]; then
-          echo "⚠️  Low test coverage ($COVERAGE%), but continuing for MVP"
-        fi
-        
-        echo "✅ QUALITY GATE: MVP基準で継続します"
-        echo "   - Issues: $ISSUES件, Coverage: $COVERAGE%"
 
     - name: Clean test artifacts after analysis
       run: |
