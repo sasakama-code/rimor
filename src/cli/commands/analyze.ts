@@ -3,6 +3,7 @@ import { TestExistencePlugin } from '../../plugins/testExistence';
 import { AssertionExistsPlugin } from '../../plugins/assertionExists';
 import { OutputFormatter } from '../output';
 import { ConfigLoader, RimorConfig } from '../../core/config';
+import { errorHandler } from '../../utils/errorHandler';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,13 +23,30 @@ export class AnalyzeCommand {
     
     this.analyzer = new Analyzer();
     
-    // 設定に基づいてプラグインを登録
-    if (this.config.plugins['test-existence'].enabled) {
-      this.analyzer.registerPlugin(new TestExistencePlugin(this.config.plugins['test-existence']));
-    }
+    // 設定に基づいて動的にプラグインを登録
+    await this.registerPluginsDynamically();
+  }
+  
+  private async registerPluginsDynamically(): Promise<void> {
+    if (!this.config) return;
     
-    if (this.config.plugins['assertion-exists'].enabled) {
-      this.analyzer.registerPlugin(new AssertionExistsPlugin());
+    for (const [pluginName, pluginConfig] of Object.entries(this.config.plugins)) {
+      if (!pluginConfig.enabled) continue;
+      
+      try {
+        // レガシープラグインの読み込み
+        if (pluginName === 'test-existence') {
+          const { TestExistencePlugin } = await import('../../plugins/testExistence');
+          this.analyzer.registerPlugin(new TestExistencePlugin(pluginConfig));
+        } else if (pluginName === 'assertion-exists') {
+          const { AssertionExistsPlugin } = await import('../../plugins/assertionExists');
+          this.analyzer.registerPlugin(new AssertionExistsPlugin());
+        }
+        // 将来的なコアプラグインの対応は今後のフェーズで実装
+        
+      } catch (error) {
+        errorHandler.handlePluginError(error, pluginName, 'load');
+      }
     }
   }
   
@@ -83,20 +101,22 @@ export class AnalyzeCommand {
       }
       
     } catch (error) {
-      console.error(OutputFormatter.error(`分析中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      const errorInfo = errorHandler.handleError(
+        error,
+        undefined,
+        '分析中にエラーが発生しました'
+      );
+      console.error(OutputFormatter.error(errorInfo.message));
       process.exit(1);
     }
   }
   
   private getEnabledPluginNames(): string[] {
-    const plugins = [];
-    if (this.config?.plugins['test-existence'].enabled) {
-      plugins.push('TestExistencePlugin');
-    }
-    if (this.config?.plugins['assertion-exists'].enabled) {
-      plugins.push('AssertionExistsPlugin');
-    }
-    return plugins;
+    if (!this.config) return [];
+    
+    return Object.entries(this.config.plugins)
+      .filter(([_, config]) => config.enabled)
+      .map(([name, _]) => name);
   }
   
   private formatAsJson(result: any, targetPath: string): object {

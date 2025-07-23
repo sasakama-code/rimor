@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { IPlugin, Issue } from '../core/types';
+import { TestPatterns } from '../utils/regexPatterns';
+import { RegexHelper } from '../utils/regexHelper';
 
 export class AssertionExistsPlugin implements IPlugin {
   name = 'assertion-exists';
@@ -35,27 +37,11 @@ export class AssertionExistsPlugin implements IPlugin {
   }
   
   private detectAssertions(content: string): boolean {
-    const assertionPatterns = [
-      /expect\s*\(/,              // expect()
-      /assert\s*\(/,              // assert()
-      /\.should\./,               // should.js  
-      /chai\.expect\s*\(/,        // chai.expect()
-      /assert\.equal/,            // assert.equal
-      /assert\.strictEqual/,      // assert.strictEqual
-      /assert\.deepEqual/,        // assert.deepEqual
-      /toEqual\s*\(/,             // Jest matchers
-      /toBe\s*\(/,                // Jest matchers
-      /toContain\s*\(/,           // Jest matchers
-      /toHaveBeenCalled/,         // Jest spy matchers
-      /toThrow/,                  // Jest matchers
-      /toBeNull/,                 // Jest matchers
-      /toBeTruthy/,               // Jest matchers
-      /toBeFalsy/,                // Jest matchers
-    ];
+    const assertionPatterns = TestPatterns.ALL_ASSERTIONS;
     
     // コメントと文字列を除外して検出
     const cleanContent = this.removeCommentsAndStrings(content);
-    return assertionPatterns.some(pattern => pattern.test(cleanContent));
+    return RegexHelper.testAny(assertionPatterns, cleanContent);
   }
   
   private removeCommentsAndStrings(content: string): string {

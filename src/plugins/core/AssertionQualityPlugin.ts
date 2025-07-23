@@ -6,6 +6,8 @@ import {
   QualityScore,
   Improvement
 } from '../../core/types';
+import { TestPatterns } from '../../utils/regexPatterns';
+import { RegexHelper } from '../../utils/regexHelper';
 
 export class AssertionQualityPlugin extends BasePlugin {
   id = 'assertion-quality';
@@ -13,28 +15,10 @@ export class AssertionQualityPlugin extends BasePlugin {
   version = '1.0.0';
   type = 'core' as const;
 
-  private readonly WEAK_ASSERTION_PATTERNS = [
-    /\.toBeTruthy\(\)/g,
-    /\.toBeFalsy\(\)/g,
-    /\.toBeDefined\(\)/g,
-    /\.toBeUndefined\(\)/g,
-    /\.not\.toBeUndefined\(\)/g,
-    /\.not\.toBeNull\(\)/g
-  ];
-
-  private readonly STRONG_ASSERTION_PATTERNS = [
-    /\.toBe\([^)]+\)/g,
-    /\.toEqual\([^)]+\)/g,
-    /\.toMatch\(\/[^/]+\/[gimuy]*\)/g,
-    /\.toMatchObject\({[^}]+}\)/g,
-    /\.toContain\([^)]+\)/g,
-    /\.toHaveLength\(\d+\)/g,
-    /\.toThrow\([^)]*\)/g,
-    /\.toHaveBeenCalledWith\([^)]*\)/g,
-    /\.toHaveBeenCalledTimes\(\d+\)/g
-  ];
-
-  private readonly MAGIC_NUMBER_PATTERN = /\.toBe\(\d+\)|\.toEqual\(\d+\)|\.toBeGreaterThan\(\d+\)|\.toBeLessThan\(\d+\)/g;
+  // 共通パターンライブラリから正規表現を取得
+  private readonly WEAK_ASSERTION_PATTERNS = TestPatterns.WEAK_ASSERTIONS;
+  private readonly STRONG_ASSERTION_PATTERNS = TestPatterns.STRONG_ASSERTIONS;
+  private readonly MAGIC_NUMBER_PATTERN = TestPatterns.MAGIC_NUMBER_ASSERTIONS;
 
   isApplicable(_context: ProjectContext): boolean {
     // すべてのプロジェクトで適用可能
@@ -198,18 +182,16 @@ export class AssertionQualityPlugin extends BasePlugin {
   private detectHighQualityAssertions(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
     const strongAssertions = this.STRONG_ASSERTION_PATTERNS.reduce((count, pattern) => {
-      pattern.lastIndex = 0;
-      const matches = cleanContent.match(pattern);
+      const matches = RegexHelper.resetAndMatch(pattern, cleanContent);
       return count + (matches ? matches.length : 0);
     }, 0);
 
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g).length;
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE).length;
     
     // テストケースあたりの強いアサーション数が2以上で、3つ以上の異なるアサーションタイプが使われている場合
     if (testCases > 0 && strongAssertions / testCases >= 2) {
       const usedPatternTypes = this.STRONG_ASSERTION_PATTERNS.filter(pattern => {
-        pattern.lastIndex = 0;
-        return pattern.test(cleanContent);
+        return RegexHelper.resetAndTest(pattern, cleanContent);
       }).length;
 
       if (usedPatternTypes >= 3) {
@@ -235,12 +217,11 @@ export class AssertionQualityPlugin extends BasePlugin {
   private detectWeakAssertions(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
     const weakAssertions = this.WEAK_ASSERTION_PATTERNS.reduce((count, pattern) => {
-      pattern.lastIndex = 0;
-      const matches = cleanContent.match(pattern);
+      const matches = RegexHelper.resetAndMatch(pattern, cleanContent);
       return count + (matches ? matches.length : 0);
     }, 0);
 
-    const totalAssertions = this.findPatternInCode(cleanContent, /expect\s*\(/g).length;
+    const totalAssertions = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT).length;
     
     // 弱いアサーションが全体の30%以上を占める場合
     if (totalAssertions > 0 && weakAssertions / totalAssertions >= 0.3) {
@@ -264,8 +245,8 @@ export class AssertionQualityPlugin extends BasePlugin {
 
   private detectMissingAssertions(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g);
-    const assertions = this.findPatternInCode(cleanContent, /expect\s*\(/g);
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE);
+    const assertions = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT);
 
     // テストケースがあるのにアサーションがないか、極端に少ない場合
     if (testCases.length > 0 && (assertions.length === 0 || assertions.length / testCases.length < 0.5)) {
@@ -292,11 +273,10 @@ export class AssertionQualityPlugin extends BasePlugin {
     const allAssertionPatterns = [...this.STRONG_ASSERTION_PATTERNS, ...this.WEAK_ASSERTION_PATTERNS];
     
     const usedPatterns = allAssertionPatterns.filter(pattern => {
-      pattern.lastIndex = 0;
-      return pattern.test(cleanContent);
+      return RegexHelper.resetAndTest(pattern, cleanContent);
     });
 
-    const totalAssertions = this.findPatternInCode(cleanContent, /expect\s*\(/g).length;
+    const totalAssertions = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT).length;
     
     // アサーションが3個以上あるが、使用されているパターンが1種類以下の場合（より緩い条件）
     if (totalAssertions >= 3 && usedPatterns.length <= 1) {
@@ -344,20 +324,10 @@ export class AssertionQualityPlugin extends BasePlugin {
 
   private detectJestAdvancedPatterns(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    const jestAdvancedPatterns = [
-      /\.resolves\./g,
-      /\.rejects\./g,
-      /toHaveBeenCalledWith/g,
-      /toHaveBeenCalledTimes/g,
-      /toMatchObject/g,
-      /expect\.any\(/g,
-      /expect\.objectContaining/g,
-      /expect\.arrayContaining/g
-    ];
+    const jestAdvancedPatterns = TestPatterns.JEST_ADVANCED;
 
     const advancedUsage = jestAdvancedPatterns.filter(pattern => {
-      pattern.lastIndex = 0;
-      return pattern.test(cleanContent);
+      return RegexHelper.resetAndTest(pattern, cleanContent);
     });
 
     // 2つ以上のJest高度機能が使われている場合

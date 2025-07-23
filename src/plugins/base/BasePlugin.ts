@@ -11,6 +11,7 @@ import {
   FixResult,
   Feedback
 } from '../../core/types';
+import { errorHandler, ErrorType } from '../../utils/errorHandler';
 
 export abstract class BasePlugin implements ITestQualityPlugin {
   abstract id: string;
@@ -197,7 +198,12 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   }
 
   protected logError(message: string, error?: any): void {
-    console.error(`[${this.name}] ERROR:`, message, error || '');
+    // 共通エラーハンドラーを使用
+    errorHandler.handlePluginError(
+      error instanceof Error ? error : new Error(message),
+      this.name,
+      'plugin_operation'
+    );
   }
 
   // ヘルパーメソッド: パターン検索

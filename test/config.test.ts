@@ -20,27 +20,28 @@ describe('ConfigLoader', () => {
     it('should return default config when no config file exists', async () => {
       const config = await loader.loadConfig(tempDir);
       
-      expect(config).toEqual({
-        excludePatterns: [
-          'node_modules/**',
-          'dist/**',
-          'build/**',
-          '.git/**'
-        ],
-        plugins: {
-          'test-existence': {
-            enabled: true,
-            excludeFiles: ['index.ts', 'index.js', 'types.ts', 'types.js', 'config.ts', 'config.js']
-          },
-          'assertion-exists': {
-            enabled: true
-          }
-        },
-        output: {
-          format: 'text',
-          verbose: false
-        }
+      // 基本構造の検証
+      expect(config.excludePatterns).toEqual([
+        'node_modules/**',
+        'dist/**',
+        'build/**',
+        '.git/**'
+      ]);
+      
+      expect(config.output).toEqual({
+        format: 'text',
+        verbose: false
       });
+      
+      // プラグインの動的発見を確認
+      expect(config.plugins).toHaveProperty('test-existence');
+      expect(config.plugins).toHaveProperty('assertion-exists');
+      expect(config.plugins['test-existence'].enabled).toBe(true);
+      expect(config.plugins['assertion-exists'].enabled).toBe(true);
+      
+      // コアプラグインが発見されることを確認
+      const pluginNames = Object.keys(config.plugins);
+      expect(pluginNames.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should load .rimorrc.json config file', async () => {

@@ -6,6 +6,8 @@ import {
   QualityScore,
   Improvement
 } from '../../core/types';
+import { TestPatterns } from '../../utils/regexPatterns';
+import { RegexHelper } from '../../utils/regexHelper';
 
 export class TestStructurePlugin extends BasePlugin {
   id = 'test-structure';
@@ -13,20 +15,8 @@ export class TestStructurePlugin extends BasePlugin {
   version = '1.0.0';
   type = 'core' as const;
 
-  private readonly AAA_PATTERNS = [
-    /\/\/\s*arrange/gi,
-    /\/\/\s*act/gi, 
-    /\/\/\s*assert/gi,
-    /\/\/\s*given/gi,
-    /\/\/\s*when/gi,
-    /\/\/\s*then/gi
-  ];
-
-  private readonly NAMING_PATTERNS = [
-    /^should\s+/i,
-    /^test\s+/i,
-    /^it\s+/i
-  ];
+  private readonly AAA_PATTERNS = TestPatterns.AAA_COMMENTS;
+  private readonly NAMING_PATTERNS = TestPatterns.NAMING_CONVENTIONS;
 
   isApplicable(_context: ProjectContext): boolean {
     // すべてのプロジェクトで適用可能
@@ -222,8 +212,8 @@ export class TestStructurePlugin extends BasePlugin {
     });
 
     // 適切な構造の指標
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g).length;
-    const describeSuites = this.findPatternInCode(cleanContent, /describe\s*\(/g).length;
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE).length;
+    const describeSuites = this.findPatternInCode(cleanContent, TestPatterns.DESCRIBE_SUITE).length;
     
     // 良い構造の条件：AAA コメント使用、セットアップ・ティアダウン存在、適切な比率
     if (aaaComments.length >= 2 && setupTeardown.length >= 1 && testCases > 0 && describeSuites > 0) {
@@ -247,27 +237,17 @@ export class TestStructurePlugin extends BasePlugin {
 
   private detectPoorTestOrganization(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g);
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE);
     
     if (testCases.length === 0) return null;
 
     // 単一のテストケース内で複数の操作を行っているかチェック
-    const totalExpectStatements = this.findPatternInCode(cleanContent, /expect\s*\(/g).length;
-    const multipleOperationPatterns = [
-      /userService\.create/g,
-      /userService\.findAll/g,
-      /userService\.delete/g,
-      /userService\.update/g,
-      /\.save\(/g,
-      /\.find\(/g,
-      /\.delete\(/g,
-      /\.update\(/g
-    ];
+    const totalExpectStatements = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT).length;
+    const multipleOperationPatterns = TestPatterns.SERVICE_OPERATIONS;
 
     let totalOperations = 0;
     multipleOperationPatterns.forEach(pattern => {
-      pattern.lastIndex = 0;
-      const matches = cleanContent.match(pattern);
+      const matches = RegexHelper.resetAndMatch(pattern, cleanContent);
       totalOperations += matches ? matches.length : 0;
     });
 
@@ -293,17 +273,16 @@ export class TestStructurePlugin extends BasePlugin {
 
   private detectMissingSetupTeardown(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g).length;
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE).length;
     const setupTeardownMethods = [
-      /beforeEach\s*\(/g,
-      /afterEach\s*\(/g,
-      /beforeAll\s*\(/g,
-      /afterAll\s*\(/g
+      TestPatterns.BEFORE_EACH,
+      TestPatterns.AFTER_EACH,
+      TestPatterns.BEFORE_ALL,
+      TestPatterns.AFTER_ALL
     ];
 
     const setupTeardownCount = setupTeardownMethods.filter(pattern => {
-      pattern.lastIndex = 0;
-      return pattern.test(cleanContent);
+      return RegexHelper.resetAndTest(pattern, cleanContent);
     }).length;
 
     // テストケースが3個以上あるのにセットアップ・ティアダウンがない場合
@@ -410,7 +389,7 @@ export class TestStructurePlugin extends BasePlugin {
 
   private detectLargeTestFile(content: string, testFile: TestFile): DetectionResult | null {
     const parsed = this.parseCodeContent(content);
-    const testCases = this.findPatternInCode(content, /it\s*\(/g).length;
+    const testCases = this.findPatternInCode(content, TestPatterns.TEST_CASE).length;
 
     // 500行以上または30個以上のテストケースがある場合
     if (parsed.totalLines > 500 || testCases > 30) {

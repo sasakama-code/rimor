@@ -6,6 +6,8 @@ import {
   QualityScore,
   Improvement
 } from '../../core/types';
+import { TestPatterns } from '../../utils/regexPatterns';
+import { RegexHelper } from '../../utils/regexHelper';
 
 export class TestCompletenessPlugin extends BasePlugin {
   id = 'test-completeness';
@@ -170,16 +172,12 @@ export class TestCompletenessPlugin extends BasePlugin {
   }
 
   private detectComprehensiveTestSuite(content: string, testFile: TestFile): DetectionResult | null {
-    const patterns = [
-      /it\s*\([^)]*should.*create/gi,
-      /it\s*\([^)]*should.*update/gi,
-      /it\s*\([^)]*should.*delete/gi,
-      /it\s*\([^)]*should.*handle.*error/gi,
-      /beforeEach\s*\(/gi,
-      /afterEach\s*\(/gi
-    ];
-
-    const matchedPatterns = patterns.filter(pattern => pattern.test(content));
+    const crudPatterns = TestPatterns.CRUD_OPERATIONS;
+    const errorPatterns = TestPatterns.ERROR_HANDLING;
+    const setupPatterns = [TestPatterns.BEFORE_EACH, TestPatterns.AFTER_EACH];
+    
+    const allPatterns = [...crudPatterns, ...errorPatterns, ...setupPatterns];
+    const matchedPatterns = allPatterns.filter(pattern => RegexHelper.resetAndTest(pattern, content));
     
     if (matchedPatterns.length >= 4) {
       return this.createDetectionResult(
@@ -201,8 +199,8 @@ export class TestCompletenessPlugin extends BasePlugin {
   }
 
   private detectIncompleteTestCoverage(content: string, testFile: TestFile): DetectionResult | null {
-    const testCases = this.findPatternInCode(content, /it\s*\(/g);
-    const describeSuites = this.findPatternInCode(content, /describe\s*\(/g);
+    const testCases = this.findPatternInCode(content, TestPatterns.TEST_CASE);
+    const describeSuites = this.findPatternInCode(content, TestPatterns.DESCRIBE_SUITE);
 
     // テストケース数が少ない、またはdescribeに対してitが少ない場合
     if (testCases.length < 3 || (describeSuites.length > 0 && testCases.length / describeSuites.length < 2)) {
@@ -225,18 +223,9 @@ export class TestCompletenessPlugin extends BasePlugin {
   }
 
   private detectMissingEdgeCases(content: string, testFile: TestFile): DetectionResult | null {
-    const edgeCasePatterns = [
-      /null/gi,
-      /undefined/gi,
-      /empty/gi,
-      /invalid/gi,
-      /error/gi,
-      /throw/gi,
-      /boundary/gi,
-      /limit/gi
-    ];
+    const edgeCasePatterns = TestPatterns.EDGE_CASES;
 
-    const edgeCaseMatches = edgeCasePatterns.filter(pattern => pattern.test(content));
+    const edgeCaseMatches = edgeCasePatterns.filter(pattern => RegexHelper.resetAndTest(pattern, content));
     
     if (edgeCaseMatches.length < 2) {
       return this.createDetectionResult(
@@ -259,8 +248,8 @@ export class TestCompletenessPlugin extends BasePlugin {
 
   private detectEmptyTestSuite(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    const describeSuites = this.findPatternInCode(cleanContent, /describe\s*\(/g);
-    const testCases = this.findPatternInCode(cleanContent, /it\s*\(/g);
+    const describeSuites = this.findPatternInCode(cleanContent, TestPatterns.DESCRIBE_SUITE);
+    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE);
 
     // 1. describeブロックがあるのにテストケースがない場合
     // 2. ファイル全体にテストケースがない場合（コメントのみなど）
@@ -287,9 +276,9 @@ export class TestCompletenessPlugin extends BasePlugin {
   }
 
   private detectMissingSetupTeardown(content: string, testFile: TestFile): DetectionResult | null {
-    const testCases = this.findPatternInCode(content, /it\s*\(/g);
-    const beforeEach = this.findPatternInCode(content, /beforeEach\s*\(/g);
-    const afterEach = this.findPatternInCode(content, /afterEach\s*\(/g);
+    const testCases = this.findPatternInCode(content, TestPatterns.TEST_CASE);
+    const beforeEach = this.findPatternInCode(content, TestPatterns.BEFORE_EACH);
+    const afterEach = this.findPatternInCode(content, TestPatterns.AFTER_EACH);
 
     // テストケースが複数あるのにセットアップ・ティアダウンがない場合
     if (testCases.length >= 3 && beforeEach.length === 0 && afterEach.length === 0) {
