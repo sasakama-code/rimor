@@ -47,14 +47,48 @@ export class CLI {
           });
         }
       )
+      .command(
+        'plugin create',
+        'プラグインを作成します',
+        (yargs) => {
+          return yargs
+            .option('interactive', {
+              alias: 'i',
+              describe: '対話モードでプラグイン作成',
+              type: 'boolean',
+              default: false
+            })
+            .option('template', {
+              alias: 't',
+              describe: 'テンプレートからプラグイン作成',
+              type: 'string',
+              choices: ['basic', 'pattern-match', 'async-await', 'api-test', 'validation']
+            })
+            .option('from', {
+              describe: '既存プラグインから派生作成',
+              type: 'string'
+            });
+        },
+        async (argv) => {
+          const { PluginCreateCommand } = await import('./commands/plugin-create');
+          const command = new PluginCreateCommand();
+          await command.execute({
+            interactive: argv.interactive,
+            template: argv.template,
+            from: argv.from
+          });
+        }
+      )
       .help('h')
       .alias('h', 'help')
-      .version('0.1.1')
+      .version('0.2.0')
       .example('$0', 'カレントディレクトリを分析')
       .example('$0 ./src', 'srcディレクトリを分析')
       .example('$0 --verbose', '詳細モードで分析')
       .example('$0 --json', 'JSON形式で出力')
       .example('$0 ./src --format=json', 'JSON形式で出力')
+      .example('$0 plugin create -i', '対話モードでプラグイン作成')
+      .example('$0 plugin create --template basic', 'テンプレートからプラグイン作成')
       .demandCommand(0, 'オプション: コマンドなしでもカレントディレクトリを分析します')
       .strict()
       .parse();
