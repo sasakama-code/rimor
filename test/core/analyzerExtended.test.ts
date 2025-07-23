@@ -5,7 +5,7 @@ import { AssertionQualityPlugin } from '../../src/plugins/core/AssertionQualityP
 import { TestStructurePlugin } from '../../src/plugins/core/TestStructurePlugin';
 import { ProjectContext } from '../../src/core/types';
 
-const getFixturePath = (filename: string) => path.join(__dirname, 'fixtures', filename);
+const getFixturePath = (filename: string) => path.join(__dirname, '..', 'fixtures', filename);
 
 describe('AnalyzerExtended', () => {
   let analyzer: AnalyzerExtended;
