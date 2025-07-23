@@ -2,6 +2,7 @@ import { PluginCreateCommand, PluginCreateOptions } from '../../../src/cli/comma
 import { InteractiveCreator } from '../../../src/interactive/creator';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getMessage } from '../../../src/i18n/messages';
 
 // InteractiveCreatorのモック
 jest.mock('../../../src/interactive/creator');
@@ -41,7 +42,7 @@ describe('PluginCreateCommand', () => {
       await command.execute(options);
 
       expect(mockCreator.startSession).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Rimorプラグイン作成'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin Creation Assistant'));
       
       consoleSpy.mockRestore();
     }, 1000);
@@ -60,7 +61,7 @@ describe('PluginCreateCommand', () => {
 
       await expect(command.execute(options)).rejects.toThrow('process.exit called');
       
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('エラー'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin creation error'));
       expect(processExitSpy).toHaveBeenCalledWith(1);
       
       consoleErrorSpy.mockRestore();
@@ -92,7 +93,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('不明なテンプレート'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown template'));
       
       consoleErrorSpy.mockRestore();
     });
@@ -108,7 +109,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('既存プラグイン'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Creating plugin from existing'));
       
       consoleSpy.mockRestore();
     });
@@ -122,7 +123,7 @@ describe('PluginCreateCommand', () => {
 
       await command.execute(options);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('プラグインが見つかりません'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin not found'));
       
       consoleErrorSpy.mockRestore();
     });
@@ -145,7 +146,7 @@ describe('PluginCreateCommand', () => {
 
       await (command as any).handleInteractiveMode();
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Rimorプラグイン作成'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Plugin Creation Assistant'));
       expect(mockCreator.startSession).toHaveBeenCalled();
       
       consoleSpy.mockRestore();
