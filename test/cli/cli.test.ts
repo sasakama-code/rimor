@@ -44,7 +44,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: '.',
         verbose: false,
-        format: 'text'
+        format: 'text',
+        performance: false,
+        showPerformanceReport: false
       });
     });
 
@@ -56,7 +58,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: './src',
         verbose: false,
-        format: 'text'
+        format: 'text',
+        performance: false,
+        showPerformanceReport: false
       });
     });
 
@@ -68,7 +72,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: '.',
         verbose: true,
-        format: 'text'
+        format: 'text',
+        performance: false,
+        showPerformanceReport: false
       });
     });
 
@@ -80,7 +86,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: '.',
         verbose: false,
-        format: 'json'
+        format: 'json',
+        performance: false,
+        showPerformanceReport: false
       });
     });
 
@@ -92,7 +100,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: '.',
         verbose: false,
-        format: 'json'
+        format: 'json',
+        performance: false,
+        showPerformanceReport: false
       });
     });
   });
@@ -168,7 +178,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: '.',
         verbose: false,
-        format: 'text'
+        format: 'text',
+        performance: false,
+        showPerformanceReport: false
       });
     });
 
@@ -180,7 +192,9 @@ describe('CLI', () => {
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
         path: './src',
         verbose: false,
-        format: 'text'
+        format: 'text',
+        performance: false,
+        showPerformanceReport: false
       });
     });
   });

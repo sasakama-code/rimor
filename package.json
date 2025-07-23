@@ -16,7 +16,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "jest",
+    "test": "RIMOR_LANG=ja jest",
     "build": "node scripts/build-with-cleanup.js",
     "build:simple": "tsc",
     "start": "node dist/index.js",

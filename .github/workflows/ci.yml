@@ -45,6 +45,8 @@ jobs:
       run: npm run build
 
     - name: Run tests
+      env:
+        RIMOR_LANG: ja
       run: |
         echo "🧪 Starting test execution..."
         timeout 300 npm test || {
@@ -151,6 +153,8 @@ jobs:
       run: npm run build
 
     - name: Run comprehensive security check
+      env:
+        RIMOR_LANG: ja
       run: npm run security-check
 
     - name: Check for outdated packages

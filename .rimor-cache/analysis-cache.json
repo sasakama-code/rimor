@@ -1,0 +1,411 @@
+{
+  "entries": [
+    [
+      "388d85bcadbee6fd458ab54e952493e5",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-zflkcu/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286176563.3645,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-zflkcu/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286176643,
+        "accessCount": 1,
+        "lastAccessed": 1753286176647
+      }
+    ],
+    [
+      "8592f31426bd1df40e7c66b3ee5bcd65",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-E99Mdl/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286176679.007,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-E99Mdl/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286176705,
+        "accessCount": 1,
+        "lastAccessed": 1753286176708
+      }
+    ],
+    [
+      "5592c98893d2f802f2ffca336a859e67",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-citU3S/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286176713.8462,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-citU3S/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286176734,
+        "accessCount": 1,
+        "lastAccessed": 1753286176736
+      }
+    ],
+    [
+      "50e8da05923f08ea978fbfdd6041942e",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-citU3S/test/main.test.ts",
+        "fileHash": "63d786029f1b976180d4d1325ad1c2ea3ab56a5eea5d479c3cf192cddcd43495",
+        "fileSize": 18,
+        "lastModified": 1753286176714.0728,
+        "pluginResults": {
+          "test-existence": [],
+          "assertion-exists": [
+            {
+              "type": "missing-assertion",
+              "severity": "warning",
+              "message": "アサーション（expect文など）が見つかりません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-citU3S/test/main.test.ts"
+            }
+          ]
+        },
+        "cachedAt": 1753286176739,
+        "accessCount": 1,
+        "lastAccessed": 1753286176745
+      }
+    ],
+    [
+      "e4cdddd65feece568a802f8519a02f64",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-t8ijuP/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286176824.1868,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-t8ijuP/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286176845,
+        "accessCount": 1,
+        "lastAccessed": 1753286176847
+      }
+    ],
+    [
+      "53165a745a7cd143499276c3250fab3a",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Ywbw5s/test.ts",
+        "fileHash": "8e0d95924c1029b760bbf9fb5701628bae3bab5fee56c6291c45556805082876",
+        "fileSize": 25,
+        "lastModified": 1753286176851.1042,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Ywbw5s/test.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286176873,
+        "accessCount": 1,
+        "lastAccessed": 1753286176876
+      }
+    ],
+    [
+      "6443e3d96fb1a6aefe99e0681c611269",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-tCI53b/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286197254.5579,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-tCI53b/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286197346,
+        "accessCount": 1,
+        "lastAccessed": 1753286197350
+      }
+    ],
+    [
+      "5bc0733858e6640b328bb1b6a125b4c0",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-WpfH6B/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286197385.8967,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-WpfH6B/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286197408,
+        "accessCount": 1,
+        "lastAccessed": 1753286197410
+      }
+    ],
+    [
+      "2b3295ea622daed7020c6f88ac1f52b9",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-JQezQ5/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286197416.7612,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-JQezQ5/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286197440,
+        "accessCount": 1,
+        "lastAccessed": 1753286197443
+      }
+    ],
+    [
+      "b405932b4fff925550a3eabd6698a766",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-JQezQ5/test/main.test.ts",
+        "fileHash": "63d786029f1b976180d4d1325ad1c2ea3ab56a5eea5d479c3cf192cddcd43495",
+        "fileSize": 18,
+        "lastModified": 1753286197416.9685,
+        "pluginResults": {
+          "test-existence": [],
+          "assertion-exists": [
+            {
+              "type": "missing-assertion",
+              "severity": "warning",
+              "message": "アサーション（expect文など）が見つかりません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-JQezQ5/test/main.test.ts"
+            }
+          ]
+        },
+        "cachedAt": 1753286197446,
+        "accessCount": 1,
+        "lastAccessed": 1753286197449
+      }
+    ],
+    [
+      "678e53b101d662fcc1a1755113f98ba9",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-3W7WmI/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286197518.514,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-3W7WmI/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286197540,
+        "accessCount": 1,
+        "lastAccessed": 1753286197543
+      }
+    ],
+    [
+      "585d5419cc8f82b2a065d3606f3786b8",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-VwqTuF/test.ts",
+        "fileHash": "8e0d95924c1029b760bbf9fb5701628bae3bab5fee56c6291c45556805082876",
+        "fileSize": 25,
+        "lastModified": 1753286197547.4272,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-VwqTuF/test.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286197567,
+        "accessCount": 1,
+        "lastAccessed": 1753286197569
+      }
+    ],
+    [
+      "d9dcbad1eaff54c8c623aa847c6a905c",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-V585hR/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286219043.9387,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-V585hR/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286219107,
+        "accessCount": 1,
+        "lastAccessed": 1753286219109
+      }
+    ],
+    [
+      "7aa74dc3ab88f8d77dec103864cec231",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-jTfF2P/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286219142.8064,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-jTfF2P/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286219168,
+        "accessCount": 1,
+        "lastAccessed": 1753286219171
+      }
+    ],
+    [
+      "38523de2ca95062c5b1849ef5c16543c",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Z2HDWl/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286219176.4912,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Z2HDWl/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286219198,
+        "accessCount": 1,
+        "lastAccessed": 1753286219200
+      }
+    ],
+    [
+      "9669caebf59015f157bec7224ad1057e",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Z2HDWl/test/main.test.ts",
+        "fileHash": "63d786029f1b976180d4d1325ad1c2ea3ab56a5eea5d479c3cf192cddcd43495",
+        "fileSize": 18,
+        "lastModified": 1753286219176.732,
+        "pluginResults": {
+          "test-existence": [],
+          "assertion-exists": [
+            {
+              "type": "missing-assertion",
+              "severity": "warning",
+              "message": "アサーション（expect文など）が見つかりません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-Z2HDWl/test/main.test.ts"
+            }
+          ]
+        },
+        "cachedAt": 1753286219206,
+        "accessCount": 1,
+        "lastAccessed": 1753286219209
+      }
+    ],
+    [
+      "1a031a1bb5803a7d6b3675445fb18f5a",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-gJwL4P/src/main.ts",
+        "fileHash": "c62d65056bd1dff18e444eaf2b43b476e97d063c03c8566648390d36742d5147",
+        "fileSize": 25,
+        "lastModified": 1753286219277.7937,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-gJwL4P/src/main.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286219297,
+        "accessCount": 1,
+        "lastAccessed": 1753286219299
+      }
+    ],
+    [
+      "fe84ee09f71cd15d483ee0599585b65a",
+      {
+        "filePath": "/var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-oSdfUZ/test.ts",
+        "fileHash": "8e0d95924c1029b760bbf9fb5701628bae3bab5fee56c6291c45556805082876",
+        "fileSize": 25,
+        "lastModified": 1753286219303.285,
+        "pluginResults": {
+          "test-existence": [
+            {
+              "type": "missing-test",
+              "severity": "error",
+              "message": "テストファイルが存在しません: /var/folders/bj/lj_37pbs39s5f9gx20m43wbc0000gn/T/rimor-analyze-test-oSdfUZ/test.ts"
+            }
+          ],
+          "assertion-exists": []
+        },
+        "cachedAt": 1753286219326,
+        "accessCount": 1,
+        "lastAccessed": 1753286219329
+      }
+    ]
+  ],
+  "stats": {
+    "totalEntries": 18,
+    "cacheHits": 0,
+    "cacheMisses": 36,
+    "hitRatio": 0,
+    "totalSizeBytes": 429,
+    "avgFileSize": 23.833333333333332,
+    "oldestEntry": 1753286176643,
+    "newestEntry": 1753286219326
+  },
+  "timestamp": 1753286219329
+}

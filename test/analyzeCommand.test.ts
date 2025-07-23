@@ -187,7 +187,7 @@ describe('AnalyzeCommand', () => {
       });
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        OutputFormatter.error('Specified path does not exist: /non/existent/path')
+        OutputFormatter.error('指定されたパスが存在しません: /non/existent/path')
       );
       expect(processExitSpy).toHaveBeenCalledWith(1);
       
