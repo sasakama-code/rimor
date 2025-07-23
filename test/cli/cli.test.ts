@@ -189,7 +189,7 @@ describe('CLI', () => {
     it('should use correct version', () => {
       // package.jsonからバージョンを読み取ってテスト
       const packageJson = require('../../package.json');
-      expect(packageJson.version).toBe('0.2.0');
+      expect(packageJson.version).toBe('0.3.0');
     });
   });
 

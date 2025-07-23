@@ -1,4 +1,4 @@
-import { ITestQualityPlugin, DetectionResult, QualityScore, Improvement, ProjectContext, TestFile } from '../../src/core/types';
+import { ITestQualityPlugin, DetectionResult, QualityScore, Improvement, ProjectContext, TestFile } from '@/core/types';
 
 describe('ITestQualityPlugin interface', () => {
   // モックプラグインの実装
