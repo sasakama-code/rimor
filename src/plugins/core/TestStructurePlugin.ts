@@ -8,6 +8,7 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
+import { getMessage } from '../../i18n/messages';
 
 export class TestStructurePlugin extends BasePlugin {
   id = 'test-structure';
@@ -84,23 +85,23 @@ export class TestStructurePlugin extends BasePlugin {
           break;
         case 'poor-test-organization':
           maintainabilityScore -= 40;
-          issues.push('テストの構造が不適切です');
+          issues.push(getMessage('plugin.structure.poor_organization'));
           break;
         case 'missing-setup-teardown':
           maintainabilityScore -= 25;
-          issues.push('セットアップ・ティアダウンが不足しています');
+          issues.push(getMessage('plugin.structure.missing_setup'));
           break;
         case 'deeply-nested-describes':
           maintainabilityScore -= 15;
-          issues.push('ネストが深すぎます');
+          issues.push(getMessage('plugin.structure.deep_nesting'));
           break;
         case 'inconsistent-naming':
           maintainabilityScore -= 10;
-          issues.push('命名が一貫していません');
+          issues.push(getMessage('plugin.structure.inconsistent_naming'));
           break;
         case 'large-test-file':
           maintainabilityScore -= 15;
-          issues.push('テストファイルが大きすぎます');
+          issues.push(getMessage('plugin.structure.large_file'));
           break;
       }
     });

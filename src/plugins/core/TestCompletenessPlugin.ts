@@ -8,6 +8,7 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
+import { getMessage } from '../../i18n/messages';
 
 export class TestCompletenessPlugin extends BasePlugin {
   id = 'test-completeness';
@@ -76,19 +77,19 @@ export class TestCompletenessPlugin extends BasePlugin {
           break;
         case 'incomplete-test-coverage':
           completenessScore -= 30;
-          issues.push('テストカバレッジが不完全です');
+          issues.push(getMessage('plugin.completeness.incomplete_coverage'));
           break;
         case 'missing-edge-cases':
           completenessScore -= 20;
-          issues.push('エッジケースのテストが不足しています');
+          issues.push(getMessage('plugin.completeness.missing_edge_cases'));
           break;
         case 'empty-test-suite':
           completenessScore -= 40;
-          issues.push('空のテストスイートがあります');
+          issues.push(getMessage('plugin.completeness.empty_suite'));
           break;
         case 'missing-setup-teardown':
           completenessScore -= 10;
-          issues.push('セットアップ・ティアダウンが不足しています');
+          issues.push(getMessage('plugin.completeness.missing_setup'));
           break;
       }
     });

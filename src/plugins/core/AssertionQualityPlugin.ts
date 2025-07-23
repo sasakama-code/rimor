@@ -8,6 +8,7 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
+import { getMessage } from '../../i18n/messages';
 
 export class AssertionQualityPlugin extends BasePlugin {
   id = 'assertion-quality';
@@ -86,19 +87,19 @@ export class AssertionQualityPlugin extends BasePlugin {
           break;
         case 'weak-assertions':
           correctnessScore -= 25;
-          issues.push('弱いアサーションが検出されました');
+          issues.push(getMessage('plugin.assertion.weak_detected'));
           break;
         case 'missing-assertions':
           correctnessScore -= 40;
-          issues.push('アサーションが不足しています');
+          issues.push(getMessage('plugin.assertion.missing_assertions'));
           break;
         case 'limited-assertion-variety':
           correctnessScore -= 15;
-          issues.push('アサーションの種類が限定的です');
+          issues.push(getMessage('plugin.assertion.limited_variety'));
           break;
         case 'magic-numbers-in-assertions':
           correctnessScore -= 10;
-          issues.push('マジックナンバーがアサーションに含まれています');
+          issues.push(getMessage('plugin.assertion.magic_numbers'));
           break;
       }
     });
