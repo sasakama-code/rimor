@@ -21,8 +21,6 @@ jobs:
       with:
         node-version: 20.x
         cache: 'npm'
-        registry-url: 'https://registry.npmjs.org'
-        always-auth: true
     
     - name: Install dependencies
       run: npm ci
@@ -55,24 +53,25 @@ jobs:
         fi
         echo "✅ Version match confirmed: $PACKAGE_VERSION"
     
-    - name: Debug and create npm authentication
+    - name: Setup npm authentication
       run: |
-        echo "🔍 Debugging NPM_TOKEN format..."
-        echo "Token length: ${#NPM_TOKEN}"
-        echo "Token prefix: ${NPM_TOKEN:0:8}..."
-        echo "Token suffix: ...${NPM_TOKEN: -8}"
+        echo "🔐 Setting up npm authentication..."
         
-        echo "🔐 Creating direct .npmrc authentication..."
+        # 環境変数のクリア（setup-nodeによる設定を排除）
+        unset NPM_CONFIG_USERCONFIG
+        unset NODE_AUTH_TOKEN
+        
+        # 直接.npmrcファイルを作成
         echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
         echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
         
-        echo "📝 Verifying .npmrc content:"
-        echo "//registry.npmjs.org/:_authToken=npm_[REDACTED]"
-        echo "registry=https://registry.npmjs.org/"
+        # ファイル権限を設定
+        chmod 600 ~/.npmrc
         
+        echo "📝 Created .npmrc with proper permissions"
         echo "🔐 Testing npm authentication..."
         npm whoami
-        echo "✅ Authentication verified"
+        echo "✅ Authentication successful"
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     
