@@ -46,7 +46,16 @@ jobs:
         echo "✅ Cleanup completed"
 
     - name: Run Rimor self-analysis (REQUIRED)
-      run: node dist/index.js analyze ./src --format=json > rimor-results.json
+      run: |
+        echo "🔍 Running Rimor self-analysis..."
+        node dist/index.js analyze ./src --format=json > rimor-results.json
+        if [ $? -eq 0 ]; then
+          echo "✅ Rimor analysis completed successfully"
+          cat rimor-results.json
+        else
+          echo "❌ Rimor analysis failed"
+          exit 1
+        fi
 
     - name: Upload Rimor results
       uses: actions/upload-artifact@v4
@@ -58,8 +67,21 @@ jobs:
     - name: Quality Gate - Test Coverage Check
       run: |
         echo "🔍 Checking quality standards..."
-        ISSUES=$(cat rimor-results.json | jq '.summary.issuesFound')
-        COVERAGE=$(cat rimor-results.json | jq '.summary.testCoverage')
+        
+        if [ ! -f rimor-results.json ]; then
+          echo "❌ rimor-results.json not found"
+          exit 1
+        fi
+        
+        # Install jq if not available
+        if ! command -v jq &> /dev/null; then
+          echo "Installing jq..."
+          sudo apt-get update && sudo apt-get install -y jq
+        fi
+        
+        ISSUES=$(cat rimor-results.json | jq -r '.summary.issuesFound')
+        COVERAGE=$(cat rimor-results.json | jq -r '.summary.testCoverage')
+        
         echo "📊 Analysis Results:"
         echo "   - Issues found: $ISSUES"
         echo "   - Test coverage: $COVERAGE%"
