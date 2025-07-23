@@ -21,11 +21,8 @@ export class CleanupManager {
       reason: '不正なプラグインファイル（型エラーを含む自動生成ファイル）',
       enabled: true
     },
-    {
-      pattern: /^src\/plugins\/generated\/.*\.ts$/,
-      reason: 'テスト生成ファイル（コンパイルエラーを含む可能性）',
-      enabled: false // デフォルトは無効（個別判定が必要）
-    },
+    // 安全性重視: 他のプラグインファイルは削除対象から除外
+    // ユーザーが意図的に作成したファイルの削除を防ぐ
     {
       pattern: /\.tmp$/,
       reason: '一時ファイル',
@@ -99,32 +96,34 @@ export class CleanupManager {
   }
 
   /**
-   * コンパイルエラーの原因となるファイルを検出・削除
+   * コンパイルエラーの原因となるファイルを検出・削除（安全性重視）
    * @param errorMessage TypeScriptコンパイルエラーメッセージ
    */
   async handleCompileError(errorMessage: string): Promise<boolean> {
-    // saved-plugin.tsによるエラーを検出
+    // saved-plugin.tsによるエラーのみを自動削除対象とする
     const savedPluginError = errorMessage.includes('saved-plugin.ts') && 
-                             errorMessage.includes('Cannot find name \'IPlugin\'');
+                             (errorMessage.includes('Cannot find name \'IPlugin\'') ||
+                              errorMessage.includes('TS2552') ||
+                              errorMessage.includes('TS2304'));
     
     if (savedPluginError) {
       const savedPluginPath = 'src/plugins/generated/saved-plugin.ts';
-      console.log('⚠️  コンパイルエラーの原因ファイルを検出しました');
+      console.log('⚠️  既知の問題ファイル（saved-plugin.ts）を検出しました');
       return await this.emergencyDelete(
         savedPluginPath, 
-        'TypeScriptコンパイルエラーの原因（IPlugin型定義エラー）'
+        'TypeScriptコンパイルエラーの原因（IPlugin型定義エラー - 自動生成された既知の問題ファイル）'
       );
     }
 
-    // その他のプラグイン生成ファイルのエラーを検出
+    // その他のプラグインファイルエラーは警告のみ表示（削除しない）
     const pluginGeneratedMatch = errorMessage.match(/src\/plugins\/generated\/([^:]+\.ts)/);
     if (pluginGeneratedMatch) {
       const problematicFile = pluginGeneratedMatch[0];
-      console.log(`⚠️  生成プラグインファイルでエラーを検出: ${problematicFile}`);
-      return await this.emergencyDelete(
-        problematicFile,
-        'TypeScriptコンパイルエラーの原因（生成プラグインファイル）'
-      );
+      console.log(`⚠️  プラグインファイルでコンパイルエラーを検出: ${problematicFile}`);
+      console.log('   💡 ユーザー作成ファイルの可能性があるため、自動削除は行いません');
+      console.log('   📝 ファイル内容を確認し、必要に応じて手動で修正または削除してください');
+      // 削除は行わず、falseを返す
+      return false;
     }
 
     return false;

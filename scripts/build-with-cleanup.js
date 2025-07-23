@@ -93,9 +93,25 @@ async function buildWithCleanup() {
         continue;
       }
       
+      // その他のプラグインファイルエラーがある場合は警告表示
+      if (fullErrorOutput.includes('src/plugins/generated/') && fullErrorOutput.includes('.ts')) {
+        console.log('⚠️  プラグインファイルでコンパイルエラーが発生しています');
+        console.log('💡 ユーザー作成ファイルの可能性があるため、自動削除は行いません');
+        console.log('📝 以下のファイルを確認し、必要に応じて手動で修正してください：');
+        
+        // エラーのあるファイルを抽出して表示
+        const pluginErrorFiles = fullErrorOutput.match(/src\/plugins\/generated\/[^:]+\.ts/g);
+        if (pluginErrorFiles) {
+          const uniqueFiles = [...new Set(pluginErrorFiles)];
+          uniqueFiles.forEach(file => {
+            console.log(`   - ${file}`);
+          });
+        }
+      }
+      
       // その他のエラーの場合は即座に終了
       console.error('💥 回復不可能なビルドエラーです');
-      console.error('エラー詳細:', errorMessage);
+      console.error('エラー詳細:', fullErrorOutput.substring(0, 200));
       process.exit(1);
     }
   }
