@@ -55,20 +55,12 @@ jobs:
         fi
         echo "✅ Version match confirmed: $PACKAGE_VERSION"
     
-    - name: Setup npm authentication
-      run: |
-        echo "🔐 Setting up npm authentication..."
-        echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-        echo "Registry configuration:"
-        npm config get registry
-        echo "Auth configuration check:"
-        npm config list | grep -E "(registry|_authToken)" || echo "No auth config found"
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    
     - name: Verify npm authentication
       run: |
         echo "🔐 Verifying npm authentication..."
+        echo "Registry: $(npm config get registry)"
+        echo "Auth config location: $NPM_CONFIG_USERCONFIG"
+        cat $NPM_CONFIG_USERCONFIG
         npm whoami
         echo "✅ Authentication verified"
       env:
