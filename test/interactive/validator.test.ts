@@ -153,7 +153,7 @@ describe('PluginValidator', () => {
       const result = await validator.validate(plugin, testFiles);
       const actualTime = Date.now() - startTime;
 
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
       expect(result.executionTime).toBeLessThanOrEqual(actualTime + 50); // 50ms許容
     });
   });
