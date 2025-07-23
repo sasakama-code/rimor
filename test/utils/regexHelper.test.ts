@@ -1,326 +1,193 @@
 /**
  * RegexHelper テストスイート
- * v0.3.0: 正規表現ヘルパー関数のテスト
+ * v0.3.0: 正規表現ヘルパークラスのテスト
  */
 
 import { RegexHelper } from '../../src/utils/regexHelper';
 
 describe('RegexHelper', () => {
-  describe('escapeRegExp', () => {
-    it('should escape special regex characters', () => {
-      const input = 'test.file*with[special]chars?and+more^symbols$';
-      const escaped = RegexHelper.escapeRegExp(input);
+  describe('resetAndTest', () => {
+    it('should reset lastIndex before testing', () => {
+      const pattern = /test/g;
+      const text = 'test content test';
       
-      expect(escaped).toBe('test\\.file\\*with\\[special\\]chars\\?and\\+more\\^symbols\\$');
+      // 最初のテスト
+      expect(RegexHelper.resetAndTest(pattern, text)).toBe(true);
       
-      // エスケープされた文字列で正規表現を作成してもエラーが出ないことを確認
-      expect(() => new RegExp(escaped)).not.toThrow();
+      // lastIndexがリセットされて再度テストできることを確認
+      expect(RegexHelper.resetAndTest(pattern, text)).toBe(true);
     });
 
-    it('should handle empty string', () => {
-      const escaped = RegexHelper.escapeRegExp('');
-      expect(escaped).toBe('');
-    });
-
-    it('should handle string without special characters', () => {
-      const input = 'normalstring123';
-      const escaped = RegexHelper.escapeRegExp(input);
-      expect(escaped).toBe(input);
+    it('should handle non-matching text', () => {
+      const pattern = /notfound/g;
+      const text = 'test content';
+      
+      expect(RegexHelper.resetAndTest(pattern, text)).toBe(false);
     });
   });
 
-  describe('createGlobPattern', () => {
-    it('should convert simple glob pattern to regex', () => {
-      const pattern = '*.ts';
-      const regex = RegexHelper.createGlobPattern(pattern);
+  describe('resetAndMatch', () => {
+    it('should reset lastIndex and return match array', () => {
+      const pattern = /test/g;
+      const text = 'test content';
       
-      expect(regex.test('test.ts')).toBe(true);
-      expect(regex.test('file.ts')).toBe(true);
-      expect(regex.test('test.js')).toBe(false);
-      expect(regex.test('ts')).toBe(false);
+      const match = RegexHelper.resetAndMatch(pattern, text);
+      
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('test');
     });
 
-    it('should handle double asterisk for recursive matching', () => {
-      const pattern = '**/*.test.ts';
-      const regex = RegexHelper.createGlobPattern(pattern);
+    it('should return null for non-matching text', () => {
+      const pattern = /notfound/g;
+      const text = 'test content';
       
-      expect(regex.test('src/test.test.ts')).toBe(true);
-      expect(regex.test('src/core/analyzer.test.ts')).toBe(true);
-      expect(regex.test('test.test.ts')).toBe(true);
-      expect(regex.test('test.ts')).toBe(false);
-    });
-
-    it('should handle question mark for single character matching', () => {
-      const pattern = 'test?.ts';
-      const regex = RegexHelper.createGlobPattern(pattern);
+      const match = RegexHelper.resetAndMatch(pattern, text);
       
-      expect(regex.test('test1.ts')).toBe(true);
-      expect(regex.test('testA.ts')).toBe(true);
-      expect(regex.test('test.ts')).toBe(false);
-      expect(regex.test('test12.ts')).toBe(false);
-    });
-
-    it('should handle character classes', () => {
-      const pattern = 'test[0-9].ts';
-      const regex = RegexHelper.createGlobPattern(pattern);
-      
-      expect(regex.test('test1.ts')).toBe(true);
-      expect(regex.test('test9.ts')).toBe(true);
-      expect(regex.test('testA.ts')).toBe(false);
-      expect(regex.test('test.ts')).toBe(false);
-    });
-
-    it('should handle brace expansion', () => {
-      const pattern = '*.{ts,js}';
-      const regex = RegexHelper.createGlobPattern(pattern);
-      
-      expect(regex.test('file.ts')).toBe(true);
-      expect(regex.test('file.js')).toBe(true);
-      expect(regex.test('file.tsx')).toBe(false);
+      expect(match).toBeNull();
     });
   });
 
-  describe('extractImports', () => {
-    it('should extract ES6 import statements', () => {
-      const code = `
-        import { Component } from 'react';
-        import fs from 'fs';
-        import * as path from 'path';
-        const test = 'not an import';
-      `;
+  describe('resetAndExec', () => {
+    it('should reset lastIndex and execute pattern', () => {
+      const pattern = /test/g;
+      const text = 'test content';
       
-      const imports = RegexHelper.extractImports(code);
+      const result = RegexHelper.resetAndExec(pattern, text);
       
-      expect(imports).toHaveLength(3);
-      expect(imports).toContain('react');
-      expect(imports).toContain('fs');
-      expect(imports).toContain('path');
+      expect(result).toBeTruthy();
+      expect(result![0]).toBe('test');
     });
 
-    it('should extract CommonJS require statements', () => {
-      const code = `
-        const fs = require('fs');
-        const { resolve } = require('path');
-        const express = require('express');
-        console.log('not a require');
-      `;
+    it('should return null for non-matching text', () => {
+      const pattern = /notfound/g;
+      const text = 'test content';
       
-      const imports = RegexHelper.extractImports(code, { includeRequire: true });
+      const result = RegexHelper.resetAndExec(pattern, text);
       
-      expect(imports).toHaveLength(3);
-      expect(imports).toContain('fs');
-      expect(imports).toContain('path');
-      expect(imports).toContain('express');
-    });
-
-    it('should handle relative imports', () => {
-      const code = `
-        import { helper } from './helper';
-        import config from '../config';
-        import { utils } from '../../utils';
-      `;
-      
-      const imports = RegexHelper.extractImports(code, { includeRelative: true });
-      
-      expect(imports).toHaveLength(3);
-      expect(imports).toContain('./helper');
-      expect(imports).toContain('../config');
-      expect(imports).toContain('../../utils');
-    });
-
-    it('should filter out relative imports by default', () => {
-      const code = `
-        import { Component } from 'react';
-        import { helper } from './helper';
-      `;
-      
-      const imports = RegexHelper.extractImports(code);
-      
-      expect(imports).toHaveLength(1);
-      expect(imports).toContain('react');
-      expect(imports).not.toContain('./helper');
+      expect(result).toBeNull();
     });
   });
 
-  describe('extractFunctionNames', () => {
-    it('should extract function declarations', () => {
-      const code = `
-        function test() {}
-        function anotherTest(param) {}
-        const notAFunction = 'test';
-      `;
+  describe('countMatches', () => {
+    it('should count matching patterns', () => {
+      const patterns = [/test/g, /content/g, /notfound/g];
+      const text = 'test content';
       
-      const functions = RegexHelper.extractFunctionNames(code);
+      const count = RegexHelper.countMatches(patterns, text);
       
-      expect(functions).toHaveLength(2);
-      expect(functions).toContain('test');
-      expect(functions).toContain('anotherTest');
+      expect(count).toBe(2);
     });
 
-    it('should extract arrow functions', () => {
-      const code = `
-        const arrowFunc = () => {};
-        const namedArrow = (param) => param * 2;
-        const obj = { method: () => {} };
-      `;
+    it('should return 0 for no matches', () => {
+      const patterns = [/notfound1/g, /notfound2/g];
+      const text = 'test content';
       
-      const functions = RegexHelper.extractFunctionNames(code, { includeArrowFunctions: true });
+      const count = RegexHelper.countMatches(patterns, text);
       
-      expect(functions).toContain('arrowFunc');
-      expect(functions).toContain('namedArrow');
-    });
-
-    it('should extract method definitions', () => {
-      const code = `
-        class TestClass {
-          method1() {}
-          async method2() {}
-          static method3() {}
-        }
-      `;
-      
-      const functions = RegexHelper.extractFunctionNames(code, { includeMethods: true });
-      
-      expect(functions).toContain('method1');
-      expect(functions).toContain('method2');
-      expect(functions).toContain('method3');
+      expect(count).toBe(0);
     });
   });
 
-  describe('extractTestCases', () => {
-    it('should extract Jest test cases', () => {
-      const code = `
-        describe('TestSuite', () => {
-          it('should test something', () => {});
-          test('should test another thing', () => {});
-          it.skip('should skip this test', () => {});
-        });
-      `;
+  describe('testAny', () => {
+    it('should return true if any pattern matches', () => {
+      const patterns = [/test/g, /notfound/g];
+      const text = 'test content';
       
-      const testCases = RegexHelper.extractTestCases(code);
+      const result = RegexHelper.testAny(patterns, text);
       
-      expect(testCases).toHaveLength(3);
-      expect(testCases).toContain('should test something');
-      expect(testCases).toContain('should test another thing');
-      expect(testCases).toContain('should skip this test');
+      expect(result).toBe(true);
     });
 
-    it('should extract describe blocks', () => {
-      const code = `
-        describe('MainSuite', () => {
-          describe('SubSuite', () => {
-            it('test case', () => {});
-          });
-        });
-      `;
+    it('should return false if no patterns match', () => {
+      const patterns = [/notfound1/g, /notfound2/g];
+      const text = 'test content';
       
-      const suites = RegexHelper.extractTestSuites(code);
+      const result = RegexHelper.testAny(patterns, text);
       
-      expect(suites).toHaveLength(2);
-      expect(suites).toContain('MainSuite');
-      expect(suites).toContain('SubSuite');
+      expect(result).toBe(false);
     });
   });
 
-  describe('extractAssertions', () => {
-    it('should extract Jest assertions', () => {
-      const code = `
-        expect(result).toBe(true);
-        expect(value).toEqual({ key: 'value' });
-        expect(fn).toHaveBeenCalled();
-        const notAssertion = 'expect';
-      `;
+  describe('testAll', () => {
+    it('should return true if all patterns match', () => {
+      const patterns = [/test/g, /content/g];
+      const text = 'test content';
       
-      const assertions = RegexHelper.extractAssertions(code);
+      const result = RegexHelper.testAll(patterns, text);
       
-      expect(assertions).toHaveLength(3);
-      expect(assertions.some(a => a.includes('toBe(true)'))).toBe(true);
-      expect(assertions.some(a => a.includes('toEqual'))).toBe(true);
-      expect(assertions.some(a => a.includes('toHaveBeenCalled'))).toBe(true);
+      expect(result).toBe(true);
     });
 
-    it('should extract assert library assertions', () => {
-      const code = `
-        assert.equal(a, b);
-        assert.strictEqual(x, y);
-        assert.ok(condition);
-      `;
+    it('should return false if any pattern does not match', () => {
+      const patterns = [/test/g, /notfound/g];
+      const text = 'test content';
       
-      const assertions = RegexHelper.extractAssertions(code, { includeAssertLibrary: true });
+      const result = RegexHelper.testAll(patterns, text);
       
-      expect(assertions).toHaveLength(3);
-      expect(assertions.some(a => a.includes('assert.equal'))).toBe(true);
-      expect(assertions.some(a => a.includes('assert.strictEqual'))).toBe(true);
-      expect(assertions.some(a => a.includes('assert.ok'))).toBe(true);
-    });
-
-    it('should extract chai assertions', () => {
-      const code = `
-        value.should.equal(expected);
-        expect(result).to.be.true;
-        chai.expect(data).to.have.property('key');
-      `;
-      
-      const assertions = RegexHelper.extractAssertions(code, { includeChai: true });
-      
-      expect(assertions).toHaveLength(3);
-      expect(assertions.some(a => a.includes('should.equal'))).toBe(true);
-      expect(assertions.some(a => a.includes('to.be.true'))).toBe(true);
-      expect(assertions.some(a => a.includes('to.have.property'))).toBe(true);
+      expect(result).toBe(false);
     });
   });
 
-  describe('validation helpers', () => {
-    it('should validate email format', () => {
-      expect(RegexHelper.isValidEmail('test@example.com')).toBe(true);
-      expect(RegexHelper.isValidEmail('user.name+tag@domain.co.uk')).toBe(true);
-      expect(RegexHelper.isValidEmail('invalid-email')).toBe(false);
-      expect(RegexHelper.isValidEmail('test@')).toBe(false);
+  describe('findAllMatches', () => {
+    it('should find all matches for global patterns', () => {
+      const pattern = /t\w+/g;
+      const text = 'test text two';
+      
+      const matches = RegexHelper.findAllMatches(pattern, text);
+      
+      expect(matches).toHaveLength(3);
+      expect(matches).toContain('test');
+      expect(matches).toContain('text');
+      expect(matches).toContain('two');
     });
 
-    it('should validate version format (semver)', () => {
-      expect(RegexHelper.isValidVersion('1.0.0')).toBe(true);
-      expect(RegexHelper.isValidVersion('2.1.3-beta.1')).toBe(true);
-      expect(RegexHelper.isValidVersion('0.0.1-alpha')).toBe(true);
-      expect(RegexHelper.isValidVersion('1.0')).toBe(false);
-      expect(RegexHelper.isValidVersion('invalid')).toBe(false);
+    it('should throw error for non-global patterns', () => {
+      const pattern = /test/; // グローバルフラグなし
+      const text = 'test content';
+      
+      expect(() => {
+        RegexHelper.findAllMatches(pattern, text);
+      }).toThrow();
     });
 
-    it('should validate file path format', () => {
-      expect(RegexHelper.isValidFilePath('src/test.ts')).toBe(true);
-      expect(RegexHelper.isValidFilePath('/absolute/path/file.js')).toBe(true);
-      expect(RegexHelper.isValidFilePath('../relative/path.tsx')).toBe(true);
-      expect(RegexHelper.isValidFilePath('')).toBe(false);
-      expect(RegexHelper.isValidFilePath('invalid\x00path')).toBe(false);
+    it('should return empty array for no matches', () => {
+      const pattern = /notfound/g;
+      const text = 'test content';
+      
+      const matches = RegexHelper.findAllMatches(pattern, text);
+      
+      expect(matches).toHaveLength(0);
     });
   });
 
-  describe('performance', () => {
-    it('should handle large text efficiently', () => {
-      const largeText = 'test content '.repeat(10000);
-      const startTime = Date.now();
+  describe('debugPattern', () => {
+    it('should log pattern information', () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       
-      const imports = RegexHelper.extractImports(largeText);
+      const pattern = /test/gi;
+      RegexHelper.debugPattern(pattern, 'TestPattern');
       
-      const endTime = Date.now();
-      const processingTime = endTime - startTime;
-      
-      expect(processingTime).toBeLessThan(100); // Should complete within 100ms
-      expect(Array.isArray(imports)).toBe(true);
-    });
-
-    it('should handle regex compilation efficiently', () => {
-      const patterns = Array.from({ length: 100 }, (_, i) => `pattern${i}.*`);
-      const startTime = Date.now();
-      
-      patterns.forEach(pattern => {
-        RegexHelper.createGlobPattern(pattern);
+      expect(consoleSpy).toHaveBeenCalledWith('TestPattern:', {
+        source: 'test',
+        flags: 'gi',
+        lastIndex: 0,
+        global: true,
+        ignoreCase: true,
+        multiline: false
       });
       
-      const endTime = Date.now();
-      const processingTime = endTime - startTime;
+      consoleSpy.mockRestore();
+    });
+
+    it('should use default label when not provided', () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       
-      expect(processingTime).toBeLessThan(50); // Should complete within 50ms
+      const pattern = /test/;
+      RegexHelper.debugPattern(pattern);
+      
+      expect(consoleSpy).toHaveBeenCalledWith('Pattern:', expect.any(Object));
+      
+      consoleSpy.mockRestore();
     });
   });
 });
