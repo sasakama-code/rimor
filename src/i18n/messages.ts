@@ -84,7 +84,21 @@ export type MessageKey =
   | 'cleanup.error.compile_cause'
   | 'cleanup.warning.plugin_compile_error'
   | 'cleanup.warning.user_file_protection'
-  | 'cleanup.instruction.manual_fix';
+  | 'cleanup.instruction.manual_fix'
+  // Core Plugin Messages
+  | 'plugin.assertion.weak_detected'
+  | 'plugin.assertion.missing_assertions'
+  | 'plugin.assertion.limited_variety'
+  | 'plugin.assertion.magic_numbers'
+  | 'plugin.completeness.incomplete_coverage'
+  | 'plugin.completeness.missing_edge_cases'
+  | 'plugin.completeness.empty_suite'
+  | 'plugin.completeness.missing_setup'
+  | 'plugin.structure.poor_organization'
+  | 'plugin.structure.missing_setup'
+  | 'plugin.structure.deep_nesting'
+  | 'plugin.structure.inconsistent_naming'
+  | 'plugin.structure.large_file';
 
 export const messages = {
   ja: {
@@ -168,7 +182,21 @@ export const messages = {
     'cleanup.error.compile_cause': 'TypeScriptコンパイルエラーの原因（IPlugin型定義エラー - 自動生成された既知の問題ファイル）',
     'cleanup.warning.plugin_compile_error': '⚠️  プラグインファイルでコンパイルエラーを検出: {file}',
     'cleanup.warning.user_file_protection': '💡 ユーザー作成ファイルの可能性があるため、自動削除は行いません',
-    'cleanup.instruction.manual_fix': '📝 ファイル内容を確認し、必要に応じて手動で修正または削除してください'
+    'cleanup.instruction.manual_fix': '📝 ファイル内容を確認し、必要に応じて手動で修正または削除してください',
+    // Core Plugin Messages
+    'plugin.assertion.weak_detected': '弱いアサーションが検出されました',
+    'plugin.assertion.missing_assertions': 'アサーションが不足しています',
+    'plugin.assertion.limited_variety': 'アサーションの種類が限定的です',
+    'plugin.assertion.magic_numbers': 'マジックナンバーがアサーションに含まれています',
+    'plugin.completeness.incomplete_coverage': 'テストカバレッジが不完全です',
+    'plugin.completeness.missing_edge_cases': 'エッジケースのテストが不足しています',
+    'plugin.completeness.empty_suite': '空のテストスイートがあります',
+    'plugin.completeness.missing_setup': 'セットアップ・ティアダウンが不足しています',
+    'plugin.structure.poor_organization': 'テストの構造が不適切です',
+    'plugin.structure.missing_setup': 'セットアップ・ティアダウンが不足しています',
+    'plugin.structure.deep_nesting': 'ネストが深すぎます',
+    'plugin.structure.inconsistent_naming': '命名が一貫していません',
+    'plugin.structure.large_file': 'テストファイルが大きすぎます'
   },
   en: {
     'plugin.create.welcome': '🧙 Rimor Plugin Creation Assistant',
@@ -251,7 +279,21 @@ export const messages = {
     'cleanup.error.compile_cause': 'TypeScript compilation error cause (IPlugin type definition error - known auto-generated problematic file)',
     'cleanup.warning.plugin_compile_error': '⚠️  Plugin file compilation error detected: {file}',
     'cleanup.warning.user_file_protection': '💡 Automatic deletion skipped as this may be a user-created file',
-    'cleanup.instruction.manual_fix': '📝 Please review the file content and manually fix or delete if necessary'
+    'cleanup.instruction.manual_fix': '📝 Please review the file content and manually fix or delete if necessary',
+    // Core Plugin Messages
+    'plugin.assertion.weak_detected': 'Weak assertions detected',
+    'plugin.assertion.missing_assertions': 'Missing assertions',
+    'plugin.assertion.limited_variety': 'Limited assertion variety',
+    'plugin.assertion.magic_numbers': 'Magic numbers in assertions',
+    'plugin.completeness.incomplete_coverage': 'Incomplete test coverage',
+    'plugin.completeness.missing_edge_cases': 'Missing edge case tests',
+    'plugin.completeness.empty_suite': 'Empty test suite',
+    'plugin.completeness.missing_setup': 'Missing setup/teardown',
+    'plugin.structure.poor_organization': 'Poor test organization',
+    'plugin.structure.missing_setup': 'Missing setup/teardown',
+    'plugin.structure.deep_nesting': 'Too deeply nested',
+    'plugin.structure.inconsistent_naming': 'Inconsistent naming',
+    'plugin.structure.large_file': 'Test file too large'
   }
 };
 
