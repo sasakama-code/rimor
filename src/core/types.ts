@@ -106,6 +106,20 @@ export interface ScoreBreakdown {
   [dimension: string]: number;
 }
 
+// 詳細スコア情報（内部処理用）
+export interface DetailedScoreBreakdown {
+  completeness: DetailedScore;
+  correctness: DetailedScore;
+  maintainability: DetailedScore;
+  [dimension: string]: DetailedScore;
+}
+
+export interface DetailedScore {
+  score: number;
+  weight: number;
+  issues: string[];
+}
+
 // 評価ディメンション
 export type QualityDimension = 
   | 'completeness'    // 網羅性

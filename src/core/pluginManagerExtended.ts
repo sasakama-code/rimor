@@ -150,7 +150,7 @@ export class PluginManagerExtended {
       return {
         pluginId: plugin.id,
         pluginName: plugin.name,
-        patterns,
+        detectionResults: patterns,
         qualityScore,
         improvements,
         executionTime: Date.now() - startTime
@@ -160,12 +160,15 @@ export class PluginManagerExtended {
       return {
         pluginId: plugin.id,
         pluginName: plugin.name,
-        patterns: [],
+        detectionResults: [],
         qualityScore: {
           overall: 0,
-          breakdown: {},
-          confidence: 0,
-          explanation: 'Plugin execution failed'
+          breakdown: {
+          completeness: 0,
+          correctness: 0,
+          maintainability: 0
+        },
+          confidence: 0
         },
         improvements: [],
         executionTime: Date.now() - startTime,

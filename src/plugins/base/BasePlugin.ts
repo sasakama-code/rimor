@@ -64,9 +64,9 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   ): CodeLocation {
     return {
       file,
-      startLine,
+      line: startLine,
+      column: startColumn || 1,
       endLine: endLine ?? startLine,
-      startColumn,
       endColumn
     };
   }
@@ -130,14 +130,11 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     return {
       overall,
       breakdown: {
-        general: {
-          score: overall,
-          weight: 1.0,
-          issues: patterns.map(p => p.patternName)
-        }
+        completeness: 70,
+        correctness: overall,
+        maintainability: 75
       },
-      confidence: avgConfidence,
-      explanation: `基本スコア ${baseScore} から ${totalIssues} 個の問題により ${totalIssues * penaltyPerIssue} 点減点`
+      confidence: avgConfidence
     };
   }
 

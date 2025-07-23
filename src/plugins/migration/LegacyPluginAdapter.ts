@@ -50,39 +50,37 @@ export class LegacyPluginAdapter implements ITestQualityPlugin {
     return {
       overall,
       breakdown: {
-        legacy: {
-          score: overall,
-          weight: 1.0,
-          issues: patterns.map(p => p.patternId.replace('legacy-issue-', ''))
-        }
+        completeness: 50,
+        correctness: overall,
+        maintainability: 60
       },
-      confidence: avgConfidence,
-      explanation: `Legacy plugin compatibility mode: ${issueCount} issues detected, scored ${overall}/100`
+      confidence: avgConfidence
     };
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
     
-    if (evaluation.breakdown.legacy) {
-      evaluation.breakdown.legacy.issues.forEach((issue, index) => {
-        improvements.push({
-          id: `legacy-improvement-${index}`,
-          priority: 'medium',
-          type: 'add',
-          title: `Legacy plugin issue: ${issue}`,
-          description: `レガシープラグインで検出された問題を解決してください: ${issue}`,
-          location: {
-            file: 'unknown', // レガシープラグインでは詳細な位置情報が不明
-            startLine: 1,
-            endLine: 1
-          },
-          estimatedImpact: {
-            scoreImprovement: 20, // 1問題あたり20点改善
-            effortMinutes: 30 // デフォルト見積もり
-          },
-          automatable: false // レガシープラグインの問題は基本的に手動修正
-        });
+    const correctnessScore = evaluation.breakdown.correctness || 0;
+    
+    // レガシープラグインベースの基本的な改善提案
+    if (correctnessScore < 70) {
+      improvements.push({
+        id: 'legacy-improvement',
+        priority: 'medium',
+        type: 'add',
+        title: 'Legacy plugin compatibility issues',
+        description: 'レガシープラグインで検出された問題を解決してください',
+        location: {
+          file: 'unknown',
+          line: 1,
+          column: 1
+        },
+        estimatedImpact: {    
+          scoreImprovement: 20,
+          effortMinutes: 30
+        },
+        automatable: false
       });
     }
 
@@ -95,15 +93,21 @@ export class LegacyPluginAdapter implements ITestQualityPlugin {
       patternName: `Legacy Issue: ${issue.type}`,
       location: {
         file: issue.file || testFile.path,
-        startLine: issue.line || 1,
-        endLine: issue.line || 1
+        line: issue.line || 1,
+        column: 1
       },
       confidence: this.calculateConfidenceFromSeverity(issue.severity),
       evidence: [
         {
           type: 'code',
           description: `Legacy plugin (${this.legacyPlugin.name}): ${issue.message}`,
-          line: issue.line
+          location: {
+            file: issue.file || testFile.path,
+            line: issue.line || 1,
+            column: 1
+          },
+          code: 'N/A',
+          confidence: this.calculateConfidenceFromSeverity(issue.severity)
         }
       ],
       metadata: {

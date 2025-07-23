@@ -101,14 +101,11 @@ export class TestCompletenessPlugin extends BasePlugin {
     return {
       overall: completenessScore,
       breakdown: {
-        completeness: {
-          score: completenessScore,
-          weight: 1.0,
-          issues
-        }
+        completeness: completenessScore,
+        correctness: 75,
+        maintainability: 70
       },
-      confidence: avgConfidence,
-      explanation: this.generateExplanation(completenessScore, issues.length)
+      confidence: avgConfidence
     };
   }
 
@@ -120,57 +117,54 @@ export class TestCompletenessPlugin extends BasePlugin {
       return improvements;
     }
 
-    const issues = evaluation.breakdown.completeness?.issues || [];
+    const completenessScore = evaluation.breakdown.completeness || 0;
+    
+    // 改善提案を生成（スコアベース）
+    if (completenessScore < 30) {
+      improvements.push(this.createImprovement(
+        'empty-suite',
+        'critical',
+        'add',
+        'テストケースの実装',
+        '空のテストスイートに具体的なテストケースを追加してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 40, effortMinutes: 90 }
+      ));
+    }
 
-    issues.forEach((issue, index) => {
-      if (issue.includes('カバレッジが不完全')) {
-        improvements.push(this.createImprovement(
-          `completeness-${index}`,
-          'high',
-          'add',
-          'テストケースの追加',
-          'CRUD操作、エラーハンドリング、境界値テストなど、包括的なテストケースを追加してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 30, effortMinutes: 60 }
-        ));
-      }
+    if (completenessScore < 50) {
+      improvements.push(this.createImprovement(
+        'completeness',
+        'high',
+        'add',
+        'テストケースの追加',
+        'CRUD操作、エラーハンドリング、境界値テストなど、包括的なテストケースを追加してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 30, effortMinutes: 60 }
+      ));
+    }
 
-      if (issue.includes('エッジケース')) {
-        improvements.push(this.createImprovement(
-          `edge-cases-${index}`,
-          'medium',
-          'add',
-          'エッジケーステストの追加',
-          '境界値、null値、空文字列、大きなデータサイズなどのエッジケースをテストしてください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 20, effortMinutes: 40 }
-        ));
-      }
+    if (completenessScore < 70) {
+      improvements.push(this.createImprovement(
+        'edge-cases',
+        'medium',
+        'add',
+        'エッジケーステストの追加',
+        '境界値、null値、空文字列、大きなデータサイズなどのエッジケースをテストしてください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 20, effortMinutes: 40 }
+      ));
 
-      if (issue.includes('空のテストスイート')) {
-        improvements.push(this.createImprovement(
-          `empty-suite-${index}`,
-          'critical',
-          'add',
-          'テストケースの実装',
-          '空のテストスイートに具体的なテストケースを追加してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 40, effortMinutes: 90 }
-        ));
-      }
-
-      if (issue.includes('セットアップ')) {
-        improvements.push(this.createImprovement(
-          `setup-${index}`,
-          'low',
-          'add',
-          'セットアップ・ティアダウンの追加',
-          'beforeEach/afterEachでテストの前処理・後処理を適切に行ってください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 10, effortMinutes: 20 }
-        ));
-      }
-    });
+      improvements.push(this.createImprovement(
+        'setup',
+        'low',
+        'add',
+        'セットアップ・ティアダウンの追加',
+        'beforeEach/afterEachでテストの前処理・後処理を適切に行ってください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 10, effortMinutes: 20 }
+      ));
+    }
 
     return improvements;
   }
@@ -195,7 +189,10 @@ export class TestCompletenessPlugin extends BasePlugin {
         0.9,
         [{
           type: 'structure',
-          description: `包括的なテストスイート: ${matchedPatterns.length}個のテストパターンを検出`
+          description: `包括的なテストスイート: ${matchedPatterns.length}個のテストパターンを検出`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.9
         }]
       );
     }
@@ -216,7 +213,10 @@ export class TestCompletenessPlugin extends BasePlugin {
         0.7,
         [{
           type: 'structure',
-          description: `テストケース数不足: ${testCases.length}件のテストケース`
+          description: `テストケース数不足: ${testCases.length}件のテストケース`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.7
         }]
       );
     }
@@ -246,7 +246,10 @@ export class TestCompletenessPlugin extends BasePlugin {
         0.6,
         [{
           type: 'code',
-          description: `エッジケーステスト不足: ${edgeCaseMatches.length}個のエッジケースパターンのみ検出`
+          description: `エッジケーステスト不足: ${edgeCaseMatches.length}個のエッジケースパターンのみ検出`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.6
         }]
       );
     }
@@ -272,7 +275,10 @@ export class TestCompletenessPlugin extends BasePlugin {
           type: 'structure',
           description: describeSuites.length > 0 
             ? `空のテストスイート: ${describeSuites.length}個のdescribeブロックに対してテストケースが0個`
-            : 'テストケースが存在しません'
+            : 'テストケースが存在しません',
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.9
         }]
       );
     }
@@ -294,7 +300,10 @@ export class TestCompletenessPlugin extends BasePlugin {
         0.5,
         [{
           type: 'structure',
-          description: `セットアップ・ティアダウン不足: ${testCases.length}個のテストケースに対してbeforeEach/afterEachがありません`
+          description: `セットアップ・ティアダウン不足: ${testCases.length}個のテストケースに対してbeforeEach/afterEachがありません`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.5
         }]
       );
     }

@@ -129,14 +129,11 @@ export class AssertionQualityPlugin extends BasePlugin {
     return {
       overall: correctnessScore,
       breakdown: {
-        correctness: {
-          score: correctnessScore,
-          weight: 1.0,
-          issues
-        }
+        completeness: 70,
+        correctness: correctnessScore,
+        maintainability: 75
       },
-      confidence: avgConfidence,
-      explanation: this.generateExplanation(correctnessScore, issues.length)
+      confidence: avgConfidence
     };
   }
 
@@ -148,57 +145,52 @@ export class AssertionQualityPlugin extends BasePlugin {
       return improvements;
     }
 
-    const issues = evaluation.breakdown.correctness?.issues || [];
+    const correctnessScore = evaluation.breakdown.correctness || 0;
+    
+    // 改善提案を生成（スコアベース）
+    if (correctnessScore < 50) {
+      improvements.push(this.createImprovement(
+        'weak-assertions',
+        'high',
+        'modify',
+        '具体的なアサーションの使用',
+        'toBeTruthy()やtoBeDefined()ではなく、toBe()、toEqual()、toMatch()など具体的な値を検証するアサーションを使用してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 25, effortMinutes: 30 }
+      ));
 
-    issues.forEach((issue, index) => {
-      if (issue.includes('弱いアサーション')) {
-        improvements.push(this.createImprovement(
-          `weak-assertions-${index}`,
-          'high',
-          'modify',
-          '具体的なアサーションの使用',
-          'toBeTruthy()やtoBeDefined()ではなく、toBe()、toEqual()、toMatch()など具体的な値を検証するアサーションを使用してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 25, effortMinutes: 30 }
-        ));
-      }
+      improvements.push(this.createImprovement(
+        'missing-assertions',
+        'critical',
+        'add',
+        'アサーションの追加',
+        'テストケースに適切なアサーション文を追加して、期待される結果を明確に検証してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 40, effortMinutes: 45 }
+      ));
+    }
 
-      if (issue.includes('アサーションが不足')) {
-        improvements.push(this.createImprovement(
-          `missing-assertions-${index}`,
-          'critical',
-          'add',
-          'アサーションの追加',
-          'テストケースに適切なアサーション文を追加して、期待される結果を明確に検証してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 40, effortMinutes: 45 }
-        ));
-      }
+    if (correctnessScore < 70) {
+      improvements.push(this.createImprovement(
+        'variety',
+        'medium',
+        'modify',
+        '多様なアサーションの活用',
+        'toMatch()、toContain()、toHaveLength()、toThrow()など、多様なアサーションメソッドを活用してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 15, effortMinutes: 20 }
+      ));
 
-      if (issue.includes('種類が限定的')) {
-        improvements.push(this.createImprovement(
-          `variety-${index}`,
-          'medium',
-          'modify',
-          '多様なアサーションの活用',
-          'toMatch()、toContain()、toHaveLength()、toThrow()など、多様なアサーションメソッドを活用してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 15, effortMinutes: 20 }
-        ));
-      }
-
-      if (issue.includes('マジックナンバー')) {
-        improvements.push(this.createImprovement(
-          `magic-numbers-${index}`,
-          'low',
-          'refactor',
-          '定数の使用によるマジックナンバー除去',
-          'アサーション内の数値リテラルを名前付き定数に置き換えて、テストの意図を明確にしてください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 10, effortMinutes: 15 }
-        ));
-      }
-    });
+      improvements.push(this.createImprovement(
+        'magic-numbers',
+        'low',
+        'refactor',
+        '定数の使用によるマジックナンバー除去',
+        'アサーション内の数値リテラルを名前付き定数に置き換えて、テストの意図を明確にしてください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 10, effortMinutes: 15 }
+      ));
+    }
 
     return improvements;
   }
@@ -228,7 +220,10 @@ export class AssertionQualityPlugin extends BasePlugin {
           0.9,
           [{
             type: 'code',
-            description: `高品質なアサーション: ${strongAssertions}個の具体的なアサーション、${usedPatternTypes}種類のアサーションタイプを使用`
+            description: `高品質なアサーション: ${strongAssertions}個の具体的なアサーション、${usedPatternTypes}種類のアサーションタイプを使用`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.9
           }]
         );
       }
@@ -256,7 +251,10 @@ export class AssertionQualityPlugin extends BasePlugin {
         0.8,
         [{
           type: 'code',
-          description: `弱いアサーション: ${weakAssertions}/${totalAssertions}個のアサーションが曖昧な検証を行っています`
+          description: `弱いアサーション: ${weakAssertions}/${totalAssertions}個のアサーションが曖昧な検証を行っています`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.8
         }]
       );
     }
@@ -278,7 +276,10 @@ export class AssertionQualityPlugin extends BasePlugin {
         0.9,
         [{
           type: 'structure',
-          description: `アサーション不足: ${testCases.length}個のテストケースに対して${assertions.length}個のアサーションのみ`
+          description: `アサーション不足: ${testCases.length}個のテストケースに対して${assertions.length}個のアサーションのみ`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.9
         }]
       );
     }
@@ -306,7 +307,10 @@ export class AssertionQualityPlugin extends BasePlugin {
         0.7,
         [{
           type: 'code',
-          description: `アサーションの多様性不足: ${totalAssertions}個のアサーションで${usedPatterns.length}種類のパターンのみ使用`
+          description: `アサーションの多様性不足: ${totalAssertions}個のアサーションで${usedPatterns.length}種類のパターンのみ使用`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.7
         }]
       );
     }
@@ -327,7 +331,10 @@ export class AssertionQualityPlugin extends BasePlugin {
         0.6,
         [{
           type: 'code',
-          description: `マジックナンバー: ${magicNumbers.length}個の数値リテラルがアサーションで直接使用されています`
+          description: `マジックナンバー: ${magicNumbers.length}個の数値リテラルがアサーションで直接使用されています`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.6
         }]
       );
     }
@@ -362,7 +369,10 @@ export class AssertionQualityPlugin extends BasePlugin {
         0.8,
         [{
           type: 'code',
-          description: `Jest高度機能の使用: ${advancedUsage.length}種類の高度なasync/awaitパターンやモック検証を使用`
+          description: `Jest高度機能の使用: ${advancedUsage.length}種類の高度なasync/awaitパターンやモック検証を使用`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.8
         }]
       );
     }

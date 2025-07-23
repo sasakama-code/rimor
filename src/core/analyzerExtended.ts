@@ -46,7 +46,7 @@ export class AnalyzerExtended extends Analyzer {
   }
 
   // 登録された品質プラグインの取得
-  getRegisteredQualityPlugins(): ITestQualityPlugin[] {
+  getRegisteredQualityPlugins(): any {
     return this.qualityPluginManager.getRegisteredPlugins();
   }
 
@@ -113,9 +113,13 @@ export class AnalyzerExtended extends Analyzer {
         },
         aggregatedScore: {
           overall: 0,
-          breakdown: {},
+          breakdown: {
+            completeness: 0,
+            correctness: 0,
+            maintainability: 0
+          },
           confidence: 0,
-          explanation: `ファイル分析エラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+          metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
         },
         recommendations: [],
         executionTime: Date.now() - startTime
@@ -158,11 +162,11 @@ export class AnalyzerExtended extends Analyzer {
       poor: scores.filter(s => s < 50).length
     };
 
-    // 共通の問題を集計
+    // 共通の問題を集計（今回は単純化のため推奨事項から抽出）
     const allIssues: string[] = [];
     results.forEach(result => {
-      Object.values(result.aggregatedScore.breakdown).forEach(dimension => {
-        allIssues.push(...dimension.issues);
+      result.recommendations.forEach(rec => {
+        allIssues.push(rec.title);
       });
     });
 
@@ -202,9 +206,13 @@ export class AnalyzerExtended extends Analyzer {
     if (pluginResults.length === 0) {
       return {
         overall: 0,
-        breakdown: {},
+        breakdown: {
+          completeness: 0,
+          correctness: 0,
+          maintainability: 0
+        },
         confidence: 0,
-        explanation: 'No plugins executed successfully'
+        metadata: { message: 'No plugins executed successfully' }
       };
     }
 
@@ -214,9 +222,13 @@ export class AnalyzerExtended extends Analyzer {
     if (successfulResults.length === 0) {
       return {
         overall: 0,
-        breakdown: {},
+        breakdown: {
+          completeness: 0,
+          correctness: 0,
+          maintainability: 0
+        },
         confidence: 0,
-        explanation: 'All plugins failed to execute'
+        metadata: { message: 'All plugins failed to execute' }
       };
     }
 
@@ -232,7 +244,7 @@ export class AnalyzerExtended extends Analyzer {
     const aggregatedBreakdown: { [dimension: string]: { score: number; weight: number; issues: string[] } } = {};
     
     successfulResults.forEach(result => {
-      Object.entries(result.qualityScore.breakdown).forEach(([dimension, data]) => {
+      Object.entries(result.qualityScore.breakdown).forEach(([dimension, score]) => {
         if (!aggregatedBreakdown[dimension]) {
           aggregatedBreakdown[dimension] = {
             score: 0,
@@ -241,21 +253,28 @@ export class AnalyzerExtended extends Analyzer {
           };
         }
         
-        // 加重平均でスコアを計算
-        const currentWeight = aggregatedBreakdown[dimension].weight;
-        const newWeight = currentWeight + data.weight;
-        aggregatedBreakdown[dimension].score = 
-          (aggregatedBreakdown[dimension].score * currentWeight + data.score * data.weight) / newWeight;
-        aggregatedBreakdown[dimension].weight = newWeight;
-        aggregatedBreakdown[dimension].issues.push(...data.issues);
+        // 単純に数値として扱う
+        aggregatedBreakdown[dimension].weight += 1;
+        aggregatedBreakdown[dimension].score += score;
       });
     });
 
+    // 最終的なScoreBreakdownを作成（数値のみ）
+    const finalBreakdown: { [dimension: string]: number } = {};
+    Object.entries(aggregatedBreakdown).forEach(([dimension, data]) => {
+      finalBreakdown[dimension] = Math.round(data.score / data.weight);
+    });
+
+    // 必須のディメンションを確保
+    finalBreakdown.completeness = finalBreakdown.completeness || 0;
+    finalBreakdown.correctness = finalBreakdown.correctness || 0;
+    finalBreakdown.maintainability = finalBreakdown.maintainability || 0;
+
     return {
       overall: Math.round(averageScore),
-      breakdown: aggregatedBreakdown,
+      breakdown: finalBreakdown as { completeness: number; correctness: number; maintainability: number; [dimension: string]: number },
       confidence: averageConfidence,
-      explanation: this.generateAggregatedExplanation(averageScore, successfulResults.length)
+      metadata: { averageScore, successfulPlugins: successfulResults.length }
     };
   }
 

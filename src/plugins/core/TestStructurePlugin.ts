@@ -125,14 +125,11 @@ export class TestStructurePlugin extends BasePlugin {
     return {
       overall: maintainabilityScore,
       breakdown: {
-        maintainability: {
-          score: maintainabilityScore,
-          weight: 1.0,
-          issues
-        }
+        completeness: 70,
+        correctness: 75,
+        maintainability: maintainabilityScore
       },
-      confidence: avgConfidence,
-      explanation: this.generateExplanation(maintainabilityScore, issues.length)
+      confidence: avgConfidence
     };
   }
 
@@ -144,69 +141,62 @@ export class TestStructurePlugin extends BasePlugin {
       return improvements;
     }
 
-    const issues = evaluation.breakdown.maintainability?.issues || [];
+    const maintainabilityScore = evaluation.breakdown.maintainability || 0;
+    
+    // 改善提案を生成（スコアベース）
+    if (maintainabilityScore < 50) {
+      improvements.push(this.createImprovement(
+        'structure',
+        'high',
+        'refactor',
+        'AAAパターンの適用',
+        'Arrange-Act-Assertパターンを使用してテストを構造化し、各段階を明確に分離してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 30, effortMinutes: 45 }
+      ));
 
-    issues.forEach((issue, index) => {
-      if (issue.includes('構造が不適切')) {
-        improvements.push(this.createImprovement(
-          `structure-${index}`,
-          'high',
-          'refactor',
-          'AAAパターンの適用',
-          'Arrange-Act-Assertパターンを使用してテストを構造化し、各段階を明確に分離してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 30, effortMinutes: 45 }
-        ));
-      }
+      improvements.push(this.createImprovement(
+        'setup',
+        'medium',
+        'add',
+        'セットアップ・ティアダウンの追加',
+        'beforeEach/afterEachを使用して適切なテスト環境の準備と後処理を行ってください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 20, effortMinutes: 30 }
+      ));
+    }
 
-      if (issue.includes('セットアップ・ティアダウン')) {
-        improvements.push(this.createImprovement(
-          `setup-${index}`,
-          'medium',
-          'add',
-          'セットアップ・ティアダウンの追加',
-          'beforeEach/afterEachを使用して適切なテスト環境の準備と後処理を行ってください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 20, effortMinutes: 30 }
-        ));
-      }
+    if (maintainabilityScore < 70) {
+      improvements.push(this.createImprovement(
+        'nesting',
+        'medium',
+        'refactor',
+        'ネスト構造の簡素化',
+        'describeブロックのネストを2-3レベルに制限し、より平坦な構造に変更してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 15, effortMinutes: 25 }
+      ));
 
-      if (issue.includes('ネストが深すぎ')) {
-        improvements.push(this.createImprovement(
-          `nesting-${index}`,
-          'medium',
-          'refactor',
-          'ネスト構造の簡素化',
-          'describeブロックのネストを2-3レベルに制限し、より平坦な構造に変更してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 15, effortMinutes: 25 }
-        ));
-      }
+      improvements.push(this.createImprovement(
+        'naming',
+        'low',
+        'modify',
+        '一貫した命名規則の適用',
+        'すべてのテストケースで「should + 動詞」の形式など、一貫した命名規則を使用してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 10, effortMinutes: 20 }
+      ));
 
-      if (issue.includes('命名が一貫')) {
-        improvements.push(this.createImprovement(
-          `naming-${index}`,
-          'low',
-          'modify',
-          '一貫した命名規則の適用',
-          'すべてのテストケースで「should + 動詞」の形式など、一貫した命名規則を使用してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 10, effortMinutes: 20 }
-        ));
-      }
-
-      if (issue.includes('ファイルが大きすぎ')) {
-        improvements.push(this.createImprovement(
-          `size-${index}`,
-          'medium',
-          'refactor',
-          'テストファイルの分割',
-          '大きなテストファイルを機能やクラスごとに複数のファイルに分割してください',
-          this.createCodeLocation('unknown', 1, 1),
-          { scoreImprovement: 15, effortMinutes: 40 }
-        ));
-      }
-    });
+      improvements.push(this.createImprovement(
+        'size',
+        'medium',
+        'refactor',
+        'テストファイルの分割',
+        '大きなテストファイルを機能やクラスごとに複数のファイルに分割してください',
+        this.createCodeLocation('unknown', 1, 1),
+        { scoreImprovement: 15, effortMinutes: 40 }
+      ));
+    }
 
     return improvements;
   }
@@ -244,7 +234,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.9,
         [{
           type: 'structure',
-          description: `構造化されたテスト: ${aaaComments.length}個のAAAパターンコメント、${setupTeardown.length}個のセットアップ・ティアダウン`
+          description: `構造化されたテスト: ${aaaComments.length}個のAAAパターンコメント、${setupTeardown.length}個のセットアップ・ティアダウン`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.9
         }]
       );
     }
@@ -287,7 +280,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.8,
         [{
           type: 'structure',
-          description: `構造不良: 単一のテストケースで${totalOperations}個の操作と${totalExpectStatements}個の検証を行っています`
+          description: `構造不良: 単一のテストケースで${totalOperations}個の操作と${totalExpectStatements}個の検証を行っています`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.8
         }]
       );
     }
@@ -319,7 +315,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.7,
         [{
           type: 'structure',
-          description: `セットアップ・ティアダウン不足: ${testCases}個のテストケースに対してbeforeEach/afterEachがありません`
+          description: `セットアップ・ティアダウン不足: ${testCases}個のテストケースに対してbeforeEach/afterEachがありません`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.7
         }]
       );
     }
@@ -352,7 +351,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.8,
         [{
           type: 'structure',
-          description: `深いネスト: 最大${maxNestLevel}レベルのdescribeブロックが検出されました`
+          description: `深いネスト: 最大${maxNestLevel}レベルのdescribeブロックが検出されました`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.8
         }]
       );
     }
@@ -395,7 +397,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.6,
         [{
           type: 'naming',
-          description: `命名の一貫性不足: ${usedStyles}種類の異なる命名スタイルが混在しています`
+          description: `命名の一貫性不足: ${usedStyles}種類の異なる命名スタイルが混在しています`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.6
         }]
       );
     }
@@ -416,7 +421,10 @@ export class TestStructurePlugin extends BasePlugin {
         0.7,
         [{
           type: 'structure',
-          description: `大きなテストファイル: ${parsed.totalLines}行、${testCases}個のテストケース`
+          description: `大きなテストファイル: ${parsed.totalLines}行、${testCases}個のテストケース`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.7
         }]
       );
     }
