@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "node scripts/build-with-cleanup.js",
+    "build:simple": "tsc",
     "start": "node dist/index.js",
     "analyze": "npm run build && node dist/index.js analyze",
     "analyze:json": "npm run build && node dist/index.js analyze --format=json",

@@ -4,6 +4,7 @@ import { AssertionExistsPlugin } from '../../plugins/assertionExists';
 import { OutputFormatter } from '../output';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
+import { cleanupManager } from '../../utils/cleanupManager';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -51,6 +52,9 @@ export class AnalyzeCommand {
   }
   
   async execute(options: AnalyzeOptions): Promise<void> {
+    // プロジェクト開始時クリーンアップを実行
+    await cleanupManager.performStartupCleanup();
+    
     try {
       const targetPath = path.resolve(options.path);
       
