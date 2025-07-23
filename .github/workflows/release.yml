@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Build
+      run: npm run build
+    
+    - name: Clean test artifacts before release
+      run: |
+        echo "🧹 Cleaning test-generated files before release..."
+        rm -rf src/plugins/generated/
+        echo "✅ Release cleanup completed"
+    
+    - name: Run quality check
+      run: npm run analyze:src
+    
+    - name: Extract version from tag
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    
+    - name: Verify package.json version matches tag
+      run: |
+        PACKAGE_VERSION=$(node -p "require('./package.json').version")
+        TAG_VERSION="${VERSION}"
+        if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+          echo "❌ Version mismatch: package.json ($PACKAGE_VERSION) != tag ($TAG_VERSION)"
+          exit 1
+        fi
+        echo "✅ Version match confirmed: $PACKAGE_VERSION"
+    
+    - name: Publish to npm
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes in v${{ env.VERSION }}
+          
+          リリース v${{ env.VERSION }} です。
+          
+          ### 新機能・改善点
+          - テスト品質監査機能の改善
+          - プラグインシステムの拡充
+          - 国際化対応の実装
+          - パフォーマンスの向上
+          
+          ### インストール方法
+          ```bash
+          npm install -g rimor
+          ```
+          
+          ### 使用方法
+          ```bash
+          # プロジェクトのテスト品質を分析
+          rimor analyze ./src
+          
+          # JSON形式で結果を出力
+          rimor analyze ./src --format=json
+          
+          # プラグインを作成
+          rimor plugin create
+          ```
+          
+          詳細な変更履歴とドキュメントは [README](https://github.com/sasakama/rimor#readme) をご確認ください。
+        draft: false
+        prerelease: false
