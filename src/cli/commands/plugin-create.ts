@@ -245,7 +245,7 @@ export class PluginCreateCommand {
    */
   private getBasicTemplate(): string {
     return `import * as fs from 'fs';
-import { IPlugin, Issue } from '../core/types';
+import { IPlugin, Issue } from '../../core/types';
 
 /**
  * 基本プラグインテンプレート
@@ -257,7 +257,7 @@ export class BasicPlugin implements IPlugin {
   name = 'basic-plugin';
 
   async analyze(filePath: string): Promise<Issue[]> {
-    const content = await fs.readFile(filePath, 'utf-8');
+    const content = await fs.promises.readFile(filePath, 'utf-8');
     const issues: Issue[] = [];
 
     // ここにチェックロジックを実装してください
