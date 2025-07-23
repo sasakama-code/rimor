@@ -1,5 +1,5 @@
-import { TestCompletenessPlugin } from '../src/plugins/core/TestCompletenessPlugin';
-import { ProjectContext, TestFile } from '../src/core/types';
+import { TestCompletenessPlugin } from '../../../src/plugins/core/TestCompletenessPlugin';
+import { ProjectContext, TestFile } from '../../../src/core/types';
 
 describe('TestCompletenessPlugin', () => {
   let plugin: TestCompletenessPlugin;

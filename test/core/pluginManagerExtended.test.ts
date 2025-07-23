@@ -1,5 +1,5 @@
-import { PluginManagerExtended } from '../src/core/pluginManagerExtended';
-import { LegacyPluginAdapter } from '../src/plugins/migration/LegacyPluginAdapter';
+import { PluginManagerExtended } from '../../src/core/pluginManagerExtended';
+import { LegacyPluginAdapter } from '../../src/plugins/migration/LegacyPluginAdapter';
 import { 
   IPlugin, 
   ITestQualityPlugin, 
@@ -9,7 +9,7 @@ import {
   DetectionResult,
   QualityScore,
   Improvement
-} from '../src/core/types';
+} from '../../src/core/types';
 
 // テスト用のレガシープラグイン
 class MockLegacyPlugin implements IPlugin {

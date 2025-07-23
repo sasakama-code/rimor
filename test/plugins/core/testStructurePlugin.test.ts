@@ -1,5 +1,5 @@
-import { TestStructurePlugin } from '../src/plugins/core/TestStructurePlugin';
-import { ProjectContext, TestFile } from '../src/core/types';
+import { TestStructurePlugin } from '../../../src/plugins/core/TestStructurePlugin';
+import { ProjectContext, TestFile } from '../../../src/core/types';
 
 describe('TestStructurePlugin', () => {
   let plugin: TestStructurePlugin;

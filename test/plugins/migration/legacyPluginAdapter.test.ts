@@ -1,5 +1,5 @@
-import { LegacyPluginAdapter } from '../src/plugins/migration/LegacyPluginAdapter';
-import { IPlugin, Issue, ProjectContext, TestFile } from '../src/core/types';
+import { LegacyPluginAdapter } from '../../../src/plugins/migration/LegacyPluginAdapter';
+import { IPlugin, Issue, ProjectContext, TestFile } from '../../../src/core/types';
 
 // テスト用のレガシープラグイン
 class MockLegacyPlugin implements IPlugin {

@@ -1,4 +1,4 @@
-import { ConfigLoader, RimorConfig } from '../src/core/config';
+import { ConfigLoader, RimorConfig } from '../../src/core/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';

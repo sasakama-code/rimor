@@ -1,4 +1,4 @@
-import { BasePlugin } from '../src/plugins/base/BasePlugin';
+import { BasePlugin } from '../../../src/plugins/base/BasePlugin';
 import { 
   ITestQualityPlugin, 
   ProjectContext, 
@@ -6,7 +6,7 @@ import {
   DetectionResult, 
   QualityScore, 
   Improvement 
-} from '../src/core/types';
+} from '../../../src/core/types';
 
 class TestBasePlugin extends BasePlugin {
   id = 'test-base-plugin';

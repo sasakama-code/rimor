@@ -1,9 +1,9 @@
 import * as path from 'path';
-import { AnalyzerExtended } from '../src/core/analyzerExtended';
-import { TestCompletenessPlugin } from '../src/plugins/core/TestCompletenessPlugin';
-import { AssertionQualityPlugin } from '../src/plugins/core/AssertionQualityPlugin';
-import { TestStructurePlugin } from '../src/plugins/core/TestStructurePlugin';
-import { ProjectContext } from '../src/core/types';
+import { AnalyzerExtended } from '../../src/core/analyzerExtended';
+import { TestCompletenessPlugin } from '../../src/plugins/core/TestCompletenessPlugin';
+import { AssertionQualityPlugin } from '../../src/plugins/core/AssertionQualityPlugin';
+import { TestStructurePlugin } from '../../src/plugins/core/TestStructurePlugin';
+import { ProjectContext } from '../../src/core/types';
 
 const getFixturePath = (filename: string) => path.join(__dirname, 'fixtures', filename);
 

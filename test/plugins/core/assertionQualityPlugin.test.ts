@@ -1,5 +1,5 @@
-import { AssertionQualityPlugin } from '../src/plugins/core/AssertionQualityPlugin';
-import { ProjectContext, TestFile } from '../src/core/types';
+import { AssertionQualityPlugin } from '../../../src/plugins/core/AssertionQualityPlugin';
+import { ProjectContext, TestFile } from '../../../src/core/types';
 
 describe('AssertionQualityPlugin', () => {
   let plugin: AssertionQualityPlugin;

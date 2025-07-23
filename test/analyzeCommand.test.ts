@@ -1,5 +1,5 @@
-import { AnalyzeCommand } from '../src/cli/commands/analyze';
-import { OutputFormatter } from '../src/cli/output';
+import { AnalyzeCommand } from '../../src/cli/commands/analyze';
+import { OutputFormatter } from '../../src/cli/output';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
