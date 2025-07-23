@@ -33,6 +33,13 @@ jobs:
       run: npm run lint
       continue-on-error: true  # MVP期間中はlintエラーでCIを止めない
 
+    - name: Clean generated files before build
+      run: |
+        echo "🧹 Cleaning test-generated files before build..."
+        rm -rf src/plugins/generated/
+        mkdir -p src/plugins/generated/
+        echo "✅ Cleanup completed"
+
     - name: Build TypeScript
       run: npm run build
 

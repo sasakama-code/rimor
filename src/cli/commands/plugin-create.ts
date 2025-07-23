@@ -273,7 +273,7 @@ export class BasicPlugin implements IPlugin {
    */
   private getPatternMatchTemplate(): string {
     return `import * as fs from 'fs';
-import { IPlugin, Issue } from '../core/types';
+import { IPlugin, Issue } from '../../core/types';
 
 /**
  * パターンマッチプラグインテンプレート
@@ -308,7 +308,7 @@ export class PatternMatchPlugin implements IPlugin {
    */
   private getAsyncAwaitTemplate(): string {
     return `import * as fs from 'fs';
-import { IPlugin, Issue } from '../core/types';
+import { IPlugin, Issue } from '../../core/types';
 
 /**
  * 非同期テストパターンプラグイン
@@ -362,7 +362,7 @@ export class AsyncAwaitPlugin implements IPlugin {
    */
   private getApiTestTemplate(): string {
     return `import * as fs from 'fs';
-import { IPlugin, Issue } from '../core/types';
+import { IPlugin, Issue } from '../../core/types';
 
 /**
  * APIテストパターンプラグイン
@@ -420,7 +420,7 @@ export class ApiTestPlugin implements IPlugin {
    */
   private getValidationTemplate(): string {
     return `import * as fs from 'fs';
-import { IPlugin, Issue } from '../core/types';
+import { IPlugin, Issue } from '../../core/types';
 
 /**
  * バリデーションテストパターンプラグイン
