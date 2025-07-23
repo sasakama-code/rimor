@@ -5,6 +5,61 @@ All notable changes to the Rimor project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-07-23
+
+### 🎉 Major Features
+
+v0.2.0では念願の**対話型プラグイン作成システム**が完全実装されました。これにより、プログラミング知識がなくても品質チェックルールをプラグイン化できるようになり、組織の暗黙知を形式化できます。
+
+#### Added
+
+- **対話型プラグイン作成システム**: `rimor plugin create -i` コマンドで質問に答えるだけでカスタムプラグイン作成
+- **5種類のプラグインテンプレート**:
+  - `basic`: 基本的なプラグインテンプレート
+  - `pattern-match`: パターンマッチングプラグイン
+  - `async-await`: 非同期テスト専用プラグイン（新規）
+  - `api-test`: APIテスト専用プラグイン（新規） 
+  - `validation`: バリデーション専用プラグイン（新規）
+- **国際化対応基盤**: 日本語・英語対応（環境変数 `RIMOR_LANG` で切り替え）
+- **CLIコマンド統合**: `rimor plugin create` コマンドの完全統合
+
+#### Enhanced
+
+- **プラグイン作成の民主化**: 非プログラマーでもカスタムプラグイン作成可能
+- **テンプレート豊富化**: 用途別の専門プラグインテンプレート追加
+- **ユーザー体験向上**: 多言語対応とエラーメッセージ改善
+- **CLI体系整理**: `analyze` + `plugin create` の統合コマンド体系
+
+#### Technical Details
+
+- **Interactive System**: `src/interactive/` 完全実装済み（creator.ts, analyzer.ts, generator.ts, validator.ts）
+- **i18n Framework**: `src/i18n/messages.ts` によるメッセージ多言語化
+- **Template Engine**: 動的プラグインコード生成機能
+- **CLI Integration**: yargs によるサブコマンド完全統合
+
+### 🚀 実現された価値
+
+- **知識の形式化**: チームの暗黙知をプラグインとして文書化・共有可能
+- **導入障壁の削減**: プログラミング知識不要でカスタムルール作成
+- **グローバル対応**: 多言語環境での利用可能性向上
+- **拡張性確保**: 将来の機能追加に対応する基盤構築
+
+### 🎯 使用例
+
+```bash
+# 対話モードでプラグイン作成
+rimor plugin create -i
+
+# テンプレートからプラグイン作成
+rimor plugin create --template async-await
+
+# 既存プラグインから派生作成
+rimor plugin create --from testExistence
+
+# 英語環境での実行
+RIMOR_LANG=en rimor plugin create --help
+```
+
 ## [0.1.1] - 2025-07-22
 
 ### 🐛 Bug Fixes
