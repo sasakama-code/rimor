@@ -18,7 +18,8 @@ describe('ITestQualityPlugin interface', () => {
         patternName: 'Test Pattern',
         location: {
           file: 'test.ts',
-          startLine: 1,
+          line: 1,
+          column: 1,
           endLine: 1
         },
         confidence: 0.9,
@@ -34,11 +35,7 @@ describe('ITestQualityPlugin interface', () => {
       return {
         overall: 80,
         breakdown: {
-          completeness: {
-            score: 80,
-            weight: 0.3,
-            issues: []
-          }
+          completeness: 80
         },
         confidence: 0.8,
         explanation: 'Good quality test with room for improvement'
@@ -54,7 +51,8 @@ describe('ITestQualityPlugin interface', () => {
         description: 'Consider adding more comprehensive assertions',
         location: {
           file: 'test.ts',
-          startLine: 1,
+          line: 1,
+          column: 1,
           endLine: 1
         },
         estimatedImpact: {
@@ -174,7 +172,8 @@ describe('DetectionResult type', () => {
       patternName: 'Test Pattern',
       location: {
         file: 'test.ts',
-        startLine: 1,
+        line: 1,
+        column: 1,
         endLine: 2
       },
       confidence: 0.95,
@@ -216,7 +215,7 @@ describe('QualityScore type', () => {
     };
 
     expect(score.overall).toBe(85);
-    expect(score.breakdown.completeness.score).toBe(90);
+    expect(score.breakdown.completeness).toBe(90);
     expect(score.confidence).toBe(0.9);
   });
 });

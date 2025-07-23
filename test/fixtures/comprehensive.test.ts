@@ -1,3 +1,10 @@
+// Mock service for testing
+const service = {
+  create: (data: any) => ({ id: 1, ...data }),
+  update: (id: number, updates: any) => ({ id, ...updates }),
+  delete: (id: number) => true
+};
+
 describe('Comprehensive Test', () => {
   beforeEach(() => {
     // Setup

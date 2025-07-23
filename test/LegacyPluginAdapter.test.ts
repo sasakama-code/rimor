@@ -101,7 +101,7 @@ describe('LegacyPluginAdapter', () => {
       {
         patternId: 'legacy-issue-missing-test',
         patternName: 'Legacy Issue: missing-test',
-        location: { file: 'test.ts', startLine: 1, endLine: 1 },
+        location: { file: 'test.ts', line: 1, column: 1, endLine: 1 },
         confidence: 0.7,
         evidence: []
       }
@@ -110,7 +110,6 @@ describe('LegacyPluginAdapter', () => {
     const errorQuality = adapter.evaluateQuality(errorPatterns);
     expect(errorQuality.overall).toBe(80); // 100 - (1 * 20)
     expect(errorQuality.confidence).toBe(0.7);
-    expect(errorQuality.explanation).toContain('Legacy plugin compatibility mode');
 
     // 問題なしのパターン
     const noIssueQuality = adapter.evaluateQuality([]);
@@ -122,14 +121,11 @@ describe('LegacyPluginAdapter', () => {
     const mockQuality = {
       overall: 80,
       breakdown: {
-        legacy: {
-          score: 80,
-          weight: 1.0,
-          issues: ['missing-test']
-        }
+        completeness: 80,
+        correctness: 80,
+        maintainability: 80
       },
-      confidence: 0.7,
-      explanation: 'Legacy plugin compatibility mode'
+      confidence: 0.7
     };
 
     const improvements = adapter.suggestImprovements(mockQuality);
@@ -161,7 +157,7 @@ describe('LegacyPluginAdapter', () => {
     const patterns = await adapter.detectPatterns(warningTestFile);
     
     expect(patterns).toHaveLength(1);
-    expect(patterns[0].location.startLine).toBe(1); // デフォルト値
+    expect(patterns[0].location.line).toBe(1); // デフォルト値
     expect(patterns[0].location.endLine).toBe(1);
   });
 

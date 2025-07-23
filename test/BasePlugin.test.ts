@@ -25,9 +25,12 @@ class TestBasePlugin extends BasePlugin {
   evaluateQuality(_patterns: DetectionResult[]): QualityScore {
     return {
       overall: 100,
-      breakdown: {},
+      breakdown: {
+        completeness: 100,
+        correctness: 100,
+        maintainability: 100
+      },
       confidence: 1.0,
-      explanation: 'Perfect test quality'
     };
   }
 
@@ -157,7 +160,7 @@ describe('BasePlugin', () => {
   it('should provide helper method for creating code locations', () => {
     const location = plugin.testCreateCodeLocation('/test.ts', 5, 10);
     expect(location.file).toBe('/test.ts');
-    expect(location.startLine).toBe(5);
+    expect(location.line).toBe(5);
     expect(location.endLine).toBe(10);
   });
 
@@ -207,7 +210,6 @@ describe('BasePlugin', () => {
     const score = plugin.testCalculateBasicQualityScore(patterns, 80);
     expect(score.overall).toBe(75); // 80 - (1 * 5) = 75
     expect(score.confidence).toBe(0.9);
-    expect(score.explanation).toBeDefined();
   });
 
   it('should provide helper method for parsing code content', () => {

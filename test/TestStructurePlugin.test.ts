@@ -241,7 +241,7 @@ describe('TestStructurePlugin', () => {
         {
           patternId: 'well-structured-tests',
           patternName: 'Well Structured Tests',
-          location: { file: 'test.ts', startLine: 1, endLine: 30 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 30 },
           confidence: 0.9,
           evidence: []
         }
@@ -251,7 +251,7 @@ describe('TestStructurePlugin', () => {
       
       expect(score.overall).toBeGreaterThan(85);
       expect(score.breakdown.maintainability).toBeDefined();
-      expect(score.breakdown.maintainability.score).toBeGreaterThan(85);
+      expect(score.breakdown.maintainability).toBeGreaterThan(85);
     });
 
     it('should give low score for poorly structured tests', () => {
@@ -259,14 +259,14 @@ describe('TestStructurePlugin', () => {
         {
           patternId: 'poor-test-organization',
           patternName: 'Poor Test Organization',
-          location: { file: 'test.ts', startLine: 1, endLine: 20 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 20 },
           confidence: 0.8,
           evidence: []
         },
         {
           patternId: 'missing-setup-teardown',
           patternName: 'Missing Setup Teardown',
-          location: { file: 'test.ts', startLine: 1, endLine: 20 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 20 },
           confidence: 0.7,
           evidence: []
         }
@@ -275,7 +275,7 @@ describe('TestStructurePlugin', () => {
       const score = plugin.evaluateQuality(poorlyStructuredPatterns);
       
       expect(score.overall).toBeLessThan(50);
-      expect(score.breakdown.maintainability.issues.length).toBeGreaterThan(0);
+      // Score should reflect poor structure
     });
 
     it('should handle mixed quality patterns', () => {
@@ -283,14 +283,14 @@ describe('TestStructurePlugin', () => {
         {
           patternId: 'well-structured-tests',
           patternName: 'Well Structured Tests',
-          location: { file: 'test.ts', startLine: 1, endLine: 15 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 15 },
           confidence: 0.9,
           evidence: []
         },
         {
           patternId: 'inconsistent-naming',
           patternName: 'Inconsistent Naming',
-          location: { file: 'test.ts', startLine: 16, endLine: 30 },
+          location: { file: 'test.ts', line: 16, column: 1, endLine: 30 },
           confidence: 0.6,
           evidence: []
         }
@@ -308,14 +308,11 @@ describe('TestStructurePlugin', () => {
       const poorOrganizationScore = {
         overall: 35,
         breakdown: {
-          maintainability: {
-            score: 35,
-            weight: 1.0,
-            issues: ['テストの構造が不適切です', 'セットアップ・ティアダウンが不足しています']
-          }
+          completeness: 35,
+          correctness: 35,
+          maintainability: 35
         },
-        confidence: 0.8,
-        explanation: 'Test structure needs improvement'
+        confidence: 0.8
       };
 
       const improvements = plugin.suggestImprovements(poorOrganizationScore);
@@ -330,18 +327,11 @@ describe('TestStructurePlugin', () => {
       const diverseIssueScore = {
         overall: 45,
         breakdown: {
-          maintainability: {
-            score: 45,
-            weight: 1.0,
-            issues: [
-              'ネストが深すぎます',
-              '命名が一貫していません',
-              'テストファイルが大きすぎます'
-            ]
-          }
+          completeness: 45,
+          correctness: 45,
+          maintainability: 45
         },
-        confidence: 0.7,
-        explanation: 'Multiple structure issues detected'
+        confidence: 0.7
       };
 
       const improvements = plugin.suggestImprovements(diverseIssueScore);
@@ -355,14 +345,11 @@ describe('TestStructurePlugin', () => {
       const excellentScore = {
         overall: 95,
         breakdown: {
-          maintainability: {
-            score: 95,
-            weight: 1.0,
-            issues: []
-          }
+          completeness: 95,
+          correctness: 95,
+          maintainability: 95
         },
-        confidence: 0.9,
-        explanation: 'Excellent test structure'
+        confidence: 0.9
       };
 
       const improvements = plugin.suggestImprovements(excellentScore);

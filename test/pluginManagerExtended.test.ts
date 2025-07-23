@@ -41,7 +41,7 @@ class MockNewPlugin implements ITestQualityPlugin {
       {
         patternId: 'new-pattern',
         patternName: 'New Pattern',
-        location: { file: 'test.ts', startLine: 1, endLine: 1 },
+        location: { file: 'test.ts', line: 1, column: 1, endLine: 1 },
         confidence: 0.9,
         evidence: [{ type: 'code', description: 'Test evidence' }]
       }
@@ -52,7 +52,7 @@ class MockNewPlugin implements ITestQualityPlugin {
     return {
       overall: 85,
       breakdown: {
-        test: { score: 85, weight: 1.0, issues: [] }
+        test: 85
       },
       confidence: 0.9,
       explanation: 'Good quality'
@@ -67,7 +67,7 @@ class MockNewPlugin implements ITestQualityPlugin {
         type: 'add',
         title: 'Add test',
         description: 'Add comprehensive test',
-        location: { file: 'test.ts', startLine: 1, endLine: 1 },
+        location: { file: 'test.ts', line: 1, column: 1, endLine: 1 },
         estimatedImpact: { scoreImprovement: 10, effortMinutes: 20 },
         automatable: false
       }

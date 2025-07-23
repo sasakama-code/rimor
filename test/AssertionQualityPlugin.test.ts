@@ -189,7 +189,7 @@ describe('AssertionQualityPlugin', () => {
         {
           patternId: 'high-quality-assertions',
           patternName: 'High Quality Assertions',
-          location: { file: 'test.ts', startLine: 1, endLine: 20 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 20 },
           confidence: 0.9,
           evidence: []
         }
@@ -199,7 +199,7 @@ describe('AssertionQualityPlugin', () => {
       
       expect(score.overall).toBeGreaterThan(80);
       expect(score.breakdown.correctness).toBeDefined();
-      expect(score.breakdown.correctness.score).toBeGreaterThan(80);
+      expect(score.breakdown.correctness).toBeGreaterThan(80);
     });
 
     it('should give low score for weak assertions', () => {
@@ -207,14 +207,14 @@ describe('AssertionQualityPlugin', () => {
         {
           patternId: 'weak-assertions',
           patternName: 'Weak Assertions',
-          location: { file: 'test.ts', startLine: 1, endLine: 10 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 10 },
           confidence: 0.8,
           evidence: []
         },
         {
           patternId: 'missing-assertions',
           patternName: 'Missing Assertions',
-          location: { file: 'test.ts', startLine: 11, endLine: 15 },
+          location: { file: 'test.ts', line: 11, column: 1, endLine: 15 },
           confidence: 0.9,
           evidence: []
         }
@@ -223,7 +223,7 @@ describe('AssertionQualityPlugin', () => {
       const score = plugin.evaluateQuality(weakPatterns);
       
       expect(score.overall).toBeLessThan(50);
-      expect(score.breakdown.correctness.issues.length).toBeGreaterThan(0);
+      expect(score.breakdown.correctness).toBeLessThan(50);
     });
 
     it('should calculate weighted scores properly', () => {
@@ -231,14 +231,14 @@ describe('AssertionQualityPlugin', () => {
         {
           patternId: 'high-quality-assertions',
           patternName: 'High Quality Assertions',
-          location: { file: 'test.ts', startLine: 1, endLine: 10 },
+          location: { file: 'test.ts', line: 1, column: 1, endLine: 10 },
           confidence: 0.9,
           evidence: []
         },
         {
           patternId: 'limited-assertion-variety',
           patternName: 'Limited Assertion Variety',
-          location: { file: 'test.ts', startLine: 11, endLine: 20 },
+          location: { file: 'test.ts', line: 11, column: 1, endLine: 20 },
           confidence: 0.7,
           evidence: []
         }
@@ -257,14 +257,11 @@ describe('AssertionQualityPlugin', () => {
       const weakAssertionScore = {
         overall: 30,
         breakdown: {
-          correctness: {
-            score: 30,
-            weight: 1.0,
-            issues: ['弱いアサーションが検出されました', 'アサーションが不足しています']
-          }
+          completeness: 30,
+          correctness: 30,
+          maintainability: 30
         },
-        confidence: 0.8,
-        explanation: 'Assertion quality needs improvement'
+        confidence: 0.8
       };
 
       const improvements = plugin.suggestImprovements(weakAssertionScore);
@@ -279,17 +276,11 @@ describe('AssertionQualityPlugin', () => {
       const diverseIssueScore = {
         overall: 40,
         breakdown: {
-          correctness: {
-            score: 40,
-            weight: 1.0,
-            issues: [
-              'アサーションの種類が限定的です',
-              'マジックナンバーがアサーションに含まれています'
-            ]
-          }
+          completeness: 40,
+          correctness: 40,
+          maintainability: 40
         },
-        confidence: 0.7,
-        explanation: 'Multiple assertion issues detected'
+        confidence: 0.7
       };
 
       const improvements = plugin.suggestImprovements(diverseIssueScore);
@@ -302,14 +293,11 @@ describe('AssertionQualityPlugin', () => {
       const excellentScore = {
         overall: 95,
         breakdown: {
-          correctness: {
-            score: 95,
-            weight: 1.0,
-            issues: []
-          }
+          completeness: 95,
+          correctness: 95,
+          maintainability: 95
         },
-        confidence: 0.9,
-        explanation: 'Excellent assertion quality'
+        confidence: 0.9
       };
 
       const improvements = plugin.suggestImprovements(excellentScore);
