@@ -140,11 +140,9 @@ export class AIOutputCommand {
 
     const trimmedPath = inputPath.trim();
 
-    // テスト環境の検出
-    const isTestEnvironment = process.env.NODE_ENV === 'test' || 
-                             process.env.JEST_WORKER_ID !== undefined ||
-                             trimmedPath.includes('/tmp/') ||
-                             trimmedPath.includes('/var/folders/');
+    // テスト環境の検出（より限定的）
+    const isTestTempFile = (trimmedPath.includes('/tmp/') && trimmedPath.includes('rimor-test')) ||
+                          (trimmedPath.includes('/var/folders/') && trimmedPath.includes('T/'));
 
     // 危険なパターンの検出（テスト環境では緩和）
     const dangerousPatterns = [
@@ -155,7 +153,7 @@ export class AIOutputCommand {
     ];
 
     // テスト環境以外では絶対パスと隠しファイルも制限
-    if (!isTestEnvironment) {
+    if (!isTestTempFile) {
       dangerousPatterns.push(
         /^\/|^\\|^[a-zA-Z]:[\\/]/g, // 絶対パス（制限する場合）
         /^\.|\/\./g, // 隠しファイル・ディレクトリ（一部制限）
@@ -174,7 +172,7 @@ export class AIOutputCommand {
     }
 
     // プロジェクトルート外へのアクセス防止（outputパスの場合）
-    if (parameterName === 'output' && !isTestEnvironment) {
+    if (parameterName === 'output' && !isTestTempFile) {
       const resolvedPath = path.resolve(trimmedPath);
       const projectRoot = process.cwd();
       
@@ -329,12 +327,10 @@ export class AIOutputCommand {
       const outputDir = path.dirname(safeOutputPath);
       
       // セキュリティ: 出力ディレクトリの検証（テスト環境では緩和）
-      const isTestEnvironment = process.env.NODE_ENV === 'test' || 
-                               process.env.JEST_WORKER_ID !== undefined ||
-                               outputDir.includes('/tmp/') ||
-                               outputDir.includes('/var/folders/');
+      const isTestTempFile = (outputDir.includes('/tmp/') && outputDir.includes('rimor-test')) ||
+                            (outputDir.includes('/var/folders/') && outputDir.includes('T/'));
       
-      if (!isTestEnvironment && !PathSecurity.validateProjectPath(outputDir, projectRoot)) {
+      if (!isTestTempFile && !PathSecurity.validateProjectPath(outputDir, projectRoot)) {
         throw new Error('出力ディレクトリがプロジェクト範囲外です');
       }
       
