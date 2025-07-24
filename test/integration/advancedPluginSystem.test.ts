@@ -180,7 +180,7 @@ describe('Advanced Plugin System Integration', () => {
     it('should respect plugin execution timeouts', async () => {
       class SlowPlugin extends TestCompletenessPlugin {
         async detectPatterns(): Promise<any[]> {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
           return [];
         }
       }
@@ -201,7 +201,7 @@ describe('Advanced Plugin System Integration', () => {
       const results = await pluginManager.runQualityPlugins(
         [testFile], 
         mockProjectContext, 
-        { timeout: 50 }
+        { timeout: 100 }
       );
 
       expect(results).toHaveLength(1);

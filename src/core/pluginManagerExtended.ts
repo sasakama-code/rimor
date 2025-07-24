@@ -31,7 +31,7 @@ export interface AnalysisOptions {
 export class PluginManagerExtended {
   private qualityPlugins: ITestQualityPlugin[] = [];
   private legacyPlugins: IPlugin[] = [];
-  private readonly defaultTimeout = 30000; // 30秒
+  private readonly defaultTimeout = 60000; // 60秒（テスト環境対応）
 
   // 新しいプラグインの登録
   registerQualityPlugin(plugin: ITestQualityPlugin): void {
@@ -174,11 +174,15 @@ export class PluginManagerExtended {
     timeoutMs: number, 
     timeoutMessage: string
   ): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    });
+    
     return Promise.race([
-      promise,
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
-      )
+      promise.finally(() => clearTimeout(timeoutId)),
+      timeoutPromise
     ]);
   }
 
@@ -217,13 +221,18 @@ export class PluginManagerExtended {
           const startTime = Date.now();
           
           // タイムアウト処理
+          let timeoutId: NodeJS.Timeout;
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('Plugin execution timeout')), 
+            timeoutId = setTimeout(() => reject(new Error('Plugin execution timeout')), 
               options.timeout || this.defaultTimeout);
           });
 
+          const detectPromise = plugin.detectPatterns(testFile).finally(() => {
+            clearTimeout(timeoutId);
+          });
+
           const detectionResults = await Promise.race([
-            plugin.detectPatterns(testFile),
+            detectPromise,
             timeoutPromise
           ]);
 

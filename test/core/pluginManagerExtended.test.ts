@@ -211,7 +211,7 @@ describe('PluginManagerExtended', () => {
 
       async detectPatterns(_testFile: TestFile): Promise<DetectionResult[]> {
         // 長時間の処理をシミュレート
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
         return [];
       }
 
@@ -233,7 +233,7 @@ describe('PluginManagerExtended', () => {
     manager.registerQualityPlugin(slowPlugin);
     
     // タイムアウト設定を短く設定
-    const result = await manager.runQualityAnalysis(mockTestFile, mockProjectContext, { timeout: 100 });
+    const result = await manager.runQualityAnalysis(mockTestFile, mockProjectContext, { timeout: 200 });
     
     // タイムアウトした場合はエラー結果が含まれる
     expect(result.pluginResults).toHaveLength(1);
