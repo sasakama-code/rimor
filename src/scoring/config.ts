@@ -395,7 +395,8 @@ export class ScoringConfigManager {
     const allowedKeys = new Set([
       'scoring', 'enabled', 'weights', 'gradeThresholds', 'options',
       'plugins', 'dimensions', 'enableTrends', 'enablePredictions',
-      'cacheResults', 'reportFormat', 'A', 'B', 'C', 'D', 'F'
+      'cacheResults', 'reportFormat', 'A', 'B', 'C', 'D', 'F',
+      'excludePatterns', 'output'
     ]);
     
     for (const [key, value] of Object.entries(obj)) {
