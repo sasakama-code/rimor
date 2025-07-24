@@ -119,7 +119,8 @@ describe('Formatters', () => {
     dimensionTrends: [
       {
         dimension: 'completeness',
-        trend: 'improving'
+        trend: 'improving',
+        changeRate: 5.2
       }
     ],
     recommendations: ['Continue current improvement trend']
