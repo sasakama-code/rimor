@@ -154,8 +154,8 @@ describe('Scoring System Integration', () => {
 
       // completenessの重みが高いため、90点の影響が大きくなることを確認
       expect(projectScore.overallScore).toBeGreaterThan(75);
-      expect(projectScore.dimensions.completeness.weight).toBe(2.0);
-      expect(projectScore.dimensions.correctness.weight).toBe(1.8);
+      expect(projectScore.dimensions!.completeness.weight).toBe(2.0);
+      expect(projectScore.dimensions!.correctness.weight).toBe(1.8);
     });
   });
 
@@ -243,12 +243,12 @@ describe('Scoring System Integration', () => {
       const projectScore = aggregator.buildCompleteHierarchy(mixedResults);
 
       // グレード分布の検証
-      expect(projectScore.distribution.A).toBe(1);
-      expect(projectScore.distribution.B).toBe(1);
-      expect(projectScore.distribution.F).toBeGreaterThanOrEqual(1); // 30点と0点がFに分類される
+      expect(projectScore.distribution!.A).toBe(1);
+      expect(projectScore.distribution!.B).toBe(1);
+      expect(projectScore.distribution!.F).toBeGreaterThanOrEqual(1); // 30点と0点がFに分類される
       
       // 分布の合計がファイル総数と一致することを確認
-      const totalInDistribution = Object.values(projectScore.distribution)
+      const totalInDistribution = Object.values(projectScore.distribution!)
         .reduce((sum, count) => sum + count, 0);
       expect(totalInDistribution).toBe(projectScore.totalFiles);
 

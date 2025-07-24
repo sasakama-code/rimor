@@ -60,9 +60,9 @@ describe('ScoreAggregator', () => {
       const result = aggregator.aggregateFilesToDirectory('src/', fileScores);
 
       // 各ディメンションが0-100の範囲内であることを確認
-      Object.values(result.dimensions).forEach(dimension => {
-        expect(dimension.value).toBeGreaterThanOrEqual(0);
-        expect(dimension.value).toBeLessThanOrEqual(100);
+      Object.values(result.dimensions!).forEach(dimension => {
+        expect(dimension.score).toBeGreaterThanOrEqual(0);
+        expect(dimension.score).toBeLessThanOrEqual(100);
         expect(dimension.weight).toBeGreaterThan(0);
       });
     });
@@ -91,7 +91,7 @@ describe('ScoreAggregator', () => {
         createMockDirectoryScore('lib/', 65, 3)        // 外部依存
       ];
 
-      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores);
+      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores, DEFAULT_WEIGHTS);
 
       expect(result.projectPath).toBe('.');
       expect(result.totalFiles).toBe(26); // 10+8+5+3
@@ -108,7 +108,7 @@ describe('ScoreAggregator', () => {
         createMockDirectoryScore('src/', 88, 15)
       ];
 
-      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores);
+      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores, DEFAULT_WEIGHTS);
 
       expect(result.projectPath).toBe('.');
       expect(result.totalFiles).toBe(15);
@@ -127,22 +127,22 @@ describe('ScoreAggregator', () => {
         createMockDirectoryScore('failing/', 45, 1)     // F grade files
       ];
 
-      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores);
+      const result = aggregator.aggregateDirectoriesToProject('.', directoryScores, DEFAULT_WEIGHTS);
 
-      expect(result.distribution.A).toBe(2);
-      expect(result.distribution.B).toBe(3);
-      expect(result.distribution.C).toBe(4);
-      expect(result.distribution.D).toBe(2);
-      expect(result.distribution.F).toBe(1);
+      expect(result.distribution!.A).toBe(2);
+      expect(result.distribution!.B).toBe(3);
+      expect(result.distribution!.C).toBe(4);
+      expect(result.distribution!.D).toBe(2);
+      expect(result.distribution!.F).toBe(1);
 
       // 分布の合計がファイル総数と一致することを確認
-      const totalInDistribution = Object.values(result.distribution)
+      const totalInDistribution = Object.values(result.distribution!)
         .reduce((sum, count) => sum + count, 0);
       expect(totalInDistribution).toBe(result.totalFiles);
     });
 
     test('should handle empty project', () => {
-      const result = aggregator.aggregateDirectoriesToProject('.', []);
+      const result = aggregator.aggregateDirectoriesToProject('.', [], DEFAULT_WEIGHTS);
 
       expect(result.projectPath).toBe('.');
       expect(result.totalFiles).toBe(0);
@@ -286,14 +286,20 @@ describe('ScoreAggregator', () => {
       filePath,
       overallScore: score,
       dimensions: {
-        completeness: { value: score, weight: 1.0, contributors: [], details: '' },
-        correctness: { value: score, weight: 1.5, contributors: [], details: '' },
-        maintainability: { value: score, weight: 0.8, contributors: [], details: '' },
-        performance: { value: score, weight: 0.5, contributors: [], details: '' },
-        security: { value: score, weight: 1.2, contributors: [], details: '' }
+        completeness: { score: score, weight: 1.0, contributors: [], details: '', issues: [] },
+        correctness: { score: score, weight: 1.5, contributors: [], details: '', issues: [] },
+        maintainability: { score: score, weight: 0.8, contributors: [], details: '', issues: [] },
+        performance: { score: score, weight: 0.5, contributors: [], details: '', issues: [] },
+        security: { score: score, weight: 1.2, contributors: [], details: '', issues: [] }
       },
       pluginScores: {},
-      grade: gradeCalculator.calculateGrade(score)
+      grade: gradeCalculator.calculateGrade(score),
+      weights: DEFAULT_WEIGHTS,
+      metadata: {
+        analysisTime: 0,
+        pluginResults: [],
+        issueCount: 0
+      }
     };
   }
 
@@ -306,17 +312,24 @@ describe('ScoreAggregator', () => {
     return {
       directoryPath: dirPath,
       overallScore: avgScore,
-      averageScore: avgScore,
       fileCount,
-      dimensions: {
-        completeness: { value: avgScore, weight: 1.0, contributors: [], details: '' },
-        correctness: { value: avgScore, weight: 1.5, contributors: [], details: '' },
-        maintainability: { value: avgScore, weight: 0.8, contributors: [], details: '' },
-        performance: { value: avgScore, weight: 0.5, contributors: [], details: '' },
-        security: { value: avgScore, weight: 1.2, contributors: [], details: '' }
+      fileScores,
+      dimensionScores: {
+        completeness: avgScore,
+        correctness: avgScore,
+        maintainability: avgScore,
+        performance: avgScore,
+        security: avgScore
       },
-      grade: gradeCalculator.calculateGrade(avgScore),
-      fileScores
+      averageScore: avgScore,
+      dimensions: {
+        completeness: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
+        correctness: { score: avgScore, weight: 1.5, contributors: [], details: '', issues: [] },
+        maintainability: { score: avgScore, weight: 0.8, contributors: [], details: '', issues: [] },
+        performance: { score: avgScore, weight: 0.5, contributors: [], details: '', issues: [] },
+        security: { score: avgScore, weight: 1.2, contributors: [], details: '', issues: [] }
+      },
+      grade: gradeCalculator.calculateGrade(avgScore)
     };
   }
 
