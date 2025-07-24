@@ -35,42 +35,95 @@ export class ScoreCalculatorV2 {
     pluginResults: PluginResult[],
     weights: WeightConfig = DEFAULT_WEIGHTS
   ): FileScore {
-    if (pluginResults.length === 0) {
+    try {
+      // 入力検証
+      if (!file || typeof file !== 'string') {
+        throw new Error('ファイルパスが無効です');
+      }
+
+      if (!Array.isArray(pluginResults)) {
+        throw new Error('プラグイン結果が配列ではありません');
+      }
+
+      if (pluginResults.length === 0) {
+        return this.createEmptyFileScore(file);
+      }
+
+      // 大量のプラグイン結果の警告
+      if (pluginResults.length > 100) {
+        console.warn(`ファイル ${file} のプラグイン結果が多数: ${pluginResults.length}件`);
+      }
+
+      // プラグイン結果の検証
+      const validPluginResults = pluginResults.filter((result, index) => {
+        if (!result || typeof result !== 'object') {
+          console.warn(`ファイル ${file} の無効なプラグイン結果をスキップ: インデックス ${index}`);
+          return false;
+        }
+        
+        if (typeof result.score !== 'number' || isNaN(result.score)) {
+          console.warn(`ファイル ${file} の無効なスコア値をスキップ: ${result.pluginId}`);
+          return false;
+        }
+        
+        return true;
+      });
+
+      if (validPluginResults.length === 0) {
+        console.warn(`ファイル ${file} に有効なプラグイン結果がありません`);
+        return this.createEmptyFileScore(file);
+      }
+
+      // 1. 各プラグインのスコアを重み付きで集約
+      const overallScore = this.calculateWeightedOverallScore(validPluginResults, weights);
+
+      // 2. ディメンション別スコアを計算
+      const dimensions = this.calculateDimensionScores(validPluginResults, weights);
+
+      // 3. プラグインスコア情報を整理
+      const pluginScores: { [pluginId: string]: { score: number; weight: number; issues: any[] } } = {};
+      
+      for (const result of validPluginResults) {
+        try {
+          pluginScores[result.pluginId] = {
+            score: typeof result.score === 'number' ? result.score : 0,
+            weight: typeof result.weight === 'number' ? result.weight : 1.0,
+            issues: Array.isArray(result.issues) ? result.issues : []
+          };
+        } catch (error) {
+          console.warn(`プラグイン ${result.pluginId} の情報整理でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        }
+      }
+
+      // 4. グレード判定
+      const grade = this.gradeCalculator.calculateGrade(overallScore);
+
+      return {
+        filePath: file,
+        overallScore: this.normalizeScore(overallScore),
+        dimensions,
+        grade,
+        weights,
+        metadata: {
+          analysisTime: Date.now(),
+          pluginResults: validPluginResults,
+          issueCount: validPluginResults.reduce((count, result) => {
+            try {
+              return count + (Array.isArray(result.issues) ? result.issues.length : 0);
+            } catch {
+              return count;
+            }
+          }, 0)
+        },
+        pluginScores
+      };
+      
+    } catch (error) {
+      console.error(`ファイル ${file} のスコア計算でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      
+      // エラー時のフォールバック
       return this.createEmptyFileScore(file);
     }
-
-    // 1. 各プラグインのスコアを重み付きで集約
-    const overallScore = this.calculateWeightedOverallScore(pluginResults, weights);
-
-    // 2. ディメンション別スコアを計算
-    const dimensions = this.calculateDimensionScores(pluginResults, weights);
-
-    // 3. プラグインスコア情報を整理
-    const pluginScores: { [pluginId: string]: { score: number; weight: number; issues: any[] } } = {};
-    for (const result of pluginResults) {
-      pluginScores[result.pluginId] = {
-        score: result.score,
-        weight: result.weight,
-        issues: result.issues
-      };
-    }
-
-    // 4. グレード判定
-    const grade = this.gradeCalculator.calculateGrade(overallScore);
-
-    return {
-      filePath: file,
-      overallScore: this.normalizeScore(overallScore),
-      dimensions,
-      grade,
-      weights,
-      metadata: {
-        analysisTime: Date.now(),
-        pluginResults,
-        issueCount: pluginResults.reduce((count, result) => count + result.issues.length, 0)
-      },
-      pluginScores
-    };
   }
 
   /**

@@ -51,14 +51,33 @@ export class ScoringConfigManager {
    */
   async loadScoringConfig(configDir: string): Promise<ScoringConfig> {
     try {
+      // ディレクトリパスのセキュリティ検証
+      if (!this.isSecurePath(configDir)) {
+        console.warn('設定ディレクトリのパスが安全でないため、デフォルト設定を使用します');
+        return this.getDefaultScoringConfig();
+      }
+
       const configPath = await this.findConfigFile(configDir);
       
       if (!configPath) {
         return this.getDefaultScoringConfig();
       }
 
+      // 設定ファイルパスのセキュリティ検証
+      if (!this.isSecurePath(configPath)) {
+        console.warn('設定ファイルのパスが安全でないため、デフォルト設定を使用します');
+        return this.getDefaultScoringConfig();
+      }
+
       const configContent = fs.readFileSync(configPath, 'utf-8');
-      const config = JSON.parse(configContent);
+      
+      // ファイルサイズ制限（1MB）
+      if (configContent.length > 1024 * 1024) {
+        console.warn('設定ファイルが大きすぎるため、デフォルト設定を使用します');
+        return this.getDefaultScoringConfig();
+      }
+
+      const config = this.secureJsonParse(configContent);
       
       const scoringSection = config.scoring;
       
@@ -69,7 +88,7 @@ export class ScoringConfigManager {
       return this.buildScoringConfig(scoringSection);
       
     } catch (error) {
-      console.warn(`スコアリング設定の読み込みでエラーが発生しました: ${error}`);
+      console.warn(`スコアリング設定の読み込みでエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
       return this.getDefaultScoringConfig();
     }
   }
@@ -80,7 +99,23 @@ export class ScoringConfigManager {
    * @param scoringConfig スコアリング設定
    */
   async saveScoringConfig(configDir: string, scoringConfig: ScoringConfig): Promise<void> {
+    // ディレクトリパスのセキュリティ検証
+    if (!this.isSecurePath(configDir)) {
+      throw new Error('設定ディレクトリのパスが安全ではありません');
+    }
+
     const configPath = path.join(configDir, 'rimor.config.json');
+    
+    // 設定ファイルパスのセキュリティ検証
+    if (!this.isSecurePath(configPath)) {
+      throw new Error('設定ファイルのパスが安全ではありません');
+    }
+
+    // 設定の妥当性検証
+    const validation = this.validateScoringConfig(scoringConfig);
+    if (!validation.isValid) {
+      throw new Error(`設定が無効です: ${validation.errors.join(', ')}`);
+    }
     
     let existingConfig = {};
     
@@ -88,9 +123,17 @@ export class ScoringConfigManager {
     if (fs.existsSync(configPath)) {
       try {
         const existingContent = fs.readFileSync(configPath, 'utf-8');
-        existingConfig = JSON.parse(existingContent);
+        
+        // ファイルサイズ制限（1MB）
+        if (existingContent.length > 1024 * 1024) {
+          console.warn('既存設定ファイルが大きすぎるため、新規作成します');
+          existingConfig = {};
+        } else {
+          existingConfig = this.secureJsonParse(existingContent);
+        }
       } catch (error) {
-        console.warn(`既存設定ファイルの読み込みでエラー: ${error}`);
+        console.warn(`既存設定ファイルの読み込みでエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        existingConfig = {};
       }
     }
 
@@ -105,7 +148,13 @@ export class ScoringConfigManager {
       fs.mkdirSync(configDir, { recursive: true });
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(updatedConfig, null, 2));
+    // JSON出力のサイズ制限
+    const configJson = JSON.stringify(updatedConfig, null, 2);
+    if (configJson.length > 1024 * 1024) {
+      throw new Error('設定ファイルが制限サイズを超過しています');
+    }
+
+    fs.writeFileSync(configPath, configJson);
   }
 
   /**
@@ -276,6 +325,130 @@ export class ScoringConfigManager {
   // === プライベートメソッド ===
 
   /**
+   * パス検証によるセキュリティチェック
+   * パストラバーサル攻撃を防ぐための検証
+   */
+  private isSecurePath(inputPath: string): boolean {
+    try {
+      const resolvedPath = path.resolve(inputPath);
+      const normalizedPath = path.normalize(inputPath);
+      
+      // パストラバーサル攻撃の検出
+      if (normalizedPath.includes('..') || normalizedPath.includes('~')) {
+        return false;
+      }
+      
+      // 絶対パスの制限（プロジェクトルート配下のみ許可）
+      const cwd = process.cwd();
+      if (!resolvedPath.startsWith(cwd)) {
+        return false;
+      }
+      
+      // 危険なファイル名パターンの検出
+      const dangerousPatterns = [
+        /\/etc\//, /\/proc\//, /\/sys\//, /\/dev\//,  // システムディレクトリ
+        /\.\.\//, /~\//, /\$\{/, /\$\(/,             // シェル/環境変数
+        /\x00/, /\x01-\x1f/                          // 制御文字
+      ];
+      
+      return !dangerousPatterns.some(pattern => pattern.test(resolvedPath));
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * JSON設定の安全な解析
+   * セキュリティリスクのある値を検出・無害化
+   */
+  private secureJsonParse(content: string): any {
+    try {
+      // 基本的なJSON解析
+      const parsed = JSON.parse(content);
+      
+      // オブジェクトでない場合は拒否
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('設定ファイルはオブジェクト形式である必要があります');
+      }
+      
+      // 危険なプロパティの除去
+      return this.sanitizeConfigObject(parsed);
+    } catch (error) {
+      throw new Error(`設定ファイルの解析に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    }
+  }
+
+  /**
+   * 設定オブジェクトの無害化
+   */
+  private sanitizeConfigObject(obj: any, depth = 0): any {
+    // 循環参照・深すぎるネストの防止
+    if (depth > 10) {
+      throw new Error('設定ファイルの構造が複雑すぎます');
+    }
+    
+    if (typeof obj !== 'object' || obj === null) {
+      return this.sanitizeValue(obj);
+    }
+    
+    const sanitized: any = {};
+    const allowedKeys = new Set([
+      'scoring', 'enabled', 'weights', 'gradeThresholds', 'options',
+      'plugins', 'dimensions', 'enableTrends', 'enablePredictions',
+      'cacheResults', 'reportFormat', 'A', 'B', 'C', 'D', 'F'
+    ]);
+    
+    for (const [key, value] of Object.entries(obj)) {
+      // キー名の検証
+      if (typeof key !== 'string' || key.length > 100) {
+        continue; // 危険なキーは無視
+      }
+      
+      // 危険なキーパターンの検出
+      if (key.startsWith('__') || key.includes('constructor') || key.includes('prototype')) {
+        continue;
+      }
+      
+      // 許可されたキーのみ処理（設定の文脈外では制限）
+      if (depth === 0 || allowedKeys.has(key) || key.match(/^[a-zA-Z][a-zA-Z0-9_-]*$/)) {
+        sanitized[key] = this.sanitizeConfigObject(value, depth + 1);
+      }
+    }
+    
+    return sanitized;
+  }
+
+  /**
+   * 値の無害化
+   */
+  private sanitizeValue(value: any): any {
+    if (typeof value === 'string') {
+      // 文字列長の制限
+      if (value.length > 1000) {
+        return value.substring(0, 1000);
+      }
+      
+      // 危険なパターンの除去
+      return value.replace(/[<>'"&\x00-\x1f]/g, '');
+    }
+    
+    if (typeof value === 'number') {
+      // 数値の範囲制限
+      if (!Number.isFinite(value)) {
+        return 0;
+      }
+      return Math.max(-10000, Math.min(10000, value));
+    }
+    
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    
+    // その他の型は無視
+    return null;
+  }
+
+  /**
    * デフォルトスコアリング設定を取得
    */
   private getDefaultScoringConfig(): ScoringConfig {
@@ -299,15 +472,37 @@ export class ScoringConfigManager {
     const configFilenames = ['rimor.config.json', '.rimorrc.json', '.rimorrc'];
     let currentDir = path.resolve(startDir);
     const rootDir = path.parse(currentDir).root;
+    const projectRoot = process.cwd();
 
-    while (currentDir !== rootDir) {
+    // 最大検索階層を制限（無限ループ防止）
+    let maxLevels = 10;
+
+    while (currentDir !== rootDir && maxLevels > 0) {
+      // セキュリティ: プロジェクトルート配下のみ検索
+      if (!currentDir.startsWith(projectRoot)) {
+        break;
+      }
+
       for (const filename of configFilenames) {
         const configPath = path.join(currentDir, filename);
-        if (fs.existsSync(configPath)) {
-          return configPath;
+        
+        // パスのセキュリティ検証
+        if (this.isSecurePath(configPath) && fs.existsSync(configPath)) {
+          // ファイルの基本チェック
+          try {
+            const stats = fs.statSync(configPath);
+            // 通常ファイル・サイズ制限（1MB）・読み取り権限の確認
+            if (stats.isFile() && stats.size < 1024 * 1024) {
+              return configPath;
+            }
+          } catch (error) {
+            // ファイル情報取得エラーは無視して次へ
+            continue;
+          }
         }
       }
       currentDir = path.dirname(currentDir);
+      maxLevels--;
     }
 
     return null;

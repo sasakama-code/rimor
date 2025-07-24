@@ -130,38 +130,119 @@ export class ScoreAggregator {
       batchSize?: number;
       weights?: WeightConfig;
       onProgress?: (processed: number, total: number) => void;
+      maxMemoryUsage?: number; // MB単位
+      skipOnError?: boolean;
     } = {}
   ): ProjectScore {
     const { 
       batchSize = 100, 
       weights = DEFAULT_WEIGHTS,
-      onProgress 
+      onProgress,
+      maxMemoryUsage = 512, // デフォルト512MB
+      skipOnError = true
     } = options;
 
     const totalFiles = pluginResultsMap.size;
     let processedFiles = 0;
+    let errorCount = 0;
+    const failedFiles: string[] = [];
 
-    // バッチ処理でファイルスコアを生成
-    const fileScores: FileScore[] = [];
-    const fileEntries = Array.from(pluginResultsMap.entries());
-
-    for (let i = 0; i < fileEntries.length; i += batchSize) {
-      const batch = fileEntries.slice(i, i + batchSize);
-      
-      for (const [filePath, pluginResults] of batch) {
-        const fileScore = this.calculator.calculateFileScore(filePath, pluginResults, weights);
-        fileScores.push(fileScore);
-        processedFiles++;
-
-        if (onProgress) {
-          onProgress(processedFiles, totalFiles);
-        }
-      }
+    // 大規模プロジェクトの検出とパラメータ調整
+    if (totalFiles > 10000) {
+      console.warn(`大規模プロジェクト検出: ${totalFiles}ファイル - バッチサイズを調整します`);
+      const adjustedBatchSize = Math.max(50, Math.min(batchSize, 200));
+      options.batchSize = adjustedBatchSize;
     }
 
-    // ディレクトリとプロジェクトレベルの集約
-    const directoryScores = this.aggregateByDirectoryStructure(fileScores);
-    return this.aggregateDirectoriesToProject('.', directoryScores, weights);
+    // メモリ使用量監視
+    const initialMemory = this.getMemoryUsage();
+    
+    try {
+      // バッチ処理でファイルスコアを生成
+      const fileScores: FileScore[] = [];
+      const fileEntries = Array.from(pluginResultsMap.entries());
+
+      for (let i = 0; i < fileEntries.length; i += batchSize) {
+        const batch = fileEntries.slice(i, i + batchSize);
+        
+        // メモリ使用量チェック
+        const currentMemory = this.getMemoryUsage();
+        if (currentMemory - initialMemory > maxMemoryUsage) {
+          console.warn(`メモリ使用量が制限を超過: ${currentMemory - initialMemory}MB`);
+          // ガベージコレクションの強制実行（可能な場合）
+          if (global.gc) {
+            global.gc();
+          }
+        }
+        
+        for (const [filePath, pluginResults] of batch) {
+          try {
+            // ファイルサイズ制限チェック（プラグイン結果の量で推定）
+            if (pluginResults.length > 1000) {
+              console.warn(`ファイル ${filePath} のプラグイン結果が多すぎます: ${pluginResults.length}件`);
+              if (!skipOnError) {
+                throw new Error(`ファイル ${filePath} の処理がスキップされました（プラグイン結果過多）`);
+              }
+              failedFiles.push(filePath);
+              continue;
+            }
+
+            const fileScore = this.calculator.calculateFileScore(filePath, pluginResults, weights);
+            fileScores.push(fileScore);
+            processedFiles++;
+
+            if (onProgress) {
+              onProgress(processedFiles, totalFiles);
+            }
+          } catch (error) {
+            errorCount++;
+            failedFiles.push(filePath);
+            
+            if (skipOnError) {
+              console.warn(`ファイル ${filePath} の処理中にエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+              continue;
+            } else {
+              throw new Error(`ファイル ${filePath} の処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+            }
+          }
+        }
+
+        // バッチ間で小休止（メモリ圧迫を緩和）
+        if (i > 0 && i % (batchSize * 10) === 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+
+      // エラー統計の出力
+      if (errorCount > 0) {
+        console.warn(`処理完了: ${processedFiles}/${totalFiles}ファイル成功, ${errorCount}ファイルエラー`);
+        if (failedFiles.length > 0) {
+          console.warn(`失敗したファイル（最初の10件）: ${failedFiles.slice(0, 10).join(', ')}`);
+        }
+      }
+
+      // 最小限のファイルが処理できない場合はエラー
+      if (fileScores.length === 0) {
+        throw new Error('すべてのファイルの処理に失敗しました');
+      }
+
+      // ディレクトリとプロジェクトレベルの集約
+      const directoryScores = this.aggregateByDirectoryStructure(fileScores);
+      return this.aggregateDirectoriesToProject('.', directoryScores, weights);
+      
+    } catch (error) {
+      const memoryAfter = this.getMemoryUsage();
+      console.error(`段階的集約処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      console.error(`メモリ使用量: ${initialMemory}MB -> ${memoryAfter}MB`);
+      
+      // フォールバック: エラー時は基本的な集約を試行
+      try {
+        console.warn('フォールバック: 基本的な集約処理を実行中...');
+        return this.buildCompleteHierarchy(pluginResultsMap, weights);
+      } catch (fallbackError) {
+        throw new Error(`集約処理とフォールバックの両方に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      }
+    }
   }
 
   /**
@@ -322,5 +403,18 @@ export class ScoreAggregator {
     }
     
     return distribution;
+  }
+
+  /**
+   * 現在のメモリ使用量を取得（MB）
+   */
+  private getMemoryUsage(): number {
+    try {
+      const usage = process.memoryUsage();
+      return Math.round(usage.heapUsed / 1024 / 1024); // bytes to MB
+    } catch (error) {
+      console.warn('メモリ使用量の取得に失敗:', error);
+      return 0;
+    }
   }
 }
