@@ -36,3 +36,6 @@ docs/dev/
 # Claude Code
 CLAUDE.md
 .claude
+
+# Generated files
+src/plugins/generated/
