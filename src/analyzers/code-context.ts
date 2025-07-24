@@ -402,7 +402,6 @@ export class AdvancedCodeContextAnalyzer {
     if (stats.isSymbolicLink()) {
       throw new Error('セキュリティ: シンボリックリンクへのアクセスは許可されていません');
     }
-    
     return fs.readFileSync(filePath, 'utf-8');
   }
 
@@ -501,7 +500,6 @@ export class AdvancedCodeContextAnalyzer {
 
     // セキュリティ: 正規表現の実行時間制限
     const REGEX_TIMEOUT_MS = 100;
-
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
@@ -1031,6 +1029,8 @@ export class AdvancedCodeContextAnalyzer {
   }
 
 
+=======
+>>>>>>> aa3be86 (feat: Phase 2 - 高度なコードコンテキスト分析器を実装)
   private async findTestFiles(sourceFile: string, projectPath: string): Promise<string[]> {
     const testFiles: string[] = [];
     const baseName = path.basename(sourceFile, path.extname(sourceFile));
