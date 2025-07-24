@@ -46,7 +46,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'text',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
 
@@ -60,7 +64,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'text',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
 
@@ -74,7 +82,11 @@ describe('CLI', () => {
         verbose: true,
         format: 'text',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
 
@@ -88,7 +100,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'json',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
 
@@ -102,7 +118,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'json',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
   });
@@ -180,7 +200,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'text',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
 
@@ -194,7 +218,11 @@ describe('CLI', () => {
         verbose: false,
         format: 'text',
         performance: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
+        scoring: false,
+        reportType: 'summary',
+        noColor: false,
+        outputFile: undefined
       });
     });
   });
