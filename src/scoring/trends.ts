@@ -235,14 +235,26 @@ export class TrendAnalysisEngine {
       periodCounts[i] > 0 ? sum / periodCounts[i] : 0
     );
 
-    // 季節性の強度を計算
+    // 季節性の強度を統計的により厳密に計算
     const overallMean = values.reduce((a, b) => a + b, 0) / values.length;
-    const totalVariance = values.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0);
-    const seasonalVariance = pattern.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0) * periodCounts.reduce((a, b) => a + b, 0) / periodLength;
+    const overallVariance = values.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0) / values.length;
     
-    const strength = totalVariance > 0 ? seasonalVariance / totalVariance : 0;
-    const hasPattern = strength > 0.3;
-    const confidence = Math.min(1, strength * 2);
+    // 期間平均の分散を計算（統計的に正規化）
+    const patternVariance = pattern.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0) / periodLength;
+    
+    // 期間内データ数の最小値を確認（不均等データへの対応）
+    const minCountPerPeriod = Math.min(...periodCounts.filter(c => c > 0));
+    
+    // 統計的強度: 期間平均の分散 / 全体分散、ただしデータ数で調整
+    const rawStrength = overallVariance > 0 ? patternVariance / overallVariance : 0;
+    
+    // データ数が少ない場合の調整（偽陽性を減らす）
+    const dataCountAdjustment = Math.min(1, minCountPerPeriod / 3); // 期間あたり最低3データで満点
+    const strength = rawStrength * dataCountAdjustment;
+    
+    // より厳格な閾値（0.5）でパターン判定
+    const hasPattern = strength > 0.5 && minCountPerPeriod >= 2;
+    const confidence = Math.min(1, strength * 1.5);
 
     return {
       hasPattern,
