@@ -37,5 +37,6 @@ docs/dev/
 CLAUDE.md
 .claude
 
-# Generated files
-src/plugins/generated/
+# Generated files - ignore plugin files but keep directory structure
+src/plugins/generated/*.ts
+!src/plugins/generated/.gitkeep
