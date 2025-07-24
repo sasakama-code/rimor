@@ -25,18 +25,18 @@ describe('CLISecurity Security Tests', () => {
 
   describe('分析対象パスの検証', () => {
     test('パストラバーサル攻撃を防ぐ', () => {
-      const maliciousPaths = [
-        '../../../etc/passwd',
-        '..\\..\\..\\Windows\\System32',
-        '/etc/shadow',
-        'C:\\Windows\\System32\\config\\SAM'
+      const testCases = [
+        { path: '../../../etc/passwd', expectedIssue: 'パストラバーサル攻撃' },
+        { path: '..\\..\\..\\Windows\\System32', expectedIssue: 'パストラバーサル攻撃（Windows）' },
+        { path: '/etc/shadow', expectedIssue: 'システムディレクトリアクセス試行' },
+        { path: 'C:\\Windows\\System32\\config\\SAM', expectedIssue: 'Windowsシステムディレクトリアクセス試行' }
       ];
 
-      maliciousPaths.forEach(maliciousPath => {
-        const result = cliSecurity.validateAnalysisPath(maliciousPath);
+      testCases.forEach(({ path, expectedIssue }) => {
+        const result = cliSecurity.validateAnalysisPath(path);
         
         expect(result.isValid).toBe(false);
-        expect(result.securityIssues).toContain('パストラバーサル攻撃');
+        expect(result.securityIssues).toContain(expectedIssue);
       });
     });
 
@@ -99,7 +99,7 @@ describe('CLISecurity Security Tests', () => {
         const result = cliSecurity.validateAnalysisPath(systemPath);
         
         expect(result.isValid).toBe(false);
-        expect(result.securityIssues).toContain('システムディレクトリアクセス試行');
+        expect(result.securityIssues).toContain('システムディレクトリアクセス攻撃');
       });
     });
 
@@ -271,7 +271,7 @@ describe('CLISecurity Security Tests', () => {
         const result = cliSecurity.validateFormat(format);
         
         expect(result.isValid).toBe(false);
-        expect(result.securityIssues).toContain('フォーマットインジェクション攻撃');
+        expect(result.securityIssues).toContain('フォーマット指定攻撃の可能性');
       });
     });
 

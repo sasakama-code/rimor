@@ -115,6 +115,14 @@ export class ConfigSecurity {
       // 構造検証とサニタイゼーション
       const validationResult = this.validateAndSanitizeConfig(parseResult.data);
       
+      // parseResultのsecurityIssuesを結果にマージ
+      if (parseResult.securityIssues && parseResult.securityIssues.length > 0) {
+        validationResult.securityIssues = [
+          ...validationResult.securityIssues,
+          ...parseResult.securityIssues
+        ];
+      }
+      
       return validationResult;
 
     } catch (error) {
