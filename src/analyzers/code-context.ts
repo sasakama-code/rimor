@@ -11,6 +11,7 @@ import {
   ScopeInfo, 
   RelatedFileInfo 
 } from './types';
+import { errorHandler, ErrorType } from '../utils/errorHandler';
 
 /**
  * 高度なコードコンテキスト分析器 v0.5.0
@@ -35,12 +36,24 @@ export class AdvancedCodeContextAnalyzer {
       const filePath = path.resolve(projectPath, issue.file || '');
       const language = this.detectLanguage(filePath);
       
+      // セキュリティ: パストラバーサル攻撃を防ぐ
+      if (!this.validateProjectPath(filePath, projectPath)) {
+        errorHandler.handleError(
+          new Error(`不正なファイルパス '${issue.file}' がプロジェクト範囲外にアクセスしようとしました`),
+          ErrorType.PERMISSION_DENIED,
+          'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
+          { filePath: issue.file, projectPath },
+          true
+        );
+        return this.createEmptyContext(language, startTime);
+      }
+      
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
         return this.createEmptyContext(language, startTime);
       }
 
-      const fileContent = await this.readFileContent(filePath);
+      const fileContent = await this.readFileContent(filePath, projectPath);
       const targetLine = (issue.line || 1) - 1;
       const contextLines = Math.min(
         options.contextLines || this.DEFAULT_CONTEXT_LINES,
@@ -100,7 +113,13 @@ export class AdvancedCodeContextAnalyzer {
       };
 
     } catch (error) {
-      console.warn(`コードコンテキスト分析エラー: ${error}`);
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        'コードコンテキスト分析でエラーが発生しました',
+        { filePath: issue.file, projectPath },
+        true
+      );
       return this.createEmptyContext(this.detectLanguage(issue.file || ''), startTime);
     }
   }
@@ -119,7 +138,13 @@ export class AdvancedCodeContextAnalyzer {
         return this.extractPythonFunctions(fileContent, lines);
       }
     } catch (error) {
-      console.warn(`関数抽出エラー: ${error}`);
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        '関数抽出処理でエラーが発生しました',
+        { language, contentLength: fileContent.length },
+        true
+      );
     }
 
     return functions;
@@ -244,7 +269,13 @@ export class AdvancedCodeContextAnalyzer {
       });
 
     } catch (error) {
-      console.warn(`スコープ分析エラー: ${error}`);
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        'スコープ分析でエラーが発生しました',
+        { contentLength: fileContent.length },
+        true
+      );
     }
 
     return scopes;
@@ -262,7 +293,7 @@ export class AdvancedCodeContextAnalyzer {
     const maxFiles = options.maxRelatedFiles || 10;
 
     try {
-      const targetContent = await this.readFileContent(targetFile);
+      const targetContent = await this.readFileContent(targetFile, projectPath);
       const imports = await this.extractImports(targetContent, true);
       
       // インポートベースの関連ファイル検出
@@ -331,7 +362,13 @@ export class AdvancedCodeContextAnalyzer {
       });
 
     } catch (error) {
-      console.warn(`関連コード検出エラー: ${error}`);
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        '関連コード検出でエラーが発生しました',
+        { targetFile, projectPath },
+        true
+      );
     }
 
     return relatedFiles
@@ -341,11 +378,29 @@ export class AdvancedCodeContextAnalyzer {
 
   // プライベートメソッド群
 
-  private async readFileContent(filePath: string): Promise<string> {
+  private async readFileContent(filePath: string, projectPath?: string): Promise<string> {
+    // セキュリティ: ファイルタイプ検証
+    const ext = path.extname(filePath).toLowerCase();
+    const allowedExtensions = ['.ts', '.js', '.tsx', '.jsx', '.py', '.java', '.json', '.md'];
+    if (!allowedExtensions.includes(ext)) {
+      throw new Error(`サポートされていないファイル形式: ${ext}`);
+    }
+
+    // セキュリティ: パス検証（プロジェクトパスが提供された場合）
+    if (projectPath && !this.validateProjectPath(filePath, projectPath)) {
+      throw new Error('セキュリティ: ファイルパスがプロジェクト範囲外です');
+    }
+
     const stats = fs.statSync(filePath);
     if (stats.size > this.MAX_FILE_SIZE) {
       throw new Error(`ファイルサイズが制限を超えています: ${stats.size} bytes`);
     }
+    
+    // セキュリティ: シンボリックリンクのチェック
+    if (stats.isSymbolicLink()) {
+      throw new Error('セキュリティ: シンボリックリンクへのアクセスは許可されていません');
+    }
+    
     return fs.readFileSync(filePath, 'utf-8');
   }
 
@@ -434,6 +489,7 @@ export class AdvancedCodeContextAnalyzer {
   private async extractJSTSFunctions(fileContent: string, lines: string[]): Promise<FunctionInfo[]> {
     const functions: FunctionInfo[] = [];
     
+    // セキュリティ: 正規表現DoS攻撃を防ぐため、シンプルな正規表現を使用
     const functionRegexes = [
       /(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/,
       /(?:async\s+)?(\w+)\s*:\s*\(([^)]*)\)\s*=>/,
@@ -441,12 +497,17 @@ export class AdvancedCodeContextAnalyzer {
       /(?:async\s+)?(\w+)\s*\(([^)]*)\)\s*:\s*([^{]+)\s*\{/, // TypeScript method
     ];
 
+    // セキュリティ: 正規表現の実行時間制限
+    const REGEX_TIMEOUT_MS = 100;
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
       for (const regex of functionRegexes) {
-        const match = line.match(regex);
-        if (match) {
+        try {
+          // セキュリティ: 正規表現実行時間の制限
+          const match = this.safeRegexMatch(line, regex, REGEX_TIMEOUT_MS);
+          if (match) {
           const isAsync = line.includes('async');
           const parameters = match[2] ? 
             match[2].split(',').map(p => p.trim().split(':')[0].trim()).filter(p => p) : 
@@ -487,6 +548,17 @@ export class AdvancedCodeContextAnalyzer {
           });
           
           break;
+          }
+        } catch (error) {
+          // 正規表現実行エラーをログに記録し、処理を続行
+          errorHandler.handleError(
+            error,
+            ErrorType.PARSE_ERROR,
+            '正規表現実行でエラーが発生しました',
+            { line: i + 1, regex: regex.source },
+            true
+          );
+          continue;
         }
       }
     }
@@ -898,22 +970,94 @@ export class AdvancedCodeContextAnalyzer {
       if (importPath.startsWith('.')) {
         // 相対パス
         const resolved = path.resolve(path.dirname(fromFile), importPath);
+        
+        // セキュリティ: パストラバーサル攻撃を防ぐ
+        if (!this.validateProjectPath(resolved, projectPath)) {
+          return null;
+        }
+        
         const extensions = ['.ts', '.js', '.tsx', '.jsx'];
         
         for (const ext of extensions) {
           const withExt = resolved + ext;
+          if (!this.validateProjectPath(withExt, projectPath)) {
+            continue; // セキュリティチェック失敗
+          }
           if (fs.existsSync(withExt)) return withExt;
         }
         
         // index.*を試す
         for (const ext of extensions) {
           const indexFile = path.join(resolved, `index${ext}`);
+          if (!this.validateProjectPath(indexFile, projectPath)) {
+            continue; // セキュリティチェック失敗
+          }
           if (fs.existsSync(indexFile)) return indexFile;
         }
       }
       return null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * セキュリティ: 正規表現DoS攻撃を防ぐための安全な正規表現実行
+   */
+  private safeRegexMatch(text: string, regex: RegExp, timeoutMs: number = 100): RegExpMatchArray | null {
+    // セキュリティ: 入力文字列の長さ制限
+    if (text.length > 10000) {
+      errorHandler.handleError(
+        new Error('入力文字列が長すぎます'),
+        ErrorType.PARSE_ERROR,
+        '正規表現実行: 入力文字列の長さ制限を超えました',
+        { textLength: text.length },
+        true
+      );
+      return null;
+    }
+
+    const startTime = Date.now();
+    try {
+      const result = text.match(regex);
+      const executionTime = Date.now() - startTime;
+      
+      // 実行時間の監視
+      if (executionTime > timeoutMs) {
+        errorHandler.handleError(
+          new Error('正規表現実行時間超過'),
+          ErrorType.TIMEOUT,
+          '正規表現実行時間が制限を超えました',
+          { executionTime, timeoutMs },
+          true
+        );
+      }
+      
+      return result;
+    } catch (error) {
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        '正規表現実行でエラーが発生しました',
+        { regexSource: regex.source },
+        true
+      );
+      return null;
+    }
+  }
+
+  /**
+   * セキュリティ: パストラバーサル攻撃を防ぐためのパス検証
+   */
+  private validateProjectPath(resolvedPath: string, projectRoot: string): boolean {
+    try {
+      const normalizedProjectRoot = path.resolve(projectRoot);
+      const normalizedResolvedPath = path.resolve(resolvedPath);
+      
+      // プロジェクトルート内にあることを確認
+      return normalizedResolvedPath.startsWith(normalizedProjectRoot);
+    } catch {
+      return false;
     }
   }
 
@@ -951,7 +1095,7 @@ export class AdvancedCodeContextAnalyzer {
     const similarFiles: Array<{ path: string; similarity: number }> = [];
     
     try {
-      const targetContent = await this.readFileContent(targetFile);
+      const targetContent = await this.readFileContent(targetFile, projectPath);
       const targetWords = this.extractWords(targetContent);
       
       // プロジェクト内の他のファイルを検索（簡単な実装）
@@ -961,7 +1105,7 @@ export class AdvancedCodeContextAnalyzer {
         if (file === targetFile) continue;
         
         try {
-          const fileContent = await this.readFileContent(file);
+          const fileContent = await this.readFileContent(file, projectPath);
           const fileWords = this.extractWords(fileContent);
           const similarity = this.calculateSimilarity(targetWords, fileWords);
           
@@ -973,7 +1117,13 @@ export class AdvancedCodeContextAnalyzer {
         }
       }
     } catch (error) {
-      console.warn(`類似ファイル検索エラー: ${error}`);
+      errorHandler.handleError(
+        error,
+        ErrorType.PARSE_ERROR,
+        '類似ファイル検索でエラーが発生しました',
+        { targetFile, projectPath },
+        true
+      );
     }
 
     return similarFiles

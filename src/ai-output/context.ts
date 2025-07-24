@@ -491,11 +491,88 @@ export class ContextIntegrator {
   }
 
   private calculateContextSize(issueContext: ExtractedCodeContext, relatedFiles: any[]): number {
-    const contextJson = JSON.stringify({
-      issueContext,
-      relatedFiles: relatedFiles.map(f => ({ ...f, preview: f.preview.substring(0, 500) }))
-    });
-    return Buffer.byteLength(contextJson, 'utf8');
+    try {
+      // セキュリティ: 循環参照を防ぐための安全なJSON変換
+      const safeContext = this.createCircularSafeObject({
+        issueContext: this.sanitizeIssueContext(issueContext),
+        relatedFiles: relatedFiles.map(f => ({
+          path: f.path,
+          relationship: f.relationship,
+          relevanceScore: f.relevanceScore,
+          preview: typeof f.preview === 'string' ? f.preview.substring(0, 500) : ''
+        }))
+      });
+      
+      const contextJson = JSON.stringify(safeContext);
+      return Buffer.byteLength(contextJson, 'utf8');
+    } catch (error) {
+      console.warn('コンテキストサイズ計算エラー:', error);
+      // エラーの場合は推定サイズを返す
+      return issueContext.targetCode.content.length + 
+             relatedFiles.length * 1000; // 推定値
+    }
+  }
+
+  /**
+   * 循環参照を防ぐための安全なオブジェクト作成
+   */
+  private createCircularSafeObject(obj: any, seen = new WeakSet()): any {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (seen.has(obj)) {
+      return '[Circular Reference]';
+    }
+
+    seen.add(obj);
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.createCircularSafeObject(item, seen));
+    }
+
+    const result: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        result[key] = this.createCircularSafeObject(obj[key], seen);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * IssueContextから循環参照の可能性があるプロパティを除去
+   */
+  private sanitizeIssueContext(issueContext: ExtractedCodeContext): any {
+    return {
+      targetCode: issueContext.targetCode,
+      surroundingCode: issueContext.surroundingCode,
+      imports: issueContext.imports,
+      exports: issueContext.exports,
+      functions: issueContext.functions.map(f => ({
+        name: f.name,
+        startLine: f.startLine,
+        endLine: f.endLine,
+        parameters: f.parameters,
+        returnType: f.returnType,
+        isAsync: f.isAsync,
+        isExported: f.isExported
+      })),
+      classes: issueContext.classes.map(c => ({
+        name: c.name,
+        startLine: c.startLine,
+        endLine: c.endLine,
+        isExported: c.isExported
+      })),
+      variables: issueContext.variables.map(v => ({
+        name: v.name,
+        type: v.type,
+        scope: v.scope
+      })),
+      usedAPIs: issueContext.usedAPIs,
+      metadata: issueContext.metadata
+    };
   }
 
   private calculateOverallConfidence(
