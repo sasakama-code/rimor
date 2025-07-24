@@ -132,7 +132,7 @@ export class AnalyzeCommand {
     }
 
     // セキュリティ検証済みの引数を使用
-    const sanitizedOptions = {
+    const sanitizedOptions: AnalyzeOptions = {
       ...options,
       path: cliValidation.sanitizedArgs.path || options.path,
       format: cliValidation.sanitizedArgs.format || options.format,

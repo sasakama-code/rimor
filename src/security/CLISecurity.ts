@@ -421,7 +421,7 @@ export class CLISecurity {
     isValid: boolean;
     sanitizedArgs: {
       path?: string;
-      format?: string;
+      format?: 'text' | 'json' | 'csv' | 'html';
       outputFile?: string;
     };
     allErrors: string[];
@@ -431,7 +431,11 @@ export class CLISecurity {
     const allErrors: string[] = [];
     const allWarnings: string[] = [];
     const allSecurityIssues: string[] = [];
-    const sanitizedArgs: any = {};
+    const sanitizedArgs: {
+      path?: string;
+      format?: 'text' | 'json' | 'csv' | 'html';
+      outputFile?: string;
+    } = {};
 
     // 環境変数検証
     const envValidation = this.validateEnvironmentVariables();
@@ -456,7 +460,7 @@ export class CLISecurity {
     allWarnings.push(...formatValidation.warnings);
     allSecurityIssues.push(...formatValidation.securityIssues);
     if (formatValidation.isValid) {
-      sanitizedArgs.format = formatValidation.sanitizedValue;
+      sanitizedArgs.format = formatValidation.sanitizedValue as 'text' | 'json' | 'csv' | 'html';
     }
 
     // 出力ファイル検証
