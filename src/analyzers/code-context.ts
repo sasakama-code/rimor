@@ -46,18 +46,6 @@ export class AdvancedCodeContextAnalyzer {
       }
       const language = this.detectLanguage(filePath);
       
-      // セキュリティ: パストラバーサル攻撃を防ぐ
-      if (!this.validateProjectPath(filePath, projectPath)) {
-        errorHandler.handleError(
-          new Error(`不正なファイルパス '${issue.file}' がプロジェクト範囲外にアクセスしようとしました`),
-          ErrorType.PERMISSION_DENIED,
-          'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
-          { filePath: issue.file, projectPath },
-          true
-        );
-        return this.createEmptyContext(language, startTime);
-      }
-      
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
         return this.createEmptyContext(language, startTime);
