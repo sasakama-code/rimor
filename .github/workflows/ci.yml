@@ -44,6 +44,12 @@ jobs:
     - name: Build TypeScript
       run: npm run build
 
+    - name: Run quality check
+      run: |
+        echo "🔍 品質チェックを実行中..."
+        npm run analyze:src
+        echo "✅ 品質チェック完了"
+
     - name: Run tests
       env:
         RIMOR_LANG: ja
@@ -54,9 +60,6 @@ jobs:
           exit 1
         }
         echo "✅ Tests completed successfully"
-
-    - name: Run quality check
-      run: npm run analyze:src
 
 
     - name: Clean test artifacts after analysis
