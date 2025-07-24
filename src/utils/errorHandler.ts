@@ -13,6 +13,8 @@ export enum ErrorType {
   PLUGIN_ERROR = 'PLUGIN_ERROR',
   PARSE_ERROR = 'PARSE_ERROR',
   TIMEOUT = 'TIMEOUT',
+  WARNING = 'WARNING',
+  SYSTEM_ERROR = 'SYSTEM_ERROR',
   UNKNOWN = 'UNKNOWN'
 }
 
@@ -189,6 +191,52 @@ export class ErrorHandler {
       true
     );
   }
+
+  /**
+   * 警告メッセージの処理
+   */
+  handleWarning(
+    message: string,
+    context?: Record<string, any>,
+    operation?: string
+  ): ErrorInfo {
+    const warningContext = {
+      ...context,
+      operation: operation || 'unknown',
+      timestamp: new Date().toISOString()
+    };
+    
+    return this.handleError(
+      new Error(message),
+      ErrorType.WARNING,
+      message,
+      warningContext,
+      true // 警告は回復可能
+    );
+  }
+
+  /**
+   * システムエラーの処理（汎用）
+   */
+  handleSystemError(
+    error: Error | unknown,
+    operation: string,
+    context?: Record<string, any>
+  ): ErrorInfo {
+    const systemContext = {
+      ...context,
+      operation,
+      timestamp: new Date().toISOString()
+    };
+    
+    return this.handleError(
+      error,
+      ErrorType.SYSTEM_ERROR,
+      error instanceof Error ? error.message : 'システムエラーが発生しました',
+      systemContext,
+      false // システムエラーは回復困難
+    );
+  }
   
   /**
    * 回復可能なエラーかどうかを判定
@@ -246,6 +294,10 @@ export class ErrorHandler {
         return getMessage('error.default.parse_error', { message: baseMessage });
       case ErrorType.TIMEOUT:
         return getMessage('error.default.timeout', { message: baseMessage });
+      case ErrorType.WARNING:
+        return `警告: ${baseMessage}`;
+      case ErrorType.SYSTEM_ERROR:
+        return `システムエラー: ${baseMessage}`;
       default:
         return getMessage('error.default.generic', { message: baseMessage });
     }

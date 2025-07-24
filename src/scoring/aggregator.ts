@@ -8,6 +8,7 @@ import {
 } from './types';
 import { ScoreCalculatorV2 } from './calculator';
 import path from 'path';
+import { errorHandler, ErrorType } from '../utils/errorHandler';
 
 /**
  * スコア集約システム - ファイルからディレクトリ、プロジェクトレベルへの階層的集約
@@ -149,7 +150,11 @@ export class ScoreAggregator {
 
     // 大規模プロジェクトの検出とパラメータ調整
     if (totalFiles > 10000) {
-      console.warn(`大規模プロジェクト検出: ${totalFiles}ファイル - バッチサイズを調整します`);
+      errorHandler.handleWarning(
+        `大規模プロジェクト検出: ${totalFiles}ファイル - バッチサイズを調整します`,
+        { totalFiles, originalBatchSize: batchSize },
+        'aggregateScores'
+      );
       const adjustedBatchSize = Math.max(50, Math.min(batchSize, 200));
       options.batchSize = adjustedBatchSize;
     }
@@ -168,7 +173,17 @@ export class ScoreAggregator {
         // メモリ使用量チェック
         const currentMemory = this.getMemoryUsage();
         if (currentMemory - initialMemory > maxMemoryUsage) {
-          console.warn(`メモリ使用量が制限を超過: ${currentMemory - initialMemory}MB`);
+          errorHandler.handleWarning(
+            `メモリ使用量が制限を超過: ${currentMemory - initialMemory}MB`,
+            { 
+              currentMemory, 
+              initialMemory, 
+              exceeded: currentMemory - initialMemory,
+              maxMemoryUsage,
+              batchIndex: Math.floor(i / batchSize)
+            },
+            'aggregateScores'
+          );
           // ガベージコレクションの強制実行（可能な場合）
           if (global.gc) {
             global.gc();
@@ -179,7 +194,15 @@ export class ScoreAggregator {
           try {
             // ファイルサイズ制限チェック（プラグイン結果の量で推定）
             if (pluginResults.length > 1000) {
-              console.warn(`ファイル ${filePath} のプラグイン結果が多すぎます: ${pluginResults.length}件`);
+              errorHandler.handleWarning(
+                `ファイル ${filePath} のプラグイン結果が多すぎます: ${pluginResults.length}件`,
+                { 
+                  filePath, 
+                  resultCount: pluginResults.length,
+                  threshold: 1000
+                },
+                'aggregateScores'
+              );
               if (!skipOnError) {
                 throw new Error(`ファイル ${filePath} の処理がスキップされました（プラグイン結果過多）`);
               }
@@ -199,7 +222,15 @@ export class ScoreAggregator {
             failedFiles.push(filePath);
             
             if (skipOnError) {
-              console.warn(`ファイル ${filePath} の処理中にエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+              errorHandler.handleWarning(
+                `ファイル ${filePath} の処理中にエラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+                { 
+                  filePath, 
+                  error: error instanceof Error ? error.message : '不明なエラー',
+                  skipOnError: true
+                },
+                'aggregateScores'
+              );
               continue;
             } else {
               throw new Error(`ファイル ${filePath} の処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
@@ -215,9 +246,25 @@ export class ScoreAggregator {
 
       // エラー統計の出力
       if (errorCount > 0) {
-        console.warn(`処理完了: ${processedFiles}/${totalFiles}ファイル成功, ${errorCount}ファイルエラー`);
+        errorHandler.handleWarning(
+          `処理完了: ${processedFiles}/${totalFiles}ファイル成功, ${errorCount}ファイルエラー`,
+          { 
+            processedFiles, 
+            totalFiles, 
+            errorCount,
+            successRate: (processedFiles / totalFiles * 100).toFixed(2) + '%'
+          },
+          'aggregateScores'
+        );
         if (failedFiles.length > 0) {
-          console.warn(`失敗したファイル（最初の10件）: ${failedFiles.slice(0, 10).join(', ')}`);
+          errorHandler.handleWarning(
+            `失敗したファイル（最初の10件）: ${failedFiles.slice(0, 10).join(', ')}`,
+            { 
+              failedCount: failedFiles.length,
+              failedFiles: failedFiles.slice(0, 10)
+            },
+            'aggregateScores'
+          );
         }
       }
 
@@ -237,7 +284,14 @@ export class ScoreAggregator {
       
       // フォールバック: エラー時は基本的な集約を試行
       try {
-        console.warn('フォールバック: 基本的な集約処理を実行中...');
+        errorHandler.handleWarning(
+          'フォールバック: 基本的な集約処理を実行中...',
+          { 
+            originalError: error instanceof Error ? error.message : '不明なエラー',
+            memoryUsage: { initial: initialMemory, current: memoryAfter }
+          },
+          'aggregateScores'
+        );
         return this.buildCompleteHierarchy(pluginResultsMap, weights);
       } catch (fallbackError) {
         throw new Error(`集約処理とフォールバックの両方に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
@@ -413,7 +467,11 @@ export class ScoreAggregator {
       const usage = process.memoryUsage();
       return Math.round(usage.heapUsed / 1024 / 1024); // bytes to MB
     } catch (error) {
-      console.warn('メモリ使用量の取得に失敗:', error);
+      errorHandler.handleWarning(
+        'メモリ使用量の取得に失敗',
+        { error: error instanceof Error ? error.message : '不明なエラー' },
+        'getMemoryUsage'
+      );
       return 0;
     }
   }

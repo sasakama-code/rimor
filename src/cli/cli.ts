@@ -1,6 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { AnalyzeCommand } from './commands/analyze';
+import { AIOutputCommand } from './commands/ai-output';
 
 export class CLI {
   async run(): Promise<void> {
@@ -81,6 +82,85 @@ export class CLI {
             reportType: argv['report-type'] as 'summary' | 'detailed' | 'trend',
             noColor: argv['no-color'],
             outputFile: argv.output
+          });
+        }
+      )
+      .command(
+        'ai-output [path]',
+        'AI向け出力形式で分析結果を生成',
+        (yargs) => {
+          return yargs
+            .positional('path', {
+              describe: '分析対象のディレクトリパス（デフォルト: カレントディレクトリ）',
+              type: 'string',
+              default: '.'
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力形式',
+              type: 'string',
+              choices: ['json', 'markdown'],
+              default: 'json'
+            })
+            .option('output', {
+              alias: 'o',
+              describe: '出力ファイルパス',
+              type: 'string'
+            })
+            .option('include-context', {
+              describe: 'プロジェクトコンテキスト情報を含める',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-source-code', {
+              describe: 'ソースコードを含める',
+              type: 'boolean',
+              default: false
+            })
+            .option('optimize-for-ai', {
+              describe: 'AI向けに最適化',
+              type: 'boolean',
+              default: false
+            })
+            .option('max-tokens', {
+              describe: '最大トークン数',
+              type: 'number'
+            })
+            .option('max-file-size', {
+              describe: '最大ファイルサイズ（バイト）',
+              type: 'number'
+            })
+            .option('verbose', {
+              alias: 'v',
+              describe: '詳細な出力を表示',
+              type: 'boolean',
+              default: false
+            })
+            .option('parallel', {
+              describe: '並列処理を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('cache', {
+              describe: 'キャッシュ機能を有効化',
+              type: 'boolean',
+              default: true
+            });
+        },
+        async (argv) => {
+          const aiOutputCommand = new AIOutputCommand();
+          await aiOutputCommand.execute({
+            path: argv.path || '.',
+            format: argv.format as 'json' | 'markdown',
+            output: argv.output,
+            includeContext: argv['include-context'],
+            includeSourceCode: argv['include-source-code'],
+            optimizeForAI: argv['optimize-for-ai'],
+            maxTokens: argv['max-tokens'],
+            maxFileSize: argv['max-file-size'],
+            verbose: argv.verbose,
+            parallel: argv.parallel,
+            cache: argv.cache
           });
         }
       )
@@ -464,6 +544,9 @@ export class CLI {
       .example('$0 --scoring', '品質スコア計算を有効化')
       .example('$0 --scoring --report-type=detailed --format=html', '詳細スコアレポートをHTML形式で出力')
       .example('$0 --scoring --format=csv --output=report.csv', 'スコアレポートをCSVファイルに出力')
+      .example('$0 ai-output', 'AI向けJSON形式で出力')
+      .example('$0 ai-output --format=markdown -o ai-report.md', 'AI向けMarkdown形式でファイル出力')
+      .example('$0 ai-output --include-context --optimize-for-ai', 'コンテキスト情報付きでAI最適化出力')
       .example('$0 plugin create -i', '対話モードでプラグイン作成')
       .example('$0 plugin create --template basic', 'テンプレートからプラグイン作成')
       .example('$0 history show -l 20 --trend', '20件の履歴をトレンド分析付きで表示')
