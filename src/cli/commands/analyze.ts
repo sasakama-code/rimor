@@ -8,13 +8,19 @@ import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { cleanupManager } from '../../utils/cleanupManager';
 import { getMessage } from '../../i18n/messages';
+// v0.4.0 スコアリング機能
+import { ScoreCalculatorV2 } from '../../scoring/calculator';
+import { ScoreAggregator } from '../../scoring/aggregator';
+import { WeightsManager } from '../../scoring/weights';
+import { ReportGenerator } from '../../scoring/reports';
+import { CliFormatter, JsonFormatter, CsvFormatter, HtmlFormatter } from '../../scoring/formatters';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export interface AnalyzeOptions {
   verbose?: boolean;
   path: string;
-  format?: 'text' | 'json';
+  format?: 'text' | 'json' | 'csv' | 'html';
   parallel?: boolean;       // 並列処理モードの有効化
   batchSize?: number;       // バッチサイズ（並列モード時のみ）
   concurrency?: number;     // 最大同時実行数（並列モード時のみ）
@@ -23,6 +29,11 @@ export interface AnalyzeOptions {
   showCacheStats?: boolean; // キャッシュ統計の表示
   performance?: boolean;    // パフォーマンス監視の有効化
   showPerformanceReport?: boolean; // パフォーマンスレポートの表示
+  // v0.4.0 スコアリング機能
+  scoring?: boolean;        // 品質スコア計算の有効化
+  reportType?: 'summary' | 'detailed' | 'trend'; // レポートタイプ
+  noColor?: boolean;        // カラー出力の無効化
+  outputFile?: string;      // 出力ファイルパス
 }
 
 export class AnalyzeCommand {
@@ -146,6 +157,12 @@ export class AnalyzeCommand {
       
       const result = await this.analyzer.analyze(targetPath);
       
+      // v0.4.0 スコアリング機能
+      if (options.scoring) {
+        await this.generateScoringReport(result, targetPath, options);
+        return;
+      }
+      
       // 結果の表示
       if (format === 'json') {
         const jsonOutput = this.formatAsJson(result, targetPath, options.parallel);
@@ -249,6 +266,172 @@ export class AnalyzeCommand {
         return 'assertion-exists';
       default:
         return 'unknown';
+    }
+  }
+
+  /**
+   * v0.4.0 スコアリングレポート生成
+   */
+  private async generateScoringReport(result: any, targetPath: string, options: AnalyzeOptions): Promise<void> {
+    try {
+      // プラグイン結果をスコアリング用形式に変換
+      const pluginResultsMap = this.convertToPluginResults(result, targetPath);
+      
+      // 重み設定を読み込み
+      const weightsManager = new WeightsManager();
+      const weights = await weightsManager.loadWeights(targetPath);
+      
+      // スコア計算とプロジェクト階層構築
+      const calculator = new ScoreCalculatorV2();
+      const aggregator = new ScoreAggregator(calculator);
+      const projectScore = aggregator.buildCompleteHierarchy(pluginResultsMap, weights);
+      
+      // レポート生成
+      const reportGenerator = new ReportGenerator();
+      let report: any;
+      
+      switch (options.reportType) {
+        case 'detailed':
+          report = reportGenerator.generateDetailedReport(projectScore);
+          break;
+        case 'trend':
+          // TODO: 履歴データの実装
+          const mockHistoricalData: any[] = [];
+          report = reportGenerator.generateTrendReport(projectScore, mockHistoricalData);
+          break;
+        case 'summary':
+        default:
+          report = reportGenerator.generateSummaryReport(projectScore);
+          break;
+      }
+      
+      // フォーマット別出力
+      const useColors = !options.noColor;
+      let formattedOutput: string;
+      
+      switch (options.format) {
+        case 'json':
+          const jsonFormatter = new JsonFormatter();
+          formattedOutput = options.reportType === 'detailed' 
+            ? jsonFormatter.formatDetailedReport(report)
+            : options.reportType === 'trend'
+            ? jsonFormatter.formatTrendReport(report)
+            : jsonFormatter.formatSummaryReport(report);
+          break;
+        case 'csv':
+          const csvFormatter = new CsvFormatter();
+          formattedOutput = options.reportType === 'detailed'
+            ? csvFormatter.formatDetailedReport(report)
+            : options.reportType === 'trend'
+            ? csvFormatter.formatTrendReport(report)
+            : csvFormatter.formatSummaryReport(report);
+          break;
+        case 'html':
+          const htmlFormatter = new HtmlFormatter();
+          formattedOutput = options.reportType === 'detailed'
+            ? htmlFormatter.formatDetailedReport(report)
+            : options.reportType === 'trend'
+            ? htmlFormatter.formatTrendReport(report)
+            : htmlFormatter.formatSummaryReport(report);
+          break;
+        case 'text':
+        default:
+          const cliFormatter = new CliFormatter(useColors);
+          formattedOutput = options.reportType === 'detailed'
+            ? cliFormatter.formatDetailedReport(report)
+            : options.reportType === 'trend'
+            ? cliFormatter.formatTrendReport(report)
+            : cliFormatter.formatSummaryReport(report);
+          break;
+      }
+      
+      // 出力処理
+      if (options.outputFile) {
+        fs.writeFileSync(options.outputFile, formattedOutput, 'utf-8');
+        console.log(OutputFormatter.success(`レポートを ${options.outputFile} に出力しました`));
+      } else {
+        console.log(formattedOutput);
+      }
+      
+      // 品質スコアベースの終了コード
+      if (projectScore.overallScore < 60) {
+        process.exit(1);
+      }
+      
+    } catch (error) {
+      console.error(OutputFormatter.error(`スコアリングレポート生成エラー: ${error}`));
+      process.exit(1);
+    }
+  }
+
+  /**
+   * 従来の分析結果をプラグイン結果形式に変換
+   */
+  private convertToPluginResults(result: any, targetPath: string): Map<string, any[]> {
+    const pluginResultsMap = new Map<string, any[]>();
+    
+    // ファイルごとにプラグイン結果をグループ化
+    const fileMap = new Map<string, any[]>();
+    
+    result.issues.forEach((issue: any) => {
+      const filePath = issue.file || 'unknown';
+      if (!fileMap.has(filePath)) {
+        fileMap.set(filePath, []);
+      }
+      
+      const pluginResult = {
+        pluginId: this.getPluginNameFromIssueType(issue.type),
+        pluginName: this.getPluginDisplayName(issue.type),
+        score: this.issueToScore(issue),
+        weight: 1.0,
+        issues: [issue],
+        metadata: {
+          line: issue.line,
+          severity: issue.severity || 'medium'
+        }
+      };
+      
+      fileMap.get(filePath)!.push(pluginResult);
+    });
+    
+    // Map形式に変換
+    fileMap.forEach((results, filePath) => {
+      pluginResultsMap.set(filePath, results);
+    });
+    
+    return pluginResultsMap;
+  }
+
+  /**
+   * 課題をスコアに変換（簡略版）
+   */
+  private issueToScore(issue: any): number {
+    switch (issue.severity || 'medium') {
+      case 'error':
+      case 'high':
+        return 30;
+      case 'warning':
+      case 'medium':
+        return 60;
+      case 'info':
+      case 'low':
+        return 80;
+      default:
+        return 70;
+    }
+  }
+
+  /**
+   * プラグイン表示名を取得
+   */
+  private getPluginDisplayName(issueType: string): string {
+    switch (issueType) {
+      case 'missing-test':
+        return 'Test Existence';
+      case 'missing-assertion':
+        return 'Assertion Exists';
+      default:
+        return 'Unknown Plugin';
     }
   }
 }
