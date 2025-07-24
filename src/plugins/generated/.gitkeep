@@ -1,2 +1,0 @@
-# This file ensures the src/plugins/generated/ directory is tracked in git
-# The directory is required by the CI build process and plugin generation system
