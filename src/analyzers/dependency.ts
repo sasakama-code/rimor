@@ -619,10 +619,7 @@ export class DependencyAnalyzer {
       if (!PathSecurity.validateProjectPath(resolvedPath, projectPath)) {
         return null;
       }
-<<<<<<< HEAD
-=======
       
->>>>>>> origin/main
       // 拡張子がない場合は補完を試行
       if (!path.extname(resolvedPath)) {
         for (const ext of this.SUPPORTED_EXTENSIONS) {
