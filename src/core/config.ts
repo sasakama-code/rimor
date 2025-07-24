@@ -5,6 +5,7 @@ import { errorHandler } from '../utils/errorHandler';
 import { getMessage } from '../i18n/messages';
 import { metadataDrivenConfigManager, ConfigGenerationOptions } from './metadataDrivenConfig';
 import { pluginMetadataRegistry } from './pluginMetadata';
+import { ConfigSecurity, DEFAULT_CONFIG_SECURITY_LIMITS } from '../security/ConfigSecurity';
 
 export interface PluginConfig {
   enabled: boolean;
@@ -71,6 +72,11 @@ export class ConfigLoader {
   ];
   
   private availablePlugins: PluginMetadata[] = [];
+  private configSecurity: ConfigSecurity;
+
+  constructor() {
+    this.configSecurity = new ConfigSecurity(DEFAULT_CONFIG_SECURITY_LIMITS);
+  }
 
   async loadConfig(startDir: string): Promise<RimorConfig> {
     // 利用可能なプラグインを動的に発見
@@ -80,67 +86,48 @@ export class ConfigLoader {
     
     if (configPath) {
       try {
-        // セキュリティ: 設定ファイルのパス検証
-        const { PathSecurity } = await import('../utils/pathSecurity');
+        // プロジェクトルートの決定
+        const projectRoot = this.determineProjectRoot(startDir, configPath);
         
-        // テスト環境の検出
-        const isTestEnvironment = process.env.NODE_ENV === 'test' || 
-                                 process.env.JEST_WORKER_ID !== undefined ||
-                                 configPath.includes('/tmp/') ||
-                                 configPath.includes('/var/folders/');
+        // ConfigSecurityクラスを使用した安全な設定ファイル読み込み
+        const validationResult = await this.configSecurity.loadAndValidateConfig(configPath, projectRoot);
         
-        // 検証基準ディレクトリの決定
-        let baseDir: string;
-        if (isTestEnvironment) {
-          // テスト環境では、設定ファイルが見つかった最上位ディレクトリを基準にする
-          const configDir = path.dirname(configPath);
-          // startDirから上位に遡って設定ファイルのディレクトリまでの共通祖先を見つける
-          const resolvedStartDir = path.resolve(startDir);
-          const resolvedConfigDir = path.resolve(configDir);
-          baseDir = resolvedStartDir.startsWith(resolvedConfigDir) ? resolvedConfigDir : resolvedStartDir;
-        } else {
-          baseDir = process.cwd();
-        }
-        
-        if (!PathSecurity.validateProjectPath(configPath, baseDir)) {
-          errorHandler.handleError(
-            new Error('設定ファイルがプロジェクト範囲外です'),
-            undefined,
-            'セキュリティ違反: 設定ファイルアクセス拒否',
-            { configPath }
-          );
+        if (!validationResult.isValid) {
+          // セキュリティエラーの詳細ログ
+          if (validationResult.securityIssues.length > 0) {
+            errorHandler.handleError(
+              new Error('設定ファイルでセキュリティ問題を検出'),
+              undefined,
+              `セキュリティ警告: ${validationResult.securityIssues.join(', ')}`,
+              { 
+                configPath,
+                errors: validationResult.errors,
+                securityIssues: validationResult.securityIssues
+              }
+            );
+          }
+          
+          // 一般的なエラーログ
+          if (validationResult.errors.length > 0) {
+            console.error(`設定ファイルエラー: ${validationResult.errors.join(', ')}`);
+          }
+          
           return this.getDefaultConfig();
         }
 
-        // セキュリティ: ファイルサイズ制限
-        const fileStats = fs.statSync(configPath);
-        if (fileStats.size > 1024 * 1024) { // 1MB制限
-          errorHandler.handleError(
-            new Error('設定ファイルサイズが制限を超えています'),
-            undefined,
-            '設定ファイルが大きすぎます',
-            { configPath, size: fileStats.size }
-          );
-          return this.getDefaultConfig();
+        // 警告の表示
+        if (validationResult.warnings.length > 0) {
+          console.warn(`設定ファイル警告: ${validationResult.warnings.join(', ')}`);
         }
 
-        const configData = fs.readFileSync(configPath, 'utf-8');
+        // セキュリティ問題があるが有効な設定の場合の警告
+        if (validationResult.securityIssues.length > 0) {
+          console.warn(`セキュリティ警告（修正済み）: ${validationResult.securityIssues.join(', ')}`);
+        }
+
+        // サニタイズされた設定をデフォルト設定とマージ
+        return this.mergeWithDefaults(validationResult.sanitizedConfig || {});
         
-        // セキュリティ: 安全なJSON解析
-        const userConfig = this.safeParseConfig(configData);
-        if (!userConfig) {
-          errorHandler.handleError(
-            new Error('設定ファイルの形式が無効です'),
-            undefined,
-            '設定ファイル解析失敗',
-            { configPath }
-          );
-          return this.getDefaultConfig();
-        }
-
-        // セキュリティ: 設定内容の検証
-        const validatedConfig = this.validateConfig(userConfig);
-        return this.mergeWithDefaults(validatedConfig);
       } catch (error) {
         errorHandler.handleConfigError(error, configPath);
         return this.getDefaultConfig();
@@ -148,6 +135,27 @@ export class ConfigLoader {
     }
     
     return this.getDefaultConfig();
+  }
+
+  /**
+   * プロジェクトルートディレクトリの決定
+   */
+  private determineProjectRoot(startDir: string, configPath: string): string {
+    // テスト環境の検出
+    const isTestEnvironment = process.env.NODE_ENV === 'test' || 
+                             process.env.JEST_WORKER_ID !== undefined ||
+                             configPath.includes('/tmp/') ||
+                             configPath.includes('/var/folders/');
+    
+    if (isTestEnvironment) {
+      // テスト環境では、設定ファイルが見つかった最上位ディレクトリを基準にする
+      const configDir = path.dirname(configPath);
+      const resolvedStartDir = path.resolve(startDir);
+      const resolvedConfigDir = path.resolve(configDir);
+      return resolvedStartDir.startsWith(resolvedConfigDir) ? resolvedConfigDir : resolvedStartDir;
+    } else {
+      return process.cwd();
+    }
   }
   
   /**
@@ -355,186 +363,9 @@ export class ConfigLoader {
   }
 
   /**
-   * 安全な設定ファイル解析
+   * ConfigSecurityのセキュリティ制限更新
    */
-  private safeParseConfig(data: string): any | null {
-    try {
-      // 基本的な検証
-      if (!data || data.trim().length === 0) {
-        return null;
-      }
-
-      // サイズ制限
-      if (data.length > 512 * 1024) { // 512KB
-        return null;
-      }
-
-      // 危険なパターンの検出
-      const dangerousPatterns = [
-        /__proto__/g,
-        /constructor/g,
-        /prototype/g,
-        /function\s*\(/gi,
-        /eval\s*\(/gi,
-        /require\s*\(/gi,
-        /import\s*\(/gi,
-        /process\./gi,
-        /global\./gi,
-        /child_process/gi,
-        /fs\./gi,
-        /path\./gi,
-        /\.\.\//g, // パストラバーサル
-        /\/etc\/|\/root\/|\/home\//gi, // システムディレクトリ
-      ];
-
-      for (const pattern of dangerousPatterns) {
-        if (pattern.test(data)) {
-          errorHandler.handleError(
-            new Error('設定ファイルに危険なコードが含まれています'),
-            undefined,
-            'セキュリティ違反: 設定ファイル改ざん検出',
-            { pattern: pattern.source }
-          );
-          return null;
-        }
-      }
-
-      const parsed = JSON.parse(data);
-      
-      // オブジェクトの深度制限（DoS攻撃防止）
-      if (this.getObjectDepth(parsed) > 5) {
-        return null;
-      }
-
-      return parsed;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  /**
-   * 設定内容の検証
-   */
-  private validateConfig(config: any): Partial<RimorConfig> {
-    if (!config || typeof config !== 'object') {
-      return {};
-    }
-
-    const validatedConfig: Partial<RimorConfig> = {};
-
-    // excludePatternsの検証
-    if (Array.isArray(config.excludePatterns)) {
-      validatedConfig.excludePatterns = config.excludePatterns
-        .filter((pattern: any) => typeof pattern === 'string' && pattern.length < 200)
-        .slice(0, 50); // 最大50個
-    }
-
-    // pluginsの検証
-    if (config.plugins && typeof config.plugins === 'object') {
-      validatedConfig.plugins = {};
-      
-      for (const [pluginName, pluginConfig] of Object.entries(config.plugins)) {
-        if (this.validatePluginName(pluginName) && this.validatePluginConfig(pluginConfig)) {
-          validatedConfig.plugins[pluginName] = pluginConfig as PluginConfig;
-        }
-      }
-    }
-
-    // outputの検証
-    if (config.output && typeof config.output === 'object') {
-      validatedConfig.output = {
-        format: ['text', 'json'].includes(config.output.format) ? config.output.format : 'text',
-        verbose: typeof config.output.verbose === 'boolean' ? config.output.verbose : false
-      };
-    }
-
-    // scoringの検証
-    if (config.scoring && typeof config.scoring === 'object') {
-      validatedConfig.scoring = this.validateScoringConfig(config.scoring);
-    }
-
-    return validatedConfig;
-  }
-
-  /**
-   * プラグイン名の検証
-   */
-  private validatePluginName(name: string): boolean {
-    if (typeof name !== 'string' || name.length === 0 || name.length > 50) {
-      return false;
-    }
-
-    // 英数字、ハイフン、アンダースコアのみ許可
-    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * プラグイン設定の検証
-   */
-  private validatePluginConfig(config: any): boolean {
-    if (!config || typeof config !== 'object') {
-      return false;
-    }
-
-    // enabledは必須
-    if (typeof config.enabled !== 'boolean') {
-      return false;
-    }
-
-    // excludeFilesが存在する場合は配列である必要
-    if (config.excludeFiles && !Array.isArray(config.excludeFiles)) {
-      return false;
-    }
-
-    // priorityが存在する場合は数値である必要
-    if (config.priority && typeof config.priority !== 'number') {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * スコアリング設定の検証
-   */
-  private validateScoringConfig(scoring: any): any {
-    const validatedScoring: any = {};
-
-    if (typeof scoring.enabled === 'boolean') {
-      validatedScoring.enabled = scoring.enabled;
-    }
-
-    // weightsの検証は複雑なので基本的な型チェックのみ
-    if (scoring.weights && typeof scoring.weights === 'object') {
-      validatedScoring.weights = scoring.weights;
-    }
-
-    if (scoring.gradeThresholds && typeof scoring.gradeThresholds === 'object') {
-      validatedScoring.gradeThresholds = scoring.gradeThresholds;
-    }
-
-    if (scoring.options && typeof scoring.options === 'object') {
-      validatedScoring.options = scoring.options;
-    }
-
-    return validatedScoring;
-  }
-
-  /**
-   * オブジェクトの深度を取得
-   */
-  private getObjectDepth(obj: any, depth = 0): number {
-    if (depth > 5) return depth; // 最大深度制限
-
-    if (obj && typeof obj === 'object') {
-      const depths = Object.values(obj).map(value => this.getObjectDepth(value, depth + 1));
-      return Math.max(depth, ...depths);
-    }
-    
-    return depth;
+  updateSecurityLimits(newLimits: Partial<typeof DEFAULT_CONFIG_SECURITY_LIMITS>): void {
+    this.configSecurity.updateLimits(newLimits);
   }
 }
