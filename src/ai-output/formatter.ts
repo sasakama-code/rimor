@@ -13,6 +13,7 @@ import {
 } from './types';
 import { Issue } from '../core/types';
 import { FileScore } from '../scoring/types';
+import { PathSecurity } from '../utils/pathSecurity';
 
 /**
  * AI向け出力フォーマッター v0.5.0

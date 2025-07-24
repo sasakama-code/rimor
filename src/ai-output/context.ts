@@ -13,6 +13,7 @@ import {
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PathSecurity } from '../utils/pathSecurity';
 
 /**
  * コンテキスト統合の結果

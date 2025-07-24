@@ -12,15 +12,19 @@ import {
   RelatedFileInfo 
 } from './types';
 import { errorHandler, ErrorType } from '../utils/errorHandler';
+import { PathSecurity } from '../utils/pathSecurity';
+import { ResourceLimitMonitor, DEFAULT_ANALYSIS_LIMITS } from '../utils/resourceLimits';
 
 /**
  * 高度なコードコンテキスト分析器 v0.5.0
  * AI向け出力の品質向上のための詳細なコード解析
  */
 export class AdvancedCodeContextAnalyzer {
-  private readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  private readonly MAX_CONTEXT_LINES = 50;
-  private readonly DEFAULT_CONTEXT_LINES = 10;
+  private resourceMonitor: ResourceLimitMonitor;
+
+  constructor(resourceMonitor?: ResourceLimitMonitor) {
+    this.resourceMonitor = resourceMonitor || new ResourceLimitMonitor();
+  }
 
   /**
    * 包括的なコードコンテキスト分析
@@ -30,35 +34,33 @@ export class AdvancedCodeContextAnalyzer {
     projectPath: string, 
     options: AnalysisOptions = {}
   ): Promise<ExtractedCodeContext> {
+    // リソース監視開始
+    this.resourceMonitor.startAnalysis();
     const startTime = Date.now();
     
     try {
-      const filePath = path.resolve(projectPath, issue.file || '');
-      const language = this.detectLanguage(filePath);
-      
-      // セキュリティ: パストラバーサル攻撃を防ぐ
-      if (!this.validateProjectPath(filePath, projectPath)) {
-        errorHandler.handleError(
-          new Error(`不正なファイルパス '${issue.file}' がプロジェクト範囲外にアクセスしようとしました`),
-          ErrorType.PERMISSION_DENIED,
-          'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
-          { filePath: issue.file, projectPath },
-          true
-        );
+      const filePath = PathSecurity.safeResolve(issue.file || '', projectPath, 'analyzeCodeContext');
+      if (!filePath) {
+        const language = this.detectLanguage(issue.file || '');
         return this.createEmptyContext(language, startTime);
       }
+      const language = this.detectLanguage(filePath);
       
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
         return this.createEmptyContext(language, startTime);
       }
 
+      // ファイルサイズチェック
+      const stats = fs.statSync(filePath);
+      if (!this.resourceMonitor.checkFileSize(stats.size, filePath)) {
+        return this.createEmptyContext(language, startTime);
+      }
+
       const fileContent = await this.readFileContent(filePath, projectPath);
       const targetLine = (issue.line || 1) - 1;
-      const contextLines = Math.min(
-        options.contextLines || this.DEFAULT_CONTEXT_LINES,
-        this.MAX_CONTEXT_LINES
-      );
+      const requestedContextLines = options.contextLines || 10;
+      const contextLines = this.resourceMonitor.checkContextLines(requestedContextLines);
 
       // 基本コンテキスト抽出
       const { targetCode, surroundingCode } = this.extractBasicContext(
@@ -387,12 +389,12 @@ export class AdvancedCodeContextAnalyzer {
     }
 
     // セキュリティ: パス検証（プロジェクトパスが提供された場合）
-    if (projectPath && !this.validateProjectPath(filePath, projectPath)) {
+    if (projectPath && !PathSecurity.validateProjectPath(filePath, projectPath)) {
       throw new Error('セキュリティ: ファイルパスがプロジェクト範囲外です');
     }
 
     const stats = fs.statSync(filePath);
-    if (stats.size > this.MAX_FILE_SIZE) {
+    if (!this.resourceMonitor.checkFileSize(stats.size, filePath)) {
       throw new Error(`ファイルサイズが制限を超えています: ${stats.size} bytes`);
     }
     
@@ -969,31 +971,13 @@ export class AdvancedCodeContextAnalyzer {
     try {
       if (importPath.startsWith('.')) {
         // 相対パス
-        const resolved = path.resolve(path.dirname(fromFile), importPath);
-        
-        // セキュリティ: パストラバーサル攻撃を防ぐ
-        if (!this.validateProjectPath(resolved, projectPath)) {
+        const resolved = PathSecurity.safeResolveImport(importPath, fromFile, projectPath);
+        if (!resolved) {
           return null;
         }
         
         const extensions = ['.ts', '.js', '.tsx', '.jsx'];
-        
-        for (const ext of extensions) {
-          const withExt = resolved + ext;
-          if (!this.validateProjectPath(withExt, projectPath)) {
-            continue; // セキュリティチェック失敗
-          }
-          if (fs.existsSync(withExt)) return withExt;
-        }
-        
-        // index.*を試す
-        for (const ext of extensions) {
-          const indexFile = path.join(resolved, `index${ext}`);
-          if (!this.validateProjectPath(indexFile, projectPath)) {
-            continue; // セキュリティチェック失敗
-          }
-          if (fs.existsSync(indexFile)) return indexFile;
-        }
+        return PathSecurity.safeResolveWithExtensions(resolved, extensions, projectPath);
       }
       return null;
     } catch {
@@ -1046,20 +1030,6 @@ export class AdvancedCodeContextAnalyzer {
     }
   }
 
-  /**
-   * セキュリティ: パストラバーサル攻撃を防ぐためのパス検証
-   */
-  private validateProjectPath(resolvedPath: string, projectRoot: string): boolean {
-    try {
-      const normalizedProjectRoot = path.resolve(projectRoot);
-      const normalizedResolvedPath = path.resolve(resolvedPath);
-      
-      // プロジェクトルート内にあることを確認
-      return normalizedResolvedPath.startsWith(normalizedProjectRoot);
-    } catch {
-      return false;
-    }
-  }
 
   private async findTestFiles(sourceFile: string, projectPath: string): Promise<string[]> {
     const testFiles: string[] = [];

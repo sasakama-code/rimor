@@ -22,6 +22,8 @@ import {
 } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PathSecurity } from '../utils/pathSecurity';
+import { ResourceLimitMonitor } from '../utils/resourceLimits';
 
 /**
  * プロジェクト構造分析器
@@ -36,6 +38,12 @@ export class ProjectStructureAnalyzer {
     '.vscode',
     '.idea'
   ];
+  
+  private resourceMonitor: ResourceLimitMonitor;
+
+  constructor(resourceMonitor?: ResourceLimitMonitor) {
+    this.resourceMonitor = resourceMonitor || new ResourceLimitMonitor();
+  }
 
   private readonly SUPPORTED_EXTENSIONS = [
     '.ts', '.js', '.tsx', '.jsx', '.mjs', '.cjs',
@@ -247,16 +255,26 @@ export class ProjectStructureAnalyzer {
   private async getAllFiles(projectPath: string): Promise<string[]> {
     const files: string[] = [];
     
-    const walkDir = (dir: string) => {
+    const walkDir = (dir: string, depth: number = 0) => {
       try {
+        // 深度制限チェック
+        if (!this.resourceMonitor.checkDepth(depth, projectPath)) {
+          return; // 深度制限に達した場合は探索を停止
+        }
+        
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
           
+          // セキュリティ: パス検証
+          if (!PathSecurity.validateProjectPath(fullPath, projectPath)) {
+            continue; // プロジェクト範囲外はスキップ
+          }
+          
           if (entry.isDirectory()) {
             if (!this.shouldIgnoreDirectory(entry.name)) {
-              walkDir(fullPath);
+              walkDir(fullPath, depth + 1);
             }
           } else if (entry.isFile()) {
             files.push(fullPath);
@@ -274,16 +292,27 @@ export class ProjectStructureAnalyzer {
   private async getAllDirectories(projectPath: string): Promise<string[]> {
     const directories: string[] = [projectPath];
     
-    const walkDir = (dir: string) => {
+    const walkDir = (dir: string, depth: number = 0) => {
       try {
+        // 深度制限チェック
+        if (!this.resourceMonitor.checkDepth(depth, projectPath)) {
+          return; // 深度制限に達した場合は探索を停止
+        }
+        
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         
         for (const entry of entries) {
           if (entry.isDirectory()) {
             const fullPath = path.join(dir, entry.name);
+            
+            // セキュリティ: パス検証
+            if (!PathSecurity.validateProjectPath(fullPath, projectPath)) {
+              continue; // プロジェクト範囲外はスキップ
+            }
+            
             if (!this.shouldIgnoreDirectory(entry.name)) {
               directories.push(fullPath);
-              walkDir(fullPath);
+              walkDir(fullPath, depth + 1);
             }
           }
         }
@@ -1056,6 +1085,12 @@ export class ProjectStructureAnalyzer {
     
     for (const fileName of readmeFiles) {
       const filePath = path.join(projectPath, fileName);
+      
+      // セキュリティ: パス検証
+      if (!PathSecurity.validateProjectPath(filePath, projectPath)) {
+        continue; // プロジェクト範囲外はスキップ
+      }
+      
       if (fs.existsSync(filePath)) {
         try {
           const content = fs.readFileSync(filePath, 'utf-8');

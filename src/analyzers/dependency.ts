@@ -1,6 +1,7 @@
 import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PathSecurity } from '../utils/pathSecurity';
 
 /**
  * 依存関係分析器
@@ -80,7 +81,10 @@ export class DependencyAnalyzer {
         dependencyGraph.set(dep.file, new Set());
       }
       dep.dependsOn.forEach(dependency => {
-        dependencyGraph.get(dep.file)!.add(dependency);
+        const dependencies = dependencyGraph.get(dep.file);
+        if (dependencies) {
+          dependencies.add(dependency);
+        }
       });
     });
 
@@ -335,7 +339,7 @@ export class DependencyAnalyzer {
         const resolvedDependsOn = imports
           .filter(imp => this.isRelativeImport(imp))
           .map(imp => this.resolveRelativePath(file, imp, projectPath))
-          .filter(resolved => resolved !== null) as string[];
+          .filter((resolved): resolved is string => resolved !== null);
 
         fileDependencies.push({
           file: path.relative(projectPath, file),
@@ -611,10 +615,18 @@ export class DependencyAnalyzer {
       const fromDir = path.dirname(fromFile);
       let resolvedPath = path.resolve(fromDir, importPath);
       
+      // セキュリティ: パス検証
+      if (!PathSecurity.validateProjectPath(resolvedPath, projectPath)) {
+        return null;
+      }
+      
       // 拡張子がない場合は補完を試行
       if (!path.extname(resolvedPath)) {
         for (const ext of this.SUPPORTED_EXTENSIONS) {
           const withExt = resolvedPath + ext;
+          if (!PathSecurity.validateProjectPath(withExt, projectPath)) {
+            continue; // セキュリティチェック失敗
+          }
           if (fs.existsSync(withExt)) {
             resolvedPath = withExt;
             break;
@@ -625,6 +637,9 @@ export class DependencyAnalyzer {
         const indexPath = path.join(resolvedPath, 'index');
         for (const ext of this.SUPPORTED_EXTENSIONS) {
           const withExt = indexPath + ext;
+          if (!PathSecurity.validateProjectPath(withExt, projectPath)) {
+            continue; // セキュリティチェック失敗
+          }
           if (fs.existsSync(withExt)) {
             resolvedPath = withExt;
             break;
