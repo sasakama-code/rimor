@@ -11,6 +11,7 @@ import {
 } from './types';
 import { GradeCalculator } from './grades';
 import { QualityScore } from '../core/types';
+import { errorHandler, ErrorType } from '../utils/errorHandler';
 
 /**
  * v0.4.0 品質スコア算出器のコア計算エンジン
@@ -51,18 +52,43 @@ export class ScoreCalculatorV2 {
 
       // 大量のプラグイン結果の警告
       if (pluginResults.length > 100) {
-        console.warn(`ファイル ${file} のプラグイン結果が多数: ${pluginResults.length}件`);
+        errorHandler.handleWarning(
+          `ファイル ${file} のプラグイン結果が多数: ${pluginResults.length}件`,
+          { 
+            filePath: file, 
+            resultCount: pluginResults.length,
+            threshold: 100
+          },
+          'calculateFileScore'
+        );
       }
 
       // プラグイン結果の検証
       const validPluginResults = pluginResults.filter((result, index) => {
         if (!result || typeof result !== 'object') {
-          console.warn(`ファイル ${file} の無効なプラグイン結果をスキップ: インデックス ${index}`);
+          errorHandler.handleWarning(
+            `ファイル ${file} の無効なプラグイン結果をスキップ: インデックス ${index}`,
+            { 
+              filePath: file, 
+              index,
+              resultType: typeof result
+            },
+            'calculateFileScore'
+          );
           return false;
         }
         
         if (typeof result.score !== 'number' || isNaN(result.score)) {
-          console.warn(`ファイル ${file} の無効なスコア値をスキップ: ${result.pluginId}`);
+          errorHandler.handleWarning(
+            `ファイル ${file} の無効なスコア値をスキップ: ${result.pluginId}`,
+            { 
+              filePath: file, 
+              pluginId: result.pluginId,
+              scoreType: typeof result.score,
+              scoreValue: result.score
+            },
+            'calculateFileScore'
+          );
           return false;
         }
         
@@ -70,7 +96,15 @@ export class ScoreCalculatorV2 {
       });
 
       if (validPluginResults.length === 0) {
-        console.warn(`ファイル ${file} に有効なプラグイン結果がありません`);
+        errorHandler.handleWarning(
+          `ファイル ${file} に有効なプラグイン結果がありません`,
+          { 
+            filePath: file, 
+            originalResultCount: pluginResults.length,
+            validResultCount: 0
+          },
+          'calculateFileScore'
+        );
         return this.createEmptyFileScore(file);
       }
 
@@ -91,7 +125,15 @@ export class ScoreCalculatorV2 {
             issues: Array.isArray(result.issues) ? result.issues : []
           };
         } catch (error) {
-          console.warn(`プラグイン ${result.pluginId} の情報整理でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+          errorHandler.handleWarning(
+            `プラグイン ${result.pluginId} の情報整理でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+            { 
+              pluginId: result.pluginId,
+              error: error instanceof Error ? error.message : '不明なエラー',
+              filePath: file
+            },
+            'calculateFileScore'
+          );
         }
       }
 
