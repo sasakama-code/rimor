@@ -115,11 +115,27 @@ export class ConfigSecurity {
       // 構造検証とサニタイゼーション
       const validationResult = this.validateAndSanitizeConfig(parseResult.data);
       
+      // preValidationのsecurityIssuesを結果にマージ
+      if (preValidation.securityIssues && preValidation.securityIssues.length > 0) {
+        validationResult.securityIssues = [
+          ...validationResult.securityIssues,
+          ...preValidation.securityIssues
+        ];
+      }
+      
       // parseResultのsecurityIssuesを結果にマージ
       if (parseResult.securityIssues && parseResult.securityIssues.length > 0) {
         validationResult.securityIssues = [
           ...validationResult.securityIssues,
           ...parseResult.securityIssues
+        ];
+      }
+      
+      // preValidationのwarningsも結果にマージ
+      if (preValidation.warnings && preValidation.warnings.length > 0) {
+        validationResult.warnings = [
+          ...validationResult.warnings,
+          ...preValidation.warnings
         ];
       }
       
@@ -443,6 +459,57 @@ export class ConfigSecurity {
             warnings.push(`プラグイン ${pluginName} のpriority設定を削除（不正な値）`);
             delete config.priority;
           }
+
+          // システムディレクトリアクセス攻撃の検証
+          const pathProperties = ['outputPath', 'configPath', 'logPath', 'dataPath'];
+          for (const prop of pathProperties) {
+            if (config[prop] && typeof config[prop] === 'string') {
+              const path = config[prop] as string;
+              if (path.includes('/etc/') || path.includes('/root/') || 
+                  path.includes('/usr/bin/') || path.includes('/sys/') ||
+                  path.includes('C:\\Windows\\') || path.includes('C:\\Program Files\\')) {
+                errors.push(`プラグイン ${pluginName} の ${prop} にシステムディレクトリへのアクセスが含まれています: ${path}`);
+                securityIssues.push('システムディレクトリアクセス攻撃');
+                delete config[prop];
+              }
+            }
+          }
+
+          // 危険なコードの検証（Unicode攻撃含む）
+          const codeProperties = ['command', 'script', 'code', 'exec'];
+          for (const prop of codeProperties) {
+            if (config[prop] && typeof config[prop] === 'string') {
+              const code = config[prop] as string;
+              let codeRemoved = false;
+              
+              // Unicode攻撃の検出（最優先）
+              if (/\\u[0-9a-f]{4}/gi.test(code)) {
+                errors.push(`プラグイン ${pluginName} の ${prop} にUnicode攻撃が含まれています: ${code}`);
+                securityIssues.push('Unicode攻撃');
+                delete config[prop];
+                codeRemoved = true;
+              }
+              
+              // その他の危険なパターン（Unicode攻撃が検出されなかった場合のみ）
+              if (!codeRemoved) {
+                const dangerousPatterns = [
+                  /eval\s*\(/gi,
+                  /function\s*\(/gi,
+                  /require\s*\(/gi,
+                  /import\s*\(/gi
+                ];
+                
+                for (const pattern of dangerousPatterns) {
+                  if (pattern.test(code)) {
+                    errors.push(`プラグイン ${pluginName} の ${prop} に危険なコードが含まれています: ${code}`);
+                    securityIssues.push('コード実行攻撃');
+                    delete config[prop];
+                    break;
+                  }
+                }
+              }
+            }
+          }
         }
       }
 
@@ -453,6 +520,9 @@ export class ConfigSecurity {
           delete sanitizedConfig.excludePatterns;
         } else {
           // パターンの検証とフィルタリング
+          const originalLength = sanitizedConfig.excludePatterns.length;
+          let dangerousPatternCount = 0;
+          
           sanitizedConfig.excludePatterns = sanitizedConfig.excludePatterns.filter((pattern: any) => {
             if (typeof pattern !== 'string') {
               warnings.push('excludePatternsに文字列以外の値を検出。除外しました。');
@@ -466,6 +536,7 @@ export class ConfigSecurity {
             }
 
             if (pattern.includes('..') || pattern.includes('/etc/') || pattern.includes('/root/')) {
+              dangerousPatternCount++;
               warnings.push(`危険な除外パターンを削除: ${pattern}`);
               securityIssues.push('パストラバーサル攻撃');
               return false;
@@ -473,6 +544,11 @@ export class ConfigSecurity {
 
             return true;
           });
+
+          // 全パターンが危険な場合はエラーとする
+          if (originalLength > 0 && dangerousPatternCount === originalLength) {
+            errors.push('すべての除外パターンが危険です');
+          }
         }
       }
 
