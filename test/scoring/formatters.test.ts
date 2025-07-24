@@ -72,7 +72,14 @@ describe('Formatters', () => {
             issues: ['Missing test file']
           }
         ],
-        issues: ['Missing test file'],
+        issues: [
+          {
+            dimension: 'completeness',
+            severity: 'medium' as const,
+            message: 'Missing test file',
+            line: 1
+          }
+        ],
         suggestions: ['Add test file']
       }
     ],
