@@ -220,7 +220,16 @@ describe('InteractiveCreator', () => {
   describe('savePlugin', () => {
     it('should save generated plugin to file system', async () => {
       const plugin: GeneratedPlugin = {
-        code: 'export class SavedPlugin implements IPlugin { /* test */ }',
+        code: `import { IPlugin } from '../../core/types';
+
+export class SavedPlugin implements IPlugin {
+  name = 'saved-plugin';
+  
+  async analyze(): Promise<any[]> {
+    // テスト用の実装
+    return [];
+  }
+}`,
         metadata: {
           name: 'saved-plugin',
           description: 'Saved test plugin',

@@ -40,3 +40,6 @@ CLAUDE.md
 # Generated files - ignore plugin files but keep directory structure
 src/plugins/generated/*.ts
 !src/plugins/generated/.gitkeep
+
+# Cache files
+.rimor-cache/

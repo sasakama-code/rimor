@@ -31,7 +31,13 @@
     "security-check": "node scripts/security-check.js",
     "lint": "echo 'ℹ️  Lint機能は将来実装予定です - MVP期間中はスキップ' && exit 0",
     "format": "echo 'Format機能は将来実装予定です'",
-    "full-check": "npm run security-check && npm run analyze:src"
+    "full-check": "npm run security-check && npm run analyze:src",
+    "setup-branch-protection": "bash scripts/setup-branch-protection.sh",
+    "setup-branch-protection:node": "node scripts/setup-branch-protection.js",
+    "pre-release-check": "bash scripts/pre-release-check.sh",
+    "release-ready": "npm run pre-release-check && echo '📋 Manual checklist: docs/RELEASE_READINESS_CHECKLIST.md'",
+    "health-check": "node scripts/release-health-check.js",
+    "health-check:github": "GITHUB_TOKEN=$GITHUB_TOKEN node scripts/release-health-check.js"
   },
   "repository": {
     "type": "git",
