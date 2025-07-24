@@ -4,7 +4,7 @@ import { IPlugin, Issue } from '../../core/types';
 /**
  * 基本プラグインテンプレート
  * 
- * 作成日: 2025-07-24T03:17:01.762Z
+ * 作成日: 2025-07-24T03:58:51.333Z
  * 作成方法: template
  */
 export class BasicPlugin implements IPlugin {
