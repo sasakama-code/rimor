@@ -391,6 +391,11 @@ export class ScoringConfigManager {
       return this.sanitizeValue(obj);
     }
     
+    // 配列の処理
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeConfigObject(item, depth + 1));
+    }
+    
     const sanitized: any = {};
     const allowedKeys = new Set([
       'scoring', 'enabled', 'weights', 'gradeThresholds', 'options',
