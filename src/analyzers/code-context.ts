@@ -56,6 +56,7 @@ export class AdvancedCodeContextAnalyzer {
       if (!this.resourceMonitor.checkFileSize(stats.size, filePath)) {
         return this.createEmptyContext(language, startTime);
       }
+
       const fileContent = await this.readFileContent(filePath, projectPath);
       const targetLine = (issue.line || 1) - 1;
       const requestedContextLines = options.contextLines || 10;
@@ -401,6 +402,10 @@ export class AdvancedCodeContextAnalyzer {
     if (stats.isSymbolicLink()) {
       throw new Error('セキュリティ: シンボリックリンクへのアクセスは許可されていません');
     }
+<<<<<<< HEAD
+=======
+    
+>>>>>>> origin/main
     return fs.readFileSync(filePath, 'utf-8');
   }
 
@@ -499,6 +504,10 @@ export class AdvancedCodeContextAnalyzer {
 
     // セキュリティ: 正規表現の実行時間制限
     const REGEX_TIMEOUT_MS = 100;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
@@ -1026,6 +1035,11 @@ export class AdvancedCodeContextAnalyzer {
       return null;
     }
   }
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/main
   private async findTestFiles(sourceFile: string, projectPath: string): Promise<string[]> {
     const testFiles: string[] = [];
     const baseName = path.basename(sourceFile, path.extname(sourceFile));

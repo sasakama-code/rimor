@@ -261,6 +261,10 @@ export class ProjectStructureAnalyzer {
         if (!this.resourceMonitor.checkDepth(depth, projectPath)) {
           return; // 深度制限に達した場合は探索を停止
         }
+<<<<<<< HEAD
+=======
+        
+>>>>>>> origin/main
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         
         for (const entry of entries) {
@@ -297,6 +301,10 @@ export class ProjectStructureAnalyzer {
         if (!this.resourceMonitor.checkDepth(depth, projectPath)) {
           return; // 深度制限に達した場合は探索を停止
         }
+<<<<<<< HEAD
+=======
+        
+>>>>>>> origin/main
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         
         for (const entry of entries) {
@@ -1088,6 +1096,10 @@ export class ProjectStructureAnalyzer {
       if (!PathSecurity.validateProjectPath(filePath, projectPath)) {
         continue; // プロジェクト範囲外はスキップ
       }
+<<<<<<< HEAD
+=======
+      
+>>>>>>> origin/main
       if (fs.existsSync(filePath)) {
         try {
           const content = fs.readFileSync(filePath, 'utf-8');
