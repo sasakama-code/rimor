@@ -115,7 +115,7 @@ describe('ConfigLoader', () => {
       // Should fallback to default config
       expect(config.output.format).toBe('text');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('設定ファイルが不正です')
+        expect.stringContaining('設定ファイル解析失敗')
       );
       
       consoleSpy.mockRestore();

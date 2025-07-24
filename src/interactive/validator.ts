@@ -104,9 +104,90 @@ export class PluginValidator {
       return { isValid: false, error: '戻り値の型がPromise<Issue[]>ではありません' };
     }
 
+    // セキュリティチェック - 危険なコードパターンを検出
+    const dangerousPatterns = [
+      // ファイルシステム操作
+      /fs\.writeFile|fs\.writeFileSync|fs\.appendFile|fs\.appendFileSync/g,
+      /fs\.unlink|fs\.unlinkSync|fs\.rmdir|fs\.rmdirSync/g,
+      /fs\.mkdir|fs\.mkdirSync/g,
+      
+      // プロセス実行
+      /child_process|exec|spawn|fork/g,
+      /process\.exit|process\.kill/g,
+      
+      // ネットワーク操作
+      /http\.request|https\.request|fetch|axios/g,
+      /net\.connect|dgram\.createSocket/g,
+      
+      // 危険なグローバルアクセス
+      /global\.|globalThis\.|window\./g,
+      /require\s*\(/g, // requireの動的呼び出し
+      /import\s*\(/g, // 動的import
+      
+      // eval系
+      /eval\s*\(|Function\s*\(|setTimeout\s*\(.*,.*\)|setInterval\s*\(.*,.*\)/g,
+      
+      // 環境変数アクセス
+      /process\.env/g,
+      
+      // ファイルパス操作
+      /path\.resolve|path\.join.*\.\./g,
+      
+      // 危険な文字列パターン
+      // /\.\.\/g removed - legitimate import statements use ../
+      /\/etc\/|\/root\/|\/home\/.*\/\./g, // システムディレクトリアクセス
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(code)) {
+        return { 
+          isValid: false, 
+          error: `セキュリティ違反: 危険なコードパターンが検出されました: ${pattern.source}` 
+        };
+      }
+    }
+
     // 基本的な構文チェック
     if (code.includes('invalid typescript code')) {
       return { isValid: false, error: '無効なTypeScriptコードが含まれています' };
+    }
+
+    // コード長制限（DoS攻撃防止）
+    if (code.length > 50000) {
+      return { isValid: false, error: 'プラグインコードが長すぎます（最大50KB）' };
+    }
+
+    // 必要なimport文の検証
+    if (!code.includes('import') || !code.includes('from')) {
+      return { isValid: false, error: 'プラグインに必要なimport文が不足しています' };
+    }
+
+    // 許可されたimportのみかチェック
+    const allowedImports = [
+      'fs',
+      '../../core/types',
+      '../core/types',
+      './types',
+      '../utils/'
+    ];
+    
+    const importMatches = code.match(/import.*from\s+['"]([^'"]+)['"]/g);
+    if (importMatches) {
+      for (const importMatch of importMatches) {
+        const moduleMatch = importMatch.match(/from\s+['"]([^'"]+)['"]/);
+        if (moduleMatch) {
+          const moduleName = moduleMatch[1];
+          const isAllowed = allowedImports.some(allowed => 
+            moduleName.startsWith(allowed) || moduleName === allowed
+          );
+          if (!isAllowed) {
+            return { 
+              isValid: false, 
+              error: `許可されていないモジュールのimport: ${moduleName}` 
+            };
+          }
+        }
+      }
     }
 
     return { isValid: true };
