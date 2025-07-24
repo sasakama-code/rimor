@@ -134,7 +134,7 @@ export class PluginValidator {
       /path\.resolve|path\.join.*\.\./g,
       
       // 危険な文字列パターン
-      /\.\.\//g, // パストラバーサル
+      // /\.\.\/g removed - legitimate import statements use ../
       /\/etc\/|\/root\/|\/home\/.*\/\./g, // システムディレクトリアクセス
     ];
 

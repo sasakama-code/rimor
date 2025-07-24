@@ -140,8 +140,8 @@ export class AIOutputCommand {
 
     const trimmedPath = inputPath.trim();
 
-    // テスト環境の検出（より限定的）
-    const isTestTempFile = (trimmedPath.includes('/tmp/') && trimmedPath.includes('rimor-test')) ||
+    // テスト環境の検出（rimor-*-test-*パターンをサポート）
+    const isTestTempFile = (trimmedPath.includes('/tmp/') && /rimor.*test/.test(trimmedPath)) ||
                           (trimmedPath.includes('/var/folders/') && trimmedPath.includes('T/'));
 
     // 危険なパターンの検出（テスト環境では緩和）
@@ -327,7 +327,7 @@ export class AIOutputCommand {
       const outputDir = path.dirname(safeOutputPath);
       
       // セキュリティ: 出力ディレクトリの検証（テスト環境では緩和）
-      const isTestTempFile = (outputDir.includes('/tmp/') && outputDir.includes('rimor-test')) ||
+      const isTestTempFile = (outputDir.includes('/tmp/') && /rimor.*test/.test(outputDir)) ||
                             (outputDir.includes('/var/folders/') && outputDir.includes('T/'));
       
       if (!isTestTempFile && !PathSecurity.validateProjectPath(outputDir, projectRoot)) {

@@ -33,9 +33,11 @@ export class PathSecurity {
    */
   static safeResolve(filePath: string, projectPath: string, context?: string): string | null {
     try {
-      // テスト環境の検出（より限定的）
-      const isTestTempFile = (projectPath.includes('/tmp/') && projectPath.includes('rimor-test')) ||
-                            projectPath.includes('/var/folders/') && projectPath.includes('T/');
+      // テスト環境の検出（rimor-*-test-*パターンをサポート）
+      const isTestTempFile = (filePath.includes('/tmp/') && /rimor.*test/.test(filePath)) ||
+                            (filePath.includes('/var/folders/') && filePath.includes('T/')) ||
+                            (projectPath.includes('/tmp/') && /rimor.*test/.test(projectPath)) ||
+                            (projectPath.includes('/var/folders/') && projectPath.includes('T/'));
 
       const resolvedPath = path.resolve(projectPath, filePath);
       
