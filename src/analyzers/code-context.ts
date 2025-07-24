@@ -46,6 +46,18 @@ export class AdvancedCodeContextAnalyzer {
       }
       const language = this.detectLanguage(filePath);
       
+      // セキュリティ: パストラバーサル攻撃を防ぐ
+      if (!this.validateProjectPath(filePath, projectPath)) {
+        errorHandler.handleError(
+          new Error(`不正なファイルパス '${issue.file}' がプロジェクト範囲外にアクセスしようとしました`),
+          ErrorType.PERMISSION_DENIED,
+          'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
+          { filePath: issue.file, projectPath },
+          true
+        );
+        return this.createEmptyContext(language, startTime);
+      }
+      
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
         return this.createEmptyContext(language, startTime);
@@ -56,7 +68,6 @@ export class AdvancedCodeContextAnalyzer {
       if (!this.resourceMonitor.checkFileSize(stats.size, filePath)) {
         return this.createEmptyContext(language, startTime);
       }
-
       const fileContent = await this.readFileContent(filePath, projectPath);
       const targetLine = (issue.line || 1) - 1;
       const requestedContextLines = options.contextLines || 10;
@@ -1027,10 +1038,6 @@ export class AdvancedCodeContextAnalyzer {
       return null;
     }
   }
-
-
-=======
->>>>>>> aa3be86 (feat: Phase 2 - 高度なコードコンテキスト分析器を実装)
   private async findTestFiles(sourceFile: string, projectPath: string): Promise<string[]> {
     const testFiles: string[] = [];
     const baseName = path.basename(sourceFile, path.extname(sourceFile));
