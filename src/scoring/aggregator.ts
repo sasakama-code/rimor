@@ -124,7 +124,7 @@ export class ScoreAggregator {
    * @param options 集約オプション
    * @returns プロジェクトスコア
    */
-  aggregateIncrementally(
+  async aggregateIncrementally(
     pluginResultsMap: Map<string, PluginResult[]>,
     options: {
       batchSize?: number;
@@ -133,7 +133,7 @@ export class ScoreAggregator {
       maxMemoryUsage?: number; // MB単位
       skipOnError?: boolean;
     } = {}
-  ): ProjectScore {
+  ): Promise<ProjectScore> {
     const { 
       batchSize = 100, 
       weights = DEFAULT_WEIGHTS,

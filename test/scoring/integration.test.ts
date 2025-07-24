@@ -160,7 +160,7 @@ describe('Scoring System Integration', () => {
   });
 
   describe('Performance and Scalability', () => {
-    test('should handle large number of files efficiently', () => {
+    test('should handle large number of files efficiently', async () => {
       const startTime = Date.now();
 
       // 大量のファイルをシミュレート
@@ -181,7 +181,7 @@ describe('Scoring System Integration', () => {
       }
 
       // 段階的集約を使用
-      const projectScore = aggregator.aggregateIncrementally(pluginResultsMap, {
+      const projectScore = await aggregator.aggregateIncrementally(pluginResultsMap, {
         batchSize: 100
       });
 
