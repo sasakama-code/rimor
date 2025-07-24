@@ -34,6 +34,33 @@ export interface RimorConfig {
     pluginCount?: number;
     estimatedExecutionTime?: number;
   };
+  scoring?: {
+    enabled?: boolean;
+    weights?: {
+      plugins?: Record<string, number>;
+      dimensions?: {
+        completeness?: number;
+        correctness?: number;
+        maintainability?: number;
+        performance?: number;
+        security?: number;
+      };
+      fileTypes?: Record<string, number>;
+    };
+    gradeThresholds?: {
+      A?: number;
+      B?: number;
+      C?: number;
+      D?: number;
+      F?: number;
+    };
+    options?: {
+      enableTrends?: boolean;
+      enablePredictions?: boolean;
+      cacheResults?: boolean;
+      reportFormat?: 'detailed' | 'summary' | 'minimal';
+    };
+  };
 }
 
 export class ConfigLoader {

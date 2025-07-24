@@ -1,0 +1,67 @@
+{
+  "$schema": "https://rimorjs.com/schema/config.json",
+  "excludePatterns": [
+    "node_modules/**",
+    "dist/**", 
+    "build/**",
+    "coverage/**",
+    "*.generated.ts"
+  ],
+  "plugins": {
+    "test-existence": {
+      "enabled": true,
+      "priority": 1,
+      "excludeFiles": ["index.ts", "types.ts", "config.ts"]
+    },
+    "assertion-quality": {
+      "enabled": true,
+      "priority": 2
+    },
+    "test-structure": {
+      "enabled": false,
+      "priority": 3
+    }
+  },
+  "output": {
+    "format": "json",
+    "verbose": false
+  },
+  "scoring": {
+    "enabled": true,
+    "weights": {
+      "plugins": {
+        "test-existence": 1.5,
+        "assertion-quality": 2.0,
+        "test-structure": 1.2
+      },
+      "dimensions": {
+        "completeness": 1.2,
+        "correctness": 2.0,
+        "maintainability": 1.0,
+        "performance": 0.8,
+        "security": 1.5
+      },
+      "fileTypes": {
+        "**/*.critical.test.ts": 2.5,
+        "**/*.integration.test.ts": 2.0,
+        "**/*.unit.test.ts": 1.5,
+        "**/*.e2e.test.ts": 2.0,
+        "**/utils/**/*.test.ts": 1.2,
+        "**/deprecated/**/*.test.ts": 0.8
+      }
+    },
+    "gradeThresholds": {
+      "A": 90,
+      "B": 80,
+      "C": 70,
+      "D": 60,
+      "F": 0
+    },
+    "options": {
+      "enableTrends": true,
+      "enablePredictions": false,
+      "cacheResults": true,
+      "reportFormat": "detailed"
+    }
+  }
+}
