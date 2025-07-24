@@ -58,6 +58,52 @@ export class InteractiveCreator implements IInteractivePluginCreator {
 
     const trimmedInput = input.trim();
 
+    // セキュリティ: 入力長制限
+    if (trimmedInput.length > 10000) {
+      return {
+        action: 'error',
+        step: session.currentStep,
+        prompt: '入力が長すぎます（最大10,000文字）。',
+        error: 'Input too long'
+      };
+    }
+
+    // セキュリティ: 危険なパターンの検出
+    const dangerousInputPatterns = [
+      /\<script[^>]*\>/gi, // XSS攻撃
+      /javascript:/gi, // JavaScript URL scheme
+      /vbscript:/gi, // VBScript URL scheme
+      /on\w+\s*=/gi, // イベントハンドラー
+      /eval\s*\(/gi, // eval関数
+      /require\s*\(/gi, // require関数
+      /import\s*\(/gi, // 動的import
+      /\.\.\//g, // パストラバーサル
+      /\/etc\/|\/root\/|\/home\//gi, // システムディレクトリ
+      /child_process|exec|spawn/gi, // プロセス実行
+      /fs\.write|fs\.unlink|fs\.rmdir/gi, // ファイル操作
+    ];
+
+    for (const pattern of dangerousInputPatterns) {
+      if (pattern.test(trimmedInput)) {
+        return {
+          action: 'error',
+          step: session.currentStep,
+          prompt: 'セキュリティ違反: 不正な入力が検出されました。安全な文字のみ使用してください。',
+          error: `Dangerous pattern detected: ${pattern.source}`
+        };
+      }
+    }
+
+    // 制御文字のチェック
+    if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(trimmedInput)) {
+      return {
+        action: 'error',
+        step: session.currentStep,
+        prompt: '無効な制御文字が含まれています。',
+        error: 'Control characters detected'
+      };
+    }
+
     try {
       switch (session.currentStep) {
         case SessionStep.PURPOSE:
@@ -128,8 +174,21 @@ export class InteractiveCreator implements IInteractivePluginCreator {
    * プラグインの保存
    */
   async savePlugin(plugin: GeneratedPlugin, name: string): Promise<void> {
-    const pluginDir = path.join(process.cwd(), 'src', 'plugins', 'generated');
+    // セキュリティ: プラグイン名のサニタイゼーション
+    const sanitizedName = this.sanitizePluginName(name);
+    if (!sanitizedName) {
+      throw new Error('無効なプラグイン名です');
+    }
+
+    const projectRoot = process.cwd();
+    const pluginDir = path.join(projectRoot, 'src', 'plugins', 'generated');
     
+    // セキュリティ: プロジェクト範囲内であることを確認
+    const { PathSecurity } = await import('../utils/pathSecurity');
+    if (!PathSecurity.validateProjectPath(pluginDir, projectRoot)) {
+      throw new Error('セキュリティ違反: プラグインディレクトリがプロジェクト範囲外です');
+    }
+
     // ディレクトリが存在しない場合は作成（非同期版を使用）
     try {
       await fs.promises.access(pluginDir);
@@ -138,10 +197,65 @@ export class InteractiveCreator implements IInteractivePluginCreator {
       await fs.promises.mkdir(pluginDir, { recursive: true });
     }
 
-    const fileName = `${name}.ts`;
+    const fileName = `${sanitizedName}.ts`;
     const filePath = path.join(pluginDir, fileName);
     
+    // セキュリティ: 最終的なファイルパスの検証
+    if (!PathSecurity.validateProjectPath(filePath, projectRoot)) {
+      throw new Error('セキュリティ違反: ファイルパスがプロジェクト範囲外です');
+    }
+
+    // 既存ファイルの上書き防止
+    try {
+      await fs.promises.access(filePath);
+      throw new Error(`プラグインファイル ${fileName} は既に存在します`);
+    } catch (error) {
+      // ファイルが存在しない場合は続行
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
+    }
+
+    // セキュリティ: ファイルサイズ制限
+    if (plugin.code.length > 100000) {
+      throw new Error('プラグインファイルサイズが制限を超えています（最大100KB）');
+    }
+    
     await fs.promises.writeFile(filePath, plugin.code, 'utf-8');
+  }
+
+  /**
+   * プラグイン名のサニタイゼーション
+   */
+  private sanitizePluginName(name: string): string | null {
+    // 空文字チェック
+    if (!name || name.trim().length === 0) {
+      return null;
+    }
+
+    // 危険な文字を除去
+    const sanitized = name
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]/g, '') // 英数字、アンダースコア、ハイフンのみ許可
+      .replace(/^[^a-zA-Z]/, '') // 先頭は英字である必要
+      .substring(0, 50); // 最大50文字
+
+    // 長さチェック
+    if (sanitized.length < 3) {
+      return null;
+    }
+
+    // 予約語チェック
+    const reservedNames = [
+      'plugin', 'index', 'config', 'types', 'test', 'spec',
+      'node_modules', 'dist', 'build', 'src', 'lib'
+    ];
+    
+    if (reservedNames.includes(sanitized.toLowerCase())) {
+      return null;
+    }
+
+    return sanitized;
   }
 
   /**

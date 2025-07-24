@@ -464,14 +464,62 @@ export class CacheManager {
   
   private async loadCacheFromDisk(): Promise<void> {
     try {
+      // セキュリティ: キャッシュディレクトリのパス検証
+      const { PathSecurity } = await import('../utils/pathSecurity');
+      const projectRoot = process.cwd();
+      
+      if (!PathSecurity.validateProjectPath(this.options.cacheDirectory, projectRoot)) {
+        errorHandler.handleError(
+          new Error('キャッシュディレクトリがプロジェクト範囲外です'),
+          undefined,
+          'セキュリティ違反: キャッシュディレクトリアクセス拒否',
+          { cacheDirectory: this.options.cacheDirectory }
+        );
+        return;
+      }
+
       await fs.mkdir(this.options.cacheDirectory, { recursive: true });
       
       if (!fsSync.existsSync(this.cacheFilePath)) {
         return;
       }
+
+      // セキュリティ: ファイルサイズ制限
+      const fileStats = await fs.stat(this.cacheFilePath);
+      if (fileStats.size > 100 * 1024 * 1024) { // 100MB制限
+        errorHandler.handleError(
+          new Error('キャッシュファイルサイズが制限を超えています'),
+          undefined,
+          'キャッシュファイルが大きすぎます',
+          { filePath: this.cacheFilePath, size: fileStats.size }
+        );
+        return;
+      }
       
       const data = await fs.readFile(this.cacheFilePath, 'utf-8');
-      const cacheData = JSON.parse(data);
+      
+      // セキュリティ: JSON解析の安全化
+      const cacheData = this.safeJsonParse(data);
+      if (!cacheData) {
+        errorHandler.handleError(
+          new Error('キャッシュファイルの形式が無効です'),
+          undefined,
+          'キャッシュファイル破損',
+          { cacheFilePath: this.cacheFilePath }
+        );
+        return;
+      }
+
+      // セキュリティ: データ構造の検証
+      if (!this.validateCacheData(cacheData)) {
+        errorHandler.handleError(
+          new Error('キャッシュデータの構造が無効です'),
+          undefined,
+          'キャッシュデータ検証失敗',
+          { cacheFilePath: this.cacheFilePath }
+        );
+        return;
+      }
       
       this.cache = new Map(cacheData.entries || []);
       this.stats = { ...this.stats, ...cacheData.stats };
@@ -487,6 +535,135 @@ export class CacheManager {
         true
       );
     }
+  }
+
+  /**
+   * 安全なJSON解析
+   */
+  private safeJsonParse(data: string): any | null {
+    try {
+      // 基本的な検証
+      if (!data || data.trim().length === 0) {
+        return null;
+      }
+
+      // サイズ制限
+      if (data.length > 50 * 1024 * 1024) { // 50MB
+        return null;
+      }
+
+      // 危険なパターンの検出
+      const dangerousPatterns = [
+        /__proto__/g,
+        /constructor/g,
+        /prototype/g,
+        /function\s*\(/gi,
+        /eval\s*\(/gi,
+        /require\s*\(/gi,
+        /import\s*\(/gi,
+        /process\./gi,
+        /global\./gi,
+        /child_process/gi
+      ];
+
+      for (const pattern of dangerousPatterns) {
+        if (pattern.test(data)) {
+          errorHandler.handleError(
+            new Error('キャッシュファイルに危険なコードが含まれています'),
+            undefined,
+            'セキュリティ違反: キャッシュファイル改ざん検出',
+            { pattern: pattern.source }
+          );
+          return null;
+        }
+      }
+
+      const parsed = JSON.parse(data);
+      
+      // オブジェクトの深度制限（DoS攻撃防止）
+      if (this.getObjectDepth(parsed) > 10) {
+        return null;
+      }
+
+      return parsed;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * キャッシュデータの構造検証
+   */
+  private validateCacheData(data: any): boolean {
+    if (!data || typeof data !== 'object') {
+      return false;
+    }
+
+    // 必須フィールドの存在確認
+    if (!Array.isArray(data.entries)) {
+      return false;
+    }
+
+    // エントリ数制限
+    if (data.entries.length > this.options.maxEntries * 2) {
+      return false;
+    }
+
+    // 各エントリの検証
+    for (const [key, entry] of data.entries) {
+      if (!this.validateCacheEntry(key, entry)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 個別キャッシュエントリの検証
+   */
+  private validateCacheEntry(key: string, entry: any): boolean {
+    if (!key || typeof key !== 'string' || key.length > 100) {
+      return false;
+    }
+
+    if (!entry || typeof entry !== 'object') {
+      return false;
+    }
+
+    // 必須フィールドの検証
+    const requiredFields = ['filePath', 'fileHash', 'fileSize', 'lastModified', 'pluginResults', 'cachedAt'];
+    for (const field of requiredFields) {
+      if (!(field in entry)) {
+        return false;
+      }
+    }
+
+    // ファイルパスの検証
+    if (typeof entry.filePath !== 'string' || entry.filePath.includes('..') || entry.filePath.length > 500) {
+      return false;
+    }
+
+    // 数値フィールドの検証
+    if (typeof entry.fileSize !== 'number' || entry.fileSize < 0 || entry.fileSize > 100 * 1024 * 1024) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * オブジェクトの深度を取得
+   */
+  private getObjectDepth(obj: any, depth = 0): number {
+    if (depth > 10) return depth; // 最大深度制限
+
+    if (obj && typeof obj === 'object') {
+      const depths = Object.values(obj).map(value => this.getObjectDepth(value, depth + 1));
+      return Math.max(depth, ...depths);
+    }
+    
+    return depth;
   }
   
   private async saveCacheToDisk(): Promise<void> {
