@@ -13,34 +13,73 @@ export class DictionaryLoader {
   private static readonly BACKUP_EXTENSION = '.backup';
 
   /**
-   * 辞書をYAMLファイルから読み込み
+   * 辞書をファイルから読み込み（YAML/JSON両対応）
    */
-  static async loadFromFile(filePath: string): Promise<DomainDictionary> {
+  static async loadFromFile(filePath: string): Promise<DomainDictionary | null> {
     try {
+      if (!filePath || filePath.trim() === '') {
+        return null;
+      }
+
       if (!fs.existsSync(filePath)) {
-        throw new Error(`辞書ファイルが見つかりません: ${filePath}`);
+        return null;
+      }
+
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // サポートされていない拡張子の場合
+      if (!ext || (ext !== '.yaml' && ext !== '.yml' && ext !== '.json')) {
+        return null;
       }
 
       const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const yamlData = yaml.load(fileContent) as any;
+      let parsedData: any;
 
-      if (!yamlData) {
-        throw new Error('YAML形式が不正です');
+      if (ext === '.json') {
+        try {
+          parsedData = JSON.parse(fileContent);
+        } catch (error) {
+          errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, 'JSONファイルの解析に失敗しました');
+          return null;
+        }
+      } else {
+        try {
+          parsedData = yaml.load(fileContent) as any;
+        } catch (error) {
+          errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, 'YAMLファイルの解析に失敗しました');
+          return null;
+        }
       }
 
-      const dictionary = this.validateAndConvertYamlToDictionary(yamlData);
+      if (!parsedData) {
+        return null;
+      }
+
+      // 日付の変換（JSON形式の場合）
+      if (parsedData.lastUpdated && typeof parsedData.lastUpdated === 'string') {
+        parsedData.lastUpdated = new Date(parsedData.lastUpdated);
+      }
+
+      const dictionary = this.validateAndConvertYamlToDictionary(parsedData);
       return dictionary;
     } catch (error) {
       errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, '辞書ファイルの読み込みに失敗しました');
-      throw error;
+      return null;
     }
   }
 
   /**
-   * 辞書をYAMLファイルに保存
+   * 辞書をファイルに保存（YAML/JSON両対応）
    */
   static async saveToFile(dictionary: DomainDictionary, filePath: string): Promise<void> {
     try {
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // サポートされていない拡張子の場合
+      if (!ext || (ext !== '.yaml' && ext !== '.yml' && ext !== '.json')) {
+        throw new Error('サポートされていないファイル形式です。.yaml、.yml、または.jsonを使用してください');
+      }
+
       // バックアップ作成
       if (fs.existsSync(filePath)) {
         const backupPath = filePath + this.BACKUP_EXTENSION;
@@ -53,17 +92,25 @@ export class DictionaryLoader {
         fs.mkdirSync(directory, { recursive: true });
       }
 
-      // YAML形式に変換
-      const yamlData = this.convertDictionaryToYaml(dictionary);
-      const yamlString = yaml.dump(yamlData, {
-        indent: 2,
-        lineWidth: 120,
-        noRefs: true,
-        sortKeys: true
-      });
+      let content: string;
+
+      if (ext === '.json') {
+        // JSON形式で保存
+        const jsonData = this.convertDictionaryToYaml(dictionary);
+        content = JSON.stringify(jsonData, null, 2);
+      } else {
+        // YAML形式で保存
+        const yamlData = this.convertDictionaryToYaml(dictionary);
+        content = yaml.dump(yamlData, {
+          indent: 2,
+          lineWidth: 120,
+          noRefs: true,
+          sortKeys: true
+        });
+      }
 
       // ファイルに書き込み
-      fs.writeFileSync(filePath, yamlString, 'utf-8');
+      fs.writeFileSync(filePath, content, 'utf-8');
     } catch (error) {
       errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, '辞書ファイルの保存に失敗しました');
       throw error;
@@ -84,10 +131,9 @@ export class DictionaryLoader {
 
       for (const filePath of possiblePaths) {
         if (fs.existsSync(filePath)) {
-          if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
-            return await this.loadFromFile(filePath);
-          } else if (filePath.endsWith('.json')) {
-            return await this.loadFromJsonFile(filePath);
+          const dictionary = await this.loadFromFile(filePath);
+          if (dictionary) {
+            return dictionary;
           }
         }
       }
@@ -150,8 +196,25 @@ export class DictionaryLoader {
         ...mergeDictionary.contextMappings
       ];
 
+      // バージョンの比較（より高いバージョンを採用）
+      const baseVersion = baseDictionary.version.split('.').map(Number);
+      const mergeVersion = mergeDictionary.version.split('.').map(Number);
+      let useHigherVersion = baseDictionary.version;
+      
+      for (let i = 0; i < Math.max(baseVersion.length, mergeVersion.length); i++) {
+        const baseNum = baseVersion[i] || 0;
+        const mergeNum = mergeVersion[i] || 0;
+        if (mergeNum > baseNum) {
+          useHigherVersion = mergeDictionary.version;
+          break;
+        } else if (baseNum > mergeNum) {
+          useHigherVersion = baseDictionary.version;
+          break;
+        }
+      }
+
       return {
-        version: baseDictionary.version,
+        version: useHigherVersion,
         domain: baseDictionary.domain,
         language: baseDictionary.language,
         lastUpdated: new Date(),
@@ -170,16 +233,17 @@ export class DictionaryLoader {
   /**
    * 辞書のバックアップ作成
    */
-  static async createBackup(filePath: string): Promise<string> {
+  static async createBackup(filePath: string): Promise<string | null> {
     try {
       if (!fs.existsSync(filePath)) {
-        throw new Error(`バックアップ対象ファイルが見つかりません: ${filePath}`);
+        return null;
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const backupPath = `${filePath}.backup.${timestamp}`;
       
-      fs.copyFileSync(filePath, backupPath);
+      const originalContent = fs.readFileSync(filePath, 'utf-8');
+      fs.writeFileSync(backupPath, originalContent, 'utf-8');
       return backupPath;
     } catch (error) {
       errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, 'バックアップ作成に失敗しました');
@@ -200,8 +264,8 @@ export class DictionaryLoader {
 
     try {
       // 基本構造の検証
-      if (!dictionary.version) errors.push('バージョン情報が不足しています');
-      if (!dictionary.domain) errors.push('ドメイン情報が不足しています');
+      if (!dictionary.version || dictionary.version.trim() === '') errors.push('バージョンが不正です');
+      if (!dictionary.domain || dictionary.domain.trim() === '') errors.push('ドメインが不正です');
       if (!dictionary.language) errors.push('言語情報が不足しています');
       if (!dictionary.lastUpdated) errors.push('更新日時情報が不足しています');
 
@@ -428,22 +492,106 @@ export class DictionaryLoader {
   }
 
   /**
-   * JSONファイルから読み込み（下位互換性）
+   * ディレクトリから複数の辞書を読み込み
    */
-  private static async loadFromJsonFile(filePath: string): Promise<DomainDictionary> {
+  static async loadFromDirectory(
+    directoryPath: string, 
+    options: { recursive?: boolean } = {}
+  ): Promise<DomainDictionary[]> {
     try {
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const jsonData = JSON.parse(fileContent);
-      
-      // 日付の変換
-      if (jsonData.lastUpdated) {
-        jsonData.lastUpdated = new Date(jsonData.lastUpdated);
+      if (!fs.existsSync(directoryPath)) {
+        return [];
       }
 
-      return this.validateAndConvertYamlToDictionary(jsonData);
+      const dictionaries: DomainDictionary[] = [];
+      const files = fs.readdirSync(directoryPath);
+
+      for (const file of files) {
+        const filePath = path.join(directoryPath, file);
+        const stat = fs.statSync(filePath);
+
+        if (stat.isFile()) {
+          const ext = path.extname(file).toLowerCase();
+          if (ext === '.yaml' || ext === '.yml' || ext === '.json') {
+            try {
+              const dictionary = await this.loadFromFile(filePath);
+              if (dictionary) {
+                dictionaries.push(dictionary);
+              }
+            } catch (error) {
+              // 個別ファイルの読み込みエラーは警告のみ
+              console.warn(`辞書ファイル ${filePath} の読み込みに失敗しました:`, error);
+            }
+          }
+        } else if (stat.isDirectory() && options.recursive) {
+          const subDictionaries = await this.loadFromDirectory(filePath, options);
+          dictionaries.push(...subDictionaries);
+        }
+      }
+
+      return dictionaries;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`JSONファイルの読み込みに失敗しました: ${errorMessage}`);
+      errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, 'ディレクトリからの辞書読み込みに失敗しました');
+      return [];
     }
   }
+
+  /**
+   * 利用可能な辞書ファイルの一覧を取得
+   */
+  static async listAvailableDictionaries(directoryPath: string): Promise<Array<{
+    filename: string;
+    path: string;
+    lastModified: Date;
+    size: number;
+    type: 'yaml' | 'json';
+  }>> {
+    try {
+      if (!fs.existsSync(directoryPath)) {
+        return [];
+      }
+
+      const result: Array<{
+        filename: string;
+        path: string;
+        lastModified: Date;
+        size: number;
+        type: 'yaml' | 'json';
+      }> = [];
+
+      const files = fs.readdirSync(directoryPath);
+
+      for (const file of files) {
+        const filePath = path.join(directoryPath, file);
+        const stat = fs.statSync(filePath);
+
+        if (stat.isFile()) {
+          const ext = path.extname(file).toLowerCase();
+          if (ext === '.yaml' || ext === '.yml') {
+            result.push({
+              filename: file,
+              path: filePath,
+              lastModified: stat.mtime,
+              size: stat.size,
+              type: 'yaml'
+            });
+          } else if (ext === '.json') {
+            result.push({
+              filename: file,
+              path: filePath,
+              lastModified: stat.mtime,
+              size: stat.size,
+              type: 'json'
+            });
+          }
+        }
+      }
+
+      return result.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+    } catch (error) {
+      errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, '利用可能辞書一覧の取得に失敗しました');
+      return [];
+    }
+  }
+
 }

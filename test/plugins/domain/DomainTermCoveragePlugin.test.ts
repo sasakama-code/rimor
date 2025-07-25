@@ -188,7 +188,7 @@ describe('DomainTermCoveragePlugin', () => {
   describe('プラグイン基本機能', () => {
     test('プラグイン識別情報が正しく設定される', () => {
       expect(plugin.id).toBe('domain-term-coverage');
-      expect(plugin.name).toBe('Domain Term Coverage');
+      expect(plugin.name).toBe('DomainTermCoverage');
       expect(plugin.version).toBe('1.0.0');
       expect(plugin.type).toBe('domain');
     });

@@ -100,7 +100,7 @@ describe('Dictionary Plugin Integration', () => {
       const registeredPlugins = pluginManager.getDictionaryAwarePlugins();
       expect(registeredPlugins).toHaveLength(1);
       expect(registeredPlugins[0].id).toBe('domain-term-coverage');
-      expect(registeredPlugins[0].name).toBe('Domain Term Coverage');
+      expect(registeredPlugins[0].name).toBe('DomainTermCoverage');
     });
 
     test('ドメイン辞書の読み込み', async () => {
@@ -331,6 +331,10 @@ contextMappings: []
 
   describe('統計情報とステータス', () => {
     test('拡張統計情報の取得', () => {
+      // プラグイン登録前の統計を確認
+      const initialStats = pluginManager.getEnhancedStats();
+      const initialTotalPlugins = initialStats.basic.totalPlugins;
+      
       const plugin = new DomainTermCoveragePlugin();
       pluginManager.registerDictionaryAwarePlugin(plugin);
       (pluginManager as any).loadedDictionaries.set('test', testDictionary);
@@ -340,7 +344,8 @@ contextMappings: []
       expect(stats.dictionaryAwarePlugins).toBe(1);
       expect(stats.loadedDictionaries).toBe(1);
       expect(stats.basic).toBeDefined();
-      expect(stats.basic.totalPlugins).toBeGreaterThan(0);
+      // プラグイン登録後、totalPluginsが増加していることを確認
+      expect(stats.basic.totalPlugins).toBe(initialTotalPlugins + 1);
     });
 
     test('辞書機能の有効/無効切り替え', () => {

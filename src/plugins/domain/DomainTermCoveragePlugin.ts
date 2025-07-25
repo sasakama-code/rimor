@@ -19,7 +19,7 @@ import { DictionaryAwareBasePlugin } from '../base/DictionaryAwareBasePlugin';
  */
 export class DomainTermCoveragePlugin extends DictionaryAwareBasePlugin {
   id = 'domain-term-coverage';
-  name = 'Domain Term Coverage';
+  name = 'DomainTermCoverage';
   version = '1.0.0';
   type = 'domain' as const;
 
