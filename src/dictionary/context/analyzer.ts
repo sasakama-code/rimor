@@ -418,6 +418,11 @@ export class ContextAnalyzer {
       // 条件に基づく判定
       const { condition } = rule;
 
+      // nullチェック追加
+      if (!condition || !condition.type) {
+        return false;
+      }
+
       switch (condition.type) {
         case 'function-name':
           return context.functions.some(fn => {

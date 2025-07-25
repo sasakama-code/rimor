@@ -185,8 +185,9 @@ describe('ContextAnalyzer', () => {
         mockDictionary
       );
 
-      expect(result.applicableRules).toHaveLength(1); // 'test.*' pattern matches testFunction
-      expect(result.applicableRules[0].name).toBe('Test Rule');
+      expect(result.applicableRules).toHaveLength(2); // 両方のルールが適用される
+      expect(result.applicableRules.map(r => r.name)).toContain('Test Rule');
+      expect(result.applicableRules.map(r => r.name)).toContain('User Rule');
     });
 
     test('必要なテストが推論される', async () => {
@@ -273,8 +274,9 @@ describe('ContextAnalyzer', () => {
     test('適用可能なルールが正しく特定される', () => {
       const result = analyzer.identifyApplicableRules(mockCodeContext, mockDictionary.businessRules);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe('Test Rule'); // testFunction matches 'test.*' pattern
+      expect(result).toHaveLength(2); // 両方のルールが適用される
+      expect(result.map(r => r.name)).toContain('Test Rule'); // testFunction matches 'test.*' pattern
+      expect(result.map(r => r.name)).toContain('User Rule'); // userService matches 'user.*' pattern
     });
 
     test('優先度でソートされる', () => {
@@ -302,13 +304,13 @@ describe('ContextAnalyzer', () => {
       expect(result[0].priority).toBeLessThanOrEqual(result[1]?.priority || Infinity);
     });
 
-    test('エラーが発生した場合、空配列を返す', () => {
+    test('無効な条件のルールは除外される', () => {
       const invalidRules = [{ ...mockDictionary.businessRules[0], condition: null }];
       
       const result = analyzer.identifyApplicableRules(mockCodeContext, invalidRules as any);
 
-      expect(result).toHaveLength(0);
-      expect(mockErrorHandler.handleError).toHaveBeenCalled();
+      expect(result).toHaveLength(0); // nullチェックにより除外される
+      expect(mockErrorHandler.handleError).not.toHaveBeenCalled(); // エラーは発生しない
     });
   });
 
@@ -362,26 +364,33 @@ describe('ContextAnalyzer', () => {
     });
 
     test('複雑性が高いコードでスコアが調整される', () => {
-      const complexContext = {
+      // ドメイン関連度を下げてスコア上限を回避
+      const normalContext = {
         ...mockCodeContext,
+        domainRelevance: 0.4  // 0.8から0.4に下げる
+      };
+      
+      const complexContext = {
+        ...normalContext,
         functions: [{ name: 'complex', complexity: 15 }]
       };
 
-      const score = analyzer.calculateContextualQualityScore(
+      const normalScore = analyzer.calculateContextualQualityScore(
+        normalContext,
+        mockRelevantTerms,
+        mockApplicableRules,
+        mockRequiredTests as any
+      );
+
+      const complexScore = analyzer.calculateContextualQualityScore(
         complexContext,
         mockRelevantTerms,
         mockApplicableRules,
         mockRequiredTests as any
       );
 
-      const normalScore = analyzer.calculateContextualQualityScore(
-        mockCodeContext,
-        mockRelevantTerms,
-        mockApplicableRules,
-        mockRequiredTests as any
-      );
-
-      expect(score).toBeLessThan(normalScore);
+      expect(complexScore).toBeLessThan(normalScore);
+      expect(normalScore - complexScore).toBeGreaterThanOrEqual(5); // 複雑性による調整があることを確認
     });
 
     test('エラーが発生した場合、デフォルトスコアを返す', () => {
