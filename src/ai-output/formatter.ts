@@ -16,7 +16,7 @@ import { FileScore } from '../scoring/types';
 import { PathSecurity } from '../utils/pathSecurity';
 
 /**
- * AI向け出力フォーマッター v0.5.0
+ * AI向け出力フォーマッター v0.6.0
  * 分析結果をAIツールが理解しやすい形式で出力
  */
 export class AIOptimizedFormatter {
@@ -141,7 +141,7 @@ export class AIOptimizedFormatter {
       language,
       testFramework,
       timestamp: new Date().toISOString(),
-      rimVersion: '0.5.0'
+      rimVersion: '0.6.0'
     };
   }
 
