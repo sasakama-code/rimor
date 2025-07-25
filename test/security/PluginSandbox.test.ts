@@ -36,10 +36,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-exec', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-exec', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-exec');
     });
 
     test('fsモジュールによる任意ファイルアクセスを防ぐ', async () => {
@@ -52,10 +52,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-fs', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-fs', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-fs');
     });
 
     test('eval()による動的コード実行を防ぐ', async () => {
@@ -67,10 +67,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-eval', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-eval', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-eval');
     });
 
     test('プロトタイプ汚染攻撃を防ぐ', async () => {
@@ -86,10 +86,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-prototype', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-prototype', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-prototype');
     });
 
     test('グローバル変数操作を防ぐ', async () => {
@@ -102,10 +102,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-global', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-global', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-global');
     });
 
     test('Function constructorによる動的コード実行を防ぐ', async () => {
@@ -117,10 +117,10 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(maliciousCode, 'malicious-function', '/test.js');
+      const result = await sandbox.executePlugin(maliciousCode, 'malicious-function', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('危険なコードパターンを検出');
+      expect(result.error).toContain('不正なプラグインコード: malicious-function');
     });
   });
 
@@ -141,7 +141,7 @@ describe('PluginSandbox Security Tests', () => {
       // 制限を短く設定
       sandbox.updateLimits({ maxExecutionTime: 1000 }); // 1秒
 
-      const result = await sandbox.executePlugin(longRunningCode, 'timeout-test', '/test.js');
+      const result = await sandbox.executePlugin(longRunningCode, 'timeout-test', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
       expect(result.error).toContain('実行時間超過');
@@ -163,7 +163,7 @@ describe('PluginSandbox Security Tests', () => {
       // メモリ制限を低く設定
       sandbox.updateLimits({ maxMemoryUsage: 1 }); // 1MB
 
-      const result = await sandbox.executePlugin(memoryHungryCode, 'memory-test', '/test.js');
+      const result = await sandbox.executePlugin(memoryHungryCode, 'memory-test', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
       expect(result.error).toContain('メモリ使用量超過');
@@ -172,7 +172,7 @@ describe('PluginSandbox Security Tests', () => {
     test('ファイルサイズ制限を強制する', async () => {
       const largeCode = 'a'.repeat(10 * 1024 * 1024); // 10MB のコード
       
-      const result = await sandbox.executePlugin(largeCode, 'large-plugin', '/test.js');
+      const result = await sandbox.executePlugin(largeCode, 'large-plugin', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
       expect(result.error).toContain('不正なプラグインコード');
@@ -283,7 +283,7 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(buggyCode, 'buggy-plugin', '/test.js');
+      const result = await sandbox.executePlugin(buggyCode, 'buggy-plugin', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(false);
       expect(result.error).toContain('Plugin internal error');
@@ -300,7 +300,7 @@ describe('PluginSandbox Security Tests', () => {
         }
       `;
 
-      const result = await sandbox.executePlugin(simpleCode, 'stats-plugin', '/test.js');
+      const result = await sandbox.executePlugin(simpleCode, 'stats-plugin', path.join(tempDir, 'test.js'));
       
       expect(result.success).toBe(true);
       expect(result.executionTime).toBeGreaterThanOrEqual(0);

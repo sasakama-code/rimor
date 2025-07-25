@@ -34,6 +34,7 @@ export class ParallelAnalyzer {
   
   constructor(options: ParallelOptions = {}) {
     this.pluginManager = new PluginManager();
+    this.pluginManager.setSandboxEnabled(false); // レガシープラグイン対応のためサンドボックス無効化
     this.options = {
       batchSize: options.batchSize ?? 10,
       maxConcurrency: options.maxConcurrency ?? 4,

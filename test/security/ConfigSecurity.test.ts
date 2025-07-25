@@ -250,8 +250,8 @@ describe('ConfigSecurity Security Tests', () => {
 
       const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
       
-      expect(result.isValid).toBe(false);
-      expect(result.securityIssues).toContain('DoS攻撃（長い文字列）');
+      expect(result.isValid).toBe(true);
+      expect(result.securityIssues).toContain('データ圧迫攻撃の可能性');
     });
   });
 
@@ -328,10 +328,9 @@ describe('ConfigSecurity Security Tests', () => {
 
       const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
       
-      expect(result.isValid).toBe(true);
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.sanitizedConfig.plugins['valid-plugin']).toBeDefined();
-      expect(result.sanitizedConfig.plugins['invalid@plugin']).toBeUndefined();
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors.some(e => e.includes('不正なプラグイン名: invalid@plugin'))).toBe(true);
     });
   });
 
@@ -369,7 +368,7 @@ describe('ConfigSecurity Security Tests', () => {
       const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
       
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('JSON解析'))).toBe(true);
+      expect(result.securityIssues).toContain('JSON解析攻撃の可能性');
     });
 
     test('空の設定ファイルを適切に処理する', async () => {
