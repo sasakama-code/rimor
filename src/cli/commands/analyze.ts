@@ -14,6 +14,8 @@ import { ScoreAggregator } from '../../scoring/aggregator';
 import { WeightsManager } from '../../scoring/weights';
 import { ReportGenerator } from '../../scoring/reports';
 import { CliFormatter, JsonFormatter, CsvFormatter, HtmlFormatter } from '../../scoring/formatters';
+// v0.4.1 セキュリティ強化
+import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -39,6 +41,11 @@ export interface AnalyzeOptions {
 export class AnalyzeCommand {
   private analyzer!: Analyzer | ParallelAnalyzer | CachedAnalyzer;
   private config: RimorConfig | null = null;
+  private cliSecurity: CLISecurity;
+
+  constructor() {
+    this.cliSecurity = new CLISecurity(process.cwd(), DEFAULT_CLI_SECURITY_LIMITS);
+  }
   
   private async initializeWithConfig(targetPath: string, options: AnalyzeOptions): Promise<void> {
     const configLoader = new ConfigLoader();
@@ -92,8 +99,48 @@ export class AnalyzeCommand {
   }
   
   async execute(options: AnalyzeOptions): Promise<void> {
+    // v0.4.1 セキュリティ強化: CLI引数の包括的検証
+    const cliValidation = this.cliSecurity.validateAllArguments({
+      path: options.path,
+      format: options.format,
+      outputFile: options.outputFile
+    });
+
+    // セキュリティ問題への対応
+    if (cliValidation.allSecurityIssues.length > 0) {
+      console.error(OutputFormatter.error('🛡️  セキュリティ問題を検出しました:'));
+      cliValidation.allSecurityIssues.forEach(issue => {
+        console.error(OutputFormatter.error(`  - ${issue}`));
+      });
+    }
+
+    // エラーがある場合は実行停止
+    if (!cliValidation.isValid) {
+      console.error(OutputFormatter.error('❌ CLI引数の検証に失敗しました:'));
+      cliValidation.allErrors.forEach(error => {
+        console.error(OutputFormatter.error(`  - ${error}`));
+      });
+      process.exit(1);
+    }
+
+    // 警告の表示
+    if (cliValidation.allWarnings.length > 0) {
+      console.warn(OutputFormatter.warning('⚠️  以下の警告があります:'));
+      cliValidation.allWarnings.forEach(warning => {
+        console.warn(OutputFormatter.warning(`  - ${warning}`));
+      });
+    }
+
+    // セキュリティ検証済みの引数を使用
+    const sanitizedOptions: AnalyzeOptions = {
+      ...options,
+      path: cliValidation.sanitizedArgs.path || options.path,
+      format: cliValidation.sanitizedArgs.format || options.format,
+      outputFile: cliValidation.sanitizedArgs.outputFile || options.outputFile
+    };
+
     // キャッシュクリア処理（最優先）
-    if (options.clearCache) {
+    if (sanitizedOptions.clearCache) {
       const cachedAnalyzer = new CachedAnalyzer();
       await cachedAnalyzer.clearCache();
       return; // キャッシュクリア後は分析を実行せず終了
@@ -103,20 +150,20 @@ export class AnalyzeCommand {
     await cleanupManager.performStartupCleanup();
     
     try {
-      const targetPath = path.resolve(options.path);
+      const targetPath = path.resolve(sanitizedOptions.path);
       
-      // パスの存在確認
+      // パスの存在確認（サニタイズ済みパスで再実行）
       if (!fs.existsSync(targetPath)) {
         console.error(OutputFormatter.error(getMessage('cli.error.path_not_found', { targetPath })));
         process.exit(1);
       }
       
-      // 設定ファイル読み込みとプラグイン初期化
-      await this.initializeWithConfig(targetPath, options);
+      // 設定ファイル読み込みとプラグイン初期化（サニタイズ済みオプションを使用）
+      await this.initializeWithConfig(targetPath, sanitizedOptions);
       
-      // 出力フォーマット決定（オプション > 設定ファイル > デフォルト）
-      const format = options.format || this.config?.output.format || 'text';
-      const verbose = options.verbose ?? this.config?.output.verbose ?? false;
+      // 出力フォーマット決定（サニタイズ済みオプション > 設定ファイル > デフォルト）
+      const format = sanitizedOptions.format || this.config?.output.format || 'text';
+      const verbose = sanitizedOptions.verbose ?? this.config?.output.verbose ?? false;
       
       if (format === 'text') {
         // 単一ファイル対応の確認
@@ -157,22 +204,22 @@ export class AnalyzeCommand {
       
       const result = await this.analyzer.analyze(targetPath);
       
-      // v0.4.0 スコアリング機能
-      if (options.scoring) {
-        await this.generateScoringReport(result, targetPath, options);
+      // v0.4.0 スコアリング機能（サニタイズ済みオプションを使用）
+      if (sanitizedOptions.scoring) {
+        await this.generateScoringReport(result, targetPath, sanitizedOptions);
         return;
       }
       
       // 結果の表示
       if (format === 'json') {
-        const jsonOutput = this.formatAsJson(result, targetPath, options.parallel);
+        const jsonOutput = this.formatAsJson(result, targetPath, sanitizedOptions.parallel);
         console.log(JSON.stringify(jsonOutput, null, 2));
       } else {
         console.log(OutputFormatter.issueList(result.issues));
         console.log(OutputFormatter.summary(result.totalFiles, result.issues.length, result.executionTime));
         
         // キャッシュ統計の表示（verbose時またはshowCacheStats時）
-        if ((verbose || options.showCacheStats) && 'cacheStats' in result) {
+        if ((verbose || sanitizedOptions.showCacheStats) && 'cacheStats' in result) {
           const cacheStats = (result as any).cacheStats;
           console.log(OutputFormatter.info('\n📊 キャッシュ統計:'));
           console.log(OutputFormatter.info(`  ヒット率: ${(cacheStats.hitRatio * 100).toFixed(1)}%`));
@@ -183,7 +230,7 @@ export class AnalyzeCommand {
         }
         
         // 並列処理統計の表示（verbose時のみ）
-        if (options.parallel && verbose && 'parallelStats' in result) {
+        if (sanitizedOptions.parallel && verbose && 'parallelStats' in result) {
           const stats = (result as any).parallelStats;
           console.log(OutputFormatter.info(getMessage('analysis.stats.parallel_header')));
           console.log(OutputFormatter.info(getMessage('analysis.stats.batch_count', { count: stats.batchCount.toString() })));

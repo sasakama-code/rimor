@@ -16,7 +16,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "RIMOR_LANG=ja jest",
+    "test": "NODE_OPTIONS=\"--max-old-space-size=10240\" RIMOR_LANG=ja jest --runInBand",
     "build": "node scripts/build-with-cleanup.js",
     "build:simple": "tsc",
     "start": "node dist/index.js",

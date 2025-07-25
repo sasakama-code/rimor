@@ -45,7 +45,10 @@ export class WeightsManager {
       return this.mergeWithDefaults(weightConfig);
       
     } catch (error) {
-      console.warn(`重み設定の読み込みでエラーが発生しました: ${error}`);
+      // テスト環境では警告を抑制
+      if (process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+        console.warn(`重み設定の読み込みでエラーが発生しました: ${error}`);
+      }
       return DEFAULT_WEIGHTS;
     }
   }
@@ -66,7 +69,10 @@ export class WeightsManager {
         const existingContent = fs.readFileSync(configPath, 'utf-8');
         existingConfig = JSON.parse(existingContent);
       } catch (error) {
-        console.warn(`既存設定ファイルの読み込みでエラー: ${error}`);
+        // テスト環境では警告を抑制
+        if (process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+          console.warn(`既存設定ファイルの読み込みでエラー: ${error}`);
+        }
       }
     }
 
