@@ -1,6 +1,6 @@
 {
   "name": "rimor",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
   "main": "dist/index.js",
   "bin": {
@@ -17,6 +17,10 @@
   },
   "scripts": {
     "test": "NODE_OPTIONS=\"--max-old-space-size=10240\" RIMOR_LANG=ja jest --runInBand",
+    "test:integration": "NODE_OPTIONS=\"--max-old-space-size=10240\" RIMOR_LANG=ja jest --testPathPattern=integration --runInBand",
+    "test:unit": "NODE_OPTIONS=\"--max-old-space-size=10240\" RIMOR_LANG=ja jest --testPathPattern=test/.*test\\.ts$ --runInBand",
+    "test:performance": "NODE_OPTIONS=\"--max-old-space-size=10240\" RIMOR_LANG=ja jest --testPathPattern=performance --runInBand",
+    "test:full-suite": "npm run test:unit && npm run test:integration",
     "build": "node scripts/build-with-cleanup.js",
     "build:simple": "tsc",
     "start": "node dist/index.js",
@@ -25,6 +29,13 @@
     "analyze:verbose": "npm run build && node dist/index.js analyze --verbose",
     "analyze:src": "npm run build && node dist/index.js analyze ./src",
     "analyze:src:json": "npm run build && node dist/index.js analyze ./src --format=json",
+    "analyze:dictionary": "npm run build && node dist/index.js analyze --dictionary",
+    "dictionary:init": "npm run build && node dist/index.js dictionary init",
+    "dictionary:list": "npm run build && node dist/index.js dictionary list",
+    "dictionary:validate": "npm run build && node dist/index.js dictionary validate",
+    "bootstrap:init": "npm run build && node dist/index.js bootstrap init",
+    "bootstrap:status": "npm run build && node dist/index.js bootstrap status",
+    "bootstrap:validate": "npm run build && node dist/index.js bootstrap validate",
     "dev": "npm run build && npm run analyze",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
@@ -78,8 +89,10 @@
   },
   "dependencies": {
     "@types/glob": "^8.1.0",
+    "@types/js-yaml": "^4.0.9",
     "chalk": "^4.1.2",
     "glob": "^11.0.3",
+    "js-yaml": "^4.1.0",
     "yargs": "^17.7.2"
   }
 }

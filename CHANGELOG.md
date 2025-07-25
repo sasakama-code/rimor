@@ -5,6 +5,55 @@ All notable changes to the Rimor project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-07-25
+
+### 📚 Domain Dictionary System - Contextual Code Analysis
+
+v0.6.0では**ドメイン辞書システム**を実装し、ビジネス知識とコードコンテキストを活用した高度な品質分析を実現しました。従来の構文解析に加えて、ドメイン固有の用語・ルール・品質基準に基づく文脈理解による次世代テスト品質評価システムを導入しています。
+
+#### Added - Domain Dictionary Core System
+
+- **ドメイン辞書管理**: `src/dictionary/core/` によるビジネス用語・ルール管理
+- **知識抽出エンジン**: `src/dictionary/extractors/linter.ts` ESLint/TypeScript/Prettier設定からの自動学習
+- **文脈理解エンジン**: `src/dictionary/context/` コードのドメイン関連度とビジネス適合性評価
+- **YAML永続化**: `src/dictionary/storage/` 辞書データの構造化保存・バージョン管理
+- **高性能キャッシュ**: メモリ・ディスクの2段階キャッシュシステム（1ms辞書検索）
+- **CLI辞書管理**: `src/cli/commands/dictionary.ts` 対話型辞書操作・検証コマンド
+
+#### Enhanced - Dictionary-Aware Plugin System
+
+- **DictionaryAwarePlugin**: `src/plugins/base/DictionaryAwareBasePlugin.ts` 辞書連携プラグイン基盤
+- **ドメイン用語カバレッジ**: `src/plugins/domain/DomainTermCoveragePlugin.ts` ビジネス用語分析
+- **文脈品質評価**: ドメイン適合度・ビジネス規則準拠度・技術品質の統合評価
+- **辞書対応プラグインマネージャー**: `src/core/DictionaryAwarePluginManager.ts` 辞書連携分析実行
+
+#### Added - Project Bootstrap System
+
+- **自動セットアップ**: `src/cli/bootstrap/DictionaryBootstrap.ts` 新規プロジェクト初期化
+- **設定自動検出**: プロジェクト設定からのドメイン知識抽出・辞書生成
+- **対話型ウィザード**: プロジェクト特性に応じた最適辞書構築支援
+- **ブートストラップCLI**: `src/cli/commands/bootstrap.ts` init/status/validate/clean
+
+#### Added - Advanced Analysis Features
+
+- **多次元品質評価**: ドメイン適合度・ビジネス規則準拠度・技術品質の統合分析
+- **テスト要件推論**: ビジネスルールに基づく推奨テストケース生成
+- **関連性スコアリング**: コード要素とドメイン用語の関連度定量化
+- **マルチドメイン対応**: 複数ビジネスドメインでの辞書管理・切り替え分析
+
+#### Enhanced - Performance & Scalability
+
+- **大規模辞書対応**: 1000+用語での高速検索・統計処理（性能要件達成）
+- **並列分析処理**: 複数ファイル同時分析による処理効率向上
+- **メモリ最適化**: 大規模プロジェクトでの安定動作とリソース管理
+- **統合テストスイート**: `test/integration/` 性能・E2E・負荷テスト完備
+
+#### Documentation & Developer Experience
+
+- **包括的ドキュメント**: README.md完全リニューアル・クイックスタート・APIリファレンス
+- **使用例とベストプラクティス**: Ecommerce/既存プロジェクト統合/チーム開発対応
+- **開発者ガイド**: プラグイン開発・辞書設計・継続的品質改善方法論
+
 ## [0.5.0] - 2025-07-25
 
 ### 🤖 AI-Optimized Output System & Security Enhancement
