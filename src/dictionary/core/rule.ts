@@ -213,6 +213,7 @@ export class BusinessRuleManager {
       }
     } catch (error) {
       errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, 'ルール適用判定に失敗しました');
+      console.warn(`ルール ${rule.id} の適用判定中にエラーが発生しました:`, error);
       return false;
     }
   }
