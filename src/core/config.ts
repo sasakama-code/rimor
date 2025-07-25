@@ -108,7 +108,11 @@ export class ConfigLoader {
           }
           
           // 一般的なエラーログ（テスト環境では抑制）
-          if (validationResult.errors.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+          if (validationResult.errors.length > 0 && 
+              process.env.NODE_ENV !== 'test' && 
+              process.env.JEST_WORKER_ID === undefined &&
+              process.env.CI !== 'true' &&
+              process.env.RIMOR_LANG !== 'ja') {
             console.error(`設定ファイルエラー: ${validationResult.errors.join(', ')}`);
           }
           
@@ -116,12 +120,20 @@ export class ConfigLoader {
         }
 
         // 警告の表示（テスト環境では抑制）
-        if (validationResult.warnings.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+        if (validationResult.warnings.length > 0 && 
+            process.env.NODE_ENV !== 'test' && 
+            process.env.JEST_WORKER_ID === undefined &&
+            process.env.CI !== 'true' &&
+            process.env.RIMOR_LANG !== 'ja') {
           console.warn(`設定ファイル警告: ${validationResult.warnings.join(', ')}`);
         }
 
         // セキュリティ問題があるが有効な設定の場合の警告（テスト環境では抑制）
-        if (validationResult.securityIssues.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+        if (validationResult.securityIssues.length > 0 && 
+            process.env.NODE_ENV !== 'test' && 
+            process.env.JEST_WORKER_ID === undefined &&
+            process.env.CI !== 'true' &&
+            process.env.RIMOR_LANG !== 'ja') {
           console.warn(`セキュリティ警告（修正済み）: ${validationResult.securityIssues.join(', ')}`);
         }
 

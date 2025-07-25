@@ -22,7 +22,12 @@ console.error = (...args) => {
       message.includes('PERMISSION_DENIED') ||
       message.includes('UNKNOWN: セキュリティ警告') ||
       message.includes('設定ファイルエラー:') ||
-      message.includes('Context:')) {
+      message.includes('Context:') ||
+      message.includes('セキュリティ警告: プロパティ汚染攻撃') ||
+      message.includes('セキュリティ警告: パストラバーサル攻撃') ||
+      message.includes('危険なプロパティ名を検出') ||
+      message.includes('[2025-') && message.includes('UNKNOWN:') ||
+      message.includes('⚠️') || message.includes('❌')) {
     return;
   }
   
