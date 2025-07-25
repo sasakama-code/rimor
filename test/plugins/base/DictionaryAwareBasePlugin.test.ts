@@ -304,7 +304,7 @@ describe('DictionaryAwareBasePlugin', () => {
     test('パターンが空の場合の品質評価', () => {
       const result = plugin.evaluateDomainQuality([], domainContext);
 
-      expect(result.overall).toBe(75); // 技術的品質100、他50で計算
+      expect(result.overall).toBe(70); // (50*0.4 + 75*0.4 + 100*0.2) = 70
       expect(result.dimensions.domainAlignment).toBe(50);
       expect(result.dimensions.businessCompliance).toBe(75);
       expect(result.dimensions.technicalQuality).toBe(100);
@@ -315,11 +315,11 @@ describe('DictionaryAwareBasePlugin', () => {
       const invalidContext = null as any;
       const result = plugin.evaluateDomainQuality(mockPatterns, invalidContext);
 
-      expect(result.overall).toBe(50);
+      expect(result.overall).toBe(67); // (50*0.4 + 75*0.4 + 85*0.2) = 67
       expect(result.dimensions.domainAlignment).toBe(50);
-      expect(result.dimensions.businessCompliance).toBe(50);
-      expect(result.dimensions.technicalQuality).toBe(50);
-      expect(result.recommendations).toContain('ドメイン品質評価中にエラーが発生しました。設定を確認してください。');
+      expect(result.dimensions.businessCompliance).toBe(75);
+      expect(result.dimensions.technicalQuality).toBe(85);
+      expect(result.recommendations).toContain('ドメイン適合度が低いです（50点）。ドメイン関連の用語をテストに含めることを検討してください。');
     });
   });
 
@@ -575,13 +575,12 @@ describe('DictionaryAwareBasePlugin', () => {
     test('ドメイン品質評価エラー時のログ出力', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       
-      // 不正なコンテキストでエラーを発生させる
+      // null安全チェックが追加されたため、通常のnullケースではエラーが発生しない
+      // 代わりに、null安全チェックが正常に動作することを確認
       plugin.evaluateDomainQuality(mockPatterns, null as any);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'ドメイン品質評価中にエラーが発生しました',
-        expect.any(Error)
-      );
+      
+      // null安全チェックによりエラーが発生せず、ログも出力されない
+      expect(consoleSpy).toHaveBeenCalledTimes(0);
 
       consoleSpy.mockRestore();
     });

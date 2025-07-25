@@ -87,7 +87,7 @@ describe('End-to-End Workflow Tests', () => {
 
       // 5. 辞書管理コマンドのテスト
       const dictionaryListSpy = jest.spyOn(console, 'log').mockImplementation();
-      const dictionaryCommand = new DictionaryCommand(tempProjectDir);
+      const dictionaryCommand = new DictionaryCommand(tempProjectDir, 'e2e-test');
       await dictionaryCommand.list({});
       
       expect(dictionaryListSpy).toHaveBeenCalledWith(expect.stringContaining('📚 ドメイン辞書内容'));

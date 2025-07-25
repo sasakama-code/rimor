@@ -622,7 +622,7 @@ describe('DictionaryCommand', () => {
     describe('getDictionaryPath', () => {
       test('辞書ファイルパスを取得する', () => {
         const result = (dictionaryCommand as any).getDictionaryPath();
-        expect(result).toBe('/test/project/.rimor/dictionary.json');
+        expect(result).toBe('/test/project/.rimor/dictionaries/default.yaml');
       });
     });
 
@@ -663,8 +663,8 @@ describe('DictionaryCommand', () => {
         await (dictionaryCommand as any).saveDictionary();
         
         expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-          expect.stringContaining('dictionary.json'),
-          JSON.stringify(mockDictionary, null, 2),
+          expect.stringContaining('dictionaries/default.yaml'),
+          'test: data\n',
           'utf-8'
         );
       });
