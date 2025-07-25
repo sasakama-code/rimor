@@ -1,5 +1,6 @@
 import { DictionaryBootstrap } from '../bootstrap/DictionaryBootstrap';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
+import { FsCompat } from '../../utils/fsCompat';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -195,7 +196,7 @@ export class BootstrapCommand {
       
       // .rimorディレクトリの削除
       if (fs.existsSync(rimorDir)) {
-        fs.rmSync(rimorDir, { recursive: true });
+        FsCompat.removeSync(rimorDir, { recursive: true });
         console.log('✅ .rimorディレクトリを削除しました');
         cleaned++;
       }
@@ -248,16 +249,152 @@ export class BootstrapCommand {
     const template = options.template || 'basic';
     
     try {
-      // TODO: テンプレートシステムの実装
       console.log(`📋 テンプレート "${template}" を使用してセットアップします`);
-      console.log('💡 完全な自動セットアップは今後の実装で対応予定です');
-      console.log('現在は手動モードをご使用ください:');
-      console.log('  rimor bootstrap init');
+      
+      const templateConfig = await this.loadTemplate(template);
+      const bootstrap = new DictionaryBootstrap(process.cwd());
+      
+      // テンプレートに基づく自動初期化
+      await bootstrap.runBootstrap({
+        domain: templateConfig.domain,
+        language: templateConfig.language,
+        autoAccept: true,
+        initialTerms: templateConfig.terms || []
+      });
+      
+      console.log('✅ テンプレートベースのセットアップが完了しました');
       
     } catch (error) {
       console.warn('自動セットアップに失敗しました。手動モードを使用してください。');
       throw error;
     }
+  }
+
+  /**
+   * テンプレート設定を読み込み
+   */
+  private static async loadTemplate(templateName: string): Promise<{
+    domain: string;
+    language: string;
+    terms: Array<{
+      term: string;
+      definition: string;
+      category: string;
+      importance: string;
+    }>;
+  }> {
+    const templates = {
+      'basic': {
+        domain: 'general',
+        language: 'ja',
+        terms: [
+          {
+            term: 'テスト',
+            definition: 'コードの動作を確認するための検証プロセス',
+            category: 'technical',
+            importance: 'high'
+          },
+          {
+            term: '品質',
+            definition: 'ソフトウェアの要求に対する適合度',
+            category: 'core-business',
+            importance: 'critical'
+          }
+        ]
+      },
+      'ecommerce': {
+        domain: 'ecommerce',
+        language: 'ja',
+        terms: [
+          {
+            term: '商品',
+            definition: '販売対象となるアイテム',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: 'カート',
+            definition: '購入予定商品を一時的に保存する機能',
+            category: 'core-business',
+            importance: 'high'
+          },
+          {
+            term: '決済',
+            definition: '商品購入時の支払い処理',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: '在庫',
+            definition: '販売可能な商品の数量管理',
+            category: 'domain-specific',
+            importance: 'high'
+          }
+        ]
+      },
+      'healthcare': {
+        domain: 'healthcare',
+        language: 'ja',
+        terms: [
+          {
+            term: '患者',
+            definition: '医療サービスを受ける個人',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: 'カルテ',
+            definition: '患者の医療記録',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: '診断',
+            definition: '患者の状態を判断するプロセス',
+            category: 'domain-specific',
+            importance: 'high'
+          }
+        ]
+      },
+      'finance': {
+        domain: 'finance',
+        language: 'ja',
+        terms: [
+          {
+            term: '口座',
+            definition: '金融機関における顧客の資金管理単位',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: '取引',
+            definition: '資金の移動を伴う操作',
+            category: 'core-business',
+            importance: 'critical'
+          },
+          {
+            term: '残高',
+            definition: '口座に保有されている資金額',
+            category: 'domain-specific',
+            importance: 'high'
+          },
+          {
+            term: 'リスク評価',
+            definition: '投資や取引に伴うリスクの分析',
+            category: 'domain-specific',
+            importance: 'medium'
+          }
+        ]
+      }
+    };
+
+    const template = templates[templateName as keyof typeof templates];
+    if (!template) {
+      console.warn(`⚠️  テンプレート "${templateName}" が見つかりません。基本テンプレートを使用します。`);
+      return templates.basic;
+    }
+
+    return template;
   }
 
   /**

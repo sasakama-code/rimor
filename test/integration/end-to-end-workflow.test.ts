@@ -5,6 +5,7 @@ import { DictionaryAwarePluginManager } from '../../src/core/DictionaryAwarePlug
 import { DomainTermCoveragePlugin } from '../../src/plugins/domain/DomainTermCoveragePlugin';
 import { LinterKnowledgeExtractor } from '../../src/dictionary/extractors/linter';
 import { AnalyzeCommand } from '../../src/cli/commands/analyze';
+import { FsCompat } from '../../src/utils/fsCompat';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -25,7 +26,7 @@ describe('End-to-End Workflow Tests', () => {
     tempProjectDir = path.join(__dirname, '../fixtures/e2e-project');
     
     if (fs.existsSync(tempProjectDir)) {
-      fs.rmSync(tempProjectDir, { recursive: true });
+      FsCompat.removeSync(tempProjectDir, { recursive: true });
     }
     fs.mkdirSync(tempProjectDir, { recursive: true });
   });
@@ -33,7 +34,7 @@ describe('End-to-End Workflow Tests', () => {
   afterAll(() => {
     process.chdir(originalCwd);
     if (fs.existsSync(tempProjectDir)) {
-      fs.rmSync(tempProjectDir, { recursive: true });
+      FsCompat.removeSync(tempProjectDir, { recursive: true });
     }
   });
 
@@ -45,7 +46,7 @@ describe('End-to-End Workflow Tests', () => {
     files.forEach(file => {
       const filePath = path.join(tempProjectDir, file);
       if (fs.statSync(filePath).isDirectory()) {
-        fs.rmSync(filePath, { recursive: true });
+        FsCompat.removeSync(filePath, { recursive: true });
       } else {
         fs.unlinkSync(filePath);
       }

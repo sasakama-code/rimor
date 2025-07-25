@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LinterKnowledgeExtractor } from '../../../src/dictionary/extractors/linter';
 import { ExtractedKnowledge, LearningOptions } from '../../../src/core/types';
+import { FsCompat } from '../../../src/utils/fsCompat';
 
 // テスト用ファイルのパス
 const testFilesDir = path.join(__dirname, '../../fixtures/dictionary');
@@ -16,9 +17,7 @@ describe('LinterKnowledgeExtractor', () => {
 
   afterAll(() => {
     // テストファイルのクリーンアップ
-    if (fs.existsSync(testFilesDir)) {
-      fs.rmSync(testFilesDir, { recursive: true });
-    }
+    FsCompat.removeSync(testFilesDir, { recursive: true });
   });
 
   describe('ESLint設定からの抽出', () => {
@@ -421,7 +420,7 @@ module.exports = {
       expect(configs.prettier).toBeUndefined();
 
       // クリーンアップ
-      fs.rmSync(emptyDir, { recursive: true });
+      FsCompat.removeSync(emptyDir, { recursive: true });
     });
   });
 

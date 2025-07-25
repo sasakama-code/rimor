@@ -20,10 +20,31 @@ import { PathSecurity } from '../utils/pathSecurity';
  * 分析結果をAIツールが理解しやすい形式で出力
  */
 export class AIOptimizedFormatter {
-  private readonly VERSION = '1.0';
+  private readonly VERSION: string;
   private readonly MAX_CONTEXT_LINES = 10;
   private readonly DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private readonly DEFAULT_MAX_TOKENS = 8000;
+
+  constructor() {
+    // package.jsonからバージョンを動的に取得
+    this.VERSION = this.loadVersionFromPackageJson();
+  }
+
+  /**
+   * package.jsonからバージョンを読み込み
+   */
+  private loadVersionFromPackageJson(): string {
+    try {
+      const packageJsonPath = path.resolve(__dirname, '../../package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        return packageJson.version || '0.6.0';
+      }
+    } catch (error) {
+      // エラーの場合はフォールバック
+    }
+    return '0.6.0';
+  }
 
   /**
    * JSON形式でフォーマット
@@ -141,7 +162,7 @@ export class AIOptimizedFormatter {
       language,
       testFramework,
       timestamp: new Date().toISOString(),
-      rimVersion: '0.6.0'
+      rimVersion: this.VERSION
     };
   }
 
