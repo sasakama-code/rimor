@@ -140,7 +140,7 @@ describe('DomainDictionaryManager', () => {
       const term1 = DomainTermManager.createTerm({
         id: 'term-1',
         term: 'Critical Term',
-        definition: 'Critical',
+        definition: 'Critical business term definition',
         category: 'test',
         importance: 'critical'
       });
@@ -148,7 +148,7 @@ describe('DomainDictionaryManager', () => {
       const term2 = DomainTermManager.createTerm({
         id: 'term-2',
         term: 'High Term',
-        definition: 'High',
+        definition: 'High priority business term',
         category: 'test',
         importance: 'high'
       });
@@ -169,14 +169,14 @@ describe('DomainDictionaryManager', () => {
       const term1 = DomainTermManager.createTerm({
         id: 'term-1',
         term: 'Business Term',
-        definition: 'Business',
+        definition: 'Business category term definition',
         category: 'business'
       });
 
       const term2 = DomainTermManager.createTerm({
         id: 'term-2',
         term: 'Technical Term',
-        definition: 'Technical',
+        definition: 'Technical category term definition',
         category: 'technical'
       });
 
@@ -383,7 +383,7 @@ describe('DomainDictionaryManager', () => {
       const term2 = DomainTermManager.createTerm({
         id: 'term-2',
         term: 'Incomplete Term',
-        definition: 'Short',
+        definition: 'Short definition test case failure',
         category: 'technical',
         importance: 'low'
       });
