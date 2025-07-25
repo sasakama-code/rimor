@@ -2,6 +2,7 @@ import * as yargs from 'yargs';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import * as readline from 'readline';
 import { DomainDictionaryManager } from '../../dictionary/core/dictionary';
 import { DomainTermManager } from '../../dictionary/core/term';
 import { BusinessRuleManager } from '../../dictionary/core/rule';
@@ -467,17 +468,155 @@ export class DictionaryCommand {
    */
   private async runInteractiveSetup(): Promise<void> {
     console.log(OutputFormatter.info('\n🔧 基本的な用語を追加しましょう...'));
-    // 実際の実装では readline を使用してインタラクティブな入力を行う
-    console.log('（インタラクティブモードは今後実装予定）');
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    try {
+      let continueAdding = true;
+      
+      while (continueAdding) {
+        const term = await this.askQuestion(rl, '用語を入力してください (終了する場合は空入力): ');
+        
+        if (!term.trim()) {
+          continueAdding = false;
+          break;
+        }
+
+        const definition = await this.askQuestion(rl, '定義を入力してください: ');
+        const category = await this.askQuestion(rl, 'カテゴリを選択してください [core-business/technical/domain-specific/other]: ') || 'other';
+        const importance = await this.askQuestion(rl, '重要度を選択してください [critical/high/medium/low]: ') || 'medium';
+
+        try {
+          const domainTerm = DomainTermManager.createTerm({
+            term: term.trim(),
+            definition: definition.trim(),
+            category: category.trim() as any,
+            importance: importance.trim() as any,
+            aliases: [],
+            examples: [],
+            testRequirements: [],
+            relatedPatterns: []
+          });
+
+          this.dictionaryManager.addTerm(domainTerm);
+          console.log(OutputFormatter.success(`✅ 用語「${term}」を追加しました`));
+        } catch (error) {
+          console.log(OutputFormatter.error(`❌ 用語の追加に失敗しました: ${error}`));
+        }
+
+        const addMore = await this.askQuestion(rl, '他の用語も追加しますか？ [y/N]: ');
+        continueAdding = addMore.toLowerCase().startsWith('y');
+      }
+
+      console.log(OutputFormatter.success('\n✅ インタラクティブセットアップが完了しました'));
+    } finally {
+      rl.close();
+    }
   }
 
   /**
    * 用語詳細のプロンプト
    */
   private async promptTermDetails(termData: any): Promise<any> {
-    // 実際の実装では readline を使用してインタラクティブな入力を行う
-    console.log('（インタラクティブモードは今後実装予定）');
-    return termData;
+    console.log(OutputFormatter.info('\n🔧 用語の詳細情報を入力してください...'));
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    try {
+      // 基本情報の確認・修正
+      console.log(`\n現在の用語: ${termData.term}`);
+      const newTerm = await this.askQuestion(rl, `用語名を変更しますか？ [現在: ${termData.term}] (空で維持): `);
+      if (newTerm.trim()) {
+        termData.term = newTerm.trim();
+      }
+
+      console.log(`\n現在の定義: ${termData.definition}`);
+      const newDefinition = await this.askQuestion(rl, `定義を変更しますか？ [現在: ${termData.definition}] (空で維持): `);
+      if (newDefinition.trim()) {
+        termData.definition = newDefinition.trim();
+      }
+
+      // エイリアスの追加
+      const addAliases = await this.askQuestion(rl, 'エイリアス（別名）を追加しますか？ [y/N]: ');
+      if (addAliases.toLowerCase().startsWith('y')) {
+        const aliasesInput = await this.askQuestion(rl, 'エイリアスをカンマ区切りで入力してください: ');
+        if (aliasesInput.trim()) {
+          termData.aliases = aliasesInput.split(',').map(alias => alias.trim()).filter(alias => alias);
+        }
+      }
+
+      // 使用例の追加
+      const addExamples = await this.askQuestion(rl, 'コード例を追加しますか？ [y/N]: ');
+      if (addExamples.toLowerCase().startsWith('y')) {
+        const examples = [];
+        let continueExamples = true;
+        
+        while (continueExamples) {
+          const exampleCode = await this.askQuestion(rl, 'コード例を入力してください: ');
+          const exampleDescription = await this.askQuestion(rl, 'コード例の説明を入力してください: ');
+          
+          if (exampleCode.trim() && exampleDescription.trim()) {
+            examples.push({
+              code: exampleCode.trim(),
+              description: exampleDescription.trim(),
+              language: 'typescript'
+            });
+          }
+
+          const addMore = await this.askQuestion(rl, '他のコード例も追加しますか？ [y/N]: ');
+          continueExamples = addMore.toLowerCase().startsWith('y');
+        }
+        
+        termData.examples = examples;
+      }
+
+      // テスト要件の追加
+      const addTestRequirements = await this.askQuestion(rl, 'テスト要件を追加しますか？ [y/N]: ');
+      if (addTestRequirements.toLowerCase().startsWith('y')) {
+        const testRequirements = [];
+        let continueTests = true;
+        
+        while (continueTests) {
+          const testType = await this.askQuestion(rl, 'テストタイプ [must-have/should-have/nice-to-have]: ') || 'should-have';
+          const testDescription = await this.askQuestion(rl, 'テスト要件の説明を入力してください: ');
+          
+          if (testDescription.trim()) {
+            testRequirements.push({
+              type: testType.trim() as any,
+              description: testDescription.trim(),
+              examples: []
+            });
+          }
+
+          const addMore = await this.askQuestion(rl, '他のテスト要件も追加しますか？ [y/N]: ');
+          continueTests = addMore.toLowerCase().startsWith('y');
+        }
+        
+        termData.testRequirements = testRequirements;
+      }
+
+      console.log(OutputFormatter.success('\n✅ 用語詳細の入力が完了しました'));
+      return termData;
+    } finally {
+      rl.close();
+    }
+  }
+
+  /**
+   * readline質問ヘルパー
+   */
+  private askQuestion(rl: readline.Interface, question: string): Promise<string> {
+    return new Promise((resolve) => {
+      rl.question(question, (answer) => {
+        resolve(answer);
+      });
+    });
   }
 
   /**
