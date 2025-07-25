@@ -151,7 +151,7 @@ describe('AIOutputCommand', () => {
       const outputContent = fs.readFileSync(options.output, 'utf-8');
       const jsonOutput = JSON.parse(outputContent);
       
-      expect(jsonOutput.version).toBe('1.0');
+      expect(jsonOutput.version).toBe('0.6.0');
       expect(jsonOutput.format).toBe('ai-optimized');
       expect(jsonOutput.metadata).toBeDefined();
       expect(jsonOutput.context).toBeDefined();

@@ -119,7 +119,7 @@ describe('AIOptimizedFormatter', () => {
       const result = await formatter.formatAsJSON(mockAnalysisResult, testProjectPath, options);
       
       expect(result).toBeDefined();
-      expect(result.version).toBe('1.0');
+      expect(result.version).toBe('0.6.0');
       expect(result.format).toBe('ai-optimized');
       expect(result.metadata.language).toBeDefined();
       expect(result.context.rootPath).toBe(testProjectPath);
