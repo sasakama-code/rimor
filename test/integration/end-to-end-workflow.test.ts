@@ -87,9 +87,10 @@ describe('End-to-End Workflow Tests', () => {
 
       // 5. 辞書管理コマンドのテスト
       const dictionaryListSpy = jest.spyOn(console, 'log').mockImplementation();
-      await DictionaryCommand.executeList({});
+      const dictionaryCommand = new DictionaryCommand(tempProjectDir);
+      await dictionaryCommand.list({});
       
-      expect(dictionaryListSpy).toHaveBeenCalledWith(expect.stringContaining('📚 読み込み済み辞書'));
+      expect(dictionaryListSpy).toHaveBeenCalledWith(expect.stringContaining('📚 ドメイン辞書内容'));
       dictionaryListSpy.mockRestore();
 
       // 6. プラグインマネージャーでの統合分析

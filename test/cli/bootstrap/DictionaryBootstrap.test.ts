@@ -582,16 +582,17 @@ describe('DictionaryBootstrap', () => {
       jest.spyOn(bootstrap as any, 'generateConfiguration').mockResolvedValue(undefined);
       jest.spyOn(bootstrap as any, 'runInitialValidation').mockResolvedValue(undefined);
 
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      // プライベートlogメソッドをスパイ（テスト環境では出力が抑制されるため）
+      const logSpy = jest.spyOn(bootstrap as any, 'log').mockImplementation();
 
       await bootstrap.runBootstrap();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('✅ ブートストラップが完了しました！')
       );
       expect(mockRl.close).toHaveBeenCalled();
       
-      consoleSpy.mockRestore();
+      logSpy.mockRestore();
     });
 
     test('既存設定がある場合の上書き確認', async () => {
@@ -600,13 +601,14 @@ describe('DictionaryBootstrap', () => {
         callback('n'); // 上書きしない
       });
 
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      // プライベートlogメソッドをスパイ（テスト環境では出力が抑制されるため）  
+      const logSpy = jest.spyOn(bootstrap as any, 'log').mockImplementation();
 
       await bootstrap.runBootstrap();
 
-      expect(consoleSpy).toHaveBeenCalledWith('ブートストラップを中止しました。');
+      expect(logSpy).toHaveBeenCalledWith('ブートストラップを中止しました。');
       
-      consoleSpy.mockRestore();
+      logSpy.mockRestore();
     });
 
     test('エラーが発生した場合の処理', async () => {
