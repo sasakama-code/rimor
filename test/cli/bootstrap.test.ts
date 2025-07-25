@@ -1,6 +1,7 @@
 import { DictionaryBootstrap } from '../../src/cli/bootstrap/DictionaryBootstrap';
 import { BootstrapCommand } from '../../src/cli/commands/bootstrap';
 import { DictionaryLoader } from '../../src/dictionary/storage/loader';
+import { DomainDictionary } from '../../src/core/types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -55,13 +56,15 @@ describe('Bootstrap Functionality', () => {
     test('基本辞書の作成', () => {
       const bootstrap = new DictionaryBootstrap(tempDir);
       
-      // privateメソッドにアクセスするために型アサーション
-      const basicDictionary = (bootstrap as any).createBasicDictionary({
+      const projectInfo = {
         domain: 'test',
         language: 'typescript',
         framework: 'jest',
         projectType: 'web'
-      });
+      };
+      
+      // privateメソッドにアクセスするために型アサーション
+      const basicDictionary: DomainDictionary = (bootstrap as any).createBasicDictionary(projectInfo);
       
       expect(basicDictionary).toBeDefined();
       expect(basicDictionary.domain).toBe('test');
@@ -80,19 +83,19 @@ describe('Bootstrap Functionality', () => {
       const bootstrap = new DictionaryBootstrap(tempDir);
       
       // ecommerceドメインの用語取得
-      const ecommerceTerms = (bootstrap as any).getBasicTermsForDomain('ecommerce');
+      const ecommerceTerms: Array<any> = (bootstrap as any).getBasicTermsForDomain('ecommerce');
       expect(ecommerceTerms.length).toBeGreaterThan(1);
       
-      const productTerm = ecommerceTerms.find(term => term.term === 'Product');
+      const productTerm = ecommerceTerms.find((term: any) => term.term === 'Product');
       expect(productTerm).toBeDefined();
       
-      const paymentTerm = ecommerceTerms.find(term => term.term === 'Payment');
+      const paymentTerm = ecommerceTerms.find((term: any) => term.term === 'Payment');
       expect(paymentTerm).toBeDefined();
       expect(paymentTerm?.category).toBe('financial');
       
       // financialドメインの用語取得
-      const financialTerms = (bootstrap as any).getBasicTermsForDomain('financial');
-      const transactionTerm = financialTerms.find(term => term.term === 'Transaction');
+      const financialTerms: Array<any> = (bootstrap as any).getBasicTermsForDomain('financial');
+      const transactionTerm = financialTerms.find((term: any) => term.term === 'Transaction');
       expect(transactionTerm).toBeDefined();
       
       bootstrap.close();
@@ -108,7 +111,7 @@ describe('Bootstrap Functionality', () => {
         projectType: 'web'
       };
       
-      const testDictionary = (bootstrap as any).createBasicDictionary(projectInfo);
+      const testDictionary: DomainDictionary = (bootstrap as any).createBasicDictionary(projectInfo);
       
       // 設定ファイル生成を実行
       await (bootstrap as any).generateConfiguration(projectInfo, testDictionary);
@@ -138,14 +141,14 @@ describe('Bootstrap Functionality', () => {
       const bootstrap = new DictionaryBootstrap(tempDir);
       
       // 初期状態では設定なし
-      const hasConfigInitial = await (bootstrap as any).checkExistingConfiguration();
+      const hasConfigInitial: boolean = await (bootstrap as any).checkExistingConfiguration();
       expect(hasConfigInitial).toBe(false);
       
       // 設定ファイルを作成
       const configPath = path.join(tempDir, '.rimorrc.json');
       fs.writeFileSync(configPath, JSON.stringify({ test: true }), 'utf-8');
       
-      const hasConfigAfter = await (bootstrap as any).checkExistingConfiguration();
+      const hasConfigAfter: boolean = await (bootstrap as any).checkExistingConfiguration();
       expect(hasConfigAfter).toBe(true);
       
       bootstrap.close();
@@ -213,20 +216,20 @@ describe('Bootstrap Functionality', () => {
 
     test('既存セットアップの検出', async () => {
       // 設定ファイルが存在しない場合
-      const hasSetupInitial = await (BootstrapCommand as any).hasExistingSetup();
+      const hasSetupInitial: boolean = await (BootstrapCommand as any).hasExistingSetup();
       expect(hasSetupInitial).toBe(false);
       
       // 設定ファイルを作成
       const configPath = path.join(tempDir, '.rimorrc.json');
       fs.writeFileSync(configPath, '{}', 'utf-8');
       
-      const hasSetupAfter = await (BootstrapCommand as any).hasExistingSetup();
+      const hasSetupAfter: boolean = await (BootstrapCommand as any).hasExistingSetup();
       expect(hasSetupAfter).toBe(true);
     });
 
     test('設定ファイルの検証', async () => {
       // 設定ファイルが存在しない場合
-      const validationEmpty = await (BootstrapCommand as any).validateConfiguration();
+      const validationEmpty: any = await (BootstrapCommand as any).validateConfiguration();
       expect(validationEmpty.errors.length).toBeGreaterThan(0);
       expect(validationEmpty.errors[0]).toContain('設定ファイル (.rimorrc.json) が見つかりません');
       
@@ -237,8 +240,8 @@ describe('Bootstrap Functionality', () => {
         // project.domainが不足
       }), 'utf-8');
       
-      const validationIncomplete = await (BootstrapCommand as any).validateConfiguration();
-      expect(validationIncomplete.errors.some(err => err.includes('プロジェクトドメインが設定されていません'))).toBe(true);
+      const validationIncomplete: any = await (BootstrapCommand as any).validateConfiguration();
+      expect(validationIncomplete.errors.some((err: string) => err.includes('プロジェクトドメインが設定されていません'))).toBe(true);
       
       // 完全な設定ファイルの場合
       fs.writeFileSync(configPath, JSON.stringify({
@@ -251,13 +254,13 @@ describe('Bootstrap Functionality', () => {
         }
       }), 'utf-8');
       
-      const validationComplete = await (BootstrapCommand as any).validateConfiguration();
+      const validationComplete: any = await (BootstrapCommand as any).validateConfiguration();
       expect(validationComplete.errors.length).toBe(0);
     });
 
     test('辞書ファイルの検証', async () => {
       // 辞書ディレクトリが存在しない場合
-      const validationNoDir = await (BootstrapCommand as any).validateDictionaries();
+      const validationNoDir: any = await (BootstrapCommand as any).validateDictionaries();
       expect(validationNoDir.errors.length).toBeGreaterThan(0);
       expect(validationNoDir.errors[0]).toContain('辞書ディレクトリが見つかりません');
       
@@ -265,34 +268,34 @@ describe('Bootstrap Functionality', () => {
       const dictionaryDir = path.join(tempDir, '.rimor', 'dictionaries');
       fs.mkdirSync(dictionaryDir, { recursive: true });
       
-      const validationNoFiles = await (BootstrapCommand as any).validateDictionaries();
-      expect(validationNoFiles.warnings.some(warn => warn.includes('辞書ファイルが見つかりません'))).toBe(true);
+      const validationNoFiles: any = await (BootstrapCommand as any).validateDictionaries();
+      expect(validationNoFiles.warnings.some((warn: string) => warn.includes('辞書ファイルが見つかりません'))).toBe(true);
       
       // 空の辞書ファイルがある場合
       const dictionaryPath = path.join(dictionaryDir, 'test.yaml');
       fs.writeFileSync(dictionaryPath, '', 'utf-8');
       
-      const validationEmptyFile = await (BootstrapCommand as any).validateDictionaries();
-      expect(validationEmptyFile.errors.some(err => err.includes('辞書ファイル test.yaml が空です'))).toBe(true);
+      const validationEmptyFile: any = await (BootstrapCommand as any).validateDictionaries();
+      expect(validationEmptyFile.errors.some((err: string) => err.includes('辞書ファイル test.yaml が空です'))).toBe(true);
       
       // 有効な辞書ファイルがある場合
       fs.writeFileSync(dictionaryPath, 'terms:\n  - id: test\nbuisiness rules: []', 'utf-8');
       
-      const validationValidFile = await (BootstrapCommand as any).validateDictionaries();
+      const validationValidFile: any = await (BootstrapCommand as any).validateDictionaries();
       expect(validationValidFile.errors.length).toBe(0);
     });
 
     test('プロジェクト構造の検証', async () => {
-      const validation = await (BootstrapCommand as any).validateProjectStructure();
+      const validation: any = await (BootstrapCommand as any).validateProjectStructure();
       
       // package.jsonがない場合の警告
-      expect(validation.warnings.some(warn => warn.includes('package.jsonが見つかりません'))).toBe(true);
+      expect(validation.warnings.some((warn: string) => warn.includes('package.jsonが見つかりません'))).toBe(true);
       
       // srcディレクトリがない場合の警告
-      expect(validation.warnings.some(warn => warn.includes('srcディレクトリが見つかりません'))).toBe(true);
+      expect(validation.warnings.some((warn: string) => warn.includes('srcディレクトリが見つかりません'))).toBe(true);
       
       // テストディレクトリがない場合の警告
-      expect(validation.warnings.some(warn => warn.includes('テストディレクトリが見つかりません'))).toBe(true);
+      expect(validation.warnings.some((warn: string) => warn.includes('テストディレクトリが見つかりません'))).toBe(true);
       
       // package.jsonを作成
       fs.writeFileSync(path.join(tempDir, 'package.json'), '{}', 'utf-8');
@@ -303,7 +306,7 @@ describe('Bootstrap Functionality', () => {
       // testディレクトリを作成
       fs.mkdirSync(path.join(tempDir, 'test'));
       
-      const validationWithFiles = await (BootstrapCommand as any).validateProjectStructure();
+      const validationWithFiles: any = await (BootstrapCommand as any).validateProjectStructure();
       expect(validationWithFiles.warnings.length).toBe(0);
     });
   });
@@ -329,7 +332,7 @@ describe('Bootstrap Functionality', () => {
         projectType: 'web'
       };
       
-      const dictionary = (bootstrap as any).createBasicDictionary(projectInfo);
+      const dictionary: DomainDictionary = (bootstrap as any).createBasicDictionary(projectInfo);
       await (bootstrap as any).generateConfiguration(projectInfo, dictionary);
       
       // 設定とファイルの確認
@@ -340,12 +343,12 @@ describe('Bootstrap Functionality', () => {
       expect(fs.existsSync(dictionaryPath)).toBe(true);
       
       // 設定ファイルの内容確認
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const config: any = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       expect(config.project.domain).toBe('integration-test');
       expect(config.bootstrap.completed).toBe(true);
       
       // 辞書ファイルの読み込み確認
-      const loadedDictionary = await DictionaryLoader.loadFromFile(dictionaryPath);
+      const loadedDictionary: DomainDictionary | null = await DictionaryLoader.loadFromFile(dictionaryPath);
       expect(loadedDictionary).toBeDefined();
       expect(loadedDictionary!.domain).toBe('integration-test');
       expect(loadedDictionary!.terms.length).toBeGreaterThan(0);

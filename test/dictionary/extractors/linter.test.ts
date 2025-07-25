@@ -26,7 +26,12 @@ describe('LinterKnowledgeExtractor', () => {
 
     beforeEach(() => {
       // テスト用ESLint設定ファイルの作成
-      const eslintConfig = {
+      const eslintConfig: {
+        extends: string[];
+        plugins: string[];
+        rules: { [key: string]: string };
+        env: { [key: string]: boolean };
+      } = {
         extends: [
           'eslint:recommended',
           '@typescript-eslint/recommended',
@@ -151,7 +156,11 @@ module.exports = {
 
     beforeEach(() => {
       // テスト用tsconfig.jsonの作成
-      const tsconfig = {
+      const tsconfig: {
+        compilerOptions: { [key: string]: any };
+        include: string[];
+        exclude: string[];
+      } = {
         compilerOptions: {
           target: 'ES2020',
           lib: ['ES2020', 'DOM'],
@@ -224,7 +233,13 @@ module.exports = {
     const prettierConfigPath = path.join(testFilesDir, '.prettierrc');
 
     beforeEach(() => {
-      const prettierConfig = {
+      const prettierConfig: {
+        semi: boolean;
+        singleQuote: boolean;
+        tabWidth: number;
+        trailingComma: string;
+        printWidth: number;
+      } = {
         semi: false,
         singleQuote: true,
         tabWidth: 2,
@@ -266,19 +281,23 @@ module.exports = {
 
     beforeEach(() => {
       // 複数の設定ファイルを作成
-      fs.writeFileSync(eslintPath, JSON.stringify({
+      const eslintConfig: { extends: string[]; rules: { [key: string]: string } } = {
         extends: ['@typescript-eslint/recommended'],
         rules: { 'no-console': 'error' }
-      }));
+      };
 
-      fs.writeFileSync(tsconfigPath, JSON.stringify({
+      const tsconfigData: { compilerOptions: { [key: string]: any } } = {
         compilerOptions: { target: 'ES2020', strict: true }
-      }));
+      };
 
-      fs.writeFileSync(prettierPath, JSON.stringify({
+      const prettierData: { semi: boolean; singleQuote: boolean } = {
         semi: false,
         singleQuote: true
-      }));
+      };
+
+      fs.writeFileSync(eslintPath, JSON.stringify(eslintConfig));
+      fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfigData));
+      fs.writeFileSync(prettierPath, JSON.stringify(prettierData));
     });
 
     afterEach(() => {
@@ -339,9 +358,10 @@ module.exports = {
 
     beforeEach(() => {
       // 様々な設定ファイルを作成
-      fs.writeFileSync(path.join(projectRoot, '.eslintrc.json'), JSON.stringify({}));
-      fs.writeFileSync(path.join(projectRoot, 'tsconfig.json'), JSON.stringify({}));
-      fs.writeFileSync(path.join(projectRoot, '.prettierrc'), JSON.stringify({}));
+      const emptyConfig: Record<string, never> = {};
+      fs.writeFileSync(path.join(projectRoot, '.eslintrc.json'), JSON.stringify(emptyConfig));
+      fs.writeFileSync(path.join(projectRoot, 'tsconfig.json'), JSON.stringify(emptyConfig));
+      fs.writeFileSync(path.join(projectRoot, '.prettierrc'), JSON.stringify(emptyConfig));
     });
 
     afterEach(() => {
@@ -381,7 +401,8 @@ module.exports = {
 
       // 異なる形式のファイルを作成
       fs.writeFileSync(path.join(projectRoot, '.eslintrc.js'), 'module.exports = {};');
-      fs.writeFileSync(path.join(projectRoot, '.prettierrc.json'), JSON.stringify({}));
+      const emptyConfig: Record<string, never> = {};
+      fs.writeFileSync(path.join(projectRoot, '.prettierrc.json'), JSON.stringify(emptyConfig));
 
       const configs = await LinterKnowledgeExtractor.autoDetectConfigs(projectRoot);
 
@@ -421,7 +442,8 @@ module.exports = {
 
     test('読み取り権限のないファイル', async () => {
       const restrictedPath = path.join(testFilesDir, 'restricted.json');
-      fs.writeFileSync(restrictedPath, JSON.stringify({}));
+      const emptyConfig: Record<string, never> = {};
+      fs.writeFileSync(restrictedPath, JSON.stringify(emptyConfig));
       
       // 権限を変更（Unix系システムでのみ）
       if (process.platform !== 'win32') {
@@ -446,7 +468,11 @@ module.exports = {
       const largeConfigPath = path.join(testFilesDir, 'large-eslintrc.json');
       
       // 大きな設定ファイルを生成
-      const largeConfig = {
+      const largeConfig: {
+        extends: string[];
+        plugins: string[];
+        rules: { [key: string]: string };
+      } = {
         extends: Array(100).fill('eslint:recommended'),
         plugins: Array(50).fill('test-plugin'),
         rules: {}

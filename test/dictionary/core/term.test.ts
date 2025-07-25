@@ -1,5 +1,6 @@
 import { DomainTermManager } from '../../../src/dictionary/core/term';
 import { errorHandler } from '../../../src/utils/errorHandler';
+import { DomainTerm } from '../../../src/core/types';
 
 // モック設定
 jest.mock('../../../src/utils/errorHandler');
@@ -94,16 +95,16 @@ describe('DomainTermManager', () => {
   });
 
   describe('validateTerm', () => {
-    const validTerm = {
+    const validTerm: DomainTerm = {
       id: 'test-term-1',
       term: 'TestTerm',
       definition: 'This is a test term',
       category: 'business' as const,
       importance: 'high' as const,
       aliases: ['test'],
-      examples: [],
-      relatedPatterns: [],
-      testRequirements: []
+      examples: [{ code: 'testExample()', description: 'Test example' }],
+      relatedPatterns: ['test.*'],
+      testRequirements: ['should test functionality']
     };
 
     test('有効な用語で検証が成功する', () => {
@@ -151,7 +152,7 @@ describe('DomainTermManager', () => {
   });
 
   describe('findSimilarTerms', () => {
-    const terms = [
+    const terms: DomainTerm[] = [
       { id: '1', term: 'UserService', definition: 'Service for users', category: 'technical' as const, importance: 'high' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] },
       { id: '2', term: 'User', definition: 'A user entity', category: 'business' as const, importance: 'critical' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] },
       { id: '3', term: 'TestService', definition: 'Service for testing', category: 'technical' as const, importance: 'medium' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] }
@@ -197,7 +198,7 @@ describe('DomainTermManager', () => {
   });
 
   describe('categorizeByDomain', () => {
-    const terms = [
+    const terms: DomainTerm[] = [
       { id: '1', term: 'Payment', definition: 'Payment processing', category: 'financial' as const, importance: 'critical' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] },
       { id: '2', term: 'User', definition: 'A user entity', category: 'business' as const, importance: 'high' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] },
       { id: '3', term: 'Logger', definition: 'Logging utility', category: 'technical' as const, importance: 'medium' as const, aliases: [], examples: [], relatedPatterns: [], testRequirements: [] }
@@ -249,7 +250,7 @@ describe('DomainTermManager', () => {
   });
 
   describe('mergeTerms', () => {
-    const primaryTerm = {
+    const primaryTerm: DomainTerm = {
       id: 'primary',
       term: 'UserService',
       definition: 'Primary definition',
@@ -261,7 +262,7 @@ describe('DomainTermManager', () => {
       testRequirements: ['primary test']
     };
 
-    const secondaryTerm = {
+    const secondaryTerm: DomainTerm = {
       id: 'secondary',
       term: 'UserService',
       definition: 'Secondary definition',
@@ -301,7 +302,7 @@ describe('DomainTermManager', () => {
 
   describe('calculateTermComplexity', () => {
     test('複雑な用語で高いスコアを返す', () => {
-      const complexTerm = {
+      const complexTerm: DomainTerm = {
         id: 'complex',
         term: 'AdvancedUserServiceManager',
         definition: 'A very complex service that manages multiple aspects of user interaction',
@@ -324,7 +325,7 @@ describe('DomainTermManager', () => {
     });
 
     test('シンプルな用語で低いスコアを返す', () => {
-      const simpleTerm = {
+      const simpleTerm: DomainTerm = {
         id: 'simple',
         term: 'User',
         definition: 'A user',
@@ -350,7 +351,7 @@ describe('DomainTermManager', () => {
     });
 
     test('検証エラーが適切に処理される', () => {
-      const invalidTerm = {
+      const invalidTerm: DomainTerm = {
         id: 'test',
         term: '',
         definition: '',

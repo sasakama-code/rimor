@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DictionaryLoader } from '../../../src/dictionary/storage/loader';
 import { errorHandler } from '../../../src/utils/errorHandler';
+import { DomainDictionary } from '../../../src/core/types';
 
 // モック設定
 jest.mock('fs');
@@ -13,7 +14,7 @@ const mockPath = path as jest.Mocked<typeof path>;
 const mockErrorHandler = errorHandler as jest.Mocked<typeof errorHandler>;
 
 describe('DictionaryLoader', () => {
-  const mockDictionary = {
+  const mockDictionary: DomainDictionary = {
     domain: 'test-domain',
     version: '1.0.0',
     language: 'ja',
@@ -23,12 +24,12 @@ describe('DictionaryLoader', () => {
         id: 'term1',
         term: 'TestTerm',
         definition: 'Test definition',
-        category: 'business',
-        importance: 'high',
+        category: 'business' as const,
+        importance: 'high' as const,
         aliases: ['test'],
-        examples: [],
-        relatedPatterns: [],
-        testRequirements: []
+        examples: [{ code: 'testExample()', description: 'Test example' }],
+        relatedPatterns: ['test.*'],
+        testRequirements: ['should test functionality']
       }
     ],
     businessRules: [
@@ -38,11 +39,15 @@ describe('DictionaryLoader', () => {
         description: 'Test rule',
         domain: 'test-domain',
         condition: {
-          type: 'function-name',
+          type: 'function-name' as const,
           pattern: 'test.*',
-          scope: 'function'
+          scope: 'function' as const
         },
-        requirements: [],
+        requirements: [{
+          type: 'must-have' as const,
+          description: 'Test requirement',
+          testPattern: 'expect.*toBe.*'
+        }],
         priority: 100
       }
     ],
@@ -320,17 +325,22 @@ businessRules:
   });
 
   describe('mergeDictionaries', () => {
-    const primaryDict = {
+    const primaryDict: DomainDictionary = {
       domain: 'primary',
       version: '1.0.0',
       language: 'ja',
+      lastUpdated: new Date('2023-01-01'),
       terms: [
         {
           id: 'term1',
           term: 'PrimaryTerm',
           definition: 'Primary definition',
-          category: 'business',
-          importance: 'high'
+          category: 'business' as const,
+          importance: 'high' as const,
+          aliases: [],
+          examples: [],
+          relatedPatterns: [],
+          testRequirements: []
         }
       ],
       businessRules: [
@@ -339,23 +349,32 @@ businessRules:
           name: 'PrimaryRule',
           description: 'Primary rule',
           domain: 'primary',
-          condition: { type: 'function-name', pattern: 'primary.*', scope: 'function' },
+          condition: { type: 'function-name' as const, pattern: 'primary.*', scope: 'function' as const },
+          requirements: [],
           priority: 100
         }
-      ]
+      ],
+      relationships: [],
+      qualityStandards: [],
+      contextMappings: []
     };
 
-    const secondaryDict = {
+    const secondaryDict: DomainDictionary = {
       domain: 'secondary',
       version: '1.1.0',
       language: 'ja',
+      lastUpdated: new Date('2023-01-02'),
       terms: [
         {
           id: 'term2',
           term: 'SecondaryTerm',
           definition: 'Secondary definition',
-          category: 'technical',
-          importance: 'medium'
+          category: 'technical' as const,
+          importance: 'medium' as const,
+          aliases: [],
+          examples: [],
+          relatedPatterns: [],
+          testRequirements: []
         }
       ],
       businessRules: [
@@ -364,16 +383,20 @@ businessRules:
           name: 'SecondaryRule',
           description: 'Secondary rule',
           domain: 'secondary',
-          condition: { type: 'code-pattern', pattern: 'secondary.*', scope: 'file' },
+          condition: { type: 'code-pattern' as const, pattern: 'secondary.*', scope: 'file' as const },
+          requirements: [],
           priority: 200
         }
-      ]
+      ],
+      relationships: [],
+      qualityStandards: [],
+      contextMappings: []
     };
 
     test('辞書が正しくマージされる', () => {
       const result = DictionaryLoader.mergeDictionaries(
-        primaryDict as any,
-        secondaryDict as any
+        primaryDict,
+        secondaryDict
       );
       
       expect(result.domain).toBe('primary'); // プライマリのドメインを保持
@@ -384,22 +407,26 @@ businessRules:
     });
 
     test('重複するIDが適切に処理される', () => {
-      const dictWithDuplicateId = {
+      const dictWithDuplicateId: DomainDictionary = {
         ...secondaryDict,
         terms: [
           {
             id: 'term1', // primaryDict と同じID
             term: 'DuplicateTerm',
             definition: 'Duplicate definition',
-            category: 'technical',
-            importance: 'low'
+            category: 'technical' as const,
+            importance: 'low' as const,
+            aliases: [],
+            examples: [],
+            relatedPatterns: [],
+            testRequirements: []
           }
         ]
       };
       
       const result = DictionaryLoader.mergeDictionaries(
-        primaryDict as any,
-        dictWithDuplicateId as any
+        primaryDict,
+        dictWithDuplicateId
       );
       
       expect(result.terms).toHaveLength(2);
@@ -409,8 +436,8 @@ businessRules:
 
     test('バージョンが適切に更新される', () => {
       const result = DictionaryLoader.mergeDictionaries(
-        primaryDict as any,
-        secondaryDict as any
+        primaryDict,
+        secondaryDict
       );
       
       expect(result.version).toBe('1.1.0'); // より高いバージョンが採用される
