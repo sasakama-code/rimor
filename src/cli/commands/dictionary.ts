@@ -1,6 +1,7 @@
 import * as yargs from 'yargs';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as yaml from 'js-yaml';
 import { DomainDictionaryManager } from '../../dictionary/core/dictionary';
 import { DomainTermManager } from '../../dictionary/core/term';
 import { BusinessRuleManager } from '../../dictionary/core/rule';
@@ -24,11 +25,13 @@ export class DictionaryCommand {
   private dictionaryManager: DomainDictionaryManager;
   private projectRoot: string;
   private isTestEnvironment: boolean;
+  private defaultDomain: string;
 
-  constructor(projectRoot?: string) {
+  constructor(projectRoot?: string, domain?: string) {
     this.projectRoot = projectRoot || process.cwd();
     this.dictionaryManager = new DomainDictionaryManager();
     this.isTestEnvironment = this.detectTestEnvironment();
+    this.defaultDomain = domain || this.loadDefaultDomainFromConfig() || 'default';
   }
 
   /**
@@ -38,6 +41,23 @@ export class DictionaryCommand {
     return process.env.NODE_ENV === 'test' ||
            process.env.JEST_WORKER_ID !== undefined ||
            process.argv.some(arg => arg.includes('jest'));
+  }
+
+  /**
+   * 設定ファイルからデフォルトドメインを読み込み
+   */
+  private loadDefaultDomainFromConfig(): string | null {
+    const configPath = path.join(this.projectRoot, '.rimorrc.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        return config.domain || null;
+      } catch (error) {
+        // 設定ファイルが破損している場合は無視
+        return null;
+      }
+    }
+    return null;
   }
 
   /**
@@ -470,8 +490,17 @@ export class DictionaryCommand {
       throw new Error('辞書ファイルが見つかりません。先に `rimor dictionary init` を実行してください。');
     }
 
-    // YAML読み込みは今後実装（現在は簡易的な処理）
-    console.log('（辞書読み込み機能は実装中です）');
+    // YAMLファイルを読み込んで辞書を復元
+    try {
+      const fileContent = fs.readFileSync(dictionaryPath, 'utf-8');
+      const dictionaryData = yaml.load(fileContent) as any;
+      
+      // 読み込んだデータでDomainDictionaryManagerを再初期化
+      this.dictionaryManager = new DomainDictionaryManager(dictionaryData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`辞書ファイルの読み込みに失敗しました: ${errorMessage}`);
+    }
   }
 
   /**
@@ -486,16 +515,22 @@ export class DictionaryCommand {
       fs.mkdirSync(dictionaryDir, { recursive: true });
     }
 
-    // YAML保存は今後実装（現在は簡易的な処理）
+    // YAML形式で辞書を保存
     const dictionary = this.dictionaryManager.getDictionary();
-    fs.writeFileSync(dictionaryPath, JSON.stringify(dictionary, null, 2), 'utf-8');
+    const yamlContent = yaml.dump(dictionary, { 
+      noArrayIndent: false,
+      lineWidth: 120,
+      quotingType: '"'
+    });
+    fs.writeFileSync(dictionaryPath, yamlContent, 'utf-8');
   }
 
   /**
    * 辞書ファイルパスの取得
    */
-  private getDictionaryPath(): string {
-    return path.join(this.projectRoot, '.rimor', 'dictionary.json');
+  private getDictionaryPath(domain?: string): string {
+    const targetDomain = domain || this.defaultDomain;
+    return path.join(this.projectRoot, '.rimor', 'dictionaries', `${targetDomain}.yaml`);
   }
 
   /**
