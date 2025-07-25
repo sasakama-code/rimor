@@ -424,9 +424,9 @@ describe('BootstrapCommand', () => {
       
       const result = await (BootstrapCommand as any).validateDictionaries();
       
-      expect(result.warnings).toContain(
-        expect.stringContaining('標準的な構造が見つかりません')
-      );
+      expect(result.warnings.some((warning: string) => 
+        warning.includes('標準的な構造が見つかりません')
+      )).toBe(true);
     });
   });
 
@@ -438,9 +438,9 @@ describe('BootstrapCommand', () => {
       
       const result = await (BootstrapCommand as any).validateProjectStructure();
       
-      expect(result.warnings).toContain(
-        expect.stringContaining('package.jsonが見つかりません')
-      );
+      expect(result.warnings.some((warning: string) => 
+        warning.includes('package.jsonが見つかりません')
+      )).toBe(true);
     });
 
     test('srcディレクトリがない場合の警告', async () => {

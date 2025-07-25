@@ -417,6 +417,10 @@ describe('DictionaryBootstrap', () => {
       jest.spyOn(bootstrap as any, 'getBasicTermsForDomain')
         .mockReturnValue([{ id: 'test-term', term: 'TestTerm', definition: 'Test' }]);
 
+      // テスト環境検出を一時的に無効にしてコンソール出力を有効化
+      const originalIsTestEnvironment = (bootstrap as any).isTestEnvironment;
+      (bootstrap as any).isTestEnvironment = false;
+      
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       const result = (bootstrap as any).createBasicDictionary(mockProjectInfo);
@@ -427,6 +431,7 @@ describe('DictionaryBootstrap', () => {
       expect(result).toBe(mockDictionary);
       
       consoleSpy.mockRestore();
+      (bootstrap as any).isTestEnvironment = originalIsTestEnvironment;
     });
   });
 
@@ -495,6 +500,10 @@ describe('DictionaryBootstrap', () => {
         businessRules: [{ id: 'test-rule', name: 'TestRule' }]
       };
 
+      // テスト環境検出を一時的に無効にしてコンソール出力を有効化
+      const originalIsTestEnvironment = (bootstrap as any).isTestEnvironment;
+      (bootstrap as any).isTestEnvironment = false;
+      
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
       await (bootstrap as any).runInitialValidation(mockDictionary);
@@ -504,6 +513,7 @@ describe('DictionaryBootstrap', () => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ドメイン: test'));
       
       consoleSpy.mockRestore();
+      (bootstrap as any).isTestEnvironment = originalIsTestEnvironment;
     });
 
     test('用語がない場合に警告を表示する', async () => {
@@ -514,6 +524,10 @@ describe('DictionaryBootstrap', () => {
         businessRules: []
       };
 
+      // テスト環境検出を一時的に無効にしてコンソール出力を有効化
+      const originalIsTestEnvironment = (bootstrap as any).isTestEnvironment;
+      (bootstrap as any).isTestEnvironment = false;
+      
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       await (bootstrap as any).runInitialValidation(mockDictionary);
@@ -523,6 +537,7 @@ describe('DictionaryBootstrap', () => {
       );
       
       consoleWarnSpy.mockRestore();
+      (bootstrap as any).isTestEnvironment = originalIsTestEnvironment;
     });
   });
 
