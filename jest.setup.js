@@ -83,7 +83,19 @@ afterEach(() => {
 if (process.env.NODE_OPTIONS && !process.env.NODE_OPTIONS.includes('--max-old-space-size')) {
   // メモリ制限が設定されていない場合のみ警告
   if (process.env.CI !== 'true') {
-    console.warn('メモリ制限が設定されていません。NODE_OPTIONS="--max-old-space-size=4096" の設定を推奨します');
+    console.warn('メモリ制限が設定されていません。NODE_OPTIONS="--max-old-space-size=6144" の設定を推奨します');
+  }
+}
+
+// CI環境でのメモリ管理強化
+if (process.env.CI === 'true') {
+  // より頻繁なガベージコレクション
+  if (global.gc) {
+    setInterval(() => {
+      if (global.gc) {
+        global.gc();
+      }
+    }, 5000); // 5秒間隔でGC実行
   }
 }
 
