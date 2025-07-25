@@ -13,7 +13,7 @@ module.exports = {
   detectOpenHandles: false, // メモリ使用量削減のため無効
   testTimeout: process.env.CI === 'true' ? 30000 : 10000, // CI環境では30秒、ローカルは10秒
   maxWorkers: 1, // メモリ使用量制限のため常に1ワーカー
-  runInBand: process.env.CI === 'true', // CI環境では完全シーケンシャル実行
+  // runInBand設定はpackage.jsonのコマンドラインオプションで指定
   
   // CI環境でのメモリ最適化
   cache: false, // キャッシュを無効化してメモリ使用量削減
