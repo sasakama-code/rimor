@@ -360,4 +360,87 @@ export class DomainTermManager {
     
     return tags;
   }
+
+  /**
+   * 関連パターン生成
+   */
+  static generateRelatedPatterns(term: string, aliases?: string[]): string[] {
+    const patterns: string[] = [];
+    
+    // 基本パターン
+    patterns.push(term);
+    patterns.push(term.toLowerCase());
+    
+    // キャメルケース
+    if (term.length > 0) {
+      const camelCase = term.charAt(0).toLowerCase() + term.slice(1);
+      if (camelCase !== term) {
+        patterns.push(camelCase);
+      }
+    }
+    
+    // スネークケース
+    const snakeCase = term.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+    if (snakeCase !== term.toLowerCase()) {
+      patterns.push(snakeCase);
+    }
+    
+    // エイリアスパターン
+    if (aliases) {
+      aliases.forEach(alias => {
+        patterns.push(alias);
+        patterns.push(alias.toLowerCase());
+      });
+    }
+    
+    return [...new Set(patterns)];
+  }
+
+  /**
+   * 用語の統合
+   */
+  static mergeTerms(primaryTerm: DomainTerm, secondaryTerm: DomainTerm): DomainTerm {
+    const mergedTerm: DomainTerm = {
+      ...primaryTerm,
+      // エイリアスをマージ（重複除去）
+      aliases: [...new Set([...primaryTerm.aliases, ...secondaryTerm.aliases])],
+      // 例文をマージ
+      examples: [...primaryTerm.examples, ...secondaryTerm.examples],
+      // 関連パターンをマージ
+      relatedPatterns: [...new Set([...primaryTerm.relatedPatterns, ...secondaryTerm.relatedPatterns])],
+      // テスト要件をマージ
+      testRequirements: [...new Set([...primaryTerm.testRequirements, ...secondaryTerm.testRequirements])]
+    };
+    
+    return this.validateTerm(mergedTerm);
+  }
+
+  /**
+   * 用語の複雑度計算
+   */
+  static calculateTermComplexity(term: DomainTerm): {
+    score: number;
+    factors: {
+      aliasCount: number;
+      exampleCount: number;
+      testRequirementCount: number;
+      definitionLength: number;
+    };
+  } {
+    const factors = {
+      aliasCount: term.aliases.length,
+      exampleCount: term.examples.length,
+      testRequirementCount: term.testRequirements.length,
+      definitionLength: term.definition.length
+    };
+    
+    // 複雑度スコア計算
+    let score = 0;
+    score += factors.aliasCount * 2;        // エイリアス数
+    score += factors.exampleCount * 3;      // 例文数
+    score += factors.testRequirementCount * 2; // テスト要件数
+    score += Math.min(factors.definitionLength / 10, 10); // 定義の長さ（最大10点）
+    
+    return { score, factors };
+  }
 }

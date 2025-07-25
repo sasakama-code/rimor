@@ -90,7 +90,8 @@ describe('DictionaryBootstrap', () => {
 
     test('辞書ディレクトリが存在する場合trueを返す', async () => {
       mockFs.existsSync.mockImplementation((filePath) => {
-        return filePath.includes('dictionaries') || filePath === testConfigPath;
+        const path = filePath.toString();
+        return path.includes('dictionaries') || path === testConfigPath;
       });
       mockFs.readdirSync.mockReturnValue(['test-dictionary.yaml'] as any);
 

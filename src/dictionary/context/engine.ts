@@ -497,7 +497,7 @@ export class ContextEngine {
         });
       }
 
-      if (fn.parameters.length > 3) {
+      if (fn.parameters && fn.parameters.length > 3) {
         requirements.push({
           type: 'should-have',
           description: `多数のパラメータを持つ ${fn.name} の境界値テスト`,
@@ -509,11 +509,12 @@ export class ContextEngine {
 
     // クラスベースの要件
     context.classes.forEach(cls => {
+      const className = typeof cls === 'string' ? cls : cls.name;
       requirements.push({
         type: 'should-have',
-        description: `クラス ${cls.name} のインスタンス化テスト`,
-        testPattern: `new\\s+${cls.name}\\(`,
-        example: `const instance = new ${cls.name}()`
+        description: `クラス ${className} のインスタンス化テスト`,
+        testPattern: `new\\s+${className}\\(`,
+        example: `const instance = new ${className}()`
       });
     });
 

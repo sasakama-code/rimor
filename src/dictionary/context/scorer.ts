@@ -421,11 +421,12 @@ export class ContextualScorer {
 
     // クラス名との関連性
     context.classes.forEach(cls => {
-      if (cls.name.toLowerCase().includes(term.term.toLowerCase())) {
+      const className = typeof cls === 'string' ? cls : cls.name;
+      if (className.toLowerCase().includes(term.term.toLowerCase())) {
         score += 0.4;
       }
       term.aliases.forEach(alias => {
-        if (cls.name.toLowerCase().includes(alias.toLowerCase())) {
+        if (className.toLowerCase().includes(alias.toLowerCase())) {
           score += 0.3;
         }
       });
@@ -531,7 +532,10 @@ export class ContextualScorer {
       const functionMatches = context.functions.filter(fn => regex.test(fn.name)).length;
       
       // クラス名でのマッチング
-      const classMatches = context.classes.filter(cls => regex.test(cls.name)).length;
+      const classMatches = context.classes.filter(cls => {
+        const className = typeof cls === 'string' ? cls : cls.name;
+        return regex.test(className);
+      }).length;
       
       const totalMatches = functionMatches + classMatches;
       const totalElements = context.functions.length + context.classes.length;

@@ -369,7 +369,7 @@ export interface CodeContext {
   filePath: string;
   language: string;
   functions: FunctionContext[];
-  classes: ClassContext[];
+  classes: ClassContext[] | string[];
   imports: ImportContext[];
   domainRelevance: number; // 0.0-1.0
   relatedTerms: DomainTerm[];
@@ -378,25 +378,26 @@ export interface CodeContext {
 // 関数コンテキスト
 export interface FunctionContext {
   name: string;
-  parameters: string[];
+  parameters?: string[];
   returnType?: string;
   complexity: number;
-  location: CodeLocation;
+  location?: CodeLocation;
 }
 
 // クラスコンテキスト
 export interface ClassContext {
   name: string;
-  methods: string[];
-  properties: string[];
-  location: CodeLocation;
+  methods?: string[];
+  properties?: string[];
+  location?: CodeLocation;
 }
 
 // インポートコンテキスト
 export interface ImportContext {
   module: string;
-  imports: string[];
-  type: 'default' | 'named' | 'namespace';
+  imports?: string[];
+  type?: 'default' | 'named' | 'namespace';
+  path?: string;
 }
 
 // 重要度レベル

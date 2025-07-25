@@ -104,12 +104,14 @@ export class PaymentProcessor {
       expect(context.functions.length).toBeGreaterThan(0);
       const processPaymentFunction = context.functions.find(fn => fn.name === 'processPayment');
       expect(processPaymentFunction).toBeDefined();
-      expect(processPaymentFunction?.parameters.length).toBe(2);
+      expect(processPaymentFunction?.parameters?.length).toBe(2);
       expect(processPaymentFunction?.complexity).toBeGreaterThanOrEqual(1);
 
       // クラスが検出されることを確認
       expect(context.classes.length).toBe(1);
-      expect(context.classes[0].name).toBe('PaymentProcessor');
+      const firstClass = context.classes[0];
+      const className = typeof firstClass === 'string' ? firstClass : firstClass.name;
+      expect(className).toBe('PaymentProcessor');
 
       // インポートが検出されることを確認
       expect(context.imports.length).toBeGreaterThanOrEqual(0);
