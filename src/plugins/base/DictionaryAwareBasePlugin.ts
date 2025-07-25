@@ -312,20 +312,19 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
     // パターンの関連フィールドのみを検査（JSON.stringifyより効率的）
     const patternName = pattern.patternName?.toLowerCase() || '';
     const patternMetadata = pattern.metadata ? JSON.stringify(pattern.metadata).toLowerCase() : '';
-    const patternMessage = pattern.message?.toLowerCase() || '';
     const termText = term.term.toLowerCase();
     
     // 関連フィールドでの効率的な文字列マッチング
     if (patternName.includes(termText) || 
-        patternMetadata.includes(termText) || 
-        patternMessage.includes(termText)) {
+        patternMetadata.includes(termText)) {
       return 1.0;
     }
     
     // エイリアスとのマッチング
     if (term.aliases) {
       for (const alias of term.aliases) {
-        if (patternText.includes(alias.toLowerCase())) {
+        if (patternName.includes(alias.toLowerCase()) ||
+            patternMetadata.includes(alias.toLowerCase())) {
           return 0.8;
         }
       }

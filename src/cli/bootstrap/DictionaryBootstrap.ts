@@ -57,7 +57,12 @@ export class DictionaryBootstrap {
   /**
    * メインのブートストラップワークフロー
    */
-  async runBootstrap(): Promise<void> {
+  async runBootstrap(options?: {
+    domain?: string;
+    language?: string;
+    autoAccept?: boolean;
+    initialTerms?: any[];
+  }): Promise<void> {
     try {
       this.log('🚀 Rimor ドメイン辞書セットアップウィザードへようこそ！\n');
       

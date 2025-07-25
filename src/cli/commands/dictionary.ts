@@ -45,6 +45,47 @@ export class DictionaryCommand {
   }
 
   /**
+   * カテゴリの入力検証（ホワイトリスト方式）
+   */
+  private validateCategory(input: string): 'core-business' | 'technical' | 'domain-specific' | 'other' {
+    const validCategories = ['core-business', 'technical', 'domain-specific', 'other'] as const;
+    if (!validCategories.includes(input as any)) {
+      throw new Error(`無効なカテゴリです: ${input}. 有効値: ${validCategories.join(', ')}`);
+    }
+    return input as typeof validCategories[number];
+  }
+
+  /**
+   * 重要度の入力検証（ホワイトリスト方式）
+   */
+  private validateImportance(input: string): 'critical' | 'high' | 'medium' | 'low' {
+    const validImportance = ['critical', 'high', 'medium', 'low'] as const;
+    if (!validImportance.includes(input as any)) {
+      throw new Error(`無効な重要度です: ${input}. 有効値: ${validImportance.join(', ')}`);
+    }
+    return input as typeof validImportance[number];
+  }
+
+  /**
+   * 安全なID生成（サニタイゼーション強化）
+   */
+  private generateSecureId(term: string): string {
+    // ホワイトリスト方式で安全な文字のみ許可
+    const sanitized = term
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\-_]/g, '') // 英数字・ハイフン・アンダースコアのみ
+      .replace(/^[-_]+|[-_]+$/g, '') // 先頭末尾の記号除去
+      .replace(/[-_]{2,}/g, '-'); // 連続記号の正規化
+    
+    if (sanitized.length < 2) {
+      throw new Error('用語IDは2文字以上の英数字である必要があります');
+    }
+    
+    return sanitized;
+  }
+
+  /**
    * 設定ファイルからデフォルトドメインを読み込み
    */
   private loadDefaultDomainFromConfig(): string | null {
@@ -491,10 +532,11 @@ export class DictionaryCommand {
 
         try {
           const domainTerm = DomainTermManager.createTerm({
+            id: this.generateSecureId(term.trim()),
             term: term.trim(),
             definition: definition.trim(),
-            category: category.trim() as any,
-            importance: importance.trim() as any,
+            category: this.validateCategory(category.trim()),
+            importance: this.validateImportance(importance.trim()),
             aliases: [],
             examples: [],
             testRequirements: [],
