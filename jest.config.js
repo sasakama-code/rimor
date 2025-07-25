@@ -9,10 +9,16 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   // CI環境での非同期ハンドル問題解決
-  forceExit: process.env.CI === 'true',
-  detectOpenHandles: process.env.CI !== 'true', // ローカル開発時のみ検出
-  testTimeout: process.env.CI === 'true' ? 30000 : 10000, // CI環境では30秒、ローカルは10秒
-  maxWorkers: process.env.CI === 'true' ? 2 : '50%', // CI環境ではワーカー数制限
+  forceExit: true, // メモリリークを防ぐため常に有効
+  detectOpenHandles: false, // メモリ使用量削減のため無効
+  testTimeout: process.env.CI === 'true' ? 15000 : 10000, // CI環境では15秒、ローカルは10秒
+  maxWorkers: 1, // メモリ使用量制限のため常に1ワーカー
+  
+  // メモリ使用量最適化
+  logHeapUsage: process.env.CI === 'true',
+  
+  // テスト環境変数の確実な設定
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
   // CI環境でのモジュール解決強化
   moduleNameMapper: {

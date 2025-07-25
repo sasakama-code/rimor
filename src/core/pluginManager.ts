@@ -265,6 +265,11 @@ export class PluginManager {
   setSandboxEnabled(enabled: boolean): void {
     this.sandboxEnabled = enabled;
     
+    // テスト環境では警告・ログを抑制
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined) {
+      return;
+    }
+    
     if (enabled) {
       console.log('🛡️  プラグインサンドボックス機能を有効化しました');
     } else {

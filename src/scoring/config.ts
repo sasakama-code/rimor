@@ -53,7 +53,10 @@ export class ScoringConfigManager {
     try {
       // ディレクトリパスのセキュリティ検証
       if (!this.isSecurePath(configDir)) {
-        console.warn('設定ディレクトリのパスが安全でないため、デフォルト設定を使用します');
+        // テスト環境では警告を抑制
+        if (process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
+          console.warn('設定ディレクトリのパスが安全でないため、デフォルト設定を使用します');
+        }
         return this.getDefaultScoringConfig();
       }
 
