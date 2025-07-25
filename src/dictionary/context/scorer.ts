@@ -8,10 +8,63 @@ import {
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
 
 /**
+ * マッチング重み係数の設定インターフェース
+ */
+interface MatchingWeights {
+  directMatch: number;
+  aliasMatch: number;
+  patternMatch: number;
+  contextualMatch: number;
+  semanticMatch: number;
+}
+
+/**
+ * デフォルトの重み係数設定
+ */
+const DEFAULT_MATCHING_WEIGHTS: MatchingWeights = {
+  directMatch: 0.4,
+  aliasMatch: 0.25,
+  patternMatch: 0.2,
+  contextualMatch: 0.1,
+  semanticMatch: 0.05
+};
+
+/**
  * 関連度計算・スコアリングクラス
  * 用語とコードの関連度を高精度で計算
  */
 export class ContextualScorer {
+  private static matchingWeights: MatchingWeights = DEFAULT_MATCHING_WEIGHTS;
+  private static readonly DEFAULT_RELEVANCE_THRESHOLD = 0.1;
+  private static relevanceThreshold: number = ContextualScorer.DEFAULT_RELEVANCE_THRESHOLD;
+
+  /**
+   * マッチング重み係数を設定
+   */
+  static setMatchingWeights(weights: Partial<MatchingWeights>): void {
+    this.matchingWeights = { ...this.matchingWeights, ...weights };
+  }
+
+  /**
+   * 現在の重み係数を取得
+   */
+  static getMatchingWeights(): MatchingWeights {
+    return { ...this.matchingWeights };
+  }
+
+  /**
+   * 関連度閾値を設定
+   */
+  static setRelevanceThreshold(threshold: number): void {
+    this.relevanceThreshold = threshold;
+  }
+
+  /**
+   * 現在の関連度閾値を取得
+   */
+  static getRelevanceThreshold(): number {
+    return this.relevanceThreshold;
+  }
 
   /**
    * 高度な用語関連度計算
@@ -55,22 +108,22 @@ export class ContextualScorer {
         semanticMatch: 0
       };
 
-      // 1. 直接マッチング（40%の重み）
-      breakdown.directMatch = this.calculateDirectMatch(code, term) * 0.4;
+      // 1. 直接マッチング
+      breakdown.directMatch = this.calculateDirectMatch(code, term) * this.matchingWeights.directMatch;
 
-      // 2. エイリアスマッチング（25%の重み）
-      breakdown.aliasMatch = this.calculateAliasMatch(code, term) * 0.25;
+      // 2. エイリアスマッチング
+      breakdown.aliasMatch = this.calculateAliasMatch(code, term) * this.matchingWeights.aliasMatch;
 
-      // 3. パターンマッチング（20%の重み）
-      breakdown.patternMatch = this.calculatePatternMatch(code, term) * 0.2;
+      // 3. パターンマッチング
+      breakdown.patternMatch = this.calculatePatternMatch(code, term) * this.matchingWeights.patternMatch;
 
-      // 4. 文脈マッチング（10%の重み）
+      // 4. 文脈マッチング
       if (context) {
-        breakdown.contextualMatch = this.calculateContextualMatch(context, term) * 0.1;
+        breakdown.contextualMatch = this.calculateContextualMatch(context, term) * this.matchingWeights.contextualMatch;
       }
 
-      // 5. 意味的マッチング（5%の重み）
-      breakdown.semanticMatch = this.calculateSemanticMatch(code, term) * 0.05;
+      // 5. 意味的マッチング
+      breakdown.semanticMatch = this.calculateSemanticMatch(code, term) * this.matchingWeights.semanticMatch;
 
       const score = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
       const confidence = this.calculateConfidence(breakdown, term);
@@ -120,7 +173,7 @@ export class ContextualScorer {
             confidence: relevance.confidence
           };
         })
-        .filter(result => result.relevanceScore > 0.1)
+        .filter(result => result.relevanceScore > this.relevanceThreshold)
         .sort((a, b) => b.relevanceScore - a.relevanceScore);
     } catch (error) {
       errorHandler.handleError(error, ErrorType.SYSTEM_ERROR, '用語ランキングに失敗しました');

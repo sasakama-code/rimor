@@ -309,11 +309,16 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
    * パターンと用語の関連度計算
    */
   private calculatePatternTermRelevance(pattern: DetectionResult, term: any): number {
-    const patternText = JSON.stringify(pattern).toLowerCase();
+    // パターンの関連フィールドのみを検査（JSON.stringifyより効率的）
+    const patternName = pattern.patternName?.toLowerCase() || '';
+    const patternMetadata = pattern.metadata ? JSON.stringify(pattern.metadata).toLowerCase() : '';
+    const patternMessage = pattern.message?.toLowerCase() || '';
     const termText = term.term.toLowerCase();
     
-    // 単純な文字列マッチングによる関連度計算
-    if (patternText.includes(termText)) {
+    // 関連フィールドでの効率的な文字列マッチング
+    if (patternName.includes(termText) || 
+        patternMetadata.includes(termText) || 
+        patternMessage.includes(termText)) {
       return 1.0;
     }
     

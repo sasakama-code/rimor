@@ -313,7 +313,10 @@ export class ContextEngine {
         const functionPatterns = [
           /function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/g,
           /const\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*\(([^)]*)\)\s*=>/g,
-          /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)\s*:\s*[a-zA-Z]/g
+          /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)\s*:\s*[a-zA-Z]/g,
+          /async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/g,
+          /const\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*async\s*\(([^)]*)\)\s*=>/g,
+          /function\s*\*\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/g
         ];
 
         functionPatterns.forEach(pattern => {
@@ -614,9 +617,11 @@ export class ContextEngine {
   }
 
   private generateCacheKey(code: string, filePath: string): string {
-    // 簡易的なハッシュ生成
-    const hash = code.length.toString(36) + filePath.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
-    return hash;
+    // より堅牢なハッシュ生成（衝突回避）
+    const crypto = require('crypto');
+    const codeHash = crypto.createHash('sha256').update(code).digest('hex').substring(0, 16);
+    const pathHash = crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 8);
+    return `${codeHash}-${pathHash}`;
   }
 
   private createEmptyContext(filePath: string): CodeContext {
