@@ -76,6 +76,14 @@ afterEach(() => {
   // テスト後にガベージコレクションを実行
   if (global.gc) {
     global.gc();
+    // CI環境では追加のGC実行
+    if (process.env.CI === 'true') {
+      setTimeout(() => {
+        if (global.gc) {
+          global.gc();
+        }
+      }, 100);
+    }
   }
 });
 
@@ -95,7 +103,7 @@ if (process.env.CI === 'true') {
       if (global.gc) {
         global.gc();
       }
-    }, 5000); // 5秒間隔でGC実行
+    }, 2000); // 2秒間隔でGC実行
   }
 }
 
