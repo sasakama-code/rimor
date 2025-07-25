@@ -7,23 +7,45 @@
 process.env.NODE_ENV = 'test';
 process.env.RIMOR_LANG = 'ja';
 
+// テスト環境でのコンソール出力管理
+const originalError = console.error;
+const originalWarn = console.warn;
+const originalLog = console.log;
+
+// 全テスト環境で問題のあるエラーログを抑制
+console.error = (...args) => {
+  const message = args.join(' ');
+  
+  // セキュリティ機能による予期されるエラーログを抑制
+  if (message.includes('Context integration failed:') ||
+      message.includes('Project summary generation failed:') ||
+      message.includes('PERMISSION_DENIED') ||
+      message.includes('UNKNOWN: セキュリティ警告') ||
+      message.includes('設定ファイルエラー:') ||
+      message.includes('Context:')) {
+    return;
+  }
+  
+  originalError.apply(console, args);
+};
+
+console.warn = (...args) => {
+  const message = args.join(' ');
+  
+  // 既知の警告を抑制
+  if (message.includes('プラグインサンドボックス') || 
+      message.includes('重み設定の読み込み') ||
+      message.includes('設定ディレクトリのパス') ||
+      message.includes('設定ファイル警告:') ||
+      message.includes('セキュリティ警告（修正済み）:')) {
+    return;
+  }
+  
+  originalWarn.apply(console, args);
+};
+
 // CI環境での追加設定
 if (process.env.CI === 'true') {
-  // CI環境ではコンソール出力を最小限に抑制
-  const originalWarn = console.warn;
-  const originalLog = console.log;
-  
-  console.warn = (...args) => {
-    // 重要でない警告は抑制（テスト関連の既知の警告など）
-    const message = args.join(' ');
-    if (message.includes('プラグインサンドボックス') || 
-        message.includes('重み設定の読み込み') ||
-        message.includes('設定ディレクトリのパス')) {
-      return;
-    }
-    originalWarn.apply(console, args);
-  };
-  
   console.log = (...args) => {
     // CI環境ではデバッグログを抑制
     const message = args.join(' ');

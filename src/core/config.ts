@@ -107,21 +107,21 @@ export class ConfigLoader {
             );
           }
           
-          // 一般的なエラーログ
-          if (validationResult.errors.length > 0) {
+          // 一般的なエラーログ（テスト環境では抑制）
+          if (validationResult.errors.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
             console.error(`設定ファイルエラー: ${validationResult.errors.join(', ')}`);
           }
           
           return this.getDefaultConfig();
         }
 
-        // 警告の表示
-        if (validationResult.warnings.length > 0) {
+        // 警告の表示（テスト環境では抑制）
+        if (validationResult.warnings.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
           console.warn(`設定ファイル警告: ${validationResult.warnings.join(', ')}`);
         }
 
-        // セキュリティ問題があるが有効な設定の場合の警告
-        if (validationResult.securityIssues.length > 0) {
+        // セキュリティ問題があるが有効な設定の場合の警告（テスト環境では抑制）
+        if (validationResult.securityIssues.length > 0 && process.env.NODE_ENV !== 'test' && process.env.JEST_WORKER_ID === undefined) {
           console.warn(`セキュリティ警告（修正済み）: ${validationResult.securityIssues.join(', ')}`);
         }
 
