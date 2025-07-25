@@ -179,7 +179,8 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
     patterns: DetectionResult[],
     context: DomainContext
   ): number {
-    if (context.primaryTerms.length === 0) {
+    // null安全チェック
+    if (!context || !context.primaryTerms || context.primaryTerms.length === 0) {
       return 50; // 中立的なスコア
     }
 
@@ -211,7 +212,8 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
     patterns: DetectionResult[],
     context: DomainContext
   ): number {
-    if (context.activeRules.length === 0) {
+    // null安全チェック
+    if (!context || !context.activeRules || context.activeRules.length === 0) {
       return 75; // ルールがない場合は高めのデフォルト
     }
 
@@ -261,10 +263,13 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
 
     // ドメイン適合度が低い場合
     if (scores.domainAlignment < 60) {
+      const termsText = context && context.primaryTerms && context.primaryTerms.length > 0
+        ? `主要なドメイン用語（${context.primaryTerms.map(t => t.term).join(', ')}）を`
+        : 'ドメイン関連の用語を';
+      
       recommendations.push(
         `ドメイン適合度が低いです（${scores.domainAlignment}点）。` +
-        `主要なドメイン用語（${context.primaryTerms.map(t => t.term).join(', ')}）を` +
-        `テストに含めることを検討してください。`
+        `${termsText}テストに含めることを検討してください。`
       );
     }
 
