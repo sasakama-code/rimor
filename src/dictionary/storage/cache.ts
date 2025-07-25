@@ -9,7 +9,7 @@ import { errorHandler, ErrorType } from '../../utils/errorHandler';
  */
 export class DictionaryCache {
   private memoryCache: Map<string, CachedEntry> = new Map();
-  private maxMemoryEntries: number;
+  protected maxMemoryEntries: number;
   private defaultTTL: number; // TTL in milliseconds
   private diskCacheDir: string;
   private diskCacheEnabled: boolean;
@@ -405,6 +405,8 @@ export class DictionarySpecificCache extends DictionaryCache {
   private termCache: Map<string, any> = new Map();
   private ruleCache: Map<string, any> = new Map();
   private analysisCache: Map<string, any> = new Map();
+  private dictionaryCache: Map<string, any> = new Map();
+  private cleanupTimer?: NodeJS.Timeout;
 
   constructor(options?: any) {
     super({
@@ -418,17 +420,25 @@ export class DictionarySpecificCache extends DictionaryCache {
   /**
    * 用語のキャッシュ
    */
-  async cacheTerm(termId: string, term: any): Promise<void> {
+  async cacheTerm(termId: string, term: any, ttlSeconds?: number): Promise<void> {
     this.termCache.set(termId, term);
-    await this.set(`term:${termId}`, term, 60); // 1 hour TTL
+    const ttlMinutes = ttlSeconds ? ttlSeconds / 60 : 60; // Convert seconds to minutes, default 1 hour
+    await this.set(`term:${termId}`, term, ttlMinutes);
+    
+    // ローカルキャッシュのメモリ制限チェック
+    this.enforceLocalMemoryLimit();
   }
 
   /**
    * ルールのキャッシュ
    */
-  async cacheRule(ruleId: string, rule: any): Promise<void> {
+  async cacheRule(ruleId: string, rule: any, ttlSeconds?: number): Promise<void> {
     this.ruleCache.set(ruleId, rule);
-    await this.set(`rule:${ruleId}`, rule, 60); // 1 hour TTL
+    const ttlMinutes = ttlSeconds ? ttlSeconds / 60 : 60; // Convert seconds to minutes, default 1 hour
+    await this.set(`rule:${ruleId}`, rule, ttlMinutes);
+    
+    // ローカルキャッシュのメモリ制限チェック
+    this.enforceLocalMemoryLimit();
   }
 
   /**
@@ -437,23 +447,55 @@ export class DictionarySpecificCache extends DictionaryCache {
   async cacheAnalysis(fileHash: string, analysis: any): Promise<void> {
     this.analysisCache.set(fileHash, analysis);
     await this.set(`analysis:${fileHash}`, analysis, 15); // 15 minutes TTL
+    
+    // ローカルキャッシュのメモリ制限チェック
+    this.enforceLocalMemoryLimit();
+  }
+
+  /**
+   * 辞書のキャッシュ
+   */
+  async cacheDictionary(dictId: string, dictionary: any, ttlSeconds?: number): Promise<void> {
+    this.dictionaryCache.set(dictId, dictionary);
+    const ttlMinutes = ttlSeconds ? ttlSeconds / 60 : 120; // Convert seconds to minutes, default 2 hours
+    await this.set(`dictionary:${dictId}`, dictionary, ttlMinutes);
+    
+    // ローカルキャッシュのメモリ制限チェック
+    this.enforceLocalMemoryLimit();
+  }
+
+  /**
+   * 辞書の取得
+   */
+  async getDictionary(dictId: string): Promise<any | null> {
+    // メモリから取得
+    if (this.dictionaryCache.has(dictId)) {
+      return this.dictionaryCache.get(dictId);
+    }
+
+    // 一般キャッシュから取得
+    const dictionary = await this.get(`dictionary:${dictId}`);
+    if (dictionary) {
+      this.dictionaryCache.set(dictId, dictionary);
+    }
+    return dictionary;
   }
 
   /**
    * 用語の取得
    */
   async getTerm(termId: string): Promise<any | null> {
-    // メモリから取得
-    if (this.termCache.has(termId)) {
-      return this.termCache.get(termId);
-    }
-
-    // 一般キャッシュから取得
+    // 基底クラスのキャッシュから取得（期限チェック含む）
     const term = await this.get(`term:${termId}`);
     if (term) {
+      // 基底クラスに存在する場合、ローカルキャッシュも更新
       this.termCache.set(termId, term);
+      return term;
     }
-    return term;
+
+    // 基底クラスにない場合は、ローカルキャッシュからも削除
+    this.termCache.delete(termId);
+    return null;
   }
 
   /**
@@ -497,7 +539,19 @@ export class DictionarySpecificCache extends DictionaryCache {
     this.termCache.clear();
     this.ruleCache.clear();
     this.analysisCache.clear();
+    this.dictionaryCache.clear();
     await this.cleanup();
+  }
+
+  /**
+   * 全キャッシュをクリア（辞書キャッシュも含む）
+   */
+  async clear(): Promise<void> {
+    this.termCache.clear();
+    this.ruleCache.clear();
+    this.analysisCache.clear();
+    this.dictionaryCache.clear();
+    await super.clear();
   }
 
   /**
@@ -508,12 +562,179 @@ export class DictionarySpecificCache extends DictionaryCache {
     terms: number;
     rules: number;
     analyses: number;
+    dictionaries: number;
+    totalMemoryUsage: number;
   } {
+    const totalMemoryUsage = this.calculateMemoryUsage();
+    
     return {
       general: this.getStats(),
       terms: this.termCache.size,
       rules: this.ruleCache.size,
-      analyses: this.analysisCache.size
+      analyses: this.analysisCache.size,
+      dictionaries: this.dictionaryCache.size,
+      totalMemoryUsage
     };
+  }
+
+  /**
+   * メモリ圧迫状況を取得
+   */
+  getMemoryPressure(): {
+    currentEntries: number;
+    maxEntries: number;
+    usagePercentage: number;
+    recommendEviction: boolean;
+  } {
+    const totalEntries = this.termCache.size + 
+                        this.ruleCache.size + 
+                        this.analysisCache.size + 
+                        this.dictionaryCache.size;
+    
+    const maxEntries = this.maxMemoryEntries || 500;
+    const usagePercentage = Math.round((totalEntries / maxEntries) * 100);
+    const recommendEviction = usagePercentage >= 80;
+    
+    return {
+      currentEntries: totalEntries,
+      maxEntries,
+      usagePercentage,
+      recommendEviction
+    };
+  }
+
+  /**
+   * 自動クリーンアップタイマーを開始
+   */
+  startCleanupTimer(intervalMs?: number): void {
+    const interval = intervalMs ?? 60000; // Default 1 minute
+    
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+    
+    this.cleanupTimer = setInterval(async () => {
+      await this.cleanupDictionaryCache();
+    }, interval);
+  }
+
+  /**
+   * 自動クリーンアップタイマーを停止
+   */
+  stopCleanupTimer(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
+  }
+
+  /**
+   * 用語を事前読み込み
+   */
+  async prefetchTerms(termIds: string[], loader: (id: string) => Promise<any>): Promise<void> {
+    const promises = termIds.map(async (id) => {
+      if (!this.termCache.has(id)) {
+        try {
+          const term = await loader(id);
+          await this.cacheTerm(id, term);
+        } catch (error) {
+          console.warn(`用語の事前読み込みに失敗: ${id}`, error);
+        }
+      }
+    });
+
+    await Promise.all(promises);
+  }
+
+  /**
+   * キャッシュエントリを無効化
+   */
+  invalidate(key: string): void {
+    // 各ローカルキャッシュから削除
+    this.termCache.delete(key);
+    this.ruleCache.delete(key);
+    this.analysisCache.delete(key);
+    this.dictionaryCache.delete(key);
+    
+    // 基底クラスのキャッシュからもプレフィックス付きキーで削除
+    this.delete(`term:${key}`).catch(() => {});
+    this.delete(`rule:${key}`).catch(() => {});
+    this.delete(`analysis:${key}`).catch(() => {});
+    this.delete(`dictionary:${key}`).catch(() => {});
+    
+    // 直接キーでも削除（後方互換性のため）
+    this.delete(key).catch(() => {});
+  }
+
+  /**
+   * メモリ使用量の概算計算
+   */
+  private calculateMemoryUsage(): number {
+    // 簡易的な計算（実際のメモリ使用量は正確に測定困難）
+    const termMemory = this.termCache.size * 200; // 1エントリあたり約200バイト
+    const ruleMemory = this.ruleCache.size * 300; // 1エントリあたり約300バイト
+    const dictMemory = this.dictionaryCache.size * 5000; // 1エントリあたり約5KB
+    const analysisMemory = this.analysisCache.size * 1000; // 1エントリあたり約1KB
+    
+    return termMemory + ruleMemory + dictMemory + analysisMemory;
+  }
+
+  /**
+   * ローカルキャッシュのメモリ制限を強制
+   */
+  private enforceLocalMemoryLimit(): void {
+    const totalEntries = this.termCache.size + 
+                        this.ruleCache.size + 
+                        this.analysisCache.size + 
+                        this.dictionaryCache.size;
+    
+    const maxEntries = this.maxMemoryEntries || 500;
+    
+    if (totalEntries <= maxEntries) return;
+    
+    // 最も古いエントリから削除（簡易的なLRU）
+    const entriesToRemove = totalEntries - maxEntries + 1;
+    
+    // termCacheから最初に削除
+    let removed = 0;
+    const termKeys = Array.from(this.termCache.keys());
+    for (const key of termKeys) {
+      if (removed >= entriesToRemove) break;
+      this.termCache.delete(key);
+      // 基底クラスからも削除
+      this.delete(`term:${key}`).catch(() => {});
+      removed++;
+    }
+    
+    // まだ削除が必要な場合、他のキャッシュからも削除
+    if (removed < entriesToRemove) {
+      const ruleKeys = Array.from(this.ruleCache.keys());
+      for (const key of ruleKeys) {
+        if (removed >= entriesToRemove) break;
+        this.ruleCache.delete(key);
+        this.delete(`rule:${key}`).catch(() => {});
+        removed++;
+      }
+    }
+    
+    if (removed < entriesToRemove) {
+      const analysisKeys = Array.from(this.analysisCache.keys());
+      for (const key of analysisKeys) {
+        if (removed >= entriesToRemove) break;
+        this.analysisCache.delete(key);
+        this.delete(`analysis:${key}`).catch(() => {});
+        removed++;
+      }
+    }
+    
+    if (removed < entriesToRemove) {
+      const dictKeys = Array.from(this.dictionaryCache.keys());
+      for (const key of dictKeys) {
+        if (removed >= entriesToRemove) break;
+        this.dictionaryCache.delete(key);
+        this.delete(`dictionary:${key}`).catch(() => {});
+        removed++;
+      }
+    }
   }
 }

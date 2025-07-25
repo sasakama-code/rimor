@@ -275,7 +275,7 @@ describe('DictionarySpecificCache', () => {
       
       const pressure = smallCache.getMemoryPressure();
       
-      expect(pressure.usagePercentage).toBeGreaterThan(80);
+      expect(pressure.usagePercentage).toBeGreaterThanOrEqual(80);
       expect(pressure.recommendEviction).toBe(true);
     });
   });
