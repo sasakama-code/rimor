@@ -146,13 +146,15 @@ describe('AnalyzeCommand', () => {
       fs.writeFileSync(path.join(tempDir, '.rimorrc.json'), JSON.stringify(configContent));
 
       await command.execute({
-        path: tempDir
+        path: tempDir,
+        format: 'json'  // 明示的にJSONフォーマットを指定
       });
 
       const jsonCalls = consoleLogSpy.mock.calls.filter(call => 
         call[0] && typeof call[0] === 'string' && call[0].startsWith('{')
       );
       
+      expect(jsonCalls.length).toBeGreaterThan(0);
       const jsonOutput = JSON.parse(jsonCalls[0][0]);
       // 動的プラグイン発見により追加プラグインも含まれるため、assertion-existsが含まれることを確認
       expect(jsonOutput.config.enabledPlugins).toContain('assertion-exists');
