@@ -429,9 +429,9 @@ describe('DictionaryAwareBasePlugin', () => {
       );
 
       expect(recommendations.length).toBeGreaterThan(0);
-      expect(recommendations.some(r => r.includes('ドメイン適合度'))).toBe(true);
-      expect(recommendations.some(r => r.includes('ビジネス規則'))).toBe(true);
-      expect(recommendations.some(r => r.includes('技術的品質'))).toBe(true);
+      expect(recommendations.some((r: string) => r.includes('ドメイン適合度'))).toBe(true);
+      expect(recommendations.some((r: string) => r.includes('ビジネス規則'))).toBe(true);
+      expect(recommendations.some((r: string) => r.includes('技術的品質'))).toBe(true);
     });
 
     test('高スコア時は推奨事項が少ない', () => {

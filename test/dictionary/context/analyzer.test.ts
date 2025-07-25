@@ -16,54 +16,72 @@ describe('ContextAnalyzer', () => {
     domain: 'test-domain',
     version: '1.0.0',
     language: 'ja',
+    lastUpdated: new Date('2025-01-01'),
     terms: [
       {
         id: 'term1',
         term: 'TestTerm',
         definition: 'Test definition',
-        importance: 'critical',
+        importance: 'critical' as const,
         category: 'business',
         aliases: ['test', 'testing'],
         relatedPatterns: ['test.*', '.*Test'],
         examples: [
           { code: 'function testExample() {}', description: 'Test example' }
-        ]
+        ],
+        testRequirements: ['should test functionality']
       },
       {
         id: 'term2',
         term: 'UserService',
         definition: 'User service',
-        importance: 'high',
+        importance: 'high' as const,
         category: 'technical',
         aliases: ['user'],
         relatedPatterns: ['user.*'],
-        examples: []
+        examples: [],
+        testRequirements: ['should handle user operations']
       }
     ],
+    relationships: [],
     businessRules: [
       {
         id: 'rule1',
         name: 'Test Rule',
         description: 'Test rule description',
+        domain: 'test-domain',
         condition: {
-          type: 'function-name',
+          type: 'function-name' as const,
           pattern: 'test.*',
-          scope: 'function'
+          scope: 'function' as const
         },
+        requirements: [{
+          type: 'must-have' as const,
+          description: 'Test functions must have proper assertions',
+          testPattern: 'expect.*toBe.*'
+        }],
         priority: 5
       },
       {
         id: 'rule2',
         name: 'User Rule',
         description: 'User rule description',
+        domain: 'test-domain',
         condition: {
-          type: 'code-pattern',
+          type: 'code-pattern' as const,
           pattern: 'user.*',
-          scope: 'file'
+          scope: 'file' as const
         },
+        requirements: [{
+          type: 'should-have' as const,
+          description: 'User services should have error handling tests',
+          testPattern: 'catch.*error.*'
+        }],
         priority: 10
       }
-    ]
+    ],
+    qualityStandards: [],
+    contextMappings: []
   };
 
   const mockCodeContext = {
@@ -205,7 +223,7 @@ describe('ContextAnalyzer', () => {
     const testCode = 'function testFunction() { const user = new UserService(); }';
 
     beforeEach(() => {
-      mockContextEngine.calculateRelevance.mockImplementation((code, term) => {
+      mockContextEngine.calculateRelevance.mockImplementation((code: string, term: any) => {
         if (term.term === 'TestTerm') return 0.9;
         if (term.term === 'UserService') return 0.7;
         return 0;
@@ -213,7 +231,7 @@ describe('ContextAnalyzer', () => {
     });
 
     test('関連度の高い用語が正しく分析される', async () => {
-      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms);
+      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms as any);
 
       expect(result).toHaveLength(2);
       expect(result[0].term.term).toBe('TestTerm'); // 関連度でソートされている
@@ -225,13 +243,13 @@ describe('ContextAnalyzer', () => {
     test('関連度が0の用語は除外される', async () => {
       mockContextEngine.calculateRelevance.mockReturnValue(0);
       
-      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms);
+      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms as any);
 
       expect(result).toHaveLength(0);
     });
 
     test('証拠と位置情報が正しく抽出される', async () => {
-      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms);
+      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms as any);
 
       expect(result[0].evidence).toBeDefined();
       expect(result[0].locations).toBeDefined();
@@ -244,7 +262,7 @@ describe('ContextAnalyzer', () => {
         throw new Error('Relevance calculation failed');
       });
       
-      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms);
+      const result = await analyzer.analyzeTermRelevance(testCode, mockDictionary.terms as any);
 
       expect(result).toHaveLength(0);
       expect(mockErrorHandler.handleError).toHaveBeenCalled();
@@ -536,14 +554,14 @@ describe('ContextAnalyzer', () => {
         const code = 'function testExample() {}';
         const evidence = (analyzer as any).extractEvidence(code, mockDictionary.terms[0]);
         
-        expect(evidence.some(e => e.includes('関連パターン'))).toBe(true);
+        expect(evidence.some((e: string) => e.includes('関連パターン'))).toBe(true);
       });
 
       test('コード例との類似性が検出される', () => {
         const code = 'function testExample() { return true; }';
         const evidence = (analyzer as any).extractEvidence(code, mockDictionary.terms[0]);
         
-        expect(evidence.some(e => e.includes('コード例1との類似性'))).toBe(true);
+        expect(evidence.some((e: string) => e.includes('コード例1との類似性'))).toBe(true);
       });
     });
 
@@ -561,8 +579,8 @@ describe('ContextAnalyzer', () => {
         const code = 'const TestTerm = value;\nconst test = another;';
         const locations = (analyzer as any).findTermLocations(code, mockDictionary.terms[0]);
         
-        expect(locations.some(loc => loc.line === 1)).toBe(true);
-        expect(locations.some(loc => loc.line === 2)).toBe(true);
+        expect(locations.some((loc: any) => loc.line === 1)).toBe(true);
+        expect(locations.some((loc: any) => loc.line === 2)).toBe(true);
       });
     });
 
