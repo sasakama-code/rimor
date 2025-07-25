@@ -32,6 +32,21 @@ export class ContextualScorer {
     confidence: number;
   } {
     try {
+      // 入力検証
+      if (!code || !term) {
+        return {
+          score: 0,
+          breakdown: {
+            directMatch: 0,
+            aliasMatch: 0,
+            patternMatch: 0,
+            contextualMatch: 0,
+            semanticMatch: 0
+          },
+          confidence: 0
+        };
+      }
+
       const breakdown = {
         directMatch: 0,
         aliasMatch: 0,
@@ -330,6 +345,8 @@ export class ContextualScorer {
    * 直接マッチング計算
    */
   private static calculateDirectMatch(code: string, term: DomainTerm): number {
+    if (!code || code.length === 0) return 0;
+    
     const termRegex = new RegExp(`\\b${this.escapeRegex(term.term)}\\b`, 'gi');
     const matches = code.match(termRegex);
     if (!matches) return 0;
@@ -346,7 +363,7 @@ export class ContextualScorer {
    * エイリアスマッチング計算
    */
   private static calculateAliasMatch(code: string, term: DomainTerm): number {
-    if (term.aliases.length === 0) return 0;
+    if (!code || code.length === 0 || term.aliases.length === 0) return 0;
 
     let totalMatches = 0;
     term.aliases.forEach(alias => {

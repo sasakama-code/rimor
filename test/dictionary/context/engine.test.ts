@@ -23,7 +23,7 @@ describe('ContextEngine', () => {
         id: 'payment-term',
         term: 'Payment',
         definition: 'Payment processing functionality',
-        category: 'financial',
+        category: 'core-business',
         importance: 'critical',
         aliases: ['payment-proc', 'pay'],
         examples: [{
@@ -341,7 +341,7 @@ function complexFunction(data) {
       const context = await contextEngine.analyzeContext(code, 'payment.js');
       const importance = contextEngine.assessImportance(context, testDictionary);
 
-      expect(importance.level).toBeOneOf(['critical', 'high']);
+      expect(['critical', 'high']).toContain(importance.level);
       expect(importance.score).toBeGreaterThan(70);
       expect(importance.reasons.length).toBeGreaterThan(0);
       expect(importance.reasons.some(reason => reason.includes('重要用語'))).toBe(true);
@@ -736,7 +736,7 @@ describe('ContextualScorer', () => {
           id: 'payment-term',
           term: 'Payment',
           definition: 'Payment processing',
-          category: 'financial',
+          category: 'core-business',
           aliases: ['payment']
         })
       ];
@@ -772,7 +772,7 @@ describe('ContextualScorer', () => {
             id: 'payment-term',
             term: 'Payment',
             definition: 'Payment processing',
-            category: 'financial',
+            category: 'core-business',
             importance: 'critical'
           })
         ],
@@ -788,7 +788,7 @@ describe('ContextualScorer', () => {
       expect(result.importanceWeightedScore).toBeGreaterThan(0);
       expect(Object.keys(result.categoryScores).length).toBeGreaterThan(0);
       expect(result.categoryScores.data).toBeGreaterThan(0); // Database term
-      expect(result.categoryScores.financial).toBeGreaterThan(0); // Payment term
+      expect(result.categoryScores['core-business']).toBeGreaterThan(0); // Payment term
     });
   });
 
