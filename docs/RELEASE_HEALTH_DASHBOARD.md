@@ -270,10 +270,10 @@ npm install -g rimor@latest
 # Slack通知（オプション）
 export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx
 
-# PagerDuty連携（将来実装）
+# PagerDuty連携
 export PAGERDUTY_INTEGRATION_KEY=xxx
 
-# カスタムメトリクス送信（将来実装）
+# カスタムメトリクス送信
 export METRICS_ENDPOINT=https://metrics.example.com/api
 ```
 
