@@ -6,10 +6,14 @@
  * TaintTyper型ベースセキュリティ解析とRimoセキュリティ機能
  */
 
-const { execSync } = require('child_process');
+const { exec } = require('child_process');
+const { promisify } = require('util');
 const fs = require('fs');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+
+// 非同期版のexecを作成
+const execAsync = promisify(exec);
 
 const argv = yargs(hideBin(process.argv))
   .option('output', { alias: 'o', type: 'string', default: 'phase2-security.json' })
@@ -42,7 +46,10 @@ async function main() {
     // Rimorセキュリティ分析実行
     try {
       const cmd = 'node dist/index.js analyze ./src/security --format=json';
-      const output = execSync(cmd, { encoding: 'utf8', stdio: 'pipe' });
+      const { stdout: output } = await execAsync(cmd, { 
+        encoding: 'utf8',
+        maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large outputs
+      });
       const analysisResult = JSON.parse(output);
       
       results.details.rimorSecurityAnalysis = analysisResult;
@@ -61,7 +68,15 @@ async function main() {
       
     } catch (error) {
       log.error(`セキュリティ分析エラー: ${error.message}`);
-      results.details.rimorSecurityAnalysis = { success: false, error: error.message };
+      log.error(`エラー詳細: ${error.stack}`);
+      log.error(`実行コマンド: ${cmd}`);
+      results.details.rimorSecurityAnalysis = { 
+        success: false, 
+        error: error.message,
+        errorCode: error.code,
+        command: cmd,
+        timestamp: new Date().toISOString()
+      };
     }
 
     results.executionTime = Date.now() - startTime;

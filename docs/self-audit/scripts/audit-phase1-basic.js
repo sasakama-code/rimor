@@ -10,11 +10,15 @@
  * - ファイル構造分析
  */
 
-const { execSync, spawn } = require('child_process');
+const { exec, spawn } = require('child_process');
+const { promisify } = require('util');
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+
+// 非同期版のexecを作成
+const execAsync = promisify(exec);
 
 // ====================================================================
 // 設定とユーティリティ
@@ -96,9 +100,9 @@ class BasicQualityAuditor {
     try {
       // 全プロジェクト分析
       const fullAnalysisCmd = 'node dist/index.js analyze ./src --format=json';
-      const fullAnalysisOutput = execSync(fullAnalysisCmd, { 
+      const { stdout: fullAnalysisOutput } = await execAsync(fullAnalysisCmd, { 
         encoding: 'utf8',
-        stdio: 'pipe'
+        maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large outputs
       });
       
       const fullAnalysis = JSON.parse(fullAnalysisOutput);
@@ -107,13 +111,13 @@ class BasicQualityAuditor {
       let securityAnalysis = null;
       try {
         const securityAnalysisCmd = 'node dist/index.js analyze ./src/security --format=json';
-        const securityAnalysisOutput = execSync(securityAnalysisCmd, { 
+        const { stdout: securityAnalysisOutput } = await execAsync(securityAnalysisCmd, { 
           encoding: 'utf8',
-          stdio: 'pipe'
+          maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large outputs
         });
         securityAnalysis = JSON.parse(securityAnalysisOutput);
       } catch (err) {
-        log.warning('セキュリティディレクトリ分析をスキップしました');
+        log.warning(`セキュリティディレクトリ分析をスキップしました: ${err.message}`);
       }
 
       this.results.details.rimorAnalysis = {
@@ -198,9 +202,9 @@ class BasicQualityAuditor {
       let jestCoverage = null;
       try {
         const jestCmd = 'npm test -- --coverage --coverageReporters=json --passWithNoTests';
-        execSync(jestCmd, { 
-          stdio: 'pipe',
-          timeout: 60000 // 60秒でタイムアウト
+        await execAsync(jestCmd, { 
+          timeout: 60000, // 60秒でタイムアウト
+          maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large outputs
         });
         
         // coverage/coverage-final.jsonを読み込み
