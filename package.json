@@ -1,7 +1,7 @@
 {
   "name": "rimor",
-  "version": "0.6.1",
-  "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
+  "version": "0.7.0",
+  "description": "TaintTyper型ベースセキュリティ解析システム搭載 - 静的解析とプラグイン駆動アーキテクチャによる高度なテスト品質監査ツール",
   "main": "dist/index.js",
   "bin": {
     "rimor": "dist/index.js"
@@ -48,7 +48,16 @@
     "pre-release-check": "bash scripts/pre-release-check.sh",
     "release-ready": "npm run pre-release-check && echo '📋 Manual checklist: docs/RELEASE_READINESS_CHECKLIST.md'",
     "health-check": "node scripts/release-health-check.js",
-    "health-check:github": "GITHUB_TOKEN=$GITHUB_TOKEN node scripts/release-health-check.js"
+    "health-check:github": "GITHUB_TOKEN=$GITHUB_TOKEN node scripts/release-health-check.js",
+    "benchmark": "npm run build && node dist/index.js benchmark run",
+    "benchmark:quick": "npm run build && node dist/index.js benchmark quick",
+    "benchmark:verify": "npm run build && node dist/index.js benchmark verify",
+    "benchmark:trend": "npm run build && node dist/index.js benchmark trend",
+    "benchmark:measure": "npm run build && node dist/index.js benchmark measure",
+    "benchmark:ci": "npm run build && node dist/index.js benchmark quick --output ./ci-benchmark-results",
+    "performance:verify-5ms": "npm run build && node dist/index.js benchmark verify | grep '5ms/file'",
+    "performance:verify-speedup": "npm run build && node dist/index.js benchmark verify | grep '速度向上'",
+    "performance:targets": "npm run benchmark:verify"
   },
   "repository": {
     "type": "git",
@@ -62,7 +71,17 @@
     "static-analysis",
     "plugin",
     "typescript",
-    "linter"
+    "linter",
+    "security",
+    "taint-analysis",
+    "type-based-security",
+    "tainttyper",
+    "flow-analysis",
+    "security-testing",
+    "vulnerability-detection",
+    "express",
+    "react",
+    "nestjs"
   ],
   "author": "sasakama-code",
   "engines": {
