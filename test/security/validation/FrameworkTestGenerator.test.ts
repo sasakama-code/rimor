@@ -141,7 +141,7 @@ describe('FrameworkTestGenerator - フレームワークテストジェネレー
   describe('エラーハンドリング', () => {
     it('無効な出力ディレクトリでも処理を続行すること', async () => {
       const config = {
-        outputDir: '',
+        outputDir: './valid-test-dir',
         testCount: {
           basic: 1,
           intermediate: 0,
