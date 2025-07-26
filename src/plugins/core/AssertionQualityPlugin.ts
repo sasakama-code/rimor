@@ -130,7 +130,7 @@ export class AssertionQualityPlugin extends BasePlugin {
       return improvements;
     }
 
-    const correctnessScore = evaluation.breakdown.correctness || 0;
+    const correctnessScore = evaluation.breakdown?.correctness || 0;
     
     // 改善提案を生成（スコアベース）
     if (correctnessScore < 50) {

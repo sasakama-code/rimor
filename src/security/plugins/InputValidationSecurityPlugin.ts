@@ -85,11 +85,11 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     );
 
     // 入力検証関連のテストファイルが存在するかチェック
-    const hasValidationTests = context.filePatterns.test.some(pattern => 
+    const hasValidationTests = context.filePatterns?.test?.some(pattern => 
       pattern.includes('validation') || 
       pattern.includes('input') || 
       pattern.includes('sanitize')
-    );
+    ) || false;
 
     return hasWebLibrary || hasValidationTests;
   }
@@ -146,7 +146,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (evaluation.breakdown.completeness < 70) {
+    if (evaluation.breakdown?.completeness && evaluation.breakdown.completeness < 70) {
       improvements.push({
         id: 'input-validation-coverage',
         priority: 'high',
@@ -159,7 +159,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       });
     }
 
-    if (evaluation.breakdown.correctness < 70) {
+    if (evaluation.breakdown?.correctness && evaluation.breakdown.correctness < 70) {
       improvements.push({
         id: 'sanitizer-coverage',
         priority: 'critical',
@@ -694,5 +694,90 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       suggestions: [],
       analysisTime
     };
+  }
+
+  /**
+   * テストメソッド解析（セキュリティプラグイン用）
+   */
+  async analyzeTestMethod(testMethod: TestMethod): Promise<any> {
+    try {
+      const taintFlow = await this.flowAnalyzer.trackSecurityDataFlow(testMethod);
+      const issues = this.detectSecurityIssues(testMethod.content);
+      
+      return {
+        taintFlow,
+        issues,
+        securityMetrics: {
+          inputValidationCoverage: this.calculateInputValidationCoverage(testMethod.content),
+          sanitizationCoverage: this.calculateSanitizationCoverage(testMethod.content)
+        }
+      };
+    } catch (error) {
+      return {
+        taintFlow: null,
+        issues: [{
+          id: 'analysis-error',
+          severity: 'error' as const,
+          type: 'missing-sanitizer' as const,
+          message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+          location: { file: testMethod.filePath, line: 0, column: 0 }
+        }]
+      };
+    }
+  }
+
+  /**
+   * 増分解析（セキュリティプラグイン用）
+   */
+  async analyzeIncrementally(changes: any[]): Promise<any> {
+    const affectedTests: string[] = [];
+    
+    for (const change of changes) {
+      if (change.methodName && change.filePath) {
+        affectedTests.push(change.methodName);
+      }
+    }
+    
+    return {
+      affectedTests,
+      changesProcessed: changes.length,
+      securityImpact: this.assessSecurityImpact(changes)
+    };
+  }
+
+  private detectSecurityIssues(content: string): any[] {
+    const issues: any[] = [];
+    
+    // 基本的なセキュリティ問題の検出
+    if (content.includes('req.body') && !content.includes('validate')) {
+      issues.push({
+        id: 'missing-validation',
+        severity: 'medium' as const,
+        type: 'missing-sanitizer' as const,
+        message: '入力検証が不足している可能性があります',
+        location: { file: '', line: 0, column: 0 }
+      });
+    }
+    
+    return issues;
+  }
+
+  private calculateInputValidationCoverage(content: string): number {
+    const hasValidation = content.includes('validate') || content.includes('check');
+    return hasValidation ? 0.8 : 0.3;
+  }
+
+  private calculateSanitizationCoverage(content: string): number {
+    const hasSanitization = this.sanitizerPatterns.some(pattern => pattern.test(content));
+    return hasSanitization ? 0.9 : 0.2;
+  }
+
+  private assessSecurityImpact(changes: any[]): string {
+    const hasSecurityChanges = changes.some(change => 
+      change.type === 'security' || 
+      (change.methodName && change.methodName.toLowerCase().includes('security'))
+    );
+    
+    return hasSecurityChanges ? 'high' : 'medium';
   }
 }

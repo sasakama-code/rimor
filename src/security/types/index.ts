@@ -96,6 +96,16 @@ export interface TestMethod {
   filePath: string;
   /** メソッドの内容 */
   content: string;
+  /** メソッド本体（セキュリティプラグイン用） */
+  body?: string;
+  /** セキュリティ関連度（セキュリティプラグイン用） */
+  securityRelevance?: number;
+  /** アサーション（セキュリティプラグイン用） */
+  assertions?: any[];
+  /** 依存関係（セキュリティプラグイン用） */
+  dependencies?: string[];
+  /** テストタイプ（セキュリティプラグイン用） */
+  testType?: string;
   /** メソッドシグネチャ */
   signature: MethodSignature;
   /** 位置情報 */
@@ -122,7 +132,7 @@ export interface MethodSignature {
   /** アクセス修飾子 */
   visibility?: 'private' | 'protected' | 'public';
   /** 非同期かどうか */
-  isAsync: boolean;
+  isAsync?: boolean;
 }
 
 /**
@@ -135,6 +145,8 @@ export interface Parameter {
   type?: string;
   /** データソース */
   source?: 'user-input' | 'database' | 'api' | 'constant';
+  /** アノテーション（セキュリティプラグイン用） */
+  annotations?: string[];
 }
 
 /**

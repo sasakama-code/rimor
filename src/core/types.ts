@@ -35,13 +35,17 @@ export interface ITestQualityPlugin {
 
 // プロジェクトコンテキスト
 export interface ProjectContext {
-  rootPath: string;
-  language: 'javascript' | 'typescript' | 'python' | 'java' | 'other';
+  rootPath?: string;
+  projectPath?: string; // プロジェクトパス（セキュリティプラグイン用）
+  language?: 'javascript' | 'typescript' | 'python' | 'java' | 'other';
   testFramework?: string;
+  framework?: string; // フレームワーク（セキュリティプラグイン用）
   packageJson?: any;
   tsConfig?: any;
+  dependencies?: string[]; // プロジェクト依存関係（セキュリティ解析用）
+  configuration?: Record<string, any>; // プロジェクト設定（セキュリティプラグイン用）
   customConfig?: Record<string, any>;
-  filePatterns: {
+  filePatterns?: {
     test: string[];
     source: string[];
     ignore: string[];
@@ -52,8 +56,10 @@ export interface ProjectContext {
 export interface TestFile {
   path: string;
   content: string;
+  framework?: string; // テストフレームワーク（セキュリティプラグイン用）
+  testMethods?: any[]; // テストメソッド（セキュリティプラグイン用）
   ast?: any; // 将来的なAST対応
-  metadata: {
+  metadata?: {
     framework?: string;
     language: string;
     lastModified: Date;
@@ -73,11 +79,14 @@ export interface PluginResult {
 
 // パターン検出結果
 export interface DetectionResult {
-  patternId: string;
-  patternName: string;
-  location: CodeLocation;
+  patternId?: string;
+  pattern?: string; // patternIdのエイリアス（セキュリティプラグイン互換性）
+  patternName?: string;
+  location?: CodeLocation;
   confidence: number; // 0.0-1.0
-  evidence: Evidence[];
+  evidence?: Evidence[];
+  severity?: 'info' | 'low' | 'medium' | 'high' | 'critical'; // セキュリティ重要度
+  securityRelevance?: number; // セキュリティ関連度 (0.0-1.0)
   metadata?: Record<string, any>;
 }
 
@@ -93,8 +102,12 @@ export interface Evidence {
 // 品質評価
 export interface QualityScore {
   overall: number; // 0-100
-  breakdown: ScoreBreakdown;
-  confidence: number; // 0.0-1.0
+  breakdown?: ScoreBreakdown;
+  confidence?: number; // 0.0-1.0
+  security?: number; // セキュリティスコア (0-100)
+  coverage?: number; // カバレッジスコア (0-100)
+  maintainability?: number; // 保守性スコア (0-100)
+  details?: Record<string, any>; // 詳細情報（セキュリティプラグイン用）
   metadata?: Record<string, any>;
 }
 
@@ -132,7 +145,7 @@ export type QualityDimension =
 export interface Improvement {
   id: string;
   priority: 'critical' | 'high' | 'medium' | 'low';
-  type: 'add' | 'modify' | 'remove' | 'refactor';
+  type: 'add' | 'modify' | 'remove' | 'refactor' | string; // カスタム改善タイプも許可
   title: string;
   description: string;
   location: CodeLocation;
@@ -141,6 +154,9 @@ export interface Improvement {
     scoreImprovement: number;
     effortMinutes: number;
   };
+  impact?: string; // 影響度説明（セキュリティプラグイン用）
+  suggestions?: string[]; // 提案リスト（セキュリティプラグイン用）
+  codeExample?: string; // コード例（セキュリティプラグイン用）
   automatable: boolean;
 }
 

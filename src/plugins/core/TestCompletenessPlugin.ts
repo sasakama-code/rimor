@@ -120,7 +120,7 @@ export class TestCompletenessPlugin extends BasePlugin {
       return improvements;
     }
 
-    const completenessScore = evaluation.breakdown.completeness || 0;
+    const completenessScore = evaluation.breakdown?.completeness || 0;
     
     // 改善提案を生成（スコアベース）
     if (completenessScore < 30) {

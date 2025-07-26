@@ -305,6 +305,9 @@ export class FeedbackCollectionSystem {
 - **平均解析時間**: ${analysis.performanceIssues.averageAnalysisTime.toFixed(1)}ms
 - **偽陽性率**: ${(analysis.accuracyIssues.falsePositiveRate * 100).toFixed(1)}%
 
+## 📋 参加プロジェクト一覧
+${this.collectedFeedback.map(f => `- **${f.projectName}** (${f.framework})`).join('\n')}
+
 ## 🎯 主要な成果
 - **要件文書指標達成**: 全8項目クリア
 - **高速化実現**: 平均32-65倍の性能向上

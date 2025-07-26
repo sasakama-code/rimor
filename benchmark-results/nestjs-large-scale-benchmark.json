@@ -2,9 +2,9 @@
   "requirement": "1500+ NestJS test cases",
   "testCases": 1500,
   "fileCount": 600,
-  "totalTimeSeconds": 0.102,
-  "timePerTestMs": 0.068,
-  "throughputTestsPerSec": 14705.882352941177,
+  "totalTimeSeconds": 0.106,
+  "timePerTestMs": 0.07066666666666667,
+  "throughputTestsPerSec": 14150.943396226416,
   "detailedResults": {
     "config": {
       "name": "NestJS Large Scale Project",
@@ -17,22 +17,22 @@
       ]
     },
     "timing": {
-      "totalTime": 99,
-      "timePerFile": 0.165,
-      "timePerMethod": 0.066,
+      "totalTime": 104,
+      "timePerFile": 0.17333333333333334,
+      "timePerMethod": 0.06933333333333333,
       "setupTime": 0,
-      "analysisTime": 99,
+      "analysisTime": 104,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 575.7756500244141,
-      "peakMemory": 602.0546035766602,
-      "finalMemory": 602.0551147460938,
-      "memoryPerFile": 0.04379825592041016
+      "initialMemory": 572.6698913574219,
+      "peakMemory": 599.0713958740234,
+      "finalMemory": 599.071907043457,
+      "memoryPerFile": 0.04400250752766927
     },
     "throughput": {
-      "filesPerSecond": 6060.60606060606,
-      "methodsPerSecond": 15151.51515151515,
+      "filesPerSecond": 5769.2307692307695,
+      "methodsPerSecond": 14423.076923076924,
       "issuesPerSecond": 0
     },
     "parallelism": {
@@ -44,7 +44,7 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 30.3030303030303
+      "actualSpeedup": 28.846153846153847
     },
     "analysisResults": {
       "totalIssues": 0,
@@ -53,5 +53,5 @@
     }
   },
   "achieved": true,
-  "timestamp": "2025-07-26T11:35:54.894Z"
+  "timestamp": "2025-07-26T17:46:51.655Z"
 }

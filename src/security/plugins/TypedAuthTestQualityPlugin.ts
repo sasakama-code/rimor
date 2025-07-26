@@ -65,9 +65,9 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     );
 
     // 認証関連のテストファイルが存在するかチェック
-    const hasAuthTests = context.filePatterns.test.some(pattern => 
+    const hasAuthTests = context.filePatterns?.test?.some(pattern => 
       pattern.includes('auth') || pattern.includes('login')
-    );
+    ) || false;
 
     return hasAuthLibrary || hasAuthTests;
   }
@@ -95,7 +95,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     // 認証カバレッジの計算
     const requiredPatterns = ['login-success', 'login-failure', 'token-validation', 'session-management'];
     const coveredPatterns = patterns.filter(p => 
-      requiredPatterns.includes(p.patternId)
+      p.patternId && requiredPatterns.includes(p.patternId)
     );
     
     authCoverage = coveredPatterns.length / requiredPatterns.length * 100;
@@ -118,7 +118,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (evaluation.breakdown.completeness < 80) {
+    if (evaluation.breakdown?.completeness && evaluation.breakdown.completeness < 80) {
       improvements.push({
         id: 'auth-coverage-improvement',
         priority: 'high',
