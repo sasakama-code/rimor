@@ -18,7 +18,7 @@ import {
   TaintLevel,
   SecurityType
 } from '../types';
-import { MethodSignature } from '../../core/types';
+import { MethodSignature } from '../types';
 import { ModularTestAnalyzer } from './modular';
 import { FlowSensitiveAnalyzer, FlowGraph } from './flow';
 import { SignatureBasedInference } from './inference';
@@ -256,34 +256,104 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     const methods: TestMethod[] = [];
     const content = testFile.content;
     
-    // 簡易的なメソッド抽出（実際の実装ではASTパースが必要）
-    const methodPattern = /(?:it|test|describe)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(?:async\s+)?(?:function\s*)?\(\s*\)\s*=>\s*\{([\s\S]*?)\}/g;
-    let match: RegExpExecArray | null;
+    // Step 1: まず全ての it/test メソッドを直接抽出（ネスト考慮）
+    // より堅牢なテストメソッド抽出パターン
+    const itPatterns = [
+      // it('test name', async () => { ... }) - ブレース対応版
+      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*async\s*\(\s*\)\s*=>\s*\{/g,
+      // it('test name', () => { ... }) - ブレース対応版
+      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*\(\s*\)\s*=>\s*\{/g,
+      // it('test name', async function() { ... }) - ブレース対応版
+      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*async\s+function\s*\(\s*\)\s*\{/g,
+      // it('test name', function() { ... }) - ブレース対応版
+      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*function\s*\(\s*\)\s*\{/g
+    ];
+    
     let methodIndex = 0;
 
-    while ((match = methodPattern.exec(content)) !== null) {
-      const methodName = match[1];
-      const methodContent = match[2];
-      const startIndex = match.index;
-      const startLine = this.getLineNumber(content, startIndex);
+    // Step 2: 各パターンでitメソッドを検索し、ブレースマッチングで本体を抽出
+    for (const itPattern of itPatterns) {
+      let match: RegExpExecArray | null;
+      itPattern.lastIndex = 0; // Reset regex state
+      
+      while ((match = itPattern.exec(content)) !== null) {
+        const methodName = match[1];
+        const startIndex = match.index;
+        const startLine = this.getLineNumber(content, startIndex);
 
-      methods.push({
-        name: methodName,
-        filePath: testFile.file,
-        content: methodContent,
-        signature: this.createMethodSignature(methodName, methodContent),
-        location: {
-          startLine,
-          endLine: startLine + methodContent.split('\n').length - 1,
-          startColumn: 0,
-          endColumn: 0
+        // Step 3: ブレースマッチングで実際のメソッド本体を抽出
+        const methodContent = this.extractMethodBody(content, match.index + match[0].length - 1);
+        
+        if (methodContent) {
+          // 重複を避けるため、既存のメソッド名をチェック
+          if (!methods.some(m => m.name === methodName)) {
+            methods.push({
+              name: methodName,
+              filePath: testFile.file,
+              content: methodContent,
+              signature: this.createMethodSignature(methodName, methodContent),
+              location: {
+                startLine,
+                endLine: startLine + methodContent.split('\n').length - 1,
+                startColumn: 0,
+                endColumn: 0
+              }
+            });
+            methodIndex++;
+          }
         }
-      });
-
-      methodIndex++;
+      }
     }
 
     return methods;
+  }
+
+  /**
+   * ブレースマッチングでメソッド本体を抽出
+   */
+  private extractMethodBody(content: string, startIndex: number): string | null {
+    if (startIndex >= content.length || content[startIndex] !== '{') {
+      return null;
+    }
+
+    let braceCount = 1;
+    let index = startIndex + 1;
+    const methodStart = startIndex;
+
+    while (index < content.length && braceCount > 0) {
+      const char = content[index];
+      
+      // 文字列リテラル内のブレースは無視
+      if (char === '"' || char === "'" || char === '`') {
+        const quote = char;
+        index++;
+        // 対応するクォートまでスキップ
+        while (index < content.length && content[index] !== quote) {
+          if (content[index] === '\\') {
+            index++; // エスケープ文字をスキップ
+          }
+          index++;
+        }
+        index++; // クロージングクォートをスキップ
+        continue;
+      }
+
+      // ブレースカウント
+      if (char === '{') {
+        braceCount++;
+      } else if (char === '}') {
+        braceCount--;
+      }
+
+      index++;
+    }
+
+    if (braceCount === 0) {
+      // 完全にマッチした場合、開始ブレースは除く
+      return content.substring(methodStart + 1, index - 1);
+    }
+
+    return null; // マッチしなかった場合
   }
 
   /**
@@ -378,7 +448,8 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       parameters: [],
       returnType: 'void',
       annotations: [],
-      visibility: 'public'
+      visibility: 'public',
+      isAsync: methodContent.includes('async')
     };
   }
 

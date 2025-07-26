@@ -190,7 +190,7 @@ export class SignatureBasedInference {
     const requirements: SecurityRequirement[] = [];
 
     // API アノテーションの検出
-    const isApiEndpoint = signature.annotations.some(annotation => 
+    const isApiEndpoint = (signature.annotations || []).some(annotation => 
       this.isApiAnnotation(annotation)
     ) || this.isApiMethodName(signature.name);
 
@@ -593,7 +593,7 @@ export class SignatureBasedInference {
   private calculateSignatureComplexity(signature: MethodSignature): number {
     let complexity = 1; // base complexity
     complexity += signature.parameters.length * 0.2;
-    complexity += signature.annotations.length * 0.1;
+    complexity += (signature.annotations || []).length * 0.1;
     return Math.min(10, complexity);
   }
 
@@ -602,7 +602,7 @@ export class SignatureBasedInference {
     
     if (this.isAuthRelated(signature.name)) relevance += 0.4;
     if (signature.parameters.some(p => p.source === 'user-input')) relevance += 0.3;
-    if (signature.annotations.some(a => this.isApiAnnotation(a))) relevance += 0.2;
+    if ((signature.annotations || []).some(a => this.isApiAnnotation(a))) relevance += 0.2;
     if (signature.parameters.some(p => this.isCredentialParameter(p.name))) relevance += 0.1;
     
     return Math.min(1.0, relevance);
@@ -630,7 +630,7 @@ export class SignatureBasedInference {
       types.push('input-validation-test', 'boundary-test');
     }
     
-    if (signature.annotations.some(a => this.isApiAnnotation(a))) {
+    if ((signature.annotations || []).some(a => this.isApiAnnotation(a))) {
       types.push('api-security-test', 'integration-test');
     }
     

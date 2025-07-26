@@ -7,6 +7,10 @@
 export { PerformanceBenchmark } from './PerformanceBenchmark';
 export { BenchmarkRunner } from './BenchmarkRunner';
 
+// インポート（デフォルトエクスポート用）
+import { PerformanceBenchmark } from './PerformanceBenchmark';
+import { BenchmarkRunner } from './BenchmarkRunner';
+
 // インターフェースのエクスポート
 export type {
   BenchmarkResult,
@@ -73,3 +77,14 @@ export async function verifyTargets(): Promise<{
     summary
   };
 }
+
+// デフォルトエクスポート
+const defaultExport = {
+  PerformanceBenchmark,
+  BenchmarkRunner,
+  runQuickPerformanceCheck,
+  runCiBenchmark,
+  verifyTargets
+};
+
+export default defaultExport;

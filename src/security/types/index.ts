@@ -118,9 +118,11 @@ export interface MethodSignature {
   /** 戻り値の型 */
   returnType?: string;
   /** アノテーション */
-  annotations: string[];
+  annotations?: string[];
   /** アクセス修飾子 */
-  visibility: 'private' | 'protected' | 'public';
+  visibility?: 'private' | 'protected' | 'public';
+  /** 非同期かどうか */
+  isAsync: boolean;
 }
 
 /**

@@ -213,15 +213,21 @@ export interface Variable {
  */
 export interface SecurityTypeAnnotation {
   /** 変数や式 */
-  target: string;
+  target?: string;
+  /** 変数名（レガシー互換性） */
+  variable?: string;
   /** セキュリティ型 */
   securityType: SecurityType;
+  /** セキュリティレベル */
+  securityLevel?: TaintLevel;
   /** 汚染レベル */
   taintLevel: TaintLevel;
   /** 推論の信頼度 */
   confidence: number;
   /** 推論の根拠 */
   evidence: string[];
+  /** フローポリシー */
+  flowPolicy?: string;
 }
 
 /**

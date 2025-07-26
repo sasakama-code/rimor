@@ -481,6 +481,23 @@ export class RealWorldProjectValidator {
       dataProtection: number;
     };
   } {
+    // 解析結果が空の場合は解析失敗として扱う
+    if (results.length === 0) {
+      return {
+        overallScore: 0,
+        criticalIssues: 0,
+        highIssues: 0,
+        mediumIssues: 0,
+        lowIssues: 0,
+        coverageByCategory: {
+          authentication: 0,
+          inputValidation: 0,
+          authorization: 0,
+          dataProtection: 0
+        }
+      };
+    }
+
     let criticalIssues = 0;
     let highIssues = 0;
     let mediumIssues = 0;
@@ -491,7 +508,15 @@ export class RealWorldProjectValidator {
     let authzSum = 0;
     let dataSum = 0;
 
+    // 解析が実行されたが全てエラーだった場合のチェック
+    let hasValidAnalysis = false;
+
     results.forEach(result => {
+      // 有効な解析結果があるかチェック
+      if (result.metrics && result.metrics.securityCoverage) {
+        hasValidAnalysis = true;
+      }
+
       result.issues.forEach(issue => {
         switch (issue.severity) {
           case 'error': criticalIssues++; break;
@@ -509,7 +534,15 @@ export class RealWorldProjectValidator {
 
     const count = results.length;
     const totalIssues = criticalIssues + highIssues + mediumIssues + lowIssues;
-    const overallScore = Math.max(0, 100 - (criticalIssues * 10 + highIssues * 5 + mediumIssues * 2));
+    
+    // 有効な解析が行われなかった場合は低スコア、正常時は従来ロジック
+    const overallScore = hasValidAnalysis ? 
+      Math.max(0, 100 - (criticalIssues * 10 + highIssues * 5 + mediumIssues * 2)) : 
+      10;
+
+    if (!hasValidAnalysis) {
+      console.warn('⚠️  セキュリティ解析が正常に実行されませんでした（スコア: 10点）');
+    }
 
     return {
       overallScore,

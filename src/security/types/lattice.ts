@@ -296,7 +296,7 @@ export class SecurityLattice {
  */
 export interface SecurityViolation {
   /** 違反の種別 */
-  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion';
+  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion' | 'sql-injection' | 'xss' | 'command-injection';
   /** 関連する変数 */
   variable: string;
   /** 汚染レベル */

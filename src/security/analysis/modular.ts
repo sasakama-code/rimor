@@ -219,7 +219,7 @@ export class ModularTestAnalyzer {
     }
 
     // API関連
-    if (signature.annotations.includes('@api') || signature.name.includes('endpoint')) {
+    if ((signature.annotations || []).includes('@api') || signature.name.includes('endpoint')) {
       requirements.push({
         id: `api-req-${signature.name}`,
         type: 'api-security',
@@ -457,7 +457,8 @@ export class ModularTestAnalyzer {
   private countAssertions(content: string): number {
     const assertions = ['expect(', 'assert(', 'should'];
     return assertions.reduce((count, assertion) => {
-      const matches = content.match(new RegExp(assertion, 'gi')) || [];
+      const escapedAssertion = assertion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matches = content.match(new RegExp(escapedAssertion, 'gi')) || [];
       return count + matches.length;
     }, 0);
   }

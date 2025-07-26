@@ -616,7 +616,7 @@ export class TypeAwareProgressiveAI {
         
         if (annotation.confidence < 0.7) {
           uncertainTypes.push({
-            variable: annotation.target,
+            variable: annotation.target || annotation.variable || 'unknown',
             possibleTypes: [annotation.securityType],
             confidence: annotation.confidence,
             evidence: annotation.evidence

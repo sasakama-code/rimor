@@ -575,7 +575,8 @@ export interface MethodSignature {
   parameters: Parameter[];
   returnType?: string;
   annotations: string[];
-  visibility: 'private' | 'protected' | 'public';
+  visibility?: 'private' | 'protected' | 'public';
+  isAsync: boolean;
 }
 
 // パラメータ
@@ -603,6 +604,7 @@ export interface FlowGraph {
   securitySinks: FlowNode[];
   sanitizers: FlowNode[];
   paths: FlowPath[];
+  violations?: SecurityViolation[];
 }
 
 // フローノード
@@ -679,7 +681,7 @@ export interface TaintAnalysisResult {
 
 // セキュリティ違反
 export interface SecurityViolation {
-  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion';
+  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion' | 'sql-injection' | 'xss' | 'command-injection';
   variable: string;
   taintLevel: TaintLevel;
   metadata: TaintMetadata;
@@ -717,11 +719,22 @@ export interface TypeInferenceResult {
 
 // セキュリティ型注釈
 export interface SecurityTypeAnnotation {
-  target: string;
+  /** 変数や式 */
+  target?: string;
+  /** 変数名（レガシー互換性） */
+  variable?: string;
+  /** セキュリティ型 */
   securityType: SecurityType;
+  /** セキュリティレベル */
+  securityLevel?: TaintLevel;
+  /** 汚染レベル */
   taintLevel: TaintLevel;
+  /** 推論の信頼度 */
   confidence: number;
+  /** 推論の根拠 */
   evidence: string[];
+  /** フローポリシー */
+  flowPolicy?: string;
 }
 
 // メソッド変更

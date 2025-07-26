@@ -431,16 +431,22 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
 
   private calculateOverallSatisfaction(): number {
     if (this.collectedFeedback.length === 0) return 0;
-    return this.collectedFeedback.reduce((sum, f) => sum + f.userExperience.satisfaction, 0) / this.collectedFeedback.length;
+    
+    const validFeedback = this.collectedFeedback.filter(f => f.userExperience && f.userExperience.satisfaction !== undefined);
+    if (validFeedback.length === 0) return 0;
+    
+    return validFeedback.reduce((sum, f) => sum + f.userExperience.satisfaction, 0) / validFeedback.length;
   }
 
   private identifyCommonPainPoints(): string[] {
     const painPoints = new Map<string, number>();
     
     this.collectedFeedback.forEach(f => {
-      f.specificFeedback.painPoints.forEach(point => {
-        painPoints.set(point, (painPoints.get(point) || 0) + 1);
-      });
+      if (f.specificFeedback && f.specificFeedback.painPoints) {
+        f.specificFeedback.painPoints.forEach(point => {
+          painPoints.set(point, (painPoints.get(point) || 0) + 1);
+        });
+      }
     });
     
     return Array.from(painPoints.entries())
@@ -455,8 +461,12 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
   }
 
   private analyzeAccuracyIssues(): any {
-    const totalFalsePositives = this.collectedFeedback.reduce((sum, f) => sum + f.specificFeedback.falsePositives.length, 0);
-    const totalIssues = this.collectedFeedback.reduce((sum, f) => sum + f.usageMetrics.issuesDetected, 0);
+    const totalFalsePositives = this.collectedFeedback.reduce((sum, f) => {
+      return sum + (f.specificFeedback && f.specificFeedback.falsePositives ? f.specificFeedback.falsePositives.length : 0);
+    }, 0);
+    const totalIssues = this.collectedFeedback.reduce((sum, f) => {
+      return sum + (f.usageMetrics && f.usageMetrics.issuesDetected ? f.usageMetrics.issuesDetected : 0);
+    }, 0);
     
     return {
       falsePositiveRate: totalIssues > 0 ? totalFalsePositives / totalIssues : 0,
@@ -466,8 +476,9 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
   }
 
   private analyzePerformanceIssues(): any {
-    const avgTime = this.collectedFeedback.reduce((sum, f) => sum + f.usageMetrics.averageAnalysisTime, 0) / 
-                   Math.max(this.collectedFeedback.length, 1);
+    const validFeedback = this.collectedFeedback.filter(f => f.usageMetrics && f.usageMetrics.averageAnalysisTime !== undefined);
+    const avgTime = validFeedback.length > 0 ? 
+      validFeedback.reduce((sum, f) => sum + f.usageMetrics.averageAnalysisTime, 0) / validFeedback.length : 0;
     
     return {
       averageAnalysisTime: avgTime,
@@ -481,12 +492,16 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
     const requested = new Map<string, number>();
     
     this.collectedFeedback.forEach(f => {
-      f.specificFeedback.mostUsefulFeatures.forEach(feature => {
-        mostUsed.set(feature, (mostUsed.get(feature) || 0) + 1);
-      });
-      f.specificFeedback.improvementSuggestions.forEach(suggestion => {
-        requested.set(suggestion, (requested.get(suggestion) || 0) + 1);
-      });
+      if (f.specificFeedback && f.specificFeedback.mostUsefulFeatures) {
+        f.specificFeedback.mostUsefulFeatures.forEach(feature => {
+          mostUsed.set(feature, (mostUsed.get(feature) || 0) + 1);
+        });
+      }
+      if (f.specificFeedback && f.specificFeedback.improvementSuggestions) {
+        f.specificFeedback.improvementSuggestions.forEach(suggestion => {
+          requested.set(suggestion, (requested.get(suggestion) || 0) + 1);
+        });
+      }
     });
     
     return {

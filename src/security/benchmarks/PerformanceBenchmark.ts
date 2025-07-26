@@ -111,6 +111,42 @@ export class PerformanceBenchmark {
   }
 
   /**
+   * 小規模テストの実行
+   */
+  async runSmallTest(): Promise<BenchmarkResult> {
+    const testCases = this.testData.get('small') || [];
+    return this.measureAnalysisPerformance(
+      '小規模テスト',
+      testCases,
+      { enableCache: true, parallelism: 1 }
+    );
+  }
+
+  /**
+   * 中規模テストの実行
+   */
+  async runMediumTest(): Promise<BenchmarkResult> {
+    const testCases = this.testData.get('medium') || [];
+    return this.measureAnalysisPerformance(
+      '中規模テスト',
+      testCases,
+      { enableCache: true, parallelism: Math.min(os.cpus().length, 4) }
+    );
+  }
+
+  /**
+   * 大規模テストの実行
+   */
+  async runLargeTest(): Promise<BenchmarkResult> {
+    const testCases = this.testData.get('large') || [];
+    return this.measureAnalysisPerformance(
+      '大規模テスト',
+      testCases,
+      { enableCache: true, parallelism: os.cpus().length }
+    );
+  }
+
+  /**
    * 包括的ベンチマークの実行
    */
   async runComprehensiveBenchmark(): Promise<BenchmarkComparison[]> {
@@ -648,7 +684,8 @@ ${methods.join('\n')}
           parameters: [],
           returnType: 'void',
           annotations: [],
-          visibility: 'public'
+          visibility: 'public',
+          isAsync: false
         },
         location: {
           startLine: 1,
