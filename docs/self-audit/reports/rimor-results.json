@@ -1,0 +1,60 @@
+{
+  "summary": {
+    "totalFiles": 30,
+    "issuesFound": 7,
+    "testCoverage": 77,
+    "executionTime": 9
+  },
+  "issues": [
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/core/analyzerExtended.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/core/pluginManagerExtended.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/plugins/base/BasePlugin.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/plugins/core/AssertionQualityPlugin.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/plugins/core/TestCompletenessPlugin.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/plugins/core/TestStructurePlugin.ts",
+      "plugin": "test-existence"
+    },
+    {
+      "type": "missing-test",
+      "severity": "error",
+      "message": "テストファイルが存在しません: /Users/sasakama/Projects/Rimor/src/plugins/migration/LegacyPluginAdapter.ts",
+      "plugin": "test-existence"
+    }
+  ],
+  "config": {
+    "targetPath": "/Users/sasakama/Projects/Rimor/src",
+    "enabledPlugins": [
+      "TestExistencePlugin",
+      "AssertionExistsPlugin"
+    ],
+    "format": "json"
+  }
+}
