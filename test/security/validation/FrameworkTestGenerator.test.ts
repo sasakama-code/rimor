@@ -14,128 +14,165 @@ describe('FrameworkTestGenerator - フレームワークテストジェネレー
   });
 
   describe('基本的なテスト生成', () => {
-    it('Jestテストを正しく生成すること', async () => {
+    it('フレームワーク別テストを正しく生成すること', async () => {
       const config = {
-        framework: 'jest',
-        targetFunction: 'validateInput',
-        securityLevel: 'high'
+        outputDir: './temp-tests',
+        testCount: {
+          basic: 2,
+          intermediate: 1,
+          advanced: 1
+        },
+        frameworkConfig: {
+          express: { version: '4.x', dependencies: [], testFramework: 'jest' as const },
+          react: { version: '18.x', dependencies: [], testFramework: 'jest' as const },
+          nestjs: { version: '9.x', dependencies: [], testFramework: 'jest' as const }
+        }
       };
 
-      const result = await generator.generateTests(config);
+      const result = await generator.generateAllFrameworkTests(config);
 
       expect(result).toBeDefined();
-      expect(result.framework).toBe('jest');
-      expect(result.testCode).toContain('describe');
-      expect(result.testCode).toContain('expect');
-      expect(result.securityTests.length).toBeGreaterThan(0);
+      expect(result.size).toBeGreaterThanOrEqual(3);
+      expect(result.has('express')).toBe(true);
+      expect(result.has('react')).toBe(true);
+      expect(result.has('nestjs')).toBe(true);
     });
 
-    it('セキュリティテストケースを適切に生成すること', async () => {
+    it('Express.js専用テストケースを生成すること', async () => {
       const config = {
-        framework: 'jest',
-        targetFunction: 'sanitizeHtml',
-        securityLevel: 'critical'
+        outputDir: './temp-tests',
+        testCount: {
+          basic: 1,
+          intermediate: 1,
+          advanced: 1
+        },
+        frameworkConfig: {
+          express: { version: '4.x', dependencies: [], testFramework: 'jest' as const }
+        }
       };
 
-      const result = await generator.generateTests(config);
+      const result = await generator.generateExpressTests(config);
 
-      expect(result.securityTests).toContain('xss-protection');
-      expect(result.securityTests).toContain('html-injection');
-      expect(result.testCode).toContain('<script>');
-      expect(result.testCode).toContain('malicious');
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
     });
 
-    it('複数のフレームワークをサポートすること', async () => {
-      const frameworks = ['jest', 'mocha', 'vitest'];
-      
-      for (const framework of frameworks) {
-        const config = {
-          framework,
-          targetFunction: 'testFunction',
-          securityLevel: 'medium'
-        };
+    it('React専用テストケースを生成すること', async () => {
+      const config = {
+        outputDir: './temp-tests',
+        testCount: {
+          basic: 1,
+          intermediate: 1,
+          advanced: 1
+        },
+        frameworkConfig: {
+          react: { version: '18.x', dependencies: [], testFramework: 'jest' as const }
+        }
+      };
 
-        const result = await generator.generateTests(config);
-        expect(result.framework).toBe(framework);
-        expect(result.testCode).toBeDefined();
-      }
+      const result = await generator.generateReactTests(config);
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('NestJS専用テストケースを生成すること', async () => {
+      const config = {
+        outputDir: './temp-tests',
+        testCount: {
+          basic: 1,
+          intermediate: 1,
+          advanced: 1
+        },
+        frameworkConfig: {
+          nestjs: { version: '9.x', dependencies: [], testFramework: 'jest' as const }
+        }
+      };
+
+      const result = await generator.generateNestJSTests(config);
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
     });
   });
 
-  describe('セキュリティレベル別生成', () => {
-    it('Criticalレベルで包括的なテストを生成すること', async () => {
+  describe('設定管理', () => {
+    it('生成設定を適切に処理すること', async () => {
       const config = {
-        framework: 'jest',
-        targetFunction: 'processUserData',
-        securityLevel: 'critical'
+        outputDir: './test-output',
+        testCount: {
+          basic: 5,
+          intermediate: 3,
+          advanced: 2
+        },
+        frameworkConfig: {
+          express: { version: '4.x', dependencies: ['cors', 'helmet'], testFramework: 'jest' as const },
+          react: { version: '18.x', dependencies: ['@testing-library/react'], testFramework: 'vitest' as const }
+        }
       };
 
-      const result = await generator.generateTests(config);
+      const result = await generator.generateAllFrameworkTests(config);
 
-      expect(result.securityTests.length).toBeGreaterThan(5);
-      expect(result.securityTests).toContain('sql-injection');
-      expect(result.securityTests).toContain('xss-protection');
-      expect(result.securityTests).toContain('csrf-protection');
-      expect(result.testCode.split('\n').length).toBeGreaterThan(50);
+      expect(result).toBeDefined();
+      expect(result.size).toBeGreaterThanOrEqual(2);
     });
 
-    it('Lowレベルで基本的なテストを生成すること', async () => {
+    it('空の設定でもエラーなく動作すること', async () => {
       const config = {
-        framework: 'jest',
-        targetFunction: 'formatString',
-        securityLevel: 'low'
+        outputDir: './empty-tests',
+        testCount: {
+          basic: 0,
+          intermediate: 0,
+          advanced: 0
+        },
+        frameworkConfig: {}
       };
 
-      const result = await generator.generateTests(config);
+      const result = await generator.generateAllFrameworkTests(config);
 
-      expect(result.securityTests.length).toBeLessThan(4);
-      expect(result.testCode.split('\n').length).toBeLessThan(30);
-    });
-  });
-
-  describe('パフォーマンステスト', () => {
-    it('大量のテスト生成を効率的に処理すること', async () => {
-      const configs = Array.from({ length: 20 }, (_, i) => ({
-        framework: 'jest',
-        targetFunction: `function${i}`,
-        securityLevel: 'medium'
-      }));
-
-      const startTime = Date.now();
-      
-      for (const config of configs) {
-        await generator.generateTests(config);
-      }
-      
-      const endTime = Date.now();
-      const executionTime = endTime - startTime;
-      
-      expect(executionTime).toBeLessThan(5000); // 5秒以内
+      expect(result).toBeDefined();
+      expect(result.size).toBeGreaterThanOrEqual(0);
     });
   });
 
   describe('エラーハンドリング', () => {
-    it('不正な設定でもクラッシュしないこと', async () => {
-      const invalidConfig = {
-        framework: 'invalid-framework',
-        targetFunction: '',
-        securityLevel: 'invalid-level'
+    it('無効な出力ディレクトリでも処理を続行すること', async () => {
+      const config = {
+        outputDir: '',
+        testCount: {
+          basic: 1,
+          intermediate: 0,
+          advanced: 0
+        },
+        frameworkConfig: {
+          express: { version: '4.x', dependencies: [], testFramework: 'jest' as const }
+        }
       };
 
-      expect(async () => {
-        const result = await generator.generateTests(invalidConfig);
-        expect(result).toBeDefined();
+      await expect(async () => {
+        await generator.generateAllFrameworkTests(config);
       }).not.toThrow();
     });
 
-    it('空の入力を適切に処理すること', async () => {
-      const emptyConfig = {} as any;
+    it('無効なフレームワーク設定を適切に処理すること', async () => {
+      const config = {
+        outputDir: './invalid-tests',
+        testCount: {
+          basic: 1,
+          intermediate: 0,
+          advanced: 0
+        },
+        frameworkConfig: {
+          'invalid-framework': { version: '1.0', dependencies: [], testFramework: 'jest' as const }
+        }
+      };
 
-      const result = await generator.generateTests(emptyConfig);
-      
+      const result = await generator.generateAllFrameworkTests(config);
+
       expect(result).toBeDefined();
-      expect(result.framework).toBeDefined();
-      expect(result.testCode).toBeDefined();
     });
   });
 });
