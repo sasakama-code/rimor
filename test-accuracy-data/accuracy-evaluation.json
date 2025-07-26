@@ -1,14 +1,14 @@
 {
-  "timestamp": "2025-07-26T17:47:08.569Z",
+  "timestamp": "2025-07-26T18:23:46.422Z",
   "requirements": {
     "automaticInferenceRate": "≥85%",
     "inferenceAccuracy": "≥90%",
     "falsePositiveRate": "≤15%"
   },
   "achieved": {
-    "automaticInferenceRate": "100.0%",
-    "inferenceAccuracy": "77.8%",
-    "falsePositiveRate": "11.1%"
+    "automaticInferenceRate": "88.9%",
+    "inferenceAccuracy": "88.9%",
+    "falsePositiveRate": "0.0%"
   },
   "success": {
     "automaticInferenceRate": true,
@@ -17,12 +17,12 @@
   },
   "overallSuccess": false,
   "detailedMetrics": {
-    "automaticInferenceRate": 100,
-    "inferenceAccuracy": 77.77777777777779,
-    "falsePositiveRate": 11.11111111111111,
-    "truePositiveRate": 66.66666666666666,
-    "precisionScore": 66.66666666666666,
-    "recallScore": 66.66666666666666
+    "automaticInferenceRate": 88.88888888888889,
+    "inferenceAccuracy": 88.88888888888889,
+    "falsePositiveRate": 0,
+    "truePositiveRate": 100,
+    "precisionScore": 100,
+    "recallScore": 100
   },
   "results": [
     {
@@ -33,7 +33,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "inference-002",
@@ -50,24 +50,24 @@
     {
       "testCaseId": "inference-003",
       "detectedIssues": [],
-      "inferredSecurityType": "sanitized-data",
+      "inferredSecurityType": "unknown",
       "isTainted": false,
-      "isCorrect": true,
+      "isCorrect": false,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "accuracy-001",
       "detectedIssues": [
-        "incorrect-detection"
+        "sql-injection-risk"
       ],
-      "inferredSecurityType": "incorrect-type",
-      "isTainted": false,
-      "isCorrect": false,
+      "inferredSecurityType": "user-input",
+      "isTainted": true,
+      "isCorrect": true,
       "isFalsePositive": false,
-      "isFalseNegative": true,
-      "inferenceTime": 4
+      "isFalseNegative": false,
+      "inferenceTime": 3
     },
     {
       "testCaseId": "accuracy-002",
@@ -79,7 +79,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 4
     },
     {
       "testCaseId": "accuracy-003",
@@ -99,19 +99,17 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     },
     {
       "testCaseId": "false-positive-002",
-      "detectedIssues": [
-        "false-issue"
-      ],
+      "detectedIssues": [],
       "inferredSecurityType": "validated-input",
       "isTainted": false,
-      "isCorrect": false,
-      "isFalsePositive": true,
+      "isCorrect": true,
+      "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "false-positive-003",
@@ -121,7 +119,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     }
   ]
 }
