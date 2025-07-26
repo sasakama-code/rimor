@@ -6,6 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { ProjectScore, ScoreHistory, GradeType } from './types';
 
 /**
@@ -428,7 +429,6 @@ export class ScoreHistoryManager {
 
   private getCurrentGitCommit(projectPath: string): string | undefined {
     try {
-      const { execSync } = require('child_process');
       const result = execSync('git rev-parse HEAD', { 
         cwd: projectPath, 
         encoding: 'utf8' 
@@ -441,7 +441,6 @@ export class ScoreHistoryManager {
 
   private getCurrentGitBranch(projectPath: string): string | undefined {
     try {
-      const { execSync } = require('child_process');
       const result = execSync('git branch --show-current', { 
         cwd: projectPath, 
         encoding: 'utf8' 

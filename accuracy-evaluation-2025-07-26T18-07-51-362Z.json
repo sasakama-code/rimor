@@ -1,0 +1,145 @@
+{
+  "overallMetrics": {
+    "totalTestCases": 1,
+    "analyzedTestCases": 1,
+    "inference": {
+      "automaticInferenceRate": 1,
+      "inferenceAccuracy": 1,
+      "inferenceFailed": 0
+    },
+    "detection": {
+      "truePositives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 5,
+      "falseNegatives": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1Score": 0,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0
+    },
+    "typeSystem": {
+      "typeInferenceSuccessRate": 1,
+      "taintTrackingAccuracy": 0,
+      "invariantVerificationRate": 0
+    },
+    "performance": {
+      "averageAnalysisTime": 0,
+      "targetAchievementRate": 1,
+      "throughput": 0
+    }
+  },
+  "perTestCaseResults": [
+    {
+      "testCase": {
+        "name": "E2EAuthTest",
+        "file": "/test/e2e-auth.test.ts",
+        "content": "\n            describe('E2E Authentication Tests', () => {\n              it('should perform complete auth flow', async () => {\n                const credentials = { username: 'admin', password: 'secret123' };\n                const loginResult = await authService.login(credentials);\n                expect(loginResult.token).toBeDefined();\n                \n                const protectedData = await api.getProtectedData(loginResult.token);\n                expect(protectedData).toBeDefined();\n              });\n\n              it('should handle auth failure', async () => {\n                const invalidCredentials = { username: 'hacker', password: 'wrong' };\n                await expect(authService.login(invalidCredentials)).rejects.toThrow();\n              });\n            });\n          ",
+        "metadata": {
+          "framework": "express",
+          "language": "typescript",
+          "lastModified": "2025-07-26T18:07:51.357Z"
+        }
+      },
+      "groundTruth": {
+        "testFileId": "/test/e2e-auth.test.ts",
+        "methodName": "E2EAuthTest",
+        "actualSecurityIssues": [],
+        "actualTaintLevels": {},
+        "requiredSecurityTests": [],
+        "manualVerificationResult": "needs-attention",
+        "verifiedBy": "accuracy-evaluation-system",
+        "verifiedAt": "2025-07-26T18:07:51.361Z"
+      },
+      "detectedIssues": [],
+      "accuracy": {
+        "correct": true,
+        "precision": 0,
+        "recall": 0,
+        "inferenceSuccessful": true
+      },
+      "analysis": {
+        "missedIssues": [],
+        "falseAlarms": [],
+        "correctDetections": []
+      }
+    }
+  ],
+  "perFrameworkResults": {},
+  "issueTypeAnalysis": {},
+  "accuracyTrends": [
+    {
+      "timestamp": "2025-07-26T18:07:51.279Z",
+      "metrics": {
+        "totalTestCases": 2,
+        "analyzedTestCases": 2,
+        "inference": {
+          "automaticInferenceRate": 1,
+          "inferenceAccuracy": 1,
+          "inferenceFailed": 0
+        },
+        "detection": {
+          "truePositives": 0,
+          "falsePositives": 0,
+          "trueNegatives": 10,
+          "falseNegatives": 0,
+          "precision": 0,
+          "recall": 0,
+          "f1Score": 0,
+          "falsePositiveRate": 0,
+          "falseNegativeRate": 0
+        },
+        "typeSystem": {
+          "typeInferenceSuccessRate": 1,
+          "taintTrackingAccuracy": 0,
+          "invariantVerificationRate": 0
+        },
+        "performance": {
+          "averageAnalysisTime": 0,
+          "targetAchievementRate": 1,
+          "throughput": 0
+        }
+      },
+      "changes": [
+        "accuracy-evaluation-completed"
+      ]
+    },
+    {
+      "timestamp": "2025-07-26T18:07:51.294Z",
+      "metrics": {
+        "totalTestCases": 0,
+        "analyzedTestCases": 0,
+        "inference": {
+          "automaticInferenceRate": 0,
+          "inferenceAccuracy": 0,
+          "inferenceFailed": 0
+        },
+        "detection": {
+          "truePositives": 0,
+          "falsePositives": 0,
+          "trueNegatives": 0,
+          "falseNegatives": 0,
+          "precision": 0,
+          "recall": 0,
+          "f1Score": 0,
+          "falsePositiveRate": 0,
+          "falseNegativeRate": 0
+        },
+        "typeSystem": {
+          "typeInferenceSuccessRate": 0,
+          "taintTrackingAccuracy": 0,
+          "invariantVerificationRate": 0
+        },
+        "performance": {
+          "averageAnalysisTime": 0,
+          "targetAchievementRate": 1,
+          "throughput": 0
+        }
+      },
+      "changes": [
+        "accuracy-evaluation-completed"
+      ]
+    }
+  ],
+  "recommendedImprovements": []
+}

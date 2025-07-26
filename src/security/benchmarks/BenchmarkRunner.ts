@@ -7,6 +7,8 @@ import { PerformanceBenchmark, BenchmarkResult, BenchmarkComparison } from './Pe
 import { TestCase } from '../types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
+import * as crypto from 'crypto';
 
 /**
  * ベンチマーク設定
@@ -637,9 +639,6 @@ export class BenchmarkRunner {
    * システムハッシュの生成
    */
   private generateSystemHash(): string {
-    const os = require('os');
-    const crypto = require('crypto');
-    
     const systemInfo = {
       platform: os.platform(),
       arch: os.arch(),

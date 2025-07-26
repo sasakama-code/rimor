@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { CLI } from './cli/cli';
-import { getMessage } from './i18n/messages';
+import { CLI } from './cli/cli.js';
+import { getMessage } from './i18n/messages.js';
 
 async function main() {
   const cli = new CLI();

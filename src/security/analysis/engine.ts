@@ -23,6 +23,7 @@ import { ModularTestAnalyzer } from './modular';
 import { FlowSensitiveAnalyzer, FlowGraph } from './flow';
 import { SignatureBasedInference } from './inference';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import * as os from 'os';
 
 /**
  * 型ベースセキュリティ解析エンジン
@@ -39,7 +40,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     this.config = {
       strictness: 'moderate',
       maxAnalysisTime: 30000,
-      parallelism: Math.max(1, Math.floor(require('os').cpus().length * 0.8)),
+      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8)),
       enableCache: true,
       customSanitizers: [],
       customSinks: [],

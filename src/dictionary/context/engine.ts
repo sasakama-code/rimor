@@ -12,6 +12,7 @@ import {
   CodeLocation
 } from '../../core/types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
+import * as crypto from 'crypto';
 
 /**
  * 文脈理解エンジン
@@ -618,7 +619,6 @@ export class ContextEngine {
 
   private generateCacheKey(code: string, filePath: string): string {
     // より堅牢なハッシュ生成（衝突回避）
-    const crypto = require('crypto');
     const codeHash = crypto.createHash('sha256').update(code).digest('hex').substring(0, 16);
     const pathHash = crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 8);
     return `${codeHash}-${pathHash}`;

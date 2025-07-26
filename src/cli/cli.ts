@@ -1,7 +1,8 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { AnalyzeCommand } from './commands/analyze';
-import { AIOutputCommand } from './commands/ai-output';
+import { AnalyzeCommand } from './commands/analyze.js';
+import { AIOutputCommand } from './commands/ai-output.js';
+import * as os from 'os';
 
 export class CLI {
   async run(): Promise<void> {
@@ -832,7 +833,7 @@ export class CLI {
                 try {
                   const benchmark = new PerformanceBenchmark();
                   const fileCount = argv.files;
-                  const parallelism = argv.parallel || require('os').cpus().length;
+                  const parallelism = argv.parallel || os.cpus().length;
                   
                   console.log(`設定: ${fileCount}ファイル, 並列度${parallelism}, キャッシュ${argv.cache ? '有効' : '無効'}`);
 

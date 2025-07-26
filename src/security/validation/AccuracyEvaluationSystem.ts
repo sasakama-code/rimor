@@ -14,6 +14,7 @@ import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { RealWorldProject, ValidationResult } from './RealWorldProjectValidator';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 
 /**
  * 正解データ（Ground Truth）
@@ -224,7 +225,7 @@ export class AccuracyEvaluationSystem {
     this.securityEngine = new TypeBasedSecurityEngine({
       strictness: 'moderate',
       enableCache: true,
-      parallelism: Math.max(1, Math.floor(require('os').cpus().length * 0.8))
+      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8))
     });
   }
 

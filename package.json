@@ -108,7 +108,7 @@
     "node": ">=18.0.0"
   },
   "license": "MIT",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/sasakama-code/rimor/issues"
   },
