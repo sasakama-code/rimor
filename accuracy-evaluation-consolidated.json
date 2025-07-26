@@ -1,0 +1,104 @@
+{
+  "consolidationInfo": {
+    "createdAt": "2025-07-26T18:30:00.000Z",
+    "consolidatedFrom": "39個の冗長な精度評価ファイル",
+    "version": "v0.7.0",
+    "purpose": "CodeRabbitAI指摘事項対応：冗長ファイル統合と品質改善"
+  },
+  "overallMetrics": {
+    "totalTestCases": 1,
+    "analyzedTestCases": 1,
+    "inference": {
+      "automaticInferenceRate": 1.0,
+      "inferenceAccuracy": 1.0,
+      "inferenceFailed": 0
+    },
+    "detection": {
+      "truePositives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 5,
+      "falseNegatives": 0,
+      "precision": null,
+      "recall": null,
+      "f1Score": null,
+      "falsePositiveRate": 0.0,
+      "falseNegativeRate": 0.0
+    },
+    "typeSystem": {
+      "typeInferenceSuccessRate": 1.0,
+      "taintTrackingAccuracy": null,
+      "invariantVerificationRate": null
+    },
+    "performance": {
+      "averageAnalysisTime": 1.0,
+      "targetAchievementRate": 1.0,
+      "throughput": 1000,
+      "unit": "methods/second"
+    }
+  },
+  "consolidatedResults": {
+    "testCaseSummary": {
+      "name": "E2EAuthTest",
+      "file": "/test/e2e-auth.test.ts",
+      "framework": "express",
+      "language": "typescript",
+      "lastModified": "2025-07-26T18:23:36.276Z"
+    },
+    "groundTruthSummary": {
+      "testFileId": "/test/e2e-auth.test.ts",
+      "methodName": "E2EAuthTest",
+      "actualSecurityIssues": [],
+      "actualTaintLevels": {},
+      "requiredSecurityTests": [],
+      "manualVerificationResult": "needs-attention",
+      "verifiedBy": "accuracy-evaluation-system-consolidated",
+      "verifiedAt": "2025-07-26T18:30:00.000Z"
+    },
+    "detectedIssues": [],
+    "accuracy": {
+      "correct": true,
+      "precision": null,
+      "recall": null,
+      "inferenceSuccessful": true
+    },
+    "analysis": {
+      "missedIssues": [],
+      "falseAlarms": [],
+      "correctDetections": []
+    }
+  },
+  "frameworkResults": {},
+  "issueTypeAnalysis": {},
+  "qualityMetrics": {
+    "coderabbitaiImprovements": {
+      "nullValuesForUndefined": "適用済み：未定義メトリクスを0からnullに変更",
+      "consolidatedReporting": "適用済み：39個のファイルを1つに統合",
+      "structuredFormat": "適用済み：より構造化された設定フォーマット採用",
+      "performanceUnits": "適用済み：測定単位を明確化 (methods/second)"
+    }
+  },
+  "recommendedImprovements": [
+    {
+      "category": "metrics",
+      "priority": "high",
+      "title": "精度メトリクスの計算改善",
+      "description": "precision、recall、f1Scoreが適切に計算されるようtrue positives等の値を適切に設定",
+      "suggestions": [
+        "実際のセキュリティ問題を含むテストケースの追加",
+        "型推論精度の向上",
+        "汚染追跡アルゴリズムの最適化"
+      ]
+    },
+    {
+      "category": "testing",
+      "priority": "medium", 
+      "title": "テストケースの多様化",
+      "description": "より多様なフレームワークとセキュリティパターンのテストケース追加",
+      "suggestions": [
+        "React/NestJS/Express以外のフレームワーク対応",
+        "複雑な汚染伝搬パターンのテスト",
+        "実世界プロジェクトでの大規模検証"
+      ]
+    }
+  ]
+}
