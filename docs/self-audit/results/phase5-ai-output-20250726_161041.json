@@ -1,0 +1,41 @@
+{
+  "timestamp": "2025-07-26T07:11:44.224Z",
+  "phase": "5",
+  "name": "AI最適化出力検証",
+  "summary": {
+    "outputQuality": 85,
+    "claudeCompatibility": 85,
+    "overallScore": 85
+  },
+  "details": {
+    "jsonOutput": {
+      "success": false,
+      "error": "Invalid JSON"
+    },
+    "markdownOutput": {
+      "success": true,
+      "hasInstructions": true,
+      "size": 478
+    },
+    "compatibility": {
+      "claudeCode": 85,
+      "chatgpt": 80,
+      "copilot": 75
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "category": "ai-output",
+      "title": "AI出力品質の改善",
+      "description": "より詳細なコンテキスト情報と具体的な指示の追加",
+      "suggestions": [
+        "プロジェクト推論精度の向上",
+        "段階的情報提供の強化",
+        "実行可能タスクの具体化"
+      ],
+      "impact": "medium"
+    }
+  ],
+  "executionTime": 610
+}

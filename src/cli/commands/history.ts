@@ -9,6 +9,7 @@ import { TrendAnalysisEngine } from '../../scoring/trends';
 import { AdvancedPredictionEngine } from '../../scoring/prediction';
 // import { Command } from 'commander'; // Commander not used in this implementation
 import * as path from 'path';
+import * as fs from 'fs';
 
 export interface HistoryCommandOptions {
   projectPath?: string;
@@ -316,8 +317,6 @@ export class HistoryCommand {
         history: history.entries
       };
 
-      const fs = require('fs');
-      
       if (format === 'csv') {
         // CSV形式のエクスポート
         let csvContent = 'timestamp,score,grade,commit,branch\\n';

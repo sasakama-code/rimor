@@ -18,8 +18,8 @@ export class ScoreCalculator {
       return { ...pluginScores[0] };
     }
 
-    const weights = pluginScores.map(score => score.confidence);
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    const weights = pluginScores.map(score => score.confidence || 0);
+    const totalWeight = weights.reduce((sum, weight) => sum + (weight || 0), 0);
 
     if (totalWeight === 0) {
       return {
@@ -32,19 +32,19 @@ export class ScoreCalculator {
 
     // 加重平均によるスコア計算
     const aggregatedOverall = pluginScores.reduce((sum, score, index) => {
-      return sum + (score.overall * weights[index]);
-    }, 0) / totalWeight;
+      return sum + (score.overall * (weights[index] || 0));
+    }, 0) / (totalWeight || 1);
 
     const aggregatedBreakdown: ScoreBreakdown = {
       completeness: pluginScores.reduce((sum, score, index) => {
-        return sum + ((score.breakdown.completeness || 0) * weights[index]);
-      }, 0) / totalWeight,
+        return sum + ((score.breakdown?.completeness || 0) * (weights[index] || 0));
+      }, 0) / (totalWeight || 1),
       correctness: pluginScores.reduce((sum, score, index) => {
-        return sum + ((score.breakdown.correctness || 0) * weights[index]);
-      }, 0) / totalWeight,
+        return sum + ((score.breakdown?.correctness || 0) * (weights[index] || 0));
+      }, 0) / (totalWeight || 1),
       maintainability: pluginScores.reduce((sum, score, index) => {
-        return sum + ((score.breakdown.maintainability || 0) * weights[index]);
-      }, 0) / totalWeight
+        return sum + ((score.breakdown?.maintainability || 0) * (weights[index] || 0));
+      }, 0) / (totalWeight || 1)
     };
 
     const aggregatedConfidence = this.calculateConfidenceScore(pluginScores);
@@ -91,7 +91,7 @@ export class ScoreCalculator {
   calculateConfidenceScore(scores: QualityScore[]): number {
     if (scores.length === 0) return 0;
 
-    const totalConfidence = scores.reduce((sum, score) => sum + score.confidence, 0);
+    const totalConfidence = scores.reduce((sum, score) => sum + (score.confidence || 0), 0);
     return totalConfidence / scores.length;
   }
 

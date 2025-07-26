@@ -72,7 +72,7 @@ export class AnalyzerExtended extends Analyzer {
         content,
         metadata: {
           framework: context.testFramework,
-          language: context.language,
+          language: context.language || 'javascript',
           lastModified: new Date()
         }
       };
@@ -237,14 +237,14 @@ export class AnalyzerExtended extends Analyzer {
     const averageScore = totalScore / successfulResults.length;
 
     // 信頼度の計算（各プラグインの信頼度の加重平均）
-    const totalConfidence = successfulResults.reduce((sum, result) => sum + result.qualityScore.confidence, 0);
+    const totalConfidence = successfulResults.reduce((sum, result) => sum + (result.qualityScore.confidence || 0), 0);
     const averageConfidence = totalConfidence / successfulResults.length;
 
     // ブレークダウンを統合
     const aggregatedBreakdown: { [dimension: string]: { score: number; weight: number; issues: string[] } } = {};
     
     successfulResults.forEach(result => {
-      Object.entries(result.qualityScore.breakdown).forEach(([dimension, score]) => {
+      Object.entries(result.qualityScore.breakdown || {}).forEach(([dimension, score]) => {
         if (!aggregatedBreakdown[dimension]) {
           aggregatedBreakdown[dimension] = {
             score: 0,

@@ -290,8 +290,8 @@ export class ScoreCalculatorV2 {
     }
 
     const weightConfig = weights || DEFAULT_WEIGHTS;
-    const weightValues = scores.map(score => score.confidence);
-    const totalWeight = weightValues.reduce((sum, weight) => sum + weight, 0);
+    const weightValues = scores.map(score => score.confidence || 0);
+    const totalWeight = weightValues.reduce((sum, weight) => sum + (weight || 0), 0);
 
     if (totalWeight === 0) {
       return {
@@ -307,11 +307,11 @@ export class ScoreCalculatorV2 {
 
     // 加重平均によるスコア計算
     const aggregatedScore = scores.reduce((sum, score, index) => {
-      return sum + (score.overall * weightValues[index]);
-    }, 0) / totalWeight;
+      return sum + (score.overall * (weightValues[index] || 0));
+    }, 0) / (totalWeight || 1);
 
     // 信頼度の平均
-    const avgConfidence = scores.reduce((sum, score) => sum + score.confidence, 0) / scores.length;
+    const avgConfidence = scores.reduce((sum, score) => sum + (score.confidence || 0), 0) / scores.length;
 
     return {
       score: this.normalizeScore(aggregatedScore),

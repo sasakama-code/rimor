@@ -5,8 +5,13 @@
  * コンパイルエラーが発生した場合、問題のあるファイルを自動削除して再試行
  */
 
-const { execSync, spawnSync } = require('child_process');
-const path = require('path');
+import { execSync, spawnSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ES Modulesスタイルのimportをrequireで代替
 const cleanupManagerPath = path.join(__dirname, '../dist/utils/cleanupManager.js');
@@ -63,7 +68,6 @@ async function buildWithCleanup() {
         console.log('🗑️  問題のあるプラグインファイルを削除中...');
         
         try {
-          const fs = require('fs');
           const savedPluginPath = path.join(process.cwd(), 'src/plugins/generated/saved-plugin.ts');
           
           if (fs.existsSync(savedPluginPath)) {
@@ -118,11 +122,9 @@ async function buildWithCleanup() {
 }
 
 // スクリプト実行
-if (require.main === module) {
-  buildWithCleanup().catch(error => {
-    console.error('💥 ビルドスクリプトでエラーが発生しました:', error);
-    process.exit(1);
-  });
-}
+buildWithCleanup().catch(error => {
+  console.error('💥 ビルドスクリプトでエラーが発生しました:', error);
+  process.exit(1);
+});
 
-module.exports = { buildWithCleanup };
+export { buildWithCleanup };

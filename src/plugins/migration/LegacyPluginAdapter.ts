@@ -62,7 +62,7 @@ export class LegacyPluginAdapter implements ITestQualityPlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
     
-    const correctnessScore = evaluation.breakdown.correctness || 0;
+    const correctnessScore = evaluation.breakdown?.correctness || 0;
     
     // レガシープラグインベースの基本的な改善提案
     if (correctnessScore < 70) {

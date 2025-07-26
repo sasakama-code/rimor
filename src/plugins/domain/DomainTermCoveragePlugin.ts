@@ -92,7 +92,7 @@ export class DomainTermCoveragePlugin extends DictionaryAwareBasePlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
     
-    if (evaluation.breakdown.completeness < 70) {
+    if (evaluation.breakdown?.completeness && evaluation.breakdown.completeness < 70) {
       improvements.push(this.createImprovement(
         'add-domain-terms',
         'high',
@@ -104,7 +104,7 @@ export class DomainTermCoveragePlugin extends DictionaryAwareBasePlugin {
       ));
     }
     
-    if (evaluation.breakdown.correctness < 80) {
+    if (evaluation.breakdown?.correctness && evaluation.breakdown.correctness < 80) {
       improvements.push(this.createImprovement(
         'improve-term-consistency',
         'medium',
@@ -306,7 +306,7 @@ export class DomainTermCoveragePlugin extends DictionaryAwareBasePlugin {
     }
     
     // パターンの種類の多様性を評価
-    const patternTypes = new Set(patterns.map(p => p.patternId.split('-')[2]));
+    const patternTypes = new Set(patterns.map(p => p.patternId?.split('-')[2]).filter(Boolean));
     const diversityBonus = Math.min(20, patternTypes.size * 7);
     
     // 基本スコア + 多様性ボーナス
@@ -415,7 +415,7 @@ export class DomainTermCoveragePlugin extends DictionaryAwareBasePlugin {
     const coveredTerms = new Set();
     for (const pattern of patterns) {
       for (const term of context.primaryTerms) {
-        if (pattern.patternName.toLowerCase().includes(term.term.toLowerCase())) {
+        if (pattern.patternName?.toLowerCase().includes(term.term.toLowerCase())) {
           coveredTerms.add(term.id);
         }
       }

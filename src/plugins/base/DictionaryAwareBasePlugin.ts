@@ -72,7 +72,7 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
       return {
         context: basicContext || {
           filePath: testFile.path,
-          language: testFile.metadata.language as any,
+          language: testFile.metadata?.language as any,
           functions: [],
           classes: [],
           imports: [],
@@ -397,7 +397,9 @@ export abstract class DictionaryAwareBasePlugin extends BasePlugin implements Di
       ...basicScore,
       overall: Math.min(100, basicScore.overall + domainBonus),
       breakdown: {
-        ...basicScore.breakdown,
+        completeness: basicScore.breakdown?.completeness || 0,
+        correctness: basicScore.breakdown?.correctness || 0,
+        maintainability: basicScore.breakdown?.maintainability || 0,
         // ドメイン適合度の情報を追加
         domainAlignment: this.calculateDomainAlignmentForScore(patterns)
       }

@@ -21,6 +21,7 @@ export interface AnalysisOptions {
   includeServices?: boolean;
   analyzeDependencies?: boolean;
   includeTransitiveDeps?: boolean;
+  includeSiblings?: boolean;
 }
 
 // 拡張されたコードコンテキスト
@@ -77,6 +78,7 @@ export interface FunctionInfo {
   complexity?: number;
   calls: string[]; // 呼び出している関数
   calledBy: string[]; // この関数を呼び出している関数
+  variables?: string[]; // 関数内で定義されている変数
 }
 
 // クラス情報
@@ -129,16 +131,23 @@ export interface ScopeInfo {
   variables: string[];
   parent?: ScopeInfo;
   children: ScopeInfo[];
+  functions?: string[];
+  level?: number;
+  parentScope?: string;
 }
 
 // 関連ファイル情報
 export interface RelatedFileInfo {
   path: string;
-  relationship: 'import' | 'export' | 'test' | 'similar' | 'dependency';
+  relationship: 'import' | 'export' | 'test' | 'similar' | 'dependency' | 'sibling';
   confidence: number;
   reason: string;
   size?: number;
   lastModified?: Date;
+  language?: string;
+  similarity?: number;
+  exports?: string[];
+  functions?: string[];
 }
 
 // 依存関係分析結果

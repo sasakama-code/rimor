@@ -1,0 +1,4538 @@
+{
+  "timestamp": "2025-07-26T07:10:53.239Z",
+  "phase": "1",
+  "name": "基本品質分析",
+  "summary": {
+    "totalFiles": 0,
+    "testFiles": 236,
+    "sourceFiles": 356,
+    "issuesFound": 0,
+    "testCoverage": 89.42307692307693,
+    "codeQualityScore": 0,
+    "overallScore": 60
+  },
+  "details": {
+    "rimorAnalysis": {
+      "success": false,
+      "error": "Command failed: node dist/index.js analyze ./src --format=json"
+    },
+    "testCoverageAnalysis": {
+      "success": true,
+      "jestCoverage": null,
+      "simpleCoverage": {
+        "totalSrcFiles": 208,
+        "coveredFiles": 186,
+        "coveragePercentage": 89.42307692307693,
+        "uncoveredFiles": [
+          "src/feedback/FeedbackCollectionSystem.ts",
+          "src/index.ts",
+          "src/security/analysis/inference.ts",
+          "src/security/analysis/modular.ts",
+          "src/security/analysis/progressive-ai.ts",
+          "src/security/benchmarks/BenchmarkRunner.ts",
+          "src/security/benchmarks/PerformanceBenchmark.ts",
+          "src/security/benchmarks/index.ts",
+          "src/security/plugins/InputValidationSecurityPlugin.ts",
+          "src/security/plugins/TypedAuthTestQualityPlugin.ts",
+          "src/security/validation/FrameworkTestGenerator.ts",
+          "src/feedback/FeedbackCollectionSystem.ts",
+          "src/index.ts",
+          "src/security/analysis/inference.ts",
+          "src/security/analysis/modular.ts",
+          "src/security/analysis/progressive-ai.ts",
+          "src/security/benchmarks/BenchmarkRunner.ts",
+          "src/security/benchmarks/PerformanceBenchmark.ts",
+          "src/security/benchmarks/index.ts",
+          "src/security/plugins/InputValidationSecurityPlugin.ts",
+          "src/security/plugins/TypedAuthTestQualityPlugin.ts",
+          "src/security/validation/FrameworkTestGenerator.ts"
+        ]
+      },
+      "fileStructure": {
+        "srcFiles": [
+          {
+            "path": "src/ai-output/context.ts",
+            "size": 23162,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/ai-output/formatter.ts",
+            "size": 19333,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/ai-output/types.ts",
+            "size": 4981,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/analyzers/code-context.ts",
+            "size": 36985,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/analyzers/dependency.ts",
+            "size": 20951,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/analyzers/structure.ts",
+            "size": 37143,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/analyzers/types.ts",
+            "size": 7872,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/bootstrap/DictionaryBootstrap.ts",
+            "size": 18248,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/cli.ts",
+            "size": 38078,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/ai-output.ts",
+            "size": 15720,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/analyze.ts",
+            "size": 19385,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/bootstrap.ts",
+            "size": 17512,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/dictionary.ts",
+            "size": 39271,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/history.ts",
+            "size": 12715,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/plugin-create.ts",
+            "size": 16534,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/trend.ts",
+            "size": 19510,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/commands/validate.ts",
+            "size": 26063,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/cli/output.ts",
+            "size": 1989,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/DictionaryAwarePluginManager.ts",
+            "size": 16449,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/analyzer.ts",
+            "size": 4054,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/analyzerExtended.ts",
+            "size": 9966,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/cacheManager.ts",
+            "size": 20431,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/cachedAnalyzer.ts",
+            "size": 11520,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/config.ts",
+            "size": 13248,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/fileDiscovery.ts",
+            "size": 3691,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/metadataDrivenConfig.ts",
+            "size": 14925,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/parallelAnalyzer.ts",
+            "size": 7778,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/performanceMonitor.ts",
+            "size": 11810,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/pluginManager.ts",
+            "size": 10684,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/pluginManagerExtended.ts",
+            "size": 7796,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/pluginMetadata.ts",
+            "size": 10425,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/core/types.ts",
+            "size": 17923,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/context/analyzer.ts",
+            "size": 14899,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/context/engine.ts",
+            "size": 19231,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/context/scorer.ts",
+            "size": 21607,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/core/dictionary.ts",
+            "size": 13660,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/core/rule.ts",
+            "size": 14792,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/core/term.ts",
+            "size": 13329,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/extractors/knowledgeExtractor.ts",
+            "size": 18519,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/extractors/linter.ts",
+            "size": 19683,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/extractors/termExtractor.ts",
+            "size": 32842,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/storage/cache.ts",
+            "size": 21900,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/storage/loader.ts",
+            "size": 21266,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/dictionary/storage/versioning.ts",
+            "size": 17597,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/feedback/FeedbackCollectionSystem.ts",
+            "size": 18032,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/i18n/messages.ts",
+            "size": 27304,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/index.ts",
+            "size": 278,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/interactive/analyzer.ts",
+            "size": 4728,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/interactive/creator.ts",
+            "size": 10730,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/interactive/generator.ts",
+            "size": 3199,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/interactive/types.ts",
+            "size": 3484,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/interactive/validator.ts",
+            "size": 8324,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/assertionExists.ts",
+            "size": 2114,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/base/BasePlugin.ts",
+            "size": 7400,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/base/DictionaryAwareBasePlugin.ts",
+            "size": 13679,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/core/AssertionQualityPlugin.ts",
+            "size": 14357,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/core/TestCompletenessPlugin.ts",
+            "size": 11832,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/core/TestStructurePlugin.ts",
+            "size": 15602,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/domain/DomainTermCoveragePlugin.ts",
+            "size": 15352,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/migration/LegacyPluginAdapter.ts",
+            "size": 3874,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/plugins/testExistence.ts",
+            "size": 4556,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/aggregator.ts",
+            "size": 17513,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/calculator.ts",
+            "size": 22572,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/config.ts",
+            "size": 23243,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/formatters.ts",
+            "size": 25753,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/grades.ts",
+            "size": 4672,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/history.ts",
+            "size": 15164,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/prediction.ts",
+            "size": 19844,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/reports.ts",
+            "size": 18771,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/trends.ts",
+            "size": 17785,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/types.ts",
+            "size": 6430,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/scoring/weights.ts",
+            "size": 14400,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/CLISecurity.ts",
+            "size": 17396,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/ConfigSecurity.ts",
+            "size": 20868,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/PluginSandbox.ts",
+            "size": 11385,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/analysis/engine.ts",
+            "size": 14887,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/analysis/flow.ts",
+            "size": 19634,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/analysis/inference.ts",
+            "size": 21837,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/analysis/modular.ts",
+            "size": 18856,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/analysis/progressive-ai.ts",
+            "size": 26083,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/benchmarks/BenchmarkRunner.ts",
+            "size": 25369,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/benchmarks/PerformanceBenchmark.ts",
+            "size": 25286,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/benchmarks/index.ts",
+            "size": 2017,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/plugins/InputValidationSecurityPlugin.ts",
+            "size": 23421,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/plugins/TypedAuthTestQualityPlugin.ts",
+            "size": 18212,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/types/index.ts",
+            "size": 6679,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/types/lattice.ts",
+            "size": 9248,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/types/security.ts",
+            "size": 7518,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/types/taint.ts",
+            "size": 5502,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/validation/AccuracyEvaluationSystem.ts",
+            "size": 27991,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/validation/FrameworkTestGenerator.ts",
+            "size": 27976,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/validation/LargeScalePerformanceValidator.ts",
+            "size": 25704,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/security/validation/RealWorldProjectValidator.ts",
+            "size": 21691,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/tools/migrationHelper.ts",
+            "size": 19438,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/cleanupManager.ts",
+            "size": 7262,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/codeAnalysisHelper.ts",
+            "size": 12437,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/debug.ts",
+            "size": 6074,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/errorHandler.ts",
+            "size": 8874,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/fsCompat.ts",
+            "size": 2580,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/pathSecurity.ts",
+            "size": 5786,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/regexHelper.ts",
+            "size": 3809,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/regexPatterns.ts",
+            "size": 4326,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/resourceLimits.ts",
+            "size": 8529,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "src/utils/scoreCalculator.ts",
+            "size": 5965,
+            "extension": ".ts",
+            "category": "src"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase0-dependencies.js",
+            "size": 16758,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase1-basic.js",
+            "size": 23099,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase2-security.js",
+            "size": 2681,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase2_5-performance.js",
+            "size": 21974,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase3-standards.js",
+            "size": 3472,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase4-gap-analysis.js",
+            "size": 5968,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase5-ai-output.js",
+            "size": 3660,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase6-maintainability.js",
+            "size": 5894,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-report-generator.js",
+            "size": 27365,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-result-archiver.js",
+            "size": 3878,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "demo/sample-project/lib/utils.js",
+            "size": 851,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "demo/sample-project/src/calculator.js",
+            "size": 412,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "demo/sample-project/src/userService.js",
+            "size": 889,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/ai-output/context.js",
+            "size": 23770,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/ai-output/formatter.js",
+            "size": 21600,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/ai-output/types.js",
+            "size": 110,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/analyzers/code-context.js",
+            "size": 41935,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/analyzers/dependency.js",
+            "size": 24287,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/analyzers/structure.js",
+            "size": 39888,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/analyzers/types.js",
+            "size": 110,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/bootstrap/DictionaryBootstrap.js",
+            "size": 21130,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/cli.js",
+            "size": 39904,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/ai-output.js",
+            "size": 17965,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/analyze.js",
+            "size": 22454,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/benchmark.js",
+            "size": 10184,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/bootstrap.js",
+            "size": 20877,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/dictionary.js",
+            "size": 42130,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/history.js",
+            "size": 14592,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/plugin-create.js",
+            "size": 19088,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/trend.js",
+            "size": 21901,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/commands/validate.js",
+            "size": 28621,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/cli/output.js",
+            "size": 2463,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/DictionaryAwarePluginManager.js",
+            "size": 18378,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/analyzer.js",
+            "size": 6115,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/analyzerExtended.js",
+            "size": 11331,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/cacheManager.js",
+            "size": 21091,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/cachedAnalyzer.js",
+            "size": 12766,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/config.js",
+            "size": 14412,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/fileDiscovery.js",
+            "size": 5623,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/metadataDrivenConfig.js",
+            "size": 15479,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/parallelAnalyzer.js",
+            "size": 9125,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/performanceMonitor.js",
+            "size": 12306,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/pluginManager.js",
+            "size": 12719,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/pluginManagerExtended.js",
+            "size": 7726,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/pluginMetadata.js",
+            "size": 9836,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/core/types.js",
+            "size": 1476,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/context/analyzer.js",
+            "size": 16057,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/context/engine.js",
+            "size": 21239,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/context/scorer.js",
+            "size": 21895,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/core/dictionary.js",
+            "size": 14306,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/core/rule.js",
+            "size": 14948,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/core/term.js",
+            "size": 13828,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/extractors/knowledgeExtractor.js",
+            "size": 21387,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/extractors/linter.js",
+            "size": 22628,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/extractors/termExtractor.js",
+            "size": 36861,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/storage/cache.js",
+            "size": 24703,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/storage/loader.js",
+            "size": 26141,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/dictionary/storage/versioning.js",
+            "size": 20228,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/feedback/FeedbackCollectionSystem.js",
+            "size": 17336,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/i18n/messages.js",
+            "size": 23803,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/index.js",
+            "size": 421,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/interactive/analyzer.js",
+            "size": 5235,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/interactive/creator.js",
+            "size": 12998,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/interactive/generator.js",
+            "size": 3385,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/interactive/types.js",
+            "size": 748,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/interactive/validator.js",
+            "size": 10772,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/assertionExists.js",
+            "size": 3714,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/base/BasePlugin.js",
+            "size": 7807,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/base/DictionaryAwareBasePlugin.js",
+            "size": 13827,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/core/AssertionQualityPlugin.js",
+            "size": 14961,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/core/TestCompletenessPlugin.js",
+            "size": 12452,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/core/TestStructurePlugin.js",
+            "size": 16494,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/domain/DomainTermCoveragePlugin.js",
+            "size": 15338,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/generated/basic-plugin.js",
+            "size": 2037,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/generated/saved-plugin.js",
+            "size": 311,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/generated/user-custom-plugin.js",
+            "size": 445,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/migration/LegacyPluginAdapter.js",
+            "size": 4226,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/plugins/testExistence.js",
+            "size": 6049,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/aggregator.js",
+            "size": 17632,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/calculator.js",
+            "size": 24069,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/config.js",
+            "size": 24810,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/formatters.js",
+            "size": 27266,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/grades.js",
+            "size": 5160,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/history.js",
+            "size": 16667,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/prediction.js",
+            "size": 19354,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/reports.js",
+            "size": 17477,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/trends.js",
+            "size": 16610,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/types.js",
+            "size": 549,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/scoring/weights.js",
+            "size": 15885,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/CLISecurity.js",
+            "size": 19953,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/ConfigSecurity.js",
+            "size": 24660,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/PluginSandbox.js",
+            "size": 13399,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/analysis/engine.js",
+            "size": 14503,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/analysis/flow.js",
+            "size": 19512,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/analysis/inference.js",
+            "size": 21555,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/analysis/modular.js",
+            "size": 18371,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/analysis/progressive-ai.js",
+            "size": 19835,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/benchmarks/BenchmarkRunner.js",
+            "size": 24516,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/benchmarks/PerformanceBenchmark.js",
+            "size": 25618,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/benchmarks/index.js",
+            "size": 3697,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/plugins/InputValidationSecurityPlugin.js",
+            "size": 24593,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/plugins/TypedAuthTestQualityPlugin.js",
+            "size": 18567,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/types/index.js",
+            "size": 1437,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/types/lattice.js",
+            "size": 8567,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/types/security.js",
+            "size": 1065,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/types/taint.js",
+            "size": 5420,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/validation/AccuracyEvaluationSystem.js",
+            "size": 25475,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/validation/FrameworkTestGenerator.js",
+            "size": 29157,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/validation/LargeScalePerformanceValidator.js",
+            "size": 24833,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/security/validation/RealWorldProjectValidator.js",
+            "size": 21561,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/tools/migrationHelper.js",
+            "size": 20959,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/cleanupManager.js",
+            "size": 9276,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/codeAnalysisHelper.js",
+            "size": 14116,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/debug.js",
+            "size": 7106,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/errorHandler.js",
+            "size": 8771,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/fsCompat.js",
+            "size": 4318,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/pathSecurity.js",
+            "size": 7514,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/regexHelper.js",
+            "size": 4034,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/regexPatterns.js",
+            "size": 4656,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/resourceLimits.js",
+            "size": 8453,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "dist/utils/scoreCalculator.js",
+            "size": 6516,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase0-dependencies.js",
+            "size": 16758,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase1-basic.js",
+            "size": 23099,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase2-security.js",
+            "size": 2681,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase2_5-performance.js",
+            "size": 21974,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase3-standards.js",
+            "size": 3472,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase4-gap-analysis.js",
+            "size": 5968,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase5-ai-output.js",
+            "size": 3660,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-phase6-maintainability.js",
+            "size": 5894,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-report-generator.js",
+            "size": 27365,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-result-archiver.js",
+            "size": 3878,
+            "extension": ".js",
+            "category": "doc"
+          },
+          {
+            "path": "jest.config.js",
+            "size": 1641,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "jest.setup.js",
+            "size": 6118,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-history-manager.js",
+            "size": 24619,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase0-dependencies.js",
+            "size": 16758,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase1-basic.js",
+            "size": 23099,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase2-security.js",
+            "size": 2681,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase2_5-performance.js",
+            "size": 21974,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase3-standards.js",
+            "size": 3472,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase4-gap-analysis.js",
+            "size": 5968,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase5-ai-output.js",
+            "size": 3660,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-phase6-maintainability.js",
+            "size": 5894,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-report-generator.js",
+            "size": 27365,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/audit-result-archiver.js",
+            "size": 3880,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/build-with-cleanup.js",
+            "size": 5190,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/release-health-check.js",
+            "size": 14276,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/security-check.js",
+            "size": 2392,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "scripts/setup-branch-protection.js",
+            "size": 5820,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "src/ai-output/context.ts",
+            "size": 23162,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/ai-output/formatter.ts",
+            "size": 19333,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/ai-output/types.ts",
+            "size": 4981,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/analyzers/code-context.ts",
+            "size": 36985,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/analyzers/dependency.ts",
+            "size": 20951,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/analyzers/structure.ts",
+            "size": 37143,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/analyzers/types.ts",
+            "size": 7872,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/bootstrap/DictionaryBootstrap.ts",
+            "size": 18248,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/cli.ts",
+            "size": 38078,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/ai-output.ts",
+            "size": 15720,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/analyze.ts",
+            "size": 19385,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/bootstrap.ts",
+            "size": 17512,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/dictionary.ts",
+            "size": 39271,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/history.ts",
+            "size": 12715,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/plugin-create.ts",
+            "size": 16534,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/trend.ts",
+            "size": 19510,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/commands/validate.ts",
+            "size": 26063,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/cli/output.ts",
+            "size": 1989,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/DictionaryAwarePluginManager.ts",
+            "size": 16449,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/analyzer.ts",
+            "size": 4054,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/analyzerExtended.ts",
+            "size": 9966,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/cacheManager.ts",
+            "size": 20431,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/cachedAnalyzer.ts",
+            "size": 11520,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/config.ts",
+            "size": 13248,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/fileDiscovery.ts",
+            "size": 3691,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/metadataDrivenConfig.ts",
+            "size": 14925,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/parallelAnalyzer.ts",
+            "size": 7778,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/performanceMonitor.ts",
+            "size": 11810,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/pluginManager.ts",
+            "size": 10684,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/pluginManagerExtended.ts",
+            "size": 7796,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/pluginMetadata.ts",
+            "size": 10425,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/core/types.ts",
+            "size": 17923,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/context/analyzer.ts",
+            "size": 14899,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/context/engine.ts",
+            "size": 19231,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/context/scorer.ts",
+            "size": 21607,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/core/dictionary.ts",
+            "size": 13660,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/core/rule.ts",
+            "size": 14792,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/core/term.ts",
+            "size": 13329,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/extractors/knowledgeExtractor.ts",
+            "size": 18519,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/extractors/linter.ts",
+            "size": 19683,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/extractors/termExtractor.ts",
+            "size": 32842,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/storage/cache.ts",
+            "size": 21900,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/storage/loader.ts",
+            "size": 21266,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/dictionary/storage/versioning.ts",
+            "size": 17597,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/feedback/FeedbackCollectionSystem.ts",
+            "size": 18032,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/i18n/messages.ts",
+            "size": 27304,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/index.ts",
+            "size": 278,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/interactive/analyzer.ts",
+            "size": 4728,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/interactive/creator.ts",
+            "size": 10730,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/interactive/generator.ts",
+            "size": 3199,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/interactive/types.ts",
+            "size": 3484,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/interactive/validator.ts",
+            "size": 8324,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/assertionExists.ts",
+            "size": 2114,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/base/BasePlugin.ts",
+            "size": 7400,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/base/DictionaryAwareBasePlugin.ts",
+            "size": 13679,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/core/AssertionQualityPlugin.ts",
+            "size": 14357,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/core/TestCompletenessPlugin.ts",
+            "size": 11832,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/core/TestStructurePlugin.ts",
+            "size": 15602,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/domain/DomainTermCoveragePlugin.ts",
+            "size": 15352,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/migration/LegacyPluginAdapter.ts",
+            "size": 3874,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/plugins/testExistence.ts",
+            "size": 4556,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/aggregator.ts",
+            "size": 17513,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/calculator.ts",
+            "size": 22572,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/config.ts",
+            "size": 23243,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/formatters.ts",
+            "size": 25753,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/grades.ts",
+            "size": 4672,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/history.ts",
+            "size": 15164,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/prediction.ts",
+            "size": 19844,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/reports.ts",
+            "size": 18771,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/trends.ts",
+            "size": 17785,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/types.ts",
+            "size": 6430,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/scoring/weights.ts",
+            "size": 14400,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/CLISecurity.ts",
+            "size": 17396,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/ConfigSecurity.ts",
+            "size": 20868,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/PluginSandbox.ts",
+            "size": 11385,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/analysis/engine.ts",
+            "size": 14887,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/analysis/flow.ts",
+            "size": 19634,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/analysis/inference.ts",
+            "size": 21837,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/analysis/modular.ts",
+            "size": 18856,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/analysis/progressive-ai.ts",
+            "size": 26083,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/benchmarks/BenchmarkRunner.ts",
+            "size": 25369,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/benchmarks/PerformanceBenchmark.ts",
+            "size": 25286,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/benchmarks/index.ts",
+            "size": 2017,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/plugins/InputValidationSecurityPlugin.ts",
+            "size": 23421,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/plugins/TypedAuthTestQualityPlugin.ts",
+            "size": 18212,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/types/index.ts",
+            "size": 6679,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/types/lattice.ts",
+            "size": 9248,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/types/security.ts",
+            "size": 7518,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/types/taint.ts",
+            "size": 5502,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/validation/AccuracyEvaluationSystem.ts",
+            "size": 27991,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/validation/FrameworkTestGenerator.ts",
+            "size": 27976,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/validation/LargeScalePerformanceValidator.ts",
+            "size": 25704,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/security/validation/RealWorldProjectValidator.ts",
+            "size": 21691,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/tools/migrationHelper.ts",
+            "size": 19438,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/cleanupManager.ts",
+            "size": 7262,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/codeAnalysisHelper.ts",
+            "size": 12437,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/debug.ts",
+            "size": 6074,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/errorHandler.ts",
+            "size": 8874,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/fsCompat.ts",
+            "size": 2580,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/pathSecurity.ts",
+            "size": 5786,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/regexHelper.ts",
+            "size": 3809,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/regexPatterns.ts",
+            "size": 4326,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/resourceLimits.ts",
+            "size": 8529,
+            "extension": ".ts",
+            "category": "config"
+          },
+          {
+            "path": "src/utils/scoreCalculator.ts",
+            "size": 5965,
+            "extension": ".ts",
+            "category": "config"
+          }
+        ],
+        "testFiles": [
+          {
+            "path": "test/ai-output/context.test.ts",
+            "size": 13855,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/ai-output/formatter.test.ts",
+            "size": 10284,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzeCommand.test.ts",
+            "size": 7750,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/code-context.test.ts",
+            "size": 16212,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/dependency.test.ts",
+            "size": 19504,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/structure.test.ts",
+            "size": 30938,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/bootstrap/DictionaryBootstrap.test.ts",
+            "size": 23354,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/bootstrap.test.ts",
+            "size": 16403,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/cli.test.ts",
+            "size": 9281,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/ai-output.test.ts",
+            "size": 12108,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/bootstrap.test.ts",
+            "size": 18528,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/dictionary.test.ts",
+            "size": 26084,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/history.test.ts",
+            "size": 4286,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/plugin-create.test.ts",
+            "size": 6283,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/trend.test.ts",
+            "size": 8221,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/history.test.ts",
+            "size": 4280,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/output.test.ts",
+            "size": 1668,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/trend.test.ts",
+            "size": 8215,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/config.test.ts",
+            "size": 5226,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/DictionaryAwarePluginManager.test.ts",
+            "size": 25373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/analyzer.test.ts",
+            "size": 2189,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/analyzerExtended.test.ts",
+            "size": 9990,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/cacheManager.test.ts",
+            "size": 373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/cachedAnalyzer.test.ts",
+            "size": 367,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/fileDiscovery.test.ts",
+            "size": 2063,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/metadataDrivenConfig.test.ts",
+            "size": 12708,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/parallelAnalyzer.test.ts",
+            "size": 9495,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/performanceMonitor.test.ts",
+            "size": 373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginManager.test.ts",
+            "size": 2046,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginManagerExtended.test.ts",
+            "size": 9624,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginMetadata.test.ts",
+            "size": 364,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/analyzer.test.ts",
+            "size": 22245,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/engine.test.ts",
+            "size": 28592,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/scorer.test.ts",
+            "size": 9388,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/dictionary.test.ts",
+            "size": 17452,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/rule.test.ts",
+            "size": 12178,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/term.test.ts",
+            "size": 14167,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/knowledgeExtractor.test.ts",
+            "size": 17337,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/linter.test.ts",
+            "size": 17276,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/termExtractor.test.ts",
+            "size": 22508,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/cache.test.ts",
+            "size": 12280,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/loader.test.ts",
+            "size": 18431,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/versioning.test.ts",
+            "size": 20491,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/feedback/FeedbackIntegration.test.ts",
+            "size": 18221,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/bad.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/comprehensive.test.ts",
+            "size": 927,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/confidence.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/error.test.ts",
+            "size": 107,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/filtered.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/good.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/legacy.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/multi-plugin.test.ts",
+            "size": 114,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/needs-improvement.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/performance.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/sample.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test1.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test2.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test3.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/i18n/messages.test.ts",
+            "size": 6351,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/RealWorldProjectValidator.test.ts",
+            "size": 9770,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/SecurityAnalysisIntegration.test.ts",
+            "size": 23911,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/advancedPluginSystem.test.ts",
+            "size": 14827,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/basicIntegration.test.ts",
+            "size": 9438,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/dictionary-plugin-integration.test.ts",
+            "size": 15256,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/end-to-end-workflow.test.ts",
+            "size": 21982,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/integration-test-suite.ts",
+            "size": 12250,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/performance.test.ts",
+            "size": 14316,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/analyzer.test.ts",
+            "size": 5804,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/creator.test.ts",
+            "size": 8628,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/generator.test.ts",
+            "size": 6788,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/integration.test.ts",
+            "size": 11166,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/types.test.ts",
+            "size": 4447,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/validator.test.ts",
+            "size": 6636,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/LargeScalePerformance.test.ts",
+            "size": 14666,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/RequirementsVerificationBenchmark.test.ts",
+            "size": 27268,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/basicPerformance.test.ts",
+            "size": 9468,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/plugin-creation.test.ts",
+            "size": 7636,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/pluginPerformance.test.ts",
+            "size": 15323,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/simplePerformance.test.ts",
+            "size": 8736,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/assertionExists.test.ts",
+            "size": 4117,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/base/BasePlugin.test.ts",
+            "size": 351,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/base/DictionaryAwareBasePlugin.test.ts",
+            "size": 20216,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/AssertionQualityPlugin.test.ts",
+            "size": 396,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/TestCompletenessPlugin.test.ts",
+            "size": 390,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/TestStructurePlugin.test.ts",
+            "size": 378,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/domain/DomainTermCoveragePlugin.test.ts",
+            "size": 23780,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/migration/LegacyPluginAdapter.test.ts",
+            "size": 395,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/testExistence.test.ts",
+            "size": 1300,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/aggregator.test.ts",
+            "size": 13456,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/calculator.test.ts",
+            "size": 11146,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/config-integration.test.ts",
+            "size": 14059,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/config.test.ts",
+            "size": 14997,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/formatters.test.ts",
+            "size": 9795,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/grades.test.ts",
+            "size": 9868,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/history.test.ts",
+            "size": 12488,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/integration.test.ts",
+            "size": 13008,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/prediction.test.ts",
+            "size": 11411,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/reports.test.ts",
+            "size": 13770,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/trends.test.ts",
+            "size": 12960,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/types.test.ts",
+            "size": 3922,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/weights.test.ts",
+            "size": 14997,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/CLISecurity.test.ts",
+            "size": 12753,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/ConfigSecurity.test.ts",
+            "size": 13614,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/PluginSandbox.test.ts",
+            "size": 11580,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/tools/migrationHelper.test.ts",
+            "size": 12798,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/types.test.ts",
+            "size": 6540,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/cleanupManager.test.ts",
+            "size": 374,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/codeAnalysisHelper.test.ts",
+            "size": 9180,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/debug.test.ts",
+            "size": 13323,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/errorHandler.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/fsCompat.test.ts",
+            "size": 10939,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/pathSecurity.test.ts",
+            "size": 7201,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/regexHelper.test.ts",
+            "size": 5476,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/regexPatterns.test.ts",
+            "size": 689,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/resourceLimits.test.ts",
+            "size": 10900,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/scoreCalculator.test.ts",
+            "size": 6621,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/validation/AccuracyEvaluationSystem.test.ts",
+            "size": 15685,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "demo/sample-project/lib/utils.test.js",
+            "size": 625,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "demo/sample-project/src/calculator.test.js",
+            "size": 724,
+            "extension": ".js",
+            "category": "config"
+          },
+          {
+            "path": "test/ai-output/context.test.ts",
+            "size": 13855,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/ai-output/formatter.test.ts",
+            "size": 10284,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzeCommand.test.ts",
+            "size": 7750,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/code-context.test.ts",
+            "size": 16212,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/dependency.test.ts",
+            "size": 19504,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/analyzers/structure.test.ts",
+            "size": 30938,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/bootstrap/DictionaryBootstrap.test.ts",
+            "size": 23354,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/bootstrap.test.ts",
+            "size": 16403,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/cli.test.ts",
+            "size": 9281,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/ai-output.test.ts",
+            "size": 12108,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/bootstrap.test.ts",
+            "size": 18528,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/dictionary.test.ts",
+            "size": 26084,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/history.test.ts",
+            "size": 4286,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/plugin-create.test.ts",
+            "size": 6283,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/commands/trend.test.ts",
+            "size": 8221,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/history.test.ts",
+            "size": 4280,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/output.test.ts",
+            "size": 1668,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/cli/trend.test.ts",
+            "size": 8215,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/config.test.ts",
+            "size": 5226,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/DictionaryAwarePluginManager.test.ts",
+            "size": 25373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/analyzer.test.ts",
+            "size": 2189,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/analyzerExtended.test.ts",
+            "size": 9990,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/cacheManager.test.ts",
+            "size": 373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/cachedAnalyzer.test.ts",
+            "size": 367,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/fileDiscovery.test.ts",
+            "size": 2063,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/metadataDrivenConfig.test.ts",
+            "size": 12708,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/parallelAnalyzer.test.ts",
+            "size": 9495,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/performanceMonitor.test.ts",
+            "size": 373,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginManager.test.ts",
+            "size": 2046,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginManagerExtended.test.ts",
+            "size": 9624,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/core/pluginMetadata.test.ts",
+            "size": 364,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/analyzer.test.ts",
+            "size": 22245,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/engine.test.ts",
+            "size": 28592,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/context/scorer.test.ts",
+            "size": 9388,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/dictionary.test.ts",
+            "size": 17452,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/rule.test.ts",
+            "size": 12178,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/core/term.test.ts",
+            "size": 14167,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/knowledgeExtractor.test.ts",
+            "size": 17337,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/linter.test.ts",
+            "size": 17276,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/extractors/termExtractor.test.ts",
+            "size": 22508,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/cache.test.ts",
+            "size": 12280,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/loader.test.ts",
+            "size": 18431,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/dictionary/storage/versioning.test.ts",
+            "size": 20491,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/feedback/FeedbackIntegration.test.ts",
+            "size": 18221,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/bad.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/comprehensive.test.ts",
+            "size": 927,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/confidence.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/error.test.ts",
+            "size": 107,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/filtered.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/good.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/legacy.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/multi-plugin.test.ts",
+            "size": 114,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/needs-improvement.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/performance.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/sample.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test1.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test2.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/fixtures/test3.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/i18n/messages.test.ts",
+            "size": 6351,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/RealWorldProjectValidator.test.ts",
+            "size": 9770,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/SecurityAnalysisIntegration.test.ts",
+            "size": 23911,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/advancedPluginSystem.test.ts",
+            "size": 14827,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/basicIntegration.test.ts",
+            "size": 9438,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/dictionary-plugin-integration.test.ts",
+            "size": 15256,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/end-to-end-workflow.test.ts",
+            "size": 21982,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/integration-test-suite.ts",
+            "size": 12250,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/integration/performance.test.ts",
+            "size": 14316,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/analyzer.test.ts",
+            "size": 5804,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/creator.test.ts",
+            "size": 8628,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/generator.test.ts",
+            "size": 6788,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/integration.test.ts",
+            "size": 11166,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/types.test.ts",
+            "size": 4447,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/interactive/validator.test.ts",
+            "size": 6636,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/LargeScalePerformance.test.ts",
+            "size": 14666,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/RequirementsVerificationBenchmark.test.ts",
+            "size": 27268,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/basicPerformance.test.ts",
+            "size": 9468,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/plugin-creation.test.ts",
+            "size": 7636,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/pluginPerformance.test.ts",
+            "size": 15323,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/performance/simplePerformance.test.ts",
+            "size": 8736,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/assertionExists.test.ts",
+            "size": 4117,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/base/BasePlugin.test.ts",
+            "size": 351,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/base/DictionaryAwareBasePlugin.test.ts",
+            "size": 20216,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/AssertionQualityPlugin.test.ts",
+            "size": 396,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/TestCompletenessPlugin.test.ts",
+            "size": 390,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/core/TestStructurePlugin.test.ts",
+            "size": 378,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/domain/DomainTermCoveragePlugin.test.ts",
+            "size": 23780,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/migration/LegacyPluginAdapter.test.ts",
+            "size": 395,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/plugins/testExistence.test.ts",
+            "size": 1300,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/aggregator.test.ts",
+            "size": 13456,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/calculator.test.ts",
+            "size": 11146,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/config-integration.test.ts",
+            "size": 14059,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/config.test.ts",
+            "size": 14997,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/formatters.test.ts",
+            "size": 9795,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/grades.test.ts",
+            "size": 9868,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/history.test.ts",
+            "size": 12488,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/integration.test.ts",
+            "size": 13008,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/prediction.test.ts",
+            "size": 11411,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/reports.test.ts",
+            "size": 13770,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/trends.test.ts",
+            "size": 12960,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/types.test.ts",
+            "size": 3922,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/scoring/weights.test.ts",
+            "size": 14997,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/CLISecurity.test.ts",
+            "size": 12753,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/ConfigSecurity.test.ts",
+            "size": 13614,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/security/PluginSandbox.test.ts",
+            "size": 11580,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/tools/migrationHelper.test.ts",
+            "size": 12798,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/types.test.ts",
+            "size": 6540,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/cleanupManager.test.ts",
+            "size": 374,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/codeAnalysisHelper.test.ts",
+            "size": 9180,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/debug.test.ts",
+            "size": 13323,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/errorHandler.test.ts",
+            "size": 356,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/fsCompat.test.ts",
+            "size": 10939,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/pathSecurity.test.ts",
+            "size": 7201,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/regexHelper.test.ts",
+            "size": 5476,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/regexPatterns.test.ts",
+            "size": 689,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/resourceLimits.test.ts",
+            "size": 10900,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/utils/scoreCalculator.test.ts",
+            "size": 6621,
+            "extension": ".ts",
+            "category": "test"
+          },
+          {
+            "path": "test/validation/AccuracyEvaluationSystem.test.ts",
+            "size": 15685,
+            "extension": ".ts",
+            "category": "test"
+          }
+        ],
+        "configFiles": [
+          {
+            "path": "docs/self-audit/config/history-policy.json",
+            "size": 4481,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary-20250726_154414.json",
+            "size": 4677,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary.json",
+            "size": 4677,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase0-dependencies-20250726_161041.json",
+            "size": 3289,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase0-dependencies.json",
+            "size": 3289,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase1-basic.json",
+            "size": 123176,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase2-security.json",
+            "size": 412,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-config.json",
+            "size": 3560,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": ".claude/settings.local.json",
+            "size": 135,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": ".github/workflows/ci.yml",
+            "size": 4955,
+            "extension": ".yml",
+            "category": "config"
+          },
+          {
+            "path": ".github/workflows/claude.yml",
+            "size": 2309,
+            "extension": ".yml",
+            "category": "config"
+          },
+          {
+            "path": ".github/workflows/health-check.yml",
+            "size": 9452,
+            "extension": ".yml",
+            "category": "config"
+          },
+          {
+            "path": ".github/workflows/release.yml",
+            "size": 18232,
+            "extension": ".yml",
+            "category": "config"
+          },
+          {
+            "path": ".github/workflows/taintyper-ci.yml",
+            "size": 15576,
+            "extension": ".yml",
+            "category": "config"
+          },
+          {
+            "path": ".rimor-cache/analysis-cache.json",
+            "size": 58302,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": ".rimorrc.json",
+            "size": 399,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T06-44-43-628Z.json",
+            "size": 5211,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T06-44-43-645Z.json",
+            "size": 2524,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T06-44-43-824Z.json",
+            "size": 6414,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T07-11-13-481Z.json",
+            "size": 5214,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T07-11-13-502Z.json",
+            "size": 2527,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "accuracy-evaluation-2025-07-26T07-11-13-693Z.json",
+            "size": 6414,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/express-large-scale-benchmark.json",
+            "size": 1419,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/incremental-update-benchmark.json",
+            "size": 243,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/memory-usage-benchmark.json",
+            "size": 333,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/nestjs-large-scale-benchmark.json",
+            "size": 1458,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/react-large-scale-benchmark.json",
+            "size": 1419,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/single-method-benchmark.json",
+            "size": 211,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/speedup-verification-benchmark.json",
+            "size": 1398,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/thousand-methods-benchmark.json",
+            "size": 1378,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "benchmark-results/type-inference-efficiency-benchmark.json",
+            "size": 439,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "demo/sample-project/package.json",
+            "size": 394,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "docs/self-audit/config/history-policy.json",
+            "size": 4481,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary-20250726_154414.json",
+            "size": 4677,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary.json",
+            "size": 4677,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase0-dependencies-20250726_161041.json",
+            "size": 3289,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase0-dependencies.json",
+            "size": 3289,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase1-basic.json",
+            "size": 123176,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/results/phase2-security.json",
+            "size": 412,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/scripts/audit-config.json",
+            "size": 3560,
+            "extension": ".json",
+            "category": "doc"
+          },
+          {
+            "path": "package-lock.json",
+            "size": 211432,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "package.json",
+            "size": 6381,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "real-world-validation-2025-07-26T06-44-43-566Z.json",
+            "size": 3734,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "real-world-validation-2025-07-26T06-44-43-812Z.json",
+            "size": 6181,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "real-world-validation-2025-07-26T07-11-13-418Z.json",
+            "size": 3734,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "real-world-validation-2025-07-26T07-11-13-680Z.json",
+            "size": 6187,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "rimor-results.json",
+            "size": 1969,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "rimor.config.example.json",
+            "size": 1414,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "test-accuracy-data/accuracy-evaluation.json",
+            "size": 3149,
+            "extension": ".json",
+            "category": "config"
+          },
+          {
+            "path": "tsconfig.json",
+            "size": 487,
+            "extension": ".json",
+            "category": "config"
+          }
+        ],
+        "docFiles": [
+          {
+            "path": "docs/AI-Optimized-Output-Requirements-v0.5.0.md",
+            "size": 14484,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Advanced-Plugin-Interface-Requirements-v0.3.0.md",
+            "size": 11224,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Domain-Dictionary-Requirements-v0.6.0.md",
+            "size": 13938,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Interactive-Plugin-Creator-Requirements-v0.2.0.md",
+            "size": 11567,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Quality-Score-Calculator-Requirements-v0.4.0.md",
+            "size": 13163,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_HEALTH_DASHBOARD.md",
+            "size": 8721,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_PROCESS_GUIDE.md",
+            "size": 6811,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_READINESS_CHECKLIST.md",
+            "size": 5444,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/SECURITY_GUIDELINES.md",
+            "size": 14263,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/api-specification.md",
+            "size": 39034,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Catchphrase.md",
+            "size": 242,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Day 9-10 Implementation Report.md",
+            "size": 4816,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/ProjectName.md",
+            "size": 7578,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Rimor Project Report.md",
+            "size": 22755,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/SECURITY_VULNERABILITY_ANALYSIS_v0.4.1.md",
+            "size": 19473,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AI（Claude Code等）向けの出力形式の設計.md",
+            "size": 9366,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AL.md",
+            "size": 21413,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint.md",
+            "size": 44571,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint_v3.md",
+            "size": 36656,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint_v4.md",
+            "size": 21205,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Claude Code風対話型プラグイン作成の実現可能性検討.md",
+            "size": 10519,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Linterドキュメントを活用したドメイン辞書の自動構築.md",
+            "size": 10248,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/MVP開発と自己改善サイクルの実践的アプローチ.md",
+            "size": 10652,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Requirements definition document.md",
+            "size": 6885,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/テスト品質監査システムの解析結果表示設計.md",
+            "size": 12417,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ドメイン辞書と文脈理解システムの具体的構築方法.md",
+            "size": 12322,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ドメイン辞書のブートストラップ問題と実践的解決策.md",
+            "size": 10138,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/プラグイン作成の改善策立案と比較評価.md",
+            "size": 11063,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ユーザー主導のLinterルール活用：なぜOSS側で事前提供しないのか.md",
+            "size": 9982,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/対話型プラグイン作成システムの深掘り：コンテキスト抽出とルール生成の仕組み.md",
+            "size": 12238,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析とドメイン知識の分離と独自価値の創出.md",
+            "size": 11159,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析中心のテスト品質監査システム設計レポート.md",
+            "size": 16965,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析中心のテスト品質監査システム設計レポート_v5.md",
+            "size": 21971,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/project directory tree.md",
+            "size": 9475,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/rimor-v0.7.0-security-requirements.md",
+            "size": 23526,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/README.md",
+            "size": 4688,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/ai-output-quality-verification.md",
+            "size": 8356,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary.md",
+            "size": 7508,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/gap-analysis-and-improvements.md",
+            "size": 8330,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/requirements-compliance-analysis.md",
+            "size": 6239,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/user-guide.md",
+            "size": 16836,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": ".claude/commands/execmd.md",
+            "size": 112,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": ".claude/commands/exeplan.md",
+            "size": 176,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": ".claude/commands/issue.md",
+            "size": 428,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": ".claude/commands/knowledge.md",
+            "size": 4811,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": ".claude/commands/record.md",
+            "size": 152,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "CHANGELOG.md",
+            "size": 27777,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "CLAUDE.md",
+            "size": 19073,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "FEEDBACK.md",
+            "size": 4582,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "README.md",
+            "size": 19283,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "debt-tracker.md",
+            "size": 16512,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "demo/demo-script.md",
+            "size": 5990,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "demo/sample-project/README.md",
+            "size": 1748,
+            "extension": ".md",
+            "category": "config"
+          },
+          {
+            "path": "docs/AI-Optimized-Output-Requirements-v0.5.0.md",
+            "size": 14484,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Advanced-Plugin-Interface-Requirements-v0.3.0.md",
+            "size": 11224,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Domain-Dictionary-Requirements-v0.6.0.md",
+            "size": 13938,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Interactive-Plugin-Creator-Requirements-v0.2.0.md",
+            "size": 11567,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/Quality-Score-Calculator-Requirements-v0.4.0.md",
+            "size": 13163,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_HEALTH_DASHBOARD.md",
+            "size": 8721,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_PROCESS_GUIDE.md",
+            "size": 6811,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/RELEASE_READINESS_CHECKLIST.md",
+            "size": 5444,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/SECURITY_GUIDELINES.md",
+            "size": 14263,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/api-specification.md",
+            "size": 39034,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Catchphrase.md",
+            "size": 242,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Day 9-10 Implementation Report.md",
+            "size": 4816,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/ProjectName.md",
+            "size": 7578,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/Rimor Project Report.md",
+            "size": 22755,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/SECURITY_VULNERABILITY_ANALYSIS_v0.4.1.md",
+            "size": 19473,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AI（Claude Code等）向けの出力形式の設計.md",
+            "size": 9366,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AL.md",
+            "size": 21413,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint.md",
+            "size": 44571,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint_v3.md",
+            "size": 36656,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/AssertLint_v4.md",
+            "size": 21205,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Claude Code風対話型プラグイン作成の実現可能性検討.md",
+            "size": 10519,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Linterドキュメントを活用したドメイン辞書の自動構築.md",
+            "size": 10248,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/MVP開発と自己改善サイクルの実践的アプローチ.md",
+            "size": 10652,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/Requirements definition document.md",
+            "size": 6885,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/テスト品質監査システムの解析結果表示設計.md",
+            "size": 12417,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ドメイン辞書と文脈理解システムの具体的構築方法.md",
+            "size": 12322,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ドメイン辞書のブートストラップ問題と実践的解決策.md",
+            "size": 10138,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/プラグイン作成の改善策立案と比較評価.md",
+            "size": 11063,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/ユーザー主導のLinterルール活用：なぜOSS側で事前提供しないのか.md",
+            "size": 9982,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/対話型プラグイン作成システムの深掘り：コンテキスト抽出とルール生成の仕組み.md",
+            "size": 12238,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析とドメイン知識の分離と独自価値の創出.md",
+            "size": 11159,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析中心のテスト品質監査システム設計レポート.md",
+            "size": 16965,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/old/静的解析中心のテスト品質監査システム設計レポート_v5.md",
+            "size": 21971,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/dev/project directory tree.md",
+            "size": 9475,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/rimor-v0.7.0-security-requirements.md",
+            "size": 23526,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/README.md",
+            "size": 4688,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/ai-output-quality-verification.md",
+            "size": 8356,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/comprehensive-audit-summary.md",
+            "size": 7508,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/gap-analysis-and-improvements.md",
+            "size": 8330,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/self-audit/reports/requirements-compliance-analysis.md",
+            "size": 6239,
+            "extension": ".md",
+            "category": "doc"
+          },
+          {
+            "path": "docs/user-guide.md",
+            "size": 16836,
+            "extension": ".md",
+            "category": "doc"
+          }
+        ]
+      }
+    },
+    "fileStructureAnalysis": null,
+    "codeMetrics": {
+      "success": true,
+      "metrics": {
+        "fileCount": {
+          "source": 356,
+          "test": 236,
+          "config": 50,
+          "doc": 94
+        },
+        "codeSize": {
+          "totalBytes": 7517430,
+          "averageFileSize": 12698.361486486487,
+          "largestFiles": [
+            {
+              "path": "dist/cli/commands/dictionary.js",
+              "size": 42130
+            },
+            {
+              "path": "dist/analyzers/code-context.js",
+              "size": 41935
+            },
+            {
+              "path": "dist/cli/cli.js",
+              "size": 39904
+            },
+            {
+              "path": "dist/analyzers/structure.js",
+              "size": 39888
+            },
+            {
+              "path": "src/cli/commands/dictionary.ts",
+              "size": 39271
+            }
+          ]
+        },
+        "testRatio": 66.29213483146067,
+        "complexity": {
+          "estimated": "high",
+          "score": 60
+        }
+      }
+    }
+  },
+  "issues": [],
+  "recommendations": [
+    {
+      "priority": "low",
+      "category": "maintainability",
+      "title": "ファイルサイズが大きすぎます (平均 12698バイト)",
+      "description": "大きなファイルは保守性を低下させる可能性があります",
+      "suggestions": [
+        "ファイルの分割",
+        "単一責任原則の適用",
+        "モジュール化の促進"
+      ],
+      "impact": "low"
+    }
+  ],
+  "executionTime": 36758
+}

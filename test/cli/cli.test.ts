@@ -236,7 +236,7 @@ describe('CLI', () => {
     it('should use correct version', () => {
       // package.jsonからバージョンを読み取ってテスト
       const packageJson = require('../../package.json');
-      expect(packageJson.version).toBe('0.6.1');
+      expect(packageJson.version).toBe('0.7.0');
     });
   });
 

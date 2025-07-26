@@ -132,7 +132,7 @@ export class TestStructurePlugin extends BasePlugin {
       return improvements;
     }
 
-    const maintainabilityScore = evaluation.breakdown.maintainability || 0;
+    const maintainabilityScore = evaluation.breakdown?.maintainability || 0;
     
     // 改善提案を生成（スコアベース）
     if (maintainabilityScore < 50) {

@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-07-26T07:11:44.992Z",
+  "phase": "6",
+  "name": "保守性・技術的負債監査",
+  "summary": {
+    "maintainabilityScore": 75,
+    "technicalDebt": "medium",
+    "overallScore": 75
+  },
+  "details": {
+    "complexity": null,
+    "duplication": null,
+    "dependencies": {
+      "production": 6,
+      "development": 8,
+      "total": 14,
+      "heavyDependencies": []
+    }
+  },
+  "recommendations": [],
+  "executionTime": 2
+}
