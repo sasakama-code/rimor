@@ -31,12 +31,13 @@ module.exports = {
   // CI環境でのモジュール解決強化
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^chalk$': '<rootDir>/__mocks__/chalk.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleDirectories: ['node_modules', '<rootDir>'],
   
   // CI環境対応のため基本設定のみ
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$))'
+    'node_modules/(?!(chalk|#ansi-styles|.*\\.mjs$))'
   ],
 };

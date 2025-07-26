@@ -57,7 +57,27 @@
     "benchmark:ci": "npm run build && node dist/index.js benchmark quick --output ./ci-benchmark-results",
     "performance:verify-5ms": "npm run build && node dist/index.js benchmark verify | grep '5ms/file'",
     "performance:verify-speedup": "npm run build && node dist/index.js benchmark verify | grep '速度向上'",
-    "performance:targets": "npm run benchmark:verify"
+    "performance:targets": "npm run benchmark:verify",
+    "self-audit": "bash scripts/self-audit.sh",
+    "self-audit:help": "bash scripts/self-audit.sh --help",
+    "self-audit:quick": "bash scripts/self-audit.sh --quick --verbose",
+    "self-audit:security": "bash scripts/self-audit.sh --security-only --verbose",
+    "self-audit:performance": "bash scripts/self-audit.sh --performance-only --verbose",
+    "self-audit:archive": "bash scripts/self-audit.sh --archive --verbose",
+    "self-audit:html": "bash scripts/self-audit.sh --format=html --verbose",
+    "self-audit:markdown": "bash scripts/self-audit.sh --format=markdown --verbose",
+    "self-audit:no-history": "bash scripts/self-audit.sh --no-history",
+    "self-audit:no-cleanup": "bash scripts/self-audit.sh --no-cleanup",
+    "self-audit:no-compare": "bash scripts/self-audit.sh --no-compare",
+    "audit-history": "node scripts/audit-history-manager.js list",
+    "audit-history:list": "node scripts/audit-history-manager.js list",
+    "audit-history:clean": "node scripts/audit-history-manager.js clean",
+    "audit-history:clean-dry": "node scripts/audit-history-manager.js clean --dry-run",
+    "audit-history:stats": "node scripts/audit-history-manager.js stats",
+    "audit-history:trend": "node scripts/audit-history-manager.js trend",
+    "audit-history:compare": "node scripts/audit-history-manager.js compare",
+    "audit-compare": "node scripts/audit-history-manager.js compare",
+    "audit-trend": "node scripts/audit-history-manager.js trend"
   },
   "repository": {
     "type": "git",
@@ -85,7 +105,7 @@
   ],
   "author": "sasakama-code",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "license": "MIT",
   "type": "commonjs",
@@ -98,9 +118,9 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.15",
+    "@types/node": "^24.1.0",
     "@types/yargs": "^17.0.33",
-    "jest": "^29.7.0",
+    "jest": "^30.0.5",
     "minimatch": "^10.0.3",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
@@ -109,9 +129,9 @@
   "dependencies": {
     "@types/glob": "^8.1.0",
     "@types/js-yaml": "^4.0.9",
-    "chalk": "^4.1.2",
+    "chalk": "^5.4.1",
     "glob": "^11.0.3",
     "js-yaml": "^4.1.0",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   }
 }
