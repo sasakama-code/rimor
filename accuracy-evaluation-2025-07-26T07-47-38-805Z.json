@@ -149,19 +149,5 @@
   ],
   "perFrameworkResults": {},
   "issueTypeAnalysis": {},
-  "accuracyTrends": [],
-  "recommendedImprovements": [
-    {
-      "area": "detection",
-      "currentValue": 1,
-      "targetValue": 0.15,
-      "recommendations": [
-        "サニタイザー検出ロジックの改善",
-        "保守的解析の調整",
-        "ホワイトリスト機能の拡充"
-      ],
-      "estimatedImpact": 0.1,
-      "implementationComplexity": "low"
-    }
-  ]
+  "accuracyTrends": []
 }
