@@ -1,0 +1,106 @@
+{
+  "overallMetrics": {
+    "totalTestCases": 2,
+    "analyzedTestCases": 2,
+    "inference": {
+      "automaticInferenceRate": 1,
+      "inferenceAccuracy": 1,
+      "inferenceFailed": 0
+    },
+    "detection": {
+      "truePositives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 10,
+      "falseNegatives": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1Score": 0,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0
+    },
+    "typeSystem": {
+      "typeInferenceSuccessRate": 1,
+      "taintTrackingAccuracy": 0,
+      "invariantVerificationRate": 0
+    },
+    "performance": {
+      "averageAnalysisTime": 0.5,
+      "targetAchievementRate": 1,
+      "throughput": 2000
+    }
+  },
+  "perTestCaseResults": [
+    {
+      "testCase": {
+        "name": "AccuracyTest1",
+        "file": "/test/accuracy1.test.ts",
+        "content": "\n            it('should detect security issue', () => {\n              const userInput = req.body.data;\n              const result = processUnsafeData(userInput); // セキュリティ問題\n              expect(result).toBeDefined();\n            });\n          ",
+        "metadata": {
+          "framework": "express",
+          "language": "typescript",
+          "lastModified": "2025-07-26T10:59:00.467Z"
+        }
+      },
+      "groundTruth": {
+        "testFileId": "/test/accuracy1.test.ts",
+        "methodName": "AccuracyTest1",
+        "actualSecurityIssues": [],
+        "actualTaintLevels": {},
+        "requiredSecurityTests": [],
+        "manualVerificationResult": "needs-attention",
+        "verifiedBy": "accuracy-evaluation-system",
+        "verifiedAt": "2025-07-26T10:59:00.473Z"
+      },
+      "detectedIssues": [],
+      "accuracy": {
+        "correct": true,
+        "precision": 0,
+        "recall": 0,
+        "inferenceSuccessful": true
+      },
+      "analysis": {
+        "missedIssues": [],
+        "falseAlarms": [],
+        "correctDetections": []
+      }
+    },
+    {
+      "testCase": {
+        "name": "AccuracyTest2",
+        "file": "/test/accuracy2.test.ts",
+        "content": "\n            it('should handle safe data', () => {\n              const safeData = 'constant value';\n              const result = processSafeData(safeData); // 安全\n              expect(result).toBeDefined();\n            });\n          ",
+        "metadata": {
+          "framework": "express",
+          "language": "typescript",
+          "lastModified": "2025-07-26T10:59:00.467Z"
+        }
+      },
+      "groundTruth": {
+        "testFileId": "/test/accuracy2.test.ts",
+        "methodName": "AccuracyTest2",
+        "actualSecurityIssues": [],
+        "actualTaintLevels": {},
+        "requiredSecurityTests": [],
+        "manualVerificationResult": "needs-attention",
+        "verifiedBy": "accuracy-evaluation-system",
+        "verifiedAt": "2025-07-26T10:59:00.473Z"
+      },
+      "detectedIssues": [],
+      "accuracy": {
+        "correct": true,
+        "precision": 0,
+        "recall": 0,
+        "inferenceSuccessful": true
+      },
+      "analysis": {
+        "missedIssues": [],
+        "falseAlarms": [],
+        "correctDetections": []
+      }
+    }
+  ],
+  "perFrameworkResults": {},
+  "issueTypeAnalysis": {},
+  "accuracyTrends": [],
+  "recommendedImprovements": []
+}

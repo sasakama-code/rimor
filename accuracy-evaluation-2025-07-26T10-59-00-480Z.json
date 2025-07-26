@@ -1,0 +1,99 @@
+{
+  "overallMetrics": {
+    "totalTestCases": 0,
+    "analyzedTestCases": 0,
+    "inference": {
+      "automaticInferenceRate": 0,
+      "inferenceAccuracy": 0,
+      "inferenceFailed": 0
+    },
+    "detection": {
+      "truePositives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "falseNegatives": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1Score": 0,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0
+    },
+    "typeSystem": {
+      "typeInferenceSuccessRate": 0,
+      "taintTrackingAccuracy": 0,
+      "invariantVerificationRate": 0
+    },
+    "performance": {
+      "averageAnalysisTime": 0,
+      "targetAchievementRate": 1,
+      "throughput": 0
+    }
+  },
+  "perTestCaseResults": [],
+  "perFrameworkResults": {},
+  "issueTypeAnalysis": {},
+  "accuracyTrends": [
+    {
+      "timestamp": "2025-07-26T10:59:00.476Z",
+      "metrics": {
+        "totalTestCases": 2,
+        "analyzedTestCases": 2,
+        "inference": {
+          "automaticInferenceRate": 1,
+          "inferenceAccuracy": 1,
+          "inferenceFailed": 0
+        },
+        "detection": {
+          "truePositives": 0,
+          "falsePositives": 0,
+          "trueNegatives": 10,
+          "falseNegatives": 0,
+          "precision": 0,
+          "recall": 0,
+          "f1Score": 0,
+          "falsePositiveRate": 0,
+          "falseNegativeRate": 0
+        },
+        "typeSystem": {
+          "typeInferenceSuccessRate": 1,
+          "taintTrackingAccuracy": 0,
+          "invariantVerificationRate": 0
+        },
+        "performance": {
+          "averageAnalysisTime": 0.5,
+          "targetAchievementRate": 1,
+          "throughput": 2000
+        }
+      },
+      "changes": [
+        "accuracy-evaluation-completed"
+      ]
+    }
+  ],
+  "recommendedImprovements": [
+    {
+      "area": "inference",
+      "currentValue": 0,
+      "targetValue": 0.85,
+      "recommendations": [
+        "型アノテーションの充実化",
+        "メソッドシグネチャベースの推論ロジック強化",
+        "機械学習による推論パターンの学習"
+      ],
+      "estimatedImpact": 0.15,
+      "implementationComplexity": "medium"
+    },
+    {
+      "area": "inference",
+      "currentValue": 0,
+      "targetValue": 0.9,
+      "recommendations": [
+        "格子理論ベースの汚染レベル精緻化",
+        "フロー感度解析の精度向上",
+        "コンテキスト感度の強化"
+      ],
+      "estimatedImpact": 0.12,
+      "implementationComplexity": "high"
+    }
+  ]
+}

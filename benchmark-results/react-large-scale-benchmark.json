@@ -2,9 +2,9 @@
   "requirement": "2000+ React test cases",
   "testCases": 2000,
   "fileCount": 800,
-  "totalTimeSeconds": 0.081,
-  "timePerTestMs": 0.0405,
-  "throughputTestsPerSec": 24691.35802469136,
+  "totalTimeSeconds": 0.084,
+  "timePerTestMs": 0.042,
+  "throughputTestsPerSec": 23809.52380952381,
   "detailedResults": {
     "config": {
       "name": "React Large Scale Project",
@@ -17,23 +17,23 @@
       ]
     },
     "timing": {
-      "totalTime": 79,
-      "timePerFile": 0.09875,
-      "timePerMethod": 0.0395,
+      "totalTime": 82,
+      "timePerFile": 0.1025,
+      "timePerMethod": 0.041,
       "setupTime": 0,
-      "analysisTime": 79,
+      "analysisTime": 82,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 458.48755645751953,
-      "peakMemory": 468.19590759277344,
-      "finalMemory": 468.19641876220703,
-      "memoryPerFile": 0.012135438919067383
+      "initialMemory": 568.3397064208984,
+      "peakMemory": 573.1172103881836,
+      "finalMemory": 573.1177215576172,
+      "memoryPerFile": 0.0059718799591064456
     },
     "throughput": {
-      "filesPerSecond": 10126.582278481013,
-      "methodsPerSecond": 25316.45569620253,
-      "issuesPerSecond": 30379.74683544304
+      "filesPerSecond": 9756.09756097561,
+      "methodsPerSecond": 24390.243902439022,
+      "issuesPerSecond": 0
     },
     "parallelism": {
       "coreCount": 8,
@@ -44,14 +44,14 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 50.63291139240506
+      "actualSpeedup": 48.78048780487805
     },
     "analysisResults": {
-      "totalIssues": 2400,
+      "totalIssues": 0,
       "issuesPerFile": 0,
       "issueTypeDistribution": {}
     }
   },
   "achieved": true,
-  "timestamp": "2025-07-26T05:09:27.948Z"
+  "timestamp": "2025-07-26T11:35:54.790Z"
 }

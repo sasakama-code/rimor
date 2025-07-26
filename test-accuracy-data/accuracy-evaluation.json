@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-26T05:48:28.674Z",
+  "timestamp": "2025-07-26T11:36:11.684Z",
   "requirements": {
     "automaticInferenceRate": "≥85%",
     "inferenceAccuracy": "≥90%",
@@ -7,21 +7,21 @@
   },
   "achieved": {
     "automaticInferenceRate": "100.0%",
-    "inferenceAccuracy": "100.0%",
-    "falsePositiveRate": "0.0%"
+    "inferenceAccuracy": "77.8%",
+    "falsePositiveRate": "22.2%"
   },
   "success": {
     "automaticInferenceRate": true,
-    "inferenceAccuracy": true,
-    "falsePositiveRate": true
+    "inferenceAccuracy": false,
+    "falsePositiveRate": false
   },
-  "overallSuccess": true,
+  "overallSuccess": false,
   "detailedMetrics": {
     "automaticInferenceRate": 100,
-    "inferenceAccuracy": 100,
-    "falsePositiveRate": 0,
+    "inferenceAccuracy": 77.77777777777779,
+    "falsePositiveRate": 22.22222222222222,
     "truePositiveRate": 100,
-    "precisionScore": 100,
+    "precisionScore": 60,
     "recallScore": 100
   },
   "results": [
@@ -33,7 +33,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     },
     {
       "testCaseId": "inference-002",
@@ -45,7 +45,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     },
     {
       "testCaseId": "inference-003",
@@ -89,15 +89,17 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 4
     },
     {
       "testCaseId": "false-positive-001",
-      "detectedIssues": [],
+      "detectedIssues": [
+        "false-issue"
+      ],
       "inferredSecurityType": "sanitized-data",
       "isTainted": false,
-      "isCorrect": true,
-      "isFalsePositive": false,
+      "isCorrect": false,
+      "isFalsePositive": true,
       "isFalseNegative": false,
       "inferenceTime": 2
     },
@@ -113,11 +115,13 @@
     },
     {
       "testCaseId": "false-positive-003",
-      "detectedIssues": [],
+      "detectedIssues": [
+        "false-issue"
+      ],
       "inferredSecurityType": "constant",
       "isTainted": false,
-      "isCorrect": true,
-      "isFalsePositive": false,
+      "isCorrect": false,
+      "isFalsePositive": true,
       "isFalseNegative": false,
       "inferenceTime": 2
     }
