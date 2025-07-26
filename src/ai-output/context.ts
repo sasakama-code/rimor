@@ -1,5 +1,5 @@
 import { Issue } from '../core/types';
-import { AdvancedCodeContextAnalyzer } from '../analyzers/code-context';
+import { CodeContextAnalyzer } from '../analyzers/code-context';
 import { DependencyAnalyzer } from '../analyzers/dependency';
 import { ProjectStructureAnalyzer } from '../analyzers/structure';
 import {
@@ -10,6 +10,7 @@ import {
   ContextOptimizationOptions,
   AnalysisCache
 } from '../analyzers/types';
+import { ProjectInferenceEngine, ProjectInferenceResult } from './project-inference';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -45,6 +46,9 @@ export interface IntegratedContext {
     preview: string;
   }[];
   
+  // プロジェクト推論情報（v0.7.0新機能）
+  projectInference?: ProjectInferenceResult;
+  
   // コンテキスト統計
   metadata: {
     totalFiles: number;
@@ -52,6 +56,9 @@ export interface IntegratedContext {
     contextSize: number;
     confidence: number;
     suggestions: string[];
+    // AI推論支援情報（v0.7.0新機能）
+    aiEnhancedSuggestions?: string[];
+    inferenceConfidence?: number;
   };
 }
 
@@ -60,9 +67,10 @@ export interface IntegratedContext {
  * 複数のアナライザーの結果を統合し、関連性の高い情報を優先的に提供
  */
 export class ContextIntegrator {
-  private codeContextAnalyzer: AdvancedCodeContextAnalyzer;
+  private codeContextAnalyzer: CodeContextAnalyzer;
   private dependencyAnalyzer: DependencyAnalyzer;
   private structureAnalyzer: ProjectStructureAnalyzer;
+  private projectInferenceEngine: ProjectInferenceEngine; // v0.7.0新機能
   private cache: AnalysisCache;
 
   // デフォルト設定
@@ -76,9 +84,10 @@ export class ContextIntegrator {
   };
 
   constructor() {
-    this.codeContextAnalyzer = new AdvancedCodeContextAnalyzer();
+    this.codeContextAnalyzer = new CodeContextAnalyzer();
     this.dependencyAnalyzer = new DependencyAnalyzer();
     this.structureAnalyzer = new ProjectStructureAnalyzer();
+    this.projectInferenceEngine = new ProjectInferenceEngine(); // v0.7.0新機能
     this.cache = {
       fileHash: new Map(),
       contexts: new Map(),
@@ -107,20 +116,22 @@ export class ContextIntegrator {
         return cachedResult;
       }
 
-      // 並列分析実行
-      const [issueContext, dependencyAnalysis, projectStructure] = await Promise.all([
+      // 並列分析実行（v0.7.0: プロジェクト推論を追加）
+      const [issueContext, dependencyAnalysis, projectStructure, projectInference] = await Promise.all([
         this.analyzeIssueContext(issue, projectPath, finalOptions),
         this.analyzeDependencies(projectPath, issue, finalOptions),
-        this.analyzeProjectStructure(projectPath, finalOptions)
+        this.analyzeProjectStructure(projectPath, finalOptions),
+        this.projectInferenceEngine.inferProject(projectPath) // v0.7.0新機能
       ]);
 
-      // コンテキスト統合
+      // コンテキスト統合（v0.7.0: プロジェクト推論を統合）
       const integratedContext = await this.integrateContexts(
         issue,
         projectPath,
         issueContext,
         dependencyAnalysis,
         projectStructure,
+        projectInference, // v0.7.0新機能
         finalOptions,
         startTime
       );
@@ -311,6 +322,7 @@ export class ContextIntegrator {
     issueContext: ExtractedCodeContext,
     dependencyAnalysis: DependencyAnalysis,
     projectStructure: ProjectStructure,
+    projectInference: ProjectInferenceResult, // v0.7.0新機能
     options: ContextOptimizationOptions,
     startTime: number
   ): Promise<IntegratedContext> {
@@ -342,6 +354,11 @@ export class ContextIntegrator {
       ? this.generateContextualSuggestions(issue, issueContext, dependencyAnalysis, projectStructure)
       : [];
 
+    // AI拡張提案を生成（v0.7.0新機能）
+    const aiEnhancedSuggestions = projectInference.aiGuidance.recommendedImprovements.concat(
+      projectInference.aiGuidance.contextualHints
+    );
+
     const analysisTime = Date.now() - startTime;
     const contextSize = this.calculateContextSize(issueContext, relatedFiles);
 
@@ -351,12 +368,16 @@ export class ContextIntegrator {
       relevantDependencies,
       architectureContext,
       relatedFiles,
+      projectInference, // v0.7.0新機能
       metadata: {
         totalFiles: projectStructure.overview.totalFiles,
         analysisTime,
         contextSize,
         confidence: this.calculateOverallConfidence(issueContext, dependencyAnalysis, projectStructure),
-        suggestions
+        suggestions,
+        // AI推論支援情報（v0.7.0新機能）
+        aiEnhancedSuggestions,
+        inferenceConfidence: projectInference.projectIntent.confidence
       }
     };
   }
@@ -623,12 +644,16 @@ export class ContextIntegrator {
       relevantDependencies: { used: [], missing: [], cyclic: [] },
       architectureContext: { pattern: 'unknown', confidence: 0, suggestions: [] },
       relatedFiles: [],
+      projectInference: undefined, // v0.7.0新機能（分析失敗時は未定義）
       metadata: {
         totalFiles: 0,
         analysisTime: Date.now() - startTime,
         contextSize: 0,
         confidence: 0,
-        suggestions: ['Analysis failed - manual review recommended']
+        suggestions: ['Analysis failed - manual review recommended'],
+        // AI推論支援情報（v0.7.0新機能）
+        aiEnhancedSuggestions: ['分析が失敗しました - 手動確認を推奨'],
+        inferenceConfidence: 0
       }
     };
   }

@@ -14,6 +14,7 @@ import {
 import { Issue } from '../core/types';
 import { FileScore } from '../scoring/types';
 import { PathSecurity } from '../utils/pathSecurity';
+import { ProjectInferenceEngine } from './projectInference';
 
 /**
  * AI向け出力フォーマッター v0.6.0
@@ -24,10 +25,12 @@ export class AIOptimizedFormatter {
   private readonly MAX_CONTEXT_LINES = 10;
   private readonly DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private readonly DEFAULT_MAX_TOKENS = 8000;
+  private projectInferenceEngine: ProjectInferenceEngine;
 
   constructor() {
     // package.jsonからバージョンを動的に取得
     this.VERSION = this.loadVersionFromPackageJson();
+    this.projectInferenceEngine = new ProjectInferenceEngine();
   }
 
   /**
@@ -121,40 +124,72 @@ export class AIOptimizedFormatter {
    * メタデータ構築
    */
   private async buildMetadata(projectPath: string) {
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    const tsConfigPath = path.join(projectPath, 'tsconfig.json');
-    const jestConfigPath = path.join(projectPath, 'jest.config.js');
-
     let language = 'javascript';
     let testFramework = 'unknown';
     let projectType = 'unknown';
 
     try {
-      if (fs.existsSync(tsConfigPath)) {
-        language = 'typescript';
-      }
-
-      if (fs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        
-        // テストフレームワーク検出
-        if (packageJson.devDependencies?.jest || packageJson.dependencies?.jest) {
-          testFramework = 'jest';
-        } else if (packageJson.devDependencies?.mocha || packageJson.dependencies?.mocha) {
-          testFramework = 'mocha';
-        }
-
-        // プロジェクトタイプ検出
-        if (packageJson.dependencies?.express || packageJson.dependencies?.fastify) {
+      // ProjectInferenceEngineを使用した高度な推論
+      const inferenceResult = await this.projectInferenceEngine.inferProject(projectPath);
+      
+      // 言語検出
+      language = inferenceResult.language.language || 'javascript';
+      
+      // テストフレームワーク検出
+      testFramework = inferenceResult.testFramework.framework || 'unknown';
+      
+      // プロジェクトタイプ検出
+      switch (inferenceResult.projectType.type) {
+        case 'backend':
           projectType = 'rest-api';
-        } else if (packageJson.dependencies?.react || packageJson.dependencies?.vue) {
+          break;
+        case 'frontend':
           projectType = 'frontend';
-        } else {
+          break;
+        case 'library':
           projectType = 'library';
-        }
+          break;
+        case 'cli-tool':
+          projectType = 'cli-tool';
+          break;
+        case 'fullstack':
+          projectType = 'fullstack';
+          break;
+        default:
+          projectType = inferenceResult.projectType.type || 'unknown';
       }
     } catch (error) {
-      // エラーは無視してデフォルト値を使用
+      // ProjectInferenceEngineエラー時は簡易検出にフォールバック
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      const tsConfigPath = path.join(projectPath, 'tsconfig.json');
+
+      try {
+        if (fs.existsSync(tsConfigPath)) {
+          language = 'typescript';
+        }
+
+        if (fs.existsSync(packageJsonPath)) {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+          
+          // テストフレームワーク検出
+          if (packageJson.devDependencies?.jest || packageJson.dependencies?.jest) {
+            testFramework = 'jest';
+          } else if (packageJson.devDependencies?.mocha || packageJson.dependencies?.mocha) {
+            testFramework = 'mocha';
+          }
+
+          // プロジェクトタイプ検出
+          if (packageJson.dependencies?.express || packageJson.dependencies?.fastify) {
+            projectType = 'rest-api';
+          } else if (packageJson.dependencies?.react || packageJson.dependencies?.vue) {
+            projectType = 'frontend';
+          } else {
+            projectType = 'library';
+          }
+        }
+      } catch (fallbackError) {
+        // フォールバックエラーも無視してデフォルト値を使用
+      }
     }
 
     return {
