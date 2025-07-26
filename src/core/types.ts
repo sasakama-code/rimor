@@ -509,3 +509,269 @@ export interface DictionaryAwarePlugin extends ITestQualityPlugin {
     context: DomainContext
   ): DomainQualityScore;
 }
+
+// ========================================
+// 型ベースセキュリティテスト品質監査システム v0.7.0 統合型定義
+// ========================================
+
+// 型ベースセキュリティプラグインインターフェース
+export interface ITypeBasedSecurityPlugin extends ITestQualityPlugin {
+  // 型システムとの統合
+  readonly requiredTypes: SecurityType[];
+  readonly providedTypes: SecurityType[];
+  
+  // モジュラー解析
+  analyzeMethod(method: TestMethod): Promise<MethodAnalysisResult>;
+  
+  // フロー感度
+  trackDataFlow(method: TestMethod): Promise<FlowGraph>;
+  
+  // 格子ベースの汚染解析
+  analyzeTaint(flow: FlowGraph): Promise<TaintAnalysisResult>;
+  
+  // 型推論
+  inferSecurityTypes(method: TestMethod): Promise<TypeInferenceResult>;
+  
+  // インクリメンタル更新
+  updateAnalysis(changes: MethodChange[]): Promise<IncrementalUpdate>;
+}
+
+// セキュリティ型列挙
+export enum SecurityType {
+  USER_INPUT = 'user-input',
+  AUTH_TOKEN = 'auth-token',
+  VALIDATED_AUTH = 'validated-auth',
+  VALIDATED_INPUT = 'validated-input',
+  SANITIZED_DATA = 'sanitized-data',
+  SECURE_SQL = 'secure-sql',
+  SECURE_HTML = 'secure-html'
+}
+
+// 汚染レベル列挙  
+export enum TaintLevel {
+  UNTAINTED = 0,
+  POSSIBLY_TAINTED = 1,
+  LIKELY_TAINTED = 2,
+  DEFINITELY_TAINTED = 3
+}
+
+// テストメソッド
+export interface TestMethod {
+  name: string;
+  filePath: string;
+  content: string;
+  signature: MethodSignature;
+  location: {
+    startLine: number;
+    endLine: number;
+    startColumn: number;
+    endColumn: number;
+  };
+}
+
+// メソッドシグネチャ
+export interface MethodSignature {
+  name: string;
+  parameters: Parameter[];
+  returnType?: string;
+  annotations: string[];
+  visibility: 'private' | 'protected' | 'public';
+}
+
+// パラメータ
+export interface Parameter {
+  name: string;
+  type?: string;
+  source?: 'user-input' | 'database' | 'api' | 'constant';
+}
+
+// メソッド解析結果
+export interface MethodAnalysisResult {
+  methodName: string;
+  issues: SecurityIssue[];
+  metrics: SecurityTestMetrics;
+  suggestions: SecurityImprovement[];
+  analysisTime: number;
+}
+
+// フローグラフ
+export interface FlowGraph {
+  nodes: FlowNode[];
+  entry: string;
+  exit: string;
+  taintSources: FlowNode[];
+  securitySinks: FlowNode[];
+  sanitizers: FlowNode[];
+  paths: FlowPath[];
+}
+
+// フローノード
+export interface FlowNode {
+  id: string;
+  statement: TestStatement;
+  inputTaint: TaintLevel;
+  outputTaint: TaintLevel;
+  metadata?: TaintMetadata;
+  successors: string[];
+  predecessors: string[];
+}
+
+// フローパス
+export interface FlowPath {
+  id: string;
+  nodes: string[];
+  taintLevel: TaintLevel;
+  passedThroughSanitizer: boolean;
+  reachesSecuritySink: boolean;
+  length: number;
+}
+
+// テストステートメント
+export interface TestStatement {
+  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput';
+  content: string;
+  location: { line: number; column: number };
+  lhs?: string;
+  rhs?: string;
+  method?: string;
+  arguments?: any[];
+  returnValue?: string;
+  actual?: string;
+  expected?: string;
+  isNegativeAssertion?: boolean;
+}
+
+// 汚染メタデータ
+export interface TaintMetadata {
+  source: TaintSource;
+  confidence: number;
+  location: { file: string; line: number; column: number };
+  tracePath: TaintTraceStep[];
+  securityRules: string[];
+}
+
+// 汚染源
+export enum TaintSource {
+  USER_INPUT = 'user-input',
+  EXTERNAL_API = 'external-api',
+  ENVIRONMENT = 'environment',
+  FILE_SYSTEM = 'file-system',
+  DATABASE = 'database',
+  NETWORK = 'network'
+}
+
+// 汚染追跡ステップ
+export interface TaintTraceStep {
+  type: 'propagate' | 'sanitize' | 'merge' | 'branch';
+  description: string;
+  inputTaint: TaintLevel;
+  outputTaint: TaintLevel;
+  location: { file: string; line: number; column: number };
+}
+
+// 汚染解析結果
+export interface TaintAnalysisResult {
+  lattice: any; // SecurityLattice
+  violations: SecurityViolation[];
+  taintPaths: TaintPath[];
+  criticalFlows: CriticalFlow[];
+}
+
+// セキュリティ違反
+export interface SecurityViolation {
+  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion';
+  variable: string;
+  taintLevel: TaintLevel;
+  metadata: TaintMetadata;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  suggestedFix: string;
+}
+
+// 汚染パス
+export interface TaintPath {
+  id: string;
+  source: string;
+  sink: string;
+  path: string[];
+  taintLevel: TaintLevel;
+}
+
+// クリティカルフロー
+export interface CriticalFlow {
+  id: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// 型推論結果
+export interface TypeInferenceResult {
+  annotations: SecurityTypeAnnotation[];
+  statistics: {
+    totalVariables: number;
+    inferred: number;
+    failed: number;
+    averageConfidence: number;
+  };
+  inferenceTime: number;
+}
+
+// セキュリティ型注釈
+export interface SecurityTypeAnnotation {
+  target: string;
+  securityType: SecurityType;
+  taintLevel: TaintLevel;
+  confidence: number;
+  evidence: string[];
+}
+
+// メソッド変更
+export interface MethodChange {
+  type: 'added' | 'modified' | 'deleted';
+  method: TestMethod;
+  details: string;
+}
+
+// インクリメンタル更新
+export interface IncrementalUpdate {
+  updatedMethods: string[];
+  invalidatedCache: string[];
+  newIssues: SecurityIssue[];
+  resolvedIssues: string[];
+}
+
+// セキュリティ問題
+export interface SecurityIssue {
+  id: string;
+  severity: 'info' | 'warning' | 'error' | 'critical';
+  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation';
+  message: string;
+  location: { file: string; line: number; column: number; method?: string };
+  fixSuggestion?: string;
+  taintInfo?: TaintMetadata;
+}
+
+// セキュリティテストメトリクス
+export interface SecurityTestMetrics {
+  securityCoverage: {
+    authentication: number;
+    inputValidation: number;
+    apiSecurity: number;
+    overall: number;
+  };
+  taintFlowDetection: number;
+  sanitizerCoverage: number;
+  invariantCompliance: number;
+}
+
+// セキュリティ改善提案
+export interface SecurityImprovement {
+  id: string;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  type: 'add-sanitizer' | 'add-validation' | 'fix-assertion' | 'enhance-coverage';
+  title: string;
+  description: string;
+  location: { file: string; line: number; column: number };
+  suggestedCode?: string;
+  estimatedImpact: { securityImprovement: number; implementationMinutes: number };
+  automatable: boolean;
+}
