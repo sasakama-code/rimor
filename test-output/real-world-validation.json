@@ -1,0 +1,149 @@
+{
+  "timestamp": "2025-07-26T05:47:42.682Z",
+  "totalProjectsValidated": 6,
+  "overallSuccessRate": 1,
+  "averageAnalysisTime": 3.058214385122936,
+  "averageAccuracy": 92.22271034886894,
+  "results": [
+    {
+      "framework": "express",
+      "projectSize": "medium",
+      "filesAnalyzed": 149,
+      "testsExecuted": 278,
+      "averageAnalysisTime": 3.1873400433413503,
+      "accuracyScore": 89.00654546994193,
+      "securityIssuesFound": 32,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    },
+    {
+      "framework": "express",
+      "projectSize": "large",
+      "filesAnalyzed": 414,
+      "testsExecuted": 817,
+      "averageAnalysisTime": 2.8180451935730253,
+      "accuracyScore": 89.48252986755939,
+      "securityIssuesFound": 31,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    },
+    {
+      "framework": "react",
+      "projectSize": "medium",
+      "filesAnalyzed": 212,
+      "testsExecuted": 486,
+      "averageAnalysisTime": 3.484967992862625,
+      "accuracyScore": 92.11509403924681,
+      "securityIssuesFound": 47,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    },
+    {
+      "framework": "react",
+      "projectSize": "large",
+      "filesAnalyzed": 465,
+      "testsExecuted": 990,
+      "averageAnalysisTime": 4.683519459058013,
+      "accuracyScore": 93.0028095703575,
+      "securityIssuesFound": 46,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    },
+    {
+      "framework": "nestjs",
+      "projectSize": "medium",
+      "filesAnalyzed": 177,
+      "testsExecuted": 437,
+      "averageAnalysisTime": 1.7771659543463108,
+      "accuracyScore": 95.56709083785142,
+      "securityIssuesFound": 30,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    },
+    {
+      "framework": "nestjs",
+      "projectSize": "large",
+      "filesAnalyzed": 332,
+      "testsExecuted": 736,
+      "averageAnalysisTime": 2.3982476675562947,
+      "accuracyScore": 94.16219230825665,
+      "securityIssuesFound": 72,
+      "falsePositiveRate": 0.05,
+      "overallSuccess": true
+    }
+  ],
+  "summary": {
+    "expressResults": [
+      {
+        "framework": "express",
+        "projectSize": "medium",
+        "filesAnalyzed": 149,
+        "testsExecuted": 278,
+        "averageAnalysisTime": 3.1873400433413503,
+        "accuracyScore": 89.00654546994193,
+        "securityIssuesFound": 32,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      },
+      {
+        "framework": "express",
+        "projectSize": "large",
+        "filesAnalyzed": 414,
+        "testsExecuted": 817,
+        "averageAnalysisTime": 2.8180451935730253,
+        "accuracyScore": 89.48252986755939,
+        "securityIssuesFound": 31,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      }
+    ],
+    "reactResults": [
+      {
+        "framework": "react",
+        "projectSize": "medium",
+        "filesAnalyzed": 212,
+        "testsExecuted": 486,
+        "averageAnalysisTime": 3.484967992862625,
+        "accuracyScore": 92.11509403924681,
+        "securityIssuesFound": 47,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      },
+      {
+        "framework": "react",
+        "projectSize": "large",
+        "filesAnalyzed": 465,
+        "testsExecuted": 990,
+        "averageAnalysisTime": 4.683519459058013,
+        "accuracyScore": 93.0028095703575,
+        "securityIssuesFound": 46,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      }
+    ],
+    "nestjsResults": [
+      {
+        "framework": "nestjs",
+        "projectSize": "medium",
+        "filesAnalyzed": 177,
+        "testsExecuted": 437,
+        "averageAnalysisTime": 1.7771659543463108,
+        "accuracyScore": 95.56709083785142,
+        "securityIssuesFound": 30,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      },
+      {
+        "framework": "nestjs",
+        "projectSize": "large",
+        "filesAnalyzed": 332,
+        "testsExecuted": 736,
+        "averageAnalysisTime": 2.3982476675562947,
+        "accuracyScore": 94.16219230825665,
+        "securityIssuesFound": 72,
+        "falsePositiveRate": 0.05,
+        "overallSuccess": true
+      }
+    ]
+  }
+}

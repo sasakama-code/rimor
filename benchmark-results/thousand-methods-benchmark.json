@@ -1,0 +1,56 @@
+{
+  "requirement": "< 5 seconds for 1000 methods",
+  "totalTimeSeconds": 0.064,
+  "methodCount": 1000,
+  "timePerMethodMs": 0.064,
+  "achieved": true,
+  "detailedResults": {
+    "config": {
+      "name": "1000 Methods Performance Test",
+      "fileCount": 400,
+      "methodCount": 1000,
+      "averageFileSize": 80,
+      "complexity": "moderate",
+      "frameworks": [
+        "express",
+        "react"
+      ]
+    },
+    "timing": {
+      "totalTime": 62,
+      "timePerFile": 0.155,
+      "timePerMethod": 0.062,
+      "setupTime": 1,
+      "analysisTime": 61,
+      "teardownTime": 0
+    },
+    "memory": {
+      "initialMemory": 446.97254943847656,
+      "peakMemory": 454.0368347167969,
+      "finalMemory": 454.03746795654297,
+      "memoryPerFile": 0.01766071319580078
+    },
+    "throughput": {
+      "filesPerSecond": 6451.612903225807,
+      "methodsPerSecond": 16129.032258064517,
+      "issuesPerSecond": 19354.83870967742
+    },
+    "parallelism": {
+      "coreCount": 8,
+      "parallelism": 6,
+      "cpuUtilization": 0.8,
+      "parallelEfficiency": 1
+    },
+    "targetAchievement": {
+      "fiveMsTarget": true,
+      "speedupTarget": false,
+      "actualSpeedup": 32.25806451612903
+    },
+    "analysisResults": {
+      "totalIssues": 1200,
+      "issuesPerFile": 0,
+      "issueTypeDistribution": {}
+    }
+  },
+  "timestamp": "2025-07-26T05:09:27.547Z"
+}

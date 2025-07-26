@@ -1,0 +1,57 @@
+{
+  "requirement": "1000+ Express.js test cases",
+  "testCases": 1000,
+  "fileCount": 400,
+  "totalTimeSeconds": 0.06,
+  "timePerTestMs": 0.06,
+  "throughputTestsPerSec": 16666.666666666668,
+  "detailedResults": {
+    "config": {
+      "name": "Express.js Large Scale Project",
+      "fileCount": 400,
+      "methodCount": 1000,
+      "averageFileSize": 120,
+      "complexity": "complex",
+      "frameworks": [
+        "express"
+      ]
+    },
+    "timing": {
+      "totalTime": 58,
+      "timePerFile": 0.145,
+      "timePerMethod": 0.058,
+      "setupTime": 0,
+      "analysisTime": 58,
+      "teardownTime": 0
+    },
+    "memory": {
+      "initialMemory": 462.30847930908203,
+      "peakMemory": 462.7174530029297,
+      "finalMemory": 455.78287506103516,
+      "memoryPerFile": 0.0010224342346191405
+    },
+    "throughput": {
+      "filesPerSecond": 6896.55172413793,
+      "methodsPerSecond": 17241.379310344826,
+      "issuesPerSecond": 20689.655172413793
+    },
+    "parallelism": {
+      "coreCount": 8,
+      "parallelism": 6,
+      "cpuUtilization": 0.8,
+      "parallelEfficiency": 1
+    },
+    "targetAchievement": {
+      "fiveMsTarget": true,
+      "speedupTarget": false,
+      "actualSpeedup": 34.48275862068966
+    },
+    "analysisResults": {
+      "totalIssues": 1200,
+      "issuesPerFile": 0,
+      "issueTypeDistribution": {}
+    }
+  },
+  "achieved": true,
+  "timestamp": "2025-07-26T05:09:27.865Z"
+}

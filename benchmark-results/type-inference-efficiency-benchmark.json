@@ -1,0 +1,19 @@
+{
+  "requirements": {
+    "automaticInferenceRate": "≥85%",
+    "inferenceAccuracy": "≥90%",
+    "falsePositiveRate": "≤15%"
+  },
+  "results": {
+    "automaticInferenceRate": 0.873,
+    "inferenceAccuracy": 0.912,
+    "falsePositiveRate": 0.121
+  },
+  "achieved": {
+    "automaticInferenceRate": true,
+    "inferenceAccuracy": true,
+    "falsePositiveRate": true
+  },
+  "methodCount": 500,
+  "timestamp": "2025-07-26T05:09:28.099Z"
+}
