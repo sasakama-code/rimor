@@ -1,8 +1,8 @@
 {
   "requirement": "< 5 seconds for 1000 methods",
-  "totalTimeSeconds": 0.077,
+  "totalTimeSeconds": 0.071,
   "methodCount": 1000,
-  "timePerMethodMs": 0.077,
+  "timePerMethodMs": 0.071,
   "achieved": true,
   "detailedResults": {
     "config": {
@@ -17,22 +17,22 @@
       ]
     },
     "timing": {
-      "totalTime": 75,
-      "timePerFile": 0.1875,
-      "timePerMethod": 0.075,
-      "setupTime": 1,
-      "analysisTime": 74,
+      "totalTime": 70,
+      "timePerFile": 0.175,
+      "timePerMethod": 0.07,
+      "setupTime": 0,
+      "analysisTime": 69,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 510.35970306396484,
-      "peakMemory": 522.2808074951172,
-      "finalMemory": 522.2814254760742,
-      "memoryPerFile": 0.02980276107788086
+      "initialMemory": 469.69639587402344,
+      "peakMemory": 480.73680114746094,
+      "finalMemory": 480.73741912841797,
+      "memoryPerFile": 0.02760101318359375
     },
     "throughput": {
-      "filesPerSecond": 5333.333333333334,
-      "methodsPerSecond": 13333.333333333334,
+      "filesPerSecond": 5714.285714285714,
+      "methodsPerSecond": 14285.714285714284,
       "issuesPerSecond": 0
     },
     "parallelism": {
@@ -44,7 +44,7 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 26.666666666666668
+      "actualSpeedup": 28.571428571428573
     },
     "analysisResults": {
       "totalIssues": 0,
@@ -52,5 +52,5 @@
       "issueTypeDistribution": {}
     }
   },
-  "timestamp": "2025-07-26T18:23:33.305Z"
+  "timestamp": "2025-07-26T19:51:14.712Z"
 }

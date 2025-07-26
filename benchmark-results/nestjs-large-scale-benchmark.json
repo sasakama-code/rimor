@@ -17,22 +17,22 @@
       ]
     },
     "timing": {
-      "totalTime": 102,
-      "timePerFile": 0.17,
-      "timePerMethod": 0.068,
-      "setupTime": 0,
-      "analysisTime": 101,
+      "totalTime": 101,
+      "timePerFile": 0.16833333333333333,
+      "timePerMethod": 0.06733333333333333,
+      "setupTime": 1,
+      "analysisTime": 100,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 581.2663269042969,
-      "peakMemory": 607.6742935180664,
-      "finalMemory": 607.6748046875,
-      "memoryPerFile": 0.04401327768961589
+      "initialMemory": 534.5090103149414,
+      "peakMemory": 561.0313720703125,
+      "finalMemory": 561.0318832397461,
+      "memoryPerFile": 0.044203936258951824
     },
     "throughput": {
-      "filesPerSecond": 5882.352941176471,
-      "methodsPerSecond": 14705.882352941177,
+      "filesPerSecond": 5940.59405940594,
+      "methodsPerSecond": 14851.48514851485,
       "issuesPerSecond": 0
     },
     "parallelism": {
@@ -44,7 +44,7 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 29.41176470588235
+      "actualSpeedup": 29.702970297029704
     },
     "analysisResults": {
       "totalIssues": 0,
@@ -53,5 +53,5 @@
     }
   },
   "achieved": true,
-  "timestamp": "2025-07-26T18:23:33.889Z"
+  "timestamp": "2025-07-26T19:51:15.264Z"
 }
