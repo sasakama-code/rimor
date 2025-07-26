@@ -533,6 +533,86 @@ export class CLI {
             .demandCommand(1, 'サブコマンドを指定してください: analyze, predict, anomalies, compare');
         }
       )
+      .command(
+        'bootstrap [subcommand]',
+        'プロジェクトのセットアップとブートストラップ',
+        (yargs) => {
+          return yargs
+            .command(
+              ['init', '$0'],
+              'プロジェクトの初期化ウィザード',
+              (yargs) => {
+                return yargs
+                  .option('force', {
+                    describe: '既存設定を上書きする',
+                    type: 'boolean',
+                    default: false
+                  })
+                  .option('auto', {
+                    describe: '自動モードで実行',
+                    type: 'boolean',
+                    default: false
+                  })
+                  .option('template', {
+                    describe: 'テンプレートを指定',
+                    type: 'string',
+                    choices: ['basic', 'ecommerce', 'financial', 'web-api'],
+                    default: 'basic'
+                  })
+                  .option('domain', {
+                    describe: 'ドメイン名を指定',
+                    type: 'string'
+                  });
+              },
+              async (argv) => {
+                const { BootstrapCommand } = await import('./commands/bootstrap');
+                await BootstrapCommand.executeInit({
+                  force: argv.force,
+                  auto: argv.auto,
+                  template: argv.template,
+                  domain: argv.domain
+                });
+              }
+            )
+            .command(
+              'status',
+              'セットアップ状況の確認',
+              (yargs) => yargs,
+              async () => {
+                const { BootstrapCommand } = await import('./commands/bootstrap');
+                await BootstrapCommand.executeStatus();
+              }
+            )
+            .command(
+              'validate',
+              'セットアップの検証',
+              (yargs) => yargs,
+              async () => {
+                const { BootstrapCommand } = await import('./commands/bootstrap');
+                await BootstrapCommand.executeValidate();
+              }
+            )
+            .command(
+              'clean',
+              'セットアップのクリーンアップ',
+              (yargs) => {
+                return yargs
+                  .option('confirm', {
+                    describe: '削除を確認する',
+                    type: 'boolean',
+                    default: false
+                  });
+              },
+              async (argv) => {
+                const { BootstrapCommand } = await import('./commands/bootstrap');
+                await BootstrapCommand.executeClean({
+                  confirm: argv.confirm
+                });
+              }
+            )
+            .demandCommand(1, 'サブコマンドを指定してください: init, status, validate, clean');
+        }
+      )
       .help('h')
       .alias('h', 'help')
       .version('0.4.0')
@@ -554,6 +634,11 @@ export class CLI {
       .example('$0 trend analyze --prediction --anomalies', 'トレンド分析を予測・異常値検知付きで実行')
       .example('$0 trend predict -h 14', '14日後のスコアを予測')
       .example('$0 trend compare --baseline 60 --current 14', '過去60日と直近14日を比較')
+      .example('$0 bootstrap init', 'プロジェクト初期化ウィザード')
+      .example('$0 bootstrap init --auto --domain=ecommerce', '自動モードでecommerceドメインを設定')
+      .example('$0 bootstrap status', 'セットアップ状況の確認')
+      .example('$0 bootstrap validate', 'セットアップの検証')
+      .example('$0 bootstrap clean --confirm', 'セットアップの完全削除')
       .demandCommand(0, 'オプション: コマンドなしでもカレントディレクトリを分析します')
       .strict()
       .parse();

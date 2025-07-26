@@ -196,3 +196,316 @@ export interface Feedback {
   comment?: string;
   outcome: 'accepted' | 'rejected' | 'modified';
 }
+
+// ========================================
+// ドメイン辞書システム v0.6.0 型定義
+// ========================================
+
+// ドメイン辞書メイン構造
+export interface DomainDictionary {
+  version: string;
+  domain: string;
+  language: string;
+  lastUpdated: Date;
+  
+  // 用語定義
+  terms: DomainTerm[];
+  
+  // 概念間の関係
+  relationships: TermRelationship[];
+  
+  // ビジネスルール
+  businessRules: BusinessRule[];
+  
+  // 品質基準
+  qualityStandards: QualityStandard[];
+  
+  // コンテキストマッピング
+  contextMappings: ContextMapping[];
+}
+
+// ドメイン用語定義
+export interface DomainTerm {
+  id: string;
+  term: string;
+  aliases: string[];
+  definition: string;
+  category: string;
+  importance: 'critical' | 'high' | 'medium' | 'low';
+  examples: {
+    code: string;
+    description: string;
+  }[];
+  relatedPatterns: string[];
+  testRequirements: string[];
+}
+
+// 用語間の関係
+export interface TermRelationship {
+  id: string;
+  type: 'synonym' | 'antonym' | 'parent' | 'child' | 'related';
+  sourceTermId: string;
+  targetTermId: string;
+  strength: number; // 0.0-1.0
+  description?: string;
+}
+
+// ビジネスルール定義
+export interface BusinessRule {
+  id: string;
+  name: string;
+  description: string;
+  domain: string;
+  condition: RuleCondition;
+  requirements: TestRequirement[];
+  priority: number;
+  compliance?: {
+    standard: string;
+    clause: string;
+  };
+}
+
+// ルール条件
+export interface RuleCondition {
+  type: 'code-pattern' | 'function-name' | 'data-type' | 'api-endpoint';
+  pattern: string; // 正規表現またはパターン
+  scope: 'file' | 'class' | 'function' | 'variable';
+}
+
+// テスト要件
+export interface TestRequirement {
+  type: 'must-have' | 'should-have' | 'nice-to-have';
+  description: string;
+  testPattern: string;
+  example?: string;
+}
+
+// 品質基準
+export interface QualityStandard {
+  id: string;
+  name: string;
+  description: string;
+  criteria: QualityCriterion[];
+  weight: number;
+}
+
+// 品質基準項目
+export interface QualityCriterion {
+  name: string;
+  description: string;
+  threshold: number;
+  measurement: 'count' | 'percentage' | 'ratio';
+}
+
+// コンテキストマッピング
+export interface ContextMapping {
+  id: string;
+  context: string;
+  termIds: string[];
+  ruleIds: string[];
+  priority: number;
+}
+
+// 知識抽出結果
+export interface ExtractedKnowledge {
+  terms: DomainTerm[];
+  patterns: CodePattern[];
+  rules: InferredRule[];
+  confidence: number; // 0.0-1.0
+}
+
+// コードパターン
+export interface CodePattern {
+  id: string;
+  name: string;
+  pattern: string;
+  description: string;
+  examples: string[];
+  frequency: number;
+}
+
+// 推論されたルール
+export interface InferredRule {
+  id: string;
+  name: string;
+  pattern: string;
+  confidence: number;
+  evidence: string[];
+  suggestedRequirements: TestRequirement[];
+}
+
+// 学習オプション
+export interface LearningOptions {
+  includeComments: boolean;
+  includeTests: boolean;
+  minFrequency: number;
+  maxTerms: number;
+}
+
+// テストパターン
+export interface TestPatterns {
+  patterns: CodePattern[];
+  coverage: TestCoverage;
+  quality: TestQualityMetrics;
+}
+
+// テストカバレッジ
+export interface TestCoverage {
+  functions: number;
+  statements: number;
+  branches: number;
+  overall: number;
+}
+
+// テスト品質メトリクス
+export interface TestQualityMetrics {
+  assertionRatio: number;
+  complexityScore: number;
+  maintainabilityScore: number;
+}
+
+// コードコンテキスト
+export interface CodeContext {
+  filePath: string;
+  language: string;
+  functions: FunctionContext[];
+  classes: ClassContext[] | string[];
+  imports: ImportContext[];
+  domainRelevance: number; // 0.0-1.0
+  relatedTerms: DomainTerm[];
+}
+
+// 関数コンテキスト
+export interface FunctionContext {
+  name: string;
+  parameters?: string[];
+  returnType?: string;
+  complexity: number;
+  location?: CodeLocation;
+}
+
+// クラスコンテキスト
+export interface ClassContext {
+  name: string;
+  methods?: string[];
+  properties?: string[];
+  location?: CodeLocation;
+}
+
+// インポートコンテキスト
+export interface ImportContext {
+  module: string;
+  imports?: string[];
+  type?: 'default' | 'named' | 'namespace';
+  path?: string;
+}
+
+// 重要度レベル
+export interface ImportanceLevel {
+  level: 'critical' | 'high' | 'medium' | 'low';
+  score: number; // 0-100
+  reasons: string[];
+}
+
+// 文脈理解分析結果
+export interface ContextualAnalysis {
+  context: CodeContext;
+  relevantTerms: TermRelevance[];
+  applicableRules: BusinessRule[];
+  requiredTests: TestRequirement[];
+  qualityScore: number;
+}
+
+// 用語関連度
+export interface TermRelevance {
+  term: DomainTerm;
+  relevance: number; // 0.0-1.0
+  evidence: string[];
+  locations: CodeLocation[];
+}
+
+// ドメインコンテキスト
+export interface DomainContext {
+  domain: string;
+  primaryTerms: DomainTerm[];
+  activeRules: BusinessRule[];
+  qualityThreshold: number;
+}
+
+// ドメイン品質スコア
+export interface DomainQualityScore {
+  overall: number;
+  dimensions: {
+    domainAlignment: number;
+    businessCompliance: number;
+    technicalQuality: number;
+  };
+  recommendations: string[];
+}
+
+// 用語候補
+export interface TermCandidate {
+  term: string;
+  frequency: number;
+  contexts: string[];
+  confidence: number;
+  suggestedCategory: string;
+  suggestedImportance: 'critical' | 'high' | 'medium' | 'low';
+}
+
+// 品質メトリクス
+export interface QualityMetrics {
+  completeness: number;
+  accuracy: number;
+  consistency: number;
+  coverage: number;
+  overall: number;
+}
+
+// 辞書差分
+export interface DictionaryDiff {
+  added: {
+    terms: DomainTerm[];
+    rules: BusinessRule[];
+  };
+  modified: {
+    terms: { old: DomainTerm; new: DomainTerm }[];
+    rules: { old: BusinessRule; new: BusinessRule }[];
+  };
+  removed: {
+    terms: DomainTerm[];
+    rules: BusinessRule[];
+  };
+}
+
+// 使用統計
+export interface UsageStatistics {
+  termUsage: Map<string, number>;
+  ruleApplication: Map<string, number>;
+  contextHits: Map<string, number>;
+  lastAccessed: Map<string, Date>;
+}
+
+// キャッシュエントリ
+export interface CachedEntry {
+  key: string;
+  value: any;
+  timestamp: Date;
+  ttl: number;
+  accessCount: number;
+}
+
+// ドメイン辞書対応プラグインインターフェース
+export interface DictionaryAwarePlugin extends ITestQualityPlugin {
+  // 辞書を使用した分析
+  analyzeWithContext(
+    testFile: TestFile,
+    dictionary: DomainDictionary
+  ): Promise<ContextualAnalysis>;
+  
+  // ドメイン固有の品質評価
+  evaluateDomainQuality(
+    patterns: DetectionResult[],
+    context: DomainContext
+  ): DomainQualityScore;
+}

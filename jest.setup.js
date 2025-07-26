@@ -54,7 +54,43 @@ if (process.env.CI === 'true') {
   console.log = (...args) => {
     // CI環境ではデバッグログを抑制
     const message = args.join(' ');
-    if (message.includes('🛡️') || message.includes('プラグインサンドボックス')) {
+    if (message.includes('🛡️') || 
+        message.includes('プラグインサンドボックス') ||
+        message.includes('🔧') ||
+        message.includes('📋') ||
+        message.includes('🤖') ||
+        message.includes('✏️') ||
+        message.includes('📥') ||
+        message.includes('⚙️') ||
+        message.includes('🔍') ||
+        message.includes('📊') ||
+        message.includes('🚀') ||
+        message.includes('辞書') ||
+        message.includes('ドメイン') ||
+        message.includes('用語') ||
+        message.includes('ルール') ||
+        message.includes('設定ファイル') ||
+        message.includes('初期化方法') ||
+        message.includes('自動生成') ||
+        message.includes('手動設定') ||
+        message.includes('インポート') ||
+        message.includes('プロジェクト情報') ||
+        message.includes('検証結果') ||
+        message.includes('ブートストラップ')) {
+      return;
+    }
+    originalLog.apply(console, args);
+  };
+} else {
+  // ローカル環境でもテスト時は辞書ブートストラップ出力を抑制
+  console.log = (...args) => {
+    const message = args.join(' ');
+    if (message.includes('🔧 辞書の初期化方法を選択してください:') ||
+        message.includes('🤖 既存コードから辞書を自動生成しています...') ||
+        message.includes('✏️  手動で辞書を設定しています...') ||
+        message.includes('📥 既存の辞書ファイルをインポートしています...') ||
+        message.includes('📋 プロジェクト情報を収集しています...') ||
+        message.includes('🚀 Rimor ドメイン辞書セットアップウィザード')) {
       return;
     }
     originalLog.apply(console, args);

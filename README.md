@@ -1,10 +1,24 @@
-# Rimor - テスト品質監査ツール
+# Rimor - AI最適化テスト品質監査ツール v0.6.0
 
-**Rimor**（リモール）は、静的解析とプラグイン駆動アーキテクチャを使用して、テスト品質の問題を特定するツールです。ラテン語で「深く掘る」「徹底的に探索する」を意味し、見過ごされがちなテスト品質の問題を発見することを目的としています。
+**Rimor**（リモール）は、静的解析とプラグイン駆動アーキテクチャを使用して、テスト品質の問題を特定する次世代ツールです。ラテン語で「深く掘る」「徹底的に探索する」を意味し、見過ごされがちなテスト品質の問題を発見することを目的としています。
+
+## 🆕 v0.6.0の新機能 - ドメイン辞書システム
+
+**Rimorが大幅にパワーアップ！** ドメイン知識を活用したコンテキスト理解により、より深い品質分析が可能になりました。
+
+### 主な新機能
+- 📚 **ドメイン辞書システム** - ビジネス用語とルールによる文脈理解
+- 🧠 **知識抽出エンジン** - ESLint/TypeScript/Prettier設定からの自動学習
+- 🔍 **文脈理解分析** - コードのドメイン関連度とビジネス適合性評価
+- 🚀 **セットアップウィザード** - 新規プロジェクト向け自動初期化
+- ⚡ **高性能キャッシュ** - メモリ・ディスクの2段階キャッシュシステム
+- 🔧 **プラグイン統合** - DictionaryAwarePlugin対応
 
 ## 特徴
 
 - 📊 **プラグイン駆動システム** - すべての品質チェックをプラグインとして実装
+- 📚 **ドメイン辞書システム** - ビジネス知識を活用した高度な分析（v0.6.0）
+- 🧠 **自動知識抽出** - プロジェクト設定からドメイン知識を自動学習（v0.6.0）
 - 🏆 **品質スコア算出** - 5次元品質評価による定量的テスト品質分析（v0.4.0）
 - 📈 **トレンド分析** - Git履歴連携による品質変化追跡と予測（v0.4.0）
 - 🎯 **改善提案生成** - AI駆動による自動改善推奨システム（v0.4.0）
@@ -26,6 +40,9 @@ npx rimor
 
 # 特定のディレクトリを分析
 npx rimor ./src
+
+# 新機能：ドメイン辞書対応分析
+npx rimor --dictionary
 ```
 
 ### ローカル開発用
@@ -40,6 +57,50 @@ npm install
 
 # TypeScriptコンパイル
 npm run build
+```
+
+## 🚀 クイックスタート（v0.6.0）
+
+### 1. プロジェクト初期化
+
+```bash
+# 新規プロジェクトのセットアップウィザード
+npx rimor bootstrap init
+
+# 自動モードでの初期化
+npx rimor bootstrap init --auto --domain=ecommerce
+
+# セットアップ状況の確認
+npx rimor bootstrap status
+```
+
+### 2. 辞書管理
+
+```bash
+# 辞書の一覧表示
+npx rimor dictionary list
+
+# 新しい用語の追加
+npx rimor dictionary add-term
+
+# 辞書の検証
+npx rimor dictionary validate
+
+# 辞書の分析統計
+npx rimor dictionary analyze
+```
+
+### 3. 辞書対応分析
+
+```bash
+# ドメイン辞書を使用した分析
+npx rimor --dictionary
+
+# 特定ドメインでの分析
+npx rimor --dictionary=ecommerce
+
+# 詳細な文脈分析
+npx rimor --dictionary --verbose
 ```
 
 ## 基本的な使用方法
@@ -66,455 +127,612 @@ npx rimor ./src --format=json
 npx rimor --help
 ```
 
-### 品質スコア算出（v0.4.0の新機能）
+### 品質スコア算出（v0.4.0の機能）
 
 ```bash
 # プロジェクト全体の品質スコア算出
-npx rimor score
+npx rimor --scoring
 
 # 特定ディレクトリの品質スコア算出
-npx rimor score ./src
+npx rimor ./src --scoring
 
 # JSON形式でスコア出力
-npx rimor score --format=json
+npx rimor --scoring --format=json
 
 # 品質トレンド分析
-npx rimor trend
+npx rimor trend analyze
 
 # スコア履歴表示
-npx rimor history
+npx rimor history show
 
 # 詳細なスコア分析
-npx rimor score --verbose
+npx rimor --scoring --verbose --report-type=detailed
+```
+
+### ドメイン辞書システム（v0.6.0の新機能）
+
+#### プロジェクトブートストラップ
+
+```bash
+# 初期化ウィザード
+npx rimor bootstrap init
+
+# 強制再初期化
+npx rimor bootstrap init --force
+
+# 特定テンプレートでの初期化
+npx rimor bootstrap init --template=ecommerce
+
+# セットアップ検証
+npx rimor bootstrap validate
+
+# セットアップクリーンアップ
+npx rimor bootstrap clean --confirm
+```
+
+#### 辞書管理
+
+```bash
+# 利用可能な辞書の表示
+npx rimor dictionary list
+
+# 新しい用語の追加（対話形式）
+npx rimor dictionary add-term
+
+# バッチでの用語追加
+npx rimor dictionary add-term --term="Payment" --category="financial" --importance="critical"
+
+# 用語の検索
+npx rimor dictionary search "payment"
+
+# 辞書の検証
+npx rimor dictionary validate
+
+# 辞書の分析統計
+npx rimor dictionary analyze
+
+# 辞書の初期化
+npx rimor dictionary init --domain=ecommerce
+```
+
+#### 高度な分析
+
+```bash
+# ドメイン辞書を使用した文脈分析
+npx rimor analyze --dictionary
+
+# 特定ドメインでの分析
+npx rimor analyze --dictionary=ecommerce ./src
+
+# 詳細な文脈分析レポート
+npx rimor analyze --dictionary --format=html --output=domain-report.html
+
+# ビジネス規則との適合性チェック
+npx rimor analyze --dictionary --business-rules
 ```
 
 ### 開発者向けコマンド（ローカル環境）
 
 ```bash
 # ディレクトリ全体の分析（推奨）
-npm run analyze ./src
+npm run analyze:src
+
+# 辞書対応分析
+npm run analyze:dictionary
 
 # JSON形式で出力
-npm run analyze:json ./src
+npm run analyze:src:json
 
-# 詳細モードで実行
-npm run analyze:verbose ./src
+# 辞書管理
+npm run dictionary:list
+npm run dictionary:validate
 
-# 完全チェック（ビルド + テスト + 分析）
+# ブートストラップ
+npm run bootstrap:init
+npm run bootstrap:status
+
+# 包括的品質チェック
 npm run full-check
+
+# テスト実行
+npm test                    # 全テスト
+npm run test:unit          # 単体テスト
+npm run test:integration   # 統合テスト
+npm run test:performance   # 性能テスト
 ```
 
-### 実行例
+## 🏗️ アーキテクチャ
 
-```bash
-$ npx rimor ./src
+### システム構成（v0.6.0）
 
-🔍 Rimor テスト品質監査
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ℹ️  分析対象: /path/to/project/src
-
-🔍 検出された問題:
-1. ❌ テストファイルが見つかりません: src/index.ts
-
-📊 サマリー:
-📁 分析対象: 11ファイル
-❌ テスト不足: 1件
-📈 テストカバレッジ: 91%
-⏱️  実行時間: 4ms
+```
+Rimor v0.6.0
+├── 🧠 Core Engine
+│   ├── Static Analysis Engine
+│   ├── Plugin Manager
+│   └── Dictionary-Aware Plugin Manager (NEW)
+├── 📚 Domain Dictionary System (NEW)
+│   ├── Knowledge Extractor
+│   ├── Context Analysis Engine
+│   ├── Business Rules Engine
+│   └── Cache System
+├── 🔌 Plugin Ecosystem
+│   ├── Core Plugins
+│   ├── Framework Plugins
+│   ├── Domain Plugins (NEW)
+│   └── Custom Plugins
+├── 💾 Storage Layer
+│   ├── YAML Dictionary Storage (NEW)
+│   ├── Cache Management
+│   └── Version Control
+└── 🖥️ CLI Interface
+    ├── Analysis Commands
+    ├── Dictionary Commands (NEW)
+    └── Bootstrap Commands (NEW)
 ```
 
-### CI/CD での使用例
+### プラグインアーキテクチャ
 
-```bash
-# GitHub Actions での使用
-- name: Run Rimor test quality audit
-  run: npx rimor --json ./src > rimor-report.json
+```typescript
+// 従来のプラグイン
+interface IPlugin {
+  name: string;
+  analyze(filePath: string): Promise<Issue[]>;
+}
 
-# 結果を確認して失敗時は CI を停止
-- name: Check test quality
-  run: |
-    if [ $(cat rimor-report.json | jq '.summary.issuesFound') -gt 0 ]; then
-      echo "テスト品質の問題が発見されました"
-      exit 1
-    fi
-```
-
-## プラグイン作成（v0.2.0の新機能）
-
-Rimorの最大の特徴は、**対話型プラグイン作成システム**です。プログラミング知識がなくても、質問に答えるだけでカスタムプラグインを作成できます。
-
-### 対話型プラグイン作成
-
-```bash
-# 対話モードでプラグイン作成
-npx rimor plugin create -i
-
-🧙 Rimor Plugin Creation Assistant
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Welcome! Create custom plugins by
-answering a few simple questions.
-
-? What test quality aspect would you like to check?
-> APIのエラーハンドリングが適切に行われているか確認したい
-
-? What does this check aim to prevent?
-> 本番環境でのAPIエラーが適切にハンドリングされず、ユーザーに不親切なエラーが表示されること
-
-✨ Analyzing samples...
-✅ Plugin generated successfully
-🎉 Plugin saved: src/plugins/generated/api-error-handling-plugin.ts
-```
-
-### テンプレートからプラグイン作成
-
-```bash
-# 利用可能なテンプレート一覧
-npx rimor plugin create --help
-
-# 基本テンプレートから作成
-npx rimor plugin create --template basic
-
-# 非同期テスト専用プラグイン
-npx rimor plugin create --template async-await
-
-# APIテスト専用プラグイン
-npx rimor plugin create --template api-test
-
-# バリデーション専用プラグイン
-npx rimor plugin create --template validation
-
-# パターンマッチングプラグイン
-npx rimor plugin create --template pattern-match
-```
-
-### 既存プラグインから派生作成
-
-```bash
-# 既存プラグインをベースにカスタム版を作成
-npx rimor plugin create --from testExistence
-```
-
-### 利用可能なテンプレート
-
-| テンプレート | 説明 | 用途 |
-|-------------|------|------|
-| `basic` | 基本的なプラグインテンプレート | カスタムロジック実装の出発点 |
-| `pattern-match` | パターンマッチングプラグイン | 特定の文字列・パターンの検出 |
-| `async-await` | 非同期テスト専用 | async/awaitの適切な使用チェック |
-| `api-test` | APIテスト専用 | HTTPステータス・レスポンス検証 |
-| `validation` | バリデーション専用 | 入力値検証の境界値テスト |
-
-### 国際化対応
-
-```bash
-# 英語環境での実行
-RIMOR_LANG=en npx rimor plugin create --help
-
-# 日本語環境での実行（デフォルト）
-RIMOR_LANG=ja npx rimor plugin create -i
-```
-
-## 品質スコア算出システム（v0.4.0）
-
-Rimorの品質スコア算出システムは、テスト品質を定量的に評価し、継続的な改善をサポートします。
-
-### 5次元品質評価
-
-| ディメンション | 説明 | 評価内容 |
-|-------------|------|----------|
-| **完全性** | テスト網羅性 | テストケースの網羅度、境界値テスト等 |
-| **正確性** | テスト正確性 | アサーションの品質、テスト論理の妥当性 |
-| **保守性** | テスト保守性 | コードの可読性、構造化、重複の排除 |
-| **パフォーマンス** | 実行効率 | テスト実行時間、リソース使用量 |
-| **セキュリティ** | 安全性 | セキュリティテスト、脆弱性チェック |
-
-### グレードシステム
-
-- **A** (90-100点): 優秀 - エンタープライズレベルの品質
-- **B** (80-89点): 良好 - 本番環境に適用可能
-- **C** (70-79点): 標準 - 基本的な品質要件を満たす
-- **D** (60-69点): 要改善 - 改善が必要
-- **F** (0-59点): 不合格 - 大幅な見直しが必要
-
-### 実行例
-
-```bash
-$ npx rimor score ./src
-
-📊 Rimorテスト品質スコアレポート
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🏆 総合評価
-├─ プロジェクトスコア: 85/100 [=========-] B
-├─ 前回からの変化: +12.3 ↑
-└─ 評価対象: 156 ファイル
-
-📈 ディメンション別スコア
-├─ 完全性:     90/100 [=========] A
-├─ 正確性:     82/100 [========-] B
-├─ 保守性:     87/100 [========-] B
-├─ パフォーマンス: 79/100 [=======--] C
-└─ セキュリティ:  84/100 [========-] B
-
-🎯 改善推奨事項（上位3件）
-1. [Critical] src/api/payment.test.ts
-   → セキュリティテストを追加（推定改善: +12点）
-2. [High] src/services/auth.test.ts
-   → エラーケースの網羅（推定改善: +8点）
-3. [High] src/utils/validation.test.ts
-   → 境界値テストの追加（推定改善: +6点）
-```
-
-### トレンド分析
-
-```bash
-$ npx rimor trend
-
-📈 品質トレンド分析
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 過去30日間のスコア推移
-85 ┤                                      ╭─
-84 ┤                                 ╭────╯
-83 ┤                        ╭────────╯
-82 ┤               ╭────────╯
-81 ┤    ╭──────────╯
-80 ┼────╯
-   └────────────────────────────────────────→
-   30日前                              今日
-
-🔍 変化の詳細
-├─ 総合スコア: 80 → 85 (+5点, +6.3%)
-├─ 最大改善: 完全性 (+8点)
-├─ 注意事項: セキュリティ (-2点)
-└─ 予測: 来週 87点 (信頼度: 85%)
-```
-
-### スコア設定のカスタマイズ
-
-```json
-{
-  "scoring": {
-    "weights": {
-      "dimensions": {
-        "completeness": 1.0,
-        "correctness": 1.5,
-        "maintainability": 0.8,
-        "performance": 0.5,
-        "security": 1.2
-      },
-      "plugins": {
-        "test-existence": 1.0,
-        "assertion-exists": 1.2
-      },
-      "fileTypes": {
-        "*.critical.test.ts": 2.0,
-        "*.integration.test.ts": 1.5
-      }
-    },
-    "grades": {
-      "A": 90,
-      "B": 80,
-      "C": 70,
-      "D": 60
-    }
-  }
+// 新しい辞書対応プラグイン（v0.6.0）
+interface DictionaryAwarePlugin extends ITestQualityPlugin {
+  analyzeWithContext(
+    testFile: TestFile,
+    dictionary: DomainDictionary
+  ): Promise<ContextualAnalysis>;
+  
+  evaluateDomainQuality(
+    patterns: DetectionResult[],
+    context: DomainContext
+  ): DomainQualityScore;
 }
 ```
 
-## 設定ファイル
+### ドメイン辞書システム
 
-Rimorは以下の設定ファイルをサポートします（優先度順）：
+#### 辞書構造
 
-1. `.rimorrc.json`
-2. `.rimorrc`
-3. `rimor.config.json`
+```yaml
+# .rimor/dictionaries/ecommerce.yaml
+version: "1.0.0"
+domain: "ecommerce"
+language: "ja"
+lastUpdated: "2024-01-15T10:30:00Z"
 
-### 設定例
+terms:
+  - id: "payment-001"
+    term: "Payment"
+    definition: "決済処理機能"
+    category: "financial"
+    importance: "critical"
+    aliases: ["決済", "payment", "pay"]
+    examples:
+      - code: "processPayment(amount, currency)"
+        description: "金額と通貨を指定した決済処理"
+    relatedPatterns: ["payment.*", "pay.*"]
+    testRequirements:
+      - "決済金額の妥当性テスト"
+      - "決済失敗時のエラーハンドリングテスト"
+
+businessRules:
+  - id: "payment-validation"
+    name: "決済バリデーションルール"
+    description: "すべての決済処理にバリデーションが必要"
+    condition:
+      type: "function-name"
+      pattern: ".*[Pp]ayment.*"
+      scope: "function"
+    requirements:
+      - type: "must-have"
+        description: "金額妥当性テスト"
+        testPattern: "expect\\(.*amount.*\\)\\.toBe.*"
+```
+
+#### 知識抽出
+
+システムは以下の設定ファイルから自動的にドメイン知識を抽出します：
+
+- **ESLint設定** (`.eslintrc.json`) - プロジェクトの技術スタックとコーディング規則
+- **TypeScript設定** (`tsconfig.json`) - 型定義とモジュール構成
+- **Prettier設定** (`.prettierrc`) - コードフォーマット規則
+
+#### 文脈分析エンジン
+
+```typescript
+// コード分析結果
+interface ContextualAnalysis {
+  context: CodeContext;           // 基本的なコード構造
+  relevantTerms: TermRelevance[]; // 関連するドメイン用語
+  applicableRules: BusinessRule[]; // 適用可能なビジネスルール
+  requiredTests: TestRequirement[]; // 推奨テストケース
+  qualityScore: number;           // ドメイン品質スコア
+}
+```
+
+## 📖 使用例
+
+### 1. Ecommerceプロジェクトでの使用
+
+```bash
+# 1. プロジェクト初期化
+npx rimor bootstrap init --domain=ecommerce
+
+# 2. 基本分析
+npx rimor analyze ./src
+
+# 3. ドメイン辞書を使用した高度分析
+npx rimor analyze ./src --dictionary
+
+# 4. 決済モジュールの詳細分析
+npx rimor analyze ./src/payment --dictionary --verbose
+```
+
+### 2. 既存プロジェクトへの統合
+
+```bash
+# 1. セットアップ状況確認
+npx rimor bootstrap status
+
+# 2. 自動設定抽出による辞書作成
+npx rimor bootstrap init --auto
+
+# 3. 辞書内容の確認・調整
+npx rimor dictionary list
+npx rimor dictionary validate
+
+# 4. 段階的分析実行
+npx rimor analyze ./src --dictionary
+```
+
+### 3. チーム開発での活用
+
+```bash
+# CI/CDパイプラインに統合
+name: Quality Check
+run: |
+  npx rimor bootstrap validate
+  npx rimor analyze --dictionary --format=json > quality-report.json
+  npx rimor trend analyze --prediction
+
+# 品質レポートの生成
+npx rimor analyze --dictionary --format=html --output=team-quality-report.html
+```
+
+## 🔧 設定
+
+### 設定ファイル (.rimorrc.json)
 
 ```json
 {
+  "version": "1.0.0",
+  "project": {
+    "domain": "ecommerce",
+    "language": "typescript",
+    "framework": "jest",
+    "type": "web"
+  },
+  "dictionary": {
+    "enabled": true,
+    "defaultDomain": "ecommerce",
+    "autoUpdate": true,
+    "paths": {
+      "dictionaries": ".rimor/dictionaries",
+      "cache": ".rimor/cache"
+    }
+  },
   "plugins": {
-    "test-existence": {
-      "enabled": true
-    },
-    "assertion-exists": {
-      "enabled": true
-    }
+    "enabled": ["domain-term-coverage"],
+    "disabled": []
   },
-  "excludePatterns": [
-    "node_modules/**",
-    "dist/**",
-    "*.config.*",
-    "*.test.*",
-    "*.spec.*"
-  ],
-  "testPatterns": [
-    "**/*.test.{js,ts,tsx}",
-    "**/*.spec.{js,ts,tsx}",
-    "**/__tests__/**/*.{js,ts,tsx}"
-  ],
-  "output": {
-    "format": "text",
-    "verbose": false
+  "analysis": {
+    "includeTests": true,
+    "includeComments": false,
+    "minConfidence": 0.7
   }
 }
 ```
 
-### 設定項目
-
-| 項目 | 説明 | デフォルト値 |
-|------|------|--------------|
-| `plugins` | 使用するプラグインの設定 | 全プラグイン有効 |
-| `excludePatterns` | 分析から除外するファイルパターン | 設定ファイルとテストファイル |
-| `testPatterns` | テストファイルのパターン | `.test.*`, `.spec.*`, `__tests__/` |
-| `output.format` | 出力形式（`text` または `json`） | `text` |
-| `output.verbose` | 詳細表示フラグ | `false` |
-
-## 利用可能なプラグイン
-
-### TestExistencePlugin
-- **機能**: ソースファイルに対応するテストファイルの存在確認
-- **検出内容**: テストファイルが存在しないソースファイル
-- **設定ID**: `test-existence`
-
-### AssertionExistsPlugin
-- **機能**: テストファイル内のアサーション文の存在確認
-- **検出内容**: `expect`、`assert`、`should`文がないテストファイル
-- **設定ID**: `assertion-exists`
-
-## JSON出力形式
-
-`--format=json` オプションを使用した場合の出力形式：
-
-```json
-{
-  "summary": {
-    "totalFiles": 11,
-    "issuesFound": 1,
-    "testCoverage": 91,
-    "executionTime": 4
-  },
-  "issues": [
-    {
-      "type": "missing-test",
-      "severity": "error",
-      "message": "テストファイルが見つかりません: src/index.ts",
-      "file": "src/index.ts",
-      "plugin": "test-existence"
-    }
-  ],
-  "config": {
-    "targetPath": "/path/to/project/src",
-    "enabledPlugins": ["TestExistencePlugin", "AssertionExistsPlugin"],
-    "format": "json"
-  }
-}
-```
-
-## 開発者向け情報
-
-### テストの実行
-
-```bash
-# 全テストの実行
-npm test
-
-# 特定のテストファイルの実行
-npm test -- analyzer.test.ts
-```
-
-### プロジェクト構造
+### ディレクトリ構造
 
 ```
-rimor/
+your-project/
+├── .rimorrc.json              # Rimor設定ファイル
+├── .rimor/
+│   ├── dictionaries/
+│   │   ├── ecommerce.yaml     # ドメイン辞書
+│   │   └── financial.yaml     # 複数辞書対応
+│   ├── cache/                 # キャッシュファイル
+│   └── versions/              # バージョン履歴
 ├── src/
-│   ├── core/              # コアシステム
-│   │   ├── analyzer.ts    # 静的解析エンジン
-│   │   ├── pluginManager.ts # プラグインマネージャー
-│   │   ├── config.ts      # 設定管理
-│   │   └── types.ts       # 型定義
-│   ├── plugins/           # プラグイン実装
-│   │   ├── testExistence.ts
-│   │   └── assertionExists.ts
-│   └── cli/               # CLI実装
-│       ├── cli.ts
-│       ├── output.ts
-│       └── commands/
-│           └── analyze.ts
-├── test/                  # テストファイル
-└── docs/                  # ドキュメント
+└── test/
 ```
 
-### ビルドとデプロイ
+## 📊 分析結果の例
+
+### 従来の分析結果
+
+```
+🔍 テスト品質分析結果
+
+📂 ./src/payment.test.ts
+✅ テストファイル存在確認
+⚠️  アサーション文が見つかりません (行: 15)
+
+📊 品質スコア: 75/100
+📈 改善提案: アサーション文の追加を検討してください
+```
+
+### ドメイン辞書対応分析結果（v0.6.0）
+
+```
+🔍 ドメイン対応テスト品質分析結果
+
+📂 ./src/payment.test.ts
+✅ テストファイル存在確認
+✅ Paymentドメイン用語検出 (関連度: 92%)
+⚠️  決済バリデーションルール未適用
+🎯 推奨テストケース: 
+   - 決済金額妥当性テスト
+   - 決済失敗時エラーハンドリングテスト
+   - 通貨コード検証テスト
+
+📊 総合品質スコア: 82/100
+📊 ドメイン適合度: 89/100
+📊 ビジネス規則準拠度: 75/100
+📊 技術品質: 88/100
+
+🧠 文脈分析:
+   - 決済処理フローの主要テストケースをカバー
+   - エラーハンドリングの強化が推奨
+   - ユーザー認証との連携テストが不足
+
+💡 改善提案:
+   - invalid payment amount のテストケース追加
+   - 決済プロバイダーとの統合テスト実装
+   - 決済ログの検証機能追加
+```
+
+## 🔌 プラグイン開発
+
+### 基本プラグイン
+
+```typescript
+import { BasePlugin } from 'rimor/plugins/base/BasePlugin';
+
+export class CustomTestPlugin extends BasePlugin {
+  id = 'custom-test-plugin';
+  name = 'Custom Test Plugin';
+  version = '1.0.0';
+  type = 'pattern' as const;
+
+  isApplicable(context: ProjectContext): boolean {
+    return context.language === 'typescript';
+  }
+
+  async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
+    // カスタム分析ロジック
+    return [];
+  }
+
+  evaluateQuality(patterns: DetectionResult[]): QualityScore {
+    // 品質評価ロジック
+    return { overall: 100, breakdown: {}, confidence: 1.0 };
+  }
+
+  suggestImprovements(evaluation: QualityScore): Improvement[] {
+    // 改善提案ロジック
+    return [];
+  }
+}
+```
+
+### ドメイン辞書対応プラグイン（v0.6.0）
+
+```typescript
+import { DictionaryAwareBasePlugin } from 'rimor/plugins/base/DictionaryAwareBasePlugin';
+
+export class DomainSpecificPlugin extends DictionaryAwareBasePlugin {
+  id = 'domain-specific-plugin';
+  name = 'Domain Specific Plugin';
+  version = '1.0.0';
+  type = 'domain' as const;
+
+  async analyzeWithContext(
+    testFile: TestFile,
+    dictionary: DomainDictionary
+  ): Promise<ContextualAnalysis> {
+    // 辞書を使用した文脈分析
+    const basicAnalysis = await super.analyzeWithContext(testFile, dictionary);
+    
+    // ドメイン固有の拡張分析
+    const domainSpecificInsights = this.analyzeDomainSpecificPatterns(
+      testFile, dictionary
+    );
+    
+    return {
+      ...basicAnalysis,
+      qualityScore: this.calculateEnhancedScore(basicAnalysis, domainSpecificInsights)
+    };
+  }
+
+  evaluateDomainQuality(
+    patterns: DetectionResult[],
+    context: DomainContext
+  ): DomainQualityScore {
+    // ドメイン固有の品質評価
+    return super.evaluateDomainQuality(patterns, context);
+  }
+}
+```
+
+## 🎯 ベストプラクティス
+
+### 1. 効果的な辞書設計
+
+```yaml
+# 適切な用語階層
+terms:
+  # 抽象的な概念
+  - term: "Payment"
+    category: "core-business"
+    importance: "critical"
+    
+  # 具体的な実装
+  - term: "CreditCardPayment"
+    category: "implementation"
+    importance: "high"
+    relatedTerms: ["Payment"]
+```
+
+### 2. ビジネスルールの定義
+
+```yaml
+businessRules:
+  # 明確な条件と要件
+  - name: "Payment Security Rule"
+    condition:
+      type: "function-name"
+      pattern: ".*[Pp]ayment.*"
+    requirements:
+      - type: "must-have"
+        description: "Security validation test"
+        testPattern: "expect\\(.*security.*\\)"
+```
+
+### 3. 継続的な品質改善
 
 ```bash
-# TypeScriptコンパイル
+# 定期的な辞書更新
+npx rimor dictionary analyze
+npx rimor dictionary validate
+
+# トレンド監視
+npx rimor trend analyze --anomalies
+
+# 品質向上の追跡
+npx rimor history compare --baseline=30 --current=7
+```
+
+## 🤝 貢献方法
+
+### 開発環境のセットアップ
+
+```bash
+# リポジトリのフォーク・クローン
+git clone https://github.com/your-username/rimor.git
+cd rimor
+
+# 依存関係のインストール
+npm install
+
+# 開発用ビルド
 npm run build
 
 # テスト実行
 npm test
 
-# 完全なビルドとテストのサイクル
-npm run build && npm test
+# 統合テスト実行
+npm run test:integration
+
+# 性能テスト実行
+npm run test:performance
 ```
 
-## ライセンス
+### コードの貢献
 
-MIT License
+1. **Issues**を確認して作業項目を選択
+2. **Feature branch**を作成
+3. **Test-driven development**でコード実装
+4. **統合テスト**を実行して品質確認
+5. **Pull Request**を作成
 
-## 貢献
+### プラグインの貢献
 
-プロジェクトへの貢献を歓迎します。Issue報告やPull Requestをお気軽にお送りください。
+```bash
+# プラグイン作成ウィザード
+npx rimor plugin create --interactive
 
-## バージョン履歴
+# カスタムプラグインテンプレート
+npx rimor plugin create --template=domain-specific
+```
 
-### v0.5.0 (AI-Optimized Output & Security Enhancement)
-- **AI向け出力最適化システム**: 構造化出力による修正作業の自動化促進
-- **セキュリティ強化**: サンドボックス化・設定検証・CLI引数検証によるエンタープライズ対応
-- **コンテキスト抽出エンジン**: コード周辺情報の自動収集とAI向け構造化
-- **修正提案テンプレート**: 具体的なコード修正指示の自動生成
-- **多形式出力**: JSON・Markdown・プロンプトテンプレート対応
-- **アクション可能タスク**: 実行可能な改善ステップの自動生成
-- **トークン制限対応**: 大規模プロジェクトでのAI処理最適化
-- **セキュリティサンドボックス**: 安全な実行環境とパス正規化
+## 📚 API リファレンス
 
-### v0.4.0 (Quality Score System)
-- **品質スコア算出システム**: 5次元品質評価による定量的分析
-- **トレンド分析**: Git履歴連携による品質変化追跡と予測
-- **改善提案生成**: AI駆動による自動改善推奨システム
-- **重み付けカスタマイズ**: プラグイン・ディメンション・ファイルタイプ別重み設定
-- **多様なレポート形式**: CLI・JSON・CSV・HTML対応
-- **グレードシステム**: A-Fの5段階評価とスコア分布可視化
-- **パフォーマンス最適化**: 大規模プロジェクト対応とキャッシュシステム
-- **セキュリティ強化**: 設定ファイル処理の堅牢性向上
+### Core API
 
-### v0.3.0 (Advanced Plugin System)
-- **高度なプラグインシステム**: ITestQualityPlugin完全実装
-- **プラグインメタデータ**: バージョニング・詳細情報管理
-- **拡張コアコンポーネント**: AnalyzerExtended・PluginManagerExtended
-- **パフォーマンス監視**: リアルタイム実行時間測定・ボトルネック特定
-- **キャッシュマネージャー**: インテリジェントキャッシングシステム
-- **並列アナライザー**: 大規模プロジェクト対応の並列処理
+```typescript
+// プラグインマネージャー
+import { DictionaryAwarePluginManager } from 'rimor/core';
 
-### v0.2.0 (Interactive Plugin Creation)
-- **対話型プラグイン作成**: 質問応答式カスタムプラグイン生成
-- **5種類のテンプレート**: basic・pattern-match・async-await・api-test・validation
-- **国際化対応**: 日本語・英語切り替え（RIMOR_LANG）
-- **CLIコマンド統合**: `rimor plugin create`サブコマンド
+const manager = new DictionaryAwarePluginManager();
+await manager.loadDictionary('./dictionary.yaml');
+const results = await manager.runAllWithDictionary('./src');
+```
 
-### v0.1.1 (Bug Fixes)
-- **重要なバグ修正**: TestExistencePluginのテストパス探索問題解決
-- **CI/CD必須化**: 品質ゲート強化とRimor必須チェック実装
-- **テストカバレッジ向上**: 27% → 100%（追加テスト作成なし）
-- **設定ファイル統合**: excludeFiles設定の適用改善
-- **検出精度強化**: test/ディレクトリ構造・特殊命名対応
+### Dictionary API
 
-### v0.1.0 (MVP)
-- コア静的解析機能
-- TestExistencePlugin（テストファイル存在確認）
-- AssertionExistsPlugin（アサーション存在確認）
-- 設定ファイルサポート
-- JSON/テキスト出力対応
-- CLI基本機能
+```typescript
+// 辞書管理
+import { DomainDictionaryManager } from 'rimor/dictionary/core';
+
+const dictionary = new DomainDictionaryManager({
+  domain: 'ecommerce',
+  language: 'ja'
+});
+
+dictionary.addTerm(term);
+dictionary.searchTerms('payment');
+```
+
+### Context Analysis API
+
+```typescript
+// 文脈分析
+import { ContextEngine } from 'rimor/dictionary/context';
+
+const engine = new ContextEngine(dictionary);
+const context = await engine.analyzeContext(code, filePath);
+```
+
+## 🚀 ロードマップ
+
+### v0.7.0 (近日公開予定)
+- 🤖 **AI支援辞書生成** - GPT連携による自動辞書構築
+- 🔄 **リアルタイム分析** - ファイル変更時の自動分析
+- 📱 **Web UI** - ブラウザベースの分析インターフェース
+
+### v0.8.0 (計画中)
+- 🌐 **マルチプロジェクト対応** - モノレポ環境でのクロス分析
+- 📊 **カスタムダッシュボード** - チーム向け品質ダッシュボード
+- 🔗 **IDE拡張** - VS Code/IntelliJ IDEA プラグイン
+
+### v1.0.0 (長期目標)
+- 🧪 **自動テスト生成** - AI による最適テストケース生成
+- 🔍 **動的分析統合** - 実行時品質メトリクスとの統合
+- 🏢 **エンタープライズ機能** - 大規模チーム向け管理機能
+
+## 📄 ライセンス
+
+MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
+
+## 🔗 リンク
+
+- **GitHub**: https://github.com/sasakama-code/rimor
+- **NPM**: https://www.npmjs.com/package/rimor
+- **ドキュメント**: https://github.com/sasakama-code/rimor/docs
+- **Issues**: https://github.com/sasakama-code/rimor/issues
+- **Discussions**: https://github.com/sasakama-code/rimor/discussions
+
+## 🙏 謝辞
+
+Rimorの開発にご協力いただいたコントリビューターの皆様、フィードバックをお寄せいただいたユーザーの皆様に心より感謝いたします。
+
+---
+
+**Rimor v0.6.0** - あなたのテスト品質を次のレベルへ 🚀
