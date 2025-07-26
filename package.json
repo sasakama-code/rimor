@@ -1,6 +1,6 @@
 {
   "name": "rimor",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "静的解析とプラグイン駆動アーキテクチャによるテスト品質監査ツール",
   "main": "dist/index.js",
   "bin": {
