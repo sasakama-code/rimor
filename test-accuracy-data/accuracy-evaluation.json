@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-26T18:23:46.422Z",
+  "timestamp": "2025-07-26T19:51:28.523Z",
   "requirements": {
     "automaticInferenceRate": "≥85%",
     "inferenceAccuracy": "≥90%",
@@ -20,9 +20,9 @@
     "automaticInferenceRate": 88.88888888888889,
     "inferenceAccuracy": 88.88888888888889,
     "falsePositiveRate": 0,
-    "truePositiveRate": 100,
+    "truePositiveRate": 66.66666666666666,
     "precisionScore": 100,
-    "recallScore": 100
+    "recallScore": 66.66666666666666
   },
   "results": [
     {
@@ -33,29 +33,27 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 1
     },
     {
       "testCaseId": "inference-002",
-      "detectedIssues": [
-        "missing-sanitizer"
-      ],
-      "inferredSecurityType": "user-input",
-      "isTainted": true,
-      "isCorrect": true,
-      "isFalsePositive": false,
-      "isFalseNegative": false,
-      "inferenceTime": 2
-    },
-    {
-      "testCaseId": "inference-003",
       "detectedIssues": [],
       "inferredSecurityType": "unknown",
       "isTainted": false,
       "isCorrect": false,
       "isFalsePositive": false,
-      "isFalseNegative": false,
+      "isFalseNegative": true,
       "inferenceTime": 3
+    },
+    {
+      "testCaseId": "inference-003",
+      "detectedIssues": [],
+      "inferredSecurityType": "sanitized-data",
+      "isTainted": false,
+      "isCorrect": true,
+      "isFalsePositive": false,
+      "isFalseNegative": false,
+      "inferenceTime": 1
     },
     {
       "testCaseId": "accuracy-001",
@@ -79,7 +77,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 4
+      "inferenceTime": 2
     },
     {
       "testCaseId": "accuracy-003",
@@ -119,7 +117,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     }
   ]
 }
