@@ -1,19 +1,19 @@
-import { createDefaultPreset } from "ts-jest";
+import { createDefaultEsmPreset, TS_EXT_TO_TREAT_AS_ESM, ESM_TS_TRANSFORM_PATTERN } from "ts-jest";
 
-const tsJestTransformCfg = createDefaultPreset().transform;
+const tsJestTransformCfg = createDefaultEsmPreset().transform;
 
 /** @type {import("jest").Config} **/
 export default {
   testEnvironment: "node",
-  preset: 'ts-jest/presets/default-esm',
-  extensionsToTreatAsEsm: ['.ts'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  },
+  extensionsToTreatAsEsm: [...TS_EXT_TO_TREAT_AS_ESM],
   transform: {
     ...tsJestTransformCfg,
+    [ESM_TS_TRANSFORM_PATTERN]: [
+      'ts-jest',
+      {
+        useESM: true
+      }
+    ]
   },
   // CI環境での非同期ハンドル問題解決
   forceExit: true, // メモリリークを防ぐため常に有効
