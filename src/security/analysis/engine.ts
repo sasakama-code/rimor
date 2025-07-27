@@ -531,6 +531,40 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     const keywords = ['const', 'let', 'var', 'function', 'if', 'else', 'for', 'while', 'return', 'expect', 'it', 'describe'];
     return keywords.includes(word);
   }
+
+  /**
+   * expectパターンの安全な検索
+   */
+  private searchExpectPatterns(content: string): RegExpMatchArray[] {
+    const matches: RegExpMatchArray[] = [];
+    
+    try {
+      // 正しくエスケープされたexpectパターン
+      const expectPattern = /expect\s*\(/gi;
+      let match: RegExpExecArray | null;
+      
+      expectPattern.lastIndex = 0;
+      while ((match = expectPattern.exec(content)) !== null) {
+        matches.push(match);
+      }
+    } catch (error) {
+      // 正規表現エラーをキャッチして安全にフォールバック
+      console.warn(`正規表現パターンエラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // フォールバック: 単純な文字列検索
+      const simpleMatches = content.match(/expect\s*\(/g);
+      if (simpleMatches) {
+        simpleMatches.forEach(matchStr => {
+          const index = content.indexOf(matchStr);
+          if (index !== -1) {
+            matches.push(Object.assign([matchStr], { index }));
+          }
+        });
+      }
+    }
+    
+    return matches;
+  }
 }
 
 /**

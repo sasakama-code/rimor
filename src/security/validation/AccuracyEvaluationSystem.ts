@@ -261,13 +261,21 @@ export class AccuracyEvaluationSystem {
     // Step 7: 改善提案の生成
     const recommendedImprovements = this.generateImprovementRecommendations(overallMetrics);
 
-    // Step 8: 結果の保存
+    // Step 8: 履歴の更新（結果保存前に実行）
+    const currentTrend: AccuracyTrend = {
+      timestamp: new Date(),
+      metrics: overallMetrics,
+      changes: ['accuracy-evaluation-completed']
+    };
+    this.accuracyHistory.push(currentTrend);
+
+    // Step 9: 結果の保存
     const result: DetailedAccuracyResult = {
       overallMetrics,
       perTestCaseResults,
       perFrameworkResults,
       issueTypeAnalysis,
-      accuracyTrends: this.accuracyHistory,
+      accuracyTrends: [...this.accuracyHistory], // 最新の履歴を含む
       recommendedImprovements
     };
 
@@ -426,16 +434,32 @@ export class AccuracyEvaluationSystem {
       totalAnalysisTime += analysisResult.analysisTime;
     }
 
-    // 真陰性の推定（検出すべきでない箇所を正しく非検出）
-    trueNegatives = Math.max(0, testCases.length * 5 - truePositives - falsePositives - falseNegatives);
+    // 真陰性の計算を改善 - より現実的な推定値を使用
+    // 各テストケースで平均的に3-4の検証ポイントがあると仮定
+    const estimatedVerificationPoints = testCases.length * 3.5;
+    trueNegatives = Math.max(0, Math.floor(estimatedVerificationPoints - truePositives - falsePositives - falseNegatives));
 
-    const precision = truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
-    const recall = truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
-    const f1Score = precision + recall > 0 ? 2 * (precision * recall) / (precision + recall) : 0;
+    // Precision/Recallの計算 - 未定義の場合はNaNを返す（型安全性のため）
+    const precision = truePositives + falsePositives > 0 ? 
+      truePositives / (truePositives + falsePositives) : 
+      (truePositives === 0 && falsePositives === 0 ? NaN : 0);
+    
+    const recall = truePositives + falseNegatives > 0 ? 
+      truePositives / (truePositives + falseNegatives) : 
+      (truePositives === 0 && falseNegatives === 0 ? NaN : 0);
+    
+    // F1スコアの計算 - precision/recallがNaNの場合は0
+    const f1Score = (!isNaN(precision) && !isNaN(recall) && precision + recall > 0) ? 
+      2 * (precision * recall) / (precision + recall) : 0;
 
     const totalDetected = truePositives + falsePositives;
     const totalActual = truePositives + falseNegatives;
-    const falsePositiveRate = falsePositives + trueNegatives > 0 ? falsePositives / (falsePositives + trueNegatives) : 0;
+    
+    // False Positive Rateの正確な計算
+    const falsePositiveRate = falsePositives + trueNegatives > 0 ? 
+      falsePositives / (falsePositives + trueNegatives) : 0;
+    
+    // False Negative Rateの計算
     const falseNegativeRate = totalActual > 0 ? falseNegatives / totalActual : 0;
 
     const automaticInferenceRate = totalInferenceAttempts > 0 ? inferenceSuccesses / totalInferenceAttempts : 0;
@@ -511,8 +535,14 @@ export class AccuracyEvaluationSystem {
         !detectedIssues.some(detected => this.isMatchingIssue(detected, actual))
       );
 
-      const precision = detectedIssues.length > 0 ? correctDetections.length / detectedIssues.length : 0;
-      const recall = actualIssues.length > 0 ? correctDetections.length / actualIssues.length : 0;
+      // Precision/Recallの計算 - 分母が0の場合の適切な処理
+      const precision = detectedIssues.length > 0 ? 
+        correctDetections.length / detectedIssues.length : 
+        (correctDetections.length === 0 ? NaN : 0);
+      
+      const recall = actualIssues.length > 0 ? 
+        correctDetections.length / actualIssues.length : 
+        (correctDetections.length === 0 ? NaN : 0);
 
       results.push({
         testCase,
@@ -716,13 +746,6 @@ export class AccuracyEvaluationSystem {
     
     await fs.writeFile(reportPath, JSON.stringify(sanitizedResult, null, 2));
     console.log(`📄 精度評価結果を保存しました: ${reportPath}`);
-
-    // 履歴に追加
-    this.accuracyHistory.push({
-      timestamp: new Date(),
-      metrics: result.overallMetrics,
-      changes: ['accuracy-evaluation-completed']
-    });
   }
 
   /**
