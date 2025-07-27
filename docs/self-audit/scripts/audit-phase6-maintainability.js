@@ -20,7 +20,8 @@ const argv = yargs(hideBin(process.argv))
 const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 async function main() {
@@ -51,8 +52,8 @@ async function main() {
     log.info('コード複雑度分析中...');
     
     try {
-      const srcFiles = this.findSourceFiles('./src');
-      const complexity = this.analyzeComplexity(srcFiles);
+      const srcFiles = findSourceFiles('./src');
+      const complexity = analyzeComplexity(srcFiles);
       
       results.details.complexity = complexity;
       
@@ -73,6 +74,9 @@ async function main() {
       
     } catch (error) {
       log.error(`複雑度分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`スタック: ${error.stack}`);
+      results.details.complexity = { success: false, error: error.message };
     }
 
     // 依存関係分析
@@ -109,6 +113,9 @@ async function main() {
       
     } catch (error) {
       log.error(`依存関係分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
+      results.details.dependencies = { success: false, error: error.message };
     }
 
     results.executionTime = Date.now() - startTime;
@@ -118,6 +125,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 6実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }
