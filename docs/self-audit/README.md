@@ -4,7 +4,7 @@
 
 ## ディレクトリ構造
 
-```
+```text
 docs/self-audit/
 ├── README.md                   # このファイル
 ├── results/                    # 個別フェーズの監査結果

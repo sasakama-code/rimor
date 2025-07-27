@@ -126,7 +126,7 @@ Found 0 critical issues requiring immediate attention.
 ## 3. パフォーマンス評価
 
 ### 3.1 実行速度の測定
-```
+```text
 src/core (10ファイル): 7ms (平均0.7ms/ファイル)
 src/dictionary/core (3ファイル): 約5ms (平均1.7ms/ファイル)
 
@@ -137,7 +137,7 @@ src/dictionary/core (3ファイル): 約5ms (平均1.7ms/ファイル)
 ```
 
 ### 3.2 出力サイズの最適化
-```
+```text
 JSON出力サイズ: 約1.2KB (非常にコンパクト)
 Markdown出力サイズ: 約0.8KB (Claude Code向けに最適化)
 
