@@ -43,3 +43,11 @@ src/plugins/generated/*.ts
 
 # Cache files
 .rimor-cache/
+
+# Generated test and evaluation data
+benchmark-results/
+*-tests/
+test-accuracy-data/
+test-output/
+accuracy-evaluation-*.json
+real-world-validation-*.json
