@@ -4,7 +4,6 @@
  * v0.3.0: i18n対応により多言語エラーメッセージをサポート
  */
 
-import { getMessage, type MessageKey } from '../i18n/messages';
 
 export enum ErrorType {
   FILE_NOT_FOUND = 'FILE_NOT_FOUND',
@@ -86,7 +85,7 @@ export class ErrorHandler {
         return this.handleError(
           error,
           ErrorType.FILE_NOT_FOUND,
-          getMessage('error.file.not_found', { filePath }),
+          "",
           context,
           true
         );
@@ -96,7 +95,7 @@ export class ErrorHandler {
         return this.handleError(
           error,
           ErrorType.PERMISSION_DENIED,
-          getMessage('error.file.permission_denied', { filePath }),
+          "",
           context,
           false
         );
@@ -106,7 +105,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.UNKNOWN,
-      getMessage('error.file.operation_failed', { filePath }),
+      "",
       context,
       true
     );
@@ -125,7 +124,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.PLUGIN_ERROR,
-      getMessage('error.plugin.execution_failed', { pluginName }),
+      "",
       context,
       true // プラグインエラーは通常回復可能
     );
@@ -144,8 +143,8 @@ export class ErrorHandler {
       error,
       ErrorType.INVALID_CONFIG,
       configPath 
-        ? getMessage('error.config.invalid_file', { configPath })
-        : getMessage('error.config.invalid_content'),
+        ? ""
+        : "",
       context,
       true // 設定エラーはデフォルト設定で回復可能
     );
@@ -168,7 +167,7 @@ export class ErrorHandler {
     return this.handleError(
       error,
       ErrorType.PARSE_ERROR,
-      getMessage('error.parse.failed', { type }),
+      "",
       context,
       true
     );
@@ -186,7 +185,7 @@ export class ErrorHandler {
     return this.handleError(
       new Error(`Operation timed out: ${operation}`),
       ErrorType.TIMEOUT,
-      getMessage('error.timeout.operation', { operation, timeoutMs: timeoutMs.toString() }),
+      "",
       context,
       true
     );
@@ -283,23 +282,23 @@ export class ErrorHandler {
     
     switch (type) {
       case ErrorType.FILE_NOT_FOUND:
-        return getMessage('error.default.file_not_found', { message: baseMessage });
+        return "";
       case ErrorType.PERMISSION_DENIED:
-        return getMessage('error.default.permission_denied', { message: baseMessage });
+        return "";
       case ErrorType.INVALID_CONFIG:
-        return getMessage('error.default.invalid_config', { message: baseMessage });
+        return "";
       case ErrorType.PLUGIN_ERROR:
-        return getMessage('error.default.plugin_error', { message: baseMessage });
+        return "";
       case ErrorType.PARSE_ERROR:
-        return getMessage('error.default.parse_error', { message: baseMessage });
+        return "";
       case ErrorType.TIMEOUT:
-        return getMessage('error.default.timeout', { message: baseMessage });
+        return "";
       case ErrorType.WARNING:
         return `警告: ${baseMessage}`;
       case ErrorType.SYSTEM_ERROR:
         return `システムエラー: ${baseMessage}`;
       default:
-        return getMessage('error.default.generic', { message: baseMessage });
+        return "";
     }
   }
   

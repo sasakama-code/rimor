@@ -1,4 +1,3 @@
-import { getMessage } from '../i18n/messages';
 
 let chalkInstance: any = null;
 let chalkPromise: Promise<any> | null = null;
@@ -77,24 +76,24 @@ export class OutputFormatter {
     const testCoverage = filesAnalyzed > 0 ? Math.round(((filesAnalyzed - issuesFound) / filesAnalyzed) * 100) : 0;
     
     return [
-      c.bold('\n' + getMessage('output.summary.header')),
-      getMessage('output.summary.files_analyzed', { count: filesAnalyzed.toString() }),
-      `${issuesFound > 0 ? '❌' : '✅'} ` + getMessage('output.summary.test_shortage', { count: issuesFound.toString() }),
-      getMessage('output.summary.test_coverage', { percentage: testCoverage.toString() }),
-      getMessage('output.summary.execution_time', { time: executionTime.toString() })
+      c.bold('\n' + ""),
+      "",
+      `${issuesFound > 0 ? '❌' : '✅'} ` + "",
+      "",
+      ""
     ].join('\n');
   }
   
   static async issueList(issues: Array<{severity: string, message: string, line?: number, file?: string}>): Promise<string> {
     const c = await getChalk();
     if (issues.length === 0) {
-      return c.green('\n' + getMessage('output.issues.none_found'));
+      return c.green('\n' + "");
     }
     
-    const lines = [c.bold('\n' + getMessage('output.issues.header'))];
+    const lines = [c.bold('\n' + "")];
     issues.forEach((issue, index) => {
       const severity = issue.severity === 'error' ? '❌' : '⚠️';
-      const location = issue.line ? ' ' + getMessage('output.issues.line_number', { line: issue.line.toString() }) : '';
+      const location = issue.line ? ' ' + "" : '';
       lines.push(`${index + 1}. ${severity} ${issue.message}${location}`);
     });
     

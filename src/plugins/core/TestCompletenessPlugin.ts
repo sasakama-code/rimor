@@ -8,7 +8,6 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
-import { getMessage } from '../../i18n/messages';
 
 export class TestCompletenessPlugin extends BasePlugin {
   id = 'test-completeness';
@@ -77,19 +76,19 @@ export class TestCompletenessPlugin extends BasePlugin {
           break;
         case 'incomplete-test-coverage':
           completenessScore -= 30;
-          issues.push(getMessage('plugin.completeness.incomplete_coverage'));
+          issues.push("");
           break;
         case 'missing-edge-cases':
           completenessScore -= 20;
-          issues.push(getMessage('plugin.completeness.missing_edge_cases'));
+          issues.push("");
           break;
         case 'empty-test-suite':
           completenessScore -= 40;
-          issues.push(getMessage('plugin.completeness.empty_suite'));
+          issues.push("");
           break;
         case 'missing-setup-teardown':
           completenessScore -= 10;
-          issues.push(getMessage('plugin.completeness.missing_setup'));
+          issues.push("");
           break;
       }
     });
@@ -140,8 +139,8 @@ export class TestCompletenessPlugin extends BasePlugin {
         'completeness',
         'high',
         'add',
-        getMessage('test_completeness.action.add_cases'),
-        getMessage('test_completeness.suggestion.comprehensive'),
+        "",
+        "",
         this.createCodeLocation('unknown', 1, 1),
         { scoreImprovement: 30, effortMinutes: 60 }
       ));

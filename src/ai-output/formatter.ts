@@ -14,7 +14,6 @@ import {
 import { Issue } from '../core/types';
 import { FileScore } from '../scoring/types';
 import { PathSecurity } from '../utils/pathSecurity';
-import { ProjectInferenceEngine } from './projectInference';
 
 /**
  * AI向け出力フォーマッター v0.6.0
@@ -25,12 +24,10 @@ export class AIOptimizedFormatter {
   private readonly MAX_CONTEXT_LINES = 10;
   private readonly DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private readonly DEFAULT_MAX_TOKENS = 8000;
-  private projectInferenceEngine: ProjectInferenceEngine;
 
   constructor() {
     // package.jsonからバージョンを動的に取得
     this.VERSION = this.loadVersionFromPackageJson();
-    this.projectInferenceEngine = new ProjectInferenceEngine();
   }
 
   /**
@@ -128,38 +125,8 @@ export class AIOptimizedFormatter {
     let testFramework = 'unknown';
     let projectType = 'unknown';
 
-    try {
-      // ProjectInferenceEngineを使用した高度な推論
-      const inferenceResult = await this.projectInferenceEngine.inferProject(projectPath);
-      
-      // 言語検出
-      language = inferenceResult.language.language || 'javascript';
-      
-      // テストフレームワーク検出
-      testFramework = inferenceResult.testFramework.framework || 'unknown';
-      
-      // プロジェクトタイプ検出
-      switch (inferenceResult.projectType.type) {
-        case 'backend':
-          projectType = 'rest-api';
-          break;
-        case 'frontend':
-          projectType = 'frontend';
-          break;
-        case 'library':
-          projectType = 'library';
-          break;
-        case 'cli-tool':
-          projectType = 'cli-tool';
-          break;
-        case 'fullstack':
-          projectType = 'fullstack';
-          break;
-        default:
-          projectType = inferenceResult.projectType.type || 'unknown';
-      }
-    } catch (error) {
-      // ProjectInferenceEngineエラー時は簡易検出にフォールバック
+    {
+      // 簡易検出ロジック
       const packageJsonPath = path.join(projectPath, 'package.json');
       const tsConfigPath = path.join(projectPath, 'tsconfig.json');
 

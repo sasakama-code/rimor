@@ -5,7 +5,6 @@
 
 import { IPlugin, Issue } from './types';
 import { PluginManager } from './pluginManager';
-import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -101,7 +100,7 @@ export class ParallelAnalyzer {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cli.error.analysis_failed')
+        ""
       );
       throw error;
     }

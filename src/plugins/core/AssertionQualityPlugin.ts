@@ -8,7 +8,6 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
-import { getMessage } from '../../i18n/messages';
 
 export class AssertionQualityPlugin extends BasePlugin {
   id = 'assertion-quality';
@@ -87,19 +86,19 @@ export class AssertionQualityPlugin extends BasePlugin {
           break;
         case 'weak-assertions':
           correctnessScore -= 25;
-          issues.push(getMessage('plugin.assertion.weak_detected'));
+          issues.push("");
           break;
         case 'missing-assertions':
           correctnessScore -= 40;
-          issues.push(getMessage('plugin.assertion.missing_assertions'));
+          issues.push("");
           break;
         case 'limited-assertion-variety':
           correctnessScore -= 15;
-          issues.push(getMessage('plugin.assertion.limited_variety'));
+          issues.push("");
           break;
         case 'magic-numbers-in-assertions':
           correctnessScore -= 10;
-          issues.push(getMessage('plugin.assertion.magic_numbers'));
+          issues.push("");
           break;
       }
     });

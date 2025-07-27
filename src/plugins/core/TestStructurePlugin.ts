@@ -8,7 +8,6 @@ import {
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
-import { getMessage } from '../../i18n/messages';
 
 export class TestStructurePlugin extends BasePlugin {
   id = 'test-structure';
@@ -85,23 +84,23 @@ export class TestStructurePlugin extends BasePlugin {
           break;
         case 'poor-test-organization':
           maintainabilityScore -= 40;
-          issues.push(getMessage('plugin.structure.poor_organization'));
+          issues.push("");
           break;
         case 'missing-setup-teardown':
           maintainabilityScore -= 25;
-          issues.push(getMessage('plugin.structure.missing_setup'));
+          issues.push("");
           break;
         case 'deeply-nested-describes':
           maintainabilityScore -= 15;
-          issues.push(getMessage('plugin.structure.deep_nesting'));
+          issues.push("");
           break;
         case 'inconsistent-naming':
           maintainabilityScore -= 10;
-          issues.push(getMessage('plugin.structure.inconsistent_naming'));
+          issues.push("");
           break;
         case 'large-test-file':
           maintainabilityScore -= 15;
-          issues.push(getMessage('plugin.structure.large_file'));
+          issues.push("");
           break;
       }
     });

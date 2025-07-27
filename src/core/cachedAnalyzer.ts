@@ -7,7 +7,6 @@ import { IPlugin, Issue } from './types';
 import { PluginManager } from './pluginManager';
 import { CacheManager } from './cacheManager';
 import { PerformanceMonitor, PerformanceReport } from './performanceMonitor';
-import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -137,7 +136,7 @@ export class CachedAnalyzer {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cli.error.analysis_failed')
+        ""
       );
       throw error;
     }
@@ -149,7 +148,7 @@ export class CachedAnalyzer {
   async showCacheInfo(): Promise<void> {
     const info = this.cacheManager.getDetailedInfo();
     
-    console.log('\n' + getMessage('cache.info.header'));
+    console.log('\n' + "");
     console.log(`  有効: ${info.options.enabled ? 'Yes' : 'No'}`);
     console.log(`  エントリ数: ${info.statistics.totalEntries}`);
     console.log(`  ヒット率: ${(info.statistics.hitRatio * 100).toFixed(1)}%`);
@@ -170,7 +169,7 @@ export class CachedAnalyzer {
    */
   async clearCache(): Promise<void> {
     await this.cacheManager.invalidateAll();
-    console.log(getMessage('cache.info.cleared'));
+    console.log("");
   }
   
   /**
@@ -185,9 +184,9 @@ export class CachedAnalyzer {
     const cleaned = beforeStats.totalEntries - afterStats.totalEntries;
     
     if (cleaned > 0) {
-      console.log(getMessage('cache.info.optimized', { count: cleaned.toString() }));
+      console.log("");
     } else {
-      console.log(getMessage('cache.info.already_optimized'));
+      console.log("");
     }
   }
   
@@ -331,7 +330,7 @@ export class CachedAnalyzer {
   }
   
   private logCacheStatistics(cacheStats: CachedAnalysisResult['cacheStats'], totalFiles: number): void {
-    console.log('\n' + getMessage('cache.stats.header'));
+    console.log('\n' + "");
     console.log(`  対象ファイル: ${totalFiles}`);
     console.log(`  キャッシュヒット: ${cacheStats.cacheHits}`);
     console.log(`  キャッシュミス: ${cacheStats.cacheMisses}`);

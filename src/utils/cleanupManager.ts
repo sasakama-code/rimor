@@ -6,7 +6,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { errorHandler } from './errorHandler';
-import { getMessage } from '../i18n/messages';
 
 export interface CleanupRule {
   pattern: string | RegExp;
@@ -19,19 +18,19 @@ export class CleanupManager {
   private readonly defaultRules: CleanupRule[] = [
     {
       pattern: /^src\/plugins\/generated\/saved-plugin\.ts$/,
-      reason: getMessage('cleanup.reason.invalid_plugin'),
+      reason: "",
       enabled: true
     },
     // 安全性重視: 他のプラグインファイルは削除対象から除外
     // ユーザーが意図的に作成したファイルの削除を防ぐ
     {
       pattern: /\.tmp$/,
-      reason: getMessage('cleanup.reason.temp_file'),
+      reason: "",
       enabled: true
     },
     {
       pattern: /\.bak$/,
-      reason: getMessage('cleanup.reason.backup_file'),
+      reason: "",
       enabled: true
     }
   ];
@@ -50,24 +49,24 @@ export class CleanupManager {
    * @param projectRoot プロジェクトルートディレクトリ
    */
   async performStartupCleanup(projectRoot: string = process.cwd()): Promise<void> {
-    console.log(getMessage('cleanup.startup.running'));
+    console.log("");
     
     try {
       const cleanedFiles = await this.cleanupByRules(projectRoot);
       
       if (cleanedFiles.length > 0) {
-        console.log(getMessage('cleanup.startup.completed', { count: cleanedFiles.length.toString() }));
+        console.log("");
         cleanedFiles.forEach(file => {
           console.log(`   - ${file.relativePath} (${file.reason})`);
         });
       } else {
-        console.log(getMessage('cleanup.startup.none_found'));
+        console.log("");
       }
     } catch (error) {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cleanup.startup.error'),
+        "",
         { projectRoot },
         true
       );
@@ -88,7 +87,7 @@ export class CleanupManager {
       }
 
       fs.unlinkSync(absolutePath);
-      console.log(getMessage('cleanup.emergency.deleted', { filePath, reason }));
+      console.log("");
       return true;
     } catch (error) {
       errorHandler.handleFileError(error, filePath, 'delete');
@@ -109,10 +108,10 @@ export class CleanupManager {
     
     if (savedPluginError) {
       const savedPluginPath = 'src/plugins/generated/saved-plugin.ts';
-      console.log(getMessage('cleanup.error.known_file_detected'));
+      console.log("");
       return await this.emergencyDelete(
         savedPluginPath, 
-        getMessage('cleanup.error.compile_cause')
+        ""
       );
     }
 
@@ -120,9 +119,9 @@ export class CleanupManager {
     const pluginGeneratedMatch = errorMessage.match(/src\/plugins\/generated\/([^:]+\.ts)/);
     if (pluginGeneratedMatch) {
       const problematicFile = pluginGeneratedMatch[0];
-      console.log(getMessage('cleanup.warning.plugin_compile_error', { file: problematicFile }));
-      console.log('   ' + getMessage('cleanup.warning.user_file_protection'));
-      console.log('   ' + getMessage('cleanup.instruction.manual_fix'));
+      console.log("");
+      console.log('   ' + "");
+      console.log('   ' + "");
       // 削除は行わず、falseを返す
       return false;
     }

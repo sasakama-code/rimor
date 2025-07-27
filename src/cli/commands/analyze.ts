@@ -7,13 +7,6 @@ import { OutputFormatter } from '../output';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { cleanupManager } from '../../utils/cleanupManager';
-import { getMessage } from '../../i18n/messages';
-// v0.4.0 スコアリング機能
-import { ScoreCalculatorV2 } from '../../scoring/calculator';
-import { ScoreAggregator } from '../../scoring/aggregator';
-import { WeightsManager } from '../../scoring/weights';
-import { ReportGenerator } from '../../scoring/reports';
-import { CliFormatter, JsonFormatter, CsvFormatter, HtmlFormatter } from '../../scoring/formatters';
 // v0.4.1 セキュリティ強化
 import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
 import * as fs from 'fs';
@@ -22,7 +15,7 @@ import * as path from 'path';
 export interface AnalyzeOptions {
   verbose?: boolean;
   path: string;
-  format?: 'text' | 'json' | 'csv' | 'html';
+  format?: 'text' | 'json';
   parallel?: boolean;       // 並列処理モードの有効化
   batchSize?: number;       // バッチサイズ（並列モード時のみ）
   concurrency?: number;     // 最大同時実行数（並列モード時のみ）
@@ -31,11 +24,6 @@ export interface AnalyzeOptions {
   showCacheStats?: boolean; // キャッシュ統計の表示
   performance?: boolean;    // パフォーマンス監視の有効化
   showPerformanceReport?: boolean; // パフォーマンスレポートの表示
-  // v0.4.0 スコアリング機能
-  scoring?: boolean;        // 品質スコア計算の有効化
-  reportType?: 'summary' | 'detailed' | 'trend'; // レポートタイプ
-  noColor?: boolean;        // カラー出力の無効化
-  outputFile?: string;      // 出力ファイルパス
 }
 
 export class AnalyzeCommand {
@@ -102,8 +90,7 @@ export class AnalyzeCommand {
     // v0.4.1 セキュリティ強化: CLI引数の包括的検証
     const cliValidation = this.cliSecurity.validateAllArguments({
       path: options.path,
-      format: options.format,
-      outputFile: options.outputFile
+      format: options.format
     });
 
     // セキュリティ問題への対応
@@ -135,8 +122,7 @@ export class AnalyzeCommand {
     const sanitizedOptions: AnalyzeOptions = {
       ...options,
       path: cliValidation.sanitizedArgs.path || options.path,
-      format: cliValidation.sanitizedArgs.format || options.format,
-      outputFile: cliValidation.sanitizedArgs.outputFile || options.outputFile
+      format: (cliValidation.sanitizedArgs.format || options.format) as 'text' | 'json' | undefined,
     };
 
     // キャッシュクリア処理（最優先）
@@ -154,7 +140,7 @@ export class AnalyzeCommand {
       
       // パスの存在確認（サニタイズ済みパスで再実行）
       if (!fs.existsSync(targetPath)) {
-        console.error(await OutputFormatter.error(getMessage('cli.error.path_not_found', { targetPath })));
+        console.error(await OutputFormatter.error(""));
         process.exit(1);
       }
       
@@ -169,21 +155,21 @@ export class AnalyzeCommand {
         // 単一ファイル対応の確認
         const stats = fs.statSync(targetPath);
         if (stats.isFile()) {
-          console.log(await OutputFormatter.info(getMessage('analysis.mode.single_file')));
+          console.log(await OutputFormatter.info(""));
         }
         
-        console.log(await OutputFormatter.header(getMessage('analysis.header.main')));
-        console.log(await OutputFormatter.info(getMessage('analysis.info.target_path', { path: targetPath })));
+        console.log(await OutputFormatter.header(""));
+        console.log(await OutputFormatter.info(""));
         
         if (verbose) {
-          console.log(await OutputFormatter.info(getMessage('analysis.mode.verbose')));
+          console.log(await OutputFormatter.info(""));
           const enabledPlugins = this.getEnabledPluginNames();
-          console.log(await OutputFormatter.info(getMessage('analysis.info.enabled_plugins', { plugins: enabledPlugins.join(', ') })));
+          console.log(await OutputFormatter.info(""));
           
           if (options.parallel) {
-            console.log(await OutputFormatter.info(getMessage('analysis.mode.parallel')));
-            console.log(await OutputFormatter.info(getMessage('analysis.info.batch_size', { size: (options.batchSize || 10).toString() })));
-            console.log(await OutputFormatter.info(getMessage('analysis.info.max_concurrency', { count: (options.concurrency || 4).toString() })));
+            console.log(await OutputFormatter.info(""));
+            console.log(await OutputFormatter.info(""));
+            console.log(await OutputFormatter.info(""));
           }
           
           // キャッシュ機能の表示
@@ -204,11 +190,6 @@ export class AnalyzeCommand {
       
       const result = await this.analyzer.analyze(targetPath);
       
-      // v0.4.0 スコアリング機能（サニタイズ済みオプションを使用）
-      if (sanitizedOptions.scoring) {
-        await this.generateScoringReport(result, targetPath, sanitizedOptions);
-        return;
-      }
       
       // 結果の表示
       if (format === 'json') {
@@ -232,11 +213,11 @@ export class AnalyzeCommand {
         // 並列処理統計の表示（verbose時のみ）
         if (sanitizedOptions.parallel && verbose && 'parallelStats' in result) {
           const stats = (result as any).parallelStats;
-          console.log(await OutputFormatter.info(getMessage('analysis.stats.parallel_header')));
-          console.log(await OutputFormatter.info(getMessage('analysis.stats.batch_count', { count: stats.batchCount.toString() })));
-          console.log(await OutputFormatter.info(getMessage('analysis.stats.avg_batch_time', { time: stats.avgBatchTime.toString() })));
-          console.log(await OutputFormatter.info(getMessage('analysis.stats.max_batch_time', { time: stats.maxBatchTime.toString() })));
-          console.log(await OutputFormatter.info(getMessage('analysis.stats.concurrency_level', { level: stats.concurrencyLevel.toString() })));
+          console.log(await OutputFormatter.info(""));
+          console.log(await OutputFormatter.info(""));
+          console.log(await OutputFormatter.info(""));
+          console.log(await OutputFormatter.info(""));
+          console.log(await OutputFormatter.info(""));
         }
       }
       
@@ -249,7 +230,7 @@ export class AnalyzeCommand {
       const errorInfo = errorHandler.handleError(
         error,
         undefined,
-        getMessage('cli.error.analysis_failed')
+        ""
       );
       console.error(await OutputFormatter.error(errorInfo.message));
       process.exit(1);
@@ -316,169 +297,4 @@ export class AnalyzeCommand {
     }
   }
 
-  /**
-   * v0.4.0 スコアリングレポート生成
-   */
-  private async generateScoringReport(result: any, targetPath: string, options: AnalyzeOptions): Promise<void> {
-    try {
-      // プラグイン結果をスコアリング用形式に変換
-      const pluginResultsMap = this.convertToPluginResults(result, targetPath);
-      
-      // 重み設定を読み込み
-      const weightsManager = new WeightsManager();
-      const weights = await weightsManager.loadWeights(targetPath);
-      
-      // スコア計算とプロジェクト階層構築
-      const calculator = new ScoreCalculatorV2();
-      const aggregator = new ScoreAggregator(calculator);
-      const projectScore = aggregator.buildCompleteHierarchy(pluginResultsMap, weights);
-      
-      // レポート生成
-      const reportGenerator = new ReportGenerator();
-      let report: any;
-      
-      switch (options.reportType) {
-        case 'detailed':
-          report = reportGenerator.generateDetailedReport(projectScore);
-          break;
-        case 'trend':
-          // TODO: 履歴データの実装
-          const mockHistoricalData: any[] = [];
-          report = reportGenerator.generateTrendReport(projectScore, mockHistoricalData);
-          break;
-        case 'summary':
-        default:
-          report = reportGenerator.generateSummaryReport(projectScore);
-          break;
-      }
-      
-      // フォーマット別出力
-      const useColors = !options.noColor;
-      let formattedOutput: string;
-      
-      switch (options.format) {
-        case 'json':
-          const jsonFormatter = new JsonFormatter();
-          formattedOutput = options.reportType === 'detailed' 
-            ? jsonFormatter.formatDetailedReport(report)
-            : options.reportType === 'trend'
-            ? jsonFormatter.formatTrendReport(report)
-            : jsonFormatter.formatSummaryReport(report);
-          break;
-        case 'csv':
-          const csvFormatter = new CsvFormatter();
-          formattedOutput = options.reportType === 'detailed'
-            ? csvFormatter.formatDetailedReport(report)
-            : options.reportType === 'trend'
-            ? csvFormatter.formatTrendReport(report)
-            : csvFormatter.formatSummaryReport(report);
-          break;
-        case 'html':
-          const htmlFormatter = new HtmlFormatter();
-          formattedOutput = options.reportType === 'detailed'
-            ? htmlFormatter.formatDetailedReport(report)
-            : options.reportType === 'trend'
-            ? htmlFormatter.formatTrendReport(report)
-            : htmlFormatter.formatSummaryReport(report);
-          break;
-        case 'text':
-        default:
-          const cliFormatter = new CliFormatter(useColors);
-          formattedOutput = options.reportType === 'detailed'
-            ? cliFormatter.formatDetailedReport(report)
-            : options.reportType === 'trend'
-            ? cliFormatter.formatTrendReport(report)
-            : cliFormatter.formatSummaryReport(report);
-          break;
-      }
-      
-      // 出力処理
-      if (options.outputFile) {
-        fs.writeFileSync(options.outputFile, formattedOutput, 'utf-8');
-        console.log(await OutputFormatter.success(`レポートを ${options.outputFile} に出力しました`));
-      } else {
-        console.log(formattedOutput);
-      }
-      
-      // 品質スコアベースの終了コード
-      if (projectScore.overallScore < 60) {
-        process.exit(1);
-      }
-      
-    } catch (error) {
-      console.error(await OutputFormatter.error(`スコアリングレポート生成エラー: ${error}`));
-      process.exit(1);
-    }
-  }
-
-  /**
-   * 従来の分析結果をプラグイン結果形式に変換
-   */
-  private convertToPluginResults(result: any, targetPath: string): Map<string, any[]> {
-    const pluginResultsMap = new Map<string, any[]>();
-    
-    // ファイルごとにプラグイン結果をグループ化
-    const fileMap = new Map<string, any[]>();
-    
-    result.issues.forEach((issue: any) => {
-      const filePath = issue.file || 'unknown';
-      if (!fileMap.has(filePath)) {
-        fileMap.set(filePath, []);
-      }
-      
-      const pluginResult = {
-        pluginId: this.getPluginNameFromIssueType(issue.type),
-        pluginName: this.getPluginDisplayName(issue.type),
-        score: this.issueToScore(issue),
-        weight: 1.0,
-        issues: [issue],
-        metadata: {
-          line: issue.line,
-          severity: issue.severity || 'medium'
-        }
-      };
-      
-      fileMap.get(filePath)!.push(pluginResult);
-    });
-    
-    // Map形式に変換
-    fileMap.forEach((results, filePath) => {
-      pluginResultsMap.set(filePath, results);
-    });
-    
-    return pluginResultsMap;
-  }
-
-  /**
-   * 課題をスコアに変換（簡略版）
-   */
-  private issueToScore(issue: any): number {
-    switch (issue.severity || 'medium') {
-      case 'error':
-      case 'high':
-        return 30;
-      case 'warning':
-      case 'medium':
-        return 60;
-      case 'info':
-      case 'low':
-        return 80;
-      default:
-        return 70;
-    }
-  }
-
-  /**
-   * プラグイン表示名を取得
-   */
-  private getPluginDisplayName(issueType: string): string {
-    switch (issueType) {
-      case 'missing-test':
-        return 'Test Existence';
-      case 'missing-assertion':
-        return 'Assertion Exists';
-      default:
-        return 'Unknown Plugin';
-    }
-  }
 }

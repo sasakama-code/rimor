@@ -5,7 +5,6 @@
 
 import { PluginMetadata, pluginMetadataRegistry, defaultPluginMetadata } from './pluginMetadata';
 import { RimorConfig, PluginConfig } from './config';
-import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
 
 export interface ConfigGenerationOptions {

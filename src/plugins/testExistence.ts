@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { IPlugin, Issue } from '../core/types';
 import { PluginConfig } from '../core/config';
-import { getMessage } from '../i18n/messages';
 
 export class TestExistencePlugin implements IPlugin {
   name = 'test-existence';
@@ -23,7 +22,7 @@ export class TestExistencePlugin implements IPlugin {
       return [{
         type: 'missing-test',
         severity: 'error' as const,
-        message: getMessage('plugin.test.not_found', { filePath })
+        message: ""
       }];
     }
     
