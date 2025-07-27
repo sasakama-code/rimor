@@ -1,9 +1,0 @@
-{
-  "framework": "react",
-  "totalTests": 5,
-  "categories": {
-    "input-validation": 3,
-    "authentication": 2
-  },
-  "generatedAt": "2025-07-27T11:03:24.591Z"
-}

@@ -1,9 +1,0 @@
-{
-  "framework": "express",
-  "totalTests": 8,
-  "categories": {
-    "authentication": 3,
-    "input-validation": 5
-  },
-  "generatedAt": "2025-07-27T11:03:24.589Z"
-}
