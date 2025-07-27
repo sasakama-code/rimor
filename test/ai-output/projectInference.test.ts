@@ -18,14 +18,14 @@ describe('ProjectInferenceEngine', () => {
     jest.restoreAllMocks();
   });
 
-  describe('inferProjectDetails', () => {
+  describe('inferProject', () => {
     it('should successfully infer project details', async () => {
       // Mock file system operations
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue('{}');
       (fs.readdirSync as jest.Mock).mockReturnValue([]);
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result).toHaveProperty('projectType');
       expect(result).toHaveProperty('language');
@@ -40,7 +40,7 @@ describe('ProjectInferenceEngine', () => {
     it('should handle non-existent project path gracefully', async () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.projectType.type).toBe('unknown');
       expect(result.confidence).toBeLessThan(0.5);
@@ -64,7 +64,7 @@ describe('ProjectInferenceEngine', () => {
         return '{}';
       });
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.language.language).toBe('typescript');
     });
@@ -84,7 +84,7 @@ describe('ProjectInferenceEngine', () => {
         return '{}';
       });
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.testFramework.framework).toBe('jest');
     });
@@ -96,7 +96,7 @@ describe('ProjectInferenceEngine', () => {
         return path.includes('webpack.config');
       });
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.buildTool.tool).toBe('webpack');
     });
@@ -110,7 +110,7 @@ describe('ProjectInferenceEngine', () => {
         { name: 'controllers', isDirectory: () => true }
       ]);
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.architecturePattern.pattern).toBe('mvc');
     });
@@ -129,7 +129,7 @@ describe('ProjectInferenceEngine', () => {
         return '{}';
       });
       
-      const result = await engine.inferProjectDetails(mockProjectPath);
+      const result = await engine.inferProject(mockProjectPath);
       
       expect(result.frameworks).toContainEqual(
         expect.objectContaining({

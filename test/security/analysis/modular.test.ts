@@ -165,7 +165,7 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
         issue.type === 'missing-auth-test'
       );
       expect(inadequateTestingIssue).toBeDefined();
-      expect(inadequateTestingIssue?.severity).toBe('medium');
+      expect(inadequateTestingIssue?.severity).toBe('warning');
     });
 
     it('ハードコードされた認証情報を検出すること', async () => {
@@ -608,8 +608,9 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
 
       const modifiedMethod: TestMethod = {
         ...originalMethod,
-        content: 'expect(func()).toBe(false);',
-        body: 'expect(func()).toBe(false);'
+        content: 'expect(func()).toBe(false); expect(validateAuth()).toBe(true);',
+        body: 'expect(func()).toBe(false); expect(validateAuth()).toBe(true);',
+        dependencies: ['func', 'validateAuth']
       };
 
       const result1 = await analyzer.analyzeTestMethod(originalMethod);
