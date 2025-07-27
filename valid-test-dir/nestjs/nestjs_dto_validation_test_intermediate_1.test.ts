@@ -7,11 +7,11 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 describe('DTO Validation Security Tests', () => {
   it('should validate and sanitize CreateUserDto - Test 0', async () => {
     const maliciousData = {
-      username: '<script>alert("dto xsspcpg0i")</script>',
-      email: 'invalid-emailpcpg0i',
+      username: '<script>alert("dto xssoz9yiq")</script>',
+      email: 'invalid-emailoz9yiq',
       password: '123', // too short
       bio: 'Normal bio with <img src=x onerror=alert("xss")> malicious content',
-      website: 'javascript:alert("maliciouspcpg0i")'
+      website: 'javascript:alert("maliciousoz9yiq")'
     };
 
     const dto = plainToClass(CreateUserDto, maliciousData);
@@ -32,8 +32,8 @@ describe('DTO Validation Security Tests', () => {
 
   it('should sanitize HTML content in DTO - Test 0', async () => {
     const dataWithHtml = {
-      username: 'validuserpcpg0i',
-      email: 'testpcpg0i@example.com',  
+      username: 'validuseroz9yiq',
+      email: 'testoz9yiq@example.com',  
       password: 'StrongPassword123!',
       bio: 'My bio contains <b>bold</b> text and <script>alert("xss")</script>',
       website: 'https://example.com'
@@ -52,7 +52,7 @@ describe('DTO Validation Security Tests', () => {
   it('should handle SQL injection attempts in DTO - Test 0', async () => {
     const sqlInjectionData = {
       username: "admin'; DROP TABLE users; --",
-      email: 'testpcpg0i@example.com',
+      email: 'testoz9yiq@example.com',
       password: 'Password123!',
       bio: "Regular user' UNION SELECT * FROM admin_users WHERE '1'='1",
       website: 'https://example.com'
@@ -69,7 +69,7 @@ describe('DTO Validation Security Tests', () => {
   it('should validate nested object DTOs - Test 0', async () => {
     const nestedMaliciousData = {
       personalInfo: {
-        firstName: '<script>alert("nested xsspcpg0i")</script>',
+        firstName: '<script>alert("nested xssoz9yiq")</script>',
         lastName: 'User"; DELETE FROM profiles; --',
         address: {
           street: '123 Main St <img src=x onerror=alert("address xss")>',
@@ -78,7 +78,7 @@ describe('DTO Validation Security Tests', () => {
         }
       },
       preferences: {
-        theme: 'dark", "maliciousField": "injectedpcpg0i',
+        theme: 'dark", "maliciousField": "injectedoz9yiq',
         notifications: true
       }
     };
