@@ -13,8 +13,8 @@
       "trueNegatives": 3,
       "falseNegatives": 0,
       "precision": 0,
-      "recall": 0,
-      "f1Score": 0,
+      "recall": null,
+      "f1Score": null,
       "falsePositiveRate": 1,
       "falseNegativeRate": 0
     },

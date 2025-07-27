@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-07-26T19:51:28.523Z",
+  "timestamp": "2025-07-27T03:31:53.929Z",
   "requirements": {
     "automaticInferenceRate": "≥85%",
     "inferenceAccuracy": "≥90%",
     "falsePositiveRate": "≤15%"
   },
   "achieved": {
-    "automaticInferenceRate": "88.9%",
+    "automaticInferenceRate": "100.0%",
     "inferenceAccuracy": "88.9%",
     "falsePositiveRate": "0.0%"
   },
@@ -17,12 +17,12 @@
   },
   "overallSuccess": false,
   "detailedMetrics": {
-    "automaticInferenceRate": 88.89,
-    "inferenceAccuracy": 88.89,
+    "automaticInferenceRate": 100,
+    "inferenceAccuracy": 88.88888888888889,
     "falsePositiveRate": 0,
-    "truePositiveRate": 66.67,
+    "truePositiveRate": 66.66666666666666,
     "precisionScore": 100,
-    "recallScore": 66.67
+    "recallScore": 66.66666666666666
   },
   "results": [
     {
@@ -33,17 +33,19 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 1
+      "inferenceTime": 2
     },
     {
       "testCaseId": "inference-002",
-      "detectedIssues": [],
-      "inferredSecurityType": "unknown",
-      "isTainted": false,
-      "isCorrect": false,
+      "detectedIssues": [
+        "missing-sanitizer"
+      ],
+      "inferredSecurityType": "user-input",
+      "isTainted": true,
+      "isCorrect": true,
       "isFalsePositive": false,
-      "isFalseNegative": true,
-      "inferenceTime": 3
+      "isFalseNegative": false,
+      "inferenceTime": 2
     },
     {
       "testCaseId": "inference-003",
@@ -53,7 +55,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 1
+      "inferenceTime": 3
     },
     {
       "testCaseId": "accuracy-001",
@@ -65,19 +67,19 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 4
     },
     {
       "testCaseId": "accuracy-002",
       "detectedIssues": [
-        "xss-risk"
+        "incorrect-detection"
       ],
-      "inferredSecurityType": "user-input",
-      "isTainted": true,
-      "isCorrect": true,
+      "inferredSecurityType": "incorrect-type",
+      "isTainted": false,
+      "isCorrect": false,
       "isFalsePositive": false,
-      "isFalseNegative": false,
-      "inferenceTime": 2
+      "isFalseNegative": true,
+      "inferenceTime": 4
     },
     {
       "testCaseId": "accuracy-003",
@@ -87,7 +89,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 4
+      "inferenceTime": 3
     },
     {
       "testCaseId": "false-positive-001",
@@ -117,7 +119,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     }
   ]
 }

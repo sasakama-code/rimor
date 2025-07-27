@@ -480,9 +480,9 @@ export class AccuracyEvaluationSystem {
         falsePositives,
         trueNegatives,
         falseNegatives,
-        precision,
-        recall,
-        f1Score,
+        precision: isNaN(precision) ? null : precision,
+        recall: isNaN(recall) ? null : recall,
+        f1Score: isNaN(f1Score) ? null : f1Score,
         falsePositiveRate,
         falseNegativeRate
       },
@@ -951,10 +951,29 @@ export class AccuracyEvaluationSystem {
   }
 
   /**
+   * nullとundefinedを保持する深いクローン
+   */
+  private deepClone(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== 'object') return obj;
+    if (obj instanceof Date) return new Date(obj.getTime());
+    if (Array.isArray(obj)) return obj.map(item => this.deepClone(item));
+    
+    const cloned: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        cloned[key] = this.deepClone(obj[key]);
+      }
+    }
+    return cloned;
+  }
+
+  /**
    * 精度結果の個人情報マスキング
    */
   private sanitizeAccuracyResults(result: DetailedAccuracyResult): DetailedAccuracyResult {
-    const sanitizedResult = JSON.parse(JSON.stringify(result));
+    // nullを保持するためのカスタムクローン（JSON.parse(JSON.stringify)はnullを0に変換する場合がある）
+    const sanitizedResult = this.deepClone(result);
     
     // テストケース別結果のパスをマスキング
     if (sanitizedResult.perTestCaseResults) {
