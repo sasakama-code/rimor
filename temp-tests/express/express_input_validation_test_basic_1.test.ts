@@ -1,3 +1,9 @@
+import express, { Express } from 'express';
+import request from 'supertest';
+import { sanitize, validateEmail } from '../../src/utils/securityHelpers';
+
+// escapeHtmlをsanitizeで代用
+const escapeHtml = sanitize;
 
 describe('Input Validation Security Tests', () => {
   let app: Express;
@@ -24,9 +30,9 @@ describe('Input Validation Security Tests', () => {
 
   it('should sanitize malicious input - Test 0', async () => {
     const maliciousInput = {
-      username: '<script>alert("xsscerfi4")</script>',
+      username: '<script>alert("xsslzh95li")</script>',
       email: 'test@example.com',
-      bio: 'cerfi4<img src=x onerror=alert("xss")>'
+      bio: 'lzh95li<img src=x onerror=alert("xss")>'
     };
 
     const response = await request(app)
@@ -40,7 +46,7 @@ describe('Input Validation Security Tests', () => {
 
   it('should validate email format - Test 0', async () => {
     const invalidEmails = [
-      'invalid-emailcerfi4',
+      'invalid-emaillzh95li',
       'test@',
       '@example.com',
       'test..test@example.com'
@@ -57,7 +63,7 @@ describe('Input Validation Security Tests', () => {
   it('should prevent SQL injection in database queries - Test 0', async () => {
     const sqlInjectionPayload = {
       username: "admin'; DROP TABLE users; --",
-      email: 'testcerfi4@example.com',
+      email: 'testlzh95li@example.com',
       bio: '1; DELETE FROM profiles WHERE 1=1; --'
     };
 
