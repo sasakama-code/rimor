@@ -362,7 +362,10 @@ export class ProjectInferenceEngine {
     }
     
     // 最高スコアを取得
-    const topType = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b);
+    const entries = Object.entries(scores);
+    const topType = entries.length > 0 
+      ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
+      : ['unknown', 0];
     const maxScore = topType[1];
     const confidence = Math.min(maxScore / 100, 1.0);
     
@@ -419,7 +422,10 @@ export class ProjectInferenceEngine {
       // エラーは無視
     }
     
-    const primaryLang = Object.entries(distribution).reduce((a, b) => distribution[a[0]] > distribution[b[0]] ? a : b);
+    const entries = Object.entries(distribution);
+    const primaryLang = entries.length > 0 
+      ? entries.reduce((a, b) => distribution[a[0]] > distribution[b[0]] ? a : b)
+      : ['javascript', 0];
     const confidence = Math.min((primaryLang[1] || 0) / 100, 1.0);
     
     return {
@@ -482,7 +488,10 @@ export class ProjectInferenceEngine {
       scores.cypress += 25;
     }
     
-    const topFramework = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b);
+    const entries = Object.entries(scores);
+    const topFramework = entries.length > 0 
+      ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
+      : ['unknown', 0];
     const confidence = Math.min(topFramework[1] / 100, 1.0);
     
     const additionalFrameworks = Object.entries(scores)
@@ -540,7 +549,10 @@ export class ProjectInferenceEngine {
       scores.babel += 30;
     }
     
-    const topTool = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b);
+    const entries = Object.entries(scores);
+    const topTool = entries.length > 0 
+      ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
+      : ['unknown', 0];
     const confidence = Math.min(topTool[1] / 100, 1.0);
     
     return {
@@ -607,7 +619,10 @@ export class ProjectInferenceEngine {
       characteristics.push('Dependency injection');
     }
     
-    const topPattern = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b);
+    const entries = Object.entries(scores);
+    const topPattern = entries.length > 0 
+      ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
+      : ['unknown', 0];
     const confidence = Math.min(topPattern[1] / 100, 1.0);
     
     return {
