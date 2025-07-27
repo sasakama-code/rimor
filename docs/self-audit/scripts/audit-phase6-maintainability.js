@@ -193,7 +193,19 @@ function analyzeComplexity(files) {
       }
       
     } catch (error) {
-      // ファイル読み込みエラーは無視
+      // ファイル読み込みエラーは無視（verbose モードでログ出力）
+      if (argv.verbose) {
+        log.error(`⚠️  ファイル読み込みエラー: ${path.relative(process.cwd(), file)}`);
+        log.error(`   エラー詳細: ${error.message}`);
+        log.error(`   エラーコード: ${error.code || 'N/A'}`);
+        if (error.code === 'ENOENT') {
+          log.error(`   原因: ファイルが存在しません`);
+        } else if (error.code === 'EACCES') {
+          log.error(`   原因: ファイルの読み込み権限がありません`);
+        } else if (error.code === 'EISDIR') {
+          log.error(`   原因: ディレクトリを指定していますが、ファイルが期待されています`);
+        }
+      }
     }
   }
   

@@ -96,9 +96,28 @@ async function main() {
       }
       
     } catch (error) {
-      log.error(`セキュリティ分析エラー: ${error.message}`);
-      log.debug(`エラーコード: ${error.code || 'N/A'}`);
-      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
+      const errorType = error.code === 'ENOENT' ? 'コマンドが見つかりません' : 
+                        error.code === 'EACCES' ? '権限不足' :
+                        error.code === 'MAXBUFFER' ? 'バッファサイズ超過' :
+                        error.status === 127 ? 'コマンドが存在しません' :
+                        error.status !== 0 ? 'Jest実行失敗' : 'その他のエラー';
+      
+      log.error(`セキュリティ分析エラー: ${errorType} - ${error.message}`);
+      
+      // verboseモードの場合は詳細情報を出力
+      if (argv.verbose) {
+        log.error(`詳細エラー情報:`);
+        log.error(`  エラーコード: ${error.code || 'N/A'}`);
+        log.error(`  終了ステータス: ${error.status || 'N/A'}`);
+        log.error(`  シグナル: ${error.signal || 'N/A'}`);
+        log.error(`  タイムスタンプ: ${new Date().toISOString()}`);
+        log.error(`  コマンド: ${cmd}`);
+        log.error(`  作業ディレクトリ: ${process.cwd()}`);
+        
+        if (error.stderr) {
+          log.error(`  標準エラー出力: ${error.stderr}`);
+        }
+      }
       
       // フォールバック: セキュリティテストファイル数をベースにした推定
       try {

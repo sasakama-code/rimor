@@ -73,6 +73,19 @@ async function main() {
       }
     } catch (err) { 
       log.info(`Phase 1結果の読み込みに失敗: ${err.message}`);
+      
+      // verboseモードの場合は詳細なエラー情報を出力
+      if (argv.verbose) {
+        log.error(`Phase 1読み込み詳細エラー:`);
+        log.error(`  ファイルパス: ${phase1Path}`);
+        log.error(`  エラーコード: ${err.code || 'N/A'}`);
+        log.error(`  エラータイプ: ${err.name || 'Unknown'}`);
+        if (err.code === 'ENOENT') {
+          log.error(`  原因: ファイルが存在しません`);
+        } else if (err.name === 'SyntaxError') {
+          log.error(`  原因: JSONの構文エラー`);
+        }
+      }
     }
 
     // Phase 2結果  
@@ -85,6 +98,19 @@ async function main() {
       }
     } catch (err) { 
       log.info(`Phase 2結果の読み込みに失敗: ${err.message}`);
+      
+      // verboseモードの場合は詳細なエラー情報を出力
+      if (argv.verbose) {
+        log.error(`Phase 2読み込み詳細エラー:`);
+        log.error(`  ファイルパス: ${phase2Path}`);
+        log.error(`  エラーコード: ${err.code || 'N/A'}`);
+        log.error(`  エラータイプ: ${err.name || 'Unknown'}`);
+        if (err.code === 'ENOENT') {
+          log.error(`  原因: ファイルが存在しません`);
+        } else if (err.name === 'SyntaxError') {
+          log.error(`  原因: JSONの構文エラー`);
+        }
+      }
     }
 
     results.details.actualResults = {

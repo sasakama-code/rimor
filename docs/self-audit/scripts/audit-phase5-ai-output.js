@@ -79,14 +79,29 @@ async function main() {
       
     } catch (error) {
       const errorType = error.code === 'ENOENT' ? 'コマンドが見つかりません' : 
-                        error.status !== 0 ? 'コマンド実行エラー' : 'その他のエラー';
+                        error.code === 'EACCES' ? '権限不足' :
+                        error.status === 127 ? 'コマンドが存在しません' :
+                        error.status === 1 ? 'コマンド実行失敗' :
+                        error.status !== 0 ? 'コマンド実行エラー' : '構文エラー';
+      
       log.error(`AI出力テストエラー: ${errorType} - ${error.message}`);
+      
+      // より詳細なエラー情報を記録
       results.details.jsonOutput = { 
         success: false, 
         error: error.message,
-        errorType: errorType
+        errorType: errorType,
+        errorCode: error.code,
+        exitStatus: error.status,
+        timestamp: new Date().toISOString(),
+        command: jsonCmd,
+        workingDirectory: process.cwd()
       };
-    }
+      
+      // verboseモードの場合はスタックトレースも記録
+      if (argv.verbose && error.stack) {
+        results.details.jsonOutput.stackTrace = error.stack;
+      }
 
     // 互換性評価
     results.details.compatibility = {
