@@ -32,7 +32,7 @@
     "dev": "npm run build && npm run analyze:src",
     "full-check": "npm run security-check && npm run analyze:src",
     "security-check": "node scripts/security-check.js",
-    "pre-release-check": "node scripts/pre-release-check.sh",
+    "pre-release-check": "bash scripts/pre-release-check.sh",
     "release-ready": "node scripts/release-health-check.js",
     "health-check": "node scripts/release-health-check.js",
     "self-audit": "bash docs/self-audit/scripts/self-audit.sh"

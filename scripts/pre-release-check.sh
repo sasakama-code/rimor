@@ -35,7 +35,7 @@ check_result() {
 blue "\n📋 Step 1: Project Structure Validation"
 test -f package.json && check_result 0 "package.json exists" || check_result 1 "package.json missing"
 test -f tsconfig.json && check_result 0 "tsconfig.json exists" || check_result 1 "tsconfig.json missing"
-test -f jest.config.js && check_result 0 "jest.config.js exists" || check_result 1 "jest.config.js missing"
+test -f jest.config.mjs && check_result 0 "jest.config.mjs exists" || check_result 1 "jest.config.mjs missing"
 test -d src && check_result 0 "src directory exists" || check_result 1 "src directory missing"
 
 # 2. 依存関係とセキュリティチェック
@@ -53,11 +53,11 @@ npx tsc --noEmit > /dev/null 2>&1 && check_result 0 "TypeScript type checking pa
 
 # 4. テスト実行
 blue "\n🧪 Step 4: Test Execution"
-echo "🧪 Running all tests..."
-npm test > /dev/null 2>&1 && check_result 0 "All tests passed" || check_result 1 "Test failures detected"
+echo "🧪 Running unit tests..."
+NODE_OPTIONS="--max-old-space-size=8192" npm run test:unit > /dev/null 2>&1 && check_result 0 "Unit tests passed" || check_result 1 "Unit test failures detected"
 
-echo "🏃 Running performance tests..."
-npm test -- --testPathPattern=performance > /dev/null 2>&1 && check_result 0 "Performance tests passed" || check_result 1 "Performance tests failed"
+echo "🏃 Running integration tests..."
+NODE_OPTIONS="--max-old-space-size=8192" npm run test:integration > /dev/null 2>&1 && check_result 0 "Integration tests passed" || check_result 1 "Integration test failures detected"
 
 # 5. ビルドプロセス確認
 blue "\n🏗️ Step 5: Build Process"

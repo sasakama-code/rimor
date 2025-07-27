@@ -50,4 +50,21 @@ export default {
   transformIgnorePatterns: [
     'node_modules/(?!(chalk|#ansi-styles|.*\\.mjs$))'
   ],
+  
+  // 監査用サンプルテストファイルを除外
+  testPathIgnorePatterns: [
+    'node_modules',
+    'dist',
+    'docs/self-audit/scripts/empty-tests',
+    'docs/self-audit/scripts/invalid-tests',
+    'docs/self-audit/scripts/temp-tests',
+    'docs/self-audit/scripts/test-output',
+    'docs/self-audit/scripts/valid-test-dir',
+    'empty-tests',
+    'invalid-tests',
+    'temp-tests',
+    'test-output',
+    'valid-test-dir',
+    'test-accuracy-data'
+  ],
 };
