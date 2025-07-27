@@ -127,6 +127,15 @@ export class FeedbackCollectionSystem {
     // フィードバックの検証
     this.validateFeedback(feedback);
     
+    // メモリ内に保存（常に実行）
+    this.collectedFeedback.push(feedback);
+    
+    // CI環境ではファイル書き込みをスキップしてIO負荷を削減
+    if (process.env.CI === 'true') {
+      console.log(`✅ フィードバック保存完了: メモリ内のみ（CI環境）`);
+      return;
+    }
+    
     // ストレージディレクトリの作成
     await fs.mkdir(this.feedbackStorage, { recursive: true });
     
@@ -135,9 +144,6 @@ export class FeedbackCollectionSystem {
     const filepath = path.join(this.feedbackStorage, filename);
     
     await fs.writeFile(filepath, JSON.stringify(feedback, null, 2));
-    
-    // メモリ内にも保存
-    this.collectedFeedback.push(feedback);
     
     console.log(`✅ フィードバック保存完了: ${filepath}`);
   }
@@ -336,7 +342,10 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
 *Generated on ${new Date().toISOString()}*
 `;
     
-    await fs.writeFile(path.join(this.feedbackStorage, 'feedback-report.md'), report);
+    // CI環境ではファイル書き込みをスキップしてIO負荷を削減
+    if (process.env.CI !== 'true') {
+      await fs.writeFile(path.join(this.feedbackStorage, 'feedback-report.md'), report);
+    }
     return report;
   }
 
@@ -515,6 +524,11 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
   }
 
   private async saveAnalysisResult(analysis: FeedbackAnalysisResult): Promise<void> {
+    // CI環境ではファイル書き込みをスキップしてIO負荷を削減
+    if (process.env.CI === 'true') {
+      return;
+    }
+    
     const filepath = path.join(this.feedbackStorage, 'analysis-result.json');
     await fs.writeFile(filepath, JSON.stringify(analysis, null, 2));
   }

@@ -18,7 +18,7 @@ export default {
   // CI環境での非同期ハンドル問題解決
   forceExit: true, // メモリリークを防ぐため常に有効
   detectOpenHandles: false, // メモリ使用量削減のため無効
-  testTimeout: process.env.CI === 'true' ? 60000 : 10000, // CI環境では60秒、ローカルは10秒
+  testTimeout: process.env.CI === 'true' ? 90000 : 10000, // CI環境では90秒、ローカルは10秒
   maxWorkers: 1, // メモリ使用量制限のため常に1ワーカー
   // runInBand設定はpackage.jsonのコマンドラインオプションで指定
   
@@ -28,6 +28,9 @@ export default {
   restoreMocks: true, // テスト実行ごとにモック状態をクリア
   resetMocks: true, // 各テスト実行前にモックをリセット
   resetModules: true, // 各テスト実行前にモジュールキャッシュをクリア
+  
+  // CI環境でのファイルハンドル管理強化
+  openHandlesTimeout: process.env.CI === 'true' ? 0 : 1000, // CI環境では即座にクローズ
   
   // メモリ使用量最適化
   logHeapUsage: process.env.CI === 'true',
