@@ -1,0 +1,77 @@
+{
+  "name": "rimor",
+  "version": "0.7.0",
+  "description": "高度なテスト品質監査ツール - 静的解析とプラグイン駆動アーキテクチャによるテスト品質の問題特定",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "rimor": "dist/cli/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "rm -rf dist && npm run build",
+    "build:simple": "tsc",
+    "test": "NODE_OPTIONS=\"--max-old-space-size=10240\" jest --forceExit --runInBand --detectOpenHandles=false",
+    "test:unit": "NODE_OPTIONS=\"--max-old-space-size=4096\" jest test/ --testPathIgnorePatterns=test/integration/ --testPathIgnorePatterns=test/performance/ --forceExit --runInBand",
+    "test:integration": "NODE_OPTIONS=\"--max-old-space-size=6144\" jest test/integration/ --forceExit --runInBand --maxWorkers=1",
+    "test:performance": "NODE_OPTIONS=\"--max-old-space-size=8192\" jest test/performance/ --forceExit --runInBand --maxWorkers=1",
+    "test:full-suite": "npm run test:unit && npm run test:integration",
+    "analyze": "node dist/index.js analyze",
+    "analyze:json": "node dist/index.js analyze --format=json",
+    "analyze:verbose": "node dist/index.js analyze --verbose",
+    "analyze:src": "node dist/index.js analyze ./src",
+    "analyze:src:json": "node dist/index.js analyze ./src --format=json",
+    "analyze:dictionary": "node dist/index.js analyze --dictionary",
+    "dictionary:init": "node dist/cli/cli.js dictionary init",
+    "dictionary:list": "node dist/cli/cli.js dictionary list",
+    "dictionary:validate": "node dist/cli/cli.js dictionary validate",
+    "bootstrap:init": "node dist/cli/cli.js bootstrap init",
+    "bootstrap:status": "node dist/cli/cli.js bootstrap status",
+    "bootstrap:validate": "node dist/cli/cli.js bootstrap validate",
+    "dev": "npm run build && npm run analyze:src",
+    "full-check": "npm run security-check && npm run analyze:src",
+    "security-check": "node scripts/security-check.js",
+    "pre-release-check": "node scripts/pre-release-check.sh",
+    "release-ready": "node scripts/release-health-check.js",
+    "health-check": "node scripts/release-health-check.js",
+    "self-audit": "bash docs/self-audit/scripts/self-audit.sh"
+  },
+  "keywords": [
+    "testing",
+    "quality",
+    "static-analysis",
+    "test-quality",
+    "rimor",
+    "security",
+    "taint-analysis"
+  ],
+  "author": "Rimor Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "glob": "^10.3.0",
+    "js-yaml": "^4.1.0",
+    "typescript": "^5.0.0",
+    "yargs": "^17.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "@types/yargs": "^17.0.32",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rimor-project/rimor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rimor-project/rimor/issues"
+  },
+  "homepage": "https://github.com/rimor-project/rimor#readme"
+}
