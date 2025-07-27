@@ -435,7 +435,7 @@ export class AccuracyEvaluationSystem {
 
     const totalDetected = truePositives + falsePositives;
     const totalActual = truePositives + falseNegatives;
-    const falsePositiveRate = totalDetected > 0 ? falsePositives / totalDetected : 0;
+    const falsePositiveRate = falsePositives + trueNegatives > 0 ? falsePositives / (falsePositives + trueNegatives) : 0;
     const falseNegativeRate = totalActual > 0 ? falseNegatives / totalActual : 0;
 
     const automaticInferenceRate = totalInferenceAttempts > 0 ? inferenceSuccesses / totalInferenceAttempts : 0;
@@ -465,7 +465,7 @@ export class AccuracyEvaluationSystem {
       
       typeSystem: {
         typeInferenceSuccessRate: automaticInferenceRate,
-        taintTrackingAccuracy: precision,
+        taintTrackingAccuracy: this.calculateTaintTrackingAccuracy(testCases, analysisResults),
         invariantVerificationRate: recall
       },
       
@@ -711,7 +711,10 @@ export class AccuracyEvaluationSystem {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = path.join(process.cwd(), `accuracy-evaluation-${timestamp}.json`);
     
-    await fs.writeFile(reportPath, JSON.stringify(result, null, 2));
+    // 個人情報をマスキングした結果を作成
+    const sanitizedResult = this.sanitizeAccuracyResults(result);
+    
+    await fs.writeFile(reportPath, JSON.stringify(sanitizedResult, null, 2));
     console.log(`📄 精度評価結果を保存しました: ${reportPath}`);
 
     // 履歴に追加
@@ -851,5 +854,154 @@ export class AccuracyEvaluationSystem {
   private isInferenceSuccessful(result: MethodAnalysisResult, groundTruth: GroundTruthData): boolean {
     // 推論成功の判定（簡略実装）
     return result.issues.length > 0 || groundTruth.actualSecurityIssues.length === 0;
+  }
+
+  /**
+   * 汚染追跡精度の独立計算
+   */
+  private calculateTaintTrackingAccuracy(
+    testCases: TestCase[],
+    analysisResults: MethodAnalysisResult[]
+  ): number {
+    let correctTaintTracking = 0;
+    let totalTaintTrackingAttempts = 0;
+
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      const analysisResult = analysisResults[i];
+      const groundTruth = this.groundTruthDatabase.get(testCase.file);
+
+      if (!groundTruth) continue;
+
+      // 汚染追跡が必要なケースの判定
+      if (this.requiresTaintTracking(testCase, groundTruth)) {
+        totalTaintTrackingAttempts++;
+        
+        // 汚染追跡の正確性評価
+        if (this.evaluateTaintTrackingCorrectness(analysisResult, groundTruth)) {
+          correctTaintTracking++;
+        }
+      }
+    }
+
+    return totalTaintTrackingAttempts > 0 ? correctTaintTracking / totalTaintTrackingAttempts : 0;
+  }
+
+  /**
+   * 汚染追跡が必要かどうかの判定
+   */
+  private requiresTaintTracking(testCase: TestCase, groundTruth: GroundTruthData): boolean {
+    // テストケースに汚染データが含まれているか確認
+    return testCase.content.includes('input') || 
+           testCase.content.includes('user') ||
+           testCase.content.includes('request') ||
+           groundTruth.actualTaintLevels.size > 0;
+  }
+
+  /**
+   * 汚染追跡の正確性評価
+   */
+  private evaluateTaintTrackingCorrectness(
+    analysisResult: MethodAnalysisResult, 
+    groundTruth: GroundTruthData
+  ): boolean {
+    // 汚染フロー関連の問題が正しく検出されているかを評価
+    const taintRelatedIssues = analysisResult.issues.filter(issue => 
+      issue.type.includes('taint') || 
+      issue.type.includes('flow') ||
+      issue.type.includes('sanitizer')
+    );
+
+    const expectedTaintIssues = groundTruth.actualSecurityIssues.filter(issue =>
+      issue.type.includes('taint') ||
+      issue.type.includes('flow') ||
+      issue.type.includes('sanitizer')
+    );
+
+    // 簡略化された正確性判定：検出数が期待値の80%以上であれば正確とみなす
+    if (expectedTaintIssues.length === 0) {
+      return taintRelatedIssues.length === 0; // 問題がない場合は正しく非検出
+    }
+
+    const detectionRate = taintRelatedIssues.length / expectedTaintIssues.length;
+    return detectionRate >= 0.8;
+  }
+
+  /**
+   * 精度結果の個人情報マスキング
+   */
+  private sanitizeAccuracyResults(result: DetailedAccuracyResult): DetailedAccuracyResult {
+    const sanitizedResult = JSON.parse(JSON.stringify(result));
+    
+    // テストケース別結果のパスをマスキング
+    if (sanitizedResult.perTestCaseResults) {
+      sanitizedResult.perTestCaseResults.forEach((testCaseResult: any) => {
+        // ファイルパスのマスキング
+        if (testCaseResult.testCase?.file) {
+          testCaseResult.testCase.file = this.maskFilePath(testCaseResult.testCase.file);
+        }
+        if (testCaseResult.groundTruth?.testFileId) {
+          testCaseResult.groundTruth.testFileId = this.maskFilePath(testCaseResult.groundTruth.testFileId);
+        }
+        
+        // 検出されたissuesのlocation.fileマスキング
+        if (testCaseResult.detectedIssues) {
+          testCaseResult.detectedIssues.forEach((issue: any) => {
+            if (issue.location?.file) {
+              issue.location.file = this.maskFilePath(issue.location.file);
+            }
+          });
+        }
+        
+        // 正解データの問題のlocation.fileマスキング
+        if (testCaseResult.groundTruth?.actualSecurityIssues) {
+          testCaseResult.groundTruth.actualSecurityIssues.forEach((issue: any) => {
+            if (issue.location?.file) {
+              issue.location.file = this.maskFilePath(issue.location.file);
+            }
+          });
+        }
+        
+        // 分析結果のissuesマスキング
+        if (testCaseResult.analysis) {
+          ['missedIssues', 'falseAlarms', 'correctDetections'].forEach(key => {
+            if (testCaseResult.analysis[key]) {
+              testCaseResult.analysis[key].forEach((issue: any) => {
+                if (issue.location?.file) {
+                  issue.location.file = this.maskFilePath(issue.location.file);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    return sanitizedResult;
+  }
+
+  /**
+   * ファイルパスのマスキング処理
+   */
+  private maskFilePath(filePath: string): string {
+    if (!filePath) return filePath;
+    
+    // 絶対パスを相対パスに変換
+    const homeDir = os.homedir();
+    if (filePath.startsWith(homeDir)) {
+      return filePath.replace(homeDir, '~');
+    }
+    
+    // ユーザー名を含む絶対パスのマスキング
+    const userPathPattern = /\/Users\/[^\/]+\//g;
+    let maskedPath = filePath.replace(userPathPattern, '/Users/[USER]/');
+    
+    // より一般的な絶対パスパターンのマスキング
+    const absolutePathPattern = /^\/[^\/]+\/[^\/]+\//;
+    if (absolutePathPattern.test(maskedPath) && !maskedPath.startsWith('/Users/[USER]/')) {
+      maskedPath = maskedPath.replace(absolutePathPattern, '/[MASKED]/');
+    }
+    
+    return maskedPath;
   }
 }
