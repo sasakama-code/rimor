@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-07-27T00:29:04.157Z",
+  "timestamp": "2025-07-27T03:08:03.664Z",
   "phase": "4",
   "name": "差異分析・改善提案",
   "summary": {
     "expectedScore": 95,
-    "actualScore": 43,
+    "actualScore": 41,
     "gapIdentified": 2,
     "overallScore": 80
   },
@@ -16,7 +16,7 @@
     },
     "actualResults": {
       "testCoverage": 0,
-      "securityCoverage": 85,
+      "securityCoverage": 81,
       "issuesFound": 0
     },
     "gaps": [
@@ -30,8 +30,8 @@
       {
         "category": "securityCoverage",
         "expected": 90,
-        "actual": 85,
-        "gap": 5,
+        "actual": 81,
+        "gap": 9,
         "severity": "high"
       }
     ],
@@ -78,7 +78,7 @@
     {
       "priority": "high",
       "category": "security",
-      "title": "セキュリティテストカバレッジギャップ 5.0%",
+      "title": "セキュリティテストカバレッジギャップ 9.0%",
       "description": "セキュリティモジュールのテストが不足しています",
       "suggestions": [
         "セキュリティ機能のユニットテスト作成",
@@ -88,5 +88,5 @@
       "impact": "high"
     }
   ],
-  "executionTime": 3
+  "executionTime": 1
 }

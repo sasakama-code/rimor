@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-07-26T07:11:43.984Z",
+  "timestamp": "2025-07-27T03:11:26.556Z",
   "phase": "4",
   "name": "差異分析・改善提案",
   "summary": {
     "expectedScore": 95,
-    "actualScore": 45,
-    "gapIdentified": 2,
+    "actualScore": 91,
+    "gapIdentified": 1,
     "overallScore": 80
   },
   "details": {
@@ -15,23 +15,16 @@
       "issuesFound": 5
     },
     "actualResults": {
-      "testCoverage": 89.42307692307693,
-      "securityCoverage": 0,
+      "testCoverage": 100,
+      "securityCoverage": 81,
       "issuesFound": 0
     },
     "gaps": [
       {
-        "category": "testCoverage",
-        "expected": 95,
-        "actual": 89.42307692307693,
-        "gap": 5.576923076923066,
-        "severity": "low"
-      },
-      {
         "category": "securityCoverage",
         "expected": 90,
-        "actual": 0,
-        "gap": 90,
+        "actual": 81,
+        "gap": 9,
         "severity": "high"
       }
     ],
@@ -63,21 +56,9 @@
   },
   "recommendations": [
     {
-      "priority": "medium",
-      "category": "testing",
-      "title": "テストカバレッジギャップ 5.6%",
-      "description": "期待値95%に対し実際は89.4%",
-      "suggestions": [
-        "未テストファイルの特定とテスト作成",
-        "エッジケースのテスト追加",
-        "テスト品質の向上"
-      ],
-      "impact": "medium"
-    },
-    {
       "priority": "high",
       "category": "security",
-      "title": "セキュリティテストカバレッジギャップ 90.0%",
+      "title": "セキュリティテストカバレッジギャップ 9.0%",
       "description": "セキュリティモジュールのテストが不足しています",
       "suggestions": [
         "セキュリティ機能のユニットテスト作成",
