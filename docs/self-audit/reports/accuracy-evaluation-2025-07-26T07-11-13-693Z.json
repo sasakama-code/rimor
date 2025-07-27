@@ -77,8 +77,8 @@
       ],
       "accuracy": {
         "correct": false,
-        "precision": 0,
-        "recall": 0,
+        "precision": null,
+        "recall": null,
         "inferenceSuccessful": true
       },
       "analysis": {
@@ -165,9 +165,9 @@
           "falsePositives": 0,
           "trueNegatives": 0,
           "falseNegatives": 0,
-          "precision": 0,
-          "recall": 0,
-          "f1Score": 0,
+          "precision": null,
+          "recall": null,
+          "f1Score": null,
           "falsePositiveRate": 0,
           "falseNegativeRate": 0
         },
