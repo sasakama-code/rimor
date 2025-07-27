@@ -20,15 +20,15 @@
       "totalTime": 67,
       "timePerFile": 0.1675,
       "timePerMethod": 0.067,
-      "setupTime": 1,
-      "analysisTime": 66,
+      "setupTime": 0,
+      "analysisTime": 67,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 346.8478317260742,
-      "peakMemory": 358.04296875,
-      "finalMemory": 358.04358673095703,
-      "memoryPerFile": 0.027987842559814454
+      "initialMemory": 347.5867156982422,
+      "peakMemory": 358.3454055786133,
+      "finalMemory": 358.3460235595703,
+      "memoryPerFile": 0.026896724700927733
     },
     "throughput": {
       "filesPerSecond": 5970.149253731343,
@@ -52,5 +52,5 @@
       "issueTypeDistribution": {}
     }
   },
-  "timestamp": "2025-07-27T04:40:11.667Z"
+  "timestamp": "2025-07-27T05:26:44.328Z"
 }

@@ -2,9 +2,9 @@
   "requirement": "2000+ React test cases",
   "testCases": 2000,
   "fileCount": 800,
-  "totalTimeSeconds": 0.099,
-  "timePerTestMs": 0.0495,
-  "throughputTestsPerSec": 20202.0202020202,
+  "totalTimeSeconds": 0.1,
+  "timePerTestMs": 0.05,
+  "throughputTestsPerSec": 20000,
   "detailedResults": {
     "config": {
       "name": "React Large Scale Project",
@@ -25,10 +25,10 @@
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 403.7625274658203,
-      "peakMemory": 404.5716323852539,
-      "finalMemory": 284.1365509033203,
-      "memoryPerFile": 0.0010113811492919922
+      "initialMemory": 407.1126174926758,
+      "peakMemory": 407.9217071533203,
+      "finalMemory": 280.37744140625,
+      "memoryPerFile": 0.001011362075805664
     },
     "throughput": {
       "filesPerSecond": 8247.42268041237,
@@ -53,5 +53,5 @@
     }
   },
   "achieved": true,
-  "timestamp": "2025-07-27T04:40:12.142Z"
+  "timestamp": "2025-07-27T05:26:44.797Z"
 }
