@@ -30,11 +30,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('単純なテストメソッドを正しく解析すること', async () => {
       const testMethod: TestMethod = {
         name: 'testLogin',
+        filePath: '/test/login.test.ts',
+        content: 'expect(login("user", "pass")).toBe(true);',
         signature: {
           name: 'testLogin',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 10,
+          endLine: 12
         },
         body: 'expect(login("user", "pass")).toBe(true);',
         assertions: ['expect'],
@@ -57,11 +63,21 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('セキュリティ関連のテストメソッドで高いスコアを付与すること', async () => {
       const securityTestMethod: TestMethod = {
         name: 'testSqlInjectionPrevention',
+        filePath: '/test/security.test.ts',
+        content: `
+          const maliciousInput = "'; DROP TABLE users; --";
+          expect(() => queryDatabase(maliciousInput)).not.toThrow();
+          expect(sanitizeInput(maliciousInput)).not.toContain("DROP");
+        `,
         signature: {
           name: 'testSqlInjectionPrevention',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 15,
+          endLine: 19
         },
         body: `
           const maliciousInput = "'; DROP TABLE users; --";
@@ -84,11 +100,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('非セキュリティテストで適切な低スコアを付与すること', async () => {
       const regularTestMethod: TestMethod = {
         name: 'testMathAddition',
+        filePath: '/test/math.test.ts',
+        content: 'expect(add(2, 3)).toBe(5);',
         signature: {
           name: 'testMathAddition',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 5,
+          endLine: 7
         },
         body: 'expect(add(2, 3)).toBe(5);',
         assertions: ['expect'],
@@ -108,11 +130,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('セキュリティテストの不備を検出すること', async () => {
       const inadequateTestMethod: TestMethod = {
         name: 'testWeakPasswordValidation',
+        filePath: '/test/password.test.ts',
+        content: 'expect(validatePassword("123")).toBe(false);',
         signature: {
           name: 'testWeakPasswordValidation',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 10,
+          endLine: 12
         },
         body: 'expect(validatePassword("123")).toBe(false);',
         assertions: ['expect'],
@@ -136,11 +164,21 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('ハードコードされた認証情報を検出すること', async () => {
       const hardcodedCredsMethod: TestMethod = {
         name: 'testLoginWithHardcodedCreds',
+        filePath: '/test/login.test.ts',
+        content: `
+          const username = "admin";
+          const password = "password123";
+          expect(login(username, password)).toBe(true);
+        `,
         signature: {
           name: 'testLoginWithHardcodedCreds',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 20,
+          endLine: 24
         },
         body: `
           const username = "admin";
@@ -165,11 +203,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('不十分な入力検証テストを検出すること', async () => {
       const insufficientValidationMethod: TestMethod = {
         name: 'testInputValidation',
+        filePath: '/test/input.test.ts',
+        content: 'expect(validateInput("normal input")).toBe(true);',
         signature: {
           name: 'testInputValidation',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 15,
+          endLine: 17
         },
         body: 'expect(validateInput("normal input")).toBe(true);',
         assertions: ['expect'],
@@ -191,11 +235,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('セキュリティテストの強化提案を生成すること', async () => {
       const basicSecurityMethod: TestMethod = {
         name: 'testBasicAuth',
+        filePath: '/test/auth.test.ts',
+        content: 'expect(authenticate("user", "pass")).toBe(true);',
         signature: {
           name: 'testBasicAuth',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 20,
+          endLine: 22
         },
         body: 'expect(authenticate("user", "pass")).toBe(true);',
         assertions: ['expect'],
@@ -223,11 +273,20 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('テストカバレッジ改善提案を生成すること', async () => {
       const limitedCoverageMethod: TestMethod = {
         name: 'testPartialFunction',
+        filePath: '/test/partial.test.ts',
+        content: `
+          const result = complexFunction("input1");
+          expect(result.success).toBe(true);
+        `,
         signature: {
           name: 'testPartialFunction',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 25,
+          endLine: 28
         },
         body: `
           const result = complexFunction("input1");
@@ -250,11 +309,20 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('アサーション強化提案を生成すること', async () => {
       const weakAssertionMethod: TestMethod = {
         name: 'testWeakAssertion',
+        filePath: '/test/weak.test.ts',
+        content: `
+          processData("input");
+          // アサーションが不十分
+        `,
         signature: {
           name: 'testWeakAssertion',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 30,
+          endLine: 33
         },
         body: `
           processData("input");
@@ -279,11 +347,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('メソッド変更を検出してインクリメンタル解析を実行すること', async () => {
       const originalMethod: TestMethod = {
         name: 'testLoginFlow',
+        filePath: '/test/login-flow.test.ts',
+        content: 'expect(login("user", "pass")).toBe(true);',
         signature: {
           name: 'testLoginFlow',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 35,
+          endLine: 37
         },
         body: 'expect(login("user", "pass")).toBe(true);',
         assertions: ['expect'],
@@ -294,6 +368,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
 
       const modifiedMethod: TestMethod = {
         ...originalMethod,
+        content: `
+          expect(login("user", "pass")).toBe(true);
+          expect(getLastLoginTime()).toBeDefined();
+        `,
         body: `
           expect(login("user", "pass")).toBe(true);
           expect(getLastLoginTime()).toBeDefined();
@@ -321,11 +399,20 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('依存関係変更の影響を適切に伝播すること', async () => {
       const dependentMethod: TestMethod = {
         name: 'testUserManagement',
+        filePath: '/test/user-management.test.ts',
+        content: `
+          const user = createUser("test");
+          expect(validateUser(user)).toBe(true);
+        `,
         signature: {
           name: 'testUserManagement',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 40,
+          endLine: 43
         },
         body: `
           const user = createUser("test");
@@ -358,7 +445,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
       const testMethods: TestMethod[] = [
         {
           name: 'testMethod1',
+          filePath: '/test/batch1.test.ts',
+          content: 'expect(func1()).toBe(true);',
           signature: { name: 'testMethod1', parameters: [], returnType: 'void', annotations: [] },
+          location: { startLine: 1, endLine: 3 },
           body: 'expect(func1()).toBe(true);',
           assertions: ['expect'],
           dependencies: ['func1'],
@@ -367,7 +457,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
         },
         {
           name: 'testMethod2',
+          filePath: '/test/batch2.test.ts',
+          content: 'expect(func2()).toBe(false);',
           signature: { name: 'testMethod2', parameters: [], returnType: 'void', annotations: [] },
+          location: { startLine: 1, endLine: 3 },
           body: 'expect(func2()).toBe(false);',
           assertions: ['expect'],
           dependencies: ['func2'],
@@ -376,7 +469,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
         },
         {
           name: 'testMethod3',
+          filePath: '/test/batch3.test.ts',
+          content: 'expect(func3()).toBeDefined();',
           signature: { name: 'testMethod3', parameters: [], returnType: 'void', annotations: [] },
+          location: { startLine: 1, endLine: 3 },
           body: 'expect(func3()).toBeDefined();',
           assertions: ['expect'],
           dependencies: ['func3'],
@@ -396,7 +492,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
       const testMethods: TestMethod[] = [
         {
           name: 'validMethod',
+          filePath: '/test/valid.test.ts',
+          content: 'expect(validFunc()).toBe(true);',
           signature: { name: 'validMethod', parameters: [], returnType: 'void', annotations: [] },
+          location: { startLine: 1, endLine: 3 },
           body: 'expect(validFunc()).toBe(true);',
           assertions: ['expect'],
           dependencies: ['validFunc'],
@@ -405,7 +504,10 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
         },
         {
           name: 'problematicMethod',
+          filePath: '/test/problematic.test.ts',
+          content: null as any, // 意図的にnullを設定してエラーを発生させる
           signature: { name: 'problematicMethod', parameters: [], returnType: 'void', annotations: [] },
+          location: { startLine: 1, endLine: 3 },
           body: null as any, // 意図的にnullを設定してエラーを発生させる
           assertions: ['expect'],
           dependencies: [],
@@ -431,11 +533,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('同一メソッドの再解析でキャッシュを使用すること', async () => {
       const testMethod: TestMethod = {
         name: 'testCacheableMethod',
+        filePath: '/test/cache.test.ts',
+        content: 'expect(cacheableFunc()).toBe(true);',
         signature: {
           name: 'testCacheableMethod',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 45,
+          endLine: 47
         },
         body: 'expect(cacheableFunc()).toBe(true);',
         assertions: ['expect'],
@@ -460,11 +568,17 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('メソッド変更後はキャッシュを無効化すること', async () => {
       const originalMethod: TestMethod = {
         name: 'testEvolvingMethod',
+        filePath: '/test/evolving.test.ts',
+        content: 'expect(func()).toBe(true);',
         signature: {
           name: 'testEvolvingMethod',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 50,
+          endLine: 52
         },
         body: 'expect(func()).toBe(true);',
         assertions: ['expect'],
@@ -475,6 +589,7 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
 
       const modifiedMethod: TestMethod = {
         ...originalMethod,
+        content: 'expect(func()).toBe(true); expect(func2()).toBe(false);',
         body: 'expect(func()).toBe(true); expect(func2()).toBe(false);',
         dependencies: ['func', 'func2'],
         securityRelevance: 0.6
@@ -496,11 +611,21 @@ describe('ModularTestAnalyzer - TaintTyperモジュラー解析システム', ()
     it('解析メトリクスを正確に収集すること', async () => {
       const testMethod: TestMethod = {
         name: 'testMetricsCollection',
+        filePath: '/test/metrics.test.ts',
+        content: `
+          expect(authenticate("user", "pass")).toBe(true);
+          expect(authorize("user", "read")).toBe(true);
+          expect(validateInput("data")).toBe(true);
+        `,
         signature: {
           name: 'testMetricsCollection',
           parameters: [],
           returnType: 'void',
           annotations: []
+        },
+        location: {
+          startLine: 55,
+          endLine: 59
         },
         body: `
           expect(authenticate("user", "pass")).toBe(true);
