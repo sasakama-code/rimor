@@ -110,7 +110,7 @@ jobs:
 
     - name: 📊 Performance Report
       run: |
-        echo "📊 性能指標達成状況:"
+        echo "📊 性能指標達成状況"
         if [ -f benchmark-results/comprehensive-requirements-verification.json ]; then
           cat benchmark-results/comprehensive-requirements-verification.json | jq '.summary'
         fi
@@ -159,7 +159,8 @@ jobs:
       run: |
         echo "🎯 品質指標検証"
         # テストカバレッジが80%以上かチェック
-        npm test -- --coverage --coverageThreshold='{"global":{"statements":80,"branches":70,"functions":80,"lines":80}}'
+        npm test -- --coverage \
+          --coverageThreshold='{"global":{"statements":80,"branches":70,"functions":80,"lines":80}}'
         echo "✅ Quality metrics validated"
 
   # Phase 4: 実プロジェクト検証
@@ -201,7 +202,7 @@ jobs:
 
     - name: 📊 Validation Results
       run: |
-        echo "📊 ${{ matrix.framework }} (${{ matrix.project-size }}) 検証結果:"
+        echo "📊 ${{ matrix.framework }} (${{ matrix.project-size }}) 検証結果"
         if [ -f test-output/real-world-validation.json ]; then
           cat test-output/real-world-validation.json | jq '.summary'
         fi
@@ -241,8 +242,10 @@ jobs:
       run: |
         echo "📈 性能トレンド分析"
         if [ -f benchmark-results/ ]; then
-          echo "Current performance metrics:"
-          find benchmark-results/ -name "*.json" -exec echo "📄 {}" \\; -exec jq '.achieved // .summary.overallSuccess // "N/A"' {} \\;
+          echo "Current performance metrics"
+          find benchmark-results/ -name "*.json" \
+            -exec echo "📄 {}" \\; \
+            -exec jq '.achieved // .summary.overallSuccess // "N/A"' {} \\;
         fi
 
   # Phase 6: 精度評価・フィードバック統合
@@ -282,10 +285,10 @@ jobs:
 
     - name: 📊 Accuracy Report
       run: |
-        echo "📊 精度評価レポート:"
-        echo "- 自動推論率目標: ≥85%"
-        echo "- 推論精度目標: ≥90%"  
-        echo "- 誤検知率目標: ≤15%"
+        echo "📊 精度評価レポート"
+        echo "- 自動推論率目標 ≥85%"
+        echo "- 推論精度目標 ≥90%"
+        echo "- 誤検知率目標 ≤15%"
         if [ -f test-feedback-data/analysis-result.json ]; then
           cat test-feedback-data/analysis-result.json | jq '.overallSatisfaction'
         fi
@@ -484,15 +487,15 @@ jobs:
       run: |
         echo "📊 TaintTyper v0.7.0 CI/CD完了サマリー"
         echo "=================================="
-        echo "ビルド・テスト: ${{ needs.build-and-test.result }}"
-        echo "要件検証: ${{ needs.taintyper-requirements-verification.result }}"
-        echo "セキュリティゲート: ${{ needs.security-quality-gate.result }}"
-        echo "実プロジェクト検証: ${{ needs.real-world-project-validation.result }}"
-        echo "パフォーマンス回帰: ${{ needs.performance-regression-test.result }}"
-        echo "精度・フィードバック: ${{ needs.accuracy-feedback-integration.result }}"
-        echo "セキュリティ解析統合: ${{ needs.security-analysis-integration.result }}"
-        echo "リリース準備ゲート: ${{ needs.release-readiness-gate.result }}"
-        echo "アーティファクト作成: ${{ needs.create-release-artifacts.result }}"
+        echo "ビルド・テスト=${{ needs.build-and-test.result }}"
+        echo "要件検証=${{ needs.taintyper-requirements-verification.result }}"
+        echo "セキュリティゲート=${{ needs.security-quality-gate.result }}"
+        echo "実プロジェクト検証=${{ needs.real-world-project-validation.result }}"
+        echo "パフォーマンス回帰=${{ needs.performance-regression-test.result }}"
+        echo "精度・フィードバック=${{ needs.accuracy-feedback-integration.result }}"
+        echo "セキュリティ解析統合=${{ needs.security-analysis-integration.result }}"
+        echo "リリース準備ゲート=${{ needs.release-readiness-gate.result }}"
+        echo "アーティファクト作成=${{ needs.create-release-artifacts.result }}"
         echo "=================================="
         echo "🏆 TaintTyper型ベースセキュリティ解析システム v0.7.0"
         echo "   CI/CD パイプライン実行完了"
