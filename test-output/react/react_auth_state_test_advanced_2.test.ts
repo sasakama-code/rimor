@@ -30,7 +30,7 @@ describe('Authentication State Security Tests', () => {
 
   it('should sanitize user data from token - Test 1', async () => {
     const maliciousToken = btoa(JSON.stringify({
-      userId: '<script>alert("token xssns46xh")</script>',
+      userId: '<script>alert("token xssmt5d99")</script>',
       email: 'test@example.com',
       role: 'admin"; DROP TABLE users; --'
     }));

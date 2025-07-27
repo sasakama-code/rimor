@@ -7,8 +7,8 @@ import { sanitizeHtml } from '../utils/sanitizer';
 describe('XSS Prevention Security Tests', () => {
   it('should sanitize user-generated content - Test 0', () => {
     const maliciousProps = {
-      username: '<script>alert("xssl7mhsp")</script>',
-      bio: '<img src=x onerror=alert("maliciousl7mhsp")>',
+      username: '<script>alert("xsso3d7rg")</script>',
+      bio: '<img src=x onerror=alert("maliciouso3d7rg")>',
       website: 'javascript:alert("xss")'
     };
 
@@ -32,7 +32,7 @@ describe('XSS Prevention Security Tests', () => {
     const maliciousHtml = `
       <div>
         正常なコンテンツ
-        <script>alert('xssl7mhsp')</script>
+        <script>alert('xsso3d7rg')</script>
         <img src="x" onerror="alert('img xss')">
       </div>
     `;
@@ -70,12 +70,12 @@ describe('XSS Prevention Security Tests', () => {
     render(<CommentForm />);
     
     const textarea = screen.getByTestId('comment-input');
-    const maliciousComment = '<script>document.cookie="stolenl7mhsp"</script>';
+    const maliciousComment = '<script>document.cookie="stoleno3d7rg"</script>';
     
     fireEvent.change(textarea, { target: { value: maliciousComment } });
     fireEvent.click(screen.getByText('Submit'));
     
     // スクリプトが実行されていないことを確認
-    expect(document.cookie).not.toContain('stolenl7mhsp');
+    expect(document.cookie).not.toContain('stoleno3d7rg');
   });
 });

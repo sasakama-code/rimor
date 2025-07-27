@@ -15,7 +15,7 @@ describe('JWT Authentication Security Tests', () => {
 
   it('should validate JWT token properly - Test 1', async () => {
     const validToken = jwt.sign(
-      { userId: 'test-xvxddj', role: 'user' },
+      { userId: 'test-g2c13p', role: 'user' },
       process.env.JWT_SECRET || 'test-secret',
       { expiresIn: '1h' }
     );
@@ -26,11 +26,11 @@ describe('JWT Authentication Security Tests', () => {
       .expect(200);
 
     expect(response.body).toBeDefined();
-    expect(response.body.userId).toBe('test-xvxddj');
+    expect(response.body.userId).toBe('test-g2c13p');
   });
 
   it('should reject invalid JWT token - Test 1', async () => {
-    const invalidToken = 'invalid.jwt.tokenxvxddj';
+    const invalidToken = 'invalid.jwt.tokeng2c13p';
 
     await request(app)
       .get('/protected')
@@ -40,7 +40,7 @@ describe('JWT Authentication Security Tests', () => {
 
   it('should handle JWT expiration - Test 1', async () => {
     const expiredToken = jwt.sign(
-      { userId: 'test-xvxddj' },
+      { userId: 'test-g2c13p' },
       process.env.JWT_SECRET || 'test-secret',
       { expiresIn: '-1h' }
     );

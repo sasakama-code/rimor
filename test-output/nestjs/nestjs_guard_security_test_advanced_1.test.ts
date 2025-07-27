@@ -46,7 +46,7 @@ describe('Guard Security Tests', () => {
       switchToHttp: () => ({
         getRequest: () => ({
           user: {
-            userId: 'test-sioq09',
+            userId: 'test-zdk6l9',
             role: 'user', // admin role required for protected route
             permissions: ['read']
           }
@@ -67,11 +67,11 @@ describe('Guard Security Tests', () => {
     const maliciousRequest = {
       headers: {
         authorization: 'Bearer valid.jwt.token',
-        'x-forwarded-for': '<script>alert("header xsssioq09")</script>',
+        'x-forwarded-for': '<script>alert("header xsszdk6l9")</script>',
         'user-agent': 'Mozilla/5.0; DROP TABLE sessions; --'
       },
       user: {
-        userId: 'sioq09',
+        userId: 'zdk6l9',
         role: 'user'
       },
       body: {

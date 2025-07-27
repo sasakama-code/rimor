@@ -1,7 +1,3 @@
-import express, { Express } from 'express';
-import request from 'supertest';
-import jwt from 'jsonwebtoken';
-import { sanitizeJWTPayload } from '../../src/utils/securityHelpers';
 
 describe('JWT Authentication Security Tests', () => {
   let app: Express;
@@ -19,7 +15,7 @@ describe('JWT Authentication Security Tests', () => {
 
   it('should validate JWT token properly - Test 0', async () => {
     const validToken = jwt.sign(
-      { userId: 'test-e0lgg5', role: 'user' },
+      { userId: 'test-lnhwj3', role: 'user' },
       process.env.JWT_SECRET || 'test-secret',
       { expiresIn: '1h' }
     );
@@ -30,11 +26,11 @@ describe('JWT Authentication Security Tests', () => {
       .expect(200);
 
     expect(response.body).toBeDefined();
-    expect(response.body.userId).toBe('test-e0lgg5');
+    expect(response.body.userId).toBe('test-lnhwj3');
   });
 
   it('should reject invalid JWT token - Test 0', async () => {
-    const invalidToken = 'invalid.jwt.tokene0lgg5';
+    const invalidToken = 'invalid.jwt.tokenlnhwj3';
 
     await request(app)
       .get('/protected')
@@ -44,7 +40,7 @@ describe('JWT Authentication Security Tests', () => {
 
   it('should handle JWT expiration - Test 0', async () => {
     const expiredToken = jwt.sign(
-      { userId: 'test-e0lgg5' },
+      { userId: 'test-lnhwj3' },
       process.env.JWT_SECRET || 'test-secret',
       { expiresIn: '-1h' }
     );
