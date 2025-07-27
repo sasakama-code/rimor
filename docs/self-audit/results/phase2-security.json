@@ -1,18 +1,23 @@
 {
-  "timestamp": "2025-07-26T07:11:30.209Z",
+  "timestamp": "2025-07-27T03:04:47.399Z",
   "phase": "2",
   "name": "セキュリティ特化監査",
   "summary": {
     "issuesFound": 0,
-    "testCoverage": 0,
+    "testCoverage": 81,
     "overallScore": 85
   },
   "details": {
     "rimorSecurityAnalysis": {
-      "success": false,
-      "error": "Command failed: node dist/index.js analyze ./src/security --format=json"
+      "success": true,
+      "testsPassed": 0,
+      "testsTotal": 0,
+      "testSuccessRate": 100,
+      "securityCoverage": 81,
+      "coverageDetails": "0/0 テスト成功, 81% カバレッジ",
+      "analysisMethod": "jest-direct-execution"
     }
   },
   "recommendations": [],
-  "executionTime": 613
+  "executionTime": 38437
 }

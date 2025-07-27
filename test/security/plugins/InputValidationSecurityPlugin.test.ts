@@ -451,6 +451,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
     it('Taint型を使用した高度な入力検証分析を行うこと', async () => {
       const testMethod: TestMethod = {
         name: 'testTaintedInputHandling',
+        filePath: '/mock/test/path.ts',
+        content: 'test content for taintedInputHandling',
+        location: {
+          startLine: 1,
+          endLine: 10,
+          startColumn: 1,
+          endColumn: 1
+        },
         signature: {
           name: 'handleTaintedInput',
           parameters: [
@@ -483,6 +491,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
     it('型安全性違反を検出すること', async () => {
       const unsafeTestMethod: TestMethod = {
         name: 'testUnsafeInputHandling',
+        filePath: '/mock/test/unsafe-path.ts',
+        content: 'test content for unsafe input handling',
+        location: {
+          startLine: 1,
+          endLine: 10,
+          startColumn: 1,
+          endColumn: 1
+        },
         signature: {
           name: 'processUnsafeInput',
           parameters: [
@@ -517,6 +533,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
     it('テストメソッドの変更を検出してインクリメンタル解析を実行すること', async () => {
       const originalMethod: TestMethod = {
         name: 'testInputValidation',
+        filePath: '/mock/test/original-path.ts',
+        content: 'test content for input validation',
+        location: {
+          startLine: 1,
+          endLine: 5,
+          startColumn: 1,
+          endColumn: 1
+        },
         signature: {
           name: 'validateInput',
           parameters: [

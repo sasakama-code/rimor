@@ -557,7 +557,9 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
         simpleMatches.forEach(matchStr => {
           const index = content.indexOf(matchStr);
           if (index !== -1) {
-            matches.push(Object.assign([matchStr], { index }));
+            const matchArray = [matchStr] as RegExpMatchArray;
+            matchArray.index = index;
+            matches.push(matchArray);
           }
         });
       }

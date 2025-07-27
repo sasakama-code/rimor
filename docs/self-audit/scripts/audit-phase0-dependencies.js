@@ -227,6 +227,33 @@ class DependencyAuditor {
   }
 
   /**
+   * パスサニタイズ機能 - 個人情報を含む絶対パスを相対パスに変換
+   */
+  sanitizePaths(data) {
+    if (typeof data !== 'object' || data === null) {
+      return data;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.sanitizePaths(item));
+    }
+
+    const sanitized = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string' && key === 'location') {
+        // locationフィールドの絶対パスを相対パスに変換
+        const userPattern = /^\/Users\/[^\/]+\/Projects\/Rimor\//;
+        sanitized[key] = value.replace(userPattern, './');
+      } else if (typeof value === 'object') {
+        sanitized[key] = this.sanitizePaths(value);
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  }
+
+  /**
    * パッケージバージョン監査
    */
   async runVersionAudit() {
@@ -248,9 +275,12 @@ class DependencyAuditor {
       const outdatedData = JSON.parse(outdatedOutput);
       const outdatedCount = Object.keys(outdatedData).length;
 
+      // パスサニタイズを適用してから保存
+      const sanitizedOutdatedData = this.sanitizePaths(outdatedData);
+
       this.results.details.versionAudit = {
         success: true,
-        outdatedPackages: outdatedData,
+        outdatedPackages: sanitizedOutdatedData,
         outdatedCount: outdatedCount
       };
 
