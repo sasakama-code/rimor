@@ -88,11 +88,11 @@ export interface AccuracyMetrics {
     /** 偽陰性（見逃し）目標5%以下 */
     falseNegatives: number;
     /** 精度（Precision） */
-    precision: number;
+    precision: number | null;
     /** 再現率（Recall） */
-    recall: number;
+    recall: number | null;
     /** F1スコア */
-    f1Score: number;
+    f1Score: number | null;
     /** 誤検知率 */
     falsePositiveRate: number;
     /** 偽陰性率 */
@@ -151,8 +151,8 @@ export interface TestCaseAccuracyResult {
   /** 精度評価 */
   accuracy: {
     correct: boolean;
-    precision: number;
-    recall: number;
+    precision: number | null;
+    recall: number | null;
     inferenceSuccessful: boolean;
   };
   /** 詳細分析 */
@@ -174,9 +174,9 @@ export interface IssueTypeAccuracy {
   /** 正解数 */
   actual: number;
   /** 精度 */
-  precision: number;
+  precision: number | null;
   /** 再現率 */
-  recall: number;
+  recall: number | null;
   /** 典型的な誤検知パターン */
   commonFalsePositives: string[];
   /** 典型的な見逃しパターン */
@@ -765,9 +765,9 @@ export class AccuracyEvaluationSystem {
     console.log('');
     
     console.log('🔍 検出精度:');
-    console.log(`   精度(Precision): ${(metrics.detection.precision * 100).toFixed(1)}%`);
-    console.log(`   再現率(Recall): ${(metrics.detection.recall * 100).toFixed(1)}%`);
-    console.log(`   F1スコア: ${metrics.detection.f1Score.toFixed(3)}`);
+    console.log(`   精度(Precision): ${metrics.detection.precision !== null ? (metrics.detection.precision * 100).toFixed(1) + '%' : 'N/A'}`);
+    console.log(`   再現率(Recall): ${metrics.detection.recall !== null ? (metrics.detection.recall * 100).toFixed(1) + '%' : 'N/A'}`);
+    console.log(`   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`);
     console.log(`   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`);
     console.log(`   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`);
     console.log('');

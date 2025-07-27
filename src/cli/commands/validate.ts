@@ -518,7 +518,7 @@ export class ValidateCommand {
       console.log('🔍 検出精度:');
       console.log(`   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`);
       console.log(`   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`);
-      console.log(`   F1スコア: ${metrics.detection.f1Score.toFixed(3)}`);
+      console.log(`   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`);
       
       console.log('⚡ パフォーマンス:');
       console.log(`   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`);
