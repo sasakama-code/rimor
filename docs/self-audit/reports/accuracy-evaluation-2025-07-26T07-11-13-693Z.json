@@ -56,7 +56,7 @@
           "id": "analysis-error-E2E Authentication Tests",
           "severity": "error",
           "type": "missing-sanitizer",
-          "message": "解析エラー: Invalid regular expression: /expect(/gi: Unterminated group",
+          "message": "解析エラー: Invalid regular expression: /expect\\(/gi: Unterminated group",
           "location": {
             "file": "/test/e2e-auth.test.ts",
             "line": 2,
@@ -67,7 +67,7 @@
           "id": "analysis-error-should handle auth failure",
           "severity": "error",
           "type": "missing-sanitizer",
-          "message": "解析エラー: Invalid regular expression: /expect(/gi: Unterminated group",
+          "message": "解析エラー: Invalid regular expression: /expect\\(/gi: Unterminated group",
           "location": {
             "file": "/test/e2e-auth.test.ts",
             "line": 12,
@@ -88,7 +88,7 @@
             "id": "analysis-error-E2E Authentication Tests",
             "severity": "error",
             "type": "missing-sanitizer",
-            "message": "解析エラー: Invalid regular expression: /expect(/gi: Unterminated group",
+            "message": "解析エラー: Invalid regular expression: /expect\\(/gi: Unterminated group",
             "location": {
               "file": "/test/e2e-auth.test.ts",
               "line": 2,
@@ -99,7 +99,7 @@
             "id": "analysis-error-should handle auth failure",
             "severity": "error",
             "type": "missing-sanitizer",
-            "message": "解析エラー: Invalid regular expression: /expect(/gi: Unterminated group",
+            "message": "解析エラー: Invalid regular expression: /expect\\(/gi: Unterminated group",
             "location": {
               "file": "/test/e2e-auth.test.ts",
               "line": 12,
@@ -117,8 +117,8 @@
     {
       "timestamp": "2025-07-26T07:11:13.483Z",
       "metrics": {
-        "totalTestCases": 2,
-        "analyzedTestCases": 2,
+        "totalTestCases": 1,
+        "analyzedTestCases": 1,
         "inference": {
           "automaticInferenceRate": 1,
           "inferenceAccuracy": 1,
@@ -153,8 +153,8 @@
     {
       "timestamp": "2025-07-26T07:11:13.503Z",
       "metrics": {
-        "totalTestCases": 0,
-        "analyzedTestCases": 0,
+        "totalTestCases": 1,
+        "analyzedTestCases": 1,
         "inference": {
           "automaticInferenceRate": 0,
           "inferenceAccuracy": 0,
