@@ -229,7 +229,12 @@ class BasicQualityAuditor {
         success: true,
         jestCoverage: jestCoverage,
         simpleCoverage: simpleTestCoverage,
-        fileStructure: fileStructure
+        fileStructure: {
+          srcFilesCount: fileStructure.srcFiles.length,
+          testFilesCount: fileStructure.testFiles.length,
+          configFilesCount: fileStructure.configFiles.length,
+          docFilesCount: fileStructure.docFiles.length
+        }
       };
 
       // より正確なテストカバレッジを更新
@@ -475,7 +480,7 @@ class BasicQualityAuditor {
         .sort((a, b) => b.size - a.size)
         .slice(0, 5)
         .map(file => ({
-          path: file.path,
+          path: path.relative(process.cwd(), file.path),
           size: file.size
         }));
 

@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { errorHandler } from '../utils/errorHandler';
@@ -221,8 +222,11 @@ export class ConfigLoader {
     while (currentDir !== rootDir) {
       for (const filename of ConfigLoader.CONFIG_FILENAMES) {
         const configPath = path.join(currentDir, filename);
-        if (fs.existsSync(configPath)) {
+        try {
+          await fsPromises.access(configPath);
           return configPath;
+        } catch {
+          // ファイルが存在しない、続行
         }
       }
       currentDir = path.dirname(currentDir);
