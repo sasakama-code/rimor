@@ -97,6 +97,8 @@ async function main() {
       
     } catch (error) {
       log.error(`セキュリティ分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       
       // フォールバック: セキュリティテストファイル数をベースにした推定
       try {
@@ -132,6 +134,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 2実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }
