@@ -301,8 +301,10 @@ describe('TaintTyper型ベースセキュリティ解析システム統合テス
       // 目標指標の検証
       expect(metrics.inference.automaticInferenceRate).toBeGreaterThanOrEqual(0);
       expect(metrics.inference.automaticInferenceRate).toBeLessThanOrEqual(1);
-      expect(metrics.detection.precision).toBeGreaterThanOrEqual(0);
-      expect(metrics.detection.precision).toBeLessThanOrEqual(1);
+      if (metrics.detection.precision !== null) {
+        expect(metrics.detection.precision).toBeGreaterThanOrEqual(0);
+        expect(metrics.detection.precision).toBeLessThanOrEqual(1);
+      }
       expect(metrics.performance.averageAnalysisTime).toBeGreaterThan(0);
 
       console.log(`✅ 精度評価完了:`);

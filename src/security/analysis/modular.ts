@@ -70,7 +70,8 @@ export class ModularTestAnalyzer {
       const issues = this.validateAgainstRequirements(
         taintAnalysis,
         requirements,
-        typeInference
+        typeInference,
+        method
       );
 
       // Step 7: メトリクス計算
@@ -270,7 +271,8 @@ export class ModularTestAnalyzer {
   private validateAgainstRequirements(
     taintAnalysis: TaintAnalysisResult,
     requirements: SecurityRequirement[],
-    typeInference: TypeInferenceResult
+    typeInference: TypeInferenceResult,
+    method?: TestMethod
   ): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
 
@@ -310,6 +312,46 @@ export class ModularTestAnalyzer {
       }
     }
 
+    // 基本的なセキュリティチェック
+    // ハードコードされた認証情報のチェック  
+    if (method) {
+      const hardcodedPattern = /password['"]?\s*[:=]\s*['"][^'"]+['"]/i;
+      if (hardcodedPattern.test(method.content)) {
+        issues.push({
+          id: 'hardcoded-credentials',
+          severity: 'error',
+          type: 'unsafe-taint-flow',
+          message: 'ハードコードされた認証情報が検出されました',
+          location: {
+            file: 'unknown',
+            line: 0,
+            column: 0
+          },
+          fixSuggestion: '認証情報を環境変数または設定ファイルから読み込むように修正してください'
+        });
+      }
+    }
+
+    // 入力検証のチェック
+    if (method) {
+      const hasValidation = /validate|sanitize|check/i.test(method.content);
+      const hasInputKeywords = /input|param|user|data/i.test(method.content);
+      if (!hasValidation && hasInputKeywords) {
+        issues.push({
+          id: 'insufficient-validation',
+          severity: 'warning',
+          type: 'insufficient-validation',  
+          message: '入力検証が不十分である可能性があります',
+          location: {
+            file: 'unknown',
+            line: 0,
+            column: 0
+          },
+          fixSuggestion: '入力値の検証ロジックを追加してください'
+        });
+      }
+    }
+
     return issues;
   }
 
@@ -328,9 +370,9 @@ export class ModularTestAnalyzer {
 
     return {
       securityCoverage: {
-        authentication: this.calculateAuthCoverage(method),
-        inputValidation: this.calculateInputValidationCoverage(method),
-        apiSecurity: this.calculateApiSecurityCoverage(method),
+        authentication: calculateAuthCoverage(method),
+        inputValidation: calculateInputValidationCoverage(method),
+        apiSecurity: calculateApiSecurityCoverage(method),
         overall: this.calculateOverallSecurityCoverage(method)
       },
       taintFlowDetection: totalVariables > 0 ? (totalVariables - taintedVariables) / totalVariables : 1.0,
@@ -348,6 +390,7 @@ export class ModularTestAnalyzer {
   ): SecurityImprovement[] {
     const suggestions: SecurityImprovement[] = [];
 
+    // イシューに基づく提案
     for (const issue of issues) {
       if (issue.type === 'unsafe-taint-flow') {
         suggestions.push({
@@ -365,6 +408,54 @@ export class ModularTestAnalyzer {
           automatable: true
         });
       }
+    }
+
+    // セキュリティ関連メソッドの基本的な改善提案
+    if (method.name.toLowerCase().includes('auth') || 
+        method.name.toLowerCase().includes('security') ||
+        method.content.toLowerCase().includes('sql')) {
+      
+      suggestions.push({
+        id: `enhance-${method.name}-1`,
+        priority: 'medium',
+        type: 'enhance-coverage',
+        title: 'セキュリティテストの強化',
+        description: 'セキュリティ関連のテストカバレッジを強化してください',
+        location: {
+          file: method.filePath,
+          line: method.location.startLine,
+          column: method.location.startColumn
+        },
+        suggestedCode: undefined,
+        estimatedImpact: {
+          securityImprovement: 20,
+          implementationMinutes: 30
+        },
+        automatable: false
+      });
+    }
+
+    // アサーションが少ない場合の提案
+    const assertionCount = (method.content.match(/expect\(|assert\(/g) || []).length;
+    if (assertionCount < 3) {
+      suggestions.push({
+        id: `enhance-${method.name}-2`,
+        priority: 'low',
+        type: 'fix-assertion',
+        title: 'アサーションの追加',
+        description: 'テストのアサーションを追加してカバレッジを向上させてください',
+        location: {
+          file: method.filePath,
+          line: method.location.startLine,
+          column: method.location.startColumn
+        },
+        suggestedCode: undefined,
+        estimatedImpact: {
+          securityImprovement: 15,
+          implementationMinutes: 15
+        },
+        automatable: false
+      });
     }
 
     return suggestions;
@@ -463,25 +554,10 @@ export class ModularTestAnalyzer {
     }, 0);
   }
 
-  private calculateAuthCoverage(method: TestMethod): number {
-    // 簡易実装
-    return method.name.includes('auth') ? 0.8 : 0.2;
-  }
-
-  private calculateInputValidationCoverage(method: TestMethod): number {
-    // 簡易実装
-    return method.content.includes('validate') ? 0.8 : 0.2;
-  }
-
-  private calculateApiSecurityCoverage(method: TestMethod): number {
-    // 簡易実装
-    return method.content.includes('api') ? 0.6 : 0.1;
-  }
-
   private calculateOverallSecurityCoverage(method: TestMethod): number {
-    const auth = this.calculateAuthCoverage(method);
-    const input = this.calculateInputValidationCoverage(method);
-    const api = this.calculateApiSecurityCoverage(method);
+    const auth = calculateAuthCoverage(method);
+    const input = calculateInputValidationCoverage(method);
+    const api = calculateApiSecurityCoverage(method);
     return (auth + input + api) / 3;
   }
 
@@ -580,11 +656,12 @@ class TypeInferenceEngine {
     const matches = content.match(/(?:const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g) || [];
     return matches.map(match => match.split(/\s+/)[1]);
   }
+}
 
-  /**
-   * 認証カバレッジの計算
-   */
-  private calculateAuthCoverage(method: TestMethod): number {
+/**
+ * ローカルヘルパー関数
+ */
+function calculateAuthCoverage(method: TestMethod): number {
     const content = method.content.toLowerCase();
     let coverage = 0;
     
@@ -607,10 +684,10 @@ class TypeInferenceEngine {
     return Math.min(1.0, coverage);
   }
 
-  /**
-   * 入力検証カバレッジの計算
-   */
-  private calculateInputValidationCoverage(method: TestMethod): number {
+/**
+ * 入力検証カバレッジの計算
+ */
+function calculateInputValidationCoverage(method: TestMethod): number {
     const content = method.content.toLowerCase();
     let coverage = 0;
     
@@ -636,10 +713,10 @@ class TypeInferenceEngine {
     return Math.min(1.0, coverage);
   }
 
-  /**
-   * API セキュリティカバレッジの計算
-   */
-  private calculateApiSecurityCoverage(method: TestMethod): number {
+/**
+ * API セキュリティカバレッジの計算
+ */
+function calculateApiSecurityCoverage(method: TestMethod): number {
     const content = method.content.toLowerCase();
     let coverage = 0;
     
@@ -664,7 +741,6 @@ class TypeInferenceEngine {
     
     return Math.min(1.0, coverage);
   }
-}
 
 // 関連するインターフェースの定義
 interface LocalContext {
