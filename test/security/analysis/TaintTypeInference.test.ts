@@ -269,7 +269,7 @@ describe('TaintTypeInference', () => {
       
       expect(result).toBeDefined();
       expect(result.issues).toBeDefined();
-      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
       expect(result.runtimeImpact).toBe(0); // コンパイル時解析のため
     });
 

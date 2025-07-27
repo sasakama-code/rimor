@@ -580,6 +580,90 @@ class TypeInferenceEngine {
     const matches = content.match(/(?:const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g) || [];
     return matches.map(match => match.split(/\s+/)[1]);
   }
+
+  /**
+   * 認証カバレッジの計算
+   */
+  private calculateAuthCoverage(method: TestMethod): number {
+    const content = method.content.toLowerCase();
+    let coverage = 0;
+    
+    // 認証関連のキーワードや関数をチェック
+    if (content.includes('auth') || content.includes('token') || content.includes('login')) {
+      coverage += 0.4;
+    }
+    if (content.includes('verify') || content.includes('validate')) {
+      coverage += 0.3;
+    }
+    if (content.includes('permission') || content.includes('role') || content.includes('access')) {
+      coverage += 0.3;
+    }
+    
+    // securityRelevance スコアを考慮
+    if (method.securityRelevance && method.securityRelevance > 0.8) {
+      coverage = Math.max(coverage, 0.8);
+    }
+    
+    return Math.min(1.0, coverage);
+  }
+
+  /**
+   * 入力検証カバレッジの計算
+   */
+  private calculateInputValidationCoverage(method: TestMethod): number {
+    const content = method.content.toLowerCase();
+    let coverage = 0;
+    
+    // 入力検証関連のキーワードや関数をチェック
+    if (content.includes('sanitize') || content.includes('escape') || content.includes('clean')) {
+      coverage += 0.4;
+    }
+    if (content.includes('validate') || content.includes('check') || content.includes('verify')) {
+      coverage += 0.3;
+    }
+    if (content.includes('input') || content.includes('param') || content.includes('data')) {
+      coverage += 0.2;
+    }
+    if (content.includes('injection') || content.includes('xss') || content.includes('sql')) {
+      coverage += 0.1;
+    }
+    
+    // securityRelevance スコアを考慮
+    if (method.securityRelevance && method.securityRelevance > 0.8) {
+      coverage = Math.max(coverage, 0.9);
+    }
+    
+    return Math.min(1.0, coverage);
+  }
+
+  /**
+   * API セキュリティカバレッジの計算
+   */
+  private calculateApiSecurityCoverage(method: TestMethod): number {
+    const content = method.content.toLowerCase();
+    let coverage = 0;
+    
+    // API セキュリティ関連のキーワードや関数をチェック
+    if (content.includes('api') || content.includes('endpoint') || content.includes('route')) {
+      coverage += 0.3;
+    }
+    if (content.includes('cors') || content.includes('csrf') || content.includes('rate')) {
+      coverage += 0.3;
+    }
+    if (content.includes('request') || content.includes('response') || content.includes('http')) {
+      coverage += 0.2;
+    }
+    if (content.includes('security') || content.includes('protect') || content.includes('secure')) {
+      coverage += 0.2;
+    }
+    
+    // securityRelevance スコアを考慮
+    if (method.securityRelevance && method.securityRelevance > 0.8) {
+      coverage = Math.max(coverage, 0.8);
+    }
+    
+    return Math.min(1.0, coverage);
+  }
 }
 
 // 関連するインターフェースの定義

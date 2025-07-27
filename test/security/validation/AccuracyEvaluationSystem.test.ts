@@ -19,13 +19,21 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'auth.test.js',
           name: 'authenticationTest',
           content: 'expect(authenticateUser(username, password)).toBeTruthy()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         },
         {
           file: 'input.test.js',
           name: 'inputValidationTest',
           content: 'expect(sanitizeInput(userInput)).toBeDefined()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -44,7 +52,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'secure.test.js',
           name: 'secureTest',
           content: 'expect(sanitize(input)).not.toContain("<script>")',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -61,7 +73,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'inference.test.js',
           name: 'inferenceTest',
           content: 'expect(validateAndProcess(userInput)).toBeSafe()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -81,7 +97,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'detection.test.js',
           name: 'detectionTest',
           content: 'expect(processInput(taintedData)).toBeSecure()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -99,7 +119,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'false-positive.test.js',
           name: 'falsePositiveTest',
           content: 'expect(safeFunction(cleanData)).toWork()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -117,7 +141,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'f1.test.js',
           name: 'f1Test',
           content: 'expect(validateSecurity(input)).toBeValid()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -143,7 +171,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'performance.test.js',
           name: 'performanceTest',
           content: 'expect(quickProcess(data)).toBeFast()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -161,7 +193,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'target.test.js',
           name: 'targetTest',
           content: 'expect(optimizedFunction(input)).toMeetTargets()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -180,7 +216,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'throughput.test.js',
           name: 'throughputTest',
           content: 'expect(batchProcess(data)).toComplete()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -203,7 +243,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'type-inference.test.js',
           name: 'typeInferenceTest',
           content: 'expect(inferTypes(code)).toSucceed()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -220,7 +264,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'taint-tracking.test.js',
           name: 'taintTrackingTest',
           content: 'expect(trackTaint(taintedInput)).toBeAccurate()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -236,7 +284,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'invariant.test.js',
           name: 'invariantTest',
           content: 'expect(verifyInvariant(condition)).toHold()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -254,7 +306,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'detail1.test.js',
           name: 'detailTest1',
           content: 'expect(process1(input)).toWork()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         },
         {
           file: 'detail2.test.js',
@@ -284,7 +340,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'jest.test.js',
           name: 'jestTest',
           content: 'expect(jestFunction()).toBeTruthy()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         },
         {
           file: 'mocha.test.js',
@@ -314,7 +374,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'issues.test.js',
           name: 'issuesTest',
           content: 'expect(handleIssues(input)).toResolve()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -340,7 +404,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'improvement.test.js',
           name: 'improvementTest',
           content: 'expect(needsImprovement(input)).toImprove()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -366,7 +434,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'slow.test.js',
           name: 'slowTest',
           content: 'expect(slowFunction(input)).toEventuallyComplete()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 
@@ -388,7 +460,11 @@ describe('AccuracyEvaluationSystem - 精度評価システム', () => {
           file: 'trend.test.js',
           name: 'trendTest',
           content: 'expect(trendAnalysis(data)).toShowProgress()',
-          metadata: { framework: 'jest' }
+          metadata: { 
+            framework: 'jest',
+            language: 'javascript',
+            lastModified: new Date()
+          }
         }
       ];
 

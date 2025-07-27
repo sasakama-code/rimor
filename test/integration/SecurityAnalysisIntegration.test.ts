@@ -492,7 +492,7 @@ describe('TaintTyper型ベースセキュリティ解析システム統合テス
       // Step 5: 精度評価
       const accuracyResult = await accuracyEvaluator.evaluateAccuracy(testCases);
       expect(accuracyResult).toBeDefined();
-      console.log(`   🎯 精度評価完了: F1スコア ${accuracyResult.overallMetrics.detection.f1Score.toFixed(3)}`);
+      console.log(`   🎯 精度評価完了: F1スコア ${accuracyResult.overallMetrics.detection.f1Score !== null ? accuracyResult.overallMetrics.detection.f1Score.toFixed(3) : 'N/A'}`);
 
       // Step 6: パフォーマンス検証
       const avgTime = analysisResult.executionTime / testCases.length;
@@ -503,7 +503,7 @@ describe('TaintTyper型ベースセキュリティ解析システム統合テス
       const overallSuccess = 
         analysisResult.runtimeImpact === 0 && // ゼロランタイムオーバーヘッド
         analysisResult.issues.length >= 0 && // 解析が実行された
-        accuracyResult.overallMetrics.detection.f1Score >= 0; // 精度評価が動作
+        (accuracyResult.overallMetrics.detection.f1Score !== null && accuracyResult.overallMetrics.detection.f1Score >= 0); // 精度評価が動作
 
       expect(overallSuccess).toBe(true);
       console.log('✅ エンドツーエンド統合テスト完了 - 全システム正常動作確認');

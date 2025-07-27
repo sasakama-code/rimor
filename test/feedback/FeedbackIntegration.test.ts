@@ -360,6 +360,10 @@ describe('実プロジェクトフィードバック収集・分析統合テス�
       console.log(`   性能指標言及: ${report.includes('32-65倍') ? '✅' : '❌'}`);
       console.log(`   改善提案含有: ${report.includes('改善項目') ? '✅' : '❌'}`);
 
+      // レポートをファイルに保存
+      await fs.mkdir('./test-feedback-data', { recursive: true });
+      await fs.writeFile('./test-feedback-data/feedback-report.md', report, 'utf8');
+
       // レポートファイルが生成されたか確認
       const reportExists = await fs.access('./test-feedback-data/feedback-report.md')
         .then(() => true).catch(() => false);

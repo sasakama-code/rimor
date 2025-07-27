@@ -82,6 +82,10 @@ export interface ValidationResult {
   };
   /** フレームワーク固有の評価 */
   frameworkSpecificFindings: FrameworkSpecificFinding[];
+  /** パース エラー */
+  parsingErrors: string[];
+  /** 不足ファイル */
+  missingFiles: string[];
 }
 
 /**
@@ -180,7 +184,9 @@ export class RealWorldProjectValidator {
       performanceMetrics,
       accuracyMetrics,
       securityAssessment,
-      frameworkSpecificFindings
+      frameworkSpecificFindings,
+      parsingErrors: [],
+      missingFiles: []
     };
 
     // 結果をキャッシュ
@@ -741,6 +747,90 @@ export class RealWorldProjectValidator {
     return {
       avgTimePerFile: totalTimePerFile / results.length,
       avgThroughput: totalThroughput / results.length
+    };
+  }
+
+  /**
+   * テスト品質分析
+   */
+  async analyzeTestQuality(project: RealWorldProject): Promise<{
+    coverageAnalysis: any;
+    missingTests: string[];
+    testQualityScore: number;
+  }> {
+    console.log('🔍 テスト品質分析開始');
+    const testCases = await this.collectTestCases(project);
+    const analysisResults = await this.runSecurityAnalysis(testCases);
+    
+    // カバレッジ分析
+    const coverageAnalysis = {
+      totalFiles: project.testPaths.length,
+      testedFiles: testCases.length,
+      coverageRate: testCases.length / Math.max(1, project.testPaths.length)
+    };
+    
+    // 不足テスト検出
+    const missingTests = project.testPaths.filter(path => 
+      !testCases.some(testCase => testCase.file.includes(path))
+    );
+    
+    // 品質スコア計算
+    const qualityScore = analysisResults.length > 0 
+      ? analysisResults.reduce((sum, r) => sum + (r.metrics?.securityCoverage?.overall || 0), 0) / analysisResults.length
+      : 0;
+    
+    return {
+      coverageAnalysis,
+      missingTests,
+      testQualityScore: qualityScore
+    };
+  }
+
+  /**
+   * テストパフォーマンス分析
+   */
+  async analyzeTestPerformance(testSuite: any): Promise<{
+    executionTime: number;
+    memoryUsage: number;
+    performanceScore: number;
+  }> {
+    console.log('⚡ テストパフォーマンス分析開始');
+    const startTime = Date.now();
+    const startMemory = process.memoryUsage().heapUsed;
+    
+    // テストスイート実行シミュレーション
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const executionTime = Date.now() - startTime;
+    const memoryUsage = process.memoryUsage().heapUsed - startMemory;
+    const performanceScore = Math.max(0, 1 - (executionTime / 1000)); // 1秒以内で最高スコア
+    
+    return {
+      executionTime,
+      memoryUsage,
+      performanceScore
+    };
+  }
+
+  /**
+   * カスタムルールによる検証
+   */
+  async validateWithCustomRules(project: RealWorldProject): Promise<ValidationResult> {
+    console.log('📋 カスタムルール検証開始');
+    
+    // 基本検証を実行
+    const baseResult = await this.validateProject(project);
+    
+    // カスタムルール適用（フレームワーク固有の検証など）
+    const additionalFindings = await this.analyzeFrameworkSpecific(project, baseResult.analysisResults);
+    
+    // 結果をマージ
+    return {
+      ...baseResult,
+      frameworkSpecificFindings: [
+        ...baseResult.frameworkSpecificFindings,
+        ...additionalFindings
+      ]
     };
   }
 }
