@@ -34,6 +34,12 @@ export default {
   
   // メモリ使用量最適化
   logHeapUsage: process.env.CI === 'true',
+  workerIdleMemoryLimit: '256MB', // ワーカーのアイドル時メモリ制限
+  
+  // ハッシュ計算最適化
+  haste: {
+    computeSha1: false // ハッシュ計算を無効化してメモリ削減
+  },
   
   // テスト環境変数の確実な設定
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
