@@ -17,22 +17,22 @@
       ]
     },
     "timing": {
-      "totalTime": 52,
+      "totalTime": 54,
       "timePerFile": 0.13,
       "timePerMethod": 0.052,
       "setupTime": 0,
-      "analysisTime": 52,
+      "analysisTime": 54,
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 516.2824478149414,
-      "peakMemory": 524.2125854492188,
-      "finalMemory": 524.2130966186523,
-      "memoryPerFile": 0.01982534408569336
+      "initialMemory": 516.28,
+      "peakMemory": 524.21,
+      "finalMemory": 524.21,
+      "memoryPerFile": 0.020
     },
     "throughput": {
-      "filesPerSecond": 7692.307692307692,
-      "methodsPerSecond": 19230.76923076923,
+      "filesPerSecond": 7692.31,
+      "methodsPerSecond": 19230.77,
       "issuesPerSecond": 0
     },
     "parallelism": {
@@ -44,7 +44,7 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 38.46153846153846
+      "actualSpeedup": 38.46
     },
     "analysisResults": {
       "totalIssues": 0,

@@ -1,8 +1,8 @@
 {
   "requirements": {
-    "automaticInferenceRate": "≥85%",
-    "inferenceAccuracy": "≥90%",
-    "falsePositiveRate": "≤15%"
+    "automaticInferenceRate": 0.85,
+    "inferenceAccuracy": 0.90,
+    "falsePositiveRate": 0.15
   },
   "results": {
     "automaticInferenceRate": 0.873,

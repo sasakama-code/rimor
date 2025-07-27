@@ -1,8 +1,8 @@
 {
   "requirement": "< 5 seconds for 1000 methods",
-  "totalTimeSeconds": 0.071,
+  "totalTimeSeconds": 0.070,
   "methodCount": 1000,
-  "timePerMethodMs": 0.071,
+  "timePerMethodMs": 0.070,
   "achieved": true,
   "detailedResults": {
     "config": {
@@ -25,14 +25,14 @@
       "teardownTime": 0
     },
     "memory": {
-      "initialMemory": 469.69639587402344,
-      "peakMemory": 480.73680114746094,
-      "finalMemory": 480.73741912841797,
-      "memoryPerFile": 0.02760101318359375
+      "initialMemory": 469.70,
+      "peakMemory": 480.74,
+      "finalMemory": 480.74,
+      "memoryPerFile": 0.028
     },
     "throughput": {
-      "filesPerSecond": 5714.285714285714,
-      "methodsPerSecond": 14285.714285714284,
+      "filesPerSecond": 5714.29,
+      "methodsPerSecond": 14285.71,
       "issuesPerSecond": 0
     },
     "parallelism": {
@@ -44,7 +44,7 @@
     "targetAchievement": {
       "fiveMsTarget": true,
       "speedupTarget": false,
-      "actualSpeedup": 28.571428571428573
+      "actualSpeedup": 28.57
     },
     "analysisResults": {
       "totalIssues": 0,
