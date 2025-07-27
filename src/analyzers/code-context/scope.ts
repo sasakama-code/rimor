@@ -10,81 +10,85 @@ export class ScopeAnalyzer {
   async analyzeScopeContext(fileContent: string, targetLine: number): Promise<ScopeInfo[]> {
     const scopes: ScopeInfo[] = [];
     const lines = fileContent.split('\n');
+    const scopeStack: ScopeInfo[] = [];
     let braceLevel = 0;
-    let currentScope: ScopeInfo | null = null;
-    let globalScope: ScopeInfo | null = null;
+    
+    // グローバルスコープを作成
+    const globalScope: ScopeInfo = {
+      type: 'global',
+      startLine: 1,
+      endLine: lines.length,
+      variables: [],
+      parent: undefined,
+      children: [],
+      functions: [],
+      level: 0,
+      parentScope: undefined
+    };
+    scopes.push(globalScope);
+    scopeStack.push(globalScope);
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
+      const trimmedLine = line.trim();
+      
+      // スコープ開始の検出（{の前に判定）
+      const scopeType = this.determineScopeType(line);
+      const hasOpenBrace = line.includes('{');
+      
+      if (hasOpenBrace && (scopeType === 'function' || scopeType === 'block' || scopeType === 'if' || scopeType === 'loop')) {
+        const parentScope = scopeStack[scopeStack.length - 1];
+        const newScope: ScopeInfo = {
+          type: scopeType === 'if' || scopeType === 'loop' ? 'block' : scopeType as 'global' | 'function' | 'class' | 'block' | 'module',
+          startLine: lineNumber,
+          endLine: -1,
+          variables: [],
+          parent: parentScope,
+          children: [],
+          functions: [],
+          level: scopeStack.length,
+          parentScope: parentScope?.type
+        };
+        
+        scopes.push(newScope);
+        scopeStack.push(newScope);
+        if (parentScope) {
+          parentScope.children.push(newScope);
+        }
+      }
+      
+      // 現在のスコープに変数を追加
+      const currentScope = scopeStack[scopeStack.length - 1];
+      if (currentScope) {
+        const variable = this.extractVariableFromLine(line);
+        if (variable) {
+          currentScope.variables.push(variable);
+        }
+        
+        const functionName = this.extractFunctionFromLine(line);
+        if (functionName) {
+          if (!currentScope.functions) {
+            currentScope.functions = [];
+          }
+          currentScope.functions.push(functionName);
+        }
+      }
       
       // ブレースのカウント
       for (const char of line) {
         if (char === '{') {
           braceLevel++;
-          
-          // 新しいスコープの開始
-          if (currentScope && currentScope.endLine === -1) {
-            currentScope.startLine = lineNumber;
-          } else if (!currentScope || currentScope.endLine !== -1) {
-            const scopeType = this.determineScopeType(line);
-            const newScope: ScopeInfo = {
-              type: scopeType as 'global' | 'function' | 'class' | 'block' | 'module',
-              startLine: lineNumber,
-              endLine: -1,
-              variables: [],
-              parent: currentScope || undefined,
-              children: [],
-              functions: [],
-              level: braceLevel,
-              parentScope: currentScope?.type
-            };
-            
-            if (scopeType === 'function' || scopeType === 'class' || scopeType === 'method') {
-              scopes.push(newScope);
-              currentScope = newScope;
-            }
-          }
         } else if (char === '}') {
           braceLevel--;
           
           // スコープの終了
-          if (currentScope && currentScope.endLine === -1) {
-            currentScope.endLine = lineNumber;
-            currentScope = null;
+          if (scopeStack.length > 1) {
+            const closingScope = scopeStack.pop();
+            if (closingScope && closingScope.endLine === -1) {
+              closingScope.endLine = lineNumber;
+            }
           }
-        }
-      }
-      
-      // グローバルスコープの処理
-      if (braceLevel === 0) {
-        if (!globalScope) {
-          globalScope = {
-            type: 'global',
-            startLine: 1,
-            endLine: -1,
-            variables: [],
-            parent: undefined,
-            children: [],
-            functions: [],
-            level: 0,
-            parentScope: undefined
-          };
-          scopes.push(globalScope);
-        }
-        
-        // グローバルレベルの変数や関数を検出
-        const variable = this.extractVariableFromLine(line);
-        if (variable && globalScope) {
-          globalScope.variables.push(variable);
-        }
-        
-        const functionName = this.extractFunctionFromLine(line);
-        if (functionName && globalScope) {
-          if (!globalScope.functions) {
-            globalScope.functions = [];
-          }
-          globalScope.functions.push(functionName);
         }
       }
     }
@@ -96,7 +100,20 @@ export class ScopeAnalyzer {
       }
     }
     
-    return scopes;
+    // ターゲット行を含むスコープを返す
+    const relevantScopes = scopes.filter(scope => 
+      targetLine >= scope.startLine && targetLine <= scope.endLine
+    );
+    
+    // グローバルスコープを除外して、最も具体的なスコープを返す
+    const nonGlobalScopes = relevantScopes.filter(scope => scope.type !== 'global');
+    if (nonGlobalScopes.length > 0) {
+      // レベルが最も深いスコープから優先的に返す
+      nonGlobalScopes.sort((a, b) => (b.level || 0) - (a.level || 0));
+      return nonGlobalScopes;
+    }
+    
+    return relevantScopes.length > 0 ? relevantScopes : scopes;
   }
 
   /**
@@ -150,7 +167,11 @@ export class ScopeAnalyzer {
   private determineScopeType(line: string): string {
     const trimmedLine = line.trim();
     
-    if (trimmedLine.includes('function') || trimmedLine.match(/^\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\(/)) {
+    // 関数定義の検出（より厳密に）
+    if (trimmedLine.match(/(?:async\s+)?function\s+[a-zA-Z_$]/) || 
+        trimmedLine.match(/(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?function/) ||
+        trimmedLine.match(/(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*\([^)]*\)\s*=>/) ||
+        trimmedLine.match(/^\s*(?:async\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/) && !trimmedLine.includes('if') && !trimmedLine.includes('for') && !trimmedLine.includes('while')) {
       return 'function';
     }
     
@@ -158,29 +179,29 @@ export class ScopeAnalyzer {
       return 'class';
     }
     
-    if (trimmedLine.includes('if ')) {
+    if (trimmedLine.match(/\bif\s*\(/)) {
       return 'if';
     }
     
-    if (trimmedLine.includes('for ') || trimmedLine.includes('while ')) {
+    if (trimmedLine.match(/\b(?:for|while)\s*\(/)) {
       return 'loop';
     }
     
-    if (trimmedLine.includes('try ')) {
+    if (trimmedLine.match(/\btry\s*\{/)) {
       return 'try';
     }
     
-    if (trimmedLine.includes('catch ')) {
+    if (trimmedLine.match(/\bcatch\s*\(/)) {
       return 'catch';
     }
     
-    if (trimmedLine.includes('=>')) {
-      return 'arrow-function';
+    if (trimmedLine.includes('=>') && trimmedLine.includes('{')) {
+      return 'function';
     }
     
-    // メソッドの検出（クラス内での関数定義）
-    if (trimmedLine.match(/^\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)\s*\{/)) {
-      return 'method';
+    // ブロックスコープ（単独の{}）
+    if (trimmedLine === '{' || (trimmedLine.includes('{') && !trimmedLine.match(/\b(?:function|class|if|for|while|try|catch)\b/))) {
+      return 'block';
     }
     
     return 'block';

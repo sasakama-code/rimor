@@ -195,16 +195,38 @@ export class LanguageAnalyzer {
       /^[\s]*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/,
       /^[\s]*(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
       /^[\s]*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>/,
-      /^[\s]*(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)\s*\{/
+      /^[\s]*(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/
+    ];
+    
+    // Skip if-statements, for-loops, etc
+    const skipPatterns = [
+      /^[\s]*(?:if|for|while|switch|catch|try)\s*\(/,
+      /^[\s]*}\s*else\s*(?:if)?/
     ];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
+      // Skip lines that are not function declarations
+      let shouldSkip = false;
+      for (const skipPattern of skipPatterns) {
+        if (skipPattern.test(line)) {
+          shouldSkip = true;
+          break;
+        }
+      }
+      if (shouldSkip) continue;
+      
       for (const regex of functionRegexes) {
         const match = line.match(regex);
         if (match) {
           const functionName = match[1];
+          
+          // constructorはスキップ
+          if (functionName === 'constructor') {
+            break;
+          }
+          
           let braceCount = 0;
           let foundStart = false;
           let endLine = i;
@@ -457,13 +479,23 @@ export class LanguageAnalyzer {
   private extractParameters(line: string): string[] {
     const match = line.match(/\(([^)]*)\)/);
     if (match && match[1]) {
-      return match[1].split(',').map(p => p.trim()).filter(p => p);
+      return match[1].split(',').map(p => {
+        // パラメータ名のみを抽出（型情報を除去）
+        const paramName = p.trim().split(':')[0].trim();
+        return paramName;
+      }).filter(p => p);
     }
     return [];
   }
 
   private extractReturnType(line: string): string | undefined {
-    const match = line.match(/:\s*([^{=]+)/);
+    // メソッドの引数リストの後の型を抽出
+    // 最後の ) を見つけて、その後の : から { までの間を取得
+    const lastParenIndex = line.lastIndexOf(')');
+    if (lastParenIndex === -1) return undefined;
+    
+    const afterParen = line.substring(lastParenIndex + 1);
+    const match = afterParen.match(/^\s*:\s*([^{]+)/);
     return match ? match[1].trim() : undefined;
   }
 
@@ -550,8 +582,9 @@ export class LanguageAnalyzer {
       }
       
       if (braceLevel > 0) {
-        const methodMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
-        if (methodMatch) {
+        // Match various method patterns including async methods
+        const methodMatch = line.match(/^\s*(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
+        if (methodMatch && methodMatch[1] !== 'if' && methodMatch[1] !== 'for' && methodMatch[1] !== 'while' && methodMatch[1] !== 'switch') {
           methods.push(methodMatch[1]);
         }
         
