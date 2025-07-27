@@ -1,12 +1,48 @@
 import { getMessage } from '../i18n/messages';
 
-let chalk: any = null;
+let chalkInstance: any = null;
+let chalkPromise: Promise<any> | null = null;
 
-async function getChalk() {
-  if (!chalk) {
-    chalk = (await import('chalk')).default;
+function getChalk() {
+  if (!chalkPromise) {
+    chalkPromise = loadChalk();
   }
-  return chalk;
+  return chalkPromise;
+}
+
+async function loadChalk() {
+  if (chalkInstance) {
+    return chalkInstance;
+  }
+
+  try {
+    if (process.env.NODE_ENV === 'test') {
+      chalkInstance = {
+        bold: (s: string) => s,
+        green: (s: string) => s,
+        red: (s: string) => s,
+        yellow: (s: string) => s,
+        blue: (s: string) => s,
+        gray: (s: string) => s
+      };
+      chalkInstance.bold.blue = (s: string) => s;
+    } else {
+      const chalk = await import('chalk');
+      chalkInstance = chalk.default;
+    }
+  } catch (error) {
+    chalkInstance = {
+      bold: (s: string) => s,
+      green: (s: string) => s,
+      red: (s: string) => s,
+      yellow: (s: string) => s,
+      blue: (s: string) => s,
+      gray: (s: string) => s
+    };
+    chalkInstance.bold.blue = (s: string) => s;
+  }
+  
+  return chalkInstance;
 }
 
 export class OutputFormatter {
