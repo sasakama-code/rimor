@@ -105,7 +105,7 @@ export interface TestMethod {
   /** 依存関係（セキュリティプラグイン用） */
   dependencies?: string[];
   /** テストタイプ（セキュリティプラグイン用） */
-  testType?: string;
+  testType?: 'unit' | 'integration' | 'e2e' | 'security';
   /** メソッドシグネチャ */
   signature: MethodSignature;
   /** 位置情報 */
@@ -128,11 +128,11 @@ export interface MethodSignature {
   /** 戻り値の型 */
   returnType?: string;
   /** アノテーション */
-  annotations?: string[];
+  annotations: string[];
   /** アクセス修飾子 */
   visibility?: 'private' | 'protected' | 'public';
   /** 非同期かどうか */
-  isAsync?: boolean;
+  isAsync: boolean;
 }
 
 /**

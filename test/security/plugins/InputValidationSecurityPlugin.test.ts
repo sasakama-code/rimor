@@ -94,7 +94,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
                 { name: 'email', type: 'string', annotations: [] }
               ],
               returnType: 'boolean',
-              annotations: []
+              annotations: [],
+              isAsync: false
             },
             body: 'expect(validateEmail(email)).toBe(true);',
             assertions: ['expect'],
@@ -145,7 +146,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
                 { name: 'input', type: 'string', annotations: [] }
               ],
               returnType: 'string',
-              annotations: []
+              annotations: [],
+              isAsync: false
             },
             body: `
               const maliciousInput = '<script>alert("xss")</script>';
@@ -207,7 +209,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
                 { name: 'input', type: 'string', annotations: [] }
               ],
               returnType: 'boolean',
-              annotations: []
+              annotations: [],
+              isAsync: false
             },
             body: `expect(validateInput('')).toBe(false);`,
             assertions: ['expect'],
@@ -250,7 +253,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
                 { name: 'userInput', type: 'string', annotations: [] }
               ],
               returnType: 'any',
-              annotations: []
+              annotations: [],
+              isAsync: false
             },
             body: `
               const userInput = 'some input';
@@ -466,7 +470,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             { name: 'sanitizer', type: 'InputSanitizer', annotations: [] }
           ],
           returnType: 'SafeString',
-          annotations: []
+          annotations: [],
+          isAsync: false
         },
         body: `
           const cleaned = sanitizer.sanitize(taintedInput);
@@ -505,7 +510,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             { name: 'userInput', type: 'any', annotations: [] } // 型安全性違反
           ],
           returnType: 'any',
-          annotations: []
+          annotations: [],
+          isAsync: false
         },
         body: `
           const result = eval(userInput); // 非常に危険
@@ -547,7 +553,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             { name: 'input', type: 'string', annotations: [] }
           ],
           returnType: 'boolean',
-          annotations: []
+          annotations: [],
+          isAsync: false
         },
         body: 'expect(validateInput("test")).toBe(true);',
         assertions: ['expect'],
@@ -597,7 +604,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
               { name: 'input', type: 'string', annotations: [] }
             ],
             returnType: 'boolean',
-            annotations: []
+            annotations: [],
+            isAsync: false
           },
           body: `expect(validateInput${i}("test")).toBe(true);`,
           assertions: ['expect'],
@@ -629,7 +637,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
               name: 'validateCached',
               parameters: [{ name: 'input', type: 'string', annotations: [] }],
               returnType: 'boolean',
-              annotations: []
+              annotations: [],
+              isAsync: false
             },
             body: 'expect(validateCached("test")).toBe(true);',
             assertions: ['expect'],
