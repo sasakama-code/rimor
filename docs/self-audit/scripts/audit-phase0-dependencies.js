@@ -53,7 +53,8 @@ const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
   warning: (msg) => console.log(`⚠️  ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 // ====================================================================
@@ -143,9 +144,12 @@ class DependencyAuditor {
       
     } catch (error) {
       log.warning('npm auditでエラーが発生しましたが、続行します');
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.npmAudit = {
         success: false,
         error: error.message,
+        errorCode: error.code || 'N/A',
         note: 'npm auditは脆弱性が存在する場合に非0のexit codeを返すことがあります'
       };
     }
@@ -212,9 +216,12 @@ class DependencyAuditor {
       
     } catch (error) {
       log.error(`ライセンス監査エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.licenseAudit = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -271,9 +278,12 @@ class DependencyAuditor {
       
     } catch (error) {
       log.error(`バージョン監査エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.versionAudit = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -359,9 +369,12 @@ class DependencyAuditor {
       
     } catch (error) {
       log.error(`環境監査エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`スタック: ${error.stack}`);
       this.results.details.environmentAudit = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -536,6 +549,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 0実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }

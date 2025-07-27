@@ -20,7 +20,8 @@ const argv = yargs(hideBin(process.argv))
 const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 async function main() {
@@ -66,6 +67,9 @@ async function main() {
       }
     } catch (error) {
       log.error(`TypeScript設定分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`ファイルパス: tsconfig.json`);
+      results.details.typescriptConfig = { success: false, error: error.message };
     }
 
     // package.json分析
@@ -90,6 +94,9 @@ async function main() {
       }
     } catch (error) {
       log.error(`package.json分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`ファイルパス: package.json`);
+      results.details.packageJsonAnalysis = { success: false, error: error.message };
     }
 
     results.executionTime = Date.now() - startTime;
@@ -99,6 +106,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 3実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }

@@ -54,7 +54,8 @@ const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
   warning: (msg) => console.log(`⚠️  ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 // ====================================================================
@@ -165,9 +166,12 @@ class PerformanceAuditor {
       
     } catch (error) {
       log.error(`バンドルサイズ分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`distパス: ${path.join(process.cwd(), 'dist')}`);
       this.results.details.bundleAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -306,9 +310,12 @@ class PerformanceAuditor {
       
     } catch (error) {
       log.error(`メモリ分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.memoryAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -384,9 +391,12 @@ class PerformanceAuditor {
       
     } catch (error) {
       log.error(`CPU分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`スタック: ${error.stack}`);
       this.results.details.cpuAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -448,9 +458,12 @@ class PerformanceAuditor {
       
     } catch (error) {
       log.error(`ビルド分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`コマンド: npm run build`);
       this.results.details.buildAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -514,9 +527,12 @@ class PerformanceAuditor {
       
     } catch (error) {
       log.error(`ベンチマークエラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.benchmarkResults = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -714,6 +730,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 2.5実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }

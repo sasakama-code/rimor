@@ -57,7 +57,8 @@ const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
   warning: (msg) => console.log(`⚠️  ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 // ====================================================================
@@ -184,9 +185,12 @@ class BasicQualityAuditor {
       
     } catch (error) {
       log.error(`Rimor分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`コマンド: node dist/index.js analyze ./src --format=json`);
       this.results.details.rimorAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -239,9 +243,12 @@ class BasicQualityAuditor {
       
     } catch (error) {
       log.error(`テストカバレッジ分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`スタック: ${error.stack}`);
       this.results.details.testCoverageAnalysis = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -532,9 +539,12 @@ class BasicQualityAuditor {
       
     } catch (error) {
       log.error(`コードメトリクス分析エラー: ${error.message}`);
+      log.debug(`エラーコード: ${error.code || 'N/A'}`);
+      log.debug(`タイムスタンプ: ${new Date().toISOString()}`);
       this.results.details.codeMetrics = {
         success: false,
-        error: error.message
+        error: error.message,
+        errorCode: error.code || 'N/A'
       };
     }
   }
@@ -714,6 +724,8 @@ async function main() {
     
   } catch (error) {
     log.error(`Phase 1実行エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     process.exit(1);
   }
 }

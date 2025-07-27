@@ -71,7 +71,9 @@ async function main() {
         actualTestCoverage = phase1.summary?.testCoverage || 0;
         actualIssuesFound += phase1.summary?.issuesFound || 0;
       }
-    } catch (err) { /* ignore */ }
+    } catch (err) { 
+      log.info(`Phase 1結果の読み込みに失敗: ${err.message}`);
+    }
 
     // Phase 2結果  
     try {
@@ -81,7 +83,9 @@ async function main() {
         actualSecurityCoverage = phase2.summary?.testCoverage || 0;
         actualIssuesFound += phase2.summary?.issuesFound || 0;
       }
-    } catch (err) { /* ignore */ }
+    } catch (err) { 
+      log.info(`Phase 2結果の読み込みに失敗: ${err.message}`);
+    }
 
     results.details.actualResults = {
       testCoverage: actualTestCoverage,

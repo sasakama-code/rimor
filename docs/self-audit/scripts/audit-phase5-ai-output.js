@@ -78,8 +78,14 @@ async function main() {
       };
       
     } catch (error) {
-      log.error(`AI出力テストエラー: ${error.message}`);
-      results.details.jsonOutput = { success: false, error: error.message };
+      const errorType = error.code === 'ENOENT' ? 'コマンドが見つかりません' : 
+                        error.status !== 0 ? 'コマンド実行エラー' : 'その他のエラー';
+      log.error(`AI出力テストエラー: ${errorType} - ${error.message}`);
+      results.details.jsonOutput = { 
+        success: false, 
+        error: error.message,
+        errorType: errorType
+      };
     }
 
     // 互換性評価

@@ -123,12 +123,22 @@ async function analyzeTrend() {
 
 function parseTimestamp(timestamp) {
   try {
+    // 最小長チェック
+    if (timestamp.length < 13) {
+      return timestamp;
+    }
+    
     // YYYYMMDDTHHmmss 形式を想定
     const year = timestamp.substr(0, 4);
     const month = timestamp.substr(4, 2);
     const day = timestamp.substr(6, 2);
     const hour = timestamp.substr(9, 2);
     const minute = timestamp.substr(11, 2);
+    
+    // 数値妥当性チェック
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+      return timestamp;
+    }
     
     return `${year}/${month}/${day} ${hour}:${minute}`;
   } catch (error) {

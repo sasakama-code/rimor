@@ -64,7 +64,8 @@ const log = {
   info: (msg) => argv.verbose && console.log(`ℹ️  ${msg}`),
   success: (msg) => argv.verbose && console.log(`✅ ${msg}`),
   warning: (msg) => console.log(`⚠️  ${msg}`),
-  error: (msg) => console.error(`❌ ${msg}`)
+  error: (msg) => console.error(`❌ ${msg}`),
+  debug: (msg) => argv.verbose && console.log(`🔍 ${msg}`)
 };
 
 // ====================================================================
@@ -118,6 +119,8 @@ class AuditReportGenerator {
         log.info(`Phase ${phaseId} 読み込み完了: ${data.name}`);
       } catch (error) {
         log.warning(`Phase結果ファイル読み込みエラー: ${file} - ${error.message}`);
+        log.debug(`エラーコード: ${error.code || 'N/A'}`);
+        log.debug(`ファイルパス: ${filePath}`);
       }
     }
 
@@ -764,6 +767,8 @@ async function main() {
     
   } catch (error) {
     log.error(`統合レポート生成エラー: ${error.message}`);
+    log.debug(`エラーコード: ${error.code || 'N/A'}`);
+    log.debug(`スタック: ${error.stack}`);
     console.error(error.stack);
     process.exit(1);
   }
