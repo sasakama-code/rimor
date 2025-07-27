@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-27T05:26:55.564Z",
+  "timestamp": "2025-07-27T11:16:24.691Z",
   "requirements": {
     "automaticInferenceRate": "≥85%",
     "inferenceAccuracy": "≥90%",
@@ -7,21 +7,21 @@
   },
   "achieved": {
     "automaticInferenceRate": "100.0%",
-    "inferenceAccuracy": "100.0%",
-    "falsePositiveRate": "0.0%"
+    "inferenceAccuracy": "88.9%",
+    "falsePositiveRate": "11.1%"
   },
   "success": {
     "automaticInferenceRate": true,
-    "inferenceAccuracy": true,
+    "inferenceAccuracy": false,
     "falsePositiveRate": true
   },
-  "overallSuccess": true,
+  "overallSuccess": false,
   "detailedMetrics": {
     "automaticInferenceRate": 100,
-    "inferenceAccuracy": 100,
-    "falsePositiveRate": 0,
+    "inferenceAccuracy": 88.88888888888889,
+    "falsePositiveRate": 11.11111111111111,
     "truePositiveRate": 100,
-    "precisionScore": 100,
+    "precisionScore": 75,
     "recallScore": 100
   },
   "results": [
@@ -33,7 +33,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "inference-002",
@@ -55,7 +55,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "accuracy-001",
@@ -79,7 +79,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 4
+      "inferenceTime": 3
     },
     {
       "testCaseId": "accuracy-003",
@@ -89,17 +89,19 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 4
     },
     {
       "testCaseId": "false-positive-001",
-      "detectedIssues": [],
+      "detectedIssues": [
+        "false-issue"
+      ],
       "inferredSecurityType": "sanitized-data",
       "isTainted": false,
-      "isCorrect": true,
-      "isFalsePositive": false,
+      "isCorrect": false,
+      "isFalsePositive": true,
       "isFalseNegative": false,
-      "inferenceTime": 2
+      "inferenceTime": 3
     },
     {
       "testCaseId": "false-positive-002",
@@ -119,7 +121,7 @@
       "isCorrect": true,
       "isFalsePositive": false,
       "isFalseNegative": false,
-      "inferenceTime": 3
+      "inferenceTime": 2
     }
   ]
 }
