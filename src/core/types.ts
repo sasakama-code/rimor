@@ -18,7 +18,7 @@ export interface ITestQualityPlugin {
   id: string;
   name: string;
   version: string;
-  type: 'core' | 'framework' | 'pattern' | 'domain';
+  type: 'core' | 'framework' | 'pattern' | 'domain' | 'security';
   
   // プラグインの適用条件
   isApplicable(context: ProjectContext): boolean;

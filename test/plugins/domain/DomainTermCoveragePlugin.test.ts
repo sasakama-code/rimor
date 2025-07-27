@@ -316,9 +316,10 @@ describe('DomainTermCoveragePlugin', () => {
 
       expect(qualityScore.overall).toBeGreaterThan(0);
       expect(qualityScore.overall).toBeLessThanOrEqual(100);
-      expect(qualityScore.breakdown.completeness).toBeDefined();
-      expect(qualityScore.breakdown.correctness).toBeDefined();
-      expect(qualityScore.breakdown.maintainability).toBeDefined();
+      expect(qualityScore.breakdown).toBeDefined();
+      expect(qualityScore.breakdown?.completeness).toBeDefined();
+      expect(qualityScore.breakdown?.correctness).toBeDefined();
+      expect(qualityScore.breakdown?.maintainability).toBeDefined();
       expect(qualityScore.confidence).toBeGreaterThan(0);
     });
 

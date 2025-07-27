@@ -40,7 +40,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   readonly id = 'input-validation-security';
   readonly name = '入力検証セキュリティテスト品質監査';
   readonly version = '0.7.0';
-  readonly type = 'core' as const;
+  readonly type = 'security' as const;
   
   // 型システムとの統合
   readonly requiredTypes = [SecurityType.USER_INPUT];

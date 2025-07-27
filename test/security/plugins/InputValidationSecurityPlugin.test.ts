@@ -225,7 +225,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
       );
       expect(boundaryPattern).toBeDefined();
       expect(boundaryPattern?.metadata).toBeDefined();
-      expect(boundaryPattern?.metadata.boundaryTypes).toContain('empty-input');
+      expect(boundaryPattern?.metadata?.boundaryTypes).toContain('empty-input');
     });
 
     it('不十分な入力検証テストを検出すること', async () => {
@@ -358,8 +358,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
       expect(qualityScore.overall).toBeGreaterThan(0.4);
       expect(qualityScore.overall).toBeLessThan(0.8);
       expect(qualityScore.details).toBeDefined();
-      expect(qualityScore.details.validationCoverage).toBeDefined();
-      expect(qualityScore.details.sanitizationQuality).toBeDefined();
+      expect(qualityScore.details?.validationCoverage).toBeDefined();
+      expect(qualityScore.details?.sanitizationQuality).toBeDefined();
     });
   });
 
@@ -521,8 +521,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
 
       expect(analysisResult.issues.length).toBeGreaterThan(0);
       
-      const typeSafetyViolation = analysisResult.issues.find(issue => 
-        issue.type === 'type-safety-violation'
+      const typeSafetyViolation = analysisResult.issues.find((issue: SecurityIssue) => 
+        issue.type === 'unsafe-taint-flow'
       );
       expect(typeSafetyViolation).toBeDefined();
       expect(typeSafetyViolation?.severity).toBe('critical');

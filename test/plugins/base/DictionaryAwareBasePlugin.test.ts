@@ -343,7 +343,7 @@ describe('DictionaryAwareBasePlugin', () => {
       const result = plugin.evaluateQuality(mockPatterns);
 
       expect(result.overall).toBeGreaterThanOrEqual(basicScore.overall);
-      expect(result.breakdown.domainAlignment).toBeDefined();
+      expect(result.breakdown?.domainAlignment).toBeDefined();
     });
 
     test('辞書が無効な場合は基本スコアが返される', () => {
