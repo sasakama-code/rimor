@@ -12,17 +12,17 @@ describe('TestExistencePlugin', () => {
     jest.resetAllMocks();
   });
 
-  test('should return empty array for test files', async () => {
+  it('should return empty array for test files', async () => {
     const result = await plugin.analyze('src/example.test.ts');
     expect(result).toEqual([]);
   });
 
-  test('should return empty array for excluded files', async () => {
+  it('should return empty array for excluded files', async () => {
     const result = await plugin.analyze('src/index.ts');
     expect(result).toEqual([]);
   });
 
-  test('should detect missing test file', async () => {
+  it('should detect missing test file', async () => {
     mockFs.existsSync.mockReturnValue(false);
     
     const result = await plugin.analyze('src/example.ts');
@@ -33,7 +33,7 @@ describe('TestExistencePlugin', () => {
     expect(result[0].message).toBe('テストファイルが存在しません: src/example.ts');
   });
 
-  test('should return empty array when test file exists', async () => {
+  it('should return empty array when test file exists', async () => {
     mockFs.existsSync.mockReturnValue(true);
     
     const result = await plugin.analyze('src/example.ts');

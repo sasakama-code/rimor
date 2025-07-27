@@ -12,12 +12,12 @@ describe('AssertionExistsPlugin', () => {
     jest.resetAllMocks();
   });
 
-  test('should return empty array for non-test files', async () => {
+  it('should return empty array for non-test files', async () => {
     const result = await plugin.analyze('src/example.ts');
     expect(result).toEqual([]);
   });
 
-  test('should detect missing assertions in test files', async () => {
+  it('should detect missing assertions in test files', async () => {
     const testContent = `
       describe('test', () => {
         test('should do something', () => {
@@ -38,7 +38,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result[0].message).toContain('アサーション（expect文など）が見つかりません');
   });
 
-  test('should detect expect() assertions', async () => {
+  it('should detect expect() assertions', async () => {
     const testContent = `
       describe('test', () => {
         test('should work', () => {
@@ -54,7 +54,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result).toEqual([]);
   });
 
-  test('should detect various assertion patterns', async () => {
+  it('should detect various assertion patterns', async () => {
     const patterns = [
       'expect(value).toBe(42)',
       'assert(condition)',
@@ -85,7 +85,7 @@ describe('AssertionExistsPlugin', () => {
     }
   });
 
-  test('should ignore assertions in comments', async () => {
+  it('should ignore assertions in comments', async () => {
     const testContent = `
       test('should work', () => {
         // expect(value).toBe(42);
@@ -102,7 +102,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result[0].type).toBe('missing-assertion');
   });
 
-  test('should ignore assertions in strings', async () => {
+  it('should ignore assertions in strings', async () => {
     const testContent = `
       test('should work', () => {
         const message = "expect(value).toBe(42)";
@@ -119,7 +119,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result[0].type).toBe('missing-assertion');
   });
 
-  test('should handle file read errors gracefully', async () => {
+  it('should handle file read errors gracefully', async () => {
     mockFs.readFileSync.mockImplementation(() => {
       throw new Error('File not found');
     });
@@ -129,7 +129,7 @@ describe('AssertionExistsPlugin', () => {
     expect(result).toEqual([]);
   });
 
-  test('should work with different test file patterns', async () => {
+  it('should work with different test file patterns', async () => {
     const testContent = 'expect(true).toBe(true);';
     mockFs.readFileSync.mockReturnValue(testContent);
     
