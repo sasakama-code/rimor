@@ -76,7 +76,7 @@ async function main() {
     // Phase 2結果  
     try {
       const phase2Path = path.join(phaseResultsDir, 'phase2-security.json');
-      if (fs.existsExists(phase2Path)) {
+      if (fs.existsSync(phase2Path)) {
         const phase2 = JSON.parse(fs.readFileSync(phase2Path, 'utf8'));
         actualSecurityCoverage = phase2.summary?.testCoverage || 0;
         actualIssuesFound += phase2.summary?.issuesFound || 0;
