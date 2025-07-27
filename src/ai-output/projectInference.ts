@@ -366,13 +366,13 @@ export class ProjectInferenceEngine {
     const topType = entries.length > 0 
       ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
       : ['unknown', 0];
-    const maxScore = topType[1];
+    const maxScore = topType[1] as number;
     const confidence = Math.min(maxScore / 100, 1.0);
     
     return {
       type: topType[0] as ProjectType['type'],
       confidence,
-      subtype: this.inferSubtype(topType[0], evidence)
+      subtype: this.inferSubtype(topType[0] as string, evidence)
     };
   }
   
@@ -426,10 +426,10 @@ export class ProjectInferenceEngine {
     const primaryLang = entries.length > 0 
       ? entries.reduce((a, b) => distribution[a[0]] > distribution[b[0]] ? a : b)
       : ['javascript', 0];
-    const confidence = Math.min((primaryLang[1] || 0) / 100, 1.0);
+    const confidence = Math.min((primaryLang[1] as number || 0) / 100, 1.0);
     
     return {
-      language: primaryLang[0] || 'javascript',
+      language: primaryLang[0] as string || 'javascript',
       confidence,
       distribution
     };
@@ -492,7 +492,7 @@ export class ProjectInferenceEngine {
     const topFramework = entries.length > 0 
       ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
       : ['unknown', 0];
-    const confidence = Math.min(topFramework[1] / 100, 1.0);
+    const confidence = Math.min(topFramework[1] as number / 100, 1.0);
     
     const additionalFrameworks = Object.entries(scores)
       .filter(([name, score]) => name !== topFramework[0] && score > 20)
@@ -553,7 +553,7 @@ export class ProjectInferenceEngine {
     const topTool = entries.length > 0 
       ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
       : ['unknown', 0];
-    const confidence = Math.min(topTool[1] / 100, 1.0);
+    const confidence = Math.min(topTool[1] as number / 100, 1.0);
     
     return {
       tool: topTool[0] as BuildTool['tool'],
@@ -623,7 +623,7 @@ export class ProjectInferenceEngine {
     const topPattern = entries.length > 0 
       ? entries.reduce((a, b) => a[1] > b[1] ? a : b)
       : ['unknown', 0];
-    const confidence = Math.min(topPattern[1] / 100, 1.0);
+    const confidence = Math.min(topPattern[1] as number / 100, 1.0);
     
     return {
       pattern: topPattern[0] as ArchitecturePattern['pattern'],

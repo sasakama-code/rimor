@@ -15,16 +15,14 @@ import {
   SecurityIssue,
   SecurityTestMetrics,
   SecurityImprovement,
-  AuthTestCoverage
-} from '../types';
-import { ITypeBasedSecurityPlugin } from '../../core/types';
-import { FlowGraph } from '../analysis/flow';
-import { 
+  AuthTestCoverage,
+  ITypeBasedSecurityPlugin,
+  FlowGraph,
   ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement 
+  Improvement
 } from '../../core/types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
@@ -413,7 +411,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     });
 
     // 認証カバレッジの不足をチェック
-    const requiredCoverage: AuthTestCoverage[] = ['success', 'failure', 'token-expiry'];
+    const requiredCoverage: string[] = ['success', 'failure', 'token-expiry'];
     const missingCoverage = this.checkAuthCoverage(method, requiredCoverage);
     
     missingCoverage.forEach(missing => {
@@ -475,9 +473,9 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     return suggestions;
   }
 
-  private checkAuthCoverage(method: TestMethod, required: AuthTestCoverage[]): AuthTestCoverage[] {
+  private checkAuthCoverage(method: TestMethod, required: string[]): string[] {
     const content = method.content.toLowerCase();
-    const missing: AuthTestCoverage[] = [];
+    const missing: string[] = [];
 
     required.forEach(coverage => {
       let covered = false;

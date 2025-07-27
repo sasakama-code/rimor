@@ -17,16 +17,14 @@ import {
   SecurityIssue,
   SecurityTestMetrics,
   SecurityImprovement,
-  BoundaryCondition
-} from '../types';
-import { ITypeBasedSecurityPlugin } from '../../core/types';
-import { FlowGraph } from '../analysis/flow';
-import { 
+  BoundaryCondition,
+  ITypeBasedSecurityPlugin,
+  FlowGraph,
   ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement 
+  Improvement
 } from '../../core/types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';

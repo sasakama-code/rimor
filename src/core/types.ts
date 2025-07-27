@@ -565,10 +565,12 @@ export enum SecurityType {
 
 // 汚染レベル列挙  
 export enum TaintLevel {
+  CLEAN = 0,
   UNTAINTED = 0,
   POSSIBLY_TAINTED = 1,
   LIKELY_TAINTED = 2,
-  DEFINITELY_TAINTED = 3
+  DEFINITELY_TAINTED = 3,
+  HIGHLY_TAINTED = 4
 }
 
 // テストメソッド
@@ -583,6 +585,8 @@ export interface TestMethod {
     startColumn: number;
     endColumn: number;
   };
+  body?: string;
+  testType?: 'unit' | 'integration' | 'e2e' | 'security';
 }
 
 // メソッドシグネチャ
@@ -621,6 +625,12 @@ export interface FlowGraph {
   sanitizers: FlowNode[];
   paths: FlowPath[];
   violations?: SecurityViolation[];
+  loops: Array<{
+    type: 'for' | 'while' | 'do-while';
+    bodyNodes: FlowNode[];
+    entryNode: FlowNode;
+    exitNode: FlowNode;
+  }>;
 }
 
 // フローノード
@@ -803,4 +813,35 @@ export interface SecurityImprovement {
   suggestedCode?: string;
   estimatedImpact: { securityImprovement: number; implementationMinutes: number };
   automatable: boolean;
+}
+
+// サニタイザータイプ
+export enum SanitizerType {
+  HTML_ESCAPE = 'html-escape',
+  SQL_ESCAPE = 'sql-escape',
+  INPUT_VALIDATION = 'input-validation',
+  TYPE_CONVERSION = 'type-conversion',
+  STRING_SANITIZE = 'string-sanitize',
+  AUTH_TOKEN = 'auth-token',
+  PASSWORD_HASH = 'password-hash',
+  XSS_FILTER = 'xss-filter',
+  CSRF_TOKEN = 'csrf-token',
+  CUSTOM = 'custom'
+}
+
+// 境界条件
+export interface BoundaryCondition {
+  type: 'min' | 'max' | 'null' | 'empty' | 'invalid-format' | 'overflow';
+  value: any;
+  tested: boolean;
+  result?: { passed: boolean; message?: string };
+}
+
+// 認証テストカバレッジ
+export interface AuthTestCoverage {
+  sessionManagement: number;
+  tokenValidation: number;
+  permissionChecks: number;
+  authenticationFlows: number;
+  overall: number;
 }
