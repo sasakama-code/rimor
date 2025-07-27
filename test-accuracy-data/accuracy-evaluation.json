@@ -17,12 +17,12 @@
   },
   "overallSuccess": false,
   "detailedMetrics": {
-    "automaticInferenceRate": 88.88888888888889,
-    "inferenceAccuracy": 88.88888888888889,
+    "automaticInferenceRate": 88.89,
+    "inferenceAccuracy": 88.89,
     "falsePositiveRate": 0,
-    "truePositiveRate": 66.66666666666666,
+    "truePositiveRate": 66.67,
     "precisionScore": 100,
-    "recallScore": 66.66666666666666
+    "recallScore": 66.67
   },
   "results": [
     {
