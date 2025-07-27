@@ -24,9 +24,9 @@ describe('Input Validation Security Tests', () => {
 
   it('should sanitize malicious input - Test 4', async () => {
     const maliciousInput = {
-      username: '<script>alert("xssg7n5jq")</script>',
+      username: '<script>alert("xssymcd4c")</script>',
       email: 'test@example.com',
-      bio: 'g7n5jq<img src=x onerror=alert("xss")>'
+      bio: 'ymcd4c<img src=x onerror=alert("xss")>'
     };
 
     const response = await request(app)
@@ -40,7 +40,7 @@ describe('Input Validation Security Tests', () => {
 
   it('should validate email format - Test 4', async () => {
     const invalidEmails = [
-      'invalid-emailg7n5jq',
+      'invalid-emailymcd4c',
       'test@',
       '@example.com',
       'test..test@example.com'
@@ -57,7 +57,7 @@ describe('Input Validation Security Tests', () => {
   it('should prevent SQL injection in database queries - Test 4', async () => {
     const sqlInjectionPayload = {
       username: "admin'; DROP TABLE users; --",
-      email: 'testg7n5jq@example.com',
+      email: 'testymcd4c@example.com',
       bio: '1; DELETE FROM profiles WHERE 1=1; --'
     };
 

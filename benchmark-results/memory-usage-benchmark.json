@@ -1,12 +1,12 @@
 {
   "requirement": "< 500MB memory usage",
-  "initialMemoryMB": 448.20692443847656,
-  "finalMemoryMB": 460.4649353027344,
-  "peakMemoryMB": 460.4649353027344,
-  "memoryIncreaseMB": 12.258010864257812,
+  "initialMemoryMB": 356.56395721435547,
+  "finalMemoryMB": 391.5972137451172,
+  "peakMemoryMB": 390.7620849609375,
+  "memoryIncreaseMB": 35.03325653076172,
   "fileCount": 800,
   "methodCount": 2000,
-  "executionTimeMs": 96,
+  "executionTimeMs": 171,
   "achieved": true,
-  "timestamp": "2025-07-26T05:09:27.802Z"
+  "timestamp": "2025-07-27T04:40:11.957Z"
 }

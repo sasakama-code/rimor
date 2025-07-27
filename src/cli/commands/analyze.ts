@@ -108,27 +108,27 @@ export class AnalyzeCommand {
 
     // セキュリティ問題への対応
     if (cliValidation.allSecurityIssues.length > 0) {
-      console.error(OutputFormatter.error('🛡️  セキュリティ問題を検出しました:'));
-      cliValidation.allSecurityIssues.forEach(issue => {
-        console.error(OutputFormatter.error(`  - ${issue}`));
-      });
+      console.error(await OutputFormatter.error('🛡️  セキュリティ問題を検出しました:'));
+      for (const issue of cliValidation.allSecurityIssues) {
+        console.error(await OutputFormatter.error(`  - ${issue}`));
+      }
     }
 
     // エラーがある場合は実行停止
     if (!cliValidation.isValid) {
-      console.error(OutputFormatter.error('❌ CLI引数の検証に失敗しました:'));
-      cliValidation.allErrors.forEach(error => {
-        console.error(OutputFormatter.error(`  - ${error}`));
-      });
+      console.error(await OutputFormatter.error('❌ CLI引数の検証に失敗しました:'));
+      for (const error of cliValidation.allErrors) {
+        console.error(await OutputFormatter.error(`  - ${error}`));
+      }
       process.exit(1);
     }
 
     // 警告の表示
     if (cliValidation.allWarnings.length > 0) {
-      console.warn(OutputFormatter.warning('⚠️  以下の警告があります:'));
-      cliValidation.allWarnings.forEach(warning => {
-        console.warn(OutputFormatter.warning(`  - ${warning}`));
-      });
+      console.warn(await OutputFormatter.warning('⚠️  以下の警告があります:'));
+      for (const warning of cliValidation.allWarnings) {
+        console.warn(await OutputFormatter.warning(`  - ${warning}`));
+      }
     }
 
     // セキュリティ検証済みの引数を使用
@@ -154,7 +154,7 @@ export class AnalyzeCommand {
       
       // パスの存在確認（サニタイズ済みパスで再実行）
       if (!fs.existsSync(targetPath)) {
-        console.error(OutputFormatter.error(getMessage('cli.error.path_not_found', { targetPath })));
+        console.error(await OutputFormatter.error(getMessage('cli.error.path_not_found', { targetPath })));
         process.exit(1);
       }
       
@@ -169,35 +169,35 @@ export class AnalyzeCommand {
         // 単一ファイル対応の確認
         const stats = fs.statSync(targetPath);
         if (stats.isFile()) {
-          console.log(OutputFormatter.info(getMessage('analysis.mode.single_file')));
+          console.log(await OutputFormatter.info(getMessage('analysis.mode.single_file')));
         }
         
-        console.log(OutputFormatter.header(getMessage('analysis.header.main')));
-        console.log(OutputFormatter.info(getMessage('analysis.info.target_path', { path: targetPath })));
+        console.log(await OutputFormatter.header(getMessage('analysis.header.main')));
+        console.log(await OutputFormatter.info(getMessage('analysis.info.target_path', { path: targetPath })));
         
         if (verbose) {
-          console.log(OutputFormatter.info(getMessage('analysis.mode.verbose')));
+          console.log(await OutputFormatter.info(getMessage('analysis.mode.verbose')));
           const enabledPlugins = this.getEnabledPluginNames();
-          console.log(OutputFormatter.info(getMessage('analysis.info.enabled_plugins', { plugins: enabledPlugins.join(', ') })));
+          console.log(await OutputFormatter.info(getMessage('analysis.info.enabled_plugins', { plugins: enabledPlugins.join(', ') })));
           
           if (options.parallel) {
-            console.log(OutputFormatter.info(getMessage('analysis.mode.parallel')));
-            console.log(OutputFormatter.info(getMessage('analysis.info.batch_size', { size: (options.batchSize || 10).toString() })));
-            console.log(OutputFormatter.info(getMessage('analysis.info.max_concurrency', { count: (options.concurrency || 4).toString() })));
+            console.log(await OutputFormatter.info(getMessage('analysis.mode.parallel')));
+            console.log(await OutputFormatter.info(getMessage('analysis.info.batch_size', { size: (options.batchSize || 10).toString() })));
+            console.log(await OutputFormatter.info(getMessage('analysis.info.max_concurrency', { count: (options.concurrency || 4).toString() })));
           }
           
           // キャッシュ機能の表示
           if (options.cache === undefined || options.cache === true) {
-            console.log(OutputFormatter.info('キャッシュ機能: 有効'));
+            console.log(await OutputFormatter.info('キャッシュ機能: 有効'));
           } else {
-            console.log(OutputFormatter.info('キャッシュ機能: 無効'));
+            console.log(await OutputFormatter.info('キャッシュ機能: 無効'));
           }
           
           // パフォーマンス監視の表示
           if (options.performance) {
-            console.log(OutputFormatter.info('パフォーマンス監視: 有効'));
+            console.log(await OutputFormatter.info('パフォーマンス監視: 有効'));
           } else {
-            console.log(OutputFormatter.info('パフォーマンス監視: 無効'));
+            console.log(await OutputFormatter.info('パフォーマンス監視: 無効'));
           }
         }
       }
@@ -215,28 +215,28 @@ export class AnalyzeCommand {
         const jsonOutput = this.formatAsJson(result, targetPath, sanitizedOptions.parallel);
         console.log(JSON.stringify(jsonOutput, null, 2));
       } else {
-        console.log(OutputFormatter.issueList(result.issues));
-        console.log(OutputFormatter.summary(result.totalFiles, result.issues.length, result.executionTime));
+        console.log(await OutputFormatter.issueList(result.issues));
+        console.log(await OutputFormatter.summary(result.totalFiles, result.issues.length, result.executionTime));
         
         // キャッシュ統計の表示（verbose時またはshowCacheStats時）
         if ((verbose || sanitizedOptions.showCacheStats) && 'cacheStats' in result) {
           const cacheStats = (result as any).cacheStats;
-          console.log(OutputFormatter.info('\n📊 キャッシュ統計:'));
-          console.log(OutputFormatter.info(`  ヒット率: ${(cacheStats.hitRatio * 100).toFixed(1)}%`));
-          console.log(OutputFormatter.info(`  キャッシュヒット: ${cacheStats.cacheHits}`));
-          console.log(OutputFormatter.info(`  キャッシュミス: ${cacheStats.cacheMisses}`));
-          console.log(OutputFormatter.info(`  キャッシュから取得: ${cacheStats.filesFromCache}ファイル`));
-          console.log(OutputFormatter.info(`  新規分析: ${cacheStats.filesAnalyzed}ファイル`));
+          console.log(await OutputFormatter.info('\n📊 キャッシュ統計:'));
+          console.log(await OutputFormatter.info(`  ヒット率: ${(cacheStats.hitRatio * 100).toFixed(1)}%`));
+          console.log(await OutputFormatter.info(`  キャッシュヒット: ${cacheStats.cacheHits}`));
+          console.log(await OutputFormatter.info(`  キャッシュミス: ${cacheStats.cacheMisses}`));
+          console.log(await OutputFormatter.info(`  キャッシュから取得: ${cacheStats.filesFromCache}ファイル`));
+          console.log(await OutputFormatter.info(`  新規分析: ${cacheStats.filesAnalyzed}ファイル`));
         }
         
         // 並列処理統計の表示（verbose時のみ）
         if (sanitizedOptions.parallel && verbose && 'parallelStats' in result) {
           const stats = (result as any).parallelStats;
-          console.log(OutputFormatter.info(getMessage('analysis.stats.parallel_header')));
-          console.log(OutputFormatter.info(getMessage('analysis.stats.batch_count', { count: stats.batchCount.toString() })));
-          console.log(OutputFormatter.info(getMessage('analysis.stats.avg_batch_time', { time: stats.avgBatchTime.toString() })));
-          console.log(OutputFormatter.info(getMessage('analysis.stats.max_batch_time', { time: stats.maxBatchTime.toString() })));
-          console.log(OutputFormatter.info(getMessage('analysis.stats.concurrency_level', { level: stats.concurrencyLevel.toString() })));
+          console.log(await OutputFormatter.info(getMessage('analysis.stats.parallel_header')));
+          console.log(await OutputFormatter.info(getMessage('analysis.stats.batch_count', { count: stats.batchCount.toString() })));
+          console.log(await OutputFormatter.info(getMessage('analysis.stats.avg_batch_time', { time: stats.avgBatchTime.toString() })));
+          console.log(await OutputFormatter.info(getMessage('analysis.stats.max_batch_time', { time: stats.maxBatchTime.toString() })));
+          console.log(await OutputFormatter.info(getMessage('analysis.stats.concurrency_level', { level: stats.concurrencyLevel.toString() })));
         }
       }
       
@@ -251,7 +251,7 @@ export class AnalyzeCommand {
         undefined,
         getMessage('cli.error.analysis_failed')
       );
-      console.error(OutputFormatter.error(errorInfo.message));
+      console.error(await OutputFormatter.error(errorInfo.message));
       process.exit(1);
     }
   }
@@ -395,7 +395,7 @@ export class AnalyzeCommand {
       // 出力処理
       if (options.outputFile) {
         fs.writeFileSync(options.outputFile, formattedOutput, 'utf-8');
-        console.log(OutputFormatter.success(`レポートを ${options.outputFile} に出力しました`));
+        console.log(await OutputFormatter.success(`レポートを ${options.outputFile} に出力しました`));
       } else {
         console.log(formattedOutput);
       }
@@ -406,7 +406,7 @@ export class AnalyzeCommand {
       }
       
     } catch (error) {
-      console.error(OutputFormatter.error(`スコアリングレポート生成エラー: ${error}`));
+      console.error(await OutputFormatter.error(`スコアリングレポート生成エラー: ${error}`));
       process.exit(1);
     }
   }

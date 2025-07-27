@@ -1,9 +1,9 @@
 {
   "requirement": "< 5ms per method",
   "iterations": 100,
-  "averageTimeMs": 2.6950358699999994,
-  "minTimeMs": 1.805815,
-  "maxTimeMs": 26.111458,
+  "averageTimeMs": 2.0052474,
+  "minTimeMs": 1.439664,
+  "maxTimeMs": 10.219248,
   "achieved": true,
-  "timestamp": "2025-07-27T03:31:34.110Z"
+  "timestamp": "2025-07-27T04:40:11.592Z"
 }

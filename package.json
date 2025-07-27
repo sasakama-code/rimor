@@ -11,6 +11,7 @@
     "build": "tsc",
     "build:clean": "rm -rf dist && npm run build",
     "build:simple": "tsc",
+    "lint": "npx tsc --noEmit",
     "test": "NODE_OPTIONS=\"--max-old-space-size=10240\" jest --forceExit --runInBand --detectOpenHandles=false",
     "test:unit": "NODE_OPTIONS=\"--max-old-space-size=4096\" jest test/ --testPathIgnorePatterns=test/integration/ --testPathIgnorePatterns=test/performance/ --forceExit --runInBand",
     "test:integration": "NODE_OPTIONS=\"--max-old-space-size=6144\" jest test/integration/ --forceExit --runInBand --maxWorkers=1",
