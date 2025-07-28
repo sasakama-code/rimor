@@ -6,5 +6,6 @@
 export * from './AnalysisEngineImpl';
 export * from './SecurityAuditorImpl';
 export * from './ReporterImpl';
+export * from './StructuredReporterImpl';
 export * from './PluginManagerImpl';
 export * from './LegacyPluginAdapter';
