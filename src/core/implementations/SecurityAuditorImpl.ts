@@ -14,9 +14,27 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
+import { TypeBasedSecurityEngine } from '../../security/analysis/engine';
+import { ModularTestAnalyzer } from '../../security/analysis/modular';
+import { FlowSensitiveAnalyzer } from '../../security/analysis/flow';
+import { TestCase, TestMethod } from '../../security/types';
 
 @injectable()
 export class SecurityAuditorImpl implements ISecurityAuditor {
+  private typeBasedEngine: TypeBasedSecurityEngine;
+  private modularAnalyzer: ModularTestAnalyzer;
+  private flowAnalyzer: FlowSensitiveAnalyzer;
+  
+  constructor() {
+    // v0.7.0セキュリティエンジンの初期化
+    this.typeBasedEngine = new TypeBasedSecurityEngine({
+      strictness: 'moderate',
+      enableCache: true
+    });
+    this.modularAnalyzer = new ModularTestAnalyzer();
+    this.flowAnalyzer = new FlowSensitiveAnalyzer();
+  }
+  
   // 基本的なセキュリティパターン
   private readonly patterns = {
     [ThreatType.HARDCODED_SECRET]: [
@@ -48,11 +66,57 @@ export class SecurityAuditorImpl implements ISecurityAuditor {
     try {
       const files = await this.findSourceFiles(targetPath, options);
       
+      // テストファイルとソースファイルを分離
+      const testFiles: string[] = [];
+      const sourceFiles: string[] = [];
+      
       for (const file of files) {
+        if (file.includes('.test.') || file.includes('.spec.')) {
+          testFiles.push(file);
+        } else {
+          sourceFiles.push(file);
+        }
+      }
+      
+      // v0.7.0型ベースセキュリティ解析をテストファイルに適用
+      if (testFiles.length > 0) {
+        const testCases: TestCase[] = await Promise.all(
+          testFiles.map(async file => ({
+            name: path.basename(file),
+            file,
+            content: await fs.promises.readFile(file, 'utf-8'),
+            metadata: {
+              framework: 'unknown',
+              language: file.endsWith('.ts') ? 'typescript' : 'javascript',
+              lastModified: new Date()
+            }
+          }))
+        );
+        
+        const compileTimeResult = await this.typeBasedEngine.analyzeAtCompileTime(testCases);
+        
+        // 型ベース解析の結果をSecurityThreatに変換
+        for (const issue of compileTimeResult.issues) {
+          threats.push({
+            type: this.mapSecurityIssueToThreatType(issue.type),
+            severity: issue.severity as 'critical' | 'high' | 'medium' | 'low',
+            file: issue.location.file,
+            line: issue.location.line,
+            column: issue.location.column,
+            message: issue.message,
+            recommendation: issue.fixSuggestion || '適切なセキュリティ対策を実装してください'
+          });
+        }
+      }
+      
+      // 従来のパターンベース解析をソースファイルに適用
+      for (const file of sourceFiles) {
         filesScanned++;
         const fileThreats = await this.scanFile(file);
         threats.push(...fileThreats);
       }
+      
+      filesScanned += testFiles.length;
       
       const summary = this.summarizeThreats(threats);
       
@@ -172,5 +236,24 @@ export class SecurityAuditorImpl implements ISecurityAuditor {
     });
 
     return summary;
+  }
+  
+  /**
+   * セキュリティイシュータイプを脅威タイプにマッピング
+   */
+  private mapSecurityIssueToThreatType(issueType: string): ThreatType {
+    const typeMap: Record<string, ThreatType> = {
+      'missing-sanitizer': ThreatType.UNVALIDATED_INPUT,
+      'unsafe-taint-flow': ThreatType.INJECTION,
+      'missing-auth-test': ThreatType.AUTH_BYPASS,
+      'insufficient-validation': ThreatType.UNVALIDATED_INPUT,
+      'insecure-crypto': ThreatType.INSECURE_CRYPTO,
+      'hardcoded-credentials': ThreatType.HARDCODED_SECRET,
+      'data-exposure': ThreatType.DATA_EXPOSURE,
+      'xss-vulnerability': ThreatType.XSS,
+      'csrf-vulnerability': ThreatType.CSRF
+    };
+    
+    return typeMap[issueType] || ThreatType.UNVALIDATED_INPUT;
   }
 }
