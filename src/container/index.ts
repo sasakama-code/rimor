@@ -46,7 +46,7 @@ function bindCoreServices(): void {
   const { 
     AnalysisEngineImpl,
     SecurityAuditorImpl,
-    ReporterImpl,
+    StructuredReporterImpl,
     PluginManagerImpl
   } = require('../core/implementations');
   
@@ -62,7 +62,7 @@ function bindCoreServices(): void {
     .inSingletonScope();
     
   container.bind<IReporter>(TYPES.Reporter)
-    .to(ReporterImpl)
+    .to(StructuredReporterImpl)
     .inSingletonScope();
     
   container.bind<IPluginManager>(TYPES.PluginManager)
