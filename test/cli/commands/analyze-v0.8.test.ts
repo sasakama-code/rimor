@@ -56,11 +56,7 @@ describe('AnalyzeCommandV8', () => {
         success: true,
         content: 'Combined report content'
       }),
-      printToConsole: jest.fn(),
-      generateAnnotations: jest.fn().mockResolvedValue({
-        success: true,
-        content: 'Annotation summary'
-      })
+      printToConsole: jest.fn()
     };
 
     mockSecurityAuditor = {
@@ -184,22 +180,6 @@ describe('AnalyzeCommandV8', () => {
       );
     });
 
-    it('should generate annotations when --annotate is specified', async () => {
-      await expect(command.execute({
-        path: '/test/project',
-        annotate: true,
-        annotateFormat: 'block',
-        preview: true
-      })).resolves.toBeUndefined(); // アノテーションモードではexitしない
-
-      expect(mockReporter.generateAnnotations).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          format: 'block',
-          preview: true
-        })
-      );
-    });
 
     it('should include security audit when includeDetails is true', async () => {
       await expect(command.execute({
@@ -288,53 +268,6 @@ describe('AnalyzeCommandV8', () => {
     });
   });
 
-  describe('annotation generation', () => {
-    it('should generate annotations with custom output directory', async () => {
-      await command.execute({
-        path: '/test/project',
-        annotate: true,
-        annotateOutput: '/output/annotated'
-      });
-
-      expect(mockReporter.generateAnnotations).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          outputDir: '/output/annotated'
-        })
-      );
-    });
-
-    it('should show preview when preview flag is set', async () => {
-      mockReporter.generateAnnotations.mockResolvedValue({
-        success: true,
-        content: 'Preview content'
-      });
-
-      await command.execute({
-        path: '/test/project',
-        annotate: true,
-        preview: true
-      });
-
-      expect(mockReporter.printToConsole).toHaveBeenCalledWith('Preview content');
-    });
-
-    it('should handle annotation generation errors', async () => {
-      mockReporter.generateAnnotations.mockResolvedValue({
-        success: false,
-        error: 'Failed to generate annotations'
-      });
-
-      await command.execute({
-        path: '/test/project',
-        annotate: true
-      });
-
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('アノテーション生成に失敗しました')
-      );
-    });
-  });
 
   describe('console output formatting', () => {
     it('should not show header when outputting to file', async () => {

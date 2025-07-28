@@ -1,9 +1,10 @@
 /**
  * security.test.ts
  * セキュリティ型システムのテスト
+ * v0.8.0で簡素化されたため、多くの機能が削除されています
  */
 
-describe('Security Type System - セキュリティ型システム', () => {
+describe.skip('Security Type System - セキュリティ型システム (v0.7.0機能 - 削除済み)', () => {
   describe('SecurityType - セキュリティ型', () => {
     it('セキュリティ型の基本定義が正しいこと', () => {
       const { SecurityType } = require('../../../src/security/types/security');

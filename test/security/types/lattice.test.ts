@@ -1,16 +1,11 @@
-import { 
-  SecurityLattice,
-  SecurityLevel,
-  LatticeOperations,
-  createSecurityLattice,
-  compareSecurityLevels
-} from '../../../src/security/types/lattice';
+// v0.8.0で削除された機能のテスト
+// SecurityLattice等のエクスポートは削除されています
 
-describe('SecurityLattice', () => {
-  let lattice: SecurityLattice;
+describe.skip('SecurityLattice (v0.7.0機能 - 削除済み)', () => {
+  let lattice: any; // SecurityLatticeは削除されています
 
   beforeEach(() => {
-    lattice = createSecurityLattice();
+    // lattice = createSecurityLattice();
   });
 
   describe('createSecurityLattice', () => {
