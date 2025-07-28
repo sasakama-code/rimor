@@ -1,7 +1,7 @@
 {
   "name": "rimor",
-  "version": "0.7.0",
-  "description": "高度なテスト品質監査ツール - 静的解析とプラグイン駆動アーキテクチャによるテスト品質の問題特定",
+  "version": "0.8.0",
+  "description": "テスト品質監査ツール - DIベースアーキテクチャと型ベースセキュリティ解析によるテストの質の検証",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
