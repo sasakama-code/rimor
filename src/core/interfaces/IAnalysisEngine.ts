@@ -12,6 +12,7 @@ export interface AnalysisResult {
   totalFiles: number;
   issues: Issue[];
   executionTime: number;
+  pluginsExecuted?: string[];  // 実行されたプラグインのリスト
   metadata?: {
     parallelProcessed?: boolean;
     cacheUtilized?: boolean;

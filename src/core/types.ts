@@ -6,10 +6,16 @@ export interface IPlugin {
 
 export interface Issue {
   type: string;
-  severity: 'error' | 'warning';
+  severity: 'error' | 'warning' | 'info' | 'critical' | 'high' | 'medium' | 'low';
   message: string;
-  line?: number;  // 行番号（オプション）
+  line?: number;  // 開始行番号（オプション）
+  endLine?: number;  // 終了行番号（オプション）
+  column?: number;  // 開始列番号（オプション）
+  endColumn?: number;  // 終了列番号（オプション）
   file?: string;  // ファイルパス（オプション）
+  recommendation?: string;  // 推奨される修正方法（オプション）
+  codeSnippet?: string;  // 関連するコードスニペット（オプション）
+  plugin?: string;  // この問題を検出したプラグイン名（オプション）
 }
 
 // 高度なプラグインインターフェース（v0.3.0）
