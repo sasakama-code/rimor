@@ -3,57 +3,35 @@
  * v0.8.0 - 既存のAnalyzerクラスをDI対応にラップ
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { IAnalysisEngine, AnalysisResult, AnalysisOptions } from '../interfaces/IAnalysisEngine';
-import { Analyzer } from '../analyzer';
-import { ParallelAnalyzer } from '../parallelAnalyzer';
-import { CachedAnalyzer } from '../cachedAnalyzer';
+import { UnifiedAnalysisEngine } from '../engine';
+import { TYPES } from '../../container/types';
+import { IPluginManager } from '../interfaces/IPluginManager';
 
+/**
+ * Analysis Engine Implementation
+ * v0.8.0 - UnifiedAnalysisEngineへのブリッジ実装
+ */
 @injectable()
 export class AnalysisEngineImpl implements IAnalysisEngine {
-  private analyzer: Analyzer | ParallelAnalyzer | CachedAnalyzer;
+  private engine: UnifiedAnalysisEngine;
   
-  constructor() {
-    // デフォルトは基本のAnalyzer
-    this.analyzer = new Analyzer();
+  constructor(
+    @inject(TYPES.PluginManager) pluginManager: IPluginManager
+  ) {
+    this.engine = new UnifiedAnalysisEngine(pluginManager);
   }
   
   async analyze(targetPath: string, options?: AnalysisOptions): Promise<AnalysisResult> {
-    // オプションに基づいて適切なAnalyzerを選択
-    if (options?.cache) {
-      this.analyzer = new CachedAnalyzer({
-        enableCache: true,
-        showCacheStats: false,
-        enablePerformanceMonitoring: false,
-        showPerformanceReport: false
-      });
-    } else if (options?.parallel) {
-      this.analyzer = new ParallelAnalyzer({
-        maxConcurrency: options.concurrency,
-        enableStats: false
-      });
-    } else {
-      this.analyzer = new Analyzer();
-    }
-    
-    const result = await this.analyzer.analyze(targetPath);
-    
-    return {
-      totalFiles: result.totalFiles,
-      issues: result.issues,
-      executionTime: result.executionTime,
-      metadata: {
-        parallelProcessed: options?.parallel,
-        cacheUtilized: options?.cache,
-        filesFromCache: (result as any).cacheStats?.filesFromCache,
-        filesAnalyzed: (result as any).cacheStats?.filesAnalyzed
-      }
-    };
+    return this.engine.analyze(targetPath, options);
+  }
+  
+  async generateAST(filePath: string): Promise<any> {
+    return this.engine.generateAST(filePath);
   }
   
   async clearCache(): Promise<void> {
-    if (this.analyzer instanceof CachedAnalyzer) {
-      await this.analyzer.clearCache();
-    }
+    return this.engine.clearCache();
   }
 }

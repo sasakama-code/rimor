@@ -15,8 +15,6 @@ export class Analyzer {
   
   constructor() {
     this.pluginManager = new PluginManager();
-    // レガシープラグインをサポートするためサンドボックスを無効化
-    this.pluginManager.setSandboxEnabled(false);
   }
   
   registerPlugin(plugin: IPlugin): void {
