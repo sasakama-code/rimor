@@ -136,23 +136,32 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
    * ファイル検索
    */
   private async discoverFiles(targetPath: string, options?: AnalysisOptions): Promise<string[]> {
-    const stats = await fs.promises.stat(targetPath);
-    
-    if (stats.isFile()) {
-      // 単一ファイル
-      if (this.isAnalyzableFile(targetPath)) {
-        return [targetPath];
+    try {
+      const stats = await fs.promises.stat(targetPath);
+      
+      if (stats.isFile()) {
+        // 単一ファイル
+        if (this.isAnalyzableFile(targetPath)) {
+          return [targetPath];
+        }
+        return [];
       }
-      return [];
+      
+      // ディレクトリ
+      const files: string[] = [];
+      for await (const filePath of this.findAllFiles(targetPath, options)) {
+        files.push(filePath);
+      }
+      
+      return files;
+    } catch (error: any) {
+      // ファイルが存在しない場合は空の配列を返す
+      if (error.code === 'ENOENT') {
+        console.warn(`Path not found: ${targetPath}`);
+        return [];
+      }
+      throw error;
     }
-    
-    // ディレクトリ
-    const files: string[] = [];
-    for await (const filePath of this.findAllFiles(targetPath, options)) {
-      files.push(filePath);
-    }
-    
-    return files;
   }
   
   /**

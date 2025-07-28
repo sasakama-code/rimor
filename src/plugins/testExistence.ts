@@ -22,7 +22,7 @@ export class TestExistencePlugin implements IPlugin {
       return [{
         type: 'missing-test',
         severity: 'error' as const,
-        message: ""
+        message: `テストファイルが存在しません: ${filePath}`
       }];
     }
     
