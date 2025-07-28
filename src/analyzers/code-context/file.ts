@@ -31,8 +31,8 @@ export class FileAnalyzer {
       // インポートから関連ファイルを検索
       const imports = this.languageAnalyzer.extractImports(fileContent, language);
       
-      for (const importPath of imports) {
-        const resolvedPath = this.resolveImportPath(importPath, currentFilePath, projectPath);
+      for (const importObj of imports) {
+        const resolvedPath = this.resolveImportPath(importObj.source, currentFilePath, projectPath);
         if (resolvedPath) {
           const possiblePaths = this.generatePossiblePaths(resolvedPath, projectPath);
           
@@ -217,8 +217,8 @@ export class FileAnalyzer {
       
       // このファイルが依存しているファイル
       const imports = this.languageAnalyzer.extractImports(fileContent, language);
-      for (const importPath of imports) {
-        const resolvedPath = this.resolveImportPath(importPath, filePath, projectPath);
+      for (const importObj of imports) {
+        const resolvedPath = this.resolveImportPath(importObj.source, filePath, projectPath);
         if (resolvedPath) {
           dependencies.push(resolvedPath);
         }
@@ -236,8 +236,8 @@ export class FileAnalyzer {
           const sourceLang = this.languageAnalyzer.detectLanguage(sourceFile);
           const sourceImports = this.languageAnalyzer.extractImports(sourceContent, sourceLang);
           
-          for (const importPath of sourceImports) {
-            const resolvedImport = this.resolveImportPath(importPath, sourceFile, projectPath);
+          for (const importObj of sourceImports) {
+            const resolvedImport = this.resolveImportPath(importObj.source, sourceFile, projectPath);
             if (resolvedImport === filePath) {
               dependents.push(sourceFile);
               break;
@@ -453,8 +453,8 @@ export class FileAnalyzer {
         const language = this.languageAnalyzer.detectLanguage(currentFile);
         const imports = this.languageAnalyzer.extractImports(content, language);
         
-        for (const importPath of imports) {
-          const resolvedPath = this.resolveImportPath(importPath, currentFile, projectPath);
+        for (const importObj of imports) {
+          const resolvedPath = this.resolveImportPath(importObj.source, currentFile, projectPath);
           if (resolvedPath && fs.existsSync(resolvedPath)) {
             await detectCycle(resolvedPath, [...path, currentFile]);
           }

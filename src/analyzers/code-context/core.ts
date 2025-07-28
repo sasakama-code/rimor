@@ -125,6 +125,8 @@ export class AdvancedCodeContextAnalyzer {
         scopes,
         relatedFiles,
         usedAPIs: this.languageAnalyzer.extractUsedAPIs(fileContent, language),
+        language,
+        dependencies: await this.fileAnalyzer.analyzeDependencies(filePath, projectPath),
         metadata: {
           language,
           fileSize: fileContent.length,
@@ -176,6 +178,8 @@ export class AdvancedCodeContextAnalyzer {
       scopes: [],
       relatedFiles: [],
       usedAPIs: [],
+      language,
+      dependencies: { dependencies: [], dependents: [] },
       metadata: {
         language,
         fileSize: 0,

@@ -12,11 +12,13 @@ export class LanguageAnalyzer {
     const ext = path.extname(filePath).toLowerCase();
     switch (ext) {
       case '.ts':
-      case '.tsx':
         return 'typescript';
+      case '.tsx':
+        return 'typescriptreact';
       case '.js':
-      case '.jsx':
         return 'javascript';
+      case '.jsx':
+        return 'javascriptreact';
       case '.py':
         return 'python';
       case '.java':
@@ -129,8 +131,8 @@ export class LanguageAnalyzer {
   /**
    * インポート文の抽出
    */
-  extractImports(fileContent: string, language: string): string[] {
-    const imports: string[] = [];
+  extractImports(fileContent: string, language: string): Array<{ source: string }> {
+    const imports: Array<{ source: string }> = [];
     const lines = fileContent.split('\n');
     
     const importRegexes = this.getImportRegexes(language);
@@ -139,7 +141,7 @@ export class LanguageAnalyzer {
       for (const regex of importRegexes) {
         const match = line.match(regex);
         if (match && match[1]) {
-          imports.push(match[1]);
+          imports.push({ source: match[1] });
         }
       }
     }
@@ -375,25 +377,21 @@ export class LanguageAnalyzer {
 
   private extractJavaScriptVariables(line: string, lineNumber: number): VariableInfo[] {
     const variables: VariableInfo[] = [];
-    const patterns = [
-      /(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
-      /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g
-    ];
+    const pattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
     
-    for (const pattern of patterns) {
-      const matches = line.matchAll(pattern);
-      for (const match of matches) {
-        if (match[1]) {
-          variables.push({
-            name: match[1],
-            line: lineNumber,
-            type: this.extractVariableType(line, match[1]),
-            scope: this.determineScope([line], 0),
-            isConst: line.includes('const '),
-            isExported: this.isExported(line),
-            usage: []
-          });
-        }
+    const matches = line.matchAll(pattern);
+    for (const match of matches) {
+      if (match[2]) {
+        variables.push({
+          name: match[2],
+          line: lineNumber,
+          type: match[3] || this.extractVariableType(line, match[2]),
+          scope: this.determineScope([line], 0),
+          isConst: match[1] === 'const',
+          isExported: this.isExported(line),
+          usage: [],
+          kind: match[1] as 'const' | 'let' | 'var'
+        });
       }
     }
     

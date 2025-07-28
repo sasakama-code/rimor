@@ -40,7 +40,7 @@ export interface ExtractedCodeContext {
   };
   
   // インポート/エクスポート
-  imports: string[];
+  imports: Array<{ source: string }>;
   exports: string[];
   
   // 構造情報
@@ -55,6 +55,15 @@ export interface ExtractedCodeContext {
   
   // 使用されているAPI/ライブラリ
   usedAPIs: string[];
+  
+  // 言語
+  language: string;
+  
+  // 依存関係
+  dependencies: {
+    dependencies: string[];
+    dependents: string[];
+  };
   
   // メタデータ
   metadata: {
@@ -115,6 +124,7 @@ export interface VariableInfo {
   isConst: boolean;
   isExported: boolean;
   usage: VariableUsage[];
+  kind?: 'const' | 'let' | 'var';
 }
 
 export interface VariableUsage {
