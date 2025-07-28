@@ -67,7 +67,7 @@ describe('LanguageAnalyzer', () => {
       const functions = await analyzer.extractFunctionInfo(code, 'typescript');
       
       expect(functions.length).toBe(1);
-      expect(functions[0].async).toBe(true);
+      expect(functions[0].isAsync).toBe(true);
     });
   });
 

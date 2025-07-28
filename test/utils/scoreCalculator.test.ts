@@ -26,9 +26,9 @@ describe('ScoreCalculator', () => {
       const aggregated = calculator.aggregateScores(pluginScores);
 
       expect(aggregated.overall).toBeCloseTo(75.3, 1); // 加重平均 (80*0.9 + 70*0.8) / (0.9+0.8)
-      expect(aggregated.breakdown.completeness).toBeCloseTo(80.3, 1);
-      expect(aggregated.breakdown.correctness).toBeCloseTo(70.3, 1);
-      expect(aggregated.breakdown.maintainability).toBeCloseTo(75.3, 1);
+      expect(aggregated.breakdown?.completeness).toBeCloseTo(80.3, 1);
+      expect(aggregated.breakdown?.correctness).toBeCloseTo(70.3, 1);
+      expect(aggregated.breakdown?.maintainability).toBeCloseTo(75.3, 1);
       expect(aggregated.confidence).toBeCloseTo(0.85, 2);
     });
 
@@ -36,9 +36,9 @@ describe('ScoreCalculator', () => {
       const aggregated = calculator.aggregateScores([]);
 
       expect(aggregated.overall).toBe(0);
-      expect(aggregated.breakdown.completeness).toBe(0);
-      expect(aggregated.breakdown.correctness).toBe(0);
-      expect(aggregated.breakdown.maintainability).toBe(0);
+      expect(aggregated.breakdown?.completeness).toBe(0);
+      expect(aggregated.breakdown?.correctness).toBe(0);
+      expect(aggregated.breakdown?.maintainability).toBe(0);
       expect(aggregated.confidence).toBe(0);
     });
 
@@ -52,9 +52,9 @@ describe('ScoreCalculator', () => {
       const aggregated = calculator.aggregateScores([score]);
 
       expect(aggregated.overall).toBe(85);
-      expect(aggregated.breakdown.completeness).toBe(90);
-      expect(aggregated.breakdown.correctness).toBe(80);
-      expect(aggregated.breakdown.maintainability).toBe(85);
+      expect(aggregated.breakdown?.completeness).toBe(90);
+      expect(aggregated.breakdown?.correctness).toBe(80);
+      expect(aggregated.breakdown?.maintainability).toBe(85);
       expect(aggregated.confidence).toBe(0.95);
     });
   });

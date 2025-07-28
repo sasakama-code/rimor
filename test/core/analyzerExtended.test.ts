@@ -133,7 +133,7 @@ describe('AnalyzerExtended', () => {
     // 信頼度は個別プラグインの信頼度の加重平均
     const pluginConfidences = result.qualityAnalysis.pluginResults.map(r => r.qualityScore.confidence);
     if (pluginConfidences.length > 0) {
-      const avgConfidence = pluginConfidences.reduce((sum, c) => (sum ?? 0) + (c ?? 0), 0) / pluginConfidences.length;
+      const avgConfidence = pluginConfidences.reduce((sum, c) => sum + (c ?? 0), 0) / pluginConfidences.length;
       expect(Math.abs((result.aggregatedScore?.confidence ?? 0) - avgConfidence)).toBeLessThan(0.1);
     }
   });
