@@ -27,8 +27,7 @@ jobs:
       run: npm ci
 
     - name: Run security audit
-      run: npm audit
-      continue-on-error: true  # セキュリティ警告があっても続行
+      run: npm audit --audit-level=high
 
     - name: Build TypeScript
       run: npm run build
@@ -39,7 +38,17 @@ jobs:
       run: npm test
 
     - name: Run quality check
-      run: npm run analyze:src || echo "Analysis completed with warnings"
+      run: |
+        # Run analysis and capture exit code
+        npm run analyze:src || ANALYSIS_EXIT_CODE=$?
+        
+        # If analysis had warnings/errors, check threshold
+        if [ "${ANALYSIS_EXIT_CODE:-0}" -ne 0 ]; then
+          echo "::warning::Quality analysis detected issues"
+          # Future: Add warning count threshold check here
+          # For now, allow warnings but log them
+          exit 0
+        fi
 
   security:
     runs-on: ubuntu-latest
