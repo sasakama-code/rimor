@@ -48,6 +48,10 @@ src/plugins/generated/*.ts
 benchmark-results/
 *-tests/
 test-accuracy-data/
+
+# AI Error Reports
+test-errors-ai.md
+test-errors-ai.json
 test-output/
 accuracy-evaluation-*.json
 real-world-validation-*.json
