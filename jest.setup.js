@@ -16,18 +16,17 @@ const originalLog = console.log;
 console.error = (...args) => {
   const message = args.join(' ');
   
-  // セキュリティ機能による予期されるエラーログを抑制
+  // セキュリティ機能による予期されるエラーログのみを抑制
+  // テストで期待されるエラーメッセージは抑制しない
   if (message.includes('Context integration failed:') ||
       message.includes('Project summary generation failed:') ||
       message.includes('PERMISSION_DENIED') ||
       message.includes('UNKNOWN: セキュリティ警告') ||
-      message.includes('設定ファイルエラー:') ||
       message.includes('Context:') ||
       message.includes('セキュリティ警告: プロパティ汚染攻撃') ||
       message.includes('セキュリティ警告: パストラバーサル攻撃') ||
       message.includes('危険なプロパティ名を検出') ||
-      message.includes('[2025-') && message.includes('UNKNOWN:') ||
-      message.includes('⚠️') || message.includes('❌')) {
+      message.includes('[2025-') && message.includes('UNKNOWN:')) {
     return;
   }
   
@@ -52,7 +51,8 @@ console.warn = (...args) => {
 // CI環境での追加設定
 if (process.env.CI === 'true') {
   console.log = (...args) => {
-    // CI環境ではデバッグログを抑制
+    // CI環境では不要なデバッグログのみを抑制
+    // テストで期待されるログは表示する
     const message = args.join(' ');
     if (message.includes('🛡️') || 
         message.includes('プラグインサンドボックス') ||
@@ -62,18 +62,11 @@ if (process.env.CI === 'true') {
         message.includes('✏️') ||
         message.includes('📥') ||
         message.includes('⚙️') ||
-        message.includes('🔍') ||
-        message.includes('📊') ||
         message.includes('🚀') ||
         message.includes('📝') ||
-        message.includes('✅') ||
         message.includes('フィードバック') ||
-        message.includes('辞書') ||
-        message.includes('ドメイン') ||
-        message.includes('用語') ||
-        message.includes('ルール') ||
-        message.includes('設定ファイル') ||
-        message.includes('初期化方法') ||
+        message.includes('辞書') && message.includes('初期化') ||
+        message.includes('ドメイン') && message.includes('初期化') ||
         message.includes('自動生成') ||
         message.includes('手動設定') ||
         message.includes('インポート') ||

@@ -19,7 +19,7 @@ export class AssertionExistsPlugin implements IPlugin {
         return [{
           type: 'missing-assertion',
           severity: 'warning' as const,
-          message: ""
+          message: "アサーション（expect文など）が見つかりません"
         }];
       }
       
