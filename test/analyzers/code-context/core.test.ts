@@ -8,6 +8,7 @@ jest.mock('../../../src/analyzers/code-context/language');
 jest.mock('../../../src/analyzers/code-context/scope');
 jest.mock('../../../src/analyzers/code-context/file');
 jest.mock('../../../src/analyzers/code-context/utils');
+jest.mock('../../../src/utils/pathSecurity');
 
 describe('AdvancedCodeContextAnalyzer', () => {
   let analyzer: AdvancedCodeContextAnalyzer;
@@ -27,6 +28,36 @@ describe('AdvancedCodeContextAnalyzer', () => {
     (fs.existsSync as jest.Mock).mockReturnValue(true);
     (fs.readFileSync as jest.Mock).mockReturnValue('const test = "value";');
     (fs.statSync as jest.Mock).mockReturnValue({ size: 1000 });
+    
+    // PathSecurityのモック
+    const { PathSecurity } = require('../../../src/utils/pathSecurity');
+    PathSecurity.safeResolve = jest.fn((filePath) => filePath);
+    
+    // 各アナライザーのモック設定
+    const { LanguageAnalyzer } = require('../../../src/analyzers/code-context/language');
+    const { ScopeAnalyzer } = require('../../../src/analyzers/code-context/scope');
+    const { FileAnalyzer } = require('../../../src/analyzers/code-context/file');
+    const { CodeContextUtils } = require('../../../src/analyzers/code-context/utils');
+    
+    // LanguageAnalyzerのモック
+    LanguageAnalyzer.prototype.detectLanguage = jest.fn().mockReturnValue('typescript');
+    LanguageAnalyzer.prototype.extractFunctionInfo = jest.fn().mockResolvedValue([]);
+    LanguageAnalyzer.prototype.extractClassInfo = jest.fn().mockReturnValue([]);
+    LanguageAnalyzer.prototype.extractInterfaceInfo = jest.fn().mockReturnValue([]);
+    LanguageAnalyzer.prototype.extractVariableInfo = jest.fn().mockReturnValue([]);
+    LanguageAnalyzer.prototype.extractImports = jest.fn().mockReturnValue([]);
+    LanguageAnalyzer.prototype.extractExports = jest.fn().mockReturnValue([]);
+    LanguageAnalyzer.prototype.extractUsedAPIs = jest.fn().mockReturnValue([]);
+    
+    // ScopeAnalyzerのモック
+    ScopeAnalyzer.prototype.analyzeScopeContext = jest.fn().mockResolvedValue([]);
+    
+    // FileAnalyzerのモック
+    FileAnalyzer.prototype.findRelatedFiles = jest.fn().mockResolvedValue([]);
+    FileAnalyzer.prototype.analyzeDependencies = jest.fn().mockResolvedValue({ dependencies: [], dependents: [] });
+    
+    // CodeContextUtilsのモック
+    CodeContextUtils.prototype.calculateConfidence = jest.fn().mockReturnValue(0.8);
   });
 
   describe('analyzeCodeContext', () => {

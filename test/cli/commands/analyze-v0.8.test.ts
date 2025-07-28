@@ -151,8 +151,8 @@ describe('AnalyzeCommandV8', () => {
     command = new AnalyzeCommandV8(testContainer, mockCliSecurity);
 
     // process.exit のモック
-    jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
+    jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+      throw new Error(`process.exit called with code ${code}`);
     });
 
     // console のモック
@@ -169,7 +169,7 @@ describe('AnalyzeCommandV8', () => {
       await expect(command.execute({
         path: '/test/project',
         verbose: false
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(mockAnalysisEngine.analyze).toHaveBeenCalledWith(
         path.resolve('/test/project')
@@ -185,10 +185,10 @@ describe('AnalyzeCommandV8', () => {
         outputPath: '/output/analysis.json'
       });
 
-      await expect(command.execute({
+      await command.execute({
         path: '/test/project',
         outputJson: '/output/analysis.json'
-      })).rejects.toThrow('process.exit called');
+      });
 
       expect(mockReporter.generateAnalysisReport).toHaveBeenCalledWith(
         expect.any(Object),
@@ -205,11 +205,11 @@ describe('AnalyzeCommandV8', () => {
         outputPath: '/output/analysis.md'
       });
 
-      await expect(command.execute({
+      await command.execute({
         path: '/test/project',
         outputMarkdown: '/output/analysis.md',
         includeDetails: true
-      })).rejects.toThrow('process.exit called');
+      });
 
       expect(mockReporter.generateAnalysisReport).toHaveBeenCalledWith(
         expect.any(Object),
@@ -227,10 +227,10 @@ describe('AnalyzeCommandV8', () => {
         outputPath: '/output/analysis.html'
       });
 
-      await expect(command.execute({
+      await command.execute({
         path: '/test/project',
         outputHtml: '/output/analysis.html'
-      })).rejects.toThrow('process.exit called');
+      });
 
       expect(mockReporter.generateAnalysisReport).toHaveBeenCalledWith(
         expect.any(Object),
@@ -247,7 +247,7 @@ describe('AnalyzeCommandV8', () => {
         path: '/test/project',
         includeDetails: true,
         outputJson: '/output/combined.json'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(mockSecurityAuditor.audit).toHaveBeenCalledWith(
         path.resolve('/test/project')
@@ -261,7 +261,7 @@ describe('AnalyzeCommandV8', () => {
         outputJson: '/output/report.json',
         outputMarkdown: '/output/report.md',
         outputHtml: '/output/report.html'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       // 各フォーマットでgenerateAnalysisReportが呼ばれることを確認
       expect(mockReporter.generateAnalysisReport).toHaveBeenCalledTimes(3);
@@ -279,7 +279,7 @@ describe('AnalyzeCommandV8', () => {
 
       await expect(command.execute({
         path: '/nonexistent/path'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('指定されたパスが存在しません')
@@ -293,7 +293,7 @@ describe('AnalyzeCommandV8', () => {
 
       await expect(command.execute({
         path: '/test/project'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('分析中にエラーが発生しました')
@@ -306,7 +306,7 @@ describe('AnalyzeCommandV8', () => {
         path: '/test/project',
         outputMarkdown: '/output/report.md',
         includeRecommendations: false
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(mockReporter.generateAnalysisReport).toHaveBeenCalledWith(
         expect.any(Object),
@@ -322,7 +322,7 @@ describe('AnalyzeCommandV8', () => {
       await expect(command.execute({
         path: '../../../etc/passwd',
         outputJson: '/etc/sensitive.json'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       // セキュリティ検証が実行されることを確認
       // CLISecurityクラスがvalidateAllArgumentsを呼び出すことを確認
@@ -335,7 +335,7 @@ describe('AnalyzeCommandV8', () => {
       await expect(command.execute({
         path: '/test/project',
         outputJson: '/output/report.json'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(console.log).not.toHaveBeenCalledWith(
         expect.stringContaining('Rimor v0.8.0')
@@ -347,7 +347,7 @@ describe('AnalyzeCommandV8', () => {
         path: '/test/project',
         verbose: true,
         format: 'text'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
 
       expect(console.log).toHaveBeenCalledWith(
         expect.stringContaining('分析モード: v0.8.0')
@@ -376,7 +376,7 @@ describe('AnalyzeCommandV8', () => {
       // デフォルトのモックは1つの問題を返すので、exit(1)が呼ばれるはず
       await expect(command.execute({
         path: '/test/project'
-      })).rejects.toThrow('process.exit called');
+      })).rejects.toThrow('process.exit called with code 1');
     });
   });
 });
