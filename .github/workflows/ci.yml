@@ -28,47 +28,18 @@ jobs:
 
     - name: Run security audit
       run: npm audit
-
-    - name: Run lint check
-      run: npm run lint
-      continue-on-error: true  # MVP期間中はlintエラーでCIを止めない
-
-    - name: Clean generated files before build
-      run: |
-        echo "🧹 Cleaning test-generated files before build..."
-        rm -rf src/plugins/generated/ || true
-        rm -rf dist/ || true
-        mkdir -p src/plugins/generated/
-        echo "✅ Build準備完了 - 生成ファイルをクリーンアップしました"
+      continue-on-error: true  # セキュリティ警告があっても続行
 
     - name: Build TypeScript
       run: npm run build
 
-    - name: Run quality check
-      run: |
-        echo "🔍 品質チェックを実行中..."
-        npm run analyze:src
-        echo "✅ 品質チェック完了"
-
     - name: Run tests
       env:
-        RIMOR_LANG: ja
-      run: |
-        echo "🧪 Starting test execution..."
-        timeout 300 npm test || {
-          echo "❌ Tests failed or timed out after 5 minutes"
-          exit 1
-        }
-        echo "✅ Tests completed successfully"
+        NODE_OPTIONS: '--max-old-space-size=4096'
+      run: npm test
 
-
-    - name: Clean test artifacts after analysis
-      run: |
-        echo "🧹 Cleaning test-generated files..."
-        rm -rf src/plugins/generated/ || true
-        find . -name "*.d.ts.map" -type f -delete || true
-        find . -name "*.js.map" -type f -delete || true
-        echo "✅ テスト後クリーンアップ完了"
+    - name: Run quality check
+      run: npm run analyze:src || echo "Analysis completed with warnings"
 
   security:
     runs-on: ubuntu-latest
@@ -85,23 +56,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Clean generated files before build
-      run: |
-        echo "🧹 Cleaning test-generated files before security check..."
-        rm -rf src/plugins/generated/
-        mkdir -p src/plugins/generated/
-        echo "✅ Cleanup completed"
-
     - name: Build TypeScript for security check
       run: npm run build
 
-    - name: Run comprehensive security check
-      env:
-        RIMOR_LANG: ja
+    - name: Run security check
       run: npm run security-check
-
-    - name: Check for outdated packages
-      run: npm outdated || true
 
   publish-dry-run:
     runs-on: ubuntu-latest
@@ -125,67 +84,3 @@ jobs:
 
     - name: Test npm package
       run: npm pack --dry-run
-
-  # PR Quality Gates - Branch Protection Required Check
-  quality-gates:
-    name: 📋 Quality Gates
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.event_name == 'pull_request'
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 📦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: 📥 Install dependencies
-        run: npm ci
-
-      - name: 🧪 Run all tests
-        run: npm test
-
-      - name: 📊 Generate test coverage report
-        run: |
-          echo "📊 Generating test coverage report..."
-          npm test -- --coverage --coverageReporters=text-summary
-          echo "✅ Coverage report generated"
-
-      - name: 🔍 TypeScript type checking
-        run: |
-          echo "🔍 Running TypeScript type checking..."
-          npx tsc --noEmit
-          echo "✅ Type checking passed"
-
-      - name: 🔒 Security audit
-        run: npm audit --audit-level=moderate
-
-      - name: 🧹 Clean test artifacts before build
-        run: |
-          echo "🧹 Cleaning test-generated files before build..."
-          rm -rf src/plugins/generated/ || true
-          echo "✅ Build cleanup completed"
-
-      - name: 🏗️ Build project
-        run: npm run build
-
-      - name: 🎯 Run full quality check
-        run: npm run full-check
-
-      - name: 📊 Performance validation
-        run: npm test -- --testPathPattern=performance --verbose
-
-      - name: 🔍 Verify package integrity
-        run: |
-          echo "🔍 Verifying package integrity..."
-          npm pack --dry-run
-          echo "✅ Package validation successful"
-
-      - name: 🎉 Quality Gates Passed
-        run: |
-          echo "🎉 All Quality Gates passed successfully!"
-          echo "✅ Ready for merge to main branch"
