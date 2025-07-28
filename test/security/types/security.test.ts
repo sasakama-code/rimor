@@ -55,7 +55,7 @@ describe('Security Type System - セキュリティ型システム', () => {
       
       const constraint = new SecurityConstraint({
         name: 'NoTaintedInput',
-        condition: (value) => value.securityType !== 'TAINTED',
+        condition: (value: any) => value.securityType !== 'TAINTED',
         severity: 'high',
         message: 'Tainted input not allowed'
       });
@@ -69,7 +69,7 @@ describe('Security Type System - セキュリティ型システム', () => {
       
       const constraint = new SecurityConstraint({
         name: 'RequireValidation',
-        condition: (value) => value.annotations.includes('@Validated'),
+        condition: (value: any) => value.annotations.includes('@Validated'),
         severity: 'medium',
         message: 'Input must be validated'
       });
@@ -247,12 +247,12 @@ describe('Security Type System - セキュリティ型システム', () => {
         ]
       };
       
-      const arguments = [
+      const args = [
         { value: 'data', type: 'TAINTED' },
         { value: 'opts', type: 'SAFE' }
       ];
       
-      const check = checker.checkFunctionCall(functionSignature, arguments);
+      const check = checker.checkFunctionCall(functionSignature, args);
       
       expect(check.safe).toBe(false);
       expect(check.violations.length).toBe(1);
@@ -311,8 +311,8 @@ describe('Security Type System - セキュリティ型システム', () => {
       const securityIssues = analyzer.findSecurityIssues(vulnerableCode);
       
       expect(securityIssues.length).toBeGreaterThan(0);
-      expect(securityIssues.some(issue => issue.type === 'sql-injection')).toBe(true);
-      expect(securityIssues.some(issue => issue.severity === 'critical')).toBe(true);
+      expect(securityIssues.some((issue: any) => issue.type === 'sql-injection')).toBe(true);
+      expect(securityIssues.some((issue: any) => issue.severity === 'critical')).toBe(true);
     });
   });
 });

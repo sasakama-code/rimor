@@ -1,19 +1,16 @@
 import 'reflect-metadata';
 import { Container } from 'inversify';
-import { setupContainer } from '../../src/container';
-import { 
-  TYPES, 
-  IAnalysisEngine, 
-  IPluginManager, 
-  IReporter, 
-  ISecurityAuditor 
-} from '../../src/container/types';
+import { initializeContainer, TYPES } from '../../src/container';
+import type { IAnalysisEngine } from '../../src/core/interfaces/IAnalysisEngine';
+import type { IPluginManager } from '../../src/core/interfaces/IPluginManager';
+import type { IReporter } from '../../src/core/interfaces/IReporter';
+import type { ISecurityAuditor } from '../../src/core/interfaces/ISecurityAuditor';
 
 describe('DIコンテナ設定', () => {
   let container: Container;
 
   beforeEach(() => {
-    container = setupContainer();
+    container = initializeContainer();
   });
 
   afterEach(() => {
@@ -24,28 +21,34 @@ describe('DIコンテナ設定', () => {
     const engine = container.get<IAnalysisEngine>(TYPES.AnalysisEngine);
     expect(engine).toBeDefined();
     expect(engine.analyze).toBeDefined();
-    expect(engine.analyzeWithPlugins).toBeDefined();
   });
 
   it('IPluginManagerがバインドされていること', () => {
     const manager = container.get<IPluginManager>(TYPES.PluginManager);
     expect(manager).toBeDefined();
-    expect(manager.loadPlugin).toBeDefined();
+    expect(manager.register).toBeDefined();
     expect(manager.getPlugins).toBeDefined();
+    expect(manager.getPlugin).toBeDefined();
+    expect(manager.runAll).toBeDefined();
   });
 
   it('IReporterがバインドされていること', () => {
     const reporter = container.get<IReporter>(TYPES.Reporter);
     expect(reporter).toBeDefined();
-    expect(reporter.generateReport).toBeDefined();
-    expect(reporter.formatOutput).toBeDefined();
+    expect(reporter.generateAnalysisReport).toBeDefined();
+    expect(reporter.generateSecurityReport).toBeDefined();
+    expect(reporter.printToConsole).toBeDefined();
+    // generateCombinedReportはオプショナル
+    if (reporter.generateCombinedReport) {
+      expect(reporter.generateCombinedReport).toBeDefined();
+    }
   });
 
   it('ISecurityAuditorがバインドされていること', () => {
     const auditor = container.get<ISecurityAuditor>(TYPES.SecurityAuditor);
     expect(auditor).toBeDefined();
-    expect(auditor.auditCode).toBeDefined();
-    expect(auditor.validateSecurity).toBeDefined();
+    expect(auditor.audit).toBeDefined();
+    expect(auditor.scanFile).toBeDefined();
   });
 
   it('シングルトンスコープが正しく設定されていること', () => {

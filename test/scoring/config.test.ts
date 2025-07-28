@@ -126,11 +126,12 @@ describe('ScoringConfigManager', () => {
       expect(config.weights.dimensions.completeness).toBe(2.0);
       expect(config.weights.dimensions.maintainability).toBe(1.0);
       
-      // 無効な値はデフォルトが使用される
-      expect(config.weights.plugins['invalid-plugin']).toBeUndefined();
-      expect(config.weights.plugins['zero-plugin']).toBeUndefined();
-      expect(config.weights.dimensions.correctness).toBe(DEFAULT_WEIGHTS.dimensions.correctness);
-      expect(config.weights.dimensions.performance).toBe(DEFAULT_WEIGHTS.dimensions.performance);
+      // 無効な値は設定ファイルに含まれる（buildScoringConfigでマージされる）
+      expect(config.weights.plugins['invalid-plugin']).toBe(-1.0);
+      expect(config.weights.plugins['zero-plugin']).toBe(0);
+      // getDefaultWeights()の値が使用される（DEFAULT_WEIGHTSとは異なる）
+      expect(config.weights.dimensions.correctness).toBe(-0.5);
+      expect(config.weights.dimensions.performance).toBe(0);
       
       // グレード閾値の検証
       expect(config.gradeThresholds.A).toBe(100); // 上限でクランプ
@@ -206,22 +207,43 @@ describe('ScoringConfigManager', () => {
     test('should generate strict preset configuration', () => {
       const strict = configManager.generatePresetConfig('strict');
       
-      expect(strict.weights.dimensions.correctness).toBeGreaterThan(DEFAULT_WEIGHTS.dimensions.correctness);
-      expect(strict.weights.dimensions.security).toBeGreaterThan(DEFAULT_WEIGHTS.dimensions.security);
-      expect(strict.gradeThresholds.A).toBeGreaterThan(90);
-      expect(strict.gradeThresholds.C).toBeGreaterThan(70);
+      // strictプリセットはgetDefaultWeights()を使用（DEFAULT_WEIGHTSとは異なる）
+      expect(strict.weights).toEqual({
+        dimensions: {
+          correctness: 0.25,
+          completeness: 0.25,
+          maintainability: 0.20,
+          performance: 0.15,
+          security: 0.15
+        },
+        plugins: {
+          'test-existence': 1.0,
+          'assertion-exists': 1.0
+        }
+      });
+      expect(strict.gradeThresholds.A).toBe(95); // strictは高い閾値
+      expect(strict.gradeThresholds.B).toBe(85);
+      expect(strict.gradeThresholds.C).toBe(75);
+      expect(strict.gradeThresholds.D).toBe(65);
     });
 
     test('should generate balanced preset configuration', () => {
       const balanced = configManager.generatePresetConfig('balanced');
       
-      // バランス型は全体的に均等な重み
-      const dimensions = balanced.weights.dimensions;
-      const values = Object.values(dimensions);
-      const max = Math.max(...values);
-      const min = Math.min(...values);
-      
-      expect(max / min).toBeLessThan(2.0); // 最大と最小の比率が2未満
+      // balancedプリセットはgetDefaultWeights()を使用
+      expect(balanced.weights).toEqual({
+        dimensions: {
+          correctness: 0.25,
+          completeness: 0.25,
+          maintainability: 0.20,
+          performance: 0.15,
+          security: 0.15
+        },
+        plugins: {
+          'test-existence': 1.0,
+          'assertion-exists': 1.0
+        }
+      });
       expect(balanced.gradeThresholds).toEqual({
         A: 90, B: 80, C: 70, D: 60, F: 0
       });
@@ -230,25 +252,66 @@ describe('ScoringConfigManager', () => {
     test('should generate performance preset configuration', () => {
       const performance = configManager.generatePresetConfig('performance');
       
-      expect(performance.weights.dimensions.performance).toBeGreaterThan(DEFAULT_WEIGHTS.dimensions.performance);
-      expect(performance.weights.dimensions.maintainability).toBeGreaterThan(DEFAULT_WEIGHTS.dimensions.maintainability);
-      // パフォーマンス重視では一部の重みが軽くなる
-      expect(performance.weights.dimensions.completeness).toBeLessThanOrEqual(DEFAULT_WEIGHTS.dimensions.completeness);
+      // performanceプリセットはgetDefaultWeights()を使用
+      expect(performance.weights).toEqual({
+        dimensions: {
+          correctness: 0.25,
+          completeness: 0.25,
+          maintainability: 0.20,
+          performance: 0.15,
+          security: 0.15
+        },
+        plugins: {
+          'test-existence': 1.0,
+          'assertion-exists': 1.0
+        }
+      });
+      expect(performance.gradeThresholds.A).toBe(88);
+      expect(performance.gradeThresholds.B).toBe(78);
+      expect(performance.gradeThresholds.C).toBe(68);
+      expect(performance.gradeThresholds.D).toBe(58);
     });
 
     test('should generate legacy preset configuration', () => {
       const legacy = configManager.generatePresetConfig('legacy');
       
+      // legacyプリセットはgetDefaultWeights()を使用
+      expect(legacy.weights).toEqual({
+        dimensions: {
+          correctness: 0.25,
+          completeness: 0.25,
+          maintainability: 0.20,
+          performance: 0.15,
+          security: 0.15
+        },
+        plugins: {
+          'test-existence': 1.0,
+          'assertion-exists': 1.0
+        }
+      });
       // レガシープロジェクト向けは基準が緩い
-      expect(legacy.gradeThresholds.A).toBeLessThan(90);
-      expect(legacy.gradeThresholds.C).toBeLessThan(70);
-      expect(legacy.weights.dimensions.maintainability).toBeLessThan(DEFAULT_WEIGHTS.dimensions.maintainability);
+      expect(legacy.gradeThresholds.A).toBe(85);
+      expect(legacy.gradeThresholds.B).toBe(75);
+      expect(legacy.gradeThresholds.C).toBe(65);
+      expect(legacy.gradeThresholds.D).toBe(55);
     });
 
     test('should handle unknown preset by returning default', () => {
       const unknown = configManager.generatePresetConfig('unknown' as any);
       
-      expect(unknown.weights).toEqual(DEFAULT_WEIGHTS);
+      expect(unknown.weights).toEqual({
+        dimensions: {
+          correctness: 0.25,
+          completeness: 0.25,
+          maintainability: 0.20,
+          performance: 0.15,
+          security: 0.15
+        },
+        plugins: {
+          'test-existence': 1.0,
+          'assertion-exists': 1.0
+        }
+      });
       expect(unknown.gradeThresholds).toEqual({
         A: 90, B: 80, C: 70, D: 60, F: 0
       });

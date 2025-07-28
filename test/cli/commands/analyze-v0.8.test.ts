@@ -57,7 +57,6 @@ describe('AnalyzeCommandV8', () => {
         content: 'Combined report content'
       }),
       printToConsole: jest.fn(),
-      initialize: jest.fn().mockResolvedValue(undefined),
       generateAnnotations: jest.fn().mockResolvedValue({
         success: true,
         content: 'Annotation summary'
@@ -66,16 +65,27 @@ describe('AnalyzeCommandV8', () => {
 
     mockSecurityAuditor = {
       audit: jest.fn().mockResolvedValue({
-        vulnerabilities: [],
-        securityScore: 100,
-        recommendations: []
-      })
+        threats: [],
+        summary: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          total: 0
+        },
+        executionTime: 100,
+        filesScanned: 10
+      }),
+      scanFile: jest.fn().mockResolvedValue([])
     };
 
     // コンテナバインディングを上書き
-    testContainer.rebind<IAnalysisEngine>(TYPES.AnalysisEngine).toConstantValue(mockAnalysisEngine);
-    testContainer.rebind<IReporter>(TYPES.Reporter).toConstantValue(mockReporter);
-    testContainer.rebind<ISecurityAuditor>(TYPES.SecurityAuditor).toConstantValue(mockSecurityAuditor);
+    testContainer.unbind(TYPES.AnalysisEngine);
+    testContainer.bind<IAnalysisEngine>(TYPES.AnalysisEngine).toConstantValue(mockAnalysisEngine);
+    testContainer.unbind(TYPES.Reporter);
+    testContainer.bind<IReporter>(TYPES.Reporter).toConstantValue(mockReporter);
+    testContainer.unbind(TYPES.SecurityAuditor);
+    testContainer.bind<ISecurityAuditor>(TYPES.SecurityAuditor).toConstantValue(mockSecurityAuditor);
 
     // ファイルシステムのモック
     mockFs.existsSync.mockReturnValue(true);
@@ -249,13 +259,6 @@ describe('AnalyzeCommandV8', () => {
       );
     });
 
-    it('should handle reporter initialization', async () => {
-      await expect(command.execute({
-        path: '/test/project'
-      })).rejects.toThrow('process.exit called');
-
-      expect(mockReporter.initialize).toHaveBeenCalled();
-    });
 
     it('should respect includeRecommendations option', async () => {
       await expect(command.execute({
