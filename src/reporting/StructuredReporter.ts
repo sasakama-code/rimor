@@ -21,7 +21,7 @@ import {
   PluginResult
 } from './types';
 import { AnalysisResult as CoreAnalysisResult } from '../core/interfaces/IAnalysisEngine';
-import { SecurityAuditResult } from '../core/interfaces/ISecurityAuditor';
+import { SecurityAuditResult, SecurityThreat } from '../core/interfaces/ISecurityAuditor';
 import { Issue as CoreIssue } from '../core/types';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -61,7 +61,7 @@ export class StructuredReporter {
   ): Promise<StructuredAnalysisResult> {
     // セキュリティ問題を既存の問題リストに追加
     const securityIssues = this.convertSecurityIssues(
-      securityResult.vulnerabilities,
+      securityResult.threats,
       structuredResult.metadata.analyzedPath
     );
 
@@ -191,51 +191,40 @@ export class StructuredReporter {
    * セキュリティ問題を変換
    */
   private convertSecurityIssues(
-    vulnerabilities: any[],
+    threats: SecurityThreat[],
     basePath: string
   ): Issue[] {
-    return vulnerabilities.map((vuln, index) => {
-      const id = this.generateIssueId(vuln.type || 'SECURITY', index + 1000);
-      const type = this.mapSecurityType(vuln.type);
-      const severity = this.mapSeverity(vuln.severity || 'high');
+    return threats.map((threat, index) => {
+      const id = this.generateIssueId(threat.type || 'SECURITY', index + 1000);
+      const type = this.mapSecurityType(threat.type);
+      const severity = this.mapSeverity(threat.severity || 'high');
 
       const issue: Issue = {
         id,
         type,
         severity,
         location: {
-          file: path.relative(basePath, vuln.file || ''),
-          startLine: vuln.line || 1,
-          endLine: vuln.endLine || vuln.line || 1
+          file: path.relative(basePath, threat.file || ''),
+          startLine: threat.line || 1,
+          endLine: threat.line || 1
         },
-        message: vuln.message || 'Security vulnerability detected'
+        message: threat.message || 'Security vulnerability detected'
       };
 
-      // 汚染解析のデータフロー情報
-      if (vuln.taintFlow) {
-        issue.dataFlow = {
-          source: {
-            location: this.convertVulnLocation(vuln.taintFlow.source, basePath),
-            type: vuln.taintFlow.source.type
-          },
-          sink: {
-            location: this.convertVulnLocation(vuln.taintFlow.sink, basePath),
-            type: vuln.taintFlow.sink.type
-          },
-          path: (vuln.taintFlow.path || []).map((step: any) => ({
-            location: this.convertVulnLocation(step, basePath),
-            type: step.type,
-            description: step.description
-          }))
-        };
+      // 推奨事項を追加
+      if (threat.recommendation) {
+        issue.recommendation = threat.recommendation;
       }
 
-      if (vuln.recommendation) {
-        issue.recommendation = vuln.recommendation;
-      }
-
-      if (vuln.references) {
-        issue.references = vuln.references;
+      // 参考資料を追加
+      if (threat.cweId || threat.owaspCategory) {
+        issue.references = [];
+        if (threat.cweId) {
+          issue.references.push(`CWE-${threat.cweId}`);
+        }
+        if (threat.owaspCategory) {
+          issue.references.push(`OWASP: ${threat.owaspCategory}`);
+        }
       }
 
       return issue;
@@ -246,8 +235,9 @@ export class StructuredReporter {
    * 問題IDを生成（決定論的）
    */
   private generateIssueId(type: string, index: number): string {
-    const typePrefix = type.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-    return `${typePrefix}-${index + 1}`;
+    const hash = crypto.createHash('md5');
+    hash.update(`${type}-${index}`);
+    return hash.digest('hex').substring(0, 16);
   }
 
   /**
@@ -255,10 +245,18 @@ export class StructuredReporter {
    */
   private mapIssueType(coreType: string): IssueType {
     const typeMap: Record<string, IssueType> = {
+      'missing-test': IssueType.MISSING_TEST,
       'test-missing': IssueType.MISSING_TEST,
+      'insufficient-assertion': IssueType.INSUFFICIENT_ASSERTION,
       'assertion-missing': IssueType.INSUFFICIENT_ASSERTION,
       'test-quality': IssueType.TEST_QUALITY,
-      'code-quality': IssueType.CODE_QUALITY
+      'code-quality': IssueType.CODE_QUALITY,
+      'sql-injection': IssueType.SQL_INJECTION,
+      'SQL_INJECTION': IssueType.SQL_INJECTION,
+      'xss': IssueType.XSS,
+      'XSS': IssueType.XSS,
+      'path-traversal': IssueType.PATH_TRAVERSAL,
+      'PATH_TRAVERSAL': IssueType.PATH_TRAVERSAL
     };
 
     return typeMap[coreType] || IssueType.CODE_QUALITY;
@@ -267,25 +265,28 @@ export class StructuredReporter {
   /**
    * セキュリティタイプをマップ
    */
-  private mapSecurityType(vulnType: string): IssueType {
+  private mapSecurityType(threatType: string): IssueType {
     const typeMap: Record<string, IssueType> = {
-      'sql-injection': IssueType.SQL_INJECTION,
+      'injection': IssueType.SQL_INJECTION,
       'xss': IssueType.XSS,
-      'path-traversal': IssueType.PATH_TRAVERSAL,
-      'command-injection': IssueType.COMMAND_INJECTION,
-      'ldap-injection': IssueType.LDAP_INJECTION,
-      'xpath-injection': IssueType.XPATH_INJECTION,
-      'security-misconfiguration': IssueType.SECURITY_MISCONFIGURATION,
-      'sensitive-data-exposure': IssueType.SENSITIVE_DATA_EXPOSURE
+      'path_traversal': IssueType.PATH_TRAVERSAL,
+      'csrf': IssueType.SECURITY_MISCONFIGURATION,
+      'auth_bypass': IssueType.SECURITY_MISCONFIGURATION,
+      'data_exposure': IssueType.SENSITIVE_DATA_EXPOSURE,
+      'insecure_crypto': IssueType.SECURITY_MISCONFIGURATION,
+      'hardcoded_secret': IssueType.SENSITIVE_DATA_EXPOSURE,
+      'unvalidated_input': IssueType.SECURITY_MISCONFIGURATION
     };
 
-    return typeMap[vulnType.toLowerCase()] || IssueType.SECURITY_MISCONFIGURATION;
+    return typeMap[threatType.toLowerCase()] || IssueType.SECURITY_MISCONFIGURATION;
   }
 
   /**
    * 重要度をマップ
    */
-  private mapSeverity(coreSeverity: string): Severity {
+  private mapSeverity(coreSeverity: string | undefined): Severity {
+    if (!coreSeverity) return Severity.LOW;
+    
     const severityMap: Record<string, Severity> = {
       'error': Severity.HIGH,
       'warning': Severity.MEDIUM,
@@ -296,7 +297,7 @@ export class StructuredReporter {
       'low': Severity.LOW
     };
 
-    return severityMap[coreSeverity.toLowerCase()] || Severity.INFO;
+    return severityMap[coreSeverity.toLowerCase()] || Severity.LOW;
   }
 
   /**
@@ -478,21 +479,29 @@ export class StructuredReporter {
    * 構造化結果をJSON文字列に変換（決定論的）
    */
   toJSON(result: StructuredAnalysisResult): string {
-    // 決定論的な出力のため、キーをソート
-    return JSON.stringify(result, this.sortKeysReplacer, 2);
-  }
-
-  /**
-   * JSONシリアライズ時にキーをソート
-   */
-  private sortKeysReplacer(key: string, value: any): any {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      const sorted: any = {};
-      Object.keys(value).sort().forEach(k => {
-        sorted[k] = value[k];
-      });
-      return sorted;
-    }
-    return value;
+    // 循環参照を検出するためのWeakSet
+    const seen = new WeakSet();
+    
+    const replacer = (key: string, value: any): any => {
+      if (value && typeof value === 'object') {
+        // 循環参照のチェック
+        if (seen.has(value)) {
+          return '[Circular Reference]';
+        }
+        seen.add(value);
+        
+        // 配列でない場合はキーをソート
+        if (!Array.isArray(value)) {
+          const sorted: any = {};
+          Object.keys(value).sort().forEach(k => {
+            sorted[k] = value[k];
+          });
+          return sorted;
+        }
+      }
+      return value;
+    };
+    
+    return JSON.stringify(result, replacer, 2);
   }
 }
