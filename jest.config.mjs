@@ -73,4 +73,13 @@ export default {
     'valid-test-dir',
     'test-accuracy-data'
   ],
+  
+  // AI Error Reporterの設定
+  reporters: [
+    'default',
+    ['<rootDir>/dist/testing/jest-ai-reporter.js', {
+      outputPath: 'test-errors-ai.md',
+      enableConsoleOutput: true
+    }]
+  ],
 };
