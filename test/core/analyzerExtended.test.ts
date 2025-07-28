@@ -39,8 +39,8 @@ describe('AnalyzerExtended', () => {
     expect(result.qualityAnalysis).toBeDefined();
     expect(result.qualityAnalysis.pluginResults).toHaveLength(3);
     expect(result.aggregatedScore).toBeDefined();
-    expect(result.aggregatedScore.overall).toBeGreaterThanOrEqual(0);
-    expect(result.aggregatedScore.overall).toBeLessThanOrEqual(100);
+    expect(result.aggregatedScore?.overall).toBeGreaterThanOrEqual(0);
+    expect(result.aggregatedScore?.overall).toBeLessThanOrEqual(100);
   });
 
   it('should maintain backward compatibility with legacy analyze method', async () => {
@@ -74,12 +74,12 @@ describe('AnalyzerExtended', () => {
 
     const result = await analyzer.analyzeWithQuality(getFixturePath('multi-plugin.test.ts'), mockProjectContext);
     
-    expect(result.aggregatedScore.breakdown.completeness).toBeDefined();
-    expect(result.aggregatedScore.breakdown.correctness).toBeDefined();
+    expect(result.aggregatedScore?.breakdown?.completeness).toBeDefined();
+    expect(result.aggregatedScore?.breakdown?.correctness).toBeDefined();
     
     // 集約されたスコアは個別プラグインのスコアの加重平均
-    expect(result.aggregatedScore.overall).toBeGreaterThanOrEqual(0);
-    expect(result.aggregatedScore.overall).toBeLessThanOrEqual(100);
+    expect(result.aggregatedScore?.overall).toBeGreaterThanOrEqual(0);
+    expect(result.aggregatedScore?.overall).toBeLessThanOrEqual(100);
   });
 
   it('should handle plugin errors gracefully', async () => {
@@ -127,14 +127,14 @@ describe('AnalyzerExtended', () => {
 
     const result = await analyzer.analyzeWithQuality(getFixturePath('confidence.test.ts'), mockProjectContext);
     
-    expect(result.aggregatedScore.confidence).toBeGreaterThanOrEqual(0);
-    expect(result.aggregatedScore.confidence).toBeLessThanOrEqual(1);
+    expect(result.aggregatedScore?.confidence).toBeGreaterThanOrEqual(0);
+    expect(result.aggregatedScore?.confidence).toBeLessThanOrEqual(1);
     
     // 信頼度は個別プラグインの信頼度の加重平均
     const pluginConfidences = result.qualityAnalysis.pluginResults.map(r => r.qualityScore.confidence);
     if (pluginConfidences.length > 0) {
-      const avgConfidence = pluginConfidences.reduce((sum, c) => sum + c, 0) / pluginConfidences.length;
-      expect(Math.abs(result.aggregatedScore.confidence - avgConfidence)).toBeLessThan(0.1);
+      const avgConfidence = pluginConfidences.reduce((sum, c) => (sum ?? 0) + (c ?? 0), 0) / pluginConfidences.length;
+      expect(Math.abs((result.aggregatedScore?.confidence ?? 0) - avgConfidence)).toBeLessThan(0.1);
     }
   });
 

@@ -1,32 +1,26 @@
 import { CLI } from '../../src/cli/cli';
 import { AnalyzeCommand } from '../../src/cli/commands/analyze';
-import { PluginCreateCommand } from '../../src/cli/commands/plugin-create';
 
 // コマンドクラスをモック化
 jest.mock('../../src/cli/commands/analyze');
-jest.mock('../../src/cli/commands/plugin-create');
 
 describe('CLI', () => {
   let cli: CLI;
   let mockAnalyzeCommand: jest.Mocked<AnalyzeCommand>;
-  let mockPluginCreateCommand: jest.Mocked<PluginCreateCommand>;
   let originalArgv: string[];
 
   beforeEach(() => {
     cli = new CLI();
     mockAnalyzeCommand = new AnalyzeCommand() as jest.Mocked<AnalyzeCommand>;
-    mockPluginCreateCommand = new PluginCreateCommand() as jest.Mocked<PluginCreateCommand>;
     
     // process.argv をバックアップ
     originalArgv = process.argv;
     
     // execucteメソッドをモック化
     mockAnalyzeCommand.execute = jest.fn().mockResolvedValue(undefined);
-    mockPluginCreateCommand.execute = jest.fn().mockResolvedValue(undefined);
     
     // モックインスタンスを返すようにコンストラクタをモック化
     (AnalyzeCommand as jest.MockedClass<typeof AnalyzeCommand>).mockImplementation(() => mockAnalyzeCommand);
-    (PluginCreateCommand as jest.MockedClass<typeof PluginCreateCommand>).mockImplementation(() => mockPluginCreateCommand);
   });
 
   afterEach(() => {

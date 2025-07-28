@@ -1,8 +1,5 @@
 import { ScoringConfigManager } from '../../src/scoring/config';
-import { 
-  WeightConfig, 
-  DEFAULT_WEIGHTS
-} from '../../src/scoring/types';
+import { DEFAULT_WEIGHTS } from '../../src/scoring/types';
 import path from 'path';
 import fs from 'fs';
 
