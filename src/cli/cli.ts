@@ -1,6 +1,6 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { AnalyzeCommand } from './commands/analyze.js';
+import { AnalyzeCommandV8 } from './commands/analyze-v0.8.js';
 import { AIOutputCommand } from './commands/ai-output.js';
 import * as os from 'os';
 
@@ -11,7 +11,7 @@ export class CLI {
       .usage('$0 <command> [options]')
       .command(
         ['analyze [path]', '$0 [path]'],
-        'テスト品質を分析します',
+        'テスト品質を分析します（v0.8.0 Context Engineering対応）',
         (yargs) => {
           return yargs
             .positional('path', {
@@ -29,7 +29,7 @@ export class CLI {
               alias: 'f',
               describe: '出力フォーマット',
               type: 'string',
-              choices: ['text', 'json'],
+              choices: ['text', 'json', 'markdown', 'html'],
               default: 'text'
             })
             .option('json', {
@@ -37,6 +37,55 @@ export class CLI {
               type: 'boolean',
               default: false
             })
+            // v0.8.0 新オプション
+            .option('output-json', {
+              describe: '分析結果をJSON形式でファイルに出力',
+              type: 'string'
+            })
+            .option('output-markdown', {
+              describe: '分析結果をMarkdown形式でファイルに出力',
+              type: 'string'
+            })
+            .option('output-html', {
+              describe: '分析結果をHTML形式でファイルに出力',
+              type: 'string'
+            })
+            .option('annotate', {
+              describe: 'ソースコードにインライン・アノテーションを追加',
+              type: 'boolean',
+              default: false
+            })
+            .option('annotate-format', {
+              describe: 'アノテーション形式',
+              type: 'string',
+              choices: ['inline', 'block'],
+              default: 'inline'
+            })
+            .option('annotate-output', {
+              describe: 'アノテーション付きファイルの出力先ディレクトリ',
+              type: 'string'
+            })
+            .option('preview', {
+              describe: 'アノテーションのプレビューモード（ファイルを変更しない）',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-details', {
+              describe: '詳細情報を含める（データフロー分析など）',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-recommendations', {
+              describe: '改善提案を含める',
+              type: 'boolean',
+              default: true
+            })
+            .option('severity', {
+              describe: 'フィルタする重要度（複数指定可）',
+              type: 'array',
+              choices: ['critical', 'high', 'medium', 'low', 'info']
+            })
+            // 既存オプション
             .option('performance', {
               describe: 'パフォーマンス監視を有効化',
               type: 'boolean',
@@ -47,22 +96,53 @@ export class CLI {
               type: 'boolean',
               default: false
             })
-            .option('output', {
-              alias: 'o',
-              describe: '出力ファイルパス',
-              type: 'string'
+            .option('parallel', {
+              describe: '並列処理を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('cache', {
+              describe: 'キャッシュ機能を有効化',
+              type: 'boolean',
+              default: true
+            })
+            .option('clear-cache', {
+              describe: 'キャッシュをクリア',
+              type: 'boolean',
+              default: false
+            })
+            .option('show-cache-stats', {
+              describe: 'キャッシュ統計を表示',
+              type: 'boolean',
+              default: false
             });
         },
         async (argv) => {
-          const analyzeCommand = new AnalyzeCommand();
+          const analyzeCommand = new AnalyzeCommandV8();
           // --json フラグが指定された場合は format を json に上書き
           const format = argv.json ? 'json' : argv.format;
           await analyzeCommand.execute({
             path: argv.path || '.',
             verbose: argv.verbose,
-            format: format as 'text' | 'json',
+            format: format as 'text' | 'json' | 'markdown' | 'html',
+            // v0.8.0 新オプション
+            outputJson: argv['output-json'],
+            outputMarkdown: argv['output-markdown'],
+            outputHtml: argv['output-html'],
+            annotate: argv.annotate,
+            annotateFormat: argv['annotate-format'] as 'inline' | 'block',
+            annotateOutput: argv['annotate-output'],
+            preview: argv.preview,
+            includeDetails: argv['include-details'],
+            includeRecommendations: argv['include-recommendations'],
+            severity: argv.severity as string[],
+            // 既存オプション
             performance: argv.performance,
-            showPerformanceReport: argv['show-performance-report']
+            showPerformanceReport: argv['show-performance-report'],
+            parallel: argv.parallel,
+            cache: argv.cache,
+            clearCache: argv['clear-cache'],
+            showCacheStats: argv['show-cache-stats']
           });
         }
       )
@@ -482,12 +562,22 @@ export class CLI {
       )
       .help('h')
       .alias('h', 'help')
-      .version('0.4.0')
+      .version('0.8.0')
       .example('$0', 'カレントディレクトリを分析')
       .example('$0 ./src', 'srcディレクトリを分析')
       .example('$0 --verbose', '詳細モードで分析')
       .example('$0 --json', 'JSON形式で出力')
       .example('$0 ./src --format=json', 'JSON形式で出力')
+      // v0.8.0 新しい例
+      .example('$0 analyze . --output-json report.json', '分析結果をJSON形式でファイルに保存')
+      .example('$0 analyze . --output-markdown report.md', '分析結果をMarkdown形式でファイルに保存')
+      .example('$0 analyze . --output-html report.html', '分析結果をHTML形式でファイルに保存')
+      .example('$0 analyze . --annotate', 'ソースコードに分析結果をアノテーション')
+      .example('$0 analyze . --annotate --preview', 'アノテーションをプレビュー（ファイル変更なし）')
+      .example('$0 analyze . --annotate --annotate-format=block', 'ブロック形式でアノテーション')
+      .example('$0 analyze . --include-details --output-markdown detailed.md', '詳細情報を含むレポート生成')
+      .example('$0 analyze . --severity=critical,high', 'criticalとhighの問題のみ表示')
+      // 既存の例
       .example('$0 ai-output', 'AI向けJSON形式で出力')
       .example('$0 ai-output --format=markdown -o ai-report.md', 'AI向けMarkdown形式でファイル出力')
       .example('$0 ai-output --include-context --optimize-for-ai', 'コンテキスト情報付きでAI最適化出力')
