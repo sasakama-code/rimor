@@ -54,7 +54,7 @@
 ### {{severityLabel @key}} ({{this.length}}件)
 
 {{#each this}}
-#### {{../severityIcon this.severity}} [{{this.id}}] {{this.type}}
+#### {{severityIcon this.severity}} [{{this.id}}] {{this.type}}
 
 **ファイル**: `{{this.location.file}}`  
 **位置**: 行 {{this.location.startLine}}{{#if (ne this.location.startLine this.location.endLine)}}-{{this.location.endLine}}{{/if}}{{#if this.location.startColumn}}, 列 {{this.location.startColumn}}{{#if this.location.endColumn}}-{{this.location.endColumn}}{{/if}}{{/if}}

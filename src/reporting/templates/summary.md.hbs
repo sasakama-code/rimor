@@ -28,11 +28,13 @@
 - ℹ️ **Info**: {{summary.issueBySeverity.info}} 件
 {{/if}}
 
+{{#if (gt summary.totalIssues 0)}}
 ### 問題タイプ別の分布
 
 {{#each summary.issueByType}}
 - **{{@key}}**: {{this}} 件
 {{/each}}
+{{/if}}
 
 ## 🎯 テストカバレッジ
 
