@@ -1,0 +1,249 @@
+# Rimor 詳細分析レポート
+
+**解析対象**: `{{metadata.analyzedPath}}`  
+**実行日時**: {{formatDate metadata.timestamp}}  
+**Rimorバージョン**: v{{metadata.version}}  
+**解析時間**: {{formatDuration metadata.duration}}
+
+---
+
+## 目次
+
+1. [エグゼクティブサマリー](#エグゼクティブサマリー)
+2. [検出された問題の詳細](#検出された問題の詳細)
+3. [テストカバレッジ分析](#テストカバレッジ分析)
+4. [コード品質メトリクス](#コード品質メトリクス)
+5. [プラグイン実行結果](#プラグイン実行結果)
+6. [改善提案](#改善提案)
+
+---
+
+## エグゼクティブサマリー
+
+### 全体統計
+
+| メトリクス | 値 |
+|-----------|-----|
+| 解析ファイル数 | {{summary.totalFiles}} |
+| 検出された問題 | {{summary.totalIssues}} |
+| テストカバレッジ | {{metrics.testCoverage.overall}}% |
+
+### 重要度別分布
+
+| 重要度 | 件数 | 割合 |
+|--------|------|------|
+| Critical | {{summary.issueBySeverity.critical}} | {{percentage summary.issueBySeverity.critical summary.totalIssues}}% |
+| High | {{summary.issueBySeverity.high}} | {{percentage summary.issueBySeverity.high summary.totalIssues}}% |
+| Medium | {{summary.issueBySeverity.medium}} | {{percentage summary.issueBySeverity.medium summary.totalIssues}}% |
+| Low | {{summary.issueBySeverity.low}} | {{percentage summary.issueBySeverity.low summary.totalIssues}}% |
+| Info | {{summary.issueBySeverity.info}} | {{percentage summary.issueBySeverity.info summary.totalIssues}}% |
+
+### 問題タイプ別分布
+
+| タイプ | 件数 | 説明 |
+|--------|------|------|
+{{#each summary.issueByType}}
+| {{@key}} | {{this}} | {{issueTypeDescription @key}} |
+{{/each}}
+
+---
+
+## 検出された問題の詳細
+
+{{#each (groupBySeverity issues)}}
+### {{severityLabel @key}} ({{this.length}}件)
+
+{{#each this}}
+#### {{../severityIcon this.severity}} [{{this.id}}] {{this.type}}
+
+**ファイル**: `{{this.location.file}}`  
+**位置**: 行 {{this.location.startLine}}{{#if (ne this.location.startLine this.location.endLine)}}-{{this.location.endLine}}{{/if}}{{#if this.location.startColumn}}, 列 {{this.location.startColumn}}{{#if this.location.endColumn}}-{{this.location.endColumn}}{{/if}}{{/if}}
+
+**説明**: {{this.message}}
+
+{{#if this.codeSnippet}}
+**該当コード**:
+```{{detectLanguage this.location.file}}
+{{this.codeSnippet}}
+```
+{{/if}}
+
+{{#if this.dataFlow}}
+**汚染データフロー解析**:
+
+1. **Source** ({{this.dataFlow.source.type}}):
+   - ファイル: `{{this.dataFlow.source.location.file}}`
+   - 位置: 行 {{this.dataFlow.source.location.startLine}}
+
+{{#if (gt this.dataFlow.path.length 0)}}
+2. **伝播経路**:
+{{#each this.dataFlow.path}}
+   - Step {{inc @index}}: {{this.description}} (`{{this.location.file}}:{{this.location.startLine}}`)
+{{/each}}
+{{/if}}
+
+3. **Sink** ({{this.dataFlow.sink.type}}):
+   - ファイル: `{{this.dataFlow.sink.location.file}}`
+   - 位置: 行 {{this.dataFlow.sink.location.startLine}}
+{{/if}}
+
+{{#if this.recommendation}}
+**🔧 推奨される対応**:
+> {{this.recommendation}}
+{{/if}}
+
+{{#if this.references}}
+**📚 参考資料**:
+{{#each this.references}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+{{/each}}
+{{/each}}
+
+---
+
+## テストカバレッジ分析
+
+### 全体カバレッジ: {{metrics.testCoverage.overall}}%
+
+{{#if (lt metrics.testCoverage.overall 80)}}
+⚠️ **警告**: テストカバレッジが80%未満です。品質基準を満たすためにテストの追加を検討してください。
+{{/if}}
+
+### モジュール別カバレッジ
+
+| モジュール | カバレッジ | テスト済み | 未テスト |
+|-----------|-----------|------------|----------|
+{{#each metrics.testCoverage.byModule}}
+| {{@key}} | {{this.coverage}}% | {{this.testedFiles}} | {{this.untestedFiles}} |
+{{/each}}
+
+{{#if (gt metrics.testCoverage.missingTests.length 0)}}
+### テストが不足しているファイル
+
+以下のファイルにはテストが存在しないか、不十分です:
+
+{{#each metrics.testCoverage.missingTests}}
+1. **`{{this.file}}`**
+   - 理由: {{this.reason}}
+{{/each}}
+{{/if}}
+
+---
+
+## コード品質メトリクス
+
+{{#if metrics.codeQuality.complexity}}
+### 複雑度分析
+
+- **平均循環的複雑度**: {{metrics.codeQuality.complexity.average}}
+- **最大循環的複雑度**: {{metrics.codeQuality.complexity.max}}
+
+{{#if (gt metrics.codeQuality.complexity.highComplexityMethods.length 0)}}
+#### 高複雑度メソッド (複雑度 > 10)
+
+| メソッド | 複雑度 | ファイル | 位置 |
+|----------|--------|----------|------|
+{{#each metrics.codeQuality.complexity.highComplexityMethods}}
+| `{{this.method}}` | {{this.complexity}} | `{{this.location.file}}` | 行 {{this.location.startLine}} |
+{{/each}}
+
+**推奨事項**: 複雑度が10を超えるメソッドは、理解しにくくバグが発生しやすい傾向があります。リファクタリングを検討してください。
+{{/if}}
+{{/if}}
+
+{{#if metrics.codeQuality.maintainability}}
+### 保守性分析
+
+**保守性インデックス**: {{metrics.codeQuality.maintainability.score}}/100
+
+{{#if (lt metrics.codeQuality.maintainability.score 70)}}
+⚠️ **警告**: 保守性スコアが低いです。コードの可読性と構造を改善することを推奨します。
+{{/if}}
+
+{{#if (gt metrics.codeQuality.maintainability.issues.length 0)}}
+#### 保守性の問題
+
+{{#each metrics.codeQuality.maintainability.issues}}
+- {{this}}
+{{/each}}
+{{/if}}
+{{/if}}
+
+---
+
+## プラグイン実行結果
+
+{{#if plugins}}
+| プラグイン | 実行状態 | 検出問題数 | 実行時間 |
+|-----------|----------|-----------|----------|
+{{#each plugins}}
+| {{@key}} | {{#if this.executed}}✅{{else}}❌{{/if}} | {{default this.issues 0}} | {{#if this.duration}}{{formatDuration this.duration}}{{else}}-{{/if}} |
+{{/each}}
+{{else}}
+*プラグイン実行情報はありません。*
+{{/if}}
+
+---
+
+## 改善提案
+
+{{#if (gt summary.issueBySeverity.critical 0)}}
+### 🔴 緊急対応が必要な項目
+
+1. **Critical問題の即時修正**: {{summary.issueBySeverity.critical}}件のCritical問題が検出されています。これらは深刻なセキュリティリスクやシステム障害につながる可能性があります。
+{{/if}}
+
+{{#if (gt summary.issueBySeverity.high 0)}}
+### 🟠 優先度の高い改善項目
+
+1. **High問題の早期対応**: {{summary.issueBySeverity.high}}件のHigh問題が検出されています。次のリリースまでに対応することを推奨します。
+{{/if}}
+
+{{#if (lt metrics.testCoverage.overall 80)}}
+### 📊 テストカバレッジの改善
+
+1. **テストカバレッジの向上**: 現在のカバレッジ{{metrics.testCoverage.overall}}%を80%以上に引き上げることを推奨します。
+2. **重要なビジネスロジックのテスト追加**: 特に認証、決済、データ処理などの重要な機能に対するテストを優先的に追加してください。
+{{/if}}
+
+{{#if (and metrics.codeQuality.complexity (gt metrics.codeQuality.complexity.max 15))}}
+### 🔧 コード品質の改善
+
+1. **複雑なメソッドのリファクタリング**: 複雑度が15を超えるメソッドを、より小さく理解しやすい単位に分割することを検討してください。
+2. **単一責任の原則の適用**: 各メソッド・クラスが単一の責任を持つように設計を見直してください。
+{{/if}}
+
+### 📈 継続的な品質改善
+
+1. **定期的な分析の実施**: Rimorを定期的（例：毎週）に実行し、品質トレンドを監視してください。
+2. **CI/CDへの統合**: ビルドパイプラインにRimorを統合し、品質基準を下回る場合はビルドを失敗させることを検討してください。
+3. **チーム教育**: 検出された問題パターンをチームで共有し、同様の問題の再発を防ぐための教育を実施してください。
+
+---
+
+## 次のステップ
+
+1. **インライン注釈の生成**:
+   ```bash
+   rimor analyze {{metadata.analyzedPath}} --annotate
+   ```
+
+2. **JSON形式での詳細データ取得**:
+   ```bash
+   rimor analyze {{metadata.analyzedPath}} --output-json analysis-result.json
+   ```
+
+3. **特定の重要度に絞った分析**:
+   ```bash
+   rimor analyze {{metadata.analyzedPath}} --severity=critical,high
+   ```
+
+---
+
+*このレポートはRimor v{{metadata.version}}によって{{formatDate metadata.timestamp}}に生成されました。*  
+*解析所要時間: {{formatDuration metadata.duration}}*
