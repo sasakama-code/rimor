@@ -48,9 +48,9 @@ export class AnalyzeCommandV8 {
   private cliSecurity: CLISecurity;
   private container: typeof container;
 
-  constructor() {
-    this.cliSecurity = new CLISecurity(process.cwd(), DEFAULT_CLI_SECURITY_LIMITS);
-    this.container = initializeContainer();
+  constructor(customContainer?: typeof container, customCliSecurity?: CLISecurity) {
+    this.cliSecurity = customCliSecurity || new CLISecurity(process.cwd(), DEFAULT_CLI_SECURITY_LIMITS);
+    this.container = customContainer || initializeContainer();
   }
   
   async execute(options: AnalyzeOptions): Promise<void> {
