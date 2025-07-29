@@ -475,9 +475,9 @@ describe('AnalyzeCommandV8', () => {
           path: '/test/project'
         })).rejects.toThrow('process.exit called with code 1');
         
-        // console.errorが呼ばれたことを確認
+        // console.errorが呼ばれたことを確認（2回：Original errorとformatted error）
         expect(consoleErrorSpy).toHaveBeenCalled();
-        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
       } finally {
         // クリーンアップ
         mockExit.mockRestore();

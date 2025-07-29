@@ -63,7 +63,8 @@ describe('Basic Integration Tests', () => {
       pluginManager.register(plugin3);
 
       const plugins = pluginManager.getPlugins();
-      expect(plugins).toHaveLength(3);
+      // デフォルトプラグイン（test-existence, assertion-exists）+ 追加した3つ = 5
+      expect(plugins).toHaveLength(5);
     });
 
     it('should handle duplicate plugin registration', () => {
