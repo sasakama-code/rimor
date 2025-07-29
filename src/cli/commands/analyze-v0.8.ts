@@ -11,6 +11,7 @@ import { OutputFormatter } from '../output';
 import { errorHandler } from '../../utils/errorHandler';
 import { cleanupManager } from '../../utils/cleanupManager';
 import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
+import { PathSecurity } from '../../utils/pathSecurity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -115,10 +116,11 @@ export class AnalyzeCommandV8 {
         await (reporter as any).initialize();
       }
       
-      // 進行状況の表示
+      // 進行状況の表示（PIIマスキング適用）
       if (!sanitizedOptions.outputJson && !sanitizedOptions.outputMarkdown && !sanitizedOptions.outputHtml) {
         console.log(await OutputFormatter.header("Rimor v0.8.0 - Context Engineering"));
-        console.log(await OutputFormatter.info(`分析対象: ${targetPath}`));
+        const maskedPath = PathSecurity.toRelativeOrMasked(targetPath);
+        console.log(await OutputFormatter.info(`分析対象: ${maskedPath}`));
         
         if (sanitizedOptions.verbose) {
           console.log(await OutputFormatter.info("分析モード: v0.8.0 (DI Container + Context Engineering)"));

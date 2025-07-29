@@ -9,6 +9,7 @@ import { errorHandler } from '../../utils/errorHandler';
 import { cleanupManager } from '../../utils/cleanupManager';
 // v0.4.1 セキュリティ強化
 import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
+import { PathSecurity } from '../../utils/pathSecurity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -159,6 +160,7 @@ export class AnalyzeCommand {
         }
         
         console.log(await OutputFormatter.header(""));
+        const maskedPath = PathSecurity.toRelativeOrMasked(targetPath);
         console.log(await OutputFormatter.info(""));
         
         if (verbose) {

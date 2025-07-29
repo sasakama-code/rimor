@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { IPlugin, Issue } from '../core/types';
 import { PluginConfig } from '../core/config';
+import { PathSecurity } from '../utils/pathSecurity';
 
 export class TestExistencePlugin implements IPlugin {
   name = 'test-existence';
@@ -19,10 +20,12 @@ export class TestExistencePlugin implements IPlugin {
     const exists = expectedTestPaths.some(testPath => fs.existsSync(testPath));
     
     if (!exists) {
+      // PIIマスキングを適用
+      const maskedPath = PathSecurity.toRelativeOrMasked(filePath);
       return [{
         type: 'missing-test',
         severity: 'error' as const,
-        message: `テストファイルが存在しません: ${filePath}`
+        message: `テストファイルが存在しません: ${maskedPath}`
       }];
     }
     

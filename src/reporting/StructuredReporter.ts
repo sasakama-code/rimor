@@ -25,6 +25,7 @@ import { SecurityAuditResult, SecurityThreat } from '../core/interfaces/ISecurit
 import { Issue as CoreIssue } from '../core/types';
 import * as crypto from 'crypto';
 import * as path from 'path';
+import { PathSecurity } from '../utils/pathSecurity';
 
 @injectable()
 export class StructuredReporter {
@@ -88,10 +89,14 @@ export class StructuredReporter {
    * メタデータを作成
    */
   private createMetadata(analyzedPath: string, startTime: number): AnalysisMetadata {
+    // PIIマスキングを適用
+    const resolvedPath = path.resolve(analyzedPath);
+    const maskedPath = PathSecurity.toRelativeOrMasked(resolvedPath);
+    
     return {
       version: this.version,
       timestamp: new Date().toISOString(),
-      analyzedPath: path.resolve(analyzedPath),
+      analyzedPath: maskedPath,
       duration: Date.now() - startTime
     };
   }
