@@ -27,6 +27,7 @@ export interface RimorConfig {
   output: {
     format: 'text' | 'json';
     verbose: boolean;
+    reportDir?: string;  // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
   };
   metadata?: {
     generatedAt?: string;
@@ -255,6 +256,7 @@ export class ConfigLoader {
       plugins,
       output: {
         format: 'text',
+        reportDir: '.rimor/reports',
         verbose: false
       }
     };

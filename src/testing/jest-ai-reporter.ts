@@ -3,6 +3,7 @@ import { TestErrorContextCollector } from './error-context';
 import { AITestErrorFormatter } from './ai-error-formatter';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PathSecurity } from '../utils/pathSecurity';
 
 /**
  * Jest用AIエラーレポーター
@@ -18,7 +19,16 @@ export class JestAIReporter implements Reporter {
   constructor(globalConfig: any, options: any = {}) {
     this.errorCollector = new TestErrorContextCollector();
     this.errorFormatter = new AITestErrorFormatter();
-    this.outputPath = options.outputPath || 'test-errors-ai.md';
+    
+    // デフォルトの出力先を.rimor/reports/に設定
+    const defaultOutputDir = path.join(process.cwd(), '.rimor', 'reports');
+    
+    // ディレクトリが存在しない場合は作成
+    if (!fs.existsSync(defaultOutputDir)) {
+      fs.mkdirSync(defaultOutputDir, { recursive: true });
+    }
+    
+    this.outputPath = options.outputPath || path.join(defaultOutputDir, 'test-errors-ai.md');
     this.enableConsoleOutput = options.enableConsoleOutput !== false;
   }
   
@@ -92,14 +102,16 @@ export class JestAIReporter implements Reporter {
         process.cwd()
       );
       
-      // マークダウン形式で出力
+      // マークダウン形式で出力（PIIマスキング適用）
       const markdown = this.errorFormatter.formatAsMarkdown(report);
-      await fs.promises.writeFile(this.outputPath, markdown, 'utf-8');
+      const maskedMarkdown = PathSecurity.maskAllPaths(markdown, 'Rimor');
+      await fs.promises.writeFile(this.outputPath, maskedMarkdown, 'utf-8');
       
-      // JSON形式でも出力（オプション）
+      // JSON形式でも出力（PIIマスキング適用）
       const jsonPath = this.outputPath.replace(/\.md$/, '.json');
       const json = this.errorFormatter.formatAsJSON(report);
-      await fs.promises.writeFile(jsonPath, json, 'utf-8');
+      const maskedJson = PathSecurity.maskAllPaths(json, 'Rimor');
+      await fs.promises.writeFile(jsonPath, maskedJson, 'utf-8');
       
       if (this.enableConsoleOutput) {
         this.printSummary(report);
@@ -173,7 +185,9 @@ export class JestAIReporter implements Reporter {
       });
     }
     
-    console.log(`\n📄 詳細レポート: ${this.outputPath}`);
+    // 出力パスをマスキングして表示
+    const maskedPath = PathSecurity.toRelativeOrMasked(this.outputPath);
+    console.log(`\n📄 詳細レポート: ${maskedPath}`);
     console.log('='.repeat(80) + '\n');
   }
 }
