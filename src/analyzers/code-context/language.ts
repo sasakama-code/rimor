@@ -377,10 +377,16 @@ export class LanguageAnalyzer {
 
   private extractJavaScriptVariables(line: string, lineNumber: number): VariableInfo[] {
     const variables: VariableInfo[] = [];
-    const pattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
     
-    const matches = line.matchAll(pattern);
-    for (const match of matches) {
+    // 通常の変数宣言
+    const normalPattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
+    
+    // デストラクチャリング構文
+    const destructuringPattern = /(const|let|var)\s*\{([^}]+)\}\s*=/g;
+    
+    // 通常の変数を抽出
+    const normalMatches = line.matchAll(normalPattern);
+    for (const match of normalMatches) {
       if (match[2]) {
         variables.push({
           name: match[2],
@@ -392,6 +398,31 @@ export class LanguageAnalyzer {
           usage: [],
           kind: match[1] as 'const' | 'let' | 'var'
         });
+      }
+    }
+    
+    // デストラクチャリング変数を抽出
+    const destructMatches = line.matchAll(destructuringPattern);
+    for (const match of destructMatches) {
+      if (match[2]) {
+        // { name, email } から name と email を抽出
+        const vars = match[2].split(',').map(v => v.trim());
+        for (const varName of vars) {
+          // プロパティの名前変更を処理 (例: { foo: bar })
+          const cleanName = varName.includes(':') ? varName.split(':')[1].trim() : varName;
+          if (cleanName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(cleanName)) {
+            variables.push({
+              name: cleanName,
+              line: lineNumber,
+              type: 'any', // デストラクチャリングの型推論は複雑なので any とする
+              scope: this.determineScope([line], 0),
+              isConst: match[1] === 'const',
+              isExported: this.isExported(line),
+              usage: [],
+              kind: match[1] as 'const' | 'let' | 'var'
+            });
+          }
+        }
       }
     }
     

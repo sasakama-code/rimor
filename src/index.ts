@@ -7,6 +7,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("");
+  console.error("Error:", error.message || error);
+  if (error.stack) {
+    console.error("Stack trace:", error.stack);
+  }
   process.exit(1);
 });

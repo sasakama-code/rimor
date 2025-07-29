@@ -100,32 +100,26 @@ export class ScopeAnalyzer {
       }
     }
     
-    // ターゲット行を含むスコープを返す
-    const relevantScopes = scopes.filter(scope => 
-      targetLine >= scope.startLine && targetLine <= scope.endLine
-    );
-    
-    // グローバルスコープを除外して、最も具体的なスコープを返す
-    const nonGlobalScopes = relevantScopes.filter(scope => scope.type !== 'global');
-    if (nonGlobalScopes.length > 0) {
-      // レベルが最も深いスコープから優先的に返す
-      nonGlobalScopes.sort((a, b) => (b.level || 0) - (a.level || 0));
-      return nonGlobalScopes;
-    }
-    
-    return relevantScopes.length > 0 ? relevantScopes : scopes;
+    // すべてのスコープを返す（getScopeHierarchyなどで使用するため）
+    return scopes;
   }
 
   /**
    * 特定の行のスコープを特定
    */
   findScopeAtLine(scopes: ScopeInfo[], targetLine: number): ScopeInfo | null {
-    for (const scope of scopes) {
-      if (targetLine >= scope.startLine && targetLine <= scope.endLine) {
-        return scope;
-      }
+    // 対象行を含むすべてのスコープを見つける
+    const containingScopes = scopes.filter(scope => 
+      targetLine >= scope.startLine && targetLine <= scope.endLine
+    );
+    
+    if (containingScopes.length === 0) {
+      return null;
     }
-    return null;
+    
+    // レベルが最も深いスコープを返す
+    containingScopes.sort((a, b) => (b.level || 0) - (a.level || 0));
+    return containingScopes[0];
   }
 
   /**
