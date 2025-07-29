@@ -164,8 +164,8 @@ describe('UserController', () => {
       expect(context.imports).toHaveLength(2);
       expect(context.imports).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('UserController'),
-          expect.stringContaining('express')
+          expect.objectContaining({ source: expect.stringContaining('UserController') }),
+          expect.objectContaining({ source: expect.stringContaining('express') })
         ])
       );
       expect(context.functions).toBeDefined();
@@ -231,7 +231,7 @@ describe('UserController', () => {
         type: 'unused-variable',
         severity: 'warning',
         message: 'Variable may be unused',
-        line: 33,
+        line: 53,
         file: path.join(testProjectPath, 'src/UserController.ts')
       };
 
@@ -347,9 +347,12 @@ const processOrder = async (order) => {
       const scopes = await analyzer.analyzeScopeContext(code, 2);
 
       expect(scopes).toBeDefined();
-      expect(scopes.length).toBeGreaterThanOrEqual(1);
-      expect(scopes[0].type).toBe('block');  
-      expect(scopes[0].variables).toEqual(
+      expect(scopes.length).toBeGreaterThanOrEqual(2); // グローバルとブロック
+      
+      // ブロックスコープを見つける
+      const blockScope = scopes.find((scope: any) => scope.type === 'block');
+      expect(blockScope).toBeDefined();
+      expect(blockScope?.variables).toEqual(
         expect.arrayContaining(['blockVar', 'anotherVar'])
       );
     });

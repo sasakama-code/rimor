@@ -1,17 +1,40 @@
 import { CLI } from '../../src/cli/cli';
-import { AnalyzeCommand } from '../../src/cli/commands/analyze';
+import { AnalyzeCommandV8 } from '../../src/cli/commands/analyze-v0.8';
 
 // コマンドクラスをモック化
-jest.mock('../../src/cli/commands/analyze');
+jest.mock('../../src/cli/commands/analyze-v0.8');
 
 describe('CLI', () => {
   let cli: CLI;
-  let mockAnalyzeCommand: jest.Mocked<AnalyzeCommand>;
+  let mockAnalyzeCommand: jest.Mocked<AnalyzeCommandV8>;
   let originalArgv: string[];
+
+  // v0.8.0のデフォルトオプション
+  const defaultOptions = {
+    path: '.',
+    verbose: false,
+    format: 'text',
+    outputJson: undefined,
+    outputMarkdown: undefined,
+    outputHtml: undefined,
+    annotate: false,
+    annotateFormat: 'inline',
+    annotateOutput: undefined,
+    preview: false,
+    includeDetails: false,
+    includeRecommendations: true,
+    severity: undefined,
+    performance: false,
+    showPerformanceReport: false,
+    parallel: false,
+    cache: true,
+    clearCache: false,
+    showCacheStats: false
+  };
 
   beforeEach(() => {
     cli = new CLI();
-    mockAnalyzeCommand = new AnalyzeCommand() as jest.Mocked<AnalyzeCommand>;
+    mockAnalyzeCommand = new AnalyzeCommandV8() as jest.Mocked<AnalyzeCommandV8>;
     
     // process.argv をバックアップ
     originalArgv = process.argv;
@@ -20,7 +43,7 @@ describe('CLI', () => {
     mockAnalyzeCommand.execute = jest.fn().mockResolvedValue(undefined);
     
     // モックインスタンスを返すようにコンストラクタをモック化
-    (AnalyzeCommand as jest.MockedClass<typeof AnalyzeCommand>).mockImplementation(() => mockAnalyzeCommand);
+    (AnalyzeCommandV8 as jest.MockedClass<typeof AnalyzeCommandV8>).mockImplementation(() => mockAnalyzeCommand);
   });
 
   afterEach(() => {
@@ -35,17 +58,7 @@ describe('CLI', () => {
       
       await cli.run();
       
-      expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: '.',
-        verbose: false,
-        format: 'text',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
-      });
+      expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith(defaultOptions);
     });
 
     it('should execute analyze command with custom path', async () => {
@@ -54,15 +67,8 @@ describe('CLI', () => {
       await cli.run();
       
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: './src',
-        verbose: false,
-        format: 'text',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
+        ...defaultOptions,
+        path: './src'
       });
     });
 
@@ -72,15 +78,8 @@ describe('CLI', () => {
       await cli.run();
       
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: '.',
-        verbose: true,
-        format: 'text',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
+        ...defaultOptions,
+        verbose: true
       });
     });
 
@@ -90,15 +89,8 @@ describe('CLI', () => {
       await cli.run();
       
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: '.',
-        verbose: false,
-        format: 'json',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
+        ...defaultOptions,
+        format: 'json'
       });
     });
 
@@ -108,15 +100,8 @@ describe('CLI', () => {
       await cli.run();
       
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: '.',
-        verbose: false,
-        format: 'json',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
+        ...defaultOptions,
+        format: 'json'
       });
     });
   });
@@ -129,10 +114,10 @@ describe('CLI', () => {
       await cli.run();
       
       // expect(mockPluginCreateCommand.execute).toHaveBeenCalledWith({
-        interactive: true,
-        template: undefined,
-        from: undefined
-      });
+      //   interactive: true,
+      //   template: undefined,
+      //   from: undefined
+      // });
     });
 
     it.skip('should execute plugin create command with template option', async () => {
@@ -142,10 +127,10 @@ describe('CLI', () => {
       await cli.run();
       
       // expect(mockPluginCreateCommand.execute).toHaveBeenCalledWith({
-        interactive: false,
-        template: 'basic',
-        from: undefined
-      });
+      //   interactive: false,
+      //   template: 'basic',
+      //   from: undefined
+      // });
     });
 
     it.skip('should execute plugin create command with from option', async () => {
@@ -155,10 +140,10 @@ describe('CLI', () => {
       await cli.run();
       
       // expect(mockPluginCreateCommand.execute).toHaveBeenCalledWith({
-        interactive: false,
-        template: undefined,
-        from: 'testExistence'
-      });
+      //   interactive: false,
+      //   template: undefined,
+      //   from: 'testExistence'
+      // });
     });
 
     it.skip('should execute plugin create command with short options', async () => {
@@ -168,10 +153,10 @@ describe('CLI', () => {
       await cli.run();
       
       // expect(mockPluginCreateCommand.execute).toHaveBeenCalledWith({
-        interactive: true,
-        template: undefined,
-        from: undefined
-      });
+      //   interactive: true,
+      //   template: undefined,
+      //   from: undefined
+      // });
     });
 
     it.skip('should execute plugin create command with template shorthand', async () => {
@@ -181,10 +166,10 @@ describe('CLI', () => {
       await cli.run();
       
       // expect(mockPluginCreateCommand.execute).toHaveBeenCalledWith({
-        interactive: false,
-        template: 'async-await',
-        from: undefined
-      });
+      //   interactive: false,
+      //   template: 'async-await',
+      //   from: undefined
+      // });
     });
   });
 
@@ -194,17 +179,7 @@ describe('CLI', () => {
       
       await cli.run();
       
-      expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: '.',
-        verbose: false,
-        format: 'text',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
-      });
+      expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith(defaultOptions);
     });
 
     it('should execute analyze command with path when no command specified', async () => {
@@ -213,15 +188,8 @@ describe('CLI', () => {
       await cli.run();
       
       expect(mockAnalyzeCommand.execute).toHaveBeenCalledWith({
-        path: './src',
-        verbose: false,
-        format: 'text',
-        performance: false,
-        showPerformanceReport: false,
-        scoring: false,
-        reportType: 'summary',
-        noColor: false,
-        outputFile: undefined
+        ...defaultOptions,
+        path: './src'
       });
     });
   });
@@ -230,7 +198,7 @@ describe('CLI', () => {
     it('should use correct version', () => {
       // package.jsonからバージョンを読み取ってテスト
       const packageJson = require('../../package.json');
-      expect(packageJson.version).toBe('0.7.0');
+      expect(packageJson.version).toBe('0.8.0');
     });
   });
 
