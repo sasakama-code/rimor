@@ -2,6 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { AnalyzeCommandV8 } from './commands/analyze-v0.8';
 import { AIOutputCommand } from './commands/ai-output';
+import { createTaintAnalysisCommand } from './commands/taint-analysis';
 import * as os from 'os';
 
 export class CLI {
@@ -225,6 +226,7 @@ export class CLI {
           });
         }
       )
+      .command(createTaintAnalysisCommand())
       .command(
         'bootstrap [subcommand]',
         'プロジェクトのセットアップとブートストラップ',
