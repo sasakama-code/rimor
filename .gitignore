@@ -49,9 +49,23 @@ benchmark-results/
 *-tests/
 test-accuracy-data/
 
-# AI Error Reports
+# AI Error Reports (kept for backward compatibility)
 test-errors-ai.md
 test-errors-ai.json
 test-output/
 accuracy-evaluation-*.json
 real-world-validation-*.json
+
+# Rimor generated files and directories
+.rimor/
+rimor-self-analysis.json
+dogfooding-report.md
+context-engineering-evaluation.md
+test-creation-priority.md
+debt-tracker.md
+test-output.log
+test-output-after-fix.log
+empty-tests/
+invalid-tests/
+temp-tests/
+valid-test-dir/
