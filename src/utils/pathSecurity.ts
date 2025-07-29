@@ -143,4 +143,84 @@ export class PathSecurity {
     
     return null;
   }
+
+  /**
+   * 絶対パスから個人情報（PII）をマスキングする
+   * @param filePath マスキング対象のパス
+   * @param projectName プロジェクト名（省略時は'PROJECT'）
+   * @returns マスキングされたパス
+   */
+  static maskPII(filePath: string, projectName: string = 'PROJECT'): string {
+    if (!filePath) return filePath;
+    
+    // ユーザー名を含む絶対パスのマスキング（macOS/Linux）
+    const userPathPattern = /\/Users\/[^\/]+\//g;
+    let maskedPath = filePath.replace(userPathPattern, '/Users/[USER]/');
+    
+    // Windows形式のユーザーパス
+    const windowsUserPattern = /C:\\Users\\[^\\]+\\/g;
+    maskedPath = maskedPath.replace(windowsUserPattern, 'C:\\Users\\[USER]\\');
+    
+    // その他の一般的な絶対パスパターン（/home/username/ など）
+    const homePathPattern = /\/home\/[^\/]+\//g;
+    maskedPath = maskedPath.replace(homePathPattern, '/home/[USER]/');
+    
+    // プロジェクト名でさらに短縮（オプション）
+    if (projectName && projectName !== 'PROJECT') {
+      const projectPattern = new RegExp(`\\[USER\\]/[^/]+/${projectName}/`, 'g');
+      maskedPath = maskedPath.replace(projectPattern, `[${projectName}]/`);
+    }
+    
+    return maskedPath;
+  }
+
+  /**
+   * 相対パスに変換（可能な場合）
+   * @param absolutePath 絶対パス
+   * @param basePath 基準パス（通常はprocess.cwd()）
+   * @returns 相対パスまたはマスキングされた絶対パス
+   */
+  static toRelativeOrMasked(absolutePath: string, basePath: string = process.cwd()): string {
+    if (!absolutePath) return absolutePath;
+    
+    try {
+      // 相対パスに変換を試みる
+      const relativePath = path.relative(basePath, absolutePath);
+      
+      // 相対パスが親ディレクトリに遡る場合はマスキングされた絶対パスを使用
+      if (relativePath.startsWith('..')) {
+        return this.maskPII(absolutePath);
+      }
+      
+      // 相対パスを返す（./を付ける）
+      return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+    } catch {
+      // エラーの場合はマスキングされた絶対パスを返す
+      return this.maskPII(absolutePath);
+    }
+  }
+
+  /**
+   * 文字列内のすべての絶対パスをマスキング
+   * @param content マスキング対象の文字列
+   * @param projectName プロジェクト名
+   * @returns マスキングされた文字列
+   */
+  static maskAllPaths(content: string, projectName: string = 'PROJECT'): string {
+    if (!content) return content;
+    
+    // macOS/Linux形式のパス
+    const unixPathPattern = /\/(?:Users|home)\/[^\/\s"'`]+\/[^\s"'`]*/g;
+    let maskedContent = content.replace(unixPathPattern, (match) => {
+      return this.maskPII(match, projectName);
+    });
+    
+    // Windows形式のパス
+    const windowsPathPattern = /[A-Za-z]:\\Users\\[^\\s"'`]+\\[^\s"'`]*/g;
+    maskedContent = maskedContent.replace(windowsPathPattern, (match) => {
+      return this.maskPII(match, projectName);
+    });
+    
+    return maskedContent;
+  }
 }
