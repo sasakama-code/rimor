@@ -260,6 +260,7 @@ export class AnalyzeCommandV8 {
       }
       
     } catch (error) {
+      console.error("Original error:", error);
       const errorInfo = errorHandler.handleError(
         error,
         undefined,

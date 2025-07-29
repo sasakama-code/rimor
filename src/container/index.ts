@@ -67,7 +67,19 @@ function bindCoreServices(): void {
     
   container.bind<IPluginManager>(TYPES.PluginManager)
     .to(PluginManagerImpl)
-    .inSingletonScope();
+    .inSingletonScope()
+    .onActivation((context, pluginManager) => {
+      // デフォルトプラグインを登録
+      const TestExistencePlugin = require('../plugins/testExistence').TestExistencePlugin;
+      const AssertionExistsPlugin = require('../plugins/assertionExists').AssertionExistsPlugin;
+      const LegacyPluginAdapter = require('../core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
+      
+      // レガシープラグインをアダプター経由で登録
+      pluginManager.register(new LegacyPluginAdapter(new TestExistencePlugin()));
+      pluginManager.register(new LegacyPluginAdapter(new AssertionExistsPlugin()));
+      
+      return pluginManager;
+    });
 }
 
 /**

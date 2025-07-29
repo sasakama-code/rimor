@@ -1,7 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { AnalyzeCommandV8 } from './commands/analyze-v0.8.js';
-import { AIOutputCommand } from './commands/ai-output.js';
+import { AnalyzeCommandV8 } from './commands/analyze-v0.8';
+import { AIOutputCommand } from './commands/ai-output';
 import * as os from 'os';
 
 export class CLI {
