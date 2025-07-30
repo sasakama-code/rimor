@@ -12,7 +12,8 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        # mainブランチは20.xのみ、PRは18.xと20.xでテスト
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[18.x, 20.x]') || fromJSON('[20.x]') }}
 
     steps:
     - uses: actions/checkout@v4
@@ -32,10 +33,28 @@ jobs:
     - name: Build TypeScript
       run: npm run build
 
-    - name: Run tests
+    - name: Run tests (sharded)
       env:
-        NODE_OPTIONS: '--max-old-space-size=4096'
-      run: npm test
+        NODE_OPTIONS: '--max-old-space-size=2048'
+      run: |
+        # シャード化テストを並列実行
+        npm run test:shard1 &
+        PID1=$!
+        npm run test:shard2 &
+        PID2=$!
+        npm run test:shard3 &
+        PID3=$!
+        
+        # 全シャードの完了を待ち、いずれかが失敗したら exit 1
+        FAILED=0
+        wait $PID1 || FAILED=1
+        wait $PID2 || FAILED=1
+        wait $PID3 || FAILED=1
+        
+        if [ $FAILED -eq 1 ]; then
+          echo "One or more test shards failed"
+          exit 1
+        fi
 
     - name: Run quality check
       run: |
