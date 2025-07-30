@@ -104,46 +104,29 @@ export class ParallelTypeChecker extends EventEmitter {
    * ワーカーの初期化
    */
   private initializeWorkers(): void {
-    const workerScript = `
-      const { parentPort } = require('worker_threads');
-      const { TypeChecker } = require('../compatibility/checker-framework-compatibility');
+    const path = require('path');
+    
+    // __filenameでなく__dirnameを使用し、確実にdistディレクトリのファイルを参照
+    // テスト環境では、まだビルドされていない可能性があるため、
+    // require.resolveを使って解決を試みる
+    let workerPath: string;
+    
+    try {
+      // まずはdistディレクトリのパスを試す
+      const distPath = __dirname.includes('src') 
+        ? __dirname.replace('/src/', '/dist/')
+        : __dirname;
+      workerPath = path.join(distPath, 'type-check-worker.js');
       
-      parentPort.on('message', async (task) => {
-        const startTime = Date.now();
-        try {
-          const checker = new TypeChecker();
-          const result = await performTypeCheck(task);
-          
-          parentPort.postMessage({
-            id: task.id,
-            success: true,
-            result,
-            executionTime: Date.now() - startTime
-          });
-        } catch (error) {
-          parentPort.postMessage({
-            id: task.id,
-            success: false,
-            error: error.message,
-            executionTime: Date.now() - startTime
-          });
-        }
-      });
-      
-      async function performTypeCheck(task) {
-        // 実際の型チェック処理
-        return {
-          method: task.method,
-          typeCheckResult: { success: true, errors: [], warnings: [] },
-          inferredTypes: new Map(),
-          securityIssues: [],
-          executionTime: 0
-        };
-      }
-    `;
+      // ファイルの存在確認
+      require.resolve(workerPath);
+    } catch {
+      // フォールバック: 現在のディレクトリから相対的に探す
+      workerPath = path.join(__dirname, 'type-check-worker.js');
+    }
 
     for (let i = 0; i < this.config.workerCount; i++) {
-      const worker = new Worker(workerScript, { eval: true });
+      const worker = new Worker(workerPath);
       
       worker.on('message', (result: WorkerResult) => {
         this.handleWorkerResult(result);

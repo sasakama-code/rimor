@@ -275,7 +275,7 @@ export class TaintedValue {
    */
   static combine(value1: TaintedValue, value2: TaintedValue): TaintedValue {
     const combinedLevel = TaintLattice.join(value1.taintLevel, value2.taintLevel);
-    const combinedSource = value1.taintLevel > value2.taintLevel ? value1.source : value2.source;
+    const combinedSource = value1.taintLevel >= value2.taintLevel ? value1.source : value2.source;
     
     return new TaintedValue(
       value1.value + value2.value,

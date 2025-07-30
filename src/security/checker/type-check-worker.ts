@@ -5,7 +5,6 @@
 
 import { parentPort } from 'worker_threads';
 import { SubtypingChecker } from '../types/checker-framework-types';
-import { CheckerFrameworkCompatibility } from '../compatibility/checker-framework-compatibility';
 import { SearchBasedInferenceEngine } from '../analysis/search-based-inference';
 import { LocalInferenceOptimizer } from '../inference/local-inference-optimizer';
 import {
@@ -13,7 +12,6 @@ import {
   TypeQualifierError,
   TypeGuards
 } from '../types/checker-framework-types';
-import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 
 interface WorkerTask {
   id: string;
