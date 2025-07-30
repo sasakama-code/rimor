@@ -102,6 +102,16 @@ export class SearchBasedInferenceEngine {
    * 論文のSection 6.1に対応
    */
   private generateConstraints(node: ts.Node, state: InferenceState): void {
+    // 関数宣言から制約を生成
+    if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
+      this.generateFunctionConstraints(node, state);
+    }
+    
+    // パラメータから制約を生成
+    if (ts.isParameter(node)) {
+      this.generateParameterConstraints(node, state);
+    }
+    
     // 変数宣言から制約を生成
     if (ts.isVariableDeclaration(node)) {
       this.generateVariableConstraints(node, state);
@@ -127,11 +137,54 @@ export class SearchBasedInferenceEngine {
   }
   
   /**
+   * 関数宣言から制約を生成
+   */
+  private generateFunctionConstraints(node: ts.FunctionDeclaration | ts.MethodDeclaration, state: InferenceState): void {
+    // パラメータの処理
+    if (node.parameters) {
+      node.parameters.forEach(param => {
+        const paramName = param.name.getText();
+        // ユーザー入力を示唆する名前のパラメータは@Taintedとして推論
+        if (this.isUserInputName(paramName)) {
+          state.typeMap.set(paramName, '@Tainted');
+          state.confidence.set(paramName, 0.8);
+        } else {
+          state.typeMap.set(paramName, '@PolyTaint');
+          state.confidence.set(paramName, 0.5);
+        }
+      });
+    }
+  }
+  
+  /**
+   * パラメータから制約を生成
+   */
+  private generateParameterConstraints(node: ts.ParameterDeclaration, state: InferenceState): void {
+    const paramName = node.name.getText();
+    if (!state.typeMap.has(paramName)) {
+      // ユーザー入力を示唆する名前のパラメータ
+      if (this.isUserInputName(paramName)) {
+        state.typeMap.set(paramName, '@Tainted');
+        state.confidence.set(paramName, 0.8);
+      } else {
+        state.typeMap.set(paramName, '@PolyTaint');
+        state.confidence.set(paramName, 0.5);
+      }
+    }
+  }
+  
+  /**
    * 変数宣言から制約を生成
    */
   private generateVariableConstraints(node: ts.VariableDeclaration, state: InferenceState): void {
     const varName = node.name.getText();
     const initializer = node.initializer;
+    
+    // 変数を型マップに追加（初期値なしでも）
+    if (!state.typeMap.has(varName)) {
+      state.typeMap.set(varName, '@PolyTaint');
+      state.confidence.set(varName, 0.5);
+    }
     
     if (!initializer) return;
     
@@ -143,6 +196,7 @@ export class SearchBasedInferenceEngine {
         rhs: '@Tainted',
         location: this.getLocation(node)
       });
+      state.typeMap.set(varName, '@Tainted');
       state.confidence.set(varName, 0.9);
     }
     
@@ -154,6 +208,7 @@ export class SearchBasedInferenceEngine {
         rhs: '@Untainted',
         location: this.getLocation(node)
       });
+      state.typeMap.set(varName, '@Untainted');
       state.confidence.set(varName, 1.0);
     }
     
@@ -553,6 +608,24 @@ export class SearchBasedInferenceEngine {
       reason: candidate.reason,
       timestamp: Date.now()
     });
+  }
+  
+  /**
+   * ユーザー入力を示唆する名前かどうかを判定
+   */
+  private isUserInputName(name: string): boolean {
+    const userInputPatterns = [
+      /^user/i,
+      /input/i,
+      /request/i,
+      /query/i,
+      /param/i,
+      /arg/i,
+      /data$/i,
+      /value$/i
+    ];
+    
+    return userInputPatterns.some(pattern => pattern.test(name));
   }
 }
 

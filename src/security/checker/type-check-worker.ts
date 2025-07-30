@@ -71,7 +71,12 @@ async function performTypeCheck(task: WorkerTask) {
   const inferredTypes = new Map<string, QualifiedType<any>>();
   const securityIssues: any[] = [];
   
-  // 依存関係をMapに変換
+  // 依存関係の検証とMapへの変換
+  if (!task.dependencies || !Array.isArray(task.dependencies)) {
+    console.warn(`Warning: task.dependencies is not an array for ${task.id}, using empty array`);
+    task.dependencies = [];
+  }
+  
   const dependencies = new Map<string, QualifiedType<any>>(
     task.dependencies.map(([key, value]) => {
       // シリアライズされたオブジェクトを適切な型に復元

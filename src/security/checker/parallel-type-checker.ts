@@ -47,7 +47,7 @@ export interface ParallelTypeCheckConfig {
 interface WorkerTask {
   id: string;
   method: TestMethod;
-  dependencies: Map<string, QualifiedType<any>>;
+  dependencies: Array<[string, QualifiedType<any>]>;
 }
 
 /**
@@ -153,7 +153,7 @@ export class ParallelTypeChecker extends EventEmitter {
     const tasks = methods.map(method => ({
       id: method.name,
       method,
-      dependencies: dependencies.get(method.name) || new Map()
+      dependencies: Array.from(dependencies.get(method.name) || new Map())
     }));
     
     // バッチ処理
@@ -218,6 +218,11 @@ export class ParallelTypeChecker extends EventEmitter {
    */
   private async processTask(task: WorkerTask): Promise<void> {
     return new Promise((resolve, reject) => {
+      // タスクの依存関係を確実に配列として設定
+      if (!task.dependencies || !Array.isArray(task.dependencies)) {
+        task.dependencies = [];
+      }
+      
       this.taskQueue.push(task);
       
       // 利用可能なワーカーがあれば即座に実行
@@ -326,7 +331,8 @@ export class ParallelTypeChecker extends EventEmitter {
         inferredTypes.set(variable, qualifiedType);
         
         // 依存関係の型との整合性チェック
-        const depType = task.dependencies.get(variable);
+        const depsMap = new Map(task.dependencies);
+        const depType = depsMap.get(variable);
         if (depType && !SubtypingChecker.isAssignmentSafe(depType, qualifiedType)) {
           errors.push(new TypeQualifierError(
             `Type mismatch for ${variable}`,
