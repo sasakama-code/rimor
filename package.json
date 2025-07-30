@@ -8,11 +8,13 @@
     "rimor": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy:templates && npm run verify:build",
     "build:clean": "rm -rf dist && npm run build",
-    "build:simple": "tsc",
-    "build:full": "rm -rf dist && tsc -p tsconfig.build.json",
-    "build:ci": "tsc -p tsconfig.build.json",
+    "build:simple": "tsc && npm run copy:templates",
+    "build:full": "rm -rf dist && tsc -p tsconfig.build.json && npm run copy:templates && npm run verify:build",
+    "build:ci": "tsc -p tsconfig.build.json && npm run copy:templates && npm run verify:build",
+    "copy:templates": "mkdir -p dist/reporting/templates && cp -r src/reporting/templates/*.hbs dist/reporting/templates/",
+    "verify:build": "node scripts/verify-build.js",
     "lint": "npx tsc --noEmit",
     "test": "NODE_OPTIONS=\"--max-old-space-size=10240\" jest --forceExit --runInBand --detectOpenHandles=false",
     "test:unit": "NODE_OPTIONS=\"--max-old-space-size=4096\" jest test/ --testPathIgnorePatterns=test/integration/ --testPathIgnorePatterns=test/performance/ --forceExit --runInBand",
