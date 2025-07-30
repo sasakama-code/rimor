@@ -12,8 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        # mainブランチは20.xのみ、PRは18.xと20.xでテスト
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[18.x, 20.x]') || fromJSON('[20.x]') }}
+        node-version: [18.x, 20.x, 22.x]
 
     steps:
     - uses: actions/checkout@v4
