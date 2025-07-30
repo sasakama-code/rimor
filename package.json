@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "rimor": "dist/cli/cli.js"
+    "rimor": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",

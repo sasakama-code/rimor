@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CLI } from './cli/cli.js';
+import { CLI } from './cli/cli';
 
 async function main() {
   const cli = new CLI();

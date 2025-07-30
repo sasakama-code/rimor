@@ -69,3 +69,7 @@ empty-tests/
 invalid-tests/
 temp-tests/
 valid-test-dir/
+# Dogfooding analysis files
+rimor-dogfooding-*.json
+rimor-dogfooding-*.md
+rimor-dogfooding-*.txt
