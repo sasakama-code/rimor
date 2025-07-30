@@ -4,7 +4,8 @@
  */
 
 import { parentPort } from 'worker_threads';
-import { TypeChecker, SubtypingChecker } from '../compatibility/checker-framework-compatibility';
+import { SubtypingChecker } from '../types/checker-framework-types';
+import { CheckerFrameworkCompatibility } from '../compatibility/checker-framework-compatibility';
 import { SearchBasedInferenceEngine } from '../analysis/search-based-inference';
 import { LocalInferenceOptimizer } from '../inference/local-inference-optimizer';
 import {
@@ -33,7 +34,6 @@ interface WorkerResult {
 }
 
 // 型チェックインスタンス
-const typeChecker = new TypeChecker();
 const inferenceEngine = new SearchBasedInferenceEngine();
 const localOptimizer = new LocalInferenceOptimizer();
 
@@ -111,9 +111,9 @@ async function performTypeCheck(task: WorkerTask) {
       // 依存関係との整合性チェック
       const depType = dependencies.get(variable);
       if (depType) {
-        const isValid = typeChecker.isAssignable(
-          qualifiedType.__brand,
-          depType.__brand
+        const isValid = SubtypingChecker.isAssignmentSafe(
+          depType,
+          qualifiedType
         );
         
         if (!isValid) {
