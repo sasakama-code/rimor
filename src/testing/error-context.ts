@@ -49,6 +49,9 @@ export interface TestErrorContext {
     configFiles: string[];
   };
   
+  // CIトレーサビリティ情報（オプション）
+  ciTraceability?: any;
+  
   // 推奨アクション（Compress Context）
   suggestedActions: SuggestedAction[];
 }

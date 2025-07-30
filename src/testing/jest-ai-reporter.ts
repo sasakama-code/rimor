@@ -1,6 +1,7 @@
 import type { Reporter, Test, TestResult, AggregatedResult } from '@jest/reporters';
 import { TestErrorContextCollector } from './error-context';
 import { AITestErrorFormatter } from './ai-error-formatter';
+import { CITraceabilityCollector, CITraceability } from './ci-traceability';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
@@ -15,6 +16,7 @@ export class JestAIReporter implements Reporter {
   private collectedErrors: any[] = [];
   private outputPath: string;
   private enableConsoleOutput: boolean;
+  private ciTraceability: CITraceability | null = null;
   
   constructor(globalConfig: any, options: any = {}) {
     this.errorCollector = new TestErrorContextCollector();
@@ -38,8 +40,15 @@ export class JestAIReporter implements Reporter {
   onRunStart(results: AggregatedResult, options: any): void {
     this.collectedErrors = [];
     
+    // CI環境情報を収集
+    this.ciTraceability = CITraceabilityCollector.collect();
+    
     if (this.enableConsoleOutput) {
-      console.log('\n🤖 AI Error Reporter: エラー収集を開始します...\n');
+      console.log('\n🤖 AI Error Reporter: エラー収集を開始します...');
+      if (this.ciTraceability) {
+        console.log(`📍 CI実行: ${this.ciTraceability.workflow} #${this.ciTraceability.runNumber}`);
+      }
+      console.log('');
     }
   }
   
@@ -70,6 +79,18 @@ export class JestAIReporter implements Reporter {
             assertion.fullName,
             process.cwd()
           );
+          
+          // CIトレーサビリティ情報を追加
+          if (this.ciTraceability) {
+            context.ciTraceability = {
+              ...this.ciTraceability,
+              errorHash: CITraceabilityCollector.generateErrorHash({
+                testFile: test.path,
+                testName: assertion.fullName,
+                errorMessage: assertion.failureMessages[0]
+              })
+            };
+          }
           
           this.collectedErrors.push(context);
           

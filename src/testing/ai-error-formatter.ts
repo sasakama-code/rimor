@@ -12,6 +12,22 @@ export interface AITestErrorReport {
   errorGroups: ErrorGroup[];
   contextualInstructions: ContextualInstructions;
   quickActions: QuickAction[];
+  ciTraceability?: CITraceabilityInfo;
+}
+
+interface CITraceabilityInfo {
+  runId: string;
+  runNumber: string;
+  workflow: string;
+  repository: string;
+  branch: string;
+  sha: string;
+  prNumber?: string;
+  deepLink: string;
+  prLink?: string;
+  nodeVersion: string;
+  os: string;
+  timestamp: string;
 }
 
 interface ErrorSummary {
@@ -48,6 +64,7 @@ interface FormattedError {
     sourceFile?: string;
     dependencies: string[];
   };
+  errorHash?: string; // CI環境でのエラー照合用
 }
 
 interface ContextualInstructions {
@@ -87,6 +104,9 @@ export class AITestErrorFormatter {
     // サマリーの生成（Context Compression）
     const summary = this.generateSummary(errorContexts, errorGroups);
     
+    // CIトレーサビリティ情報の抽出
+    const ciTraceability = this.extractCITraceability(errorContexts);
+    
     // 文脈的な指示の生成
     const contextualInstructions = this.generateInstructions(
       errorContexts,
@@ -102,7 +122,8 @@ export class AITestErrorFormatter {
       summary,
       errorGroups,
       contextualInstructions,
-      quickActions
+      quickActions,
+      ciTraceability
     };
   }
   
@@ -111,6 +132,21 @@ export class AITestErrorFormatter {
    */
   formatAsMarkdown(report: AITestErrorReport): string {
     let markdown = '# テストエラー分析レポート\n\n';
+    
+    // CIトレーサビリティ情報
+    if (report.ciTraceability) {
+      markdown += '## 🔍 CI実行情報\n';
+      markdown += `- **ワークフロー**: ${report.ciTraceability.workflow} #${report.ciTraceability.runNumber}\n`;
+      markdown += `- **リポジトリ**: ${report.ciTraceability.repository}\n`;
+      markdown += `- **ブランチ**: ${report.ciTraceability.branch}\n`;
+      markdown += `- **コミット**: ${report.ciTraceability.sha.substring(0, 7)}\n`;
+      if (report.ciTraceability.prNumber) {
+        markdown += `- **PR**: [#${report.ciTraceability.prNumber}](${report.ciTraceability.prLink})\n`;
+      }
+      markdown += `- **CI実行**: [${report.ciTraceability.runId}](${report.ciTraceability.deepLink})\n`;
+      markdown += `- **実行環境**: Node.js ${report.ciTraceability.nodeVersion} on ${report.ciTraceability.os}\n`;
+      markdown += '\n';
+    }
     
     // サマリー
     markdown += '## サマリー\n';
@@ -187,6 +223,32 @@ export class AITestErrorFormatter {
   /**
    * エラーのグループ化（類似エラーをまとめる）
    */
+  private extractCITraceability(contexts: TestErrorContext[]): CITraceabilityInfo | undefined {
+    // 最初のコンテキストからCIトレーサビリティ情報を取得
+    const firstContextWithCI = contexts.find(ctx => (ctx as any).ciTraceability);
+    if (!firstContextWithCI) {
+      return undefined;
+    }
+    
+    const ci = (firstContextWithCI as any).ciTraceability;
+    const { CITraceabilityCollector } = require('./ci-traceability');
+    
+    return {
+      runId: ci.runId,
+      runNumber: ci.runNumber,
+      workflow: ci.workflow,
+      repository: ci.repository,
+      branch: ci.branch,
+      sha: ci.sha,
+      prNumber: ci.prNumber,
+      deepLink: CITraceabilityCollector.generateDeepLink(ci),
+      prLink: ci.prNumber ? CITraceabilityCollector.generatePRLink(ci) : undefined,
+      nodeVersion: ci.nodeVersion,
+      os: ci.os,
+      timestamp: ci.timestamp
+    };
+  }
+  
   private groupErrors(contexts: TestErrorContext[]): ErrorGroup[] {
     const groups = new Map<string, ErrorGroup>();
     
@@ -285,7 +347,8 @@ export class AITestErrorFormatter {
       relatedInfo: {
         sourceFile: context.relatedFiles.sourceFile,
         dependencies: context.relatedFiles.dependencies
-      }
+      },
+      errorHash: (context as any).ciTraceability?.errorHash
     };
   }
   
