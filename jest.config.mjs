@@ -75,7 +75,9 @@ export default {
   ],
   
   // AI Error Reporterの設定
-  reporters: [
+  reporters: process.env.CI === 'true' || process.env.DISABLE_AI_REPORTER === 'true' ? [
+    'default'
+  ] : [
     'default',
     ['<rootDir>/dist/testing/jest-ai-reporter.js', {
       outputPath: 'test-errors-ai.md',
