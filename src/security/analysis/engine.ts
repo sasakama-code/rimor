@@ -15,13 +15,14 @@ import {
   TypeBasedSecurityAnalysis,
   ModularAnalysis,
   TypeBasedSecurityConfig,
-  SecurityType
+  SecurityType,
+  TaintSource
 } from '../types';
 import {
   TaintQualifier,
-  QualifiedType,
   TypeConstructors,
-  TypeGuards
+  TypeGuards,
+  type QualifiedType
 } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { MethodSignature } from '../types';
@@ -148,7 +149,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
           const nodeType = TaintLevelAdapter.toQualifiedType(
             variable,
             node.outputTaint,
-            node.source
+            node.metadata?.source || TaintSource.USER_INPUT
           );
           
           // より汚染度の高い型を選択（join操作）
@@ -257,19 +258,26 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       const method = methods.find(m => m.name === methodName);
       if (!method) continue;
       
+      const taintedCount = Array.from(checkResult.inferredTypes.values())
+        .filter(type => type.__brand === '@Tainted').length;
+      const totalVariables = checkResult.inferredTypes.size;
+      
       results.push({
-        method,
+        methodName: method.name,
         issues: checkResult.securityIssues,
         metrics: {
-          taintedVariables: Array.from(checkResult.inferredTypes.values())
-            .filter(type => type.__brand === '@Tainted').length,
-          untaintedVariables: Array.from(checkResult.inferredTypes.values())
-            .filter(type => type.__brand === '@Untainted').length,
-          sanitizers: 0, // TODO: サニタイザー数をカウント
-          securityAssertions: 0 // TODO: アサーション数をカウント
+          securityCoverage: {
+            authentication: 0, // TODO: 認証テストカバレッジを計算
+            inputValidation: totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0,
+            apiSecurity: 0, // TODO: APIセキュリティカバレッジを計算
+            overall: totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0
+          },
+          taintFlowDetection: taintedCount,
+          sanitizerCoverage: 0, // TODO: サニタイザー適用率を計算
+          invariantCompliance: 0 // TODO: 不変条件準拠率を計算
         },
-        improvements: [],
-        executionTime: checkResult.executionTime
+        suggestions: [], // TODO: 改善提案を生成
+        analysisTime: checkResult.executionTime
       });
     }
     

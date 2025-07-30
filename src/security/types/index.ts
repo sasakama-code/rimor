@@ -282,6 +282,8 @@ export interface TypeBasedSecurityConfig {
   customSinks: string[];
   /** 除外パターン */
   excludePatterns: string[];
+  /** デバッグモード */
+  debug?: boolean;
 }
 
 /**

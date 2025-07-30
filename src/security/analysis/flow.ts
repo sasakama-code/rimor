@@ -16,6 +16,8 @@ import {
   SecurityViolation,
   SecurityIssue
 } from '../types';
+import type { QualifiedType, TaintedType } from '../types/checker-framework-types';
+import { TypeGuards } from '../types/checker-framework-types';
 
 /**
  * データフローグラフのノード

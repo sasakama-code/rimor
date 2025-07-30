@@ -167,6 +167,11 @@ class PluggableTypeSystem {
 }
 
 /**
+ * サブタイピングチェッカーのエクスポート（checker-framework-typesから）
+ */
+export { SubtypingChecker } from '../types/checker-framework-types';
+
+/**
  * アノテーション読み取り
  */
 export class AnnotationReader {

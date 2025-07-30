@@ -28,6 +28,9 @@ import {
 } from '../../core/types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
+import type { QualifiedType } from '../types/checker-framework-types';
+import { TypeConstructors } from '../types/checker-framework-types';
+import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
 
 /**

@@ -16,6 +16,7 @@ import {
   TypeInferenceResult,
   SecurityTypeAnnotation
 } from '../types';
+import { TypeConstructors } from '../types/checker-framework-types';
 
 /**
  * シグネチャベースの推論エンジン
@@ -316,11 +317,6 @@ export class SignatureBasedInference {
         target: input.variable,
         securityType: SecurityType.USER_INPUT,
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
-        qualifiedType: TypeConstructors.tainted(
-          input.variable,
-          TaintSource.USER_INPUT,
-          0.9
-        ),
         confidence: 0.9,
         evidence: [`User input detected: ${input.source}`]
       });
@@ -333,7 +329,6 @@ export class SignatureBasedInference {
         target: variable,
         securityType: SecurityType.SANITIZED_DATA,
         taintLevel: TaintLevel.UNTAINTED,
-        qualifiedType: TypeConstructors.untainted(variable, 'sanitized'),
         confidence: 0.85,
         evidence: ['Sanitizer applied']
       });

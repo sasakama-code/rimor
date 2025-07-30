@@ -67,6 +67,7 @@ parentPort?.on('message', async (task: WorkerTask) => {
  * 型チェックの実行
  */
 async function performTypeCheck(task: WorkerTask) {
+  const startTime = Date.now();
   const errors: TypeQualifierError[] = [];
   const warnings: Array<{ message: string; location?: any }> = [];
   const inferredTypes = new Map<string, QualifiedType<any>>();
@@ -97,22 +98,29 @@ async function performTypeCheck(task: WorkerTask) {
     );
     
     // ステップ3: 型チェック
-    inferenceState.typeMap.forEach((type, variable) => {
-      inferredTypes.set(variable, type);
+    inferenceState.typeMap.forEach((qualifier, variable) => {
+      // TaintQualifierをQualifiedTypeに変換
+      const qualifiedType: QualifiedType<any> = qualifier === '@Tainted' 
+        ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as any
+        : qualifier === '@Untainted'
+        ? { __brand: '@Untainted', __value: variable } as any
+        : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as any;
+      
+      inferredTypes.set(variable, qualifiedType);
       
       // 依存関係との整合性チェック
       const depType = dependencies.get(variable);
       if (depType) {
         const isValid = typeChecker.isAssignable(
-          type.__brand,
+          qualifiedType.__brand,
           depType.__brand
         );
         
         if (!isValid) {
           errors.push(new TypeQualifierError(
-            `Type mismatch for ${variable}: expected ${depType.__brand}, got ${type.__brand}`,
+            `Type mismatch for ${variable}: expected ${depType.__brand}, got ${qualifiedType.__brand}`,
             depType.__brand,
-            type.__brand,
+            qualifiedType.__brand,
             {
               file: task.method.filePath,
               line: 0,

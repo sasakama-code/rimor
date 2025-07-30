@@ -332,16 +332,23 @@ export class ParallelTypeChecker extends EventEmitter {
       );
       
       // 型チェック
-      inferenceState.typeMap.forEach((type, variable) => {
-        inferredTypes.set(variable, type);
+      inferenceState.typeMap.forEach((qualifier, variable) => {
+        // TaintQualifierをQualifiedTypeに変換
+        const qualifiedType: QualifiedType<any> = qualifier === '@Tainted' 
+          ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as any
+          : qualifier === '@Untainted'
+          ? { __brand: '@Untainted', __value: variable } as any
+          : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as any;
+        
+        inferredTypes.set(variable, qualifiedType);
         
         // 依存関係の型との整合性チェック
         const depType = task.dependencies.get(variable);
-        if (depType && !SubtypingChecker.isAssignmentSafe(depType, type)) {
+        if (depType && !SubtypingChecker.isAssignmentSafe(depType, qualifiedType)) {
           errors.push(new TypeQualifierError(
             `Type mismatch for ${variable}`,
             depType.__brand,
-            type.__brand,
+            qualifiedType.__brand,
             {
               file: task.method.filePath,
               line: 0,
@@ -354,19 +361,17 @@ export class ParallelTypeChecker extends EventEmitter {
       // セキュリティ問題の検出
       if (localAnalysis.escapingVariables.length > 0) {
         localAnalysis.escapingVariables.forEach(variable => {
-          const type = inferredTypes.get(variable);
-          if (type && type.__brand === '@Tainted') {
+          const qualifiedType = inferredTypes.get(variable);
+          if (qualifiedType && qualifiedType.__brand === '@Tainted') {
             securityIssues.push({
               id: `escape-${variable}`,
-              type: 'tainted-escape',
-              severity: 'high',
+              type: 'unsafe-taint-flow',
+              severity: 'error',
               message: `Tainted variable ${variable} escapes method scope`,
               location: {
                 file: task.method.filePath,
-                startLine: 0,
-                endLine: 0,
-                startColumn: 0,
-                endColumn: 0
+                line: 0,
+                column: 0
               }
             });
           }
@@ -467,7 +472,7 @@ export class TypeCheckResultAggregator {
       
       // クリティカルな問題を収集
       criticalIssues.push(...result.securityIssues.filter(
-        issue => issue.severity === 'critical' || issue.severity === 'high'
+        issue => issue.severity === 'critical' || issue.severity === 'error'
       ));
       
       // 型統計の収集
