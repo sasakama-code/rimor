@@ -244,7 +244,9 @@ describe('Performance Benchmark Tests', () => {
             function method${i}_${j}(input: any) {
               return process(input);
             }
-          `).join('\n')
+          `).join('\n'),
+          name: `TestFile${i}`,
+          metadata: {}
         }));
         
         const start = Date.now();

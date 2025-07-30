@@ -31,7 +31,7 @@ const createMockTestResult = (overrides: Partial<TestResult> = {}): TestResult =
   skipped: false,
   displayName: undefined,
   failureMessage: null,
-  console: null,
+  console: undefined,
   testExecError: undefined,
   coverage: undefined,
   sourceMaps: {},
@@ -234,7 +234,7 @@ describe('JestAIReporter', () => {
     it('エラーがない場合は成功メッセージを表示する', async () => {
       const aggregatedResult = createMockAggregatedResult();
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('すべてのテストがパスしました')
@@ -252,7 +252,7 @@ describe('JestAIReporter', () => {
       aggregatedResult.success = false;
       aggregatedResult.numFailedTests = 1;
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       const outputPath = path.join(testOutputDir, 'test-errors.md');
       expect(fs.existsSync(outputPath)).toBe(true);
@@ -272,7 +272,7 @@ describe('JestAIReporter', () => {
       const aggregatedResult = createMockAggregatedResult();
       aggregatedResult.success = false;
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       const jsonPath = path.join(testOutputDir, 'test-errors.json');
       expect(fs.existsSync(jsonPath)).toBe(true);
@@ -297,7 +297,7 @@ describe('JestAIReporter', () => {
       aggregatedResult.success = false;
       aggregatedResult.numFailedTests = 2;
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       const outputPath = path.join(testOutputDir, 'test-errors.md');
       const content = fs.readFileSync(outputPath, 'utf-8');
@@ -328,7 +328,7 @@ export { processData };
       const aggregatedResult = createMockAggregatedResult();
       aggregatedResult.success = false;
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       const outputPath = path.join(testOutputDir, 'test-errors.md');
       const content = fs.readFileSync(outputPath, 'utf-8');
@@ -352,7 +352,7 @@ export { processData };
       aggregatedResult.success = false;
       aggregatedResult.numFailedTests = 100;
       
-      await reporter.onRunComplete({}, aggregatedResult);
+      await reporter.onRunComplete(new Set(), aggregatedResult);
       
       const endTime = Date.now();
       
@@ -378,7 +378,7 @@ export { processData };
       
       // エラーをスローせずに処理を継続
       await expect(
-        invalidReporter.onRunComplete({}, aggregatedResult)
+        invalidReporter.onRunComplete(new Set(), aggregatedResult)
       ).resolves.not.toThrow();
     });
   });

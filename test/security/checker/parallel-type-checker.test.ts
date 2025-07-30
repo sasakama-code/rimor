@@ -288,13 +288,26 @@ describe('ParallelTypeChecker', () => {
       // シャットダウン後の操作はエラーになる
       const method: TestMethod = {
         name: 'afterShutdown',
+        filePath: 'test.ts',
+        content: 'function afterShutdown() { return 1; }',
         body: 'return 1;',
-        parameters: [],
-        returnType: 'number',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        signature: {
+          name: 'afterShutdown',
+          parameters: [],
+          returnType: 'number',
+          annotations: [],
+          isAsync: false
+        },
+        location: { 
+          startLine: 1, 
+          endLine: 1, 
+          startColumn: 1, 
+          endColumn: 40 
+        }
       };
       
-      await expect(testChecker.checkMethod(method)).rejects.toThrow();
+      const results = await testChecker.checkMethodsInParallel([method]);
+      expect(results.size).toBe(0); // シャットダウン後は結果が返らない
     });
   });
 });

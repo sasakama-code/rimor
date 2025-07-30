@@ -7,7 +7,6 @@ import {
   LocalInferenceOptimizer,
   InferenceCache,
   IncrementalInferenceEngine,
-  LocalVariableAnalyzer,
   InferenceOptimizationResult,
   CacheHitStatistics
 } from '../../../src/security/inference/local-inference-optimizer';

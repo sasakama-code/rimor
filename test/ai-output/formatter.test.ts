@@ -84,7 +84,7 @@ describe('AIOptimizedFormatter', () => {
 
     it('バージョン情報を取得できる', () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
       
       expect(formatted.version).toBeDefined();
       expect(typeof formatted.version).toBe('string');
@@ -94,7 +94,7 @@ describe('AIOptimizedFormatter', () => {
   describe('formatAsJson', () => {
     it('分析結果をJSON形式でフォーマットできる', () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
 
       expect(formatted).toHaveProperty('version');
       expect(formatted).toHaveProperty('timestamp');
@@ -115,7 +115,7 @@ describe('AIOptimizedFormatter', () => {
         includeMetrics: true
       };
 
-      const formatted = formatter.formatAsJson(result, options);
+      const formatted = formatter.formatAsJSON(result, options);
 
       expect(formatted.contextualizedIssues[0].context).toBeDefined();
       expect(formatted.metadata.formatterOptions).toEqual(options);
@@ -127,7 +127,7 @@ describe('AIOptimizedFormatter', () => {
         includeCodeContext: true
       };
 
-      const formatted = formatter.formatAsJson(result, options);
+      const formatted = formatter.formatAsJSON(result, options);
 
       formatted.contextualizedIssues.forEach(issue => {
         if (issue.context) {
@@ -234,7 +234,7 @@ describe('AIOptimizedFormatter', () => {
   describe('推奨アクションの生成', () => {
     it('実行可能なステップを生成できる', () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
 
       expect(formatted.actionableSteps).toBeDefined();
       expect(formatted.actionableSteps.immediate).toBeInstanceOf(Array);
@@ -270,7 +270,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
 
       expect(formatted.actionableSteps.immediate.length).toBeGreaterThan(0);
       expect(formatted.actionableSteps.immediate[0].description).toContain('security');
@@ -300,7 +300,7 @@ describe('AIOptimizedFormatter', () => {
         includeCodeContext: true
       };
 
-      const formatted = formatter.formatAsJson(result, options);
+      const formatted = formatter.formatAsJSON(result, options);
       const contextualizedIssue = formatted.contextualizedIssues[0];
 
       expect(contextualizedIssue.context).toBeDefined();
@@ -320,7 +320,7 @@ describe('AIOptimizedFormatter', () => {
         timestamp: new Date().toISOString()
       };
 
-      const formatted = formatter.formatAsJson(emptyResult);
+      const formatted = formatter.formatAsJSON(emptyResult);
 
       expect(formatted.summary.totalIssues).toBe(0);
       expect(formatted.criticalIssues).toHaveLength(0);
@@ -336,7 +336,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
 
       // パスが適切にサニタイズされることを確認
       expect(formatted.contextualizedIssues[0].file).not.toContain('/etc/passwd');
@@ -359,7 +359,7 @@ describe('AIOptimizedFormatter', () => {
       };
 
       const startTime = Date.now();
-      const formatted = formatter.formatAsJson(result);
+      const formatted = formatter.formatAsJSON(result);
       const endTime = Date.now();
 
       expect(formatted.contextualizedIssues.length).toBe(1000);
@@ -383,9 +383,9 @@ describe('AIOptimizedFormatter', () => {
         maxIssuesPerFile: 5
       };
 
-      const formatted = formatter.formatAsJson(result, options);
+      const formatted = formatter.formatAsJSON(result, options);
       const fileIssues = formatted.contextualizedIssues.filter(
-        issue => issue.file === 'src/example.ts'
+        (issue: any) => issue.file === 'src/example.ts'
       );
 
       expect(fileIssues.length).toBe(5);
