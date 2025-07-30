@@ -665,25 +665,37 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     return inputPatterns.some(pattern => content.includes(pattern));
   }
 
-  private analyzeInputNodeTaint(node: any): TaintLevel {
+  /**
+   * 入力ノードの汚染分析（新型システム版）
+   */
+  private analyzeInputNodeTaintType(node: any): QualifiedType<any> {
     const content = node.statement.content.toLowerCase();
     
     // ユーザー入力は高汚染
     if (content.includes('req.body') || content.includes('req.query') || content.includes('input')) {
-      return TaintLevel.DEFINITELY_TAINTED;
+      return TypeConstructors.tainted(node.statement, TaintSource.USER_INPUT, 0.9);
     }
     
     // サニタイズ後は清浄
     if (this.sanitizerPatterns.some(pattern => pattern.test(content))) {
-      return TaintLevel.UNTAINTED;
+      return TypeConstructors.untainted(node.statement, 'sanitized');
     }
     
     // 検証中は中程度の汚染
     if (content.includes('validate') || content.includes('check')) {
-      return TaintLevel.POSSIBLY_TAINTED;
+      return TypeConstructors.tainted(node.statement, 'validation-in-progress', 0.25);
     }
     
-    return TaintLevel.UNTAINTED;
+    return TypeConstructors.untainted(node.statement);
+  }
+
+  /**
+   * レガシー互換メソッド
+   * @deprecated analyzeInputNodeTaintTypeを使用してください
+   */
+  private analyzeInputNodeTaint(node: any): TaintLevel {
+    const qualifiedType = this.analyzeInputNodeTaintType(node);
+    return TaintLevelAdapter.fromQualifiedType(qualifiedType);
   }
 
   private verifyInputValidationInvariants(flow: FlowGraph, lattice: SecurityLattice): SecurityViolation[] {

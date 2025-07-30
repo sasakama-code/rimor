@@ -27,6 +27,13 @@ import {
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import {
+  TaintQualifier,
+  QualifiedType,
+  TypeConstructors,
+  TypeGuards
+} from '../types/checker-framework-types';
+import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 
 /**
  * 型ベース認証テスト品質プラグイン
@@ -338,20 +345,32 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     return authPatterns.some(pattern => content.includes(pattern));
   }
 
-  private analyzeAuthNodeTaint(node: any): TaintLevel {
+  /**
+   * 認証ノードの汚染分析（新型システム版）
+   */
+  private analyzeAuthNodeTaintType(node: any): QualifiedType<any> {
     const content = node.statement.content.toLowerCase();
     
     // ユーザー入力（パスワード、認証情報）は高汚染
     if (content.includes('password') || content.includes('credential')) {
-      return TaintLevel.DEFINITELY_TAINTED;
+      return TypeConstructors.tainted(node.statement, 'auth-credentials', 0.95);
     }
     
     // トークン生成・検証は中程度の汚染
     if (content.includes('token') || content.includes('jwt')) {
-      return TaintLevel.POSSIBLY_TAINTED;
+      return TypeConstructors.tainted(node.statement, 'auth-token', 0.25);
     }
     
-    return TaintLevel.UNTAINTED;
+    return TypeConstructors.untainted(node.statement);
+  }
+
+  /**
+   * レガシー互換メソッド
+   * @deprecated analyzeAuthNodeTaintTypeを使用してください
+   */
+  private analyzeAuthNodeTaint(node: any): TaintLevel {
+    const qualifiedType = this.analyzeAuthNodeTaintType(node);
+    return TaintLevelAdapter.fromQualifiedType(qualifiedType);
   }
 
   private verifyAuthInvariants(flow: FlowGraph, lattice: SecurityLattice): SecurityViolation[] {
