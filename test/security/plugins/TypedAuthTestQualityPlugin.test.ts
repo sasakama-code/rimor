@@ -407,7 +407,8 @@ describe('TypedAuthTestQualityPlugin', () => {
           method: createTestMethod(
             'testNewAuth',
             'const token = login();'
-          )
+          ),
+          details: 'New authentication method added'
         }
       ];
       
@@ -429,7 +430,8 @@ describe('TypedAuthTestQualityPlugin', () => {
       const changes: MethodChange[] = [
         {
           type: 'deleted',
-          method
+          method,
+          details: 'Authentication method removed'
         }
       ];
       
