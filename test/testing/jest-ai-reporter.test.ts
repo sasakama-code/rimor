@@ -32,7 +32,7 @@ const createMockTestResult = (overrides: Partial<TestResult> = {}): TestResult =
   displayName: undefined,
   failureMessage: null,
   console: null,
-  testExecError: null,
+  testExecError: undefined,
   coverage: undefined,
   sourceMaps: {},
   v8Coverage: undefined,
