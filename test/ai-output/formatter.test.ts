@@ -21,7 +21,6 @@ const createMockIssue = (overrides: Partial<Issue> = {}): Issue => ({
   line: 10,
   column: 5,
   message: 'Test coverage is missing',
-  ruleId: 'test-coverage',
   ...overrides
 });
 
@@ -29,18 +28,17 @@ const createMockFileScore = (overrides: Partial<FileScore> = {}): FileScore => (
   path: 'src/example.ts',
   score: 75,
   dimensions: {
-    completeness: 80,
-    complexity: 70,
-    security: 75,
-    maintainability: 80,
-    reliability: 70
+    completeness: { score: 80, weight: 1.0 },
+    correctness: { score: 70, weight: 1.0 },
+    security: { score: 75, weight: 1.0 },
+    maintainability: { score: 80, weight: 1.0 },
+    performance: { score: 70, weight: 1.0 }
   },
   issues: [],
   ...overrides
 });
 
 const createMockAnalysisResult = (): EnhancedAnalysisResult => ({
-  projectPath: '/test/project',
   issues: [createMockIssue()],
   overallScore: 75,
   fileScores: [createMockFileScore()],
@@ -78,13 +76,13 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('基本的なフォーマット機能', () => {
-    it('フォーマッターインスタンスを作成できる', () => {
+    it('フォーマッターインスタンスを作成できる', async () => {
       expect(formatter).toBeInstanceOf(AIOptimizedFormatter);
     });
 
-    it('バージョン情報を取得できる', () => {
+    it('バージョン情報を取得できる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, '/test/project', {});
       
       expect(formatted.version).toBeDefined();
       expect(typeof formatted.version).toBe('string');
@@ -92,9 +90,9 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('formatAsJson', () => {
-    it('分析結果をJSON形式でフォーマットできる', () => {
+    it('分析結果をJSON形式でフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, '/test/project', {});
 
       expect(formatted).toHaveProperty('version');
       expect(formatted).toHaveProperty('timestamp');
@@ -106,7 +104,7 @@ describe('AIOptimizedFormatter', () => {
       expect(formatted).toHaveProperty('metadata');
     });
 
-    it('オプションを指定してフォーマットできる', () => {
+    it('オプションを指定してフォーマットできる', async () => {
       const result = createMockAnalysisResult();
       const options: FormatterOptions = {
         includeCodeContext: true,
@@ -115,19 +113,19 @@ describe('AIOptimizedFormatter', () => {
         includeMetrics: true
       };
 
-      const formatted = formatter.formatAsJSON(result, options);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
 
       expect(formatted.contextualizedIssues[0].context).toBeDefined();
       expect(formatted.metadata.formatterOptions).toEqual(options);
     });
 
-    it('コードコンテキストを含めることができる', () => {
+    it('コードコンテキストを含めることができる', async () => {
       const result = createMockAnalysisResult();
       const options: FormatterOptions = {
         includeCodeContext: true
       };
 
-      const formatted = formatter.formatAsJSON(result, options);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
 
       formatted.contextualizedIssues.forEach(issue => {
         if (issue.context) {
@@ -139,7 +137,7 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('formatAsMarkdown', () => {
-    it('分析結果をMarkdown形式でフォーマットできる', () => {
+    it('分析結果をMarkdown形式でフォーマットできる', async () => {
       const result = createMockAnalysisResult();
       const markdown = formatter.formatAsMarkdown(result);
 
@@ -150,7 +148,7 @@ describe('AIOptimizedFormatter', () => {
       expect(markdown).toContain('## Recommendations');
     });
 
-    it('メトリクスを含むMarkdownを生成できる', () => {
+    it('メトリクスを含むMarkdownを生成できる', async () => {
       const result = createMockAnalysisResult();
       const options: FormatterOptions = {
         includeMetrics: true
@@ -163,7 +161,7 @@ describe('AIOptimizedFormatter', () => {
       expect(markdown).toContain('Security:');
     });
 
-    it('優先度でフィルタリングできる', () => {
+    it('優先度でフィルタリングできる', async () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
         issues: [
@@ -232,9 +230,9 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('推奨アクションの生成', () => {
-    it('実行可能なステップを生成できる', () => {
+    it('実行可能なステップを生成できる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", {});
 
       expect(formatted.actionableSteps).toBeDefined();
       expect(formatted.actionableSteps.immediate).toBeInstanceOf(Array);
@@ -242,7 +240,7 @@ describe('AIOptimizedFormatter', () => {
       expect(formatted.actionableSteps.longTerm).toBeInstanceOf(Array);
     });
 
-    it('優先度に基づいてステップを分類する', () => {
+    it('優先度に基づいてステップを分類する', async () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
         suggestions: [
@@ -270,7 +268,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", {});
 
       expect(formatted.actionableSteps.immediate.length).toBeGreaterThan(0);
       expect(formatted.actionableSteps.immediate[0].description).toContain('security');
@@ -278,7 +276,7 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('コンテキスト抽出', () => {
-    it('問題の周辺コードを抽出できる', () => {
+    it('問題の周辺コードを抽出できる', async () => {
       // テスト用のソースファイルを作成
       const sourceFile = path.join(testOutputDir, 'source.ts');
       const sourceContent = Array.from({ length: 20 }, (_, i) => 
@@ -300,7 +298,7 @@ describe('AIOptimizedFormatter', () => {
         includeCodeContext: true
       };
 
-      const formatted = formatter.formatAsJSON(result, options);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
       const contextualizedIssue = formatted.contextualizedIssues[0];
 
       expect(contextualizedIssue.context).toBeDefined();
@@ -309,7 +307,7 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('エラーハンドリング', () => {
-    it('空の分析結果を処理できる', () => {
+    it('空の分析結果を処理できる', async () => {
       const emptyResult: EnhancedAnalysisResult = {
         projectPath: '/test/project',
         issues: [],
@@ -320,13 +318,13 @@ describe('AIOptimizedFormatter', () => {
         timestamp: new Date().toISOString()
       };
 
-      const formatted = formatter.formatAsJSON(emptyResult);
+      const formatted = await formatter.formatAsJSON(emptyResult, "/test/project", {});
 
       expect(formatted.summary.totalIssues).toBe(0);
       expect(formatted.criticalIssues).toHaveLength(0);
     });
 
-    it('不正なファイルパスを安全に処理する', () => {
+    it('不正なファイルパスを安全に処理する', async () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
         issues: [
@@ -336,7 +334,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", {});
 
       // パスが適切にサニタイズされることを確認
       expect(formatted.contextualizedIssues[0].file).not.toContain('/etc/passwd');
@@ -344,7 +342,7 @@ describe('AIOptimizedFormatter', () => {
   });
 
   describe('パフォーマンス最適化', () => {
-    it('大量の問題を効率的に処理できる', () => {
+    it('大量の問題を効率的に処理できる', async () => {
       const issues = Array.from({ length: 1000 }, (_, i) => 
         createMockIssue({
           file: `src/file${i}.ts`,
@@ -359,14 +357,14 @@ describe('AIOptimizedFormatter', () => {
       };
 
       const startTime = Date.now();
-      const formatted = formatter.formatAsJSON(result);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", {});
       const endTime = Date.now();
 
       expect(formatted.contextualizedIssues.length).toBe(1000);
       expect(endTime - startTime).toBeLessThan(1000); // 1秒以内
     });
 
-    it('maxIssuesPerFileオプションを適用できる', () => {
+    it('maxIssuesPerFileオプションを適用できる', async () => {
       const issues = Array.from({ length: 20 }, (_, i) => 
         createMockIssue({
           file: 'src/example.ts',
@@ -383,7 +381,7 @@ describe('AIOptimizedFormatter', () => {
         maxIssuesPerFile: 5
       };
 
-      const formatted = formatter.formatAsJSON(result, options);
+      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
       const fileIssues = formatted.contextualizedIssues.filter(
         (issue: any) => issue.file === 'src/example.ts'
       );

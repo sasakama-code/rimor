@@ -191,7 +191,8 @@ describe('LocalInferenceOptimizer', () => {
       
       expect(result.analyzedMethods).toContain('base');
       expect(result.analyzedMethods).toContain('dependent1');
-      expect(result.analyzedMethods).toContain('dependent2');
+      // Body changes only affect direct dependents, not transitive ones
+      expect(result.analyzedMethods).not.toContain('dependent2');
       expect(result.analyzedMethods).not.toContain('independent');
     });
     

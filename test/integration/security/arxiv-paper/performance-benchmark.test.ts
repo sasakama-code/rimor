@@ -6,7 +6,7 @@
 import { ParallelTypeChecker } from '../../../../src/security/checker/parallel-type-checker';
 import { TypeBasedSecurityEngine } from '../../../../src/security/analysis/engine';
 import { IncrementalInferenceEngine } from '../../../../src/security/inference/local-inference-optimizer';
-import { TestMethod, TestCase } from '../../../../src/core/types';
+import { TestMethod, TestFile } from '../../../../src/core/types';
 import * as os from 'os';
 
 describe('Performance Benchmark Tests', () => {
@@ -30,7 +30,7 @@ describe('Performance Benchmark Tests', () => {
       name: `testMethod${index}`,
       parameters: [
         { name: 'userInput', type: 'string', source: 'user-input' },
-        { name: 'config', type: 'any', source: 'config' }
+        { name: 'config', type: 'any', source: 'constant' }
       ],
       returnType: 'any',
       annotations: [],
@@ -45,8 +45,8 @@ describe('Performance Benchmark Tests', () => {
     }
   });
   
-  const generateTestFile = (index: number): TestCase => ({
-    file: `test${index}.ts`,
+  const generateTestFile = (index: number): TestFile => ({
+    path: `test${index}.ts`,
     content: `
       describe('Test Suite ${index}', () => {
         ${Array.from({ length: 5 }, (_, i) => `
@@ -57,7 +57,12 @@ describe('Performance Benchmark Tests', () => {
           });
         `).join('\n')}
       });
-    `
+    `,
+    metadata: {
+      framework: 'jest',
+      language: 'typescript',
+      lastModified: new Date()
+    }
   });
   
   describe('並列型チェックのパフォーマンス', () => {

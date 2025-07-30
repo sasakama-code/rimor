@@ -112,10 +112,29 @@ export class CheckerFrameworkCompatibility {
       getAnnotation: (className: string, methodName: string, type: string, idx?: number) => {
         // 'process(String)String' 形式のメソッド名から 'process' を抽出
         const simpleMethodName = methodName.split('(')[0];
-        const key = idx !== undefined
-          ? `${className}.${simpleMethodName}.${type}.${idx}`
-          : `${className}.${simpleMethodName}.${type}`;
-        return annotations.get(key) || '';
+        
+        // classNameにパッケージが含まれているかチェック
+        let searchKey: string;
+        if (className.includes('.')) {
+          // classNameにパッケージが含まれている場合はそのまま使用
+          searchKey = idx !== undefined
+            ? `${className}.${simpleMethodName}.${type}.${idx}`
+            : `${className}.${simpleMethodName}.${type}`;
+        } else {
+          // パッケージが含まれていない場合は、すべてのキーから検索
+          const pattern = idx !== undefined
+            ? `.${className}.${simpleMethodName}.${type}.${idx}`
+            : `.${className}.${simpleMethodName}.${type}`;
+          
+          for (const [key, value] of annotations) {
+            if (key.endsWith(pattern)) {
+              return value;
+            }
+          }
+          return '';
+        }
+        
+        return annotations.get(searchKey) || '';
       }
     };
   }

@@ -52,9 +52,9 @@ describe('TypedAuthTestQualityPlugin', () => {
     
     it('必要な型情報が定義されていること', () => {
       expect(plugin.requiredTypes).toBeDefined();
-      expect(plugin.requiredTypes).toContain('USER_INPUT');
-      expect(plugin.requiredTypes).toContain('AUTH_TOKEN');
-      expect(plugin.providedTypes).toContain('VALIDATED_AUTH');
+      expect(plugin.requiredTypes).toContain('user-input');
+      expect(plugin.requiredTypes).toContain('auth-token');
+      expect(plugin.providedTypes).toContain('validated-auth');
     });
   });
   
@@ -451,8 +451,18 @@ describe('TypedAuthTestQualityPlugin', () => {
           saveToDatabase(hashed);
         `,
         filePath: 'auth.test.ts',
-        startLine: 1,
-        endLine: 4
+        signature: {
+          name: 'testTaintAnalysis',
+          parameters: [],
+          annotations: [],
+          isAsync: false
+        },
+        location: {
+          startLine: 1,
+          endLine: 4,
+          startColumn: 0,
+          endColumn: 0
+        }
       };
       
       const result = await plugin.analyzeMethod(method);

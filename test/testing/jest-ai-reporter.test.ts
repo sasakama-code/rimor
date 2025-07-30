@@ -34,7 +34,6 @@ const createMockTestResult = (overrides: Partial<TestResult> = {}): TestResult =
   console: undefined,
   testExecError: undefined,
   coverage: undefined,
-  sourceMaps: {},
   v8Coverage: undefined,
   ...overrides
 });
