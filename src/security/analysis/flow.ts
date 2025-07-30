@@ -74,8 +74,10 @@ export interface FlowPath {
   id: string;
   /** ノード列 */
   nodes: string[];
-  /** 汚染レベル */
+  /** 汚染レベル（レガシー互換） */
   taintLevel: TaintLevel;
+  /** パスの型（新型システム） */
+  pathType?: QualifiedType<any>;
   /** サニタイザーを通過したか */
   passedThroughSanitizer: boolean;
   /** セキュリティシンクに到達するか */
@@ -179,7 +181,15 @@ export class FlowSensitiveAnalyzer {
 
     // 汚染データの非サニタイズパスを検出
     flow.paths
-      .filter(path => path.taintLevel >= TaintLevel.LIKELY_TAINTED)
+      .filter(path => {
+        // 新型システムでの判定
+        if (path.pathType && TypeGuards.isTainted(path.pathType)) {
+          const tainted = path.pathType as TaintedType<any>;
+          return tainted.__confidence >= 0.5; // LIKELY_TAINTED相当
+        }
+        // レガシー互換
+        return path.taintLevel >= TaintLevel.LIKELY_TAINTED;
+      })
       .filter(path => !path.passedThroughSanitizer)
       .filter(path => path.reachesSecuritySink)
       .forEach(path => {
@@ -628,6 +638,19 @@ export class FlowSensitiveAnalyzer {
       default:
         return 'low';
     }
+  }
+
+  /**
+   * 新型システム版の重要度計算
+   */
+  private calculateSeverityFromType<T>(qualifiedType: QualifiedType<T>): 'low' | 'medium' | 'high' | 'critical' {
+    if (TypeGuards.isTainted(qualifiedType)) {
+      const tainted = qualifiedType as TaintedType<T>;
+      if (tainted.__confidence >= 0.75) return 'critical';
+      if (tainted.__confidence >= 0.5) return 'high';
+      if (tainted.__confidence >= 0.25) return 'medium';
+    }
+    return 'low';
   }
 
   private generateSanitizationSuggestion(path: FlowPath): string {

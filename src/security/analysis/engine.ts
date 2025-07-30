@@ -15,14 +15,21 @@ import {
   TypeBasedSecurityAnalysis,
   ModularAnalysis,
   TypeBasedSecurityConfig,
-  TaintLevel,
   SecurityType
 } from '../types';
+import {
+  TaintQualifier,
+  QualifiedType,
+  TypeConstructors,
+  TypeGuards
+} from '../types/checker-framework-types';
+import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { MethodSignature } from '../types';
 import { ModularTestAnalyzer } from './modular';
 import { FlowSensitiveAnalyzer, FlowGraph } from './flow';
 import { SignatureBasedInference } from './inference';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import { ParallelTypeChecker, createParallelTypeChecker } from '../checker/parallel-type-checker';
 import * as os from 'os';
 
 /**
@@ -35,6 +42,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   private inferenceEngine: SignatureBasedInference;
   private config: TypeBasedSecurityConfig;
   private workerPool: WorkerPool;
+  private parallelTypeChecker: ParallelTypeChecker;
 
   constructor(config?: Partial<TypeBasedSecurityConfig>) {
     this.config = {
@@ -52,6 +60,11 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     this.flowAnalyzer = new FlowSensitiveAnalyzer();
     this.inferenceEngine = new SignatureBasedInference();
     this.workerPool = new WorkerPool(this.config.parallelism);
+    this.parallelTypeChecker = createParallelTypeChecker({
+      workerCount: this.config.parallelism,
+      enableCache: this.config.enableCache,
+      debug: false
+    });
   }
 
   /**
@@ -115,11 +128,11 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   }
 
   /**
-   * 汚染レベルの推論
+   * 汚染レベルの推論（新型システム版）
    */
-  async inferTaintLevels(testFile: TestCase): Promise<Map<string, TaintLevel>> {
+  async inferTaintTypes(testFile: TestCase): Promise<Map<string, QualifiedType<any>>> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const taintMap = new Map<string, TaintLevel>();
+    const taintMap = new Map<string, QualifiedType<any>>();
 
     for (const method of testMethods) {
       // フロー解析による汚染追跡
@@ -129,14 +142,39 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       for (const node of flowGraph.nodes) {
         const variables = this.extractVariablesFromNode(node);
         variables.forEach(variable => {
-          const currentLevel = taintMap.get(variable) || TaintLevel.UNTAINTED;
-          const newLevel = Math.max(currentLevel, node.outputTaint) as TaintLevel;
-          taintMap.set(variable, newLevel);
+          const currentType = taintMap.get(variable) || TypeConstructors.untainted(variable);
+          
+          // node.outputTaintを新型システムに変換
+          const nodeType = TaintLevelAdapter.toQualifiedType(
+            variable,
+            node.outputTaint,
+            node.source
+          );
+          
+          // より汚染度の高い型を選択（join操作）
+          const newType = TaintLevelAdapter.join(currentType, nodeType);
+          taintMap.set(variable, newType);
         });
       }
     }
 
     return taintMap;
+  }
+
+  /**
+   * レガシー互換メソッド（段階的移行のため）
+   * @deprecated 新しいinferTaintTypesメソッドを使用してください
+   */
+  async inferTaintLevels(testFile: TestCase): Promise<Map<string, number>> {
+    const qualifiedTypes = await this.inferTaintTypes(testFile);
+    const legacyMap = new Map<string, number>();
+    
+    for (const [variable, qualifiedType] of qualifiedTypes) {
+      const legacyLevel = TaintLevelAdapter.fromQualifiedType(qualifiedType);
+      legacyMap.set(variable, legacyLevel);
+    }
+    
+    return legacyMap;
   }
 
   /**
@@ -206,10 +244,42 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   }
 
   /**
-   * 並列解析
+   * 並列解析（新型システムを使用）
    */
   async analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]> {
-    return this.modularAnalyzer.analyzeInParallel(methods);
+    // 並列型チェックを実行
+    const typeCheckResults = await this.parallelTypeChecker.checkMethodsInParallel(methods);
+    
+    // 結果をMethodAnalysisResult形式に変換
+    const results: MethodAnalysisResult[] = [];
+    
+    for (const [methodName, checkResult] of typeCheckResults) {
+      const method = methods.find(m => m.name === methodName);
+      if (!method) continue;
+      
+      results.push({
+        method,
+        issues: checkResult.securityIssues,
+        metrics: {
+          taintedVariables: Array.from(checkResult.inferredTypes.values())
+            .filter(type => type.__brand === '@Tainted').length,
+          untaintedVariables: Array.from(checkResult.inferredTypes.values())
+            .filter(type => type.__brand === '@Untainted').length,
+          sanitizers: 0, // TODO: サニタイザー数をカウント
+          securityAssertions: 0 // TODO: アサーション数をカウント
+        },
+        improvements: [],
+        executionTime: checkResult.executionTime
+      });
+    }
+    
+    // 統計情報を出力
+    const stats = this.parallelTypeChecker.getStatistics();
+    if (this.config.debug) {
+      console.log(`Parallel type check completed: ${stats.totalMethods} methods, speedup: ${stats.speedup.toFixed(2)}x`);
+    }
+    
+    return results;
   }
 
   /**

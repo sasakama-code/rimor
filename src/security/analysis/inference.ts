@@ -68,7 +68,7 @@ export class SignatureBasedInference {
     annotations.push(...contentAnnotations);
 
     // 汚染レベルの推論
-    const taintAnnotations = this.inferTaintLevels(method);
+    const taintAnnotations = this.inferTaintTypes(method);
     annotations.push(...taintAnnotations);
 
     const totalVariables = this.countVariables(method.content);
@@ -303,9 +303,9 @@ export class SignatureBasedInference {
   }
 
   /**
-   * 汚染レベルの推論
+   * 汚染レベルの推論（新型システム版）
    */
-  private inferTaintLevels(method: TestMethod): SecurityTypeAnnotation[] {
+  private inferTaintTypes(method: TestMethod): SecurityTypeAnnotation[] {
     const annotations: SecurityTypeAnnotation[] = [];
     const content = method.content;
 
@@ -316,6 +316,11 @@ export class SignatureBasedInference {
         target: input.variable,
         securityType: SecurityType.USER_INPUT,
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
+        qualifiedType: TypeConstructors.tainted(
+          input.variable,
+          TaintSource.USER_INPUT,
+          0.9
+        ),
         confidence: 0.9,
         evidence: [`User input detected: ${input.source}`]
       });
@@ -328,12 +333,21 @@ export class SignatureBasedInference {
         target: variable,
         securityType: SecurityType.SANITIZED_DATA,
         taintLevel: TaintLevel.UNTAINTED,
+        qualifiedType: TypeConstructors.untainted(variable, 'sanitized'),
         confidence: 0.85,
         evidence: ['Sanitizer applied']
       });
     });
 
     return annotations;
+  }
+
+  /**
+   * レガシー互換メソッド
+   * @deprecated inferTaintTypesを使用してください
+   */
+  private inferTaintLevels(method: TestMethod): SecurityTypeAnnotation[] {
+    return this.inferTaintTypes(method);
   }
 
   // ヘルパーメソッドの実装
