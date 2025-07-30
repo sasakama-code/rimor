@@ -14,7 +14,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     strategy:
       fail-fast: false  # 全てのNode.jsバージョンでテストを実行（互換性問題の検出のため）
       matrix:
@@ -22,7 +21,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
@@ -34,9 +32,25 @@ jobs:
 
     - name: Run security audit
       run: |
+        # Run audit and save results
         npm audit --audit-level=high --json > audit-results.json || true
-        npm audit --audit-level=high
-    
+        
+        # Check for high severity vulnerabilities using jq
+        if [ -f audit-results.json ]; then
+          HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
+          CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
+          
+          echo "Found $HIGH_VULNS high severity vulnerabilities"
+          echo "Found $CRITICAL_VULNS critical severity vulnerabilities"
+          
+          if [ "$CRITICAL_VULNS" -gt 0 ] || [ "$HIGH_VULNS" -gt 0 ]; then
+            echo "::error::Security audit failed: Found $CRITICAL_VULNS critical and $HIGH_VULNS high severity vulnerabilities"
+            exit 1
+          fi
+        else
+          echo "::error::Failed to generate audit results"
+          exit 1
+        fi
     - name: Upload audit results
       if: always()
       uses: actions/upload-artifact@v4
@@ -67,13 +81,11 @@ jobs:
         script: |
           const fs = require('fs');
           const reportPath = '.rimor/reports/test-errors-ai.md';
-          
           if (fs.existsSync(reportPath)) {
             const report = fs.readFileSync(reportPath, 'utf8');
-            const truncatedReport = report.length > 65000 
+            const truncatedReport = report.length > 65000
               ? report.substring(0, 65000) + '\n\n... [トランケートされました]'
               : report;
-              
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -84,28 +96,43 @@ jobs:
 
     - name: Run quality check
       run: |
-        # Run analysis and capture exit code
-        npm run analyze:src || ANALYSIS_EXIT_CODE=$?
+        # Run analysis and save results in JSON format
+        npm run analyze:src:json > analysis-results.json || ANALYSIS_EXIT_CODE=$?
         
-        # If analysis had warnings/errors, check threshold
-        if [ "${ANALYSIS_EXIT_CODE:-0}" -ne 0 ]; then
-          echo "::warning::Quality analysis detected issues"
-          # TODO: Implement proper threshold check
-          # For critical issues (exit code > 1), fail the build
-          if [ "${ANALYSIS_EXIT_CODE}" -gt 1 ]; then
-            echo "::error::Quality analysis detected critical issues"
+        if [ -f analysis-results.json ]; then
+          # Extract issue counts by severity
+          CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' analysis-results.json 2>/dev/null || echo "0")
+          HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' analysis-results.json 2>/dev/null || echo "0")
+          MEDIUM_ISSUES=$(jq '[.issues[] | select(.severity == "medium")] | length' analysis-results.json 2>/dev/null || echo "0")
+          LOW_ISSUES=$(jq '[.issues[] | select(.severity == "low")] | length' analysis-results.json 2>/dev/null || echo "0")
+          
+          # Display issue summary
+          echo "Quality Analysis Results:"
+          echo "  Critical: $CRITICAL_ISSUES"
+          echo "  High: $HIGH_ISSUES"
+          echo "  Medium: $MEDIUM_ISSUES"
+          echo "  Low: $LOW_ISSUES"
+          
+          # Apply thresholds
+          if [ "$CRITICAL_ISSUES" -gt 0 ]; then
+            echo "::error::Found $CRITICAL_ISSUES critical issues - build failed"
             exit 1
+          elif [ "$HIGH_ISSUES" -gt 5 ]; then
+            echo "::error::Found $HIGH_ISSUES high severity issues (threshold: 5) - build failed"
+            exit 1
+          elif [ "$MEDIUM_ISSUES" -gt 20 ]; then
+            echo "::warning::Found $MEDIUM_ISSUES medium severity issues (threshold: 20)"
           fi
-          # For warnings (exit code = 1), allow but log them
-          exit 0
+          
+          echo "Quality check passed"
+        else
+          echo "::warning::Could not generate analysis results"
         fi
 
   security:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js 20.x
       uses: actions/setup-node@v4
       with:
@@ -125,10 +152,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, security]
     if: github.ref == 'refs/heads/main'
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js 20.x
       uses: actions/setup-node@v4
       with:
