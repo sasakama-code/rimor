@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     
     strategy:
+      fail-fast: false  # 全てのNode.jsバージョンでテストを実行（互換性問題の検出のため）
       matrix:
         node-version: [18.x, 20.x]
 
@@ -45,6 +46,36 @@ jobs:
       env:
         NODE_OPTIONS: '--max-old-space-size=2048'
       run: npm test
+
+    - name: Upload AI Error Report
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-error-report-${{ matrix.node-version }}
+        path: |
+          .rimor/reports/test-errors-ai.md
+          .rimor/reports/test-errors-ai.json
+    - name: Post AI Error Report to PR
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const reportPath = '.rimor/reports/test-errors-ai.md';
+          
+          if (fs.existsSync(reportPath)) {
+            const report = fs.readFileSync(reportPath, 'utf8');
+            const truncatedReport = report.length > 65000 
+              ? report.substring(0, 65000) + '\n\n... [トランケートされました]'
+              : report;
+              
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 AI Error Report (Node.js ${{ matrix.node-version }})\n\n${truncatedReport}`
+            });
+          }
 
     - name: Run quality check
       run: |

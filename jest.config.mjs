@@ -74,13 +74,13 @@ export default {
     'test-accuracy-data'
   ],
   
-  // AI Error Reporterの設定
-  reporters: process.env.CI === 'true' || process.env.DISABLE_AI_REPORTER === 'true' ? [
+  // AI Error Reporterの設定（CI環境でも有効化）
+  reporters: process.env.DISABLE_AI_REPORTER === 'true' ? [
     'default'
   ] : [
     'default',
     ['<rootDir>/dist/testing/jest-ai-reporter.js', {
-      outputPath: 'test-errors-ai.md',
+      outputPath: process.env.CI === 'true' ? '.rimor/reports/test-errors-ai.md' : 'test-errors-ai.md',
       enableConsoleOutput: true
     }]
   ],
