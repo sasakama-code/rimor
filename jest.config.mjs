@@ -18,7 +18,7 @@ export default {
   // CI環境での非同期ハンドル問題解決
   forceExit: true, // メモリリークを防ぐため常に有効
   detectOpenHandles: false, // メモリ使用量削減のため無効
-  testTimeout: process.env.CI === 'true' ? 90000 : 10000, // CI環境では90秒、ローカルは10秒
+  testTimeout: process.env.CI === 'true' ? 30000 : 10000, // CI環境では30秒、ローカルは10秒
   maxWorkers: 1, // メモリ使用量制限のため常に1ワーカー
   // runInBand設定はpackage.jsonのコマンドラインオプションで指定
   

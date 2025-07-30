@@ -108,14 +108,6 @@ afterEach(() => {
   // テスト後にガベージコレクションを実行
   if (global.gc) {
     global.gc();
-    // CI環境では追加のGC実行
-    if (process.env.CI === 'true') {
-      setTimeout(() => {
-        if (global.gc) {
-          global.gc();
-        }
-      }, 100);
-    }
   }
 });
 
@@ -127,38 +119,14 @@ if (process.env.NODE_OPTIONS && !process.env.NODE_OPTIONS.includes('--max-old-sp
   }
 }
 
-// CI環境でのメモリ管理強化
+// CI環境でのメモリ管理（簡素化）
 if (process.env.CI === 'true') {
-  // --expose-gcが利用できない場合の代替手段
-  // v8モジュールを使用してGCを促進
-  try {
-    const v8 = require('v8');
-    
-    setInterval(() => {
-      // メモリ使用量を確認
-      const heapStats = v8.getHeapStatistics();
-      const usedHeapRatio = heapStats.used_heap_size / heapStats.heap_size_limit;
-      
-      // 使用率が80%を超えたらGCを促進
-      if (usedHeapRatio > 0.8) {
-        if (global.gc) {
-          global.gc();
-        } else {
-          // 強制的なメモリクリーンアップ
-          if (global.Buffer) {
-            global.Buffer.allocUnsafe(1).fill(0);
-          }
-        }
-      }
-    }, 1000); // 1秒間隔でチェック
-  } catch (error) {
-    // フォールバック
-    setInterval(() => {
-      if (global.gc) {
-        global.gc();
-      }
-    }, 2000);
-  }
+  // テスト終了時のみGCを実行（過度な頻度を避ける）
+  afterAll(() => {
+    if (global.gc) {
+      global.gc();
+    }
+  });
 
   // CI環境でのファイルシステムIO最適化
   const fs = require('fs/promises');
