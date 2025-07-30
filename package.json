@@ -46,7 +46,8 @@
     "pre-release-check": "bash scripts/pre-release-check.sh",
     "release-ready": "node scripts/release-health-check.js",
     "health-check": "node scripts/release-health-check.js",
-    "self-audit": "bash docs/self-audit/scripts/self-audit.sh"
+    "self-audit": "bash docs/self-audit/scripts/self-audit.sh",
+    "benchmark:arxiv-paper": "NODE_OPTIONS=\"--max-old-space-size=4096\" ts-node scripts/benchmark-arxiv-paper.ts"
   },
   "keywords": [
     "testing",
