@@ -81,7 +81,7 @@ export default {
     'default',
     ['<rootDir>/dist/testing/jest-ai-reporter.js', {
       outputPath: process.env.CI === 'true' ? '.rimor/reports/test-errors-ai.md' : 'test-errors-ai.md',
-      enableConsoleOutput: true
+      enableConsoleOutput: process.env.CI !== 'true' // CI環境ではコンソール出力を無効化
     }]
   ],
 };

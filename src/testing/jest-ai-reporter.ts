@@ -44,11 +44,16 @@ export class JestAIReporter implements Reporter {
     this.ciTraceability = CITraceabilityCollector.collect();
     
     if (this.enableConsoleOutput) {
-      console.log('\n🤖 AI Error Reporter: エラー収集を開始します...');
-      if (this.ciTraceability) {
-        console.log(`📍 CI実行: ${this.ciTraceability.workflow} #${this.ciTraceability.runNumber}`);
+      // CI環境では最小限の出力
+      if (process.env.CI === 'true') {
+        console.log('\n🤖 AI Error Reporter: 有効');
+      } else {
+        console.log('\n🤖 AI Error Reporter: エラー収集を開始します...');
+        if (this.ciTraceability) {
+          console.log(`📍 CI実行: ${this.ciTraceability.workflow} #${this.ciTraceability.runNumber}`);
+        }
+        console.log('');
       }
-      console.log('');
     }
   }
   
@@ -94,12 +99,14 @@ export class JestAIReporter implements Reporter {
           
           this.collectedErrors.push(context);
           
-          if (this.enableConsoleOutput) {
+          if (this.enableConsoleOutput && process.env.CI !== 'true') {
             console.log(`  ❌ ${assertion.fullName}`);
           }
         } catch (collectError) {
           // 収集エラーは無視（テスト実行を妨げない）
-          console.error('Error collecting context:', collectError);
+          if (process.env.CI !== 'true') {
+            console.error('Error collecting context:', collectError);
+          }
         }
       }
     }
@@ -110,7 +117,7 @@ export class JestAIReporter implements Reporter {
    */
   async onRunComplete(contexts: Set<any>, results: AggregatedResult): Promise<void> {
     if (this.collectedErrors.length === 0) {
-      if (this.enableConsoleOutput) {
+      if (this.enableConsoleOutput && process.env.CI !== 'true') {
         console.log('\n✅ すべてのテストがパスしました！\n');
       }
       return;
@@ -145,7 +152,9 @@ export class JestAIReporter implements Reporter {
       }
       
     } catch (error) {
-      console.error('AI Error Reporter failed:', error);
+      if (process.env.CI !== 'true') {
+        console.error('AI Error Reporter failed:', error);
+      }
     }
   }
   
@@ -187,6 +196,14 @@ export class JestAIReporter implements Reporter {
    * コンソールにサマリーを出力
    */
   private printSummary(report: any): void {
+    // CI環境では最小限の出力
+    if (process.env.CI === 'true') {
+      const maskedPath = PathSecurity.toRelativeOrMasked(this.outputPath);
+      console.log(`\n🤖 AI Error Report: ${report.summary.totalErrors}個のエラーを検出 → ${maskedPath}\n`);
+      return;
+    }
+    
+    // ローカル環境では詳細な出力
     console.log('\n' + '='.repeat(80));
     console.log('🤖 AI Error Report Summary');
     console.log('='.repeat(80));

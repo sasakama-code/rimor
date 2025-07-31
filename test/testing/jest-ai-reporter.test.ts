@@ -176,11 +176,20 @@ describe('JestAIReporter', () => {
     it('テスト実行開始時にエラーをリセットする', () => {
       const aggregatedResult = createMockAggregatedResult();
       
+      // CI環境変数を一時的にクリア
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      
       reporter.onRunStart(aggregatedResult, {});
       
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('AI Error Reporter: エラー収集を開始します')
       );
+      
+      // CI環境変数を復元
+      if (originalCI !== undefined) {
+        process.env.CI = originalCI;
+      }
     });
 
     it('コンソール出力を無効化できる', () => {
@@ -191,6 +200,30 @@ describe('JestAIReporter', () => {
       silentReporter.onRunStart(createMockAggregatedResult(), {});
       
       expect(consoleLogSpy).not.toHaveBeenCalled();
+    });
+
+    it('CI環境では最小限のコンソール出力にする', () => {
+      const aggregatedResult = createMockAggregatedResult();
+      
+      // CI環境変数を設定
+      const originalCI = process.env.CI;
+      process.env.CI = 'true';
+      
+      reporter.onRunStart(aggregatedResult, {});
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('AI Error Reporter: 有効')
+      );
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('エラー収集を開始します')
+      );
+      
+      // CI環境変数を復元
+      if (originalCI !== undefined) {
+        process.env.CI = originalCI;
+      } else {
+        delete process.env.CI;
+      }
     });
   });
 
@@ -233,11 +266,20 @@ describe('JestAIReporter', () => {
     it('エラーがない場合は成功メッセージを表示する', async () => {
       const aggregatedResult = createMockAggregatedResult();
       
+      // CI環境変数を一時的にクリア
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      
       await reporter.onRunComplete(new Set(), aggregatedResult);
       
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('すべてのテストがパスしました')
       );
+      
+      // CI環境変数を復元
+      if (originalCI !== undefined) {
+        process.env.CI = originalCI;
+      }
     });
 
     it('エラーレポートを生成する', async () => {
