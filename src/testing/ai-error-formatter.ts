@@ -192,10 +192,13 @@ export class AITestErrorFormatter {
         markdown += error.context.failedAssertion;
         markdown += '\n```\n\n';
         
-        markdown += '**修正案**:\n';
-        markdown += '```typescript\n';
-        markdown += error.suggestedFix.code;
-        markdown += '\n```\n';
+        // 自動修正案を生成できない場合は修正案セクションを削除
+        if (error.suggestedFix.code !== '// 自動修正案を生成できません') {
+          markdown += '**修正案**:\n';
+          markdown += '```typescript\n';
+          markdown += error.suggestedFix.code;
+          markdown += '\n```\n';
+        }
         markdown += `${error.suggestedFix.explanation} (信頼度: ${Math.round(error.suggestedFix.confidence * 100)}%)\n\n`;
       });
     });
@@ -376,20 +379,97 @@ export class AITestErrorFormatter {
         return priority[a.priority] - priority[b.priority];
       })[0];
     
-    if (topAction) {
+    if (topAction && topAction.codeSnippet) {
       return {
         explanation: topAction.reasoning,
-        code: topAction.codeSnippet || context.codeContext.failedCode,
+        code: topAction.codeSnippet,
         confidence: topAction.priority === 'high' ? 0.9 : 0.7
       };
     }
     
-    // デフォルトの提案
+    // パターンベースの修正提案生成
+    const pattern = this.detectErrorPattern(context);
+    const patternBasedFix = this.generatePatternBasedFix(context, pattern);
+    
+    if (patternBasedFix) {
+      return patternBasedFix;
+    }
+    
+    // デフォルトの提案（修正案なし）
     return {
-      explanation: 'エラーメッセージを確認して適切な修正を行ってください',
-      code: context.codeContext.failedCode,
-      confidence: 0.5
+      explanation: 'このエラーの自動修正案を生成できません。エラーメッセージと関連コードを確認して手動で修正してください。',
+      code: '// 自動修正案を生成できません',
+      confidence: 0.1
     };
+  }
+  
+  /**
+   * パターンベースの修正提案生成
+   */
+  private generatePatternBasedFix(
+    context: TestErrorContext,
+    pattern: string
+  ): FormattedError['suggestedFix'] | null {
+    const { failedCode } = context.codeContext;
+    const errorMessage = context.error.message;
+    
+    // アサーション不一致の場合
+    if (pattern === 'アサーション不一致') {
+      // expect().toContain()エラーの場合
+      if (errorMessage.includes('toContain') && failedCode.includes('expect')) {
+        const actualMatch = errorMessage.match(/Received: \[(.*?)\]/);
+        if (actualMatch && actualMatch[1]) {
+          return {
+            explanation: `配列に期待値が含まれていません。実際の配列の内容を確認して、期待値を修正してください。`,
+            code: `// 実際の配列: [${actualMatch[1]}]\n// 期待値を配列の実際の要素に変更するか、\n// テスト対象のコードを修正してください`,
+            confidence: 0.6
+          };
+        }
+      }
+      
+      // expect().toBe()エラーの場合
+      if (errorMessage.includes('Expected:') && errorMessage.includes('Received:')) {
+        const expectedMatch = errorMessage.match(/Expected: (.+?)(?:\n|$)/);
+        const receivedMatch = errorMessage.match(/Received: (.+?)(?:\n|$)/);
+        
+        if (expectedMatch && receivedMatch) {
+          return {
+            explanation: `期待値と実際の値が一致しません。期待値: ${expectedMatch[1]}, 実際: ${receivedMatch[1]}`,
+            code: `// 期待値を実際の値に合わせる場合:\n// ${failedCode.replace(expectedMatch[1], receivedMatch[1])}\n// または、テスト対象のコードを修正してください`,
+            confidence: 0.5
+          };
+        }
+      }
+    }
+    
+    // モジュール未検出エラーの場合
+    if (pattern === 'モジュール未検出エラー') {
+      const moduleMatch = errorMessage.match(/Cannot find module '(.+?)'/);
+      if (moduleMatch && moduleMatch[1]) {
+        const moduleName = moduleMatch[1];
+        return {
+          explanation: `モジュール '${moduleName}' が見つかりません。`,
+          code: `// 以下のいずれかを実行:\n// 1. npm install ${moduleName}\n// 2. インポートパスを修正\n// 3. tsconfig.jsonのパスマッピングを確認`,
+          confidence: 0.7
+        };
+      }
+    }
+    
+    // TypeScriptエラーの場合
+    if (pattern === '型エラー' && errorMessage.includes('TS')) {
+      const tsErrorMatch = errorMessage.match(/TS(\d{4}): (.+)/);
+      if (tsErrorMatch) {
+        const errorCode = tsErrorMatch[1];
+        const errorDesc = tsErrorMatch[2];
+        return {
+          explanation: `TypeScriptエラー TS${errorCode}: ${errorDesc}`,
+          code: `// TypeScriptエラーを修正してください\n// 型定義の追加、型アサーションの使用、\n// またはコードロジックの修正が必要です`,
+          confidence: 0.4
+        };
+      }
+    }
+    
+    return null;
   }
   
   /**
