@@ -46,7 +46,7 @@ describe('Performance Benchmark Tests', () => {
     }
   });
   
-  const generateTestFile = (index: number): TestFile => ({
+  const generateTestFile = (index: number): TestFile & { metadata: { framework: string; language: string; lastModified: Date } } => ({
     path: `test${index}.ts`,
     content: `
       describe('Test Suite ${index}', () => {
@@ -174,7 +174,9 @@ describe('Performance Benchmark Tests', () => {
       const testFiles = Array.from({ length: 20 }, (_, i) => generateTestFile(i));
       const testCases: TestCase[] = testFiles.map(file => ({
         name: `Test Suite from ${file.path}`,
-        file: file.path
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
       }));
       
       const result = await engine.analyzeAtCompileTime(testCases);
@@ -194,7 +196,9 @@ describe('Performance Benchmark Tests', () => {
       const testFiles = Array.from({ length: 10 }, (_, i) => generateTestFile(i));
       const testCases: TestCase[] = testFiles.map(file => ({
         name: `Test Suite from ${file.path}`,
-        file: file.path
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
       }));
       
       // 1回目の解析
@@ -225,7 +229,9 @@ describe('Performance Benchmark Tests', () => {
       const testFiles = Array.from({ length: 100 }, (_, i) => generateTestFile(i));
       const testCases: TestCase[] = testFiles.map(file => ({
         name: `Test Suite from ${file.path}`,
-        file: file.path
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
       }));
       
       await engine.analyzeAtCompileTime(testCases);
@@ -264,7 +270,11 @@ describe('Performance Benchmark Tests', () => {
             }
           `).join('\n'),
           name: `TestFile${i}`,
-          metadata: {}
+          metadata: {
+            framework: 'jest',
+            language: 'typescript',
+            lastModified: new Date()
+          }
         }));
         
         const start = Date.now();
