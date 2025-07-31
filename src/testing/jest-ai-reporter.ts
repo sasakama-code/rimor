@@ -134,6 +134,12 @@ export class JestAIReporter implements Reporter {
       const maskedJson = PathSecurity.maskAllPaths(json, 'Rimor');
       await fs.promises.writeFile(jsonPath, maskedJson, 'utf-8');
       
+      // サマリー形式でも出力（CI環境でのPRコメント用）
+      const summaryPath = this.outputPath.replace(/\.md$/, '-summary.md');
+      const summaryMarkdown = this.errorFormatter.formatAsSummaryMarkdown(report);
+      const maskedSummaryMarkdown = PathSecurity.maskAllPaths(summaryMarkdown, 'Rimor');
+      await fs.promises.writeFile(summaryPath, maskedSummaryMarkdown, 'utf-8');
+      
       if (this.enableConsoleOutput) {
         this.printSummary(report);
       }
