@@ -96,11 +96,12 @@ jobs:
     - name: Run quality check
       run: |
         # Run analysis and save results in JSON format
-        ANALYSIS_EXIT_CODE=0
-        npm run analyze:src:json > analysis-results.json || ANALYSIS_EXIT_CODE=$?
-        # Check if analysis tool crashed
-        if [ "$ANALYSIS_EXIT_CODE" -ne 0 ]; then
-          echo "::error::Analysis tool crashed with exit code $ANALYSIS_EXIT_CODE"
+        # 実行して終了コードを取得
+        npm run analyze:src:json > analysis-results.json
+        ANALYSIS_EXIT_CODE=$?
+        # 0=成功, 1=問題検出 とみなし >1 のみ異常終了扱い
+        if [ "$ANALYSIS_EXIT_CODE" -gt 1 ]; then
+          echo "::error::Quality analysis tool failed with exit code $ANALYSIS_EXIT_CODE"
           exit 1
         fi
         if [ -f analysis-results.json ]; then
