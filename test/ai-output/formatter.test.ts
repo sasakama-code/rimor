@@ -60,7 +60,33 @@ const createMockAnalysisResult = (): EnhancedAnalysisResult => ({
   issues: [createMockIssue()],
   totalFiles: 1,
   executionTime: 1000,
-  fileScores: [createMockFileScore()]
+  fileScores: [createMockFileScore()],
+  projectScore: {
+    projectPath: '/test/project',
+    overallScore: 75,
+    grade: 'B',
+    totalFiles: 1,
+    totalDirectories: 1,
+    fileScores: [createMockFileScore()],
+    directoryScores: [],
+    weights: {
+      plugins: {},
+      dimensions: {
+        completeness: 1.0,
+        correctness: 1.0,
+        maintainability: 1.0,
+        performance: 1.0,
+        security: 1.0
+      },
+      fileTypes: {}
+    },
+    metadata: {
+      generatedAt: new Date(),
+      pluginVersions: {},
+      executionTime: 1000,
+      scoreHistory: []
+    }
+  }
 });
 
 const mockFs = fs as jest.Mocked<typeof fs>;
@@ -196,7 +222,7 @@ describe('AIOptimizedFormatter', () => {
 
       const markdown = await formatter.formatAsMarkdown(result, '/test/project', options);
 
-      expect(markdown).toContain('Quality Score**: 0/100');
+      expect(markdown).toContain('**Quality Score**: 75/100');
       expect(markdown).toContain('File:');
       expect(markdown).toContain('Score: 75/100');
     });
@@ -238,7 +264,7 @@ describe('AIOptimizedFormatter', () => {
       const markdown = await formatter.formatAsMarkdown(result, '/test/project', { format: 'markdown' });
 
       expect(markdown).toContain('# Rimor Test Quality Analysis Report');
-      expect(markdown).toContain('Quality Score**: 0/100');
+      expect(markdown).toContain('**Quality Score**: 75/100');
     });
   });
 
