@@ -73,3 +73,6 @@ valid-test-dir/
 rimor-dogfooding-*.json
 rimor-dogfooding-*.md
 rimor-dogfooding-*.txt
+
+# Accuracy evaluation files
+accuracy-evaluation-*.json

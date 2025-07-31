@@ -738,8 +738,20 @@ export class AccuracyEvaluationSystem {
    * 精度結果の保存
    */
   private async saveAccuracyResults(result: DetailedAccuracyResult): Promise<void> {
+    // テスト環境では保存をスキップ
+    if (process.env.NODE_ENV === 'test') {
+      console.log('📝 テスト環境のため、精度評価結果の保存をスキップしました');
+      return;
+    }
+    
+    // .rimor/accuracy-evaluations/ ディレクトリに保存
+    const outputDir = path.join(process.cwd(), '.rimor', 'accuracy-evaluations');
+    
+    // ディレクトリが存在しない場合は作成
+    await fs.mkdir(outputDir, { recursive: true });
+    
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportPath = path.join(process.cwd(), `accuracy-evaluation-${timestamp}.json`);
+    const reportPath = path.join(outputDir, `accuracy-evaluation-${timestamp}.json`);
     
     // 個人情報をマスキングした結果を作成
     const sanitizedResult = this.sanitizeAccuracyResults(result);
