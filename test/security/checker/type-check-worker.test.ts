@@ -3,13 +3,12 @@ import * as path from 'path';
 
 describe('TypeCheckWorker', () => {
   let worker: Worker;
-  const workerPath = path.join(__dirname, '../../../src/security/checker/type-check-worker.ts');
+  // ビルド済みのJavaScriptファイルを使用
+  const workerPath = path.join(__dirname, '../../../dist/security/checker/type-check-worker.js');
 
   beforeEach(() => {
-    // TypeScriptファイルを直接実行するためにts-nodeが必要
-    worker = new Worker(workerPath, {
-      execArgv: ['-r', 'ts-node/register']
-    });
+    // ビルド済みのJSファイルを直接実行
+    worker = new Worker(workerPath);
   });
 
   afterEach(async () => {
