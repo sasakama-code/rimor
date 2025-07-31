@@ -71,7 +71,7 @@ jobs:
         path: |
           .rimor/reports/test-errors-ai.md
           .rimor/reports/test-errors-ai.json
-    - name: Post AI Error Report to PR
+    - name: Post AI Error Report Summary to PR
       if: failure() && github.event_name == 'pull_request'
       uses: actions/github-script@v7
       continue-on-error: true
@@ -80,17 +80,22 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const reportPath = '.rimor/reports/test-errors-ai.md';
-          if (fs.existsSync(reportPath)) {
-            const report = fs.readFileSync(reportPath, 'utf8');
-            const truncatedReport = report.length > 65000
-              ? report.substring(0, 65000) + '\n\n... [トランケートされました]'
-              : report;
+          const summaryPath = '.rimor/reports/test-errors-ai-summary.md';
+          
+          if (fs.existsSync(summaryPath)) {
+            const summary = fs.readFileSync(summaryPath, 'utf8');
+            
+            // アーティファクトへのリンクを追加
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsMessage = `\n\n📎 **アーティファクト**: [このワークフロー実行のアーティファクト](${runUrl})から \`ai-error-report-${process.env.NODE_VERSION}\` をダウンロードして詳細を確認してください。`;
+            
+            const body = `## 🤖 AI Error Report (Node.js ${process.env.NODE_VERSION})\n\n${summary}${artifactsMessage}`;
+            
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `## 🤖 AI Error Report (Node.js ${process.env.NODE_VERSION})\n\n${truncatedReport}`
+              body: body
             });
           }
 
