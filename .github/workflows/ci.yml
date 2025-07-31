@@ -9,7 +9,6 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: write
 
 jobs:
   test:
@@ -34,15 +33,12 @@ jobs:
       run: |
         # Run audit and save results
         npm audit --audit-level=high --json > audit-results.json || true
-        
         # Check for high severity vulnerabilities using jq
         if [ -f audit-results.json ]; then
           HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
           CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
-          
           echo "Found $HIGH_VULNS high severity vulnerabilities"
           echo "Found $CRITICAL_VULNS critical severity vulnerabilities"
-          
           if [ "$CRITICAL_VULNS" -gt 0 ] || [ "$HIGH_VULNS" -gt 0 ]; then
             echo "::error::Security audit failed: Found $CRITICAL_VULNS critical and $HIGH_VULNS high severity vulnerabilities"
             exit 1
@@ -52,11 +48,12 @@ jobs:
           exit 1
         fi
     - name: Upload audit results
-      if: always()
+      if: always() && hashFiles('audit-results.json') != ''
       uses: actions/upload-artifact@v4
       with:
         name: security-audit-${{ matrix.node-version }}
         path: audit-results.json
+        if-no-files-found: ignore
 
     - name: Build TypeScript
       run: npm run build
@@ -77,6 +74,8 @@ jobs:
     - name: Post AI Error Report to PR
       if: failure() && github.event_name == 'pull_request'
       uses: actions/github-script@v7
+      env:
+        NODE_VERSION: ${{ matrix.node-version }}
       with:
         script: |
           const fs = require('fs');
@@ -90,7 +89,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `## 🤖 AI Error Report (Node.js ${{ matrix.node-version }})\n\n${truncatedReport}`
+              body: `## 🤖 AI Error Report (Node.js ${process.env.NODE_VERSION})\n\n${truncatedReport}`
             });
           }
 
@@ -99,27 +98,23 @@ jobs:
         # Run analysis and save results in JSON format
         ANALYSIS_EXIT_CODE=0
         npm run analyze:src:json > analysis-results.json || ANALYSIS_EXIT_CODE=$?
-        
         # Check if analysis tool crashed
         if [ "$ANALYSIS_EXIT_CODE" -ne 0 ]; then
           echo "::error::Analysis tool crashed with exit code $ANALYSIS_EXIT_CODE"
           exit 1
         fi
-        
         if [ -f analysis-results.json ]; then
           # Extract issue counts by severity
           CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' analysis-results.json 2>/dev/null || echo "0")
           HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' analysis-results.json 2>/dev/null || echo "0")
           MEDIUM_ISSUES=$(jq '[.issues[] | select(.severity == "medium")] | length' analysis-results.json 2>/dev/null || echo "0")
           LOW_ISSUES=$(jq '[.issues[] | select(.severity == "low")] | length' analysis-results.json 2>/dev/null || echo "0")
-          
           # Display issue summary
           echo "Quality Analysis Results:"
           echo "  Critical: $CRITICAL_ISSUES"
           echo "  High: $HIGH_ISSUES"
           echo "  Medium: $MEDIUM_ISSUES"
           echo "  Low: $LOW_ISSUES"
-          
           # Apply thresholds
           if [ "$CRITICAL_ISSUES" -gt 0 ]; then
             echo "::error::Found $CRITICAL_ISSUES critical issues - build failed"
@@ -130,7 +125,7 @@ jobs:
           elif [ "$MEDIUM_ISSUES" -gt 20 ]; then
             echo "::warning::Found $MEDIUM_ISSUES medium severity issues (threshold: 20)"
           fi
-          
+
           echo "Quality check passed"
         else
           echo "::error::Analysis tool failed to generate results file"
