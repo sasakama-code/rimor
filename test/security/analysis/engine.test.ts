@@ -5,9 +5,9 @@ import {
   TaintSource,
   SecurityType,
   MethodSignature,
-  Parameter
+  Parameter,
+  TypeBasedSecurityConfig
 } from '../../../src/security/types';
-import { TypeBasedSecurityConfig } from '../../../src/security/types/security';
 
 describe('TypeBasedSecurityEngine', () => {
   let engine: TypeBasedSecurityEngine;
@@ -28,10 +28,11 @@ describe('TypeBasedSecurityEngine', () => {
       expect(engine).toBeInstanceOf(TypeBasedSecurityEngine);
     });
 
-    it('カスタム設定でエンジンを初期化できる', () => {
+    it('カスタム設定でエンジンを初期化できる', async () => {
       const customConfig: Partial<TypeBasedSecurityConfig> = {
         strictness: 'strict',
-        maxCacheSize: 2000
+        parallelism: 4,
+        enableCache: true
       };
       const customEngine = new TypeBasedSecurityEngine(customConfig);
       expect(customEngine).toBeInstanceOf(TypeBasedSecurityEngine);

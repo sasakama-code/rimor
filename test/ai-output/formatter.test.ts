@@ -28,11 +28,11 @@ const createMockFileScore = (overrides: Partial<FileScore> = {}): FileScore => (
   path: 'src/example.ts',
   score: 75,
   dimensions: {
-    completeness: { score: 80, weight: 1.0 },
-    correctness: { score: 70, weight: 1.0 },
-    security: { score: 75, weight: 1.0 },
-    maintainability: { score: 80, weight: 1.0 },
-    performance: { score: 70, weight: 1.0 }
+    completeness: { score: 80, weight: 1.0, issues: [] },
+    correctness: { score: 70, weight: 1.0, issues: [] },
+    security: { score: 75, weight: 1.0, issues: [] },
+    maintainability: { score: 80, weight: 1.0, issues: [] },
+    performance: { score: 70, weight: 1.0, issues: [] }
   },
   issues: [],
   ...overrides
