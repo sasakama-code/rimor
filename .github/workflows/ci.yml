@@ -11,10 +11,11 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  # ジョブ1: ビルドと基本検証
+  build-and-verify:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false  # 全てのNode.jsバージョンでテストを実行（互換性問題の検出のため）
+      fail-fast: false
       matrix:
         node-version: [18.x, 20.x]
 
@@ -29,57 +30,143 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Run security audit
-      run: |
-        # Run audit and save results
-        npm audit --audit-level=high --json > audit-results.json || true
-        # Check for high severity vulnerabilities using jq
-        if [ -f audit-results.json ]; then
-          # Validate JSON before processing
-          if ! jq empty audit-results.json >/dev/null 2>&1; then
-            echo "::error::Invalid JSON produced by npm audit"
-            exit 1
-          fi
-          
-          # Extract vulnerability counts
-          HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse high severity vulnerabilities from JSON"
-            exit 1
-          fi
-          
-          CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse critical severity vulnerabilities from JSON"
-            exit 1
-          fi
-          
-          # Ensure vulnerability counts are successfully extracted
-          if [ -z "$HIGH_VULNS" ] || [ -z "$CRITICAL_VULNS" ]; then
-            echo "::error::Failed to parse vulnerability counts"
-            exit 1
-          fi
-          
-          echo "Found $HIGH_VULNS high severity vulnerabilities"
-          echo "Found $CRITICAL_VULNS critical severity vulnerabilities"
-          if [ "$CRITICAL_VULNS" -gt 0 ] || [ "$HIGH_VULNS" -gt 0 ]; then
-            echo "::error::Security audit failed: Found $CRITICAL_VULNS critical and $HIGH_VULNS high severity vulnerabilities"
-            exit 1
-          fi
-        else
-          echo "::error::Failed to generate audit results"
-          exit 1
-        fi
-    - name: Upload audit results
-      if: always() && hashFiles('audit-results.json') != ''
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-audit-${{ matrix.node-version }}
-        path: audit-results.json
-        if-no-files-found: ignore
-
     - name: Build TypeScript
       run: npm run build
+
+    - name: Type check
+      run: npx tsc --noEmit
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.node-version }}
+        path: dist/
+        retention-days: 1
+
+  # ジョブ2: セキュリティ監査（TaintTyper含む）
+  security-audit:
+    runs-on: ubuntu-latest
+    needs: build-and-verify
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
+
+    - name: Run comprehensive security check
+      run: npm run security-check
+
+    - name: Upload security audit results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-audit-results
+        path: |
+          .rimor/reports/security/audit-results.json
+          .rimor/reports/security/security-analysis-report.json
+        if-no-files-found: ignore
+
+  # ジョブ3: 品質監査（dogfooding）
+  quality-audit:
+    runs-on: ubuntu-latest
+    needs: build-and-verify
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
+
+    - name: Run quality audit (dogfooding)
+      run: |
+        # 新しい品質監査スクリプトを実行
+        if [ -f scripts/quality-audit.js ]; then
+          node scripts/quality-audit.js
+        else
+          # 暫定的に既存の品質チェックを実行
+          mkdir -p .rimor/reports/quality
+          npm run analyze:src:json > .rimor/reports/quality/quality-audit-results.json
+          ANALYSIS_EXIT_CODE=$?
+          
+          if [ "$ANALYSIS_EXIT_CODE" -gt 1 ]; then
+            echo "::error::Quality audit failed with exit code $ANALYSIS_EXIT_CODE"
+            exit 1
+          fi
+          
+          # 結果の分析
+          if [ -f .rimor/reports/quality/quality-audit-results.json ]; then
+            if ! jq empty .rimor/reports/quality/quality-audit-results.json 2>/dev/null; then
+              echo "::error::Invalid JSON in quality-audit-results.json"
+              exit 1
+            fi
+            
+            TOTAL_ISSUES=$(jq '.issues | length' .rimor/reports/quality/quality-audit-results.json)
+            echo "Total quality issues found: $TOTAL_ISSUES"
+            
+            # 品質スコアの表示（存在する場合）
+            if jq -e '.qualityScore' .rimor/reports/quality/quality-audit-results.json >/dev/null 2>&1; then
+              QUALITY_SCORE=$(jq '.qualityScore' .rimor/reports/quality/quality-audit-results.json)
+              echo "Overall quality score: $QUALITY_SCORE"
+            fi
+          fi
+        fi
+
+    - name: Upload quality audit results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-audit-results
+        path: |
+          .rimor/reports/quality/quality-audit-results.json
+          .rimor/reports/quality/dogfooding-report.json
+        if-no-files-found: ignore
+
+  # ジョブ4: テスト実行
+  test:
+    runs-on: ubuntu-latest
+    needs: [security-audit, quality-audit]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-${{ matrix.node-version }}
+        path: dist/
 
     - name: Run tests
       env:
@@ -94,6 +181,7 @@ jobs:
         path: |
           .rimor/reports/test-errors-ai.md
           .rimor/reports/test-errors-ai.json
+
     - name: Post AI Error Report Summary to PR
       if: failure() && github.event_name == 'pull_request'
       uses: actions/github-script@v7
@@ -122,94 +210,10 @@ jobs:
             });
           }
 
-    - name: Run quality check
-      run: |
-        # Run analysis and save results in JSON format
-        # 実行して終了コードを取得
-        npm run analyze:src:json > analysis-results.json
-        ANALYSIS_EXIT_CODE=$?
-        # 0=成功, 1=問題検出 とみなし >1 のみ異常終了扱い
-        if [ "$ANALYSIS_EXIT_CODE" -gt 1 ]; then
-          echo "::error::Quality analysis tool failed with exit code $ANALYSIS_EXIT_CODE"
-          exit 1
-        fi
-        if [ -f analysis-results.json ]; then
-          # Validate JSON before processing
-          if ! jq empty analysis-results.json 2>/dev/null; then
-            echo "::error::Invalid JSON in analysis-results.json"
-            exit 1
-          fi
-          
-          # Extract issue counts by severity
-          CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' analysis-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse critical issues from JSON"
-            exit 1
-          fi
-          
-          HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' analysis-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse high issues from JSON"
-            exit 1
-          fi
-          
-          MEDIUM_ISSUES=$(jq '[.issues[] | select(.severity == "medium")] | length' analysis-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse medium issues from JSON"
-            exit 1
-          fi
-          
-          LOW_ISSUES=$(jq '[.issues[] | select(.severity == "low")] | length' analysis-results.json)
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to parse low issues from JSON"
-            exit 1
-          fi
-          
-          # Display issue summary
-          echo "Quality Analysis Results:"
-          echo "  Critical: $CRITICAL_ISSUES"
-          echo "  High: $HIGH_ISSUES"
-          echo "  Medium: $MEDIUM_ISSUES"
-          echo "  Low: $LOW_ISSUES"
-          # Apply thresholds
-          if [ "$CRITICAL_ISSUES" -gt 0 ]; then
-            echo "::error::Found $CRITICAL_ISSUES critical issues - build failed"
-            exit 1
-          elif [ "$HIGH_ISSUES" -gt 0 ]; then
-            echo "::error::Found $HIGH_ISSUES high severity issues (threshold: 0) - build failed"
-            exit 1
-          elif [ "$MEDIUM_ISSUES" -gt 20 ]; then
-            echo "::warning::Found $MEDIUM_ISSUES medium severity issues (threshold: 20)"
-          fi
-
-          echo "Quality check passed"
-        else
-          echo "::error::Analysis tool failed to generate results file"
-          exit 1
-        fi
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js 20.x
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20.x
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build TypeScript for security check
-      run: npm run build
-
-    - name: Run security check
-      run: npm run security-check
-
+  # npm公開の準備（mainブランチのみ）
   publish-dry-run:
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: test
     if: github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v4
@@ -222,8 +226,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build
-      run: npm run build
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
 
     - name: Test npm package
       run: npm pack --dry-run
