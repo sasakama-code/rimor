@@ -7,7 +7,6 @@ import { ParallelTypeChecker } from '../../../../src/security/checker/parallel-t
 import { TypeBasedSecurityEngine } from '../../../../src/security/analysis/engine';
 import { IncrementalInferenceEngine } from '../../../../src/security/inference/local-inference-optimizer';
 import { TestMethod, TestFile } from '../../../../src/core/types';
-import { TestCase } from '../../../../src/security/types/security';
 import * as os from 'os';
 
 describe('Performance Benchmark Tests', () => {
@@ -172,12 +171,8 @@ describe('Performance Benchmark Tests', () => {
       });
       
       const testFiles = Array.from({ length: 20 }, (_, i) => generateTestFile(i));
-      const testCases: TestCase[] = testFiles.map(file => ({
-        name: `Test Suite from ${file.path}`,
-        file: file.path,
-        content: file.content,
-        metadata: file.metadata
-      }));
+      // TestCase型ではなくTestFileをそのまま使用
+      const testCases = testFiles;
       
       const result = await engine.analyzeAtCompileTime(testCases);
       
@@ -194,12 +189,8 @@ describe('Performance Benchmark Tests', () => {
       });
       
       const testFiles = Array.from({ length: 10 }, (_, i) => generateTestFile(i));
-      const testCases: TestCase[] = testFiles.map(file => ({
-        name: `Test Suite from ${file.path}`,
-        file: file.path,
-        content: file.content,
-        metadata: file.metadata
-      }));
+      // TestCase型ではなくTestFileをそのまま使用
+      const testCases = testFiles;
       
       // 1回目の解析
       const firstRun = await engine.analyzeAtCompileTime(testCases);
@@ -227,12 +218,8 @@ describe('Performance Benchmark Tests', () => {
       
       // 大量のテストファイルを処理
       const testFiles = Array.from({ length: 100 }, (_, i) => generateTestFile(i));
-      const testCases: TestCase[] = testFiles.map(file => ({
-        name: `Test Suite from ${file.path}`,
-        file: file.path,
-        content: file.content,
-        metadata: file.metadata
-      }));
+      // TestCase型ではなくTestFileをそのまま使用
+      const testCases = testFiles;
       
       await engine.analyzeAtCompileTime(testCases);
       
