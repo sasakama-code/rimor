@@ -6,7 +6,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as glob from 'glob';
-import { TestCase } from '../../types';
+
+/**
+ * テストケースの型定義
+ */
+interface TestCase {
+  filePath: string;
+  content: string;
+  methods: string[];
+}
 
 export class TestFileExtractor {
   /**
@@ -51,7 +59,8 @@ export class TestFileExtractor {
             methods: this.extractTestMethods(content)
           });
         } catch (error) {
-          console.warn(`警告: ファイル読み込みエラー ${filePath}:`, error.message);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.warn(`警告: ファイル読み込みエラー ${filePath}:`, errorMessage);
         }
       }
     }
