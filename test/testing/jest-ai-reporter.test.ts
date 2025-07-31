@@ -258,7 +258,16 @@ describe('JestAIReporter', () => {
       
       const content = fs.readFileSync(outputPath, 'utf-8');
       expect(content).toContain('# テストエラー分析レポート');
-      expect(content).toContain('TypeError');
+      expect(content).toContain('Cannot read property');
+      
+      // サマリーファイルも生成されることを確認
+      const summaryPath = path.join(testOutputDir, 'test-errors-summary.md');
+      expect(fs.existsSync(summaryPath)).toBe(true);
+      
+      const summaryContent = fs.readFileSync(summaryPath, 'utf-8');
+      expect(summaryContent).toContain('## 🤖 AI Error Report Summary');
+      expect(summaryContent).toContain('### 📊 エラー統計');
+      expect(summaryContent).toContain('**詳細レポート**: GitHub Actionsのアーティファクト');
     });
 
     it('JSON形式のレポートも生成する', async () => {
@@ -302,7 +311,7 @@ describe('JestAIReporter', () => {
       const content = fs.readFileSync(outputPath, 'utf-8');
       
       expect(content).toContain('## エラー詳細');
-      expect(content).toContain('TypeError');
+      expect(content).toContain('Cannot read property');
     });
   });
 
