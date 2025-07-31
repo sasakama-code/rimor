@@ -141,9 +141,9 @@ export class SecurityAuditorImpl implements ISecurityAuditor {
       // 各セキュリティパターンをチェック
       for (const [threatType, patterns] of Object.entries(this.patterns)) {
         for (const pattern of patterns) {
-          const regex = new RegExp(pattern);
+          // patternは既にRegExpオブジェクトなので、そのまま使用
           lines.forEach((line, index) => {
-            const match = regex.exec(line);
+            const match = pattern.exec(line);
             if (match) {
               threats.push(this.createThreat(
                 threatType as ThreatType,
@@ -152,6 +152,8 @@ export class SecurityAuditorImpl implements ISecurityAuditor {
                 match.index,
                 line.trim()
               ));
+              // グローバルフラグをリセット
+              pattern.lastIndex = 0;
             }
           });
         }
