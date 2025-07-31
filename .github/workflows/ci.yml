@@ -106,11 +106,37 @@ jobs:
           exit 1
         fi
         if [ -f analysis-results.json ]; then
+          # Validate JSON before processing
+          if ! jq empty analysis-results.json 2>/dev/null; then
+            echo "::error::Invalid JSON in analysis-results.json"
+            exit 1
+          fi
+          
           # Extract issue counts by severity
-          CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' analysis-results.json 2>/dev/null || echo "0")
-          HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' analysis-results.json 2>/dev/null || echo "0")
-          MEDIUM_ISSUES=$(jq '[.issues[] | select(.severity == "medium")] | length' analysis-results.json 2>/dev/null || echo "0")
-          LOW_ISSUES=$(jq '[.issues[] | select(.severity == "low")] | length' analysis-results.json 2>/dev/null || echo "0")
+          CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' analysis-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse critical issues from JSON"
+            exit 1
+          fi
+          
+          HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' analysis-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse high issues from JSON"
+            exit 1
+          fi
+          
+          MEDIUM_ISSUES=$(jq '[.issues[] | select(.severity == "medium")] | length' analysis-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse medium issues from JSON"
+            exit 1
+          fi
+          
+          LOW_ISSUES=$(jq '[.issues[] | select(.severity == "low")] | length' analysis-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse low issues from JSON"
+            exit 1
+          fi
+          
           # Display issue summary
           echo "Quality Analysis Results:"
           echo "  Critical: $CRITICAL_ISSUES"
