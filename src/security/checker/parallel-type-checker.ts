@@ -80,6 +80,7 @@ export class ParallelTypeChecker extends EventEmitter {
   private workers: Worker[] = [];
   private taskQueue: WorkerTask[] = [];
   private activeWorkers = 0;
+  private workerStates: Map<Worker, boolean> = new Map(); // true = busy, false = idle
   private results: Map<string, MethodTypeCheckResult> = new Map();
   private inferenceEngine: SearchBasedInferenceEngine;
   private localOptimizer: LocalInferenceOptimizer;
@@ -129,14 +130,16 @@ export class ParallelTypeChecker extends EventEmitter {
       const worker = new Worker(workerPath);
       
       worker.on('message', (result: WorkerResult) => {
-        this.handleWorkerResult(result);
+        this.handleWorkerResult(result, worker);
       });
       
       worker.on('error', (error) => {
         this.emit('error', error);
+        this.workerStates.set(worker, false); // Mark as idle on error
       });
       
       this.workers.push(worker);
+      this.workerStates.set(worker, false); // Initially idle
     }
   }
 
@@ -223,19 +226,23 @@ export class ParallelTypeChecker extends EventEmitter {
         task.dependencies = [];
       }
       
-      this.taskQueue.push(task);
-      
-      // 利用可能なワーカーがあれば即座に実行
-      const availableWorker = this.workers.find((_, index) => 
-        index >= this.activeWorkers
-      );
+      // 利用可能なワーカーを探す
+      let availableWorker: Worker | null = null;
+      for (const worker of this.workers) {
+        if (!this.workerStates.get(worker)) {
+          availableWorker = worker;
+          break;
+        }
+      }
       
       if (availableWorker) {
+        this.workerStates.set(availableWorker, true); // Mark as busy
         this.activeWorkers++;
-        availableWorker.postMessage(task);
         
         // タイムアウト設定
         const timeout = setTimeout(() => {
+          this.workerStates.set(availableWorker!, false); // Mark as idle
+          this.activeWorkers--;
           reject(new Error(`Task ${task.id} timed out`));
         }, this.config.methodTimeout);
         
@@ -243,15 +250,18 @@ export class ParallelTypeChecker extends EventEmitter {
         const handler = (result: WorkerResult) => {
           if (result.id === task.id) {
             clearTimeout(timeout);
+            this.workerStates.set(availableWorker!, false); // Mark as idle
             this.activeWorkers--;
-            availableWorker.off('message', handler);
+            availableWorker!.off('message', handler);
             resolve();
           }
         };
         
         availableWorker.on('message', handler);
+        availableWorker.postMessage(task);
       } else {
-        // キューで待機
+        // すべてのワーカーが使用中の場合、キューに追加
+        this.taskQueue.push(task);
         this.once(`complete-${task.id}`, resolve);
       }
     });
@@ -260,7 +270,7 @@ export class ParallelTypeChecker extends EventEmitter {
   /**
    * ワーカー結果の処理
    */
-  private handleWorkerResult(result: WorkerResult): void {
+  private handleWorkerResult(result: WorkerResult, worker: Worker): void {
     if (result.success && result.result) {
       this.results.set(result.id, result.result);
       
@@ -276,8 +286,11 @@ export class ParallelTypeChecker extends EventEmitter {
     // キューから次のタスクを処理
     if (this.taskQueue.length > 0) {
       const nextTask = this.taskQueue.shift()!;
-      const worker = this.workers[this.activeWorkers - 1];
+      // 現在のワーカーにタスクを割り当て
       worker.postMessage(nextTask);
+    } else {
+      // キューが空の場合、ワーカーをアイドル状態にする
+      this.workerStates.set(worker, false);
     }
   }
 
@@ -395,8 +408,10 @@ export class ParallelTypeChecker extends EventEmitter {
     // ワーカーの終了
     await Promise.all(this.workers.map(worker => worker.terminate()));
     this.workers = [];
+    this.workerStates.clear();
     this.taskQueue = [];
     this.results.clear();
+    this.activeWorkers = 0;
   }
 
   /**
