@@ -212,8 +212,8 @@ describe('JestAIReporter', () => {
       await reporter.onTestFileResult(test, testResult, createMockAggregatedResult());
       
       expect((reporter as any).collectedErrors).toHaveLength(1);
-      expect((reporter as any).collectedErrors[0]).toHaveProperty('testPath');
-      expect((reporter as any).collectedErrors[0]).toHaveProperty('errorMessage');
+      expect((reporter as any).collectedErrors[0]).toHaveProperty('testFile');
+      expect((reporter as any).collectedErrors[0]).toHaveProperty('error');
     });
 
     it('複数の失敗したテストを処理する', async () => {
@@ -257,7 +257,7 @@ describe('JestAIReporter', () => {
       expect(fs.existsSync(outputPath)).toBe(true);
       
       const content = fs.readFileSync(outputPath, 'utf-8');
-      expect(content).toContain('# AI向けテストエラーレポート');
+      expect(content).toContain('# テストエラー分析レポート');
       expect(content).toContain('TypeError');
     });
 
@@ -278,8 +278,8 @@ describe('JestAIReporter', () => {
       
       const jsonContent = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
       expect(jsonContent).toHaveProperty('summary');
-      expect(jsonContent).toHaveProperty('errors');
-      expect(jsonContent.errors).toHaveLength(1);
+      expect(jsonContent).toHaveProperty('errorGroups');
+      expect(jsonContent.errorGroups).toHaveLength(1);
     });
   });
 
@@ -301,7 +301,7 @@ describe('JestAIReporter', () => {
       const outputPath = path.join(testOutputDir, 'test-errors.md');
       const content = fs.readFileSync(outputPath, 'utf-8');
       
-      expect(content).toContain('## エラーパターン分析');
+      expect(content).toContain('## エラー詳細');
       expect(content).toContain('TypeError');
     });
   });
@@ -332,7 +332,7 @@ export { processData };
       const outputPath = path.join(testOutputDir, 'test-errors.md');
       const content = fs.readFileSync(outputPath, 'utf-8');
       
-      expect(content).toContain('### ソースコード（エラー箇所周辺）');
+      expect(content).toContain('失敗コード');
     });
   });
 
