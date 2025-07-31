@@ -97,7 +97,14 @@ jobs:
     - name: Run quality check
       run: |
         # Run analysis and save results in JSON format
+        ANALYSIS_EXIT_CODE=0
         npm run analyze:src:json > analysis-results.json || ANALYSIS_EXIT_CODE=$?
+        
+        # Check if analysis tool crashed
+        if [ "$ANALYSIS_EXIT_CODE" -ne 0 ]; then
+          echo "::error::Analysis tool crashed with exit code $ANALYSIS_EXIT_CODE"
+          exit 1
+        fi
         
         if [ -f analysis-results.json ]; then
           # Extract issue counts by severity
@@ -126,7 +133,8 @@ jobs:
           
           echo "Quality check passed"
         else
-          echo "::warning::Could not generate analysis results"
+          echo "::error::Analysis tool failed to generate results file"
+          exit 1
         fi
 
   security:
