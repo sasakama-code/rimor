@@ -175,8 +175,8 @@ jobs:
           if [ "$CRITICAL_ISSUES" -gt 0 ]; then
             echo "::error::Found $CRITICAL_ISSUES critical issues - build failed"
             exit 1
-          elif [ "$HIGH_ISSUES" -gt 5 ]; then
-            echo "::error::Found $HIGH_ISSUES high severity issues (threshold: 5) - build failed"
+          elif [ "$HIGH_ISSUES" -gt 0 ]; then
+            echo "::error::Found $HIGH_ISSUES high severity issues (threshold: 0) - build failed"
             exit 1
           elif [ "$MEDIUM_ISSUES" -gt 20 ]; then
             echo "::warning::Found $MEDIUM_ISSUES medium severity issues (threshold: 20)"
