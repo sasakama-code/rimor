@@ -224,6 +224,92 @@ export class AITestErrorFormatter {
   }
   
   /**
+   * PRコメント用の簡潔なサマリーマークダウンを生成
+   */
+  formatAsSummaryMarkdown(report: AITestErrorReport): string {
+    let summary = '## 🤖 AI Error Report Summary\n\n';
+    
+    // エラー統計
+    summary += '### 📊 エラー統計\n';
+    summary += `- **総エラー数**: ${report.summary.totalErrors}\n`;
+    summary += `- **重大度別**:\n`;
+    
+    // 優先度別のエラー数を集計
+    const priorityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+    report.errorGroups.forEach(group => {
+      priorityCounts[group.priority] += group.errors.length;
+    });
+    
+    if (priorityCounts.critical > 0) {
+      summary += `  - 🔴 Critical: ${priorityCounts.critical}\n`;
+    }
+    if (priorityCounts.high > 0) {
+      summary += `  - 🟠 High: ${priorityCounts.high}\n`;
+    }
+    if (priorityCounts.medium > 0) {
+      summary += `  - 🟡 Medium: ${priorityCounts.medium}\n`;
+    }
+    if (priorityCounts.low > 0) {
+      summary += `  - 🟢 Low: ${priorityCounts.low}\n`;
+    }
+    
+    summary += `- **影響ファイル数**: ${report.summary.testFileCount}\n`;
+    summary += `- **推定修正時間**: ${report.summary.estimatedFixTime}分\n\n`;
+    
+    // CI情報（存在する場合）
+    if (report.ciTraceability) {
+      summary += '### 🔍 実行環境\n';
+      summary += `- **Node.js**: ${report.ciTraceability.nodeVersion}\n`;
+      summary += `- **OS**: ${report.ciTraceability.os}\n\n`;
+    }
+    
+    // 検出されたパターン
+    if (report.summary.commonPatterns.length > 0) {
+      summary += '### 🔍 検出されたエラーパターン\n';
+      const topPatterns = report.summary.commonPatterns.slice(0, 5);
+      topPatterns.forEach(pattern => {
+        summary += `- ${pattern}\n`;
+      });
+      if (report.summary.commonPatterns.length > 5) {
+        summary += `- _他 ${report.summary.commonPatterns.length - 5} パターン_\n`;
+      }
+      summary += '\n';
+    }
+    
+    // 最も重要なエラー（Critical/Highの最初の3つ）
+    const importantErrors = report.errorGroups
+      .filter(g => g.priority === 'critical' || g.priority === 'high')
+      .flatMap(g => g.errors)
+      .slice(0, 3);
+    
+    if (importantErrors.length > 0) {
+      summary += '### ⚠️ 最重要エラー\n';
+      importantErrors.forEach((error, index) => {
+        summary += `${index + 1}. **${error.testName}**\n`;
+        summary += `   - ファイル: \`${error.testFile}\`\n`;
+        summary += `   - エラー: ${error.errorMessage.split('\n')[0]}\n`;
+      });
+      summary += '\n';
+    }
+    
+    // クイックアクション（最初の2つ）
+    if (report.quickActions.length > 0) {
+      summary += '### 💡 推奨アクション\n';
+      const topActions = report.quickActions.slice(0, 2);
+      topActions.forEach(action => {
+        summary += `- **${action.description}**: \`${action.command}\`\n`;
+      });
+      summary += '\n';
+    }
+    
+    // 詳細レポートへの案内
+    summary += '---\n';
+    summary += '📄 **詳細レポート**: GitHub Actionsのアーティファクトから`ai-error-report-*`をダウンロードしてください。\n';
+    
+    return summary;
+  }
+  
+  /**
    * エラーのグループ化（類似エラーをまとめる）
    */
   private extractCITraceability(contexts: TestErrorContext[]): CITraceabilityInfo | undefined {
