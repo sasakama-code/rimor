@@ -221,7 +221,15 @@ export class SearchBasedInferenceEngine {
         rhs: varName,
         location: this.getLocation(node)
       });
-      state.confidence.set(varName, 0.8);
+      
+      // 右辺の型を直接コピー（型の伝播）
+      const rhsType = state.typeMap.get(rhsName);
+      if (rhsType && rhsType !== '@PolyTaint') {
+        state.typeMap.set(varName, rhsType);
+        state.confidence.set(varName, state.confidence.get(rhsName) || 0.8);
+      } else {
+        state.confidence.set(varName, 0.8);
+      }
     }
     
     // メソッド呼び出しの検出
@@ -430,8 +438,56 @@ export class SearchBasedInferenceEngine {
     
     // 各変数について可能な型変更を生成
     state.typeMap.forEach((currentType, variable) => {
+      // @PolyTaint -> 具体的な型への解決
+      if (currentType === '@PolyTaint') {
+        // 制約から推論される型を試す
+        let hasUserInputConstraint = false;
+        let hasUntaintedConstraint = false;
+        
+        state.constraints.forEach(constraint => {
+          if (constraint.type === 'subtype' && constraint.rhs === variable) {
+            const lhsType = typeof constraint.lhs === 'string' 
+              ? state.typeMap.get(constraint.lhs) 
+              : constraint.lhs;
+            
+            if (lhsType === '@Tainted') hasUserInputConstraint = true;
+            if (lhsType === '@Untainted') hasUntaintedConstraint = true;
+          }
+        });
+        
+        if (hasUserInputConstraint) {
+          candidates.push({
+            variable,
+            oldType: '@PolyTaint',
+            newType: '@Tainted',
+            reason: 'inferred_from_constraint'
+          });
+        } else if (hasUntaintedConstraint) {
+          candidates.push({
+            variable,
+            oldType: '@PolyTaint',
+            newType: '@Untainted',
+            reason: 'inferred_from_constraint'
+          });
+        } else {
+          // デフォルトは両方の可能性を試す
+          candidates.push({
+            variable,
+            oldType: '@PolyTaint',
+            newType: '@Tainted',
+            reason: 'default_tainted'
+          });
+          candidates.push({
+            variable,
+            oldType: '@PolyTaint',
+            newType: '@Untainted',
+            reason: 'default_untainted'
+          });
+        }
+      }
+      
       // @Tainted -> @Untainted への昇格を試みる
-      if (currentType === '@Tainted') {
+      else if (currentType === '@Tainted') {
         candidates.push({
           variable,
           oldType: '@Tainted',
@@ -441,7 +497,7 @@ export class SearchBasedInferenceEngine {
       }
       
       // @Untainted -> @Tainted への降格（制約違反の解消のため）
-      if (currentType === '@Untainted') {
+      else if (currentType === '@Untainted') {
         candidates.push({
           variable,
           oldType: '@Untainted',

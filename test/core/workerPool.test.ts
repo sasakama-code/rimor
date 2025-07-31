@@ -20,7 +20,7 @@ jest.mock('worker_threads', () => {
         this.emit('message', {
           id: data.id,
           type: 'result',
-          result: { processed: true, data: data.data }
+          data: { processed: true, data: data.data }
         });
       }, 50);
     }
@@ -132,18 +132,22 @@ describe('WorkerPool', () => {
       
       // ワーカーにエラーを発生させるモックを設定
       const workers = (pool as any).workers;
-      const worker = workers[0].worker;
+      const workerInfo = workers[0];
+      const worker = workerInfo.worker;
       
       const errorPromise = pool.execute('analyze', { file: 'error.js' });
       
-      // エラーメッセージを送信
+      // エラーメッセージを送信（タスクがワーカーに割り当てられるまで少し待つ）
       setTimeout(() => {
-        worker.emit('message', {
-          id: (pool as any).taskQueue[0]?.id || 'test',
-          type: 'error',
-          error: 'Test error'
-        });
-      }, 10);
+        const taskId = workerInfo.taskQueue[0]?.id;
+        if (taskId) {
+          worker.emit('message', {
+            id: taskId,
+            type: 'error',
+            error: 'Test error'
+          });
+        }
+      }, 30);
       
       await expect(errorPromise).rejects.toThrow('Test error');
     });

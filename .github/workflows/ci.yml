@@ -35,8 +35,31 @@ jobs:
         npm audit --audit-level=high --json > audit-results.json || true
         # Check for high severity vulnerabilities using jq
         if [ -f audit-results.json ]; then
+          # Validate JSON before processing
+          if ! jq empty audit-results.json >/dev/null 2>&1; then
+            echo "::error::Invalid JSON produced by npm audit"
+            exit 1
+          fi
+          
+          # Extract vulnerability counts
           HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse high severity vulnerabilities from JSON"
+            exit 1
+          fi
+          
           CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to parse critical severity vulnerabilities from JSON"
+            exit 1
+          fi
+          
+          # Ensure vulnerability counts are successfully extracted
+          if [ -z "$HIGH_VULNS" ] || [ -z "$CRITICAL_VULNS" ]; then
+            echo "::error::Failed to parse vulnerability counts"
+            exit 1
+          fi
+          
           echo "Found $HIGH_VULNS high severity vulnerabilities"
           echo "Found $CRITICAL_VULNS critical severity vulnerabilities"
           if [ "$CRITICAL_VULNS" -gt 0 ] || [ "$HIGH_VULNS" -gt 0 ]; then

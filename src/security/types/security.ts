@@ -281,7 +281,7 @@ export interface SecurityIssue {
   /** 問題の重要度 */
   severity: 'info' | 'warning' | 'error' | 'critical';
   /** 問題の種別 */
-  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation';
+  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation' | 'SQL_INJECTION' | 'CODE_EXECUTION';
   /** 問題の説明 */
   message: string;
   /** 問題の場所 */

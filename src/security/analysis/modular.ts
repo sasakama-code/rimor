@@ -43,6 +43,12 @@ export class ModularTestAnalyzer {
   async analyzeTestMethod(method: TestMethod): Promise<MethodAnalysisResult> {
     const startTime = Date.now();
 
+    // 入力検証
+    if (!method || !method.name || method.content === null || method.content === undefined || 
+        method.body === null || method.body === undefined) {
+      throw new Error('Invalid method input: missing required fields');
+    }
+
     try {
       // キャッシュチェック
       const cachedResult = this.cache.get(method);
@@ -275,6 +281,74 @@ export class ModularTestAnalyzer {
     method?: TestMethod
   ): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
+
+    // SQLインジェクションパターンのチェック
+    if (method) {
+      // 汚染されたデータがSQLクエリに含まれているかチェック
+      const sqlPatterns = [
+        /SELECT.*WHERE.*\$\{[^}]+\}/i,
+        /INSERT.*VALUES.*\$\{[^}]+\}/i,
+        /UPDATE.*SET.*\$\{[^}]+\}/i,
+        /DELETE.*WHERE.*\$\{[^}]+\}/i,
+        /db\.execute\s*\([^,]+\$\{[^}]+\}/i,
+        /db\.query\s*\([^,]+\$\{[^}]+\}/i
+      ];
+      
+      for (const pattern of sqlPatterns) {
+        if (pattern.test(method.content)) {
+          // 汚染されたデータが含まれているかチェック
+          const taintedVarPattern = /@Tainted|request\.body|request\.params|req\.body|req\.params/;
+          const sanitizePattern = /sanitize|@Untainted|パラメータ化|プリペアド/;
+          
+          // サニタイズされていないか、またはパラメータ化されていない場合のみ検出
+          if (taintedVarPattern.test(method.content) && !sanitizePattern.test(method.content)) {
+            issues.push({
+              id: `sql-injection-${method.name}`,
+              severity: 'critical',
+              type: 'SQL_INJECTION',
+              message: 'SQLインジェクションの脆弱性が検出されました',
+              location: {
+                file: method.filePath,
+                line: method.location.startLine,
+                column: method.location.startColumn
+              },
+              fixSuggestion: 'パラメータ化クエリまたはプリペアドステートメントを使用してください'
+            });
+            break;
+          }
+        }
+      }
+
+      // コード実行の脆弱性チェック
+      const codeExecPatterns = [
+        /eval\s*\(/,
+        /new\s+Function\s*\(/,
+        /setTimeout\s*\([^,]+,/,
+        /setInterval\s*\([^,]+,/
+      ];
+      
+      for (const pattern of codeExecPatterns) {
+        if (pattern.test(method.content)) {
+          // 汚染されたデータが含まれているかチェック
+          const taintedVarPattern = /@Tainted|request\.body|request\.params|req\.body|req\.params|req\./;
+          if (taintedVarPattern.test(method.content)) {
+            issues.push({
+              id: `code-execution-${method.name}`,
+              severity: 'critical',
+              type: 'CODE_EXECUTION',
+              message: 'コード実行の脆弱性が検出されました',
+              location: {
+                file: method.filePath,
+                line: method.location.startLine,
+                column: method.location.startColumn
+              },
+              fixSuggestion: 'evalの使用を避け、安全な代替手段を使用してください'
+            });
+            break;
+          }
+        }
+      }
+    }
 
     // 汚染解析の違反をイシューに変換
     for (const violation of taintAnalysis.violations) {

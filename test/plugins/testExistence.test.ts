@@ -30,7 +30,7 @@ describe('TestExistencePlugin', () => {
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('missing-test');
     expect(result[0].severity).toBe('error');
-    expect(result[0].message).toBe('テストファイルが存在しません: src/example.ts');
+    expect(result[0].message).toBe('テストファイルが存在しません: ./src/example.ts');
   });
 
   it('should return empty array when test file exists', async () => {

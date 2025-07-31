@@ -30,7 +30,8 @@ describe('ConfigLoader', () => {
       
       expect(config.output).toEqual({
         format: 'text',
-        verbose: false
+        verbose: false,
+        reportDir: '.rimor/reports'
       });
       
       // プラグインの動的発見を確認
