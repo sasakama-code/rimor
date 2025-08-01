@@ -78,10 +78,11 @@ export class SecurityAuditorImpl implements ISecurityAuditor {
         }
       }
       
-      // v0.7.0型ベースセキュリティ解析をテストファイルに適用
-      if (testFiles.length > 0) {
+      // v0.7.0型ベースセキュリティ解析を全ファイルに適用
+      const allFiles = [...testFiles, ...sourceFiles];
+      if (allFiles.length > 0) {
         const testCases: TestCase[] = await Promise.all(
-          testFiles.map(async file => ({
+          allFiles.map(async file => ({
             name: path.basename(file),
             file,
             content: await fs.promises.readFile(file, 'utf-8'),
