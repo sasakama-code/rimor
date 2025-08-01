@@ -79,6 +79,12 @@ const createMockAnalysisResult = (): EnhancedAnalysisResult => ({
         security: 1.0
       },
       fileTypes: {}
+    },
+    metadata: {
+      generatedAt: new Date(),
+      executionTime: 1000,
+      pluginCount: 3,
+      issueCount: 1
     }
   }
 });
