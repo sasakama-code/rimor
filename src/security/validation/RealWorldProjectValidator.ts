@@ -125,27 +125,37 @@ export class RealWorldProjectValidator {
    * 複数プロジェクトの包括的検証
    */
   async validateMultipleProjects(projects: RealWorldProject[]): Promise<ValidationResult[]> {
-    console.log('🌐 実世界プロジェクト包括検証開始');
-    console.log(`対象: ${projects.length}プロジェクト (${projects.map(p => p.framework).join(', ')})`);
-    console.log('');
+    const enableLogs = !process.env.DISABLE_SECURITY_VALIDATION_LOGS;
+    
+    if (enableLogs) {
+      console.log('🌐 実世界プロジェクト包括検証開始');
+      console.log(`対象: ${projects.length}プロジェクト (${projects.map(p => p.framework).join(', ')})`);
+      console.log('');
+    }
 
     const results: ValidationResult[] = [];
 
     for (const project of projects) {
-      console.log(`📁 ${project.name} (${project.framework}) 検証中...`);
+      if (enableLogs) {
+        console.log(`📁 ${project.name} (${project.framework}) 検証中...`);
+      }
       
       try {
         const result = await this.validateProject(project);
         results.push(result);
         
-        console.log(`   ✅ 完了: ${result.accuracyMetrics.detectedIssues}件検出, ` +
-                   `精度${(result.accuracyMetrics.precision * 100).toFixed(1)}%, ` +
-                   `${result.performanceMetrics.timePerFile.toFixed(2)}ms/file`);
+        if (enableLogs) {
+          console.log(`   ✅ 完了: ${result.accuracyMetrics.detectedIssues}件検出, ` +
+                     `精度${(result.accuracyMetrics.precision * 100).toFixed(1)}%, ` +
+                     `${result.performanceMetrics.timePerFile.toFixed(2)}ms/file`);
+        }
       } catch (error) {
         console.error(`   ❌ ${project.name} 検証エラー:`, error);
       }
       
-      console.log('');
+      if (enableLogs) {
+        console.log('');
+      }
     }
 
     // 結果の保存

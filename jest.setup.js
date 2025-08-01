@@ -72,7 +72,20 @@ if (process.env.CI === 'true') {
         message.includes('インポート') ||
         message.includes('プロジェクト情報') ||
         message.includes('検証結果') ||
-        message.includes('ブートストラップ')) {
+        message.includes('ブートストラップ') ||
+        // 新しいフィルタ：セキュリティ検証関連
+        message.includes('🌐') ||
+        message.includes('📁') ||
+        message.includes('✅') ||
+        message.includes('📄') ||
+        message.includes('🔍') ||
+        message.includes('⚡') ||
+        message.includes('🏗️') ||
+        message.includes('検証開始') ||
+        message.includes('検証中') ||
+        message.includes('件検出') ||
+        message.includes('包括検証') ||
+        message.includes('フレームワーク別')) {
       return;
     }
     originalLog.apply(console, args);
@@ -86,7 +99,20 @@ if (process.env.CI === 'true') {
         message.includes('✏️  手動で辞書を設定しています...') ||
         message.includes('📥 既存の辞書ファイルをインポートしています...') ||
         message.includes('📋 プロジェクト情報を収集しています...') ||
-        message.includes('🚀 Rimor ドメイン辞書セットアップウィザード')) {
+        message.includes('🚀 Rimor ドメイン辞書セットアップウィザード') ||
+        // セキュリティ検証関連（ローカル環境でも抑制）
+        message.includes('🌐') ||
+        message.includes('📁') ||
+        message.includes('✅') ||
+        message.includes('📄') ||
+        message.includes('🔍') ||
+        message.includes('⚡') ||
+        message.includes('🏗️') ||
+        message.includes('検証開始') ||
+        message.includes('検証中') ||
+        message.includes('件検出') ||
+        message.includes('包括検証') ||
+        message.includes('フレームワーク別')) {
       return;
     }
     originalLog.apply(console, args);

@@ -63,32 +63,44 @@ export class FrameworkTestGenerator {
    * 全フレームワーク用テストケース生成
    */
   async generateAllFrameworkTests(config: GenerationConfig): Promise<Map<string, TestCase[]>> {
-    console.log('🏗️  フレームワーク別テストケース生成開始');
-    console.log('対象: Express.js, React, NestJS');
-    console.log('');
+    const enableLogs = !process.env.DISABLE_SECURITY_VALIDATION_LOGS;
+    
+    if (enableLogs) {
+      console.log('🏗️  フレームワーク別テストケース生成開始');
+      console.log('対象: Express.js, React, NestJS');
+      console.log('');
+    }
 
     const results = new Map<string, TestCase[]>();
 
     // Express.js用テストケース生成
     const expressTests = await this.generateExpressTests(config);
     results.set('express', expressTests);
-    console.log(`✅ Express.js: ${expressTests.length}件のテストケース生成`);
+    if (enableLogs) {
+      console.log(`✅ Express.js: ${expressTests.length}件のテストケース生成`);
+    }
 
     // React用テストケース生成
     const reactTests = await this.generateReactTests(config);
     results.set('react', reactTests);
-    console.log(`✅ React: ${reactTests.length}件のテストケース生成`);
+    if (enableLogs) {
+      console.log(`✅ React: ${reactTests.length}件のテストケース生成`);
+    }
 
     // NestJS用テストケース生成
     const nestjsTests = await this.generateNestJSTests(config);
     results.set('nestjs', nestjsTests);
-    console.log(`✅ NestJS: ${nestjsTests.length}件のテストケース生成`);
+    if (enableLogs) {
+      console.log(`✅ NestJS: ${nestjsTests.length}件のテストケース生成`);
+    }
 
     // 生成結果の保存
     await this.saveGeneratedTests(results, config.outputDir);
 
-    console.log('');
-    console.log(`📁 全テストケースを ${config.outputDir} に保存しました`);
+    if (enableLogs) {
+      console.log('');
+      console.log(`📁 全テストケースを ${config.outputDir} に保存しました`);
+    }
 
     return results;
   }
