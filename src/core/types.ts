@@ -64,6 +64,8 @@ export interface TestFile {
   content: string;
   framework?: string; // テストフレームワーク（セキュリティプラグイン用）
   testMethods?: any[]; // テストメソッド（セキュリティプラグイン用）
+  testCount?: number; // テスト数（テストファイル用）
+  hasTests?: boolean; // テストが含まれているか（テストファイル用）
   ast?: any; // 将来的なAST対応
   metadata?: {
     framework?: string;
@@ -108,6 +110,8 @@ export interface Evidence {
 // 品質評価
 export interface QualityScore {
   overall: number; // 0-100
+  score?: number; // overall のエイリアス（後方互換性）
+  category?: string; // カテゴリ（後方互換性）
   breakdown?: ScoreBreakdown;
   confidence?: number; // 0.0-1.0
   security?: number; // セキュリティスコア (0-100)
@@ -152,6 +156,7 @@ export interface Improvement {
   id: string;
   priority: 'critical' | 'high' | 'medium' | 'low';
   type: 'add' | 'modify' | 'remove' | 'refactor' | string; // カスタム改善タイプも許可
+  category?: string; // 改善カテゴリ（テスト用）
   title: string;
   description: string;
   location: CodeLocation;
@@ -564,18 +569,20 @@ export enum SecurityType {
   VALIDATED_INPUT = 'validated-input',
   SANITIZED_DATA = 'sanitized-data',
   SECURE_SQL = 'secure-sql',
-  SECURE_HTML = 'secure-html'
+  SECURE_HTML = 'secure-html',
+  // 追加の型（テスト用）
+  AUTHENTICATION = 'authentication',
+  AUTHORIZATION = 'authorization',
+  INPUT_VALIDATION = 'input-validation',
+  API_SECURITY = 'api-security'
 }
 
-// 汚染レベル列挙  
-export enum TaintLevel {
-  CLEAN = 0,
-  UNTAINTED = 0,
-  POSSIBLY_TAINTED = 1,
-  LIKELY_TAINTED = 2,
-  DEFINITELY_TAINTED = 3,
-  HIGHLY_TAINTED = 4
-}
+// セキュリティ型関連のインポート
+import { TaintLevel } from '../security/types';
+export { TaintLevel } from '../security/types';
+
+// 汚染修飾子（後方互換性のエイリアス）
+export const TaintQualifier = TaintLevel;
 
 // テストメソッド
 export interface TestMethod {

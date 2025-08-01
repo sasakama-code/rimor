@@ -13,6 +13,9 @@ import {
   SafeValue
 } from './taint';
 
+// SecurityType のインポート（循環参照を避けるため、必要に応じて使用）
+type SecurityTypeString = 'authentication' | 'authorization' | 'input-validation' | 'api-security';
+
 /**
  * セキュリティ型の基本定義
  */
@@ -56,13 +59,17 @@ export interface SecurityRequirement {
   /** 要件ID */
   id: string;
   /** 要件の種別 */
-  type: 'auth-test' | 'input-validation' | 'api-security' | 'session-management';
+  type: 'auth-test' | 'input-validation' | 'api-security' | 'session-management' | SecurityTypeString;
   /** 必須テストケース */
   required: string[];
   /** 最小汚染レベル */
   minTaintLevel: TaintLevel;
   /** 適用される汚染源 */
   applicableSources: TaintSource[];
+  /** チェック項目（テスト用） */
+  checks?: string[];
+  /** 重要度（テスト用） */
+  severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 /**
