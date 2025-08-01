@@ -117,7 +117,7 @@ export class AnalyzeCommandV8 {
       }
       
       // 進行状況の表示（PIIマスキング適用）
-      if (!sanitizedOptions.outputJson && !sanitizedOptions.outputMarkdown && !sanitizedOptions.outputHtml) {
+      if (!sanitizedOptions.outputJson && !sanitizedOptions.outputMarkdown && !sanitizedOptions.outputHtml && sanitizedOptions.format !== 'json') {
         console.log(await OutputFormatter.header("Rimor v0.8.0 - Context Engineering"));
         const maskedPath = PathSecurity.toRelativeOrMasked(targetPath);
         console.log(await OutputFormatter.info(`分析対象: ${maskedPath}`));
@@ -250,7 +250,12 @@ export class AnalyzeCommandV8 {
         }
         
         if (result.success && result.content) {
-          reporter.printToConsole(result.content);
+          // JSON形式の場合は直接出力（フォーマッターを通さない）
+          if (sanitizedOptions.format === 'json') {
+            console.log(result.content);
+          } else {
+            reporter.printToConsole(result.content);
+          }
         } else if (!result.success) {
           console.error(await OutputFormatter.error(`レポート生成に失敗しました: ${result.error}`));
         }

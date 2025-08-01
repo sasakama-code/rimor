@@ -5,7 +5,7 @@
  * Rimor自身を使用してRimorのテスト品質を評価
  */
 
-const { spawnSync } = require('child_process');
+const { spawnSync, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -28,48 +28,64 @@ async function runDogfooding() {
   try {
     // 1. Rimorを使用して自分自身のソースコードを解析
     console.log('\n📊 ステップ1: ソースコード品質分析...');
-    const srcAnalysis = spawnSync('node', ['dist/index.js', 'analyze', 'src', '--json'], {
-      encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024 // 10MB
-    });
-
-    if (srcAnalysis.status !== 0 && srcAnalysis.status !== 1) {
-      throw new Error(`ソースコード解析が失敗しました: ${srcAnalysis.stderr}`);
+    
+    // 一時ファイルを使用してJSON出力を保存
+    const srcTempFile = path.join(process.cwd(), '.rimor-temp-src-analysis.json');
+    try {
+      execSync(`node dist/index.js analyze src --json > "${srcTempFile}"`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+    } catch (error) {
+      // exitコード1はissuesが見つかった場合なので正常
+      if (error.status !== 1) {
+        throw new Error(`ソースコード解析が失敗しました: ${error.message}`);
+      }
     }
-
-    // 出力の検証
-    if (!srcAnalysis.stdout || srcAnalysis.stdout.trim() === '') {
-      throw new Error(`ソースコード解析の出力が空です。stderr: ${srcAnalysis.stderr}`);
-    }
-
+    
+    // JSONファイルを読み込む
     let srcResults;
     try {
-      srcResults = JSON.parse(srcAnalysis.stdout);
+      const srcOutput = fs.readFileSync(srcTempFile, 'utf8');
+      srcResults = JSON.parse(srcOutput);
     } catch (parseError) {
-      throw new Error(`ソースコード解析の出力をパースできません: ${parseError.message}\n出力: ${srcAnalysis.stdout}`);
+      throw new Error(`ソースコード解析の出力をパースできません: ${parseError.message}`);
+    } finally {
+      // 一時ファイルを削除
+      if (fs.existsSync(srcTempFile)) {
+        fs.unlinkSync(srcTempFile);
+      }
     }
     
     // 2. テストコードの品質分析
     console.log('\n🧪 ステップ2: テストコード品質分析...');
-    const testAnalysis = spawnSync('node', ['dist/index.js', 'analyze', 'test', '--json'], {
-      encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024
-    });
-
-    if (testAnalysis.status !== 0 && testAnalysis.status !== 1) {
-      throw new Error(`テストコード解析が失敗しました: ${testAnalysis.stderr}`);
+    
+    // 一時ファイルを使用してJSON出力を保存
+    const testTempFile = path.join(process.cwd(), '.rimor-temp-test-analysis.json');
+    try {
+      execSync(`node dist/index.js analyze test --json > "${testTempFile}"`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+    } catch (error) {
+      // exitコード1はissuesが見つかった場合なので正常
+      if (error.status !== 1) {
+        throw new Error(`テストコード解析が失敗しました: ${error.message}`);
+      }
     }
-
-    // 出力の検証
-    if (!testAnalysis.stdout || testAnalysis.stdout.trim() === '') {
-      throw new Error(`テストコード解析の出力が空です。stderr: ${testAnalysis.stderr}`);
-    }
-
+    
+    // JSONファイルを読み込む
     let testResults;
     try {
-      testResults = JSON.parse(testAnalysis.stdout);
+      const testOutput = fs.readFileSync(testTempFile, 'utf8');
+      testResults = JSON.parse(testOutput);
     } catch (parseError) {
-      throw new Error(`テストコード解析の出力をパースできません: ${parseError.message}\n出力: ${testAnalysis.stdout}`);
+      throw new Error(`テストコード解析の出力をパースできません: ${parseError.message}`);
+    } finally {
+      // 一時ファイルを削除
+      if (fs.existsSync(testTempFile)) {
+        fs.unlinkSync(testTempFile);
+      }
     }
 
     // 3. 総合品質スコアの計算
