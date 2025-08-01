@@ -172,7 +172,7 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const result = analyzer.analyzeTaintFlow(method.body);
+      const result = analyzer.analyzeTaintFlow(method.body || method.content);
       const issues = result.violations;
       
       expect(issues.length).toBeGreaterThan(0);
@@ -211,7 +211,7 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const result = analyzer.analyzeTaintFlow(method.body);
+      const result = analyzer.analyzeTaintFlow(method.body || method.content);
       const issues = result.violations;
       
       expect(issues).toHaveLength(0);
@@ -420,7 +420,7 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const result = analyzer.analyzeTaintFlow(method.body);
+      const result = analyzer.analyzeTaintFlow(method.body || method.content);
       const issues = result.violations;
       
       // 例外ハンドリングパスが存在することを確認
