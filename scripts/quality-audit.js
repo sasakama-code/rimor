@@ -192,6 +192,13 @@ function calculateQualityScore(srcResults, testResults) {
  */
 function analyzeQualityTrends(currentScore) {
   const historyPath = path.join(process.cwd(), '.rimor', 'reports', 'quality', 'quality-history.json');
+  
+  // ディレクトリが存在しない場合は作成
+  const dir = path.dirname(historyPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  
   let history = [];
 
   if (fs.existsSync(historyPath)) {
