@@ -28,7 +28,7 @@ async function runDogfooding() {
   try {
     // 1. Rimorを使用して自分自身のソースコードを解析
     console.log('\n📊 ステップ1: ソースコード品質分析...');
-    const srcAnalysis = spawnSync('node', ['dist/cli/cli.js', 'analyze', 'src', '--json'], {
+    const srcAnalysis = spawnSync('node', ['dist/index.js', 'analyze', 'src', '--json'], {
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024 // 10MB
     });
@@ -37,11 +37,21 @@ async function runDogfooding() {
       throw new Error(`ソースコード解析が失敗しました: ${srcAnalysis.stderr}`);
     }
 
-    const srcResults = JSON.parse(srcAnalysis.stdout);
+    // 出力の検証
+    if (!srcAnalysis.stdout || srcAnalysis.stdout.trim() === '') {
+      throw new Error(`ソースコード解析の出力が空です。stderr: ${srcAnalysis.stderr}`);
+    }
+
+    let srcResults;
+    try {
+      srcResults = JSON.parse(srcAnalysis.stdout);
+    } catch (parseError) {
+      throw new Error(`ソースコード解析の出力をパースできません: ${parseError.message}\n出力: ${srcAnalysis.stdout}`);
+    }
     
     // 2. テストコードの品質分析
     console.log('\n🧪 ステップ2: テストコード品質分析...');
-    const testAnalysis = spawnSync('node', ['dist/cli/cli.js', 'analyze', 'test', '--json'], {
+    const testAnalysis = spawnSync('node', ['dist/index.js', 'analyze', 'test', '--json'], {
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024
     });
@@ -50,7 +60,17 @@ async function runDogfooding() {
       throw new Error(`テストコード解析が失敗しました: ${testAnalysis.stderr}`);
     }
 
-    const testResults = JSON.parse(testAnalysis.stdout);
+    // 出力の検証
+    if (!testAnalysis.stdout || testAnalysis.stdout.trim() === '') {
+      throw new Error(`テストコード解析の出力が空です。stderr: ${testAnalysis.stderr}`);
+    }
+
+    let testResults;
+    try {
+      testResults = JSON.parse(testAnalysis.stdout);
+    } catch (parseError) {
+      throw new Error(`テストコード解析の出力をパースできません: ${parseError.message}\n出力: ${testAnalysis.stdout}`);
+    }
 
     // 3. 総合品質スコアの計算
     console.log('\n🎯 ステップ3: 総合品質スコア計算...');
