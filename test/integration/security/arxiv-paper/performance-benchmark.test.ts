@@ -95,7 +95,7 @@ describe('Performance Benchmark Tests', () => {
       
       // 論文の最小値2.93倍以上の高速化を期待
       // CI環境では並列処理の効果が薄いため期待値を調整
-      const expectedSpeedup = process.env.CI ? 0.1 : 2.0;
+      const expectedSpeedup = (global.process as NodeJS.Process).env.CI ? 0.1 : 2.0;
       expect(speedup).toBeGreaterThan(expectedSpeedup);
     });
     
@@ -136,7 +136,7 @@ describe('Performance Benchmark Tests', () => {
       // 初期コード
       const initialCode: { [key: string]: string } = {};
       for (let i = 0; i < methodCount; i++) {
-        initialCode[`method${i}`] = `function method${i}() { return process(${i}); }`;
+        initialCode[`method${i}`] = `function method${i}() { return processValue(${i}); }`;
       }
       
       // 初回解析
@@ -247,7 +247,7 @@ describe('Performance Benchmark Tests', () => {
       
       // 妥当なメモリ使用量（100ファイルで100MB以下）
       // CI環境では余裕を持たせる
-      const memoryLimit = process.env.CI ? 200 : 100;
+      const memoryLimit = (global.process as NodeJS.Process).env.CI ? 200 : 100;
       expect(memoryIncrease).toBeLessThan(memoryLimit);
     });
   });
@@ -272,7 +272,7 @@ describe('Performance Benchmark Tests', () => {
           file: `test${i}.ts`,
           content: Array.from({ length: testCase.methodsPerFile }, (_, j) => `
             function method${i}_${j}(input: any) {
-              return process(input);
+              return processValue(input);
             }
           `).join('\n'),
           name: `TestFile${i}`,
@@ -323,7 +323,7 @@ function getUserInput(): string {
   return 'test-input';
 }
 
-function process(value: any): any {
+function processValue(value: any): any {
   return value;
 }
 
