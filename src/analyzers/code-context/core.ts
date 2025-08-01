@@ -14,6 +14,7 @@ import {
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
 import { PathSecurity } from '../../utils/pathSecurity';
 import { ResourceLimitMonitor, DEFAULT_ANALYSIS_LIMITS } from '../../utils/resourceLimits';
+import { debug } from '../../utils/debug';
 import { LanguageAnalyzer } from './language';
 import { ScopeAnalyzer } from './scope';
 import { FileAnalyzer } from './file';
@@ -60,7 +61,7 @@ export class AdvancedCodeContextAnalyzer {
       
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
-        console.warn(`ファイルが見つかりません: ${filePath}`);
+        debug.warn(`ファイルが見つかりません: ${filePath}`);
         return this.createEmptyContext(language, startTime);
       }
 
@@ -87,7 +88,7 @@ export class AdvancedCodeContextAnalyzer {
       }
 
       const executionTime = Date.now() - startTime;
-      console.log(`📊 詳細コンテキスト分析: ${filePath} (${language}, ${executionTime}ms)`);
+      debug.info(`📊 詳細コンテキスト分析: ${filePath} (${language}, ${executionTime}ms)`);
 
       // 各種分析の実行
       const [
