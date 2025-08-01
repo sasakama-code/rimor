@@ -209,6 +209,9 @@ export class TaintAnalysisSystem {
         message: `Analysis failed: ${error}`,
         location: { file: options?.fileName || 'unknown', line: 0, column: 0 }
       });
+    } finally {
+      // 必ず解析時間を記録
+      result.statistics.analysisTime = Date.now() - startTime;
     }
     
     return result;
