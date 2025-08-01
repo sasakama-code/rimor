@@ -140,7 +140,7 @@ describe('TaintLevelAdapter', () => {
 
       // 新型システムでテスト
       const untainted = TypeConstructors.untainted('safe');
-      const tainted = TypeConstructors.tainted('unsafe');
+      const tainted = TypeConstructors.tainted('unsafe', 'user-input');
 
       expect(adaptedCheck(untainted)).toBe(true);
       expect(adaptedCheck(tainted)).toBe(false);

@@ -132,8 +132,8 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const graph = analyzer.buildFlowGraph(method);
-      const issues = analyzer.analyzeTaintFlow(graph, method);
+      const result = analyzer.analyzeTaintFlow(method.body);
+      const issues = result.violations;
       
       expect(issues.length).toBeGreaterThan(0);
       expect(issues[0].type).toContain('INJECTION');
@@ -159,8 +159,8 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const graph = analyzer.buildFlowGraph(method);
-      const issues = analyzer.analyzeTaintFlow(graph, method);
+      const result = analyzer.analyzeTaintFlow(method.body);
+      const issues = result.violations;
       
       expect(issues).toHaveLength(0);
     });
@@ -334,11 +334,11 @@ describe('FlowSensitiveAnalyzer', () => {
         }
       };
 
-      const graph = analyzer.buildFlowGraph(method);
-      const issues = analyzer.analyzeTaintFlow(graph, method);
+      const result = analyzer.analyzeTaintFlow(method.body);
+      const issues = result.violations;
       
       // 例外ハンドリングパスが存在することを確認
-      expect(graph.nodes.length).toBeGreaterThan(3);
+      expect(result.paths).toBeGreaterThan(3);
     });
   });
 });
