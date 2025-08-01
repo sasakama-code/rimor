@@ -202,6 +202,7 @@ function process(@Tainted input: string) { // 明示的なアノテーション`
       improvements.push({
         id: 'improve-security-tests',
         type: 'add',
+        category: 'test-coverage',
         title: 'セキュリティテストの追加',
         description: 'セキュリティ関連のテストケースを追加してください',
         priority: 'medium',

@@ -116,7 +116,7 @@ describe('TaintAnalysisPlugin', () => {
           message: 'Tainted data flow detected',
           severity: 'high' as const,
           confidence: 0.9,
-          details: { type: 'taint-flow' }
+          metadata: { type: 'taint-flow' }
         },
         {
           patternId: 'taint-incompatible-types',
@@ -124,7 +124,7 @@ describe('TaintAnalysisPlugin', () => {
           message: 'Type incompatibility',
           severity: 'medium' as const,
           confidence: 0.8,
-          details: { type: 'incompatible-types' }
+          metadata: { type: 'incompatible-types' }
         }
       ];
       
