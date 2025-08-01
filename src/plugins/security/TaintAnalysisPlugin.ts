@@ -262,7 +262,7 @@ describe('Security', () => {
     }
     
     // セキュリティ関連の関数呼び出しをチェック
-    const hasSecurityFunctions = content.match(/\b(sanitize|validate|escape|encrypt|hash)\s*\(/);
+    const hasSecurityFunctions = content.match(/\b(sanitize|validate|escape|encrypt|hash)[A-Za-z]*\s*\(/);
     
     if (!hasSecurityTests && hasSecurityFunctions) {
       results.push({

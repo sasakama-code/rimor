@@ -146,7 +146,7 @@ export class TaintAnalysisSystem {
     fileName?: string;
     incremental?: boolean;
   }): Promise<TaintAnalysisResult> {
-    const startTime = Date.now();
+    const startTime = performance.now();
     const result: TaintAnalysisResult = {
       issues: [],
       annotations: new Map(),
@@ -195,7 +195,7 @@ export class TaintAnalysisSystem {
       // 統計情報の更新
       result.statistics.issuesFound = result.issues.length;
       result.statistics.annotationsInferred = result.annotations.size;
-      result.statistics.analysisTime = Date.now() - startTime;
+      result.statistics.analysisTime = performance.now() - startTime;
       
       // Checker Framework形式でのエクスポート
       if (this.config.compatibility.exportJAIF) {
@@ -211,7 +211,7 @@ export class TaintAnalysisSystem {
       });
     } finally {
       // 必ず解析時間を記録
-      result.statistics.analysisTime = Date.now() - startTime;
+      result.statistics.analysisTime = performance.now() - startTime;
     }
     
     return result;

@@ -112,9 +112,15 @@ export class SignatureBasedInference {
   private inferAuthRequirements(signature: MethodSignature): SecurityRequirement[] {
     const requirements: SecurityRequirement[] = [];
 
-    // アノテーションによる判定（@RequiresAdmin など）
-    const requiresAdmin = (signature.annotations || []).some(
+    // アノテーションによる判定（@RequiresAdmin, @Authenticated など）
+    const annotations = signature.annotations || [];
+    
+    const requiresAdmin = annotations.some(
       annotation => annotation === '@RequiresAdmin'
+    );
+    
+    const requiresAuth = annotations.some(
+      annotation => annotation === '@Authenticated'
     );
     
     if (requiresAdmin) {
@@ -126,6 +132,16 @@ export class SignatureBasedInference {
         applicableSources: [TaintSource.USER_INPUT],
         severity: 'critical',
         checks: ['admin_role_verification', 'permission_validation']
+      });
+    } else if (requiresAuth) {
+      requirements.push({
+        id: `auth-req-${signature.name}`,
+        type: 'auth-test',
+        required: ['authentication-verification', 'session-validation'],
+        minTaintLevel: TaintLevel.UNTAINTED,
+        applicableSources: [TaintSource.USER_INPUT],
+        severity: 'high',
+        checks: ['authentication', 'session_validation']
       });
     }
 
@@ -437,7 +453,7 @@ export class SignatureBasedInference {
   }
 
   private isApiMethodName(methodName: string): boolean {
-    const patterns = ['endpoint', 'api', 'route', 'handler', 'controller'];
+    const patterns = ['endpoint', 'api', 'route', 'handler', 'controller', 'payment', 'process'];
     return patterns.some(pattern => 
       methodName.toLowerCase().includes(pattern)
     );
@@ -450,8 +466,13 @@ export class SignatureBasedInference {
       features.push('parameter-validation');
     }
     
-    if (signature.name.toLowerCase().includes('public')) {
-      features.push('rate-limiting');
+    // Rate limiting の判定
+    const hasRateLimitAnnotation = (signature.annotations || []).some(
+      annotation => annotation === '@RateLimit'
+    );
+    
+    if (hasRateLimitAnnotation || signature.name.toLowerCase().includes('public')) {
+      features.push('rate_limiting');
     }
     
     return features;

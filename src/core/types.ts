@@ -6,7 +6,7 @@ export interface IPlugin {
 
 export interface Issue {
   type: string;
-  severity: 'error' | 'warning' | 'info' | 'critical' | 'high' | 'medium' | 'low';
+  severity: SeverityLevel;
   message: string;
   line?: number;  // 開始行番号（オプション）
   endLine?: number;  // 終了行番号（オプション）
@@ -24,7 +24,7 @@ export interface ITestQualityPlugin {
   id: string;
   name: string;
   version: string;
-  type: 'core' | 'framework' | 'pattern' | 'domain' | 'security';
+  type: PluginType;
   
   // プラグインの適用条件
   isApplicable(context: ProjectContext): boolean;
@@ -144,18 +144,13 @@ export interface DetailedScore {
 }
 
 // 評価ディメンション
-export type QualityDimension = 
-  | 'completeness'    // 網羅性
-  | 'correctness'     // 正確性
-  | 'maintainability' // 保守性
-  | 'performance'     // パフォーマンス
-  | 'security';       // セキュリティ
+export type QualityDimension = CommonQualityDimension;
 
 // 改善提案
 export interface Improvement {
   id: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  type: 'add' | 'modify' | 'remove' | 'refactor' | string; // カスタム改善タイプも許可
+  priority: ImprovementPriority;
+  type: ImprovementType | string; // カスタム改善タイプも許可
   category?: string; // 改善カテゴリ（テスト用）
   title: string;
   description: string;
@@ -192,13 +187,7 @@ export interface FailedFix {
 }
 
 // コード位置情報
-export interface CodeLocation {
-  file: string;
-  line: number;
-  column: number;
-  endLine?: number;
-  endColumn?: number;
-}
+export type CodeLocation = CommonCodeLocation;
 
 // コード変更情報
 export interface CodeChange {
@@ -539,6 +528,51 @@ export interface DictionaryAwarePlugin extends ITestQualityPlugin {
 // 型ベースセキュリティテスト品質監査システム v0.7.0 統合型定義
 // ========================================
 
+// 共通型定義からのインポート
+import { 
+  SecurityType, 
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType,
+  SeverityLevel,
+  PluginType,
+  TestType,
+  QualityDimension as CommonQualityDimension,
+  ImprovementType,
+  ImprovementPriority,
+  Location,
+  FileLocation,
+  RangeLocation,
+  CodeLocation as CommonCodeLocation,
+  TimeRange,
+  ConfidenceInfo,
+  BaseMetadata
+} from '../types/common-types';
+
+// 共通型の再エクスポート
+export { 
+  SecurityType, 
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType,
+  SeverityLevel,
+  PluginType,
+  TestType,
+  ImprovementType,
+  ImprovementPriority,
+  Location,
+  FileLocation,
+  RangeLocation,
+  TimeRange,
+  ConfidenceInfo,
+  BaseMetadata
+};
+
+// 汚染修飾子（後方互換性のエイリアス）
+export const TaintQualifier = TaintLevel;
+
 // 型ベースセキュリティプラグインインターフェース
 export interface ITypeBasedSecurityPlugin extends ITestQualityPlugin {
   // 型システムとの統合
@@ -560,29 +594,6 @@ export interface ITypeBasedSecurityPlugin extends ITestQualityPlugin {
   // インクリメンタル更新
   updateAnalysis(changes: MethodChange[]): Promise<IncrementalUpdate>;
 }
-
-// セキュリティ型列挙
-export enum SecurityType {
-  USER_INPUT = 'user-input',
-  AUTH_TOKEN = 'auth-token',
-  VALIDATED_AUTH = 'validated-auth',
-  VALIDATED_INPUT = 'validated-input',
-  SANITIZED_DATA = 'sanitized-data',
-  SECURE_SQL = 'secure-sql',
-  SECURE_HTML = 'secure-html',
-  // 追加の型（テスト用）
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  INPUT_VALIDATION = 'input-validation',
-  API_SECURITY = 'api-security'
-}
-
-// セキュリティ型関連のインポート
-import { TaintLevel } from '../security/types';
-export { TaintLevel } from '../security/types';
-
-// 汚染修飾子（後方互換性のエイリアス）
-export const TaintQualifier = TaintLevel;
 
 // テストメソッド
 export interface TestMethod {
@@ -626,6 +637,27 @@ export interface MethodAnalysisResult {
   analysisTime: number;
 }
 
+// FlowGraph関連の型定義
+export interface FlowNode {
+  id: string;
+  statement: TestStatement;
+  inputTaint: TaintLevel;
+  outputTaint: TaintLevel;
+  metadata?: TaintMetadata;
+  successors: string[];
+  predecessors: string[];
+}
+
+export interface FlowPath {
+  id: string;
+  nodes: string[];
+  taintLevel: TaintLevel;
+  pathType?: any; // QualifiedType<any>;
+  passedThroughSanitizer: boolean;
+  reachesSecuritySink: boolean;
+  length: number;
+}
+
 // フローグラフ
 export interface FlowGraph {
   nodes: FlowNode[];
@@ -667,7 +699,7 @@ export interface FlowPath {
 
 // テストステートメント
 export interface TestStatement {
-  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput';
+  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput' | 'entry';
   content: string;
   location: { line: number; column: number };
   lhs?: string;
@@ -689,15 +721,6 @@ export interface TaintMetadata {
   securityRules: string[];
 }
 
-// 汚染源
-export enum TaintSource {
-  USER_INPUT = 'user-input',
-  EXTERNAL_API = 'external-api',
-  ENVIRONMENT = 'environment',
-  FILE_SYSTEM = 'file-system',
-  DATABASE = 'database',
-  NETWORK = 'network'
-}
 
 // 汚染追跡ステップ
 export interface TaintTraceStep {
@@ -826,19 +849,6 @@ export interface SecurityImprovement {
   automatable: boolean;
 }
 
-// サニタイザータイプ
-export enum SanitizerType {
-  HTML_ESCAPE = 'html-escape',
-  SQL_ESCAPE = 'sql-escape',
-  INPUT_VALIDATION = 'input-validation',
-  TYPE_CONVERSION = 'type-conversion',
-  STRING_SANITIZE = 'string-sanitize',
-  AUTH_TOKEN = 'auth-token',
-  PASSWORD_HASH = 'password-hash',
-  XSS_FILTER = 'xss-filter',
-  CSRF_TOKEN = 'csrf-token',
-  CUSTOM = 'custom'
-}
 
 // 境界条件
 export interface BoundaryCondition {

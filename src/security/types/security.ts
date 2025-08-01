@@ -13,28 +13,14 @@ import {
   SafeValue
 } from './taint';
 
+// 共通型定義からインポート
+import { SecurityType } from '../../types/common-types';
+
+// 再エクスポート（後方互換性のため）
+export { SecurityType };
+
 // SecurityType のインポート（循環参照を避けるため、必要に応じて使用）
 type SecurityTypeString = 'authentication' | 'authorization' | 'input-validation' | 'api-security';
-
-/**
- * セキュリティ型の基本定義
- */
-export enum SecurityType {
-  /** ユーザー入力型 */
-  USER_INPUT = 'user-input',
-  /** 認証トークン型 */
-  AUTH_TOKEN = 'auth-token',
-  /** 検証済み認証型 */
-  VALIDATED_AUTH = 'validated-auth',
-  /** 検証済み入力型 */
-  VALIDATED_INPUT = 'validated-input',
-  /** サニタイズ済み型 */
-  SANITIZED_DATA = 'sanitized-data',
-  /** セキュアSQL型 */
-  SECURE_SQL = 'secure-sql',
-  /** セキュアHTML型 */
-  SECURE_HTML = 'secure-html'
-}
 
 /**
  * ブランド型によるテスト品質の型レベル追跡
@@ -177,7 +163,7 @@ export interface TestCase {
  */
 export interface TestStatement {
   /** 文の種別 */
-  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput';
+  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput' | 'entry';
   /** 文の内容 */
   content: string;
   /** 位置情報 */

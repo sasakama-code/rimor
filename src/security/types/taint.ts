@@ -3,79 +3,21 @@
  * Dorothy Denningの格子理論を基盤とした汚染追跡システム
  */
 
-/**
- * 格子理論に基づく汚染レベル（⊥ から ⊤ へ）
- * Dorothy Denning (1976) "A Lattice Model of Secure Information Flow"
- */
-export enum TaintLevel {
-  /** ⊥（ボトム）- 完全に安全、汚染なし */
-  CLEAN = 0,
-  UNTAINTED = 0,
-  /** 潜在的な汚染 - 検証が必要 */
-  POSSIBLY_TAINTED = 1,
-  /** 汚染の可能性が高い - 注意が必要 */  
-  LIKELY_TAINTED = 2,
-  /** ⊤（トップ）- 確実に汚染、サニタイズ必須 */
-  DEFINITELY_TAINTED = 3,
-  /** 最高レベルの汚染 - 厳重なサニタイズ必須 */
-  HIGHLY_TAINTED = 4
-}
+// 共通型定義からインポート
+import {
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType
+} from '../../types/common-types';
 
-/**
- * 汚染源の種別
- */
-export enum TaintSource {
-  /** ユーザー入力（フォーム、URL、ヘッダー等） */
-  USER_INPUT = 'user-input',
-  /** 外部API応答 */
-  EXTERNAL_API = 'external-api',
-  /** 環境変数 */
-  ENVIRONMENT = 'environment',
-  /** ファイルシステム */
-  FILE_SYSTEM = 'file-system',
-  /** データベース */
-  DATABASE = 'database',
-  /** ネットワーク */
-  NETWORK = 'network'
-}
-
-/**
- * セキュリティシンクの種別
- */
-export enum SecuritySink {
-  /** データベースクエリ */
-  DATABASE_QUERY = 'database-query',
-  /** HTML出力 */
-  HTML_OUTPUT = 'html-output',
-  /** JavaScript実行 */
-  JAVASCRIPT_EXEC = 'javascript-exec',
-  /** システムコマンド実行 */
-  SYSTEM_COMMAND = 'system-command',
-  /** ファイル操作 */
-  FILE_OPERATION = 'file-operation',
-  /** テストアサーション */
-  TEST_ASSERTION = 'test-assertion'
-}
-
-/**
- * サニタイザーの種別
- */
-export enum SanitizerType {
-  /** HTMLエスケープ */
-  HTML_ESCAPE = 'html-escape',
-  /** SQLエスケープ */
-  SQL_ESCAPE = 'sql-escape',
-  /** 入力検証 */
-  INPUT_VALIDATION = 'input-validation',
-  /** 型変換 */
-  TYPE_CONVERSION = 'type-conversion',
-  /** 文字列サニタイズ */
-  STRING_SANITIZE = 'string-sanitize',
-  /** JSONパース */
-  JSON_PARSE = 'json-parse',
-  /** 暗号化ハッシュ */
-  CRYPTO_HASH = 'crypto-hash'
-}
+// 再エクスポート（後方互換性のため）
+export {
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType
+};
 
 /**
  * 汚染情報のメタデータ

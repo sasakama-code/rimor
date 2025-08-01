@@ -3,12 +3,17 @@
  * v0.7.0: TaintTyperベースのモジュラー型解析システム
  */
 
-// 型定義のインポート
+// 型定義のインポート - 共通型定義から
 import {
   TaintLevel,
   TaintSource,
   SecuritySink,
   SanitizerType,
+  SecurityType
+} from '../../types/common-types';
+
+// ローカル型定義
+import {
   TaintMetadata,
   TaintTraceStep,
   TaintedValue,
@@ -17,7 +22,6 @@ import {
 } from './taint';
 
 import {
-  SecurityType,
   SecurityValidation,
   SecurityRequirement,
   SecureTest,

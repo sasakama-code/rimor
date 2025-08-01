@@ -974,7 +974,11 @@ export class TypeAwareProgressiveAI {
       [SecurityType.VALIDATED_INPUT]: '検証済み入力データ',
       [SecurityType.SANITIZED_DATA]: 'サニタイズ済みデータ',
       [SecurityType.SECURE_SQL]: 'セキュアSQL',
-      [SecurityType.SECURE_HTML]: 'セキュアHTML'
+      [SecurityType.SECURE_HTML]: 'セキュアHTML',
+      [SecurityType.AUTHENTICATION]: '認証',
+      [SecurityType.AUTHORIZATION]: '認可',
+      [SecurityType.INPUT_VALIDATION]: '入力検証',
+      [SecurityType.API_SECURITY]: 'APIセキュリティ'
     };
     return descriptions[type] || '未知の型';
   }
