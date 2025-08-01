@@ -171,8 +171,13 @@ describe('Performance Benchmark Tests', () => {
       });
       
       const testFiles = Array.from({ length: 20 }, (_, i) => generateTestFile(i));
-      // TestCase型ではなくTestFileをそのまま使用
-      const testCases = testFiles;
+      // TestFileをTestCase型に変換
+      const testCases = testFiles.map(file => ({
+        name: `Test ${file.path}`,
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
+      }));
       
       const result = await engine.analyzeAtCompileTime(testCases);
       
@@ -189,8 +194,13 @@ describe('Performance Benchmark Tests', () => {
       });
       
       const testFiles = Array.from({ length: 10 }, (_, i) => generateTestFile(i));
-      // TestCase型ではなくTestFileをそのまま使用
-      const testCases = testFiles;
+      // TestFileをTestCase型に変換
+      const testCases = testFiles.map(file => ({
+        name: `Test ${file.path}`,
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
+      }));
       
       // 1回目の解析
       const firstRun = await engine.analyzeAtCompileTime(testCases);
@@ -218,8 +228,13 @@ describe('Performance Benchmark Tests', () => {
       
       // 大量のテストファイルを処理
       const testFiles = Array.from({ length: 100 }, (_, i) => generateTestFile(i));
-      // TestCase型ではなくTestFileをそのまま使用
-      const testCases = testFiles;
+      // TestFileをTestCase型に変換
+      const testCases = testFiles.map(file => ({
+        name: `Test ${file.path}`,
+        file: file.path,
+        content: file.content,
+        metadata: file.metadata
+      }));
       
       await engine.analyzeAtCompileTime(testCases);
       

@@ -27,7 +27,12 @@ describe('FlowSensitiveAnalyzer', () => {
         body: '',
         parameters: [],
         returnType: 'void',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -50,7 +55,12 @@ describe('FlowSensitiveAnalyzer', () => {
         `,
         parameters: [],
         returnType: 'string',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -77,7 +87,12 @@ describe('FlowSensitiveAnalyzer', () => {
         `,
         parameters: [],
         returnType: 'string',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -101,7 +116,12 @@ describe('FlowSensitiveAnalyzer', () => {
           { name: 'request', type: 'Request', taint: TaintQualifier.TAINTED }
         ],
         returnType: 'void',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -123,7 +143,12 @@ describe('FlowSensitiveAnalyzer', () => {
           { name: 'request', type: 'Request', taint: TaintQualifier.TAINTED }
         ],
         returnType: 'void',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -257,7 +282,12 @@ describe('FlowSensitiveAnalyzer', () => {
         `,
         parameters: [],
         returnType: 'void',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
@@ -288,7 +318,12 @@ describe('FlowSensitiveAnalyzer', () => {
           { name: 'input', type: 'string', taint: TaintQualifier.TAINTED }
         ],
         returnType: 'any',
-        location: { file: 'test.ts', line: 1, column: 1 }
+        location: { 
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1
+        }
       };
 
       const graph = analyzer.buildFlowGraph(method);
