@@ -112,6 +112,23 @@ export class SignatureBasedInference {
   private inferAuthRequirements(signature: MethodSignature): SecurityRequirement[] {
     const requirements: SecurityRequirement[] = [];
 
+    // アノテーションによる判定（@RequiresAdmin など）
+    const requiresAdmin = (signature.annotations || []).some(
+      annotation => annotation === '@RequiresAdmin'
+    );
+    
+    if (requiresAdmin) {
+      requirements.push({
+        id: `admin-auth-req-${signature.name}`,
+        type: 'auth-test',
+        required: ['admin-role-verification', 'elevated-permission-check'],
+        minTaintLevel: TaintLevel.UNTAINTED,
+        applicableSources: [TaintSource.USER_INPUT],
+        severity: 'critical',
+        checks: ['admin_role_verification', 'permission_validation']
+      });
+    }
+
     // メソッド名パターンによる判定
     if (this.isAuthRelated(signature.name)) {
       const authCoverageTypes = this.determineAuthCoverageTypes(signature);
@@ -121,7 +138,9 @@ export class SignatureBasedInference {
         type: 'auth-test',
         required: authCoverageTypes,
         minTaintLevel: TaintLevel.UNTAINTED,
-        applicableSources: [TaintSource.USER_INPUT]
+        applicableSources: [TaintSource.USER_INPUT],
+        severity: 'high',
+        checks: authCoverageTypes
       });
     }
 
@@ -136,7 +155,9 @@ export class SignatureBasedInference {
         type: 'auth-test',
         required: ['credential-validation', 'brute-force-protection', 'timing-attack-protection'],
         minTaintLevel: TaintLevel.DEFINITELY_TAINTED,
-        applicableSources: [TaintSource.USER_INPUT]
+        applicableSources: [TaintSource.USER_INPUT],
+        severity: 'critical',
+        checks: ['credential-validation', 'brute-force-protection', 'timing-attack-protection']
       });
     }
 
@@ -162,7 +183,9 @@ export class SignatureBasedInference {
         type: 'input-validation',
         required: validationTypes,
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: [TaintSource.USER_INPUT, TaintSource.EXTERNAL_API]
+        applicableSources: [TaintSource.USER_INPUT, TaintSource.EXTERNAL_API],
+        severity: 'medium',
+        checks: validationTypes
       });
     }
 
@@ -177,7 +200,9 @@ export class SignatureBasedInference {
         type: 'input-validation',
         required: ['file-type-validation', 'file-size-validation', 'malware-scanning'],
         minTaintLevel: TaintLevel.LIKELY_TAINTED,
-        applicableSources: [TaintSource.FILE_SYSTEM]
+        applicableSources: [TaintSource.FILE_SYSTEM],
+        severity: 'high',
+        checks: ['file-type-validation', 'file-size-validation', 'malware-scanning']
       });
     }
 
@@ -203,7 +228,9 @@ export class SignatureBasedInference {
         type: 'api-security',
         required: securityFeatures,
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: [TaintSource.USER_INPUT, TaintSource.NETWORK]
+        applicableSources: [TaintSource.USER_INPUT, TaintSource.NETWORK],
+        severity: 'high',
+        checks: securityFeatures
       });
     }
 
