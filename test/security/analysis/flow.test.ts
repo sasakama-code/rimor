@@ -24,9 +24,17 @@ describe('FlowSensitiveAnalyzer', () => {
     it('空のメソッドを解析できる', () => {
       const method: TestMethod = {
         name: 'emptyMethod',
+        filePath: 'test.ts',
+        content: '',
         body: '',
-        parameters: [],
-        returnType: 'void',
+        signature: {
+          name: 'emptyMethod',
+          parameters: [],
+          returnType: 'void',
+          annotations: [],
+          visibility: 'public',
+          isAsync: false
+        },
         location: { 
           startLine: 1,
           endLine: 1,

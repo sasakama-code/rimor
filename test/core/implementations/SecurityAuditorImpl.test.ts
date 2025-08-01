@@ -275,7 +275,7 @@ describe('SecurityAuditorImpl', () => {
         } catch (error) {
           // エラーが発生することを期待
           expect(error).toBeDefined();
-          expect(error.message).toContain('Security audit failed');
+          expect((error as Error).message).toContain('Security audit failed');
         } finally {
           // クリーンアップ前に権限を戻す
           fs.chmodSync(restrictedFile, 0o644);
