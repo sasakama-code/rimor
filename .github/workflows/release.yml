@@ -28,6 +28,8 @@ jobs:
       run: npm run build
 
     - name: Run tests
+      env:
+        DISABLE_SECURITY_VALIDATION_LOGS: 'true'
       run: npm test
 
     - name: Extract version

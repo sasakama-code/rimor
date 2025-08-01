@@ -60,6 +60,7 @@ jobs:
     - name: Run full test suite
       env:
         NODE_OPTIONS: '--max-old-space-size=2048'
+        DISABLE_SECURITY_VALIDATION_LOGS: 'true'
       run: npm test
 
     - name: Run performance tests
