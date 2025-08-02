@@ -5,6 +5,15 @@ All notable changes to the Rimor project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2025-08-02
+
+### Fixed
+
+- **リリースアセットの削除**: GitHub Releaseから不要なアセットアップロードを削除
+  - release.ymlから`files:`セクションを削除
+  - README.mdとCHANGELOG.mdのアセットアップロードを廃止
+  - リリースノートは本文に記載されるため、別途アセットは不要 (#48)
+
 ## [0.8.1] - 2025-08-02
 
 ### Fixed

@@ -181,7 +181,7 @@ MITライセンス - 詳細は[LICENSE](./LICENSE)ファイルを参照してく
 
 ## 📋 変更履歴
 
-最新の変更については[RELEASE_NOTES_v0.8.0.md](./RELEASE_NOTES_v0.8.0.md)を参照してください。
+最新の変更については[CHANGELOG.md](./CHANGELOG.md)を参照してください。
 
 ---
 
