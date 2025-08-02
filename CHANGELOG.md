@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - README.mdとCHANGELOG.mdのアセットアップロードを廃止
   - リリースノートは本文に記載されるため、別途アセットは不要 (#48)
 
+## [0.8.1] - 2025-08-02
+
+### Fixed
+
+- **CI環境のログクリーン化**: CodeAnnotatorテストの意図的なエラーログを抑制
+  - jest.setup.jsにエラー抑制パターンを追加
+  - CI/CDパイプラインでのログ視認性を改善
+  - プロダクションコードには影響なし (#47)
+
 ## [0.8.0] - 2025-08-02
 
 ### 🏗️ メジャーリファクタリング - コア価値への回帰
