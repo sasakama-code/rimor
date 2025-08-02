@@ -1,3 +1,48 @@
+// 共通型定義からのインポート
+import { 
+  SecurityType, 
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType,
+  SeverityLevel,
+  PluginType,
+  TestType,
+  QualityDimension as CommonQualityDimension,
+  ImprovementType,
+  ImprovementPriority,
+  Location,
+  FileLocation,
+  RangeLocation,
+  CodeLocation as CommonCodeLocation,
+  TimeRange,
+  ConfidenceInfo,
+  BaseMetadata
+} from '../types/common-types';
+
+// 共通型の再エクスポート
+export { 
+  SecurityType, 
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType,
+  SeverityLevel,
+  PluginType,
+  TestType,
+  ImprovementType,
+  ImprovementPriority,
+  Location,
+  FileLocation,
+  RangeLocation,
+  TimeRange,
+  ConfidenceInfo,
+  BaseMetadata
+};
+
+// 汚染修飾子（後方互換性のエイリアス）
+export const TaintQualifier = TaintLevel;
+
 // 既存のシンプルなプラグインインターフェース（後方互換性のため保持）
 export interface IPlugin {
   name: string;
@@ -528,51 +573,6 @@ export interface DictionaryAwarePlugin extends ITestQualityPlugin {
 // 型ベースセキュリティテスト品質監査システム v0.7.0 統合型定義
 // ========================================
 
-// 共通型定義からのインポート
-import { 
-  SecurityType, 
-  TaintLevel,
-  TaintSource,
-  SecuritySink,
-  SanitizerType,
-  SeverityLevel,
-  PluginType,
-  TestType,
-  QualityDimension as CommonQualityDimension,
-  ImprovementType,
-  ImprovementPriority,
-  Location,
-  FileLocation,
-  RangeLocation,
-  CodeLocation as CommonCodeLocation,
-  TimeRange,
-  ConfidenceInfo,
-  BaseMetadata
-} from '../types/common-types';
-
-// 共通型の再エクスポート
-export { 
-  SecurityType, 
-  TaintLevel,
-  TaintSource,
-  SecuritySink,
-  SanitizerType,
-  SeverityLevel,
-  PluginType,
-  TestType,
-  ImprovementType,
-  ImprovementPriority,
-  Location,
-  FileLocation,
-  RangeLocation,
-  TimeRange,
-  ConfidenceInfo,
-  BaseMetadata
-};
-
-// 汚染修飾子（後方互換性のエイリアス）
-export const TaintQualifier = TaintLevel;
-
 // 型ベースセキュリティプラグインインターフェース
 export interface ITypeBasedSecurityPlugin extends ITestQualityPlugin {
   // 型システムとの統合
@@ -609,6 +609,9 @@ export interface TestMethod {
   };
   body?: string;
   testType?: 'unit' | 'integration' | 'e2e' | 'security';
+  securityRelevance?: number;
+  assertions?: any[];
+  dependencies?: string[];
 }
 
 // メソッドシグネチャ
@@ -626,6 +629,7 @@ export interface Parameter {
   name: string;
   type?: string;
   source?: 'user-input' | 'database' | 'api' | 'constant';
+  annotations?: string[];
 }
 
 // メソッド解析結果
@@ -816,7 +820,7 @@ export interface IncrementalUpdate {
 export interface SecurityIssue {
   id: string;
   severity: 'info' | 'warning' | 'error' | 'critical';
-  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation';
+  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation' | 'SQL_INJECTION' | 'CODE_EXECUTION';
   message: string;
   location: { file: string; line: number; column: number; method?: string };
   fixSuggestion?: string;

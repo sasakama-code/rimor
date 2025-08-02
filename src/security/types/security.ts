@@ -265,30 +265,9 @@ export interface CompileTimeResult {
   };
 }
 
-/**
- * セキュリティ問題
- */
-export interface SecurityIssue {
-  /** 問題ID */
-  id: string;
-  /** 問題の重要度 */
-  severity: 'info' | 'warning' | 'error' | 'critical';
-  /** 問題の種別 */
-  type: 'missing-sanitizer' | 'unsafe-taint-flow' | 'missing-auth-test' | 'insufficient-validation' | 'SQL_INJECTION' | 'CODE_EXECUTION';
-  /** 問題の説明 */
-  message: string;
-  /** 問題の場所 */
-  location: {
-    file: string;
-    line: number;
-    column: number;
-    method?: string;
-  };
-  /** 修正提案 */
-  fixSuggestion?: string;
-  /** 関連する汚染情報 */
-  taintInfo?: TaintMetadata;
-}
+// SecurityIssueはcore/typesからインポート
+import { SecurityIssue as CoreSecurityIssue } from '../../core/types';
+export type SecurityIssue = CoreSecurityIssue;
 
 /**
  * セキュリティテスト品質メトリクス

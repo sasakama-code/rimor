@@ -90,36 +90,9 @@ export {
 };
 
 
-/**
- * テストメソッド
- */
-export interface TestMethod {
-  /** メソッド名 */
-  name: string;
-  /** ファイルパス */
-  filePath: string;
-  /** メソッドの内容 */
-  content: string;
-  /** メソッド本体（セキュリティプラグイン用） */
-  body?: string;
-  /** セキュリティ関連度（セキュリティプラグイン用） */
-  securityRelevance?: number;
-  /** アサーション（セキュリティプラグイン用） */
-  assertions?: any[];
-  /** 依存関係（セキュリティプラグイン用） */
-  dependencies?: string[];
-  /** テストタイプ（セキュリティプラグイン用） */
-  testType?: 'unit' | 'integration' | 'e2e' | 'security';
-  /** メソッドシグネチャ */
-  signature: MethodSignature;
-  /** 位置情報 */
-  location: {
-    startLine: number;
-    endLine: number;
-    startColumn: number;
-    endColumn: number;
-  };
-}
+// TestMethodはcore/typesからインポート
+import { TestMethod } from '../../core/types';
+export { TestMethod };
 
 /**
  * メソッドシグネチャ
