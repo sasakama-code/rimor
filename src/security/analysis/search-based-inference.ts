@@ -74,6 +74,15 @@ export class SearchBasedInferenceEngine {
       true
     );
     
+    // 構文エラーをチェック
+    const diagnostics = (this.sourceFile as any).parseDiagnostics;
+    if (diagnostics && diagnostics.length > 0) {
+      const errorMessages = diagnostics.map((d: any) => 
+        ts.flattenDiagnosticMessageText(d.messageText, '\n')
+      ).join('; ');
+      throw new Error(`Syntax error in source file: ${errorMessages}`);
+    }
+    
     // 初期状態を作成
     const state: InferenceState = {
       typeMap: new Map(),

@@ -105,7 +105,7 @@ describe('TypeCheckWorker', () => {
         if (result.id === 'check-2') {
           expect(result.success).toBe(false);
           expect(result.error).toBeDefined();
-          expect(result.error).toContain('type');
+          expect(result.error.toLowerCase()).toContain('type');
           done();
         }
       });

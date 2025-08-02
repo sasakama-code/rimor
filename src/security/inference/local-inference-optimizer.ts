@@ -76,6 +76,15 @@ export class LocalInferenceOptimizer {
       true
     );
     
+    // 構文エラーをチェック
+    const diagnostics = (sourceFile as any).parseDiagnostics;
+    if (diagnostics && diagnostics.length > 0) {
+      const errorMessages = diagnostics.map((d: any) => 
+        ts.flattenDiagnosticMessageText(d.messageText, '\n')
+      ).join('; ');
+      throw new Error(`Syntax error in source file: ${errorMessages}`);
+    }
+    
     const result: LocalVariableAnalysisResult = {
       localVariables: [],
       inferredTypes: new Map(),
