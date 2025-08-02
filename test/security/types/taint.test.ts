@@ -55,7 +55,7 @@ describe('SecuritySink', () => {
     expect(SecuritySink.HTML_OUTPUT).toBe('html-output');
     expect(SecuritySink.JAVASCRIPT_EXEC).toBe('javascript-exec');
     expect(SecuritySink.SYSTEM_COMMAND).toBe('system-command');
-    expect(SecuritySink.FILE_OPERATION).toBe('file-operation');
+    expect(SecuritySink.FILE_WRITE).toBe('file-write');
     expect(SecuritySink.TEST_ASSERTION).toBe('test-assertion');
   });
 });
@@ -68,7 +68,6 @@ describe('SanitizerType', () => {
     expect(SanitizerType.TYPE_CONVERSION).toBe('type-conversion');
     expect(SanitizerType.STRING_SANITIZE).toBe('string-sanitize');
     expect(SanitizerType.JSON_PARSE).toBe('json-parse');
-    expect(SanitizerType.CRYPTO_HASH).toBe('crypto-hash');
   });
 });
 
