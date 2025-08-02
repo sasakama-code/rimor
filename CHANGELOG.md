@@ -88,7 +88,7 @@ v0.6.x/v0.7.xからのアップグレード：
 3. **CLI コマンドの変更**: `rimor analyze` に統一
 4. **辞書システム**: YAMLルールファイルへの移行が必要
 
-詳細は[Migration Guide](docs/migration-v0.8.0.md)を参照してください。
+詳細は[Migration Guide](docs/migration-guide-v0.8.0.md)を参照してください。
 
 ## [0.7.0] - 2025-07-26
 
