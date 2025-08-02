@@ -59,6 +59,7 @@ real-world-validation-*.json
 # Rimor generated files and directories
 .rimor/
 rimor-self-analysis.json
+rimor-src-analysis.json
 dogfooding-report.md
 context-engineering-evaluation.md
 test-creation-priority.md
