@@ -16,17 +16,19 @@ const originalLog = console.log;
 console.error = (...args) => {
   const message = args.join(' ');
   
-  // セキュリティ機能による予期されるエラーログのみを抑制
-  // テストで期待されるエラーメッセージは抑制しない
-  if (message.includes('Context integration failed:') ||
-      message.includes('Project summary generation failed:') ||
-      message.includes('PERMISSION_DENIED') ||
-      message.includes('UNKNOWN: セキュリティ警告') ||
-      message.includes('Context:') ||
-      message.includes('セキュリティ警告: プロパティ汚染攻撃') ||
-      message.includes('セキュリティ警告: パストラバーサル攻撃') ||
-      message.includes('危険なプロパティ名を検出') ||
-      message.includes('[2025-') && message.includes('UNKNOWN:')) {
+  // セキュリティ機能による予期されるエラーログを抑制
+  const suppressPatterns = [
+    'Context integration failed:',
+    'Project summary generation failed:',
+    'PERMISSION_DENIED',
+    'UNKNOWN: セキュリティ警告',
+    'Context:',
+    'セキュリティ警告:',
+    '危険なプロパティ名を検出'
+  ];
+  
+  if (suppressPatterns.some(pattern => message.includes(pattern)) ||
+      (message.includes('[2025-') && message.includes('UNKNOWN:'))) {
     return;
   }
   
@@ -37,11 +39,15 @@ console.warn = (...args) => {
   const message = args.join(' ');
   
   // 既知の警告を抑制
-  if (message.includes('プラグインサンドボックス') || 
-      message.includes('重み設定の読み込み') ||
-      message.includes('設定ディレクトリのパス') ||
-      message.includes('設定ファイル警告:') ||
-      message.includes('セキュリティ警告（修正済み）:')) {
+  const warnSuppressPatterns = [
+    'プラグインサンドボックス',
+    '重み設定の読み込み',
+    '設定ディレクトリのパス',
+    '設定ファイル警告:',
+    'セキュリティ警告（修正済み）:'
+  ];
+  
+  if (warnSuppressPatterns.some(pattern => message.includes(pattern))) {
     return;
   }
   
@@ -52,40 +58,36 @@ console.warn = (...args) => {
 if (process.env.CI === 'true') {
   console.log = (...args) => {
     // CI環境では不要なデバッグログのみを抑制
-    // テストで期待されるログは表示する
     const message = args.join(' ');
-    if (message.includes('🛡️') || 
-        message.includes('プラグインサンドボックス') ||
-        message.includes('🔧') ||
-        message.includes('📋') ||
-        message.includes('🤖') ||
-        message.includes('✏️') ||
-        message.includes('📥') ||
-        message.includes('⚙️') ||
-        message.includes('🚀') ||
-        message.includes('📝') ||
-        message.includes('フィードバック') ||
-        message.includes('辞書') && message.includes('初期化') ||
-        message.includes('ドメイン') && message.includes('初期化') ||
-        message.includes('自動生成') ||
-        message.includes('手動設定') ||
-        message.includes('インポート') ||
-        message.includes('プロジェクト情報') ||
-        message.includes('検証結果') ||
-        message.includes('ブートストラップ') ||
-        // 新しいフィルタ：セキュリティ検証関連
-        message.includes('🌐') ||
-        message.includes('📁') ||
-        message.includes('✅') ||
-        message.includes('📄') ||
-        message.includes('🔍') ||
-        message.includes('⚡') ||
-        message.includes('🏗️') ||
-        message.includes('検証開始') ||
-        message.includes('検証中') ||
-        message.includes('件検出') ||
-        message.includes('包括検証') ||
-        message.includes('フレームワーク別')) {
+    
+    // 絵文字を含むログを抑制
+    const emojiPattern = /[🛡️🔧📋🤖✏️📥⚙️🚀📝🌐📁✅📄🔍⚡🏗️]/;
+    if (emojiPattern.test(message)) {
+      return;
+    }
+    
+    // その他の抑制パターン
+    const ciSuppressPatterns = [
+      'フィードバック',
+      '辞書.*初期化',
+      'ドメイン.*初期化',
+      '自動生成',
+      '手動設定',
+      'インポート',
+      'プロジェクト情報',
+      '検証結果',
+      'ブートストラップ',
+      '検証開始',
+      '検証中',
+      '件検出',
+      '包括検証',
+      'フレームワーク別'
+    ];
+    
+    if (ciSuppressPatterns.some(pattern => {
+      const regex = new RegExp(pattern);
+      return regex.test(message);
+    })) {
       return;
     }
     originalLog.apply(console, args);
@@ -94,27 +96,32 @@ if (process.env.CI === 'true') {
   // ローカル環境でもテスト時は辞書ブートストラップ出力を抑制
   console.log = (...args) => {
     const message = args.join(' ');
-    if (message.includes('🔧 辞書の初期化方法を選択してください:') ||
-        message.includes('🤖 既存コードから辞書を自動生成しています...') ||
-        message.includes('✏️  手動で辞書を設定しています...') ||
-        message.includes('📥 既存の辞書ファイルをインポートしています...') ||
-        message.includes('📋 プロジェクト情報を収集しています...') ||
-        message.includes('🚀 Rimor ドメイン辞書セットアップウィザード') ||
-        // セキュリティ検証関連（ローカル環境でも抑制）
-        message.includes('🌐') ||
-        message.includes('📁') ||
-        message.includes('✅') ||
-        message.includes('📄') ||
-        message.includes('🔍') ||
-        message.includes('⚡') ||
-        message.includes('🏗️') ||
-        message.includes('検証開始') ||
-        message.includes('検証中') ||
-        message.includes('件検出') ||
-        message.includes('包括検証') ||
-        message.includes('フレームワーク別')) {
+    
+    // 絵文字を含むログを抑制
+    const emojiPattern = /[🔧🤖✏️📥📋🚀🌐📁✅📄🔍⚡🏗️]/;
+    if (emojiPattern.test(message)) {
       return;
     }
+    
+    // その他の抑制パターン
+    const localSuppressPatterns = [
+      '辞書の初期化方法を選択してください',
+      '既存コードから辞書を自動生成しています',
+      '手動で辞書を設定しています',
+      '既存の辞書ファイルをインポートしています',
+      'プロジェクト情報を収集しています',
+      'Rimor ドメイン辞書セットアップウィザード',
+      '検証開始',
+      '検証中',
+      '件検出',
+      '包括検証',
+      'フレームワーク別'
+    ];
+    
+    if (localSuppressPatterns.some(pattern => message.includes(pattern))) {
+      return;
+    }
+    
     originalLog.apply(console, args);
   };
 }
