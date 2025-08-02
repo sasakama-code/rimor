@@ -17,7 +17,8 @@ import { glob } from 'glob';
 import { TypeBasedSecurityEngine } from '../../security/analysis/engine';
 import { ModularTestAnalyzer } from '../../security/analysis/modular';
 import { FlowSensitiveAnalyzer } from '../../security/analysis/flow';
-import { TestCase, TestMethod } from '../../security/types';
+import { TestCase } from '../../security/types';
+import { TestMethod } from '../types';
 
 @injectable()
 export class SecurityAuditorImpl implements ISecurityAuditor {
