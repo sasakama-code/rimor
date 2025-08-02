@@ -24,7 +24,9 @@ console.error = (...args) => {
     'UNKNOWN: セキュリティ警告',
     'Context:',
     'セキュリティ警告:',
-    '危険なプロパティ名を検出'
+    '危険なプロパティ名を検出',
+    'Error reading file',
+    'Error cleaning up annotations'
   ];
   
   if (suppressPatterns.some(pattern => message.includes(pattern)) ||
