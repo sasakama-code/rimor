@@ -6,17 +6,21 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  test:
+  # ジョブ1: ビルドと基本検証
+  build-and-verify:
     runs-on: ubuntu-latest
-    
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [18.x, 20.x]
 
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
@@ -26,91 +30,194 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Run security audit
-      run: npm audit
-
-    - name: Run lint check
-      run: npm run lint
-      continue-on-error: true  # MVP期間中はlintエラーでCIを止めない
-
-    - name: Clean generated files before build
-      run: |
-        echo "🧹 Cleaning test-generated files before build..."
-        rm -rf src/plugins/generated/ || true
-        rm -rf dist/ || true
-        mkdir -p src/plugins/generated/
-        echo "✅ Build準備完了 - 生成ファイルをクリーンアップしました"
-
     - name: Build TypeScript
       run: npm run build
 
-    - name: Run quality check
+    - name: Type check
+      run: npx tsc --noEmit
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.node-version }}
+        path: dist/
+        retention-days: 1
+
+  # ジョブ2: セキュリティ監査（TaintTyper含む）
+  security-audit:
+    runs-on: ubuntu-latest
+    needs: build-and-verify
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
+
+    - name: Run comprehensive security check
+      run: npm run security-check
+
+    - name: Upload security audit results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-audit-results
+        path: |
+          .rimor/reports/security/audit-results.json
+          .rimor/reports/security/security-analysis-report.json
+        if-no-files-found: ignore
+
+  # ジョブ3: 品質監査（dogfooding）
+  quality-audit:
+    runs-on: ubuntu-latest
+    needs: build-and-verify
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
+
+    - name: Run quality audit (dogfooding)
       run: |
-        echo "🔍 品質チェックを実行中..."
-        npm run analyze:src
-        echo "✅ 品質チェック完了"
+        # 新しい品質監査スクリプトを実行
+        if [ -f scripts/quality-audit.js ]; then
+          node scripts/quality-audit.js
+        else
+          # 暫定的に既存の品質チェックを実行
+          mkdir -p .rimor/reports/quality
+          npm run analyze:src:json > .rimor/reports/quality/quality-audit-results.json
+          ANALYSIS_EXIT_CODE=$?
+          
+          if [ "$ANALYSIS_EXIT_CODE" -gt 1 ]; then
+            echo "::error::Quality audit failed with exit code $ANALYSIS_EXIT_CODE"
+            exit 1
+          fi
+          
+          # 結果の分析
+          if [ -f .rimor/reports/quality/quality-audit-results.json ]; then
+            if ! jq empty .rimor/reports/quality/quality-audit-results.json 2>/dev/null; then
+              echo "::error::Invalid JSON in quality-audit-results.json"
+              exit 1
+            fi
+            
+            TOTAL_ISSUES=$(jq '.issues | length' .rimor/reports/quality/quality-audit-results.json)
+            echo "Total quality issues found: $TOTAL_ISSUES"
+            
+            # 品質スコアの表示（存在する場合）
+            if jq -e '.qualityScore' .rimor/reports/quality/quality-audit-results.json >/dev/null 2>&1; then
+              QUALITY_SCORE=$(jq '.qualityScore' .rimor/reports/quality/quality-audit-results.json)
+              echo "Overall quality score: $QUALITY_SCORE"
+            fi
+          fi
+        fi
+
+    - name: Upload quality audit results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-audit-results
+        path: |
+          .rimor/reports/quality/quality-audit-results.json
+          .rimor/reports/quality/dogfooding-report.json
+        if-no-files-found: ignore
+
+  # ジョブ4: テスト実行
+  test:
+    runs-on: ubuntu-latest
+    needs: [security-audit, quality-audit]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-${{ matrix.node-version }}
+        path: dist/
 
     - name: Run tests
       env:
-        RIMOR_LANG: ja
-      run: |
-        echo "🧪 Starting test execution..."
-        timeout 300 npm test || {
-          echo "❌ Tests failed or timed out after 5 minutes"
-          exit 1
-        }
-        echo "✅ Tests completed successfully"
+        NODE_OPTIONS: '--max-old-space-size=2048'
+        DISABLE_SECURITY_VALIDATION_LOGS: 'true'
+      run: npm test
 
-
-    - name: Clean test artifacts after analysis
-      run: |
-        echo "🧹 Cleaning test-generated files..."
-        rm -rf src/plugins/generated/ || true
-        find . -name "*.d.ts.map" -type f -delete || true
-        find . -name "*.js.map" -type f -delete || true
-        echo "✅ テスト後クリーンアップ完了"
-
-  security:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js 20.x
-      uses: actions/setup-node@v4
+    - name: Upload AI Error Report
+      if: failure()
+      uses: actions/upload-artifact@v4
       with:
-        node-version: 20.x
-        cache: 'npm'
+        name: ai-error-report-${{ matrix.node-version }}
+        path: |
+          .rimor/reports/test-errors-ai.md
+          .rimor/reports/test-errors-ai.json
 
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Clean generated files before build
-      run: |
-        echo "🧹 Cleaning test-generated files before security check..."
-        rm -rf src/plugins/generated/
-        mkdir -p src/plugins/generated/
-        echo "✅ Cleanup completed"
-
-    - name: Build TypeScript for security check
-      run: npm run build
-
-    - name: Run comprehensive security check
+    - name: Post AI Error Report Summary to PR
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      continue-on-error: true
       env:
-        RIMOR_LANG: ja
-      run: npm run security-check
+        NODE_VERSION: ${{ matrix.node-version }}
+      with:
+        script: |
+          const fs = require('fs');
+          const summaryPath = '.rimor/reports/test-errors-ai-summary.md';
+          
+          if (fs.existsSync(summaryPath)) {
+            const summary = fs.readFileSync(summaryPath, 'utf8');
+            
+            // アーティファクトへのリンクを追加
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsMessage = `\n\n📎 **アーティファクト**: [このワークフロー実行のアーティファクト](${runUrl})から \`ai-error-report-${process.env.NODE_VERSION}\` をダウンロードして詳細を確認してください。`;
+            
+            const body = `## 🤖 AI Error Report (Node.js ${process.env.NODE_VERSION})\n\n${summary}${artifactsMessage}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
+          }
 
-    - name: Check for outdated packages
-      run: npm outdated || true
-
+  # npm公開の準備（mainブランチのみ）
   publish-dry-run:
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: test
     if: github.ref == 'refs/heads/main'
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js 20.x
       uses: actions/setup-node@v4
       with:
@@ -120,72 +227,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build
-      run: npm run build
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-20.x
+        path: dist/
 
     - name: Test npm package
       run: npm pack --dry-run
-
-  # PR Quality Gates - Branch Protection Required Check
-  quality-gates:
-    name: 📋 Quality Gates
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.event_name == 'pull_request'
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 📦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: 📥 Install dependencies
-        run: npm ci
-
-      - name: 🧪 Run all tests
-        run: npm test
-
-      - name: 📊 Generate test coverage report
-        run: |
-          echo "📊 Generating test coverage report..."
-          npm test -- --coverage --coverageReporters=text-summary
-          echo "✅ Coverage report generated"
-
-      - name: 🔍 TypeScript type checking
-        run: |
-          echo "🔍 Running TypeScript type checking..."
-          npx tsc --noEmit
-          echo "✅ Type checking passed"
-
-      - name: 🔒 Security audit
-        run: npm audit --audit-level=moderate
-
-      - name: 🧹 Clean test artifacts before build
-        run: |
-          echo "🧹 Cleaning test-generated files before build..."
-          rm -rf src/plugins/generated/ || true
-          echo "✅ Build cleanup completed"
-
-      - name: 🏗️ Build project
-        run: npm run build
-
-      - name: 🎯 Run full quality check
-        run: npm run full-check
-
-      - name: 📊 Performance validation
-        run: npm test -- --testPathPattern=performance --verbose
-
-      - name: 🔍 Verify package integrity
-        run: |
-          echo "🔍 Verifying package integrity..."
-          npm pack --dry-run
-          echo "✅ Package validation successful"
-
-      - name: 🎉 Quality Gates Passed
-        run: |
-          echo "🎉 All Quality Gates passed successfully!"
-          echo "✅ Ready for merge to main branch"

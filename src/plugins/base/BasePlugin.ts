@@ -17,7 +17,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   abstract id: string;
   abstract name: string;
   abstract version: string;
-  abstract type: 'core' | 'framework' | 'pattern' | 'domain';
+  abstract type: 'core' | 'framework' | 'pattern' | 'domain' | 'security';
 
   abstract isApplicable(context: ProjectContext): boolean;
   abstract detectPatterns(testFile: TestFile): Promise<DetectionResult[]>;

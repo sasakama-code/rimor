@@ -12,7 +12,6 @@ class TestPlugin implements IPlugin {
 describe('PluginManager', () => {
   it('should register and run single plugin', async () => {
     const manager = new PluginManager();
-    manager.setSandboxEnabled(false); // レガシープラグインテストのためサンドボックス無効化
     const issues: Issue[] = [
       { type: 'test-missing', severity: 'error', message: 'No test file found' }
     ];
@@ -26,7 +25,6 @@ describe('PluginManager', () => {
   
   it('should run multiple plugins and combine results', async () => {
     const manager = new PluginManager();
-    manager.setSandboxEnabled(false); // レガシープラグインテストのためサンドボックス無効化
     const issues1: Issue[] = [
       { type: 'test-missing', severity: 'error', message: 'No test file found' }
     ];

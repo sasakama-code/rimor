@@ -9,7 +9,7 @@ import {
   Improvement,
   PluginResult
 } from './types';
-import { LegacyPluginAdapter } from '../plugins/migration/LegacyPluginAdapter';
+// LegacyPluginAdapter removed
 
 
 export interface QualityAnalysisResult {
@@ -101,8 +101,8 @@ export class PluginManagerExtended {
 
   private getApplicablePlugins(context: ProjectContext, skipPlugins: string[] = []): ITestQualityPlugin[] {
     const allPlugins: ITestQualityPlugin[] = [
-      ...this.qualityPlugins,
-      ...this.legacyPlugins.map(plugin => new LegacyPluginAdapter(plugin))
+      ...this.qualityPlugins
+      // Legacy plugins support removed
     ];
 
     return allPlugins.filter(plugin => {

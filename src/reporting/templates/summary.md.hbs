@@ -1,0 +1,121 @@
+# Rimor 分析レポート
+
+**解析対象**: `{{metadata.analyzedPath}}`  
+**実行日時**: {{formatDate metadata.timestamp}}  
+**Rimorバージョン**: v{{metadata.version}}  
+**解析時間**: {{formatDuration metadata.duration}}
+
+## 📊 サマリー
+
+- **解析ファイル数**: {{summary.totalFiles}} ファイル
+- **検出された問題**: {{summary.totalIssues}} 件
+
+### 重要度別の問題数
+
+{{#if (gt summary.issueBySeverity.critical 0)}}
+- 🔴 **Critical**: {{summary.issueBySeverity.critical}} 件
+{{/if}}
+{{#if (gt summary.issueBySeverity.high 0)}}
+- 🟠 **High**: {{summary.issueBySeverity.high}} 件
+{{/if}}
+{{#if (gt summary.issueBySeverity.medium 0)}}
+- 🟡 **Medium**: {{summary.issueBySeverity.medium}} 件
+{{/if}}
+{{#if (gt summary.issueBySeverity.low 0)}}
+- 🟢 **Low**: {{summary.issueBySeverity.low}} 件
+{{/if}}
+{{#if (gt summary.issueBySeverity.info 0)}}
+- ℹ️ **Info**: {{summary.issueBySeverity.info}} 件
+{{/if}}
+
+{{#if (gt summary.totalIssues 0)}}
+### 問題タイプ別の分布
+
+{{#each summary.issueByType}}
+- **{{@key}}**: {{this}} 件
+{{/each}}
+{{/if}}
+
+## 🎯 テストカバレッジ
+
+- **全体カバレッジ**: {{metrics.testCoverage.overall}}%
+
+{{#if metrics.testCoverage.missingTests}}
+### テストが不足しているファイル
+
+{{#each metrics.testCoverage.missingTests}}
+- `{{this.file}}`: {{this.reason}}
+{{/each}}
+{{/if}}
+
+## 🚨 重要な問題
+
+{{#each (filterBySeverity issues "critical")}}
+### {{severityIcon this.severity}} {{this.type}} - {{this.location.file}}:{{this.location.startLine}}
+
+{{this.message}}
+
+{{#if this.recommendation}}
+**推奨される対応**: {{this.recommendation}}
+{{/if}}
+
+{{#if this.dataFlow}}
+**データフロー**:
+- Source: `{{this.dataFlow.source.location.file}}:{{this.dataFlow.source.location.startLine}}` ({{this.dataFlow.source.type}})
+- Sink: `{{this.dataFlow.sink.location.file}}:{{this.dataFlow.sink.location.startLine}}` ({{this.dataFlow.sink.type}})
+{{/if}}
+
+---
+{{/each}}
+
+{{#each (filterBySeverity issues "high")}}
+### {{severityIcon this.severity}} {{this.type}} - {{this.location.file}}:{{this.location.startLine}}
+
+{{this.message}}
+
+{{#if this.recommendation}}
+**推奨される対応**: {{this.recommendation}}
+{{/if}}
+
+---
+{{/each}}
+
+## 📈 コード品質メトリクス
+
+{{#if metrics.codeQuality.complexity}}
+- **平均複雑度**: {{metrics.codeQuality.complexity.average}}
+- **最大複雑度**: {{metrics.codeQuality.complexity.max}}
+
+{{#if (gt metrics.codeQuality.complexity.highComplexityMethods.length 0)}}
+### 複雑度の高いメソッド
+
+{{#each metrics.codeQuality.complexity.highComplexityMethods}}
+- `{{this.method}}` (複雑度: {{this.complexity}}) - {{this.location.file}}:{{this.location.startLine}}
+{{/each}}
+{{/if}}
+{{/if}}
+
+{{#if metrics.codeQuality.maintainability}}
+### 保守性
+
+- **スコア**: {{metrics.codeQuality.maintainability.score}}/100
+
+{{#if (gt metrics.codeQuality.maintainability.issues.length 0)}}
+**改善が必要な点**:
+{{#each metrics.codeQuality.maintainability.issues}}
+- {{this}}
+{{/each}}
+{{/if}}
+{{/if}}
+
+## 🔍 詳細な分析結果
+
+詳細なレポートを確認するには、以下のコマンドを実行してください:
+
+```bash
+rimor analyze {{metadata.analyzedPath}} --output-markdown detailed-report.md
+```
+
+---
+
+*このレポートはRimor v{{metadata.version}}によって自動生成されました。*

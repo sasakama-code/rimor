@@ -4,7 +4,6 @@
  */
 
 import { Issue } from './types';
-import { getMessage } from '../i18n/messages';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -150,8 +149,8 @@ export class PerformanceMonitor {
    * パフォーマンスレポートの表示
    */
   displayReport(report: PerformanceReport, verbose: boolean = false): void {
-    console.log('\n' + getMessage('performance.report.header'));
-    console.log(getMessage('performance.report.separator'));
+    console.log('\n' + "");
+    console.log("");
     
     // 総合統計
     console.log(`⏱️  総実行時間: ${report.totalMetrics.processingTime}ms`);

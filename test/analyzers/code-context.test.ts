@@ -1,12 +1,12 @@
 import { AdvancedCodeContextAnalyzer } from '../../src/analyzers/code-context';
 import { Issue } from '../../src/core/types';
-import { AnalysisOptions, ExtractedCodeContext, FunctionInfo, ScopeInfo } from '../../src/analyzers/types';
+import { AnalysisOptions, ExtractedCodeContext, FunctionInfo, ScopeInfo, VariableInfo, RelatedFileInfo } from '../../src/analyzers/types';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
 describe('AdvancedCodeContextAnalyzer', () => {
-  let analyzer: AdvancedCodeContextAnalyzer;
+  let analyzer: any;
   let testProjectPath: string;
 
   beforeEach(() => {
@@ -164,8 +164,8 @@ describe('UserController', () => {
       expect(context.imports).toHaveLength(2);
       expect(context.imports).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('UserController'),
-          expect.stringContaining('express')
+          expect.objectContaining({ source: expect.stringContaining('UserController') }),
+          expect.objectContaining({ source: expect.stringContaining('express') })
         ])
       );
       expect(context.functions).toBeDefined();
@@ -217,7 +217,7 @@ describe('UserController', () => {
         analyzeVariables: true
       });
 
-      const targetFunction = context.functions.find(f => f.name === 'createUser');
+      const targetFunction = context.functions.find((f: FunctionInfo) => f.name === 'createUser');
       expect(targetFunction).toBeDefined();
       expect(targetFunction!.parameters).toEqual(
         expect.arrayContaining(['req', 'res'])
@@ -231,7 +231,7 @@ describe('UserController', () => {
         type: 'unused-variable',
         severity: 'warning',
         message: 'Variable may be unused',
-        line: 33,
+        line: 53,
         file: path.join(testProjectPath, 'src/UserController.ts')
       };
 
@@ -243,7 +243,7 @@ describe('UserController', () => {
       expect(context.scopes).toBeDefined();
       expect(context.scopes.length).toBeGreaterThan(0);
       expect(context.variables).toBeDefined();
-      expect(context.variables.some(v => v.name === 'name' || v.name === 'email')).toBe(true);
+      expect(context.variables.some((v: VariableInfo) => v.name === 'name' || v.name === 'email')).toBe(true);
     });
 
     test('should detect related source files', async () => {
@@ -276,7 +276,7 @@ describe('UserController', () => {
 
       expect(context.relatedFiles).toBeDefined();
       expect(context.relatedFiles.length).toBeGreaterThan(0);
-      expect(context.relatedFiles.some(f => f.path.includes('UserController.ts'))).toBe(true);
+      expect(context.relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.ts'))).toBe(true);
     });
   });
 
@@ -289,7 +289,7 @@ describe('UserController', () => {
 
       expect(functions).toHaveLength(2);
       
-      const getUserByIdFunc = functions.find(f => f.name === 'getUserById');
+      const getUserByIdFunc = functions.find((f: FunctionInfo) => f.name === 'getUserById');
       expect(getUserByIdFunc).toBeDefined();
       expect(getUserByIdFunc!.isAsync).toBe(true);
       expect(getUserByIdFunc!.parameters).toEqual(['req', 'res']);
@@ -312,8 +312,8 @@ const processOrder = async (order) => {
       const functions = await analyzer.extractFunctionInfo(jsCode, 'javascript');
 
       expect(functions).toHaveLength(2);
-      expect(functions.some(f => f.name === 'calculateTotal')).toBe(true);
-      expect(functions.some(f => f.name === 'processOrder')).toBe(true);
+      expect(functions.some((f: FunctionInfo) => f.name === 'calculateTotal')).toBe(true);
+      expect(functions.some((f: FunctionInfo) => f.name === 'processOrder')).toBe(true);
     });
   });
 
@@ -334,8 +334,8 @@ const processOrder = async (order) => {
 
       expect(scopes).toBeDefined();
       expect(scopes.length).toBeGreaterThanOrEqual(1);
-      expect(scopes.some(s => s.variables.includes('outerVar'))).toBe(true);
-      expect(scopes.some(s => s.variables.includes('innerVar'))).toBe(true);
+      expect(scopes.some((s: ScopeInfo) => s.variables.includes('outerVar'))).toBe(true);
+      expect(scopes.some((s: ScopeInfo) => s.variables.includes('innerVar'))).toBe(true);
     });
 
     test('should identify block scopes', async () => {
@@ -347,9 +347,12 @@ const processOrder = async (order) => {
       const scopes = await analyzer.analyzeScopeContext(code, 2);
 
       expect(scopes).toBeDefined();
-      expect(scopes.length).toBeGreaterThanOrEqual(1);
-      expect(scopes[0].type).toBe('block');  
-      expect(scopes[0].variables).toEqual(
+      expect(scopes.length).toBeGreaterThanOrEqual(2); // グローバルとブロック
+      
+      // ブロックスコープを見つける
+      const blockScope = scopes.find((scope: any) => scope.type === 'block');
+      expect(blockScope).toBeDefined();
+      expect(blockScope?.variables).toEqual(
         expect.arrayContaining(['blockVar', 'anotherVar'])
       );
     });
@@ -367,7 +370,7 @@ const processOrder = async (order) => {
 
       expect(relatedFiles).toBeDefined();
       expect(Array.isArray(relatedFiles)).toBe(true);
-      expect(relatedFiles.some(f => f.path.includes('UserController.test.ts'))).toBe(true);
+      expect(relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.test.ts'))).toBe(true);
     });
 
     test('should analyze dependency relationships', async () => {
@@ -394,7 +397,7 @@ const processOrder = async (order) => {
       });
 
       expect(relatedFiles).toBeDefined();
-      expect(relatedFiles.some(f => f.relationship === 'import')).toBe(true);
+      expect(relatedFiles.some((f: RelatedFileInfo) => f.relationship === 'import')).toBe(true);
     });
   });
 

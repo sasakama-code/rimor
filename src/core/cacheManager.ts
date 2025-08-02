@@ -8,7 +8,6 @@ import * as fsSync from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { Issue } from './types';
-import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
 
 export interface CacheEntry {
@@ -111,7 +110,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cache.error.initialization'),
+        "",
         { cacheDirectory: this.options.cacheDirectory },
         true
       );
@@ -530,7 +529,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cache.error.read_failed'),
+        "",
         { cacheFilePath: this.cacheFilePath },
         true
       );
@@ -682,7 +681,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cache.error.save_failed'),
+        "",
         { cacheFilePath: this.cacheFilePath },
         true
       );
@@ -698,7 +697,7 @@ export class CacheManager {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cache.error.delete_failed'),
+        "",
         { cacheFilePath: this.cacheFilePath },
         true
       );

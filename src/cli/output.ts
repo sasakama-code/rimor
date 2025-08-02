@@ -1,49 +1,99 @@
-import chalk from 'chalk';
-import { getMessage } from '../i18n/messages';
+
+let chalkInstance: any = null;
+let chalkPromise: Promise<any> | null = null;
+
+function getChalk() {
+  if (!chalkPromise) {
+    chalkPromise = loadChalk();
+  }
+  return chalkPromise;
+}
+
+async function loadChalk() {
+  if (chalkInstance) {
+    return chalkInstance;
+  }
+
+  try {
+    if (process.env.NODE_ENV === 'test') {
+      chalkInstance = {
+        bold: (s: string) => s,
+        green: (s: string) => s,
+        red: (s: string) => s,
+        yellow: (s: string) => s,
+        blue: (s: string) => s,
+        gray: (s: string) => s
+      };
+      chalkInstance.bold.blue = (s: string) => s;
+    } else {
+      const chalk = await import('chalk');
+      chalkInstance = chalk.default;
+    }
+  } catch (error) {
+    chalkInstance = {
+      bold: (s: string) => s,
+      green: (s: string) => s,
+      red: (s: string) => s,
+      yellow: (s: string) => s,
+      blue: (s: string) => s,
+      gray: (s: string) => s
+    };
+    chalkInstance.bold.blue = (s: string) => s;
+  }
+  
+  return chalkInstance;
+}
 
 export class OutputFormatter {
-  static header(title: string): string {
-    return chalk.bold.blue(`🔍 ${title}\n`) + 
-           chalk.gray('━'.repeat(title.length + 4));
+  static async header(title: string): Promise<string> {
+    const c = await getChalk();
+    return c.bold.blue(`🔍 ${title}\n`) + 
+           c.gray('━'.repeat(title.length + 4));
   }
   
-  static success(message: string): string {
-    return chalk.green(`✅ ${message}`);
+  static async success(message: string): Promise<string> {
+    const c = await getChalk();
+    return c.green(`✅ ${message}`);
   }
   
-  static error(message: string): string {
-    return chalk.red(`❌ ${message}`);
+  static async error(message: string): Promise<string> {
+    const c = await getChalk();
+    return c.red(`❌ ${message}`);
   }
   
-  static warning(message: string): string {
-    return chalk.yellow(`⚠️  ${message}`);
+  static async warning(message: string): Promise<string> {
+    const c = await getChalk();
+    return c.yellow(`⚠️  ${message}`);
   }
   
-  static info(message: string): string {
-    return chalk.blue(`ℹ️  ${message}`);
+  static async info(message: string): Promise<string> {
+    const c = await getChalk();
+    return c.blue(`ℹ️  ${message}`);
   }
   
-  static summary(filesAnalyzed: number, issuesFound: number, executionTime: number): string {
+  static async summary(filesAnalyzed: number, issuesFound: number, executionTime: number): Promise<string> {
+    const c = await getChalk();
     const testCoverage = filesAnalyzed > 0 ? Math.round(((filesAnalyzed - issuesFound) / filesAnalyzed) * 100) : 0;
     
     return [
-      chalk.bold('\n' + getMessage('output.summary.header')),
-      getMessage('output.summary.files_analyzed', { count: filesAnalyzed.toString() }),
-      `${issuesFound > 0 ? '❌' : '✅'} ` + getMessage('output.summary.test_shortage', { count: issuesFound.toString() }),
-      getMessage('output.summary.test_coverage', { percentage: testCoverage.toString() }),
-      getMessage('output.summary.execution_time', { time: executionTime.toString() })
+      c.bold('\n分析サマリー'),
+      `分析対象: ${filesAnalyzed}ファイル`,
+      `${issuesFound > 0 ? '❌' : '✅'} テスト不足: ${issuesFound}件`,
+      `テストカバレッジ: ${testCoverage}%`,
+      `実行時間: ${executionTime}ms`
     ].join('\n');
   }
   
-  static issueList(issues: Array<{severity: string, message: string, line?: number, file?: string}>): string {
+  static async issueList(issues: Array<{severity: string, message: string, line?: number, file?: string}>): Promise<string> {
+    const c = await getChalk();
     if (issues.length === 0) {
-      return chalk.green('\n' + getMessage('output.issues.none_found'));
+      return c.green('\n問題は見つかりませんでした！');
     }
     
-    const lines = [chalk.bold('\n' + getMessage('output.issues.header'))];
+    const lines = [c.bold('\n見つかった問題:')];
     issues.forEach((issue, index) => {
       const severity = issue.severity === 'error' ? '❌' : '⚠️';
-      const location = issue.line ? ' ' + getMessage('output.issues.line_number', { line: issue.line.toString() }) : '';
+      const location = issue.line ? ` (行: ${issue.line})` : '';
       lines.push(`${index + 1}. ${severity} ${issue.message}${location}`);
     });
     

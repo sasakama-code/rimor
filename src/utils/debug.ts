@@ -22,6 +22,13 @@ export class DebugLogger {
   static initialize(): void {
     if (this.initialized) return;
 
+    // テスト環境では自動的にログを無効化（RIMOR_DEBUGが明示的に設定されていない場合）
+    if (process.env.NODE_ENV === 'test' && !process.env.RIMOR_DEBUG) {
+      this.debugLevel = DebugLevel.NONE;
+      this.initialized = true;
+      return;
+    }
+
     const debugEnv = process.env.RIMOR_DEBUG?.toLowerCase();
     
     switch (debugEnv) {

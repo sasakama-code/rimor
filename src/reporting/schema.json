@@ -1,0 +1,311 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rimor-project/rimor/schemas/analysis-result.json",
+  "title": "Rimor Analysis Result Schema",
+  "description": "Static analysis result schema for deterministic reporting",
+  "type": "object",
+  "required": ["metadata", "summary", "issues", "metrics"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["version", "timestamp", "analyzedPath", "duration"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Rimor version"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Analysis timestamp in ISO 8601 format"
+        },
+        "analyzedPath": {
+          "type": "string",
+          "description": "Analyzed directory or file path"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Analysis duration in milliseconds"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["totalFiles", "totalIssues", "issueBySeverity", "issueByType"],
+      "properties": {
+        "totalFiles": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of analyzed files"
+        },
+        "totalIssues": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of detected issues"
+        },
+        "issueBySeverity": {
+          "type": "object",
+          "required": ["critical", "high", "medium", "low", "info"],
+          "properties": {
+            "critical": { "type": "integer", "minimum": 0 },
+            "high": { "type": "integer", "minimum": 0 },
+            "medium": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 },
+            "info": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "issueByType": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Issue count by type (e.g., SQL_INJECTION, XSS, etc.)"
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "severity", "location", "message"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_]+-\\d+$",
+            "description": "Unique issue identifier"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SQL_INJECTION",
+              "XSS",
+              "PATH_TRAVERSAL",
+              "COMMAND_INJECTION",
+              "LDAP_INJECTION",
+              "XPATH_INJECTION",
+              "MISSING_TEST",
+              "INSUFFICIENT_ASSERTION",
+              "TEST_QUALITY",
+              "CODE_QUALITY",
+              "SECURITY_MISCONFIGURATION",
+              "SENSITIVE_DATA_EXPOSURE"
+            ],
+            "description": "Issue type classification"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"],
+            "description": "Issue severity level"
+          },
+          "location": {
+            "type": "object",
+            "required": ["file", "startLine", "endLine"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "File path relative to analyzed root"
+              },
+              "startLine": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Starting line number"
+              },
+              "endLine": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Ending line number"
+              },
+              "startColumn": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Starting column number"
+              },
+              "endColumn": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Ending column number"
+              }
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable issue description"
+          },
+          "dataFlow": {
+            "type": "object",
+            "description": "Taint analysis data flow information",
+            "properties": {
+              "source": {
+                "type": "object",
+                "required": ["location", "type"],
+                "properties": {
+                  "location": { "$ref": "#/properties/issues/items/properties/location" },
+                  "type": {
+                    "type": "string",
+                    "description": "Taint source type (e.g., user-input, file-read)"
+                  }
+                }
+              },
+              "sink": {
+                "type": "object",
+                "required": ["location", "type"],
+                "properties": {
+                  "location": { "$ref": "#/properties/issues/items/properties/location" },
+                  "type": {
+                    "type": "string",
+                    "description": "Taint sink type (e.g., database-query, file-write)"
+                  }
+                }
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["location", "description"],
+                  "properties": {
+                    "location": { "$ref": "#/properties/issues/items/properties/location" },
+                    "description": {
+                      "type": "string",
+                      "description": "Step description in taint propagation"
+                    }
+                  }
+                },
+                "description": "Taint propagation path from source to sink"
+              }
+            }
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Suggested fix or mitigation"
+          },
+          "codeSnippet": {
+            "type": "string",
+            "description": "Relevant code snippet"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "External references (CWE, OWASP, etc.)"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["testCoverage", "codeQuality"],
+      "properties": {
+        "testCoverage": {
+          "type": "object",
+          "required": ["overall", "byModule"],
+          "properties": {
+            "overall": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Overall test coverage percentage"
+            },
+            "byModule": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["coverage", "testedFiles", "untestedFiles"],
+                "properties": {
+                  "coverage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "testedFiles": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "untestedFiles": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "missingTests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["file", "reason"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "File path without test"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Reason why test is missing or insufficient"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "codeQuality": {
+          "type": "object",
+          "properties": {
+            "complexity": {
+              "type": "object",
+              "properties": {
+                "average": { "type": "number", "minimum": 0 },
+                "max": { "type": "number", "minimum": 0 },
+                "highComplexityMethods": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["method", "complexity", "location"],
+                    "properties": {
+                      "method": { "type": "string" },
+                      "complexity": { "type": "number" },
+                      "location": { "$ref": "#/properties/issues/items/properties/location" }
+                    }
+                  }
+                }
+              }
+            },
+            "maintainability": {
+              "type": "object",
+              "properties": {
+                "score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Maintainability index score"
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "Maintainability issue description"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "plugins": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "executed": { "type": "boolean" },
+          "duration": { "type": "number" },
+          "issues": { "type": "integer" },
+          "metadata": { "type": "object" }
+        }
+      },
+      "description": "Plugin execution results"
+    }
+  }
+}

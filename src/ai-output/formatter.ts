@@ -121,40 +121,42 @@ export class AIOptimizedFormatter {
    * メタデータ構築
    */
   private async buildMetadata(projectPath: string) {
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    const tsConfigPath = path.join(projectPath, 'tsconfig.json');
-    const jestConfigPath = path.join(projectPath, 'jest.config.js');
-
     let language = 'javascript';
     let testFramework = 'unknown';
     let projectType = 'unknown';
 
-    try {
-      if (fs.existsSync(tsConfigPath)) {
-        language = 'typescript';
-      }
+    {
+      // 簡易検出ロジック
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      const tsConfigPath = path.join(projectPath, 'tsconfig.json');
 
-      if (fs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        
-        // テストフレームワーク検出
-        if (packageJson.devDependencies?.jest || packageJson.dependencies?.jest) {
-          testFramework = 'jest';
-        } else if (packageJson.devDependencies?.mocha || packageJson.dependencies?.mocha) {
-          testFramework = 'mocha';
+      try {
+        if (fs.existsSync(tsConfigPath)) {
+          language = 'typescript';
         }
 
-        // プロジェクトタイプ検出
-        if (packageJson.dependencies?.express || packageJson.dependencies?.fastify) {
-          projectType = 'rest-api';
-        } else if (packageJson.dependencies?.react || packageJson.dependencies?.vue) {
-          projectType = 'frontend';
-        } else {
-          projectType = 'library';
+        if (fs.existsSync(packageJsonPath)) {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+          
+          // テストフレームワーク検出
+          if (packageJson.devDependencies?.jest || packageJson.dependencies?.jest) {
+            testFramework = 'jest';
+          } else if (packageJson.devDependencies?.mocha || packageJson.dependencies?.mocha) {
+            testFramework = 'mocha';
+          }
+
+          // プロジェクトタイプ検出
+          if (packageJson.dependencies?.express || packageJson.dependencies?.fastify) {
+            projectType = 'rest-api';
+          } else if (packageJson.dependencies?.react || packageJson.dependencies?.vue) {
+            projectType = 'frontend';
+          } else {
+            projectType = 'library';
+          }
         }
+      } catch (fallbackError) {
+        // フォールバックエラーも無視してデフォルト値を使用
       }
-    } catch (error) {
-      // エラーは無視してデフォルト値を使用
     }
 
     return {

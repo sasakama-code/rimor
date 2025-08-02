@@ -5,7 +5,6 @@
 
 import { IPlugin, Issue } from './types';
 import { PluginManager } from './pluginManager';
-import { getMessage } from '../i18n/messages';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -34,7 +33,6 @@ export class ParallelAnalyzer {
   
   constructor(options: ParallelOptions = {}) {
     this.pluginManager = new PluginManager();
-    this.pluginManager.setSandboxEnabled(false); // レガシープラグイン対応のためサンドボックス無効化
     this.options = {
       batchSize: options.batchSize ?? 10,
       maxConcurrency: options.maxConcurrency ?? 4,
@@ -101,7 +99,7 @@ export class ParallelAnalyzer {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('cli.error.analysis_failed')
+        ""
       );
       throw error;
     }

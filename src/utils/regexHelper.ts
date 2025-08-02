@@ -2,7 +2,6 @@
  * 正規表現ヘルパークラス
  * lastIndexリセットや安全な正規表現操作を提供
  */
-import { getMessage } from '../i18n/messages';
 
 export class RegexHelper {
   /**
@@ -92,7 +91,7 @@ export class RegexHelper {
    */
   static findAllMatches(pattern: RegExp, text: string): string[] {
     if (!pattern.global) {
-      throw new Error(getMessage('regex.error.global_flag_required'));
+      throw new Error("");
     }
     
     pattern.lastIndex = 0;

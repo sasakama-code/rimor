@@ -1,4 +1,4 @@
-import { ITestQualityPlugin, DetectionResult, QualityScore, Improvement, ProjectContext, TestFile } from '@/core/types';
+import { ITestQualityPlugin, DetectionResult, QualityScore, Improvement, ProjectContext, TestFile } from '../src/core/types';
 
 describe('ITestQualityPlugin interface', () => {
   // モックプラグインの実装
@@ -196,7 +196,7 @@ describe('DetectionResult type', () => {
 
     expect(result.patternId).toBe('test-id');
     expect(result.confidence).toBe(0.95);
-    expect(result.evidence[0].type).toBe('code');
+    expect(result.evidence![0].type).toBe('code');
   });
 });
 
@@ -214,7 +214,7 @@ describe('QualityScore type', () => {
     };
 
     expect(score.overall).toBe(85);
-    expect(score.breakdown.completeness).toBe(90);
+    expect(score.breakdown?.completeness).toBe(90);
     expect(score.confidence).toBe(0.9);
   });
 });

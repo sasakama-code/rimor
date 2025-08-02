@@ -1,0 +1,161 @@
+{
+  "version": "1.0",
+  "description": "セルフ監査履歴管理ポリシー設定",
+  "historyManagement": {
+    "enabled": true,
+    "defaultTimestampFormat": "YYYYMMDD_HHMMSS",
+    "createLatestLinks": true,
+    "description": "履歴保存の基本設定"
+  },
+  "retentionPolicy": {
+    "defaultRetentionDays": 30,
+    "phaseResults": {
+      "retentionDays": 30,
+      "description": "Phase別結果ファイル（phase*.json）の保持期間"
+    },
+    "reports": {
+      "retentionDays": 30,
+      "description": "統合レポートファイルの保持期間"
+    },
+    "archives": {
+      "retentionDays": 90,
+      "description": "アーカイブファイル（tar.gz）の保持期間（通常の3倍）"
+    },
+    "protectedPatterns": [
+      "*-milestone-*",
+      "*-release-*",
+      "*-baseline-*"
+    ],
+    "description": "保護対象パターン（削除対象外）"
+  },
+  "autoCleanup": {
+    "enabled": true,
+    "runOnStartup": true,
+    "safeguards": {
+      "minimumFilesToKeep": 5,
+      "maxDiskUsagePercent": 80,
+      "dryRunFirst": false
+    },
+    "description": "自動クリーンアップの設定"
+  },
+  "comparison": {
+    "autoCompare": true,
+    "compareWithPrevious": true,
+    "showTrendAnalysis": true,
+    "enableRegressionDetection": true,
+    "regressionThresholds": {
+      "overallScoreDecrease": 10,
+      "testCoverageDecrease": 5.0,
+      "issueIncrease": 10,
+      "criticalIssueIncrease": 1
+    },
+    "description": "自動比較・トレンド分析の設定"
+  },
+  "storage": {
+    "baseDirectory": "docs/self-audit",
+    "subdirectories": {
+      "results": "results",
+      "reports": "reports", 
+      "archives": "archives",
+      "config": "config"
+    },
+    "fileNaming": {
+      "phaseResults": "phase{phaseId}-{phaseName}-{timestamp}.json",
+      "reports": "comprehensive-audit-summary-{timestamp}.{format}",
+      "archives": "audit-{timestamp}.tar.gz"
+    },
+    "description": "ストレージ構成設定"
+  },
+  "output": {
+    "formats": ["json", "markdown", "html", "csv"],
+    "defaultFormat": "json",
+    "compression": {
+      "enabled": true,
+      "archiveFormat": "tar.gz",
+      "compressionLevel": 6
+    },
+    "description": "出力形式とファイル圧縮設定"
+  },
+  "notifications": {
+    "regressionAlerts": {
+      "enabled": true,
+      "channels": ["console"],
+      "severity": "warning"
+    },
+    "cleanupSummary": {
+      "enabled": true,
+      "showDeletedCount": true,
+      "showFreedSpace": true
+    },
+    "trendHighlights": {
+      "enabled": true,
+      "showPositiveTrends": true,
+      "showNegativeTrends": true
+    },
+    "description": "通知・アラート設定"
+  },
+  "advanced": {
+    "parallelProcessing": {
+      "enabled": true,
+      "maxConcurrentOperations": 4
+    },
+    "caching": {
+      "enabled": true,
+      "cacheLifetime": 300
+    },
+    "validation": {
+      "strictTimestampValidation": true,
+      "validateFileIntegrity": true
+    },
+    "debugging": {
+      "enableVerboseLogging": false,
+      "logFileOperations": false,
+      "preserveTemporaryFiles": false
+    },
+    "description": "高度な設定オプション"
+  },
+  "presets": {
+    "development": {
+      "retentionDays": 14,
+      "autoCleanup": true,
+      "autoCompare": true,
+      "verboseLogging": true,
+      "description": "開発環境向け設定（短期保持、詳細ログ）"
+    },
+    "production": {
+      "retentionDays": 60,
+      "autoCleanup": true,
+      "autoCompare": false,
+      "verboseLogging": false,
+      "description": "本番環境向け設定（長期保持、最小ログ）"
+    },
+    "ci": {
+      "retentionDays": 7,
+      "autoCleanup": true,
+      "autoCompare": false,
+      "verboseLogging": false,
+      "description": "CI/CD環境向け設定（最短保持、シンプル）"
+    },
+    "audit": {
+      "retentionDays": 365,
+      "autoCleanup": false,
+      "autoCompare": true,
+      "verboseLogging": true,
+      "description": "監査用設定（長期保持、完全ログ）"
+    }
+  },
+  "migration": {
+    "version": "1.0",
+    "supportedVersions": ["1.0"],
+    "migrationScripts": [],
+    "backwardCompatibility": true,
+    "description": "設定ファイルのマイグレーション情報"
+  },
+  "metadata": {
+    "createdDate": "2025-07-26",
+    "lastModified": "2025-07-26",
+    "author": "Rimor Self-Audit System",
+    "configurationHash": null,
+    "description": "設定ファイルのメタデータ"
+  }
+}

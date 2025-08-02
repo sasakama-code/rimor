@@ -43,3 +43,38 @@ src/plugins/generated/*.ts
 
 # Cache files
 .rimor-cache/
+
+# Generated test and evaluation data
+benchmark-results/
+*-tests/
+test-accuracy-data/
+
+# AI Error Reports (kept for backward compatibility)
+test-errors-ai.md
+test-errors-ai.json
+test-output/
+accuracy-evaluation-*.json
+real-world-validation-*.json
+
+# Rimor generated files and directories
+.rimor/
+rimor-self-analysis.json
+rimor-src-analysis.json
+dogfooding-report.md
+context-engineering-evaluation.md
+test-creation-priority.md
+debt-tracker.md
+test-output.log
+test-output-after-fix.log
+empty-tests/
+invalid-tests/
+temp-tests/
+valid-test-dir/
+# Dogfooding analysis files
+rimor-dogfooding-*.json
+rimor-dogfooding-*.md
+rimor-dogfooding-*.txt
+
+# Accuracy evaluation files
+accuracy-evaluation-*.json
+test-errors-ai-summary.md

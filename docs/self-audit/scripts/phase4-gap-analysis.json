@@ -1,0 +1,92 @@
+{
+  "timestamp": "2025-07-27T03:08:03.664Z",
+  "phase": "4",
+  "name": "差異分析・改善提案",
+  "summary": {
+    "expectedScore": 95,
+    "actualScore": 41,
+    "gapIdentified": 2,
+    "overallScore": 80
+  },
+  "details": {
+    "expectedResults": {
+      "testCoverage": 95,
+      "securityCoverage": 90,
+      "issuesFound": 5
+    },
+    "actualResults": {
+      "testCoverage": 0,
+      "securityCoverage": 81,
+      "issuesFound": 0
+    },
+    "gaps": [
+      {
+        "category": "testCoverage",
+        "expected": 95,
+        "actual": 0,
+        "gap": 95,
+        "severity": "high"
+      },
+      {
+        "category": "securityCoverage",
+        "expected": 90,
+        "actual": 81,
+        "gap": 9,
+        "severity": "high"
+      }
+    ],
+    "improvementPlan": {
+      "phase1": {
+        "duration": "1週間",
+        "target": "重要なギャップの修正",
+        "actions": [
+          "testCoverageの改善",
+          "securityCoverageの改善"
+        ]
+      },
+      "phase2": {
+        "duration": "2週間",
+        "target": "全体的な品質向上",
+        "actions": [
+          "残りのテスト実装",
+          "品質指標の達成"
+        ]
+      },
+      "phase3": {
+        "duration": "継続的",
+        "target": "品質維持・向上",
+        "actions": [
+          "定期監査",
+          "継続的改善"
+        ]
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "testing",
+      "title": "テストカバレッジギャップ 95.0%",
+      "description": "期待値95%に対し実際は0.0%",
+      "suggestions": [
+        "未テストファイルの特定とテスト作成",
+        "エッジケースのテスト追加",
+        "テスト品質の向上"
+      ],
+      "impact": "high"
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "title": "セキュリティテストカバレッジギャップ 9.0%",
+      "description": "セキュリティモジュールのテストが不足しています",
+      "suggestions": [
+        "セキュリティ機能のユニットテスト作成",
+        "統合セキュリティテストの実装",
+        "TaintTyper機能のテスト強化"
+      ],
+      "impact": "high"
+    }
+  ],
+  "executionTime": 1
+}

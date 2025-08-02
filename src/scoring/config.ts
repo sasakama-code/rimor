@@ -4,7 +4,7 @@ import {
   GRADE_THRESHOLDS,
   GradeType
 } from './types';
-import { WeightsManager } from './weights';
+// WeightsManager removed - using default weights
 import fs from 'fs';
 import path from 'path';
 
@@ -38,10 +38,29 @@ export interface ConfigValidationResult {
  * rimor.config.json との統合とスコアリング専用設定の管理
  */
 export class ScoringConfigManager {
-  private weightsManager: WeightsManager;
+  // WeightsManager removed
 
   constructor() {
-    this.weightsManager = new WeightsManager();
+    // WeightsManager initialization removed
+  }
+
+  /**
+   * Get default weights
+   */
+  private getDefaultWeights(): WeightConfig {
+    return {
+      dimensions: {
+        correctness: 0.25,
+        completeness: 0.25,
+        maintainability: 0.20,
+        performance: 0.15,
+        security: 0.15
+      },
+      plugins: {
+        'test-existence': 1.0,
+        'assertion-exists': 1.0
+      }
+    };
   }
 
   /**
@@ -166,7 +185,8 @@ export class ScoringConfigManager {
    * @returns プリセットスコアリング設定
    */
   generatePresetConfig(preset: 'strict' | 'balanced' | 'performance' | 'legacy'): ScoringConfig {
-    const weights = this.weightsManager.generatePresetWeights(preset);
+    // Use default weights
+    const weights = this.getDefaultWeights();
     
     const gradeThresholds = this.generatePresetGradeThresholds(preset);
     
@@ -199,10 +219,10 @@ export class ScoringConfigManager {
       errors.push('weights フィールドが必要です');
     } else {
       // 重み設定の検証
-      const weightValidation = this.weightsManager.validateWeights(config.weights);
-      errors.push(...weightValidation.errors);
-      warnings.push(...weightValidation.warnings);
-      suggestions.push(...weightValidation.suggestions);
+      // Simple weight validation
+      if (!config.weights || typeof config.weights !== 'object') {
+        errors.push('重み設定が無効です');
+      }
     }
 
     if (!config.gradeThresholds) {
@@ -305,11 +325,8 @@ export class ScoringConfigManager {
     }
   ): Promise<ScoringConfig> {
     // 重みの最適化
-    const optimizedWeights = await this.weightsManager.getOptimizedWeights({
-      totalFiles: projectStats.totalFiles,
-      pluginUsage: projectStats.pluginUsage,
-      dimensionImportance: projectStats.dimensionImportance as any
-    });
+    // Use default weights for optimization
+    const optimizedWeights = this.getDefaultWeights();
 
     // グレード閾値の最適化
     const optimizedThresholds = this.optimizeGradeThresholds(
@@ -529,7 +546,7 @@ export class ScoringConfigManager {
 
     // 重み設定の処理
     if (scoringSection.weights) {
-      config.weights = this.weightsManager['mergeWithDefaults'](scoringSection.weights);
+      config.weights = { ...this.getDefaultWeights(), ...scoringSection.weights };
     }
 
     // グレード閾値の処理

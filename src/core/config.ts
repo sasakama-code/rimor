@@ -1,8 +1,8 @@
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { errorHandler } from '../utils/errorHandler';
-import { getMessage } from '../i18n/messages';
 import { metadataDrivenConfigManager, ConfigGenerationOptions } from './metadataDrivenConfig';
 import { pluginMetadataRegistry } from './pluginMetadata';
 import { ConfigSecurity, DEFAULT_CONFIG_SECURITY_LIMITS } from '../security/ConfigSecurity';
@@ -27,6 +27,7 @@ export interface RimorConfig {
   output: {
     format: 'text' | 'json';
     verbose: boolean;
+    reportDir?: string;  // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
   };
   metadata?: {
     generatedAt?: string;
@@ -185,7 +186,7 @@ export class ConfigLoader {
     }
     
     // 設定ファイルが存在しない場合、メタデータ駆動設定を生成
-    console.log(getMessage('config.file.not_found'));
+    console.log("");
     
     // プラグインを自動発見
     await this.discoverAvailablePlugins();
@@ -196,18 +197,18 @@ export class ConfigLoader {
     // 設定検証
     const validation = metadataDrivenConfigManager.validateConfig(generatedConfig);
     if (!validation.isValid) {
-      console.warn(getMessage('config.generated.warning', { errors: validation.errors.join(', ') }));
+      console.warn("");
       return this.getDefaultConfig();
     }
     
     // 警告があれば表示
     if (validation.warnings.length > 0) {
-      console.warn(getMessage('config.validation.warning', { warnings: validation.warnings.join(', ') }));
+      console.warn("");
     }
     
     // 提案があれば表示
     if (validation.suggestions.length > 0) {
-      console.log(getMessage('config.improvement.suggestion', { suggestions: validation.suggestions.join(', ') }));
+      console.log("");
     }
     
     console.log(`メタデータ駆動設定を生成しました（プラグイン数: ${Object.keys(generatedConfig.plugins).length}）`);
@@ -221,8 +222,11 @@ export class ConfigLoader {
     while (currentDir !== rootDir) {
       for (const filename of ConfigLoader.CONFIG_FILENAMES) {
         const configPath = path.join(currentDir, filename);
-        if (fs.existsSync(configPath)) {
+        try {
+          await fsPromises.access(configPath);
           return configPath;
+        } catch {
+          // ファイルが存在しない、続行
         }
       }
       currentDir = path.dirname(currentDir);
@@ -252,6 +256,7 @@ export class ConfigLoader {
       plugins,
       output: {
         format: 'text',
+        reportDir: '.rimor/reports',
         verbose: false
       }
     };
@@ -323,9 +328,9 @@ export class ConfigLoader {
       
       // コアプラグイン (高度な品質分析プラグイン)
       const corePlugins = [
-        { file: 'core/AssertionQualityPlugin.ts', name: 'assertion-quality', displayName: 'Assertion Quality', description: getMessage('config.plugin.description.assertion_quality') },
-        { file: 'core/TestCompletenessPlugin.ts', name: 'test-completeness', displayName: 'Test Completeness', description: getMessage('config.plugin.description.test_completeness') },
-        { file: 'core/TestStructurePlugin.ts', name: 'test-structure', displayName: 'Test Structure', description: getMessage('config.plugin.description.test_structure') }
+        { file: 'core/AssertionQualityPlugin.ts', name: 'assertion-quality', displayName: 'Assertion Quality', description: "" },
+        { file: 'core/TestCompletenessPlugin.ts', name: 'test-completeness', displayName: 'Test Completeness', description: "" },
+        { file: 'core/TestStructurePlugin.ts', name: 'test-structure', displayName: 'Test Structure', description: "" }
       ];
       
       for (const core of corePlugins) {
@@ -345,7 +350,7 @@ export class ConfigLoader {
       errorHandler.handleError(
         error,
         undefined,
-        getMessage('config.plugin.auto_detection_failed'),
+        "",
         undefined,
         true
       );

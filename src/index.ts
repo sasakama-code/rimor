@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { CLI } from './cli/cli';
-import { getMessage } from './i18n/messages';
 
 async function main() {
   const cli = new CLI();
@@ -8,6 +7,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(getMessage('cli.execution_error'), error);
+  console.error("Error:", error.message || error);
+  if (error.stack) {
+    console.error("Stack trace:", error.stack);
+  }
   process.exit(1);
 });

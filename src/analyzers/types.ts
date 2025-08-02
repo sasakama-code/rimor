@@ -21,6 +21,7 @@ export interface AnalysisOptions {
   includeServices?: boolean;
   analyzeDependencies?: boolean;
   includeTransitiveDeps?: boolean;
+  includeSiblings?: boolean;
 }
 
 // 拡張されたコードコンテキスト
@@ -39,7 +40,7 @@ export interface ExtractedCodeContext {
   };
   
   // インポート/エクスポート
-  imports: string[];
+  imports: Array<{ source: string }>;
   exports: string[];
   
   // 構造情報
@@ -54,6 +55,15 @@ export interface ExtractedCodeContext {
   
   // 使用されているAPI/ライブラリ
   usedAPIs: string[];
+  
+  // 言語
+  language: string;
+  
+  // 依存関係
+  dependencies: {
+    dependencies: string[];
+    dependents: string[];
+  };
   
   // メタデータ
   metadata: {
@@ -77,6 +87,7 @@ export interface FunctionInfo {
   complexity?: number;
   calls: string[]; // 呼び出している関数
   calledBy: string[]; // この関数を呼び出している関数
+  variables?: string[]; // 関数内で定義されている変数
 }
 
 // クラス情報
@@ -113,6 +124,7 @@ export interface VariableInfo {
   isConst: boolean;
   isExported: boolean;
   usage: VariableUsage[];
+  kind?: 'const' | 'let' | 'var';
 }
 
 export interface VariableUsage {
@@ -129,16 +141,23 @@ export interface ScopeInfo {
   variables: string[];
   parent?: ScopeInfo;
   children: ScopeInfo[];
+  functions?: string[];
+  level?: number;
+  parentScope?: string;
 }
 
 // 関連ファイル情報
 export interface RelatedFileInfo {
   path: string;
-  relationship: 'import' | 'export' | 'test' | 'similar' | 'dependency';
+  relationship: 'import' | 'export' | 'test' | 'similar' | 'dependency' | 'sibling';
   confidence: number;
   reason: string;
   size?: number;
   lastModified?: Date;
+  language?: string;
+  similarity?: number;
+  exports?: string[];
+  functions?: string[];
 }
 
 // 依存関係分析結果
