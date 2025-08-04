@@ -1,32 +1,34 @@
-# Rimor - テスト品質監査ツール v0.8.0
+# Rimor - テスト意図実現度監査ツール v2.0
 
-**Rimor**（リモール）は、テストの「質」を監査することに特化した、シンプルで強力なツールです。単なるテストカバレッジを超えて、テストが本当にプロダクトの品質を守っているかを検証します。
+**Rimor**（リモール）は、テストコードの「意図」と「実装」のギャップを可視化し、プロジェクトに本当に必要なテストの改善を支援する革新的なツールです。単なるカバレッジ測定を超えて、テストの実効性を科学的に評価します。
 
-## 🎯 v0.8.0の特徴 - コア価値への回帰
+## 🎯 v2.0の特徴 - テスト意図実現度の可視化
 
-Rimor v0.8.0は、「テスト品質監査」というコア価値に集中するため、アーキテクチャを完全に再設計しました。
+Rimor v2.0は、「テストが何をテストしたいか」と「実際に何をテストしているか」のギャップを検出し、リスクベースで改善優先順位を提示します。
 
 ### 主要な特徴
 
-- 🏗️ **DIベースアーキテクチャ** - Inversifyによる疎結合で保守性の高い設計
-- ⚡ **統合分析エンジン** - 3つのエンジンを統合し、最適な分析モードを自動選択
-- 🔬 **型ベースセキュリティ解析** - コンパイル時解析でゼロランタイムオーバーヘッド
-- 📋 **YAMLベースルール定義** - シンプルで理解しやすいルール設定
-- 🚀 **高速実行** - 並列処理最適化により最大2倍の高速化
+- 🧠 **テスト意図の自動抽出** - 型情報とテスト名から意図を推論
+- 🎯 **ギャップ分析エンジン** - 意図と実装の乖離を自動検出
+- 🔬 **型ベース解析** - TypeScriptの型システムを活用した精密な分析
+- 📊 **NIST SP 800-30準拠** - 体系的なリスク評価と優先順位付け
+- 🚀 **依存関係考慮** - 影響範囲を考慮した包括的な評価
 
-### パフォーマンス指標
+### 差別化ポイント
 
-- ⚡ **起動時間**: 40%短縮
-- 💾 **メモリ使用量**: 30%削減
-- 🚀 **分析速度**: 最大2倍高速化
+- 📈 **カバレッジを超えた品質評価** - テストの「質」に焦点
+- 🎯 **プロジェクト適合性** - テストがプロジェクト目的に適しているか評価
+- 🔍 **実用的な改善提案** - 具体的なアクションを提示
 
 ## 🎓 技術的基盤
 
-Rimorの設計は、以下の研究成果から影響を受けています：
+Rimorの設計は、以下の技術と標準に基づいています：
 
-- **型ベースセキュリティ解析**: [Practical Type-Based Taint Checking and Inference](https://arxiv.org/abs/2504.18529) - TypeScriptの型システムを活用した静的解析手法の実装において、この論文で提案されたtaint追跡とtype inferenceの概念を参考にしています。
+- **型ベース解析**: [Practical Type-Based Taint Checking and Inference](https://arxiv.org/abs/2504.18529) - TypeScriptの型システムを活用し、テストコードの意図を型情報から推論する手法を実装
+- **NIST SP 800-30**: リスクアセスメントガイド - 脅威×脆弱性×影響の体系的評価手法を採用
+- **テスト意図抽出**: テスト名、型情報、アサーションから多角的に意図を推論
 
-この研究により、実行時オーバーヘッドなしにセキュリティ脆弱性を検出できる効率的な解析が可能になりました。
+これらの技術により、テストコードの「形式」だけでなく「意味」を理解し、プロジェクトに適したテストかどうかを科学的に評価できます。
 
 ## インストール
 
@@ -62,29 +64,76 @@ npm run build
 ### 基本的な使用方法
 
 ```bash
-# プロジェクトの分析
-npx rimor analyze ./src
+# テストコードの意図実現度を分析
+npx rimor analyze ./test
 
-# JSON形式で出力
-npx rimor analyze ./src --output=json
+# リスクベースの優先順位付きレポート
+npx rimor analyze ./test --risk-based
 
-# 並列処理モードで高速分析
-npx rimor analyze ./src --mode=parallel
+# 特定のリスクレベル以上のみ表示
+npx rimor analyze ./test --risk-threshold=high
+
+# JSON形式で詳細出力
+npx rimor analyze ./test --format=json --detailed
 ```
 
 ### プログラマティックAPI
 
 ```typescript
-import { container } from 'rimor/container';
-import { TYPES } from 'rimor/container/types';
-import { IAnalysisEngine } from 'rimor/core/interfaces';
+import { RimorAnalyzer } from 'rimor';
 
-// DIコンテナから分析エンジンを取得
-const engine = container.get<IAnalysisEngine>(TYPES.AnalysisEngine);
+// テスト意図実現度分析器の初期化
+const analyzer = new RimorAnalyzer({
+  projectContext: {
+    type: 'ecommerce',
+    criticalFeatures: ['payment', 'authentication']
+  }
+});
 
-// 分析の実行
-const result = await engine.analyze('./src');
-console.log(`検出された問題: ${result.issues.length}件`);
+// テストコードの分析
+const result = await analyzer.analyzeTests('./test');
+
+// 高リスクのギャップを取得
+const criticalGaps = result.gaps.filter(gap => gap.riskLevel === 'CRITICAL');
+console.log(`重大なテストギャップ: ${criticalGaps.length}件`);
+
+// 改善提案の表示
+result.recommendations.forEach(rec => {
+  console.log(`${rec.priority}: ${rec.action}`);
+});
+```
+
+### 分析結果の例
+
+```typescript
+// Rimorが検出するテストギャップの例
+{
+  testFile: "payment.test.ts",
+  testName: "should process payment successfully",
+  
+  // 意図分析
+  intent: {
+    extracted: "決済処理の成功ケース",
+    expectedBehaviors: ["正常処理", "エラーハンドリング", "並行処理"]
+  },
+  
+  // ギャップ
+  gaps: [{
+    type: "missing_error_cases",
+    description: "ネットワークエラー、タイムアウトのテストが欠落",
+    severity: "HIGH"
+  }],
+  
+  // リスク評価（NIST SP 800-30準拠）
+  riskAssessment: {
+    threat: 8,        // 決済機能の複雑性
+    vulnerability: 9,  // エラーケース未テスト
+    impact: 10,       // 金銭的影響
+    totalRisk: 720,   // CRITICAL
+    
+    recommendation: "ネットワーク障害とタイムアウトのテストを最優先で追加"
+  }
+}
 ```
 
 ## 📋 ルール定義
@@ -128,17 +177,28 @@ const pluginManager = container.get<IPluginManager>(TYPES.PluginManager);
 pluginManager.register(new CustomPlugin());
 ```
 
-## 📊 セキュリティ監査
+## 📊 リスクベース評価
 
-組み込みのセキュリティ監査機能により、テストコードのセキュリティ問題を検出：
+NIST SP 800-30に基づく体系的なリスク評価により、改善優先順位を明確化：
 
 ```bash
-# セキュリティ監査の実行
-npx rimor analyze ./src --security
+# リスクベース分析の実行
+npx rimor analyze ./test --risk-assessment
 
-# 詳細なセキュリティレポート
-npx rimor analyze ./src --security --verbose
+# CRITICALレベルのリスクのみ表示
+npx rimor analyze ./test --risk-level=critical
+
+# 影響度分析を含む詳細レポート
+npx rimor analyze ./test --impact-analysis --verbose
 ```
+
+### リスク評価の仕組み
+
+- **脅威（Threat）**: テストの複雑性、変更頻度
+- **脆弱性（Vulnerability）**: テストギャップ、アサーション品質
+- **影響（Impact）**: ビジネス影響、技術的影響
+
+リスクスコア = 脅威 × 脆弱性 × 影響
 
 ## 🔧 設定
 
@@ -146,15 +206,20 @@ npx rimor analyze ./src --security --verbose
 
 ```json
 {
-  "targetPath": "./src",
-  "plugins": {
-    "testExistence": true,
-    "assertionQuality": true,
-    "securityAudit": true
+  "projectContext": {
+    "type": "ecommerce",
+    "criticalFeatures": ["payment", "inventory", "authentication"],
+    "complianceRequirements": ["PCI-DSS"]
+  },
+  "analysis": {
+    "targetPath": "./test",
+    "includePatterns": ["**/*.test.ts", "**/*.spec.ts"],
+    "riskThreshold": "medium"
   },
   "output": {
     "format": "json",
-    "path": "./rimor-report.json"
+    "path": "./rimor-analysis.json",
+    "includeRecommendations": true
   }
 }
 ```
@@ -183,6 +248,19 @@ MITライセンス - 詳細は[LICENSE](./LICENSE)ファイルを参照してく
 
 最新の変更については[CHANGELOG.md](./CHANGELOG.md)を参照してください。
 
+## 🎯 なぜRimorが必要か
+
+### 既存ツールの限界
+- **カバレッジツール**: 実行率は測れるが、テストの質は評価できない
+- **静的解析ツール**: プロダクトコードは分析するが、テストコードの適切性は評価しない
+- **セキュリティツール**: 脆弱性は検出するが、セキュリティテストの網羅性は評価しない
+
+### Rimorが提供する価値
+1. **テストの意図を理解** - 「何をテストしたいか」を自動的に推論
+2. **ギャップを可視化** - 意図と実装の乖離を明確に提示
+3. **優先順位を明確化** - リスクベースで改善すべきテストを特定
+4. **具体的な改善提案** - 実装可能なアクションを提示
+
 ---
 
-**Rimor** - テストの質を監査し、真の品質保証を実現する
+**Rimor** - テストコードの「意図」と「実装」のギャップを科学的に評価し、真の品質保証を実現する
