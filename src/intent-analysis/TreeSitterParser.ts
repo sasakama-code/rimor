@@ -8,6 +8,7 @@ import JavaScript from 'tree-sitter-javascript';
 import TypeScript from 'tree-sitter-typescript';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 
 /**
@@ -21,15 +22,30 @@ export enum SupportedLanguage {
 }
 
 /**
+ * キャッシュエントリ
+ * KISS原則: シンプルなキャッシュ構造
+ */
+interface CacheEntry {
+  ast: ASTNode;
+  contentHash: string;
+  timestamp: number;
+}
+
+/**
  * Tree-sitterベースのパーサー（シングルトン実装）
  * YAGNI原則: 必要な時のみインスタンス化
  */
 export class TreeSitterParser {
   private static instance: TreeSitterParser;
   private parsers: Map<SupportedLanguage, Parser>;
+  private cache: Map<string, CacheEntry>;
+  private maxCacheSize: number = 100; // 最大キャッシュサイズ
+  private cacheHits: number = 0;
+  private cacheMisses: number = 0;
 
   private constructor() {
     this.parsers = new Map();
+    this.cache = new Map();
     this.initializeParsers();
   }
 
@@ -65,12 +81,95 @@ export class TreeSitterParser {
   }
 
   /**
-   * ファイルを解析してASTを生成
+   * ファイルを解析してASTを生成（キャッシュ対応）
+   * DRY原則: キャッシュロジックの一元化
    */
   async parseFile(filePath: string): Promise<ASTNode> {
+    // ファイルの統計情報を取得
+    const stats = await fs.stat(filePath);
+    const cacheKey = filePath;
+    
+    // キャッシュをチェック
+    const cachedEntry = this.cache.get(cacheKey);
+    if (cachedEntry && cachedEntry.timestamp === stats.mtimeMs) {
+      this.cacheHits++;
+      return cachedEntry.ast;
+    }
+    
+    // キャッシュミス - ファイルを読み込んで解析
+    this.cacheMisses++;
     const content = await fs.readFile(filePath, 'utf-8');
+    const contentHash = this.calculateHash(content);
+    
+    // 既存のキャッシュエントリのハッシュをチェック
+    if (cachedEntry && cachedEntry.contentHash === contentHash) {
+      // 内容は同じだがタイムスタンプが異なる場合、タイムスタンプのみ更新
+      cachedEntry.timestamp = stats.mtimeMs;
+      this.cacheHits++;
+      return cachedEntry.ast;
+    }
+    
+    // 新規パース
     const language = this.detectLanguage(filePath);
-    return this.parseContent(content, language);
+    const ast = this.parseContent(content, language);
+    
+    // キャッシュに保存
+    this.addToCache(cacheKey, {
+      ast,
+      contentHash,
+      timestamp: stats.mtimeMs
+    });
+    
+    return ast;
+  }
+
+  /**
+   * コンテンツのハッシュ値を計算
+   * KISS原則: シンプルなハッシュ計算
+   */
+  private calculateHash(content: string): string {
+    return crypto.createHash('md5').update(content).digest('hex');
+  }
+
+  /**
+   * キャッシュに追加（LRU方式）
+   * Defensive Programming: キャッシュサイズの制限
+   */
+  private addToCache(key: string, entry: CacheEntry): void {
+    // キャッシュサイズが上限に達した場合、最も古いエントリを削除
+    if (this.cache.size >= this.maxCacheSize && !this.cache.has(key)) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
+    
+    // 新しいエントリを追加（既存の場合は更新）
+    this.cache.delete(key); // 順序を更新するため一旦削除
+    this.cache.set(key, entry);
+  }
+
+  /**
+   * キャッシュ統計を取得
+   * YAGNI原則: 必要最小限の統計情報
+   */
+  getCacheStats(): { hits: number; misses: number; hitRate: number } {
+    const total = this.cacheHits + this.cacheMisses;
+    const hitRate = total > 0 ? this.cacheHits / total : 0;
+    return {
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      hitRate
+    };
+  }
+
+  /**
+   * キャッシュをクリア
+   */
+  clearCache(): void {
+    this.cache.clear();
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
   }
 
   /**

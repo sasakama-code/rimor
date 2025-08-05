@@ -200,7 +200,11 @@ describe('Intent Analysis Performance', () => {
       console.log(`1回目: ${firstTime.toFixed(2)}ms, 2回目: ${secondTime.toFixed(2)}ms`);
       console.log(`高速化率: ${((firstTime - secondTime) / firstTime * 100).toFixed(2)}%`);
       
-      // 現時点ではキャッシュが実装されていないため、このテストは失敗する
+      // キャッシュ統計を表示
+      const cacheStats = parser.getCacheStats();
+      console.log(`キャッシュ統計: ヒット=${cacheStats.hits}, ミス=${cacheStats.misses}, ヒット率=${(cacheStats.hitRate * 100).toFixed(2)}%`);
+      
+      // キャッシュが実装されたので、2回目は高速化されるはず
       expect(secondTime).toBeLessThan(firstTime * 0.5); // 50%以上高速化
     });
   });
