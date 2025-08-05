@@ -73,18 +73,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       concepts: [],
       businessImportance: 'low' as const
     };
-    let businessCriticality = await this.calculateBusinessImportance(allFunctions, primaryDomain);
-    
-    // ドメインオーバーライドが無効化されていない場合のみ、特定ドメインの特別扱いを適用
-    if (!this.importanceConfig.disableDomainOverrides) {
-      if (primaryDomain.domain === 'payment' && primaryDomain.businessImportance === 'critical') {
-        businessCriticality = {
-          ...businessCriticality,
-          level: 'critical',
-          score: Math.max(businessCriticality.score, 85)
-        };
-      }
-    }
+    const businessCriticality = await this.calculateBusinessImportance(allFunctions, primaryDomain);
 
     // 影響範囲の分析
     const impactScope: ImpactScope = {
@@ -184,25 +173,25 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       }
     }
 
-    // パスベースの推論
+    // パスベースの推論（信頼度を控えめに設定）
     if (filePath.includes('payment') || filePath.includes('Payment')) {
       return {
         domain: 'payment',
-        confidence: 0.8,
+        confidence: 0.6,
         concepts: ['決済'],
-        businessImportance: 'critical'
+        businessImportance: 'high'  // criticalではなくhighをデフォルトに
       };
     } else if (filePath.includes('order') || filePath.includes('Order')) {
       return {
         domain: 'order-management',
-        confidence: 0.8,
+        confidence: 0.6,
         concepts: ['注文'],
         businessImportance: 'high'
       };
     } else if (filePath.includes('user') || filePath.includes('User')) {
       return {
         domain: 'user-management',
-        confidence: 0.8,
+        confidence: 0.6,
         concepts: ['ユーザー管理'],
         businessImportance: 'high'
       };

@@ -31,19 +31,19 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
 
   // 組み込みのドメインパターン（設定可能な信頼度を持つ）
   private builtInPatterns = new Map<string, { domain: string; confidence: number; concepts: string[]; importance: BusinessImportance }>([
-    ['User', { domain: 'user-management', confidence: 0.9, concepts: ['ユーザー', '認証', 'アカウント管理'], importance: 'high' }],
-    ['PaymentService', { domain: 'payment', confidence: 0.95, concepts: ['決済', '支払い', 'トランザクション'], importance: 'critical' }],
-    ['Order', { domain: 'order-management', confidence: 0.85, concepts: ['注文'], importance: 'high' }],
-    ['AuthenticationService', { domain: 'authentication', confidence: 0.92, concepts: ['認証', 'アクセス制御', 'セキュリティ'], importance: 'critical' }],
-    ['Invoice', { domain: 'billing', confidence: 0.88, concepts: ['請求', '課金'], importance: 'critical' }],
-    ['InvoiceProcessor', { domain: 'billing', confidence: 0.88, concepts: ['請求', '課金', '会計', '税務'], importance: 'critical' }]
+    ['User', { domain: 'user-management', confidence: 0.7, concepts: ['ユーザー', '認証', 'アカウント管理'], importance: 'high' }],
+    ['PaymentService', { domain: 'payment', confidence: 0.75, concepts: ['決済', '支払い', 'トランザクション'], importance: 'high' }],
+    ['Order', { domain: 'order-management', confidence: 0.65, concepts: ['注文'], importance: 'high' }],
+    ['AuthenticationService', { domain: 'authentication', confidence: 0.75, concepts: ['認証', 'アクセス制御', 'セキュリティ'], importance: 'high' }],
+    ['Invoice', { domain: 'billing', confidence: 0.7, concepts: ['請求', '課金'], importance: 'high' }],
+    ['InvoiceProcessor', { domain: 'billing', confidence: 0.7, concepts: ['請求', '課金', '会計', '税務'], importance: 'high' }]
   ]);
 
-  // ドメイン重要度マップ
+  // ドメイン重要度マップ（控えめなデフォルト値）
   private readonly domainImportanceMap = new Map<string, BusinessImportance>([
-    ['payment', 'critical'],
-    ['authentication', 'critical'],
-    ['billing', 'critical'],
+    ['payment', 'high'],
+    ['authentication', 'high'],
+    ['billing', 'high'],
     ['user-management', 'high'],
     ['order-management', 'high'],
     ['logging', 'medium'],
@@ -71,7 +71,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
       if (typeInfo.typeName === 'Repository' && argPattern) {
         return {
           domain: argPattern.domain,
-          confidence: 0.85,
+          confidence: Math.min(0.8, argPattern.confidence + 0.1),  // 複合証拠によるわずかな増加
           concepts: [...argPattern.concepts, 'リポジトリ', 'データアクセス'],
           businessImportance: argPattern.importance
         };
