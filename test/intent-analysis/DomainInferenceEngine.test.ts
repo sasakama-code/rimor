@@ -165,4 +165,121 @@ describe('DomainInferenceEngine', () => {
       expect(result.concepts).toContain('サービス層');
     });
   });
+
+  describe('信頼度算出の改善', () => {
+    it('設定された信頼度値が固定値ではなく設定可能である', async () => {
+      // 現在の実装では信頼度がハードコードされているため、このテストは失敗するはず
+      const engine1 = new DomainInferenceEngine();
+      const engine2 = new DomainInferenceEngine();
+      
+      // 同じ型に対して異なる信頼度を設定できるべき
+      const typeInfo: TypeInfo = {
+        typeName: 'PaymentService',
+        isPrimitive: false
+      };
+      
+      // engine1のデフォルト値
+      const result1 = await engine1.inferDomainFromType(typeInfo);
+      
+      // engine2に異なる設定を適用
+      engine2.setConfidenceConfig({ typeConfidenceMap: { PaymentService: 0.7 } });
+      const result2 = await engine2.inferDomainFromType(typeInfo);
+      
+      // engine1はデフォルト値
+      expect(result1.confidence).toBe(0.95);
+      // engine2は設定された値
+      expect(result2.confidence).toBe(0.7);
+    });
+
+    it('ハードコードされた値の検証', async () => {
+      // 現在の実装のハードコード値を明示的に検証
+      const testCases = [
+        { typeName: 'User', expectedConfidence: 0.9 },
+        { typeName: 'PaymentService', expectedConfidence: 0.95 },
+        { typeName: 'Order', expectedConfidence: 0.85 },
+        { typeName: 'AuthenticationService', expectedConfidence: 0.92 },
+        { typeName: 'Invoice', expectedConfidence: 0.88 }
+      ];
+      
+      for (const testCase of testCases) {
+        const typeInfo: TypeInfo = {
+          typeName: testCase.typeName,
+          isPrimitive: false
+        };
+        
+        const result = await engine.inferDomainFromType(typeInfo);
+        expect(result.confidence).toBe(testCase.expectedConfidence);
+      }
+    });
+
+
+    it('文脈に応じて信頼度が動的に変化する', async () => {
+      // 同じ型でも、文脈情報によって信頼度が変化することを検証
+      const typeInfo: TypeInfo = {
+        typeName: 'ProcessorService',
+        isPrimitive: false
+      };
+
+      // 文脈1: 支払い処理の文脈
+      const paymentContext = {
+        filePath: '/src/payment/services/ProcessorService.ts',
+        className: 'ProcessorService',
+        imports: ['Payment', 'Transaction', 'CreditCard']
+      };
+
+      const paymentResult = await engine.inferDomainFromContext(paymentContext);
+      
+      // 文脈2: 一般的なデータ処理の文脈
+      const generalContext = {
+        filePath: '/src/utils/services/ProcessorService.ts',
+        className: 'ProcessorService',
+        imports: ['Logger', 'Config']
+      };
+
+      const generalResult = await engine.inferDomainFromContext(generalContext);
+
+      // 支払い文脈の方が信頼度が高いことを検証
+      expect(paymentResult.confidence).toBeGreaterThan(generalResult.confidence);
+      expect(paymentResult.domain).toBe('payment');
+      expect(generalResult.domain).not.toBe('payment');
+    });
+
+    it('複数の証拠が重なると信頼度が上昇する', async () => {
+      // 単一の証拠
+      const singleEvidence: TypeInfo = {
+        typeName: 'SimpleService',
+        isPrimitive: false
+      };
+      
+      const singleResult = await engine.inferDomainFromType(singleEvidence);
+
+      // 複数の証拠が組み合わさった場合
+      const multiEvidence = {
+        filePath: '/src/payment/services/PaymentService.ts',
+        className: 'PaymentService',
+        imports: ['Payment', 'Transaction', 'PaymentGateway', 'PaymentValidator']
+      };
+
+      const multiResult = await engine.inferDomainFromContext(multiEvidence);
+
+      // 複数の証拠がある方が信頼度が高い
+      expect(multiResult.confidence).toBeGreaterThan(singleResult.confidence);
+    });
+
+    it('信頼度は0.0から1.0の範囲に正規化される', async () => {
+      // 様々なケースで信頼度が適切な範囲内にあることを検証
+      const testCases: TypeInfo[] = [
+        { typeName: 'string', isPrimitive: true },
+        { typeName: 'UnknownType', isPrimitive: false },
+        { typeName: 'PaymentService', isPrimitive: false },
+        { typeName: 'Repository', isPrimitive: false, typeArguments: [{ typeName: 'User', isPrimitive: false }] }
+      ];
+
+      for (const testCase of testCases) {
+        const result = await engine.inferDomainFromType(testCase);
+        expect(result.confidence).toBeGreaterThanOrEqual(0.0);
+        expect(result.confidence).toBeLessThanOrEqual(1.0);
+      }
+    });
+  });
 });

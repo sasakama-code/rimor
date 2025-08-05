@@ -14,7 +14,8 @@ import {
   BusinessFunction,
   BusinessCriticality,
   ImpactScope,
-  RiskAssessment
+  RiskAssessment,
+  DomainImportanceConfig
 } from './IBusinessLogicMapper';
 import { CallGraphNode, TypeInfo } from './ITypeScriptAnalyzer';
 import { DomainInference } from './IDomainInferenceEngine';
@@ -22,6 +23,19 @@ import { DomainInferenceEngine } from './DomainInferenceEngine';
 
 export class BusinessLogicMapper implements IBusinessLogicMapper {
   private domainEngine: DomainInferenceEngine;
+  
+  // ドメイン重要度設定
+  private importanceConfig: DomainImportanceConfig = {
+    weightMap: {
+      critical: 70,
+      high: 50,
+      medium: 30,
+      low: 15
+    },
+    criticalDomains: ['payment', 'authentication', 'user-management', 'security', 'billing'],
+    domainBonus: 15,
+    disableDomainOverrides: false
+  };
 
   constructor() {
     this.domainEngine = new DomainInferenceEngine();
@@ -61,13 +75,15 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     };
     let businessCriticality = await this.calculateBusinessImportance(allFunctions, primaryDomain);
     
-    // Paymentドメインの場合は特別にcriticalに設定
-    if (primaryDomain.domain === 'payment' && primaryDomain.businessImportance === 'critical') {
-      businessCriticality = {
-        ...businessCriticality,
-        level: 'critical',
-        score: Math.max(businessCriticality.score, 85)
-      };
+    // ドメインオーバーライドが無効化されていない場合のみ、特定ドメインの特別扱いを適用
+    if (!this.importanceConfig.disableDomainOverrides) {
+      if (primaryDomain.domain === 'payment' && primaryDomain.businessImportance === 'critical') {
+        businessCriticality = {
+          ...businessCriticality,
+          level: 'critical',
+          score: Math.max(businessCriticality.score, 85)
+        };
+      }
     }
 
     // 影響範囲の分析
@@ -223,22 +239,30 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     );
     const businessRuleScore = file.functions.filter(f => f.containsBusinessRules).length * 20;
     
-    // 全ての重要ドメインに対して公平にボーナスを付与
-    const criticalDomains = ['payment', 'authentication', 'user-management', 'security', 'billing'];
-    const domainBonus = criticalDomains.includes(file.domain.domain) ? 15 : 0;
+    // 設定されたクリティカルドメインに対してボーナスを付与
+    const criticalDomains = this.importanceConfig.criticalDomains || [];
+    const domainBonus = criticalDomains.includes(file.domain.domain) 
+      ? (this.importanceConfig.domainBonus || 15) 
+      : 0;
     
     return Math.min(100, domainWeight + complexityScore * 0.3 + businessRuleScore * 0.5 + domainBonus);
   }
 
   private getDomainWeight(importance: string): number {
-    // ドメインの重要度をより適切に反映（品質保証の観点から）
-    const weights: Record<string, number> = {
-      critical: 70,  // セキュリティ、決済、認証など最重要ドメイン
-      high: 50,      // ユーザー管理、請求など重要ドメイン
-      medium: 30,    // 一般的なビジネスロジック
-      low: 15        // ユーティリティ、ロギングなど
+    // 設定された重み付けを使用（設定がない場合はデフォルト値）
+    if (this.importanceConfig.weightMap) {
+      const key = importance as keyof typeof this.importanceConfig.weightMap;
+      return this.importanceConfig.weightMap[key] ?? 15;
+    }
+    
+    // デフォルト値
+    const defaultWeights: Record<string, number> = {
+      critical: 70,
+      high: 50,
+      medium: 30,
+      low: 15
     };
-    return weights[importance] || 15;
+    return defaultWeights[importance] || 15;
   }
 
   private estimateComplexity(node: CallGraphNode): number {
@@ -453,5 +477,12 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     const criticalPatterns = domains.map(d => new RegExp(d.replace('-', ''), 'i'));
     
     return criticalPatterns.some(pattern => pattern.test(filePath));
+  }
+  
+  /**
+   * ドメイン重要度設定を適用
+   */
+  setDomainImportanceConfig(config: DomainImportanceConfig): void {
+    this.importanceConfig = { ...this.importanceConfig, ...config };
   }
 }

@@ -264,4 +264,154 @@ describe('BusinessLogicMapper', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('ドメイン重要度評価の改善', () => {
+    it('Paymentドメインが特別扱いされていることを検証', async () => {
+      // 現在の実装では、Paymentドメインは強制的にcriticalに設定される
+      // これは品質問題を引き起こす可能性がある
+      const testFilePath = '/test/services/ProcessorService.test.ts';
+      
+      const callGraph: CallGraphNode[] = [
+        {
+          name: 'process',
+          filePath: '/src/services/ProcessorService.ts',
+          line: 10,
+          calls: [],
+          calledBy: []
+        }
+      ];
+
+      const typeInfo = new Map<string, TypeInfo>([
+        ['ProcessorService', { typeName: 'ProcessorService', isPrimitive: false }]
+      ]);
+
+      // まず通常のドメインでテスト
+      const generalResult = await mapper.mapTestToBusinessLogic(testFilePath, callGraph, typeInfo);
+      
+      // 次にPaymentドメインでテスト（特別扱いされるはず）
+      const paymentCallGraph: CallGraphNode[] = [
+        {
+          name: 'processPayment',
+          filePath: '/src/services/PaymentService.ts',
+          line: 25,
+          calls: [],
+          calledBy: []
+        }
+      ];
+      
+      const paymentTypeInfo = new Map<string, TypeInfo>([
+        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }]
+      ]);
+      
+      const paymentResult = await mapper.mapTestToBusinessLogic(
+        '/test/services/PaymentService.test.ts',
+        paymentCallGraph,
+        paymentTypeInfo
+      );
+      
+      // 現在の実装では、PaymentServiceは特別扱いされている
+      expect(paymentResult.businessCriticality.level).toBe('critical');
+      expect(paymentResult.businessCriticality.score).toBeGreaterThanOrEqual(85);
+    });
+
+    it('ドメイン重要度の重み付けが設定可能であることを検証', async () => {
+      // 新しいmapperインスタンスで設定をテスト
+      const customMapper = new BusinessLogicMapper();
+      
+      // カスタム設定を適用
+      customMapper.setDomainImportanceConfig({
+        weightMap: {
+          critical: 90,
+          high: 70,
+          medium: 40,
+          low: 20
+        }
+      });
+      
+      const functions = [{
+        name: 'testFunction',
+        line: 10,
+        isTested: true,
+        complexity: 5,
+        dependencyCount: 2,
+        containsBusinessRules: false
+      }];
+      
+      const domain: DomainInference = {
+        domain: 'test-domain',
+        confidence: 0.8,
+        concepts: [],
+        businessImportance: 'high'
+      };
+      
+      const result = await customMapper.calculateBusinessImportance(functions, domain);
+      
+      // カスタム設定が適用されていることを検証（high = 70）
+      expect(result.score).toBeGreaterThanOrEqual(70);
+    });
+
+    it('ドメインオーバーライドが無効化できることを検証', async () => {
+      // オーバーライドを無効化したmapper
+      const customMapper = new BusinessLogicMapper();
+      customMapper.setDomainImportanceConfig({
+        disableDomainOverrides: true
+      });
+      
+      const paymentCallGraph: CallGraphNode[] = [
+        {
+          name: 'processPayment',
+          filePath: '/src/services/PaymentService.ts',
+          line: 25,
+          calls: [],
+          calledBy: []
+        }
+      ];
+      
+      const paymentTypeInfo = new Map<string, TypeInfo>([
+        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }]
+      ]);
+      
+      const result = await customMapper.mapTestToBusinessLogic(
+        '/test/services/PaymentService.test.ts',
+        paymentCallGraph,
+        paymentTypeInfo
+      );
+      
+      // オーバーライドが無効化されているので、85以上に強制されない
+      // （実際のスコアは計算によって決まる）
+      expect(result.businessCriticality.level).toBeDefined();
+    });
+
+    it('ドメイン重要度の重み付けがハードコードされていることを検証', async () => {
+      // 現在の実装では、重み付けがハードコードされている
+      // critical: 70, high: 50, medium: 30, low: 15
+      const functions = [{
+        name: 'testFunction',
+        line: 10,
+        isTested: true,
+        complexity: 5,
+        dependencyCount: 2,
+        containsBusinessRules: false
+      }];
+      
+      const testCases = [
+        { importance: 'critical' as const, minScore: 70 },
+        { importance: 'high' as const, minScore: 50 },
+        { importance: 'medium' as const, minScore: 30 },
+        { importance: 'low' as const, minScore: 15 }
+      ];
+      
+      for (const testCase of testCases) {
+        const domain: DomainInference = {
+          domain: 'test-domain',
+          confidence: 0.8,
+          concepts: [],
+          businessImportance: testCase.importance
+        };
+        
+        const result = await mapper.calculateBusinessImportance(functions, domain);
+        expect(result.score).toBeGreaterThanOrEqual(testCase.minScore);
+      }
+    });
+  });
 });

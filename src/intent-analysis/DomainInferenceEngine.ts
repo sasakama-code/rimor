@@ -11,7 +11,8 @@ import {
   DomainInference, 
   DomainContext,
   BusinessImportance,
-  DomainDictionary
+  DomainDictionary,
+  ConfidenceConfig
 } from './IDomainInferenceEngine';
 import { TypeInfo } from './ITypeScriptAnalyzer';
 
@@ -21,9 +22,15 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     terms: [],
     rules: []
   };
+  
+  // 信頼度設定
+  private confidenceConfig: ConfidenceConfig = {
+    defaultConfidence: 0.5,
+    evidenceBoostFactor: 0.1
+  };
 
-  // 組み込みのドメインパターン（KISS原則に従いハードコード）
-  private readonly builtInPatterns = new Map<string, { domain: string; confidence: number; concepts: string[]; importance: BusinessImportance }>([
+  // 組み込みのドメインパターン（設定可能な信頼度を持つ）
+  private builtInPatterns = new Map<string, { domain: string; confidence: number; concepts: string[]; importance: BusinessImportance }>([
     ['User', { domain: 'user-management', confidence: 0.9, concepts: ['ユーザー', '認証', 'アカウント管理'], importance: 'high' }],
     ['PaymentService', { domain: 'payment', confidence: 0.95, concepts: ['決済', '支払い', 'トランザクション'], importance: 'critical' }],
     ['Order', { domain: 'order-management', confidence: 0.85, concepts: ['注文'], importance: 'high' }],
@@ -76,7 +83,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     if (pattern) {
       return {
         domain: pattern.domain,
-        confidence: pattern.confidence,
+        confidence: this.getConfidence(typeInfo.typeName, pattern.confidence),
         concepts: pattern.concepts,
         businessImportance: pattern.importance
       };
@@ -163,18 +170,18 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     let confidence = 0;
     const concepts: string[] = [];
 
-    // パスベースの推論
+    // パスベースの推論（設定可能な信頼度を使用）
     if (pathParts.includes('auth') || pathParts.includes('authentication')) {
       inferredDomain = 'authentication';
-      confidence = 0.9;
+      confidence = this.confidenceConfig.domainConfidenceMap?.['authentication'] || 0.9;
       concepts.push('認証', 'アクセス制御', 'セキュリティ');
     } else if (pathParts.includes('billing')) {
       inferredDomain = 'billing';
-      confidence = 0.88;
+      confidence = this.confidenceConfig.domainConfidenceMap?.['billing'] || 0.88;
       concepts.push('請求', '課金');
     } else if (pathParts.includes('payment')) {
       inferredDomain = 'payment';
-      confidence = 0.9;
+      confidence = this.confidenceConfig.domainConfidenceMap?.['payment'] || 0.9;
       concepts.push('決済', '支払い');
     }
 
@@ -292,5 +299,41 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     };
 
     return conceptMap[domain] || [];
+  }
+  
+  /**
+   * 信頼度設定を適用
+   */
+  setConfidenceConfig(config: ConfidenceConfig): void {
+    this.confidenceConfig = { ...this.confidenceConfig, ...config };
+    
+    // typeConfidenceMapが設定されている場合、builtInPatternsを更新
+    if (config.typeConfidenceMap) {
+      for (const [typeName, confidence] of Object.entries(config.typeConfidenceMap)) {
+        const pattern = this.builtInPatterns.get(typeName);
+        if (pattern) {
+          pattern.confidence = confidence;
+        }
+      }
+    }
+  }
+  
+  /**
+   * 設定された信頼度を取得（設定がない場合はデフォルト値を返す）
+   */
+  private getConfidence(typeName: string, defaultValue: number): number {
+    // 設定された信頼度マップから取得
+    if (this.confidenceConfig.typeConfidenceMap?.[typeName] !== undefined) {
+      return this.confidenceConfig.typeConfidenceMap[typeName];
+    }
+    
+    // builtInPatternsから取得
+    const pattern = this.builtInPatterns.get(typeName);
+    if (pattern) {
+      return pattern.confidence;
+    }
+    
+    // デフォルト値を返す
+    return defaultValue;
   }
 }

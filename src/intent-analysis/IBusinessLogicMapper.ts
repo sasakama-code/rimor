@@ -172,6 +172,36 @@ export interface RiskAssessment {
 }
 
 /**
+ * ドメイン重要度設定
+ */
+export interface DomainImportanceConfig {
+  /**
+   * 重要度レベルごとの重み
+   */
+  weightMap?: {
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+  };
+  
+  /**
+   * クリティカルドメインのリスト
+   */
+  criticalDomains?: string[];
+  
+  /**
+   * ドメインボーナスポイント
+   */
+  domainBonus?: number;
+  
+  /**
+   * 特定ドメインの重要度強制設定を無効化
+   */
+  disableDomainOverrides?: boolean;
+}
+
+/**
  * ビジネスロジックマッパーのインターフェース
  */
 export interface IBusinessLogicMapper {
@@ -215,4 +245,9 @@ export interface IBusinessLogicMapper {
     node: CallGraphNode,
     domains: string[]
   ): Promise<boolean>;
+  
+  /**
+   * ドメイン重要度設定を適用
+   */
+  setDomainImportanceConfig(config: DomainImportanceConfig): void;
 }

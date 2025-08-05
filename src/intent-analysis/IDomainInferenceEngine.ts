@@ -121,6 +121,31 @@ export interface DomainDictionary {
 }
 
 /**
+ * 信頼度設定
+ */
+export interface ConfidenceConfig {
+  /**
+   * タイプ名に対する信頼度のマッピング
+   */
+  typeConfidenceMap?: Record<string, number>;
+  
+  /**
+   * ドメインに対する信頼度のマッピング
+   */
+  domainConfidenceMap?: Record<string, number>;
+  
+  /**
+   * デフォルトの信頼度
+   */
+  defaultConfidence?: number;
+  
+  /**
+   * 複数の証拠が重なった場合の信頼度増加率
+   */
+  evidenceBoostFactor?: number;
+}
+
+/**
  * ドメイン推論エンジンのインターフェース
  */
 export interface IDomainInferenceEngine {
@@ -148,4 +173,9 @@ export interface IDomainInferenceEngine {
    * 複数の推論結果を統合
    */
   mergeInferences(inferences: DomainInference[]): DomainInference;
+  
+  /**
+   * 信頼度設定を適用
+   */
+  setConfidenceConfig(config: ConfidenceConfig): void;
 }
