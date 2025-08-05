@@ -450,4 +450,70 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
         return { typeName: 'unknown', isPrimitive: false };
     }
   }
+
+  /**
+   * ファイルの型情報を取得
+   * KISS原則: 基本的な型情報のマップを返す
+   */
+  async getFileTypeInfo(filePath: string): Promise<Map<string, TypeInfo>> {
+    if (!this.program || !this.checker) {
+      throw new Error('TypeScriptAnalyzerが初期化されていません');
+    }
+    
+    const typeInfoMap = new Map<string, TypeInfo>();
+    const sourceFile = this.program.getSourceFile(filePath);
+    
+    if (!sourceFile) {
+      return typeInfoMap;
+    }
+    
+    // 変数と関数の型情報を収集
+    this.visitNode(sourceFile, (node) => {
+      if (ts.isVariableDeclaration(node) && node.name && ts.isIdentifier(node.name)) {
+        const type = this.checker!.getTypeAtLocation(node);
+        const typeName = this.checker!.typeToString(type);
+        
+        typeInfoMap.set(node.name.text, {
+          typeName,
+          isPrimitive: this.isPrimitiveType(type)
+        });
+      }
+      
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        const type = this.checker!.getTypeAtLocation(node);
+        const typeName = this.checker!.typeToString(type);
+        
+        typeInfoMap.set(node.name.text, {
+          typeName,
+          isPrimitive: false
+        });
+      }
+    });
+    
+    return typeInfoMap;
+  }
+
+  /**
+   * ファイルの呼び出しグラフを分析
+   * DRY原則: 既存のbuildCallGraphメソッドを再利用
+   */
+  async analyzeCallGraph(filePath: string): Promise<CallGraphNode[]> {
+    return this.buildCallGraph(filePath);
+  }
+
+  /**
+   * プリミティブ型かどうかを判定
+   * KISS原則: 基本的な型のみチェック
+   */
+  private isPrimitiveType(type: ts.Type): boolean {
+    const flags = type.flags;
+    return !!(flags & (
+      ts.TypeFlags.String |
+      ts.TypeFlags.Number |
+      ts.TypeFlags.Boolean |
+      ts.TypeFlags.Null |
+      ts.TypeFlags.Undefined |
+      ts.TypeFlags.Void
+    ));
+  }
 }

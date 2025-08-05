@@ -5,6 +5,7 @@
 
 // モックの設定（インポート前に設定）
 jest.mock('fs');
+jest.mock('fs/promises');
 jest.mock('glob');
 jest.mock('tree-sitter', () => ({
   default: jest.fn().mockImplementation(() => ({
@@ -24,12 +25,19 @@ jest.mock('../../../src/intent-analysis/TreeSitterParser', () => ({
 }));
 jest.mock('../../../src/intent-analysis/TestIntentExtractor');
 jest.mock('../../../src/intent-analysis/TestIntentReporter');
+jest.mock('../../../src/intent-analysis/TypeScriptAnalyzer');
+jest.mock('../../../src/intent-analysis/DomainInferenceEngine');
+jest.mock('../../../src/intent-analysis/BusinessLogicMapper');
 
 import { IntentAnalyzeCommand } from '../../../src/cli/commands/intent-analyze';
 import { TreeSitterParser } from '../../../src/intent-analysis/TreeSitterParser';
 import { TestIntentExtractor } from '../../../src/intent-analysis/TestIntentExtractor';
 import { TestIntentReporter } from '../../../src/intent-analysis/TestIntentReporter';
+import { TypeScriptAnalyzer } from '../../../src/intent-analysis/TypeScriptAnalyzer';
+import { DomainInferenceEngine } from '../../../src/intent-analysis/DomainInferenceEngine';
+import { BusinessLogicMapper } from '../../../src/intent-analysis/BusinessLogicMapper';
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import { glob } from 'glob';
 
@@ -256,6 +264,96 @@ describe('IntentAnalyzeCommand', () => {
       expect(logs.some(log => log.includes('ファイル発見:'))).toBeTruthy();
       
       consoleLogSpy.mockRestore();
+    });
+
+    describe('Phase 2 高度な分析オプション', () => {
+      it('--with-typesオプションで型情報を使った分析を実行する', async () => {
+        // Arrange
+        const options = {
+          path: '/test/project',
+          format: 'text' as const,
+          withTypes: true
+        };
+        
+        (fs.statSync as jest.Mock).mockReturnValue({ isDirectory: () => true });
+        (fs.existsSync as jest.Mock).mockReturnValue(true);
+        jest.spyOn(command as any, 'findTestFiles').mockResolvedValue(['test.test.ts']);
+        
+        mockParser.parseFile.mockResolvedValue({ type: 'program' } as any);
+        mockExtractor.extractIntent.mockResolvedValue({} as any);
+        mockExtractor.analyzeActualTest.mockResolvedValue({} as any);
+        
+        // evaluateRealizationWithTypeInfoのモック
+        mockExtractor.evaluateRealizationWithTypeInfo = jest.fn().mockResolvedValue({
+          gaps: [],
+          realizationScore: 95,
+          riskLevel: 'minimal',
+          domainRelevance: { domain: 'user-management', confidence: 0.9 },
+          businessImportance: 'high'
+        });
+        
+        // TypeScriptAnalyzerのモック
+        const mockTsAnalyzer = {
+          initialize: jest.fn().mockResolvedValue(undefined),
+          getFileTypeInfo: jest.fn().mockResolvedValue(new Map([
+            ['testVar', { typeName: 'string', isPrimitive: true }]
+          ]))
+        };
+        (TypeScriptAnalyzer as jest.MockedClass<typeof TypeScriptAnalyzer>).mockImplementation(() => mockTsAnalyzer as any);
+        
+        // fs/promisesのaccessをモック（tsconfig.json検索用）
+        (fsPromises.access as jest.Mock).mockRejectedValue(new Error('File not found'));
+        
+        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+        
+        // Act
+        await command.execute(options);
+        
+        // Assert
+        expect(mockExtractor.evaluateRealizationWithTypeInfo).toHaveBeenCalled();
+        
+        consoleLogSpy.mockRestore();
+      });
+
+      it('--with-domainオプションでドメイン推論を含む分析を実行する', async () => {
+        // Arrange
+        const options = {
+          path: '/test/project',
+          format: 'text' as const,
+          withDomain: true
+        };
+        
+        (fs.statSync as jest.Mock).mockReturnValue({ isDirectory: () => true });
+        (fs.existsSync as jest.Mock).mockReturnValue(true);
+        jest.spyOn(command as any, 'findTestFiles').mockResolvedValue(['test.test.ts']);
+        
+        mockParser.parseFile.mockResolvedValue({ type: 'program' } as any);
+        mockExtractor.extractIntent.mockResolvedValue({} as any);
+        mockExtractor.analyzeActualTest.mockResolvedValue({} as any);
+        mockExtractor.evaluateRealization.mockResolvedValue({
+          gaps: [],
+          realizationScore: 90,
+          riskLevel: 'low'
+        } as any);
+        
+        // ドメイン推論結果を含むレポートが生成されることを確認
+        mockReporter.generateMarkdownReport = jest.fn().mockImplementation(results => {
+          return results.some((r: any) => r.domainRelevance) 
+            ? '# レポート（ドメイン分析付き）' 
+            : '# 通常レポート';
+        });
+        
+        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+        
+        // Act
+        await command.execute(options);
+        
+        // Assert
+        const output = consoleLogSpy.mock.calls[0][0];
+        expect(output).toContain('ドメイン分析付き');
+        
+        consoleLogSpy.mockRestore();
+      });
     });
   });
 

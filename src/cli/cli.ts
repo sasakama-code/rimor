@@ -265,6 +265,22 @@ export class CLI {
             .option('max-workers', {
               describe: '最大ワーカー数（デフォルト: CPUコア数）',
               type: 'number'
+            })
+            // Phase 2 高度な分析オプション
+            .option('with-types', {
+              describe: '型情報を使用した高度な分析を実行',
+              type: 'boolean',
+              default: false
+            })
+            .option('with-domain', {
+              describe: 'ドメイン推論を含む分析を実行',
+              type: 'boolean',
+              default: false
+            })
+            .option('with-business', {
+              describe: 'ビジネスロジックマッピングを含む分析を実行',
+              type: 'boolean',
+              default: false
             });
         },
         async (argv) => {
@@ -275,7 +291,11 @@ export class CLI {
             output: argv.output,
             verbose: argv.verbose,
             parallel: argv.parallel,
-            maxWorkers: argv['max-workers']
+            maxWorkers: argv['max-workers'],
+            // Phase 2オプション
+            withTypes: argv['with-types'],
+            withDomain: argv['with-domain'],
+            withBusiness: argv['with-business']
           });
         }
       )

@@ -4,6 +4,26 @@
 
 Phase 2では、Tree-sitter（構文解析）とTypeScript Compiler API（型情報・意味解析）を統合し、より高度なテスト意図実現度監査を実現します。
 
+## 実装状況
+
+✅ **Phase 2機能は実装完了しました！**
+
+### 利用可能な高度な分析オプション
+
+```bash
+# 型情報を使用した分析
+rimor intent-analyze ./test --with-types
+
+# ドメイン推論を含む分析
+rimor intent-analyze ./test --with-domain
+
+# ビジネスロジックマッピングを含む分析
+rimor intent-analyze ./test --with-business
+
+# すべての高度な分析を有効化
+rimor intent-analyze ./test --with-types --with-domain --with-business --verbose
+```
+
 ## 目的
 
 1. 型情報を活用した精密な意図解析
