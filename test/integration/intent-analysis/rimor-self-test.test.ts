@@ -7,7 +7,7 @@
 import { IntentAnalyzeCommand } from '../../../src/cli/commands/intent-analyze';
 import { TreeSitterParser } from '../../../src/intent-analysis/TreeSitterParser';
 import { TestIntentExtractor } from '../../../src/intent-analysis/TestIntentExtractor';
-import { GapType } from '../../../src/intent-analysis/ITestIntentAnalyzer';
+import { GapType, Severity } from '../../../src/intent-analysis/ITestIntentAnalyzer';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -150,16 +150,36 @@ describe('Intent Analysis - Rimor Self Test', () => {
       
       // Act
       const ast = await parser.parseFile(tempFile);
-      const intent = await extractor.extractIntent(tempFile, ast);
-      const actual = await extractor.analyzeActualTest(tempFile, ast);
-      const result = await extractor.evaluateRealization(intent, actual);
       
-      // Assert
+      // 個別のテストケースを分析
+      const individualResults = await extractor.analyzeIndividualTests(tempFile, ast);
+      
+      // アサーションなしのテスト結果を取得
+      const noAssertionResult = individualResults.get('should have no assertions');
+      expect(noAssertionResult).toBeDefined();
+      
+      // アサーションありのテスト結果を取得
+      const withAssertionResult = individualResults.get('should have assertion');
+      expect(withAssertionResult).toBeDefined();
+      
+      // デバッグ用：検出情報を出力
+      console.log('アサーションなしテストのアサーション数:', noAssertionResult!.assertions.length);
+      console.log('アサーションありテストのアサーション数:', withAssertionResult!.assertions.length);
+      
+      // Assert: アサーションの検出が正しいこと
+      expect(noAssertionResult!.assertions.length).toBe(0);
+      expect(withAssertionResult!.assertions.length).toBe(1);
+      
+      // TestIntentExtractorのギャップ検出をテスト
+      const intent = await extractor.extractIntent(tempFile, ast);
+      const result = await extractor.evaluateRealization(intent, noAssertionResult!);
+      
       const noAssertionGap = result.gaps.find(gap => 
-        gap.type === GapType.MISSING_ASSERTION || gap.description.includes('assertion')
+        gap.type === GapType.MISSING_ASSERTION
       );
       
       expect(noAssertionGap).toBeDefined();
+      expect(noAssertionGap!.severity).toBe(Severity.CRITICAL);
       
       // クリーンアップ
       await fs.unlink(tempFile).catch(() => {});
