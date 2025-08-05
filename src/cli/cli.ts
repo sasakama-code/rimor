@@ -3,6 +3,7 @@ import { hideBin } from 'yargs/helpers';
 import { AnalyzeCommandV8 } from './commands/analyze-v0.8';
 import { AIOutputCommand } from './commands/ai-output';
 import { createTaintAnalysisCommand } from './commands/taint-analysis';
+import { IntentAnalyzeCommand } from './commands/intent-analyze';
 import * as os from 'os';
 
 export class CLI {
@@ -227,6 +228,57 @@ export class CLI {
         }
       )
       .command(createTaintAnalysisCommand())
+      .command(
+        'intent-analyze [path]',
+        'テスト意図実現度を監査します（v0.9.0新機能）',
+        (yargs) => {
+          return yargs
+            .positional('path', {
+              describe: '分析対象のディレクトリまたはファイルパス',
+              type: 'string',
+              default: '.'
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力フォーマット',
+              type: 'string',
+              choices: ['text', 'json', 'html'],
+              default: 'text'
+            })
+            .option('output', {
+              alias: 'o',
+              describe: '出力ファイルパス（HTML形式の場合）',
+              type: 'string'
+            })
+            .option('verbose', {
+              alias: 'v',
+              describe: '詳細な出力を表示',
+              type: 'boolean',
+              default: false
+            })
+            .option('parallel', {
+              alias: 'p',
+              describe: '並列処理を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('max-workers', {
+              describe: '最大ワーカー数（デフォルト: CPUコア数）',
+              type: 'number'
+            });
+        },
+        async (argv) => {
+          const intentAnalyzeCommand = new IntentAnalyzeCommand();
+          await intentAnalyzeCommand.execute({
+            path: argv.path || '.',
+            format: argv.format as 'text' | 'json' | 'html',
+            output: argv.output,
+            verbose: argv.verbose,
+            parallel: argv.parallel,
+            maxWorkers: argv['max-workers']
+          });
+        }
+      )
       .command(
         'bootstrap [subcommand]',
         'プロジェクトのセットアップとブートストラップ',

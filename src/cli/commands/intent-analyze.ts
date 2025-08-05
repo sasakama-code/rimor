@@ -1,0 +1,230 @@
+/**
+ * Intent Analyze Command
+ * v0.9.0 - テスト意図実現度監査のCLIコマンド
+ * TDD Green Phase - テストを通す最小限の実装
+ */
+
+import { TreeSitterParser } from '../../intent-analysis/TreeSitterParser';
+import { TestIntentExtractor } from '../../intent-analysis/TestIntentExtractor';
+import { TestIntentReporter } from '../../intent-analysis/TestIntentReporter';
+import { TestRealizationResult } from '../../intent-analysis/ITestIntentAnalyzer';
+import * as fs from 'fs';
+import * as path from 'path';
+import { glob } from 'glob';
+import { Worker } from 'worker_threads';
+import * as os from 'os';
+
+export interface IntentAnalyzeOptions {
+  path: string;
+  format?: 'text' | 'json' | 'html';
+  verbose?: boolean;
+  output?: string;
+  parallel?: boolean;
+  maxWorkers?: number;
+}
+
+/**
+ * テスト意図分析コマンド
+ * KISS原則: シンプルなコマンド構造から開始
+ */
+export class IntentAnalyzeCommand {
+  private parser: TreeSitterParser;
+  private extractor: TestIntentExtractor;
+  private reporter: TestIntentReporter;
+
+  constructor() {
+    this.parser = TreeSitterParser.getInstance();
+    this.extractor = new TestIntentExtractor(this.parser);
+    this.reporter = new TestIntentReporter();
+  }
+
+  /**
+   * コマンドを実行
+   * YAGNI原則: 必要最小限の実装
+   */
+  async execute(options: IntentAnalyzeOptions): Promise<void> {
+    // パスの存在確認
+    if (!fs.existsSync(options.path)) {
+      throw new Error('指定されたパスが存在しません');
+    }
+
+    // 詳細ログ
+    if (options.verbose) {
+      console.log(`分析中: ${options.path}`);
+    }
+
+    // テストファイルの検索
+    const testFiles = await this.findTestFiles(options.path);
+    
+    if (options.verbose) {
+      console.log(`ファイル発見: ${testFiles.length}件`);
+    }
+
+    // 各ファイルを分析
+    let results: TestRealizationResult[] = [];
+    
+    if (options.parallel) {
+      // 並列処理
+      if (options.verbose) {
+        console.log(`並列処理モード: ${options.maxWorkers || os.cpus().length} ワーカー`);
+      }
+      results = await this.analyzeInParallel(testFiles, options);
+    } else {
+      // 逐次処理
+      for (const file of testFiles) {
+        if (options.verbose) {
+          console.log(`分析中: ${file}`);
+        }
+        
+        // ASTを生成
+        const ast = await this.parser.parseFile(file);
+        
+        // 意図を抽出
+        const intent = await this.extractor.extractIntent(file, ast);
+        
+        // 実際のテストを分析
+        const actual = await this.extractor.analyzeActualTest(file, ast);
+        
+        // ギャップを評価
+        const result = await this.extractor.evaluateRealization(intent, actual);
+        
+        // ファイル情報を追加
+        result.file = file;
+        result.description = intent.description;
+        
+        results.push(result);
+      }
+    }
+
+    // レポート生成と出力
+    this.outputResults(results, options);
+  }
+
+  /**
+   * 結果を出力
+   * DRY原則: 出力ロジックの共通化
+   */
+  private outputResults(results: TestRealizationResult[], options: IntentAnalyzeOptions): void {
+    const format = options.format || 'text';
+    
+    switch (format) {
+      case 'json':
+        const jsonOutput = {
+          results,
+          summary: this.reporter.generateSummary(results)
+        };
+        console.log(JSON.stringify(jsonOutput, null, 2));
+        break;
+        
+      case 'html':
+        const html = this.reporter.generateHTMLReport(results);
+        if (options.output) {
+          fs.writeFileSync(options.output, html);
+        } else {
+          console.log(html);
+        }
+        break;
+        
+      case 'text':
+      default:
+        const markdown = this.reporter.generateMarkdownReport(results);
+        console.log(markdown);
+        break;
+    }
+  }
+
+  /**
+   * テストファイルを検索
+   * KISS原則: 基本的なパターンマッチング
+   */
+  private async findTestFiles(targetPath: string): Promise<string[]> {
+    const stats = fs.statSync(targetPath);
+    
+    if (stats.isDirectory()) {
+      // ディレクトリの場合、テストファイルパターンで検索
+      const patterns = [
+        '**/*.test.{js,jsx,ts,tsx}',
+        '**/*.spec.{js,jsx,ts,tsx}',
+        '**/__tests__/**/*.{js,jsx,ts,tsx}'
+      ];
+      
+      const files: string[] = [];
+      for (const pattern of patterns) {
+        const matches = await glob(pattern, {
+          cwd: targetPath,
+          ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+        });
+        files.push(...matches.map(f => path.join(targetPath, f)));
+      }
+      
+      return files;
+    } else {
+      // ファイルの場合、そのまま返す
+      return [targetPath];
+    }
+  }
+
+  /**
+   * 並列処理でファイルを分析
+   * YAGNI原則: 必要最小限の並列処理実装
+   */
+  private async analyzeInParallel(
+    files: string[], 
+    options: IntentAnalyzeOptions
+  ): Promise<TestRealizationResult[]> {
+    const workerCount = options.maxWorkers || os.cpus().length;
+    const chunkSize = Math.ceil(files.length / workerCount);
+    const chunks: string[][] = [];
+    
+    // ファイルをチャンクに分割
+    for (let i = 0; i < files.length; i += chunkSize) {
+      chunks.push(files.slice(i, i + chunkSize));
+    }
+    
+    // 各チャンクをワーカーで処理
+    const promises = chunks.map((chunk, index) => {
+      return new Promise<TestRealizationResult[]>((resolve, reject) => {
+        const workerPath = path.join(__dirname, '../../intent-analysis/workers/analysis-worker.js');
+        const worker = new Worker(workerPath, {
+          workerData: { files: chunk }
+        });
+        
+        if (options.verbose) {
+          console.log(`ワーカー ${index + 1} 開始: ${chunk.length} ファイル`);
+        }
+        
+        worker.on('message', (result: any) => {
+          if (result.error) {
+            reject(new Error(result.error));
+          } else {
+            if (options.verbose) {
+              console.log(`ワーカー ${index + 1} 完了`);
+            }
+            resolve(result.results);
+          }
+        });
+        
+        worker.on('error', reject);
+        worker.on('exit', (code) => {
+          if (code !== 0) {
+            reject(new Error(`ワーカーが異常終了しました: ${code}`));
+          }
+        });
+      });
+    });
+    
+    // すべてのワーカーの結果を待機
+    const results = await Promise.all(promises);
+    
+    // 結果をフラット化
+    return results.flat();
+  }
+
+  /**
+   * globパターンでファイルを検索（モック用）
+   */
+  private async glob(pattern: string): Promise<string[]> {
+    // テスト用のメソッド（実際にはglobライブラリを使用）
+    return glob(pattern, { cwd: process.cwd() });
+  }
+}
