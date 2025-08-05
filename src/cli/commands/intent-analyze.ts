@@ -7,7 +7,7 @@
 import { TreeSitterParser } from '../../intent-analysis/TreeSitterParser';
 import { TestIntentExtractor } from '../../intent-analysis/TestIntentExtractor';
 import { TestIntentReporter } from '../../intent-analysis/TestIntentReporter';
-import { TestRealizationResult } from '../../intent-analysis/ITestIntentAnalyzer';
+import { TestRealizationResult, RiskLevel } from '../../intent-analysis/ITestIntentAnalyzer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
@@ -111,9 +111,18 @@ export class IntentAnalyzeCommand {
       case 'json':
         const jsonOutput = {
           results,
-          summary: this.reporter.generateSummary(results)
+          summary: this.reporter.generateSummary(results),
+          totalFiles: results.length,
+          totalTests: results.reduce((sum, r) => sum + (r.actual?.assertions?.length || 0), 0),
+          averageRealizationScore: results.reduce((sum, r) => sum + r.realizationScore, 0) / results.length,
+          highRiskTests: results.filter(r => r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL).length
         };
-        console.log(JSON.stringify(jsonOutput, null, 2));
+        
+        if (options.output) {
+          fs.writeFileSync(options.output, JSON.stringify(jsonOutput, null, 2));
+        } else {
+          console.log(JSON.stringify(jsonOutput, null, 2));
+        }
         break;
         
       case 'html':
@@ -184,7 +193,10 @@ export class IntentAnalyzeCommand {
     // 各チャンクをワーカーで処理
     const promises = chunks.map((chunk, index) => {
       return new Promise<TestRealizationResult[]>((resolve, reject) => {
-        const workerPath = path.join(__dirname, '../../intent-analysis/workers/analysis-worker.js');
+        // 開発環境（Jest）とビルド環境の両方に対応
+        const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
+        const workerFile = isTestEnv ? 'analysis-worker.ts' : 'analysis-worker.js';
+        const workerPath = path.join(__dirname, '../../intent-analysis/workers', workerFile);
         const worker = new Worker(workerPath, {
           workerData: { files: chunk }
         });
