@@ -13,7 +13,7 @@ describe('TreeSitterParser', () => {
   const testDataDir = path.join(__dirname, '../fixtures/tree-sitter-test-data');
 
   beforeEach(() => {
-    parser = new TreeSitterParser();
+    parser = TreeSitterParser.getInstance();
   });
 
   describe('parseContent', () => {

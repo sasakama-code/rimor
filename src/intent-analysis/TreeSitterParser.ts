@@ -21,14 +21,26 @@ export enum SupportedLanguage {
 }
 
 /**
- * Tree-sitterベースのパーサー
+ * Tree-sitterベースのパーサー（シングルトン実装）
+ * YAGNI原則: 必要な時のみインスタンス化
  */
 export class TreeSitterParser {
+  private static instance: TreeSitterParser;
   private parsers: Map<SupportedLanguage, Parser>;
 
-  constructor() {
+  private constructor() {
     this.parsers = new Map();
     this.initializeParsers();
+  }
+
+  /**
+   * シングルトンインスタンスの取得
+   */
+  static getInstance(): TreeSitterParser {
+    if (!TreeSitterParser.instance) {
+      TreeSitterParser.instance = new TreeSitterParser();
+    }
+    return TreeSitterParser.instance;
   }
 
   /**
@@ -71,7 +83,11 @@ export class TreeSitterParser {
     }
 
     const tree = parser.parse(content);
-    return this.convertToASTNode(tree.rootNode);
+    if (!tree || !tree.rootNode) {
+      throw new Error(`Failed to parse content for language: ${language}`);
+    }
+    // ルートノードにはフルテキストを含める
+    return this.convertToASTNode(tree.rootNode, true);
   }
 
   /**
@@ -94,12 +110,17 @@ export class TreeSitterParser {
   }
 
   /**
-   * Tree-sitterのノードをASTNodeに変換
+   * Tree-sitterのノードをASTNodeに変換（最適化版）
+   * KISS原則: 必要最小限の情報のみコピー
    */
-  private convertToASTNode(node: Parser.SyntaxNode): ASTNode {
+  private convertToASTNode(node: Parser.SyntaxNode, includeText: boolean = false): ASTNode {
+    if (!node) {
+      throw new Error('Cannot convert null or undefined node to ASTNode');
+    }
+
     const astNode: ASTNode = {
       type: node.type,
-      text: node.text,
+      text: includeText || node.type === 'identifier' || node.type === 'call_expression' || node.namedChildCount === 0 ? node.text : '',
       startPosition: {
         row: node.startPosition.row,
         column: node.startPosition.column
@@ -111,90 +132,89 @@ export class TreeSitterParser {
       isNamed: node.isNamed
     };
 
-    if (node.children.length > 0) {
-      astNode.children = node.children.map(child => this.convertToASTNode(child));
+    // 名前付き子ノードのみを処理（パフォーマンス最適化）
+    if (node.namedChildCount > 0) {
+      astNode.children = [];
+      for (let i = 0; i < node.namedChildCount; i++) {
+        const child = node.namedChild(i);
+        if (child) {
+          astNode.children.push(this.convertToASTNode(child, false));
+        }
+      }
     }
 
     return astNode;
   }
 
   /**
-   * 特定のノードタイプを検索
+   * ASTを効率的にトラバース（ジェネレーター版）
+   * DRY原則: 共通のトラバース処理
+   */
+  private *traverseAST(node: ASTNode): Generator<ASTNode> {
+    yield node;
+    if (node.children) {
+      for (const child of node.children) {
+        yield* this.traverseAST(child);
+      }
+    }
+  }
+
+  /**
+   * 特定のノードタイプを検索（最適化版）
    */
   findNodes(ast: ASTNode, nodeType: string): ASTNode[] {
     const results: ASTNode[] = [];
-    
-    const traverse = (node: ASTNode): void => {
+    for (const node of this.traverseAST(ast)) {
       if (node.type === nodeType) {
         results.push(node);
       }
-      if (node.children) {
-        node.children.forEach(child => traverse(child));
-      }
-    };
-
-    traverse(ast);
+    }
     return results;
   }
 
   /**
-   * テスト関数を検索
+   * テスト関数を検索（最適化版）
    */
   findTestFunctions(ast: ASTNode): ASTNode[] {
-    const testPatterns = ['test', 'it', 'describe', 'suite', 'context'];
+    const testPatterns = new Set(['test', 'it', 'describe', 'suite', 'context']);
     const results: ASTNode[] = [];
 
-    const traverse = (node: ASTNode): void => {
+    for (const node of this.traverseAST(ast)) {
       if (node.type === 'call_expression' && node.children) {
         const identifier = node.children.find(child => 
-          child.type === 'identifier' && testPatterns.includes(child.text)
+          child.type === 'identifier' && testPatterns.has(child.text)
         );
         if (identifier) {
           results.push(node);
         }
       }
-      if (node.children) {
-        node.children.forEach(child => traverse(child));
-      }
-    };
+    }
 
-    traverse(ast);
     return results;
   }
 
   /**
-   * アサーションを検索
+   * アサーションを検索（最適化版）
    * KISS原則: シンプルなパターンマッチング
    */
   findAssertions(ast: ASTNode): ASTNode[] {
     const results: ASTNode[] = [];
     const seenAssertions = new Set<string>();
+    
+    // 正規表現をプリコンパイル（パフォーマンス最適化）
+    const expectPattern = /^expect\([^)]+\)\.\w+\([^)]*\)$/;
+    const assertPattern = /assert\.\w+\(/;
 
-    const traverse = (node: ASTNode): void => {
-      // expect(xxx).toBe() のような完全なアサーションチェーンを検出
+    for (const node of this.traverseAST(ast)) {
       if (node.type === 'call_expression' && node.text) {
-        if (node.text.match(/^expect\([^)]+\)\.\w+\([^)]*\)$/)) {
-          // 重複を避ける
-          if (!seenAssertions.has(node.text)) {
-            seenAssertions.add(node.text);
-            results.push(node);
-          }
-        }
-        // assert.xxx() パターン
-        else if (node.text.match(/assert\.\w+\(/)) {
-          if (!seenAssertions.has(node.text)) {
-            seenAssertions.add(node.text);
-            results.push(node);
-          }
+        if ((expectPattern.test(node.text) || assertPattern.test(node.text)) && 
+            !seenAssertions.has(node.text)) {
+          seenAssertions.add(node.text);
+          results.push(node);
         }
       }
-      
-      if (node.children) {
-        node.children.forEach(child => traverse(child));
-      }
-    };
+    }
 
-    traverse(ast);
     return results;
   }
 }
