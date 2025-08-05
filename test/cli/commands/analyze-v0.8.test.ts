@@ -49,6 +49,12 @@ function createMocks() {
       totalFiles: 10,
       issues: [],
       executionTime: 1000
+    }),
+    generateAST: jest.fn().mockResolvedValue({
+      type: 'program',
+      text: '',
+      startPosition: { row: 0, column: 0 },
+      endPosition: { row: 0, column: 0 }
     })
   };
 
