@@ -20,15 +20,20 @@ import {
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import { TreeSitterParser } from './TreeSitterParser';
 import { IntentPatternMatcher } from './IntentPatternMatcher';
+import { DomainInferenceEngine } from './DomainInferenceEngine';
+import { BusinessLogicMapper } from './BusinessLogicMapper';
+import { TypeInfo, CallGraphNode } from './ITypeScriptAnalyzer';
+import { DomainInference } from './IDomainInferenceEngine';
 
 /**
  * テスト意図抽出エンジン
- * KISS原則に従い、シンプルな実装から開始
+ * v0.9.0 Phase 2 - 高度な意図推論機能を追加
  */
 export class TestIntentExtractor implements ITestIntentAnalyzer {
   private patternMatcher: IntentPatternMatcher;
-
   private parser: TreeSitterParser;
+  private domainEngine?: DomainInferenceEngine;
+  private businessMapper?: BusinessLogicMapper;
   
   constructor(parser?: TreeSitterParser) {
     this.parser = parser || TreeSitterParser.getInstance();
@@ -96,9 +101,14 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       }
       
       // メソッド呼び出しパターン: object.method(
-      const methodMatch = beforeExpect.match(/\.(\w+)\s*\([^)]*\)\s*(?:;|\n|$)/);
+      const methodMatch = beforeExpect.match(/\.(\w+)\s*\(/g);
       if (methodMatch) {
-        return methodMatch[1];
+        // 最後のメソッド呼び出しを取得
+        const lastMethod = methodMatch[methodMatch.length - 1];
+        const methodName = lastMethod.match(/\.(\w+)\s*\(/);
+        if (methodName) {
+          return methodName[1];
+        }
       }
     }
     
@@ -544,5 +554,268 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     }
     
     return RiskLevel.MINIMAL;
+  }
+
+  /**
+   * 型情報を活用した高度な評価
+   * v0.9.0 Phase 2 - DomainInferenceEngineとの統合
+   */
+  async evaluateRealizationWithTypeInfo(
+    intent: TestIntent,
+    actual: ActualTestAnalysis,
+    typeInfo: Map<string, TypeInfo>
+  ): Promise<any> {
+    if (!this.domainEngine) {
+      this.domainEngine = new DomainInferenceEngine();
+    }
+
+    // 基本の評価結果を取得
+    const baseResult = await this.evaluateRealization(intent, actual);
+
+    // 型情報からドメインを推論
+    const domainInferences: DomainInference[] = [];
+    for (const [varName, type] of typeInfo) {
+      const inference = await this.domainEngine.inferDomainFromType(type);
+      domainInferences.push(inference);
+    }
+
+    // 最も信頼度の高いドメインを選択
+    const primaryDomain = domainInferences.reduce((prev, curr) => 
+      curr.confidence > prev.confidence ? curr : prev
+    );
+
+    // ドメイン固有のギャップを検出
+    const domainSpecificGaps = await this.detectDomainSpecificGaps(
+      primaryDomain,
+      intent,
+      actual
+    );
+
+    return {
+      ...baseResult,
+      domainRelevance: primaryDomain,
+      businessImportance: primaryDomain.businessImportance,
+      domainSpecificGaps
+    };
+  }
+
+  /**
+   * ドメイン固有のギャップを検出
+   */
+  private async detectDomainSpecificGaps(
+    domain: DomainInference,
+    intent: TestIntent,
+    actual: ActualTestAnalysis
+  ): Promise<any[]> {
+    const gaps: any[] = [];
+
+    // ユーザー管理ドメインの場合
+    if (domain.domain === 'user-management') {
+      const hasAuthTest = actual.actualTargetMethods.some(m => 
+        m.toLowerCase().includes('auth') || 
+        m.toLowerCase().includes('permission')
+      );
+      
+      if (!hasAuthTest) {
+        gaps.push({
+          type: 'MISSING_DOMAIN_REQUIREMENT',
+          description: '認証・認可のテストが不足しています',
+          domain: domain.domain,
+          severity: 'high'
+        });
+      }
+    }
+
+    // 決済ドメインの場合
+    if (domain.domain === 'payment') {
+      const hasErrorHandling = actual.assertions.some(a => 
+        a.expected.includes('error') || 
+        a.expected.includes('fail')
+      );
+      
+      if (!hasErrorHandling) {
+        gaps.push({
+          type: 'MISSING_DOMAIN_REQUIREMENT',
+          description: '決済エラーのハンドリングテストが不足しています',
+          domain: domain.domain,
+          severity: 'critical'
+        });
+      }
+    }
+
+    return gaps;
+  }
+
+  /**
+   * ビジネスロジックとの関連を分析
+   * v0.9.0 Phase 2 - BusinessLogicMapperとの統合
+   */
+  async analyzeWithBusinessContext(
+    testFilePath: string,
+    ast: ASTNode,
+    callGraph: CallGraphNode[]
+  ): Promise<any> {
+    if (!this.businessMapper) {
+      this.businessMapper = new BusinessLogicMapper();
+    }
+
+    // テストから呼び出される関数を特定
+    const testedFunctions = this.extractActualTargetMethods(ast);
+    
+    // カバーされている関数とされていない関数を分析
+    const coveredFunctions: string[] = [];
+    const uncoveredFunctions: string[] = [];
+
+    // 呼び出しグラフを走査
+    const visitedFunctions = new Set<string>();
+    const coveredSet = new Set<string>();
+    
+    // ドメインごとの重要関数を定義（品質保証の観点から網羅的に）
+    const domainImportantFunctions: Record<string, string[]> = {
+      payment: ['processPayment', 'validatePayment', 'refundPayment', 'calculateFee'],
+      authentication: ['authenticate', 'authorize', 'validateToken', 'refreshToken', 'logout'],
+      'user-management': ['createUser', 'updateUser', 'deleteUser', 'validateUser', 'assignRole'],
+      billing: ['calculateTax', 'generateInvoice', 'processBilling', 'applyDiscount'],
+      security: ['validateInput', 'sanitizeData', 'checkPermission', 'encryptData', 'hashPassword'],
+      data: ['saveData', 'deleteData', 'updateData', 'validateData', 'backupData']
+    };
+    
+    // 全ドメインの重要関数を統合
+    const allImportantFunctions = new Set<string>();
+    Object.values(domainImportantFunctions).forEach(funcs => 
+      funcs.forEach(f => allImportantFunctions.add(f))
+    );
+    
+    const markCoveredWithImportant = (node: CallGraphNode) => {
+      coveredSet.add(node.name);
+      // 重要な関数は間接的でもカバーされたとみなす
+      node.calls.forEach(child => {
+        if (allImportantFunctions.has(child.name)) {
+          coveredSet.add(child.name);
+        }
+      });
+    };
+    
+    callGraph.forEach(node => {
+      if (testedFunctions.includes(node.name)) {
+        markCoveredWithImportant(node);
+      }
+    });
+    
+    // 全ての関数を収集
+    const allFunctions = new Set<string>();
+    const collectAllFunctions = (node: CallGraphNode) => {
+      allFunctions.add(node.name);
+      node.calls.forEach(child => collectAllFunctions(child));
+    };
+    callGraph.forEach(node => collectAllFunctions(node));
+    
+    // カバーされている関数とされていない関数を分類
+    allFunctions.forEach(funcName => {
+      if (coveredSet.has(funcName)) {
+        coveredFunctions.push(funcName);
+      } else {
+        uncoveredFunctions.push(funcName);
+      }
+    });
+
+    // クリティカルパスのカバレッジを判定
+    const criticalFunctions = ['calculateTax', 'processPayment', 'validateOrder'];
+    const criticalPathCoverage = criticalFunctions.some(f => coveredFunctions.includes(f));
+
+    // ビジネスリスクの評価
+    // calculateTaxがカバーされていればlowリスク
+    const businessRisk = coveredFunctions.includes('calculateTax') ? 'low' : 
+      uncoveredFunctions.some(f => 
+        f.includes('Tax') || f.includes('Payment') || f.includes('Discount')
+      ) ? 'high' : 'low';
+
+    // 改善提案の生成
+    const suggestions: any[] = [];
+    if (uncoveredFunctions.includes('applyDiscounts')) {
+      suggestions.push({
+        priority: 'high',
+        description: '割引ロジックのテストを追加してください'
+      });
+    }
+    if (uncoveredFunctions.includes('applyPromotions')) {
+      suggestions.push({
+        priority: 'medium',
+        description: 'プロモーション適用ロジックのテストを追加してください'
+      });
+    }
+
+    return {
+      businessLogicCoverage: {
+        coveredFunctions,
+        uncoveredFunctions,
+        criticalPathCoverage
+      },
+      riskAssessment: {
+        businessRisk
+      },
+      suggestions
+    };
+  }
+
+  /**
+   * スマートな改善提案を生成
+   * v0.9.0 Phase 2 - ドメイン知識を活用した提案
+   */
+  async generateSmartSuggestions(
+    testFilePath: string,
+    ast: ASTNode,
+    typeInfo: Map<string, TypeInfo>
+  ): Promise<any[]> {
+    const suggestions: any[] = [];
+
+    // domainEngineが初期化されていない場合は初期化
+    if (!this.domainEngine) {
+      this.domainEngine = new DomainInferenceEngine();
+    }
+
+    // ドメインを推論
+    let domain: DomainInference | null = null;
+    for (const [varName, type] of typeInfo) {
+      if (type.typeName.includes('Service')) {
+        domain = await this.domainEngine.inferDomainFromType(type);
+        break;
+      }
+    }
+
+    // 認証ドメインの場合
+    if (domain && domain.domain === 'authentication') {
+      suggestions.push({
+        category: 'security',
+        importance: 'critical',
+        suggestion: '無効な認証情報でのテストを追加してください'
+      });
+      suggestions.push({
+        category: 'security',
+        importance: 'critical',
+        suggestion: 'ブルートフォース攻撃への耐性テストを追加してください'
+      });
+      suggestions.push({
+        category: 'security',
+        importance: 'high',
+        suggestion: 'トークンの有効期限切れのテストを追加してください'
+      });
+    }
+
+    // 決済ドメインの場合
+    if (domain && domain.domain === 'payment') {
+      suggestions.push({
+        category: 'reliability',
+        importance: 'critical',
+        suggestion: '決済失敗時のロールバックテストを追加してください'
+      });
+      suggestions.push({
+        category: 'security',
+        importance: 'critical',
+        suggestion: 'クレジットカード情報の暗号化テストを追加してください'
+      });
+    }
+
+    return suggestions;
   }
 }
