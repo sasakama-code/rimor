@@ -12,17 +12,28 @@ import {
   ActualTestAnalysis,
   TestRealizationResult,
   TestGap,
-  RiskLevel
+  RiskLevel,
+  TestAssertion,
+  GapType,
+  Severity
 } from './ITestIntentAnalyzer';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import { TreeSitterParser } from './TreeSitterParser';
+import { IntentPatternMatcher } from './IntentPatternMatcher';
 
 /**
  * テスト意図抽出エンジン
  * KISS原則に従い、シンプルな実装から開始
  */
 export class TestIntentExtractor implements ITestIntentAnalyzer {
-  constructor(private parser: TreeSitterParser) {}
+  private patternMatcher: IntentPatternMatcher;
+
+  private parser: TreeSitterParser;
+  
+  constructor(parser?: TreeSitterParser) {
+    this.parser = parser || TreeSitterParser.getInstance();
+    this.patternMatcher = new IntentPatternMatcher();
+  }
 
   /**
    * テストファイルから意図を抽出
@@ -213,13 +224,20 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * describeブロックからコンテキストを抽出
    */
   private extractDescribeContext(describeNode: ASTNode): string {
+    // 最適化されたASTでもテキストが取得できるようにする
+    const match = describeNode.text.match(/describe\s*\(\s*['"`]([^'"`]+)['"`]/);
+    if (match) {
+      return match[1];
+    }
+    
+    // フォールバック: 子ノードを探索
     if (describeNode.children) {
       for (const child of describeNode.children) {
         if (child.type === 'arguments' && child.children) {
           const stringLiteral = child.children.find(c => 
             c.type === 'string' || c.type === 'template_string'
           );
-          if (stringLiteral) {
+          if (stringLiteral && stringLiteral.text) {
             return stringLiteral.text.replace(/^['"`]|['"`]$/g, '');
           }
         }
@@ -253,19 +271,278 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     };
   }
 
-  // 以下、インターフェースの他のメソッドは未実装（YAGNI原則）
+  /**
+   * 実際のテスト実装を分析
+   * YAGNI原則: 必要最小限の実装
+   */
   async analyzeActualTest(testFilePath: string, ast: ASTNode): Promise<ActualTestAnalysis> {
-    throw new Error('Not implemented yet');
+    // アサーションを検索
+    const assertions = this.parser.findAssertions(ast);
+    
+    // テストされているメソッドを検索
+    const actualTargetMethods = this.extractActualTargetMethods(ast);
+    
+    // アサーション情報を構築
+    const testAssertions: TestAssertion[] = assertions.map((assertionNode, index) => {
+      const assertionInfo = this.parseAssertion(assertionNode);
+      return {
+        type: assertionInfo.type,
+        expected: assertionInfo.expected,
+        actual: assertionInfo.actual,
+        location: {
+          line: assertionNode.startPosition?.row || index,
+          column: assertionNode.startPosition?.column || 0
+        }
+      };
+    });
+
+    // カバレッジスコープを判定
+    const testDescriptions = this.extractTestDescriptions(ast);
+    const actualCoverage = this.patternMatcher.analyzeCoverageScope(testDescriptions);
+
+    // 複雑度を計算（シンプルな実装）
+    const complexity = this.calculateComplexity(ast);
+
+    return {
+      actualTargetMethods,
+      assertions: testAssertions,
+      actualCoverage,
+      complexity
+    };
   }
 
+  /**
+   * 実際にテストされているメソッドを抽出
+   */
+  private extractActualTargetMethods(ast: ASTNode): string[] {
+    const methods: string[] = [];
+    const testFunctions = this.parser.findTestFunctions(ast);
+
+    testFunctions.forEach(testNode => {
+      const targetMethod = this.extractTargetMethod(testNode);
+      if (targetMethod && !methods.includes(targetMethod)) {
+        methods.push(targetMethod);
+      }
+    });
+
+    return methods;
+  }
+
+  /**
+   * アサーションを解析
+   */
+  private parseAssertion(assertionNode: ASTNode): { type: string; expected: string; actual: string } {
+    const text = assertionNode.text || '';
+    
+    // expect(xxx).toBe(yyy) パターン
+    const expectMatch = text.match(/expect\(([^)]+)\)\.(\w+)\(([^)]*)\)/);
+    if (expectMatch) {
+      return {
+        type: expectMatch[2], // toBe, toEqual, etc.
+        expected: expectMatch[3],
+        actual: expectMatch[1]
+      };
+    }
+
+    // assert.xxx(actual, expected) パターン
+    const assertMatch = text.match(/assert\.(\w+)\(([^,]+),\s*([^)]+)\)/);
+    if (assertMatch) {
+      return {
+        type: assertMatch[1],
+        expected: assertMatch[3],
+        actual: assertMatch[2]
+      };
+    }
+
+    return {
+      type: 'unknown',
+      expected: '',
+      actual: ''
+    };
+  }
+
+  /**
+   * テストの説明文を抽出
+   */
+  private extractTestDescriptions(ast: ASTNode): string[] {
+    const descriptions: string[] = [];
+    const testFunctions = this.parser.findTestFunctions(ast);
+
+    testFunctions.forEach(testNode => {
+      const description = this.extractTestDescription(testNode);
+      if (description) {
+        descriptions.push(description);
+      }
+    });
+
+    return descriptions;
+  }
+
+  /**
+   * テストの複雑度を計算
+   * KISS原則: シンプルな計算方法
+   */
+  private calculateComplexity(ast: ASTNode): number {
+    let complexity = 1; // 基本複雑度
+
+    const traverse = (node: ASTNode): void => {
+      // 条件分岐を検出
+      if (node.type === 'if_statement' || 
+          node.type === 'ternary_expression' ||
+          node.type === 'switch_statement') {
+        complexity++;
+      }
+      
+      // ループを検出
+      if (node.type === 'for_statement' ||
+          node.type === 'while_statement' ||
+          node.type === 'do_statement') {
+        complexity++;
+      }
+
+      if (node.children) {
+        node.children.forEach(child => traverse(child));
+      }
+    };
+
+    traverse(ast);
+    return complexity;
+  }
+
+  /**
+   * テスト意図と実装のギャップを評価
+   * KISS原則: シンプルな評価ロジック
+   */
   async evaluateRealization(
     intent: TestIntent,
     actual: ActualTestAnalysis
   ): Promise<TestRealizationResult> {
-    throw new Error('Not implemented yet');
+    const gaps: TestGap[] = [];
+    
+    // 1. ターゲットメソッドのチェック
+    if (intent.targetMethod && !actual.actualTargetMethods.includes(intent.targetMethod)) {
+      gaps.push({
+        type: GapType.WRONG_TARGET,
+        description: `期待されるメソッド '${intent.targetMethod}' がテストされていません`,
+        severity: Severity.HIGH,
+        suggestions: [`テストに ${intent.targetMethod} の呼び出しを追加してください`]
+      });
+    }
+
+    // 2. カバレッジのギャップをチェック
+    if (intent.coverageScope.errorCases && !actual.actualCoverage.errorCases) {
+      gaps.push({
+        type: GapType.MISSING_ERROR_CASE,
+        description: 'エラーケースのテストが不足しています',
+        severity: Severity.HIGH,
+        suggestions: [
+          'エラーを発生させる入力値でのテストを追加',
+          'try-catchブロックでのエラーハンドリングをテスト'
+        ]
+      });
+    }
+
+    if (intent.coverageScope.edgeCases && !actual.actualCoverage.edgeCases) {
+      gaps.push({
+        type: GapType.MISSING_EDGE_CASE,
+        description: 'エッジケースのテストが不足しています',
+        severity: Severity.MEDIUM,
+        suggestions: [
+          '空配列、null、undefinedなどの特殊な値でのテストを追加',
+          '境界条件でのテストを追加'
+        ]
+      });
+    }
+
+    // 3. アサーションの存在チェック
+    if (actual.assertions.length === 0) {
+      gaps.push({
+        type: GapType.MISSING_ASSERTION,
+        description: 'アサーションが存在しません',
+        severity: Severity.CRITICAL,
+        suggestions: ['expect文またはassert文を追加してください']
+      });
+    }
+
+    // 4. 実現度スコアの計算
+    const realizationScore = this.calculateRealizationScore(intent, actual, gaps);
+
+    // 5. リスクレベルの評価
+    const riskLevel = this.assessRisk(gaps);
+
+    return {
+      intent,
+      actual,
+      gaps,
+      realizationScore,
+      riskLevel
+    };
   }
 
+  /**
+   * 実現度スコアを計算
+   */
+  private calculateRealizationScore(
+    intent: TestIntent,
+    actual: ActualTestAnalysis,
+    gaps: TestGap[]
+  ): number {
+    let score = 100;
+
+    // ギャップごとにスコアを減点
+    gaps.forEach(gap => {
+      switch (gap.severity) {
+        case Severity.CRITICAL:
+          score -= 30;
+          break;
+        case Severity.HIGH:
+          score -= 20;
+          break;
+        case Severity.MEDIUM:
+          score -= 10;
+          break;
+        case Severity.LOW:
+          score -= 5;
+          break;
+      }
+    });
+
+    // アサーションの数による加点
+    if (actual.assertions.length > 0) {
+      score = Math.min(score + actual.assertions.length * 2, 100);
+    }
+
+    return Math.max(0, score);
+  }
+
+  /**
+   * リスク評価
+   * NISTリスク評価システムを参考にシンプルに実装
+   */
   assessRisk(gaps: TestGap[]): RiskLevel {
-    throw new Error('Not implemented yet');
+    if (gaps.length === 0) {
+      return RiskLevel.MINIMAL;
+    }
+
+    // 最も重要度の高いギャップを基準にリスクレベルを決定
+    const severities = gaps.map(gap => gap.severity);
+    
+    if (severities.includes(Severity.CRITICAL)) {
+      return RiskLevel.CRITICAL;
+    }
+    
+    if (severities.includes(Severity.HIGH)) {
+      return RiskLevel.HIGH;
+    }
+    
+    if (severities.includes(Severity.MEDIUM)) {
+      return RiskLevel.MEDIUM;
+    }
+    
+    if (severities.includes(Severity.LOW)) {
+      return RiskLevel.LOW;
+    }
+    
+    return RiskLevel.MINIMAL;
   }
 }

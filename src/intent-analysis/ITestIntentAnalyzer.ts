@@ -109,6 +109,16 @@ export interface TestRealizationResult {
    * リスクレベル
    */
   riskLevel: RiskLevel;
+  
+  /**
+   * テストファイルパス（レポート生成用）
+   */
+  file?: string;
+  
+  /**
+   * テストの説明（レポート生成用）
+   */
+  description?: string;
 }
 
 /**
