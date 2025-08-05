@@ -322,6 +322,55 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   }
 
   /**
+   * 個別のテストケースを分析する新しいメソッド
+   * SOLID原則: 単一責任の原則に従い、個別テスト分析を分離
+   */
+  async analyzeIndividualTests(testFilePath: string, ast: ASTNode): Promise<Map<string, ActualTestAnalysis>> {
+    const results = new Map<string, ActualTestAnalysis>();
+    
+    // 個別のit()ブロックを検索
+    const callExpressions = this.parser.findNodes(ast, 'call_expression');
+    const testNodes = callExpressions.filter(node => 
+      node.text.startsWith('it(') || node.text.startsWith('test(')
+    );
+    
+    for (const testNode of testNodes) {
+      // テストの説明文を抽出
+      const description = this.extractTestDescription(testNode);
+      
+      // このテストケース内のアサーションのみを検索
+      const testAssertions = this.parser.findAssertions(testNode);
+      
+      // テストされているメソッドを検索
+      const actualTargetMethods = this.extractActualTargetMethods(testNode);
+      
+      // アサーション情報を構築
+      const assertions: TestAssertion[] = testAssertions.map((assertionNode, index) => {
+        const assertionInfo = this.parseAssertion(assertionNode);
+        return {
+          type: assertionInfo.type,
+          expected: assertionInfo.expected,
+          actual: assertionInfo.actual,
+          location: {
+            line: assertionNode.startPosition?.row || index,
+            column: assertionNode.startPosition?.column || 0
+          }
+        };
+      });
+      
+      // 個別テストの分析結果を保存
+      results.set(description, {
+        actualTargetMethods,
+        assertions,
+        actualCoverage: this.createDefaultCoverageScope(),
+        complexity: 1
+      });
+    }
+    
+    return results;
+  }
+
+  /**
    * 実際にテストされているメソッドを抽出
    */
   private extractActualTargetMethods(ast: ASTNode): string[] {
