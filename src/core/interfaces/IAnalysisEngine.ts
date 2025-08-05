@@ -1,9 +1,21 @@
 /**
  * Analysis Engine Interface
- * v0.8.0 - 統合された分析エンジンのインターフェース定義
+ * v0.9.0 - テスト意図実現度監査機能対応
  */
 
 import { Issue } from '../types';
+
+/**
+ * ASTノード型定義（v0.9.0）
+ */
+export interface ASTNode {
+  type: string;
+  text: string;
+  startPosition: { row: number; column: number };
+  endPosition: { row: number; column: number };
+  children?: ASTNode[];
+  isNamed?: boolean;
+}
 
 /**
  * 分析結果
@@ -43,9 +55,9 @@ export interface IAnalysisEngine {
   analyze(targetPath: string, options?: AnalysisOptions): Promise<AnalysisResult>;
   
   /**
-   * AST生成（将来の拡張用）
+   * AST生成（v0.9.0: Tree-sitter対応）
    */
-  generateAST?(filePath: string): Promise<any>;
+  generateAST(filePath: string): Promise<ASTNode>;
   
   /**
    * キャッシュのクリア

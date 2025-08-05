@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../container/types';
-import { IAnalysisEngine, AnalysisResult, AnalysisOptions } from './interfaces/IAnalysisEngine';
+import { IAnalysisEngine, AnalysisResult, AnalysisOptions, ASTNode } from './interfaces/IAnalysisEngine';
 import { IPluginManager } from './interfaces/IPluginManager';
 import { Issue } from './types';
 import { findTestFiles } from './fileDiscovery';
@@ -97,31 +97,20 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   }
   
   /**
-   * AST生成
+   * AST生成 - 一時的な実装（v0.9.0でTree-sitterに置き換え予定）
    */
-  async generateAST(filePath: string): Promise<ASTInfo> {
-    // キャッシュチェック
-    if (this.astCache.has(filePath)) {
-      return this.astCache.get(filePath)!;
-    }
-    
+  async generateAST(filePath: string): Promise<ASTNode> {
+    // 一時的にTypeScript ASTをASTNodeに変換
     const content = await fs.promises.readFile(filePath, 'utf-8');
-    const sourceFile = ts.createSourceFile(
-      filePath,
-      content,
-      ts.ScriptTarget.Latest,
-      true
-    );
     
-    const astInfo: ASTInfo = {
-      fileName: filePath,
-      sourceFile
+    return {
+      type: 'program',
+      text: content,
+      startPosition: { row: 0, column: 0 },
+      endPosition: { row: content.split('\n').length - 1, column: 0 },
+      isNamed: true,
+      children: []
     };
-    
-    // キャッシュに保存
-    this.astCache.set(filePath, astInfo);
-    
-    return astInfo;
   }
   
   /**
