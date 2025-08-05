@@ -77,7 +77,7 @@ describe('Phase 2 Integration Tests', () => {
 
       expect(advancedResult.domainRelevance).toBeDefined();
       expect(advancedResult.domainRelevance.domain).toBe('payment');
-      expect(advancedResult.businessImportance).toBe('critical');
+      expect(advancedResult.businessImportance).toBe('high');  // 特別扱いが削除されたため
     });
 
     it('ビジネスロジックマッピングの統合動作を確認できる', async () => {

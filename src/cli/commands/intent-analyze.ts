@@ -197,6 +197,7 @@ export class IntentAnalyzeCommand {
         const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
         const workerFile = isTestEnv ? 'analysis-worker.ts' : 'analysis-worker.js';
         const workerPath = path.join(__dirname, '../../intent-analysis/workers', workerFile);
+        // Worker の作成
         const worker = new Worker(workerPath, {
           workerData: { files: chunk }
         });
