@@ -4,6 +4,7 @@ import { AnalyzeCommandV8 } from './commands/analyze-v0.8';
 import { AIOutputCommand } from './commands/ai-output';
 import { createTaintAnalysisCommand } from './commands/taint-analysis';
 import { IntentAnalyzeCommand } from './commands/intent-analyze';
+import { DomainAnalyzeCommand } from './commands/domain-analyze';
 import * as os from 'os';
 
 export class CLI {
@@ -296,6 +297,75 @@ export class CLI {
             withTypes: argv['with-types'],
             withDomain: argv['with-domain'],
             withBusiness: argv['with-business']
+          });
+        }
+      )
+      .command(
+        'domain-analyze [path]',
+        '統計的ドメイン解析を実行（v0.9.0新機能）',
+        (yargs) => {
+          return yargs
+            .positional('path', {
+              describe: '分析対象のディレクトリパス',
+              type: 'string',
+              default: '.'
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力フォーマット',
+              type: 'string',
+              choices: ['text', 'json'],
+              default: 'text'
+            })
+            .option('verbose', {
+              alias: 'v',
+              describe: '詳細ログを表示',
+              type: 'boolean',
+              default: false
+            })
+            .option('interactive', {
+              alias: 'i',
+              describe: '対話型モード',
+              type: 'boolean',
+              default: true
+            })
+            .option('verify', {
+              describe: '既存のドメイン定義を検証',
+              type: 'boolean',
+              default: false
+            })
+            .option('output', {
+              alias: 'o',
+              describe: '出力先ディレクトリ',
+              type: 'string'
+            })
+            .option('max-clusters', {
+              describe: '最大クラスタ数',
+              type: 'number',
+              default: 5
+            })
+            .option('min-keyword-frequency', {
+              describe: '最小キーワード頻度',
+              type: 'number',
+              default: 3
+            })
+            .option('exclude', {
+              describe: '除外パターン（カンマ区切り）',
+              type: 'string'
+            });
+        },
+        async (argv) => {
+          const domainAnalyzeCommand = new DomainAnalyzeCommand();
+          await domainAnalyzeCommand.execute({
+            path: argv.path || '.',
+            format: argv.format as 'text' | 'json',
+            verbose: argv.verbose,
+            interactive: argv.interactive,
+            verify: argv.verify,
+            output: argv.output,
+            maxClusters: argv['max-clusters'],
+            minKeywordFrequency: argv['min-keyword-frequency'],
+            excludePatterns: argv.exclude?.split(',')
           });
         }
       )
