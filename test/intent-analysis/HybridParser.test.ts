@@ -49,7 +49,7 @@ describe('HybridParser', () => {
       expect(result.ast.type).toBe('program');
     });
 
-    it('大きいファイル（32KB以上）はBabelにフォールバック', async () => {
+    it('大きいファイル（32KB以上）はSmartChunkingを使用', async () => {
       // Arrange
       const largeContent = 'const x = 0;\n'.repeat(3000); // 約36KB
       const testFile = path.join(tempDir, 'large.js');
@@ -59,10 +59,10 @@ describe('HybridParser', () => {
       const result = await parser.parseFile(testFile);
 
       // Assert
-      expect(result.metadata.strategy).toBe(ParserStrategy.BABEL);
+      expect(result.metadata.strategy).toBe(ParserStrategy.SMART_CHUNKING);
       expect(result.metadata.truncated).toBe(false);
       expect(result.metadata.originalSize).toBeGreaterThan(32767);
-      expect(result.metadata.fallbackReason).toBe('File exceeds 32KB limit');
+      expect(result.metadata.chunked).toBe(true);
       expect(result.ast).toBeDefined();
     });
 
@@ -249,7 +249,7 @@ class Third {
       // Assert
       expect(stats.totalFiles).toBe(3);
       expect(stats.treeSitterCount).toBe(2);
-      expect(stats.babelCount).toBe(1);
+      expect(stats.smartChunkingCount).toBe(1);
       expect(stats.averageParseTime).toBeGreaterThan(0);
     });
 
@@ -294,7 +294,7 @@ class Third {
       const result = await parser.parseFile(testFile);
 
       // Assert
-      expect(result.metadata.strategy).toBe(ParserStrategy.BABEL);
+      expect(result.metadata.strategy).toBe(ParserStrategy.SMART_CHUNKING);
       expect(result.metadata.originalSize).toBe(32767);
     });
 
