@@ -10,6 +10,8 @@
 import * as babelParser from '@babel/parser';
 import * as t from '@babel/types';
 import { TreeSitterParser, SupportedLanguage } from './TreeSitterParser';
+import { SmartChunkingParser } from './SmartChunkingParser';
+import { ASTMerger, MergeStrategy } from './ASTMerger';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -20,7 +22,8 @@ import * as fs from 'fs/promises';
 export enum ParserStrategy {
   TREE_SITTER = 'tree-sitter',
   BABEL = 'babel',
-  HYBRID = 'hybrid'
+  HYBRID = 'hybrid',
+  SMART_CHUNKING = 'smart-chunking'
 }
 
 /**
@@ -38,6 +41,17 @@ export interface ParseMetadata {
     classes: number;
     lastCompleteBoundary?: number;
   };
+  // SmartChunking関連
+  chunked?: boolean;
+  chunks?: number;
+  astsMerged?: number;
+  mergeStrategy?: string;
+  syntaxBoundaryChunking?: boolean;
+  hasErrors?: boolean;
+  recoverable?: boolean;
+  nodeCount?: number;
+  cacheHit?: boolean;
+  language?: string;
 }
 
 /**
@@ -60,6 +74,10 @@ export interface HybridParserConfig {
   enableSmartTruncation?: boolean;
   /** 警告表示を有効化 */
   enableWarnings?: boolean;
+  /** SmartChunkingを有効化 */
+  enableSmartChunking?: boolean;
+  /** チャンキングを開始するサイズ */
+  chunkingThreshold?: number;
 }
 
 /**
@@ -69,16 +87,35 @@ export interface HybridParserConfig {
  */
 export class HybridParser {
   private treeSitterParser: TreeSitterParser;
-  private config: Required<HybridParserConfig>;
+  private smartChunkingParser: SmartChunkingParser;
+  private astMerger: ASTMerger;
+  private config: {
+    maxTreeSitterSize: number;
+    enableFallback: boolean;
+    enableSmartTruncation: boolean;
+    enableWarnings: boolean;
+    enableSmartChunking: boolean;
+    chunkingThreshold: number;
+  };
   private parseStats: Map<string, ParseMetadata>;
 
   constructor(config?: HybridParserConfig) {
     this.treeSitterParser = TreeSitterParser.getInstance();
+    this.smartChunkingParser = new SmartChunkingParser({
+      chunkSize: 30000,
+      enableDebug: config?.enableWarnings ?? false
+    });
+    this.astMerger = new ASTMerger({
+      validateStructure: true,
+      preservePositions: true
+    });
     this.config = {
       maxTreeSitterSize: config?.maxTreeSitterSize ?? 32767,
       enableFallback: config?.enableFallback ?? true,
       enableSmartTruncation: config?.enableSmartTruncation ?? true,
-      enableWarnings: config?.enableWarnings ?? false
+      enableWarnings: config?.enableWarnings ?? false,
+      enableSmartChunking: config?.enableSmartChunking ?? true,
+      chunkingThreshold: config?.chunkingThreshold ?? 32767
     };
     this.parseStats = new Map();
   }
@@ -118,6 +155,23 @@ export class HybridParser {
     }
 
     // 32KB以上のファイル
+    // SmartChunkingが有効かつ閾値を超える場合
+    if (this.config.enableSmartChunking && originalSize >= this.config.chunkingThreshold) {
+      try {
+        return await this.parseWithSmartChunking(filePath, originalSize, startTime);
+      } catch (error: any) {
+        if (this.config.enableWarnings) {
+          console.warn(`SmartChunking failed for ${filePath}: ${error.message}`);
+        }
+        // SmartChunkingが失敗した場合はBabelにフォールバック
+        if (this.config.enableFallback) {
+          return this.parseWithBabelFallback(content, filePath, originalSize, startTime, `SmartChunking failed: ${error.message}`);
+        }
+        throw error;
+      }
+    }
+    
+    // フォールバック戦略
     if (this.config.enableFallback) {
       return this.parseWithBabelFallback(content, filePath, originalSize, startTime, 'File exceeds 32KB limit');
     }
@@ -423,12 +477,14 @@ export class HybridParser {
     totalFiles: number;
     treeSitterCount: number;
     babelCount: number;
+    smartChunkingCount: number;
     truncatedCount: number;
     averageParseTime: number;
   } {
     const stats = Array.from(this.parseStats.values());
     const treeSitterCount = stats.filter(s => s.strategy === ParserStrategy.TREE_SITTER).length;
     const babelCount = stats.filter(s => s.strategy === ParserStrategy.BABEL).length;
+    const smartChunkingCount = stats.filter(s => s.strategy === ParserStrategy.SMART_CHUNKING).length;
     const truncatedCount = stats.filter(s => s.truncated).length;
     const averageParseTime = stats.reduce((sum, s) => sum + s.parseTime, 0) / (stats.length || 1);
 
@@ -436,9 +492,61 @@ export class HybridParser {
       totalFiles: stats.length,
       treeSitterCount,
       babelCount,
+      smartChunkingCount,
       truncatedCount,
       averageParseTime
     };
+  }
+
+  /**
+   * SmartChunkingを使用したパース
+   */
+  private async parseWithSmartChunking(
+    filePath: string,
+    originalSize: number,
+    startTime: number
+  ): Promise<ParseResult> {
+    try {
+      // SmartChunkingParserでパース
+      const chunkResult = await this.smartChunkingParser.parseFile(filePath);
+      
+      // メタデータを統合
+      const metadata: ParseMetadata = {
+        strategy: ParserStrategy.SMART_CHUNKING,
+        truncated: false,
+        originalSize,
+        parsedSize: originalSize,
+        parseTime: Date.now() - startTime,
+        chunked: true,
+        chunks: chunkResult.metadata.chunks,
+        astsMerged: chunkResult.metadata.chunks,
+        mergeStrategy: 'sequential',
+        syntaxBoundaryChunking: chunkResult.metadata.syntaxBoundaries !== undefined,
+        hasErrors: chunkResult.metadata.errors !== undefined && chunkResult.metadata.errors.length > 0,
+        recoverable: chunkResult.metadata.partialParse === true || (chunkResult.metadata.errors !== undefined && chunkResult.metadata.errors.length > 0),
+        nodeCount: this.countNodes(chunkResult.ast),
+        cacheHit: chunkResult.metadata.cacheHit,
+        language: chunkResult.metadata.language
+      };
+      
+      this.parseStats.set(filePath, metadata);
+      return { ast: chunkResult.ast, metadata };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  /**
+   * ノード数をカウント
+   */
+  private countNodes(ast: ASTNode): number {
+    let count = 1;
+    if (ast.children) {
+      for (const child of ast.children) {
+        count += this.countNodes(child);
+      }
+    }
+    return count;
   }
 
   /**
@@ -446,6 +554,7 @@ export class HybridParser {
    */
   clearCache(): void {
     this.treeSitterParser.clearCache();
+    this.smartChunkingParser.clearCache();
     this.parseStats.clear();
   }
 }
