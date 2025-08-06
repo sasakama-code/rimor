@@ -174,6 +174,7 @@ export class TreeSitterParser {
 
   /**
    * コンテンツを解析してASTを生成
+   * Defensive Programming: 32KB制限の対応
    */
   parseContent(content: string, language: SupportedLanguage): ASTNode {
     const parser = this.parsers.get(language);
@@ -181,12 +182,36 @@ export class TreeSitterParser {
       throw new Error(`Unsupported language: ${language}`);
     }
 
-    const tree = parser.parse(content);
+    // tree-sitter の32KB制限をチェック（32767バイトまで）
+    const MAX_CONTENT_SIZE = 32767;
+    let parseContent = content;
+    let isTruncated = false;
+    
+    if (content.length >= MAX_CONTENT_SIZE) {
+      // 32KB以下に切り詰める（最後の完全な行まで）
+      parseContent = content.substring(0, MAX_CONTENT_SIZE);
+      const lastNewline = parseContent.lastIndexOf('\n');
+      if (lastNewline > 0) {
+        parseContent = parseContent.substring(0, lastNewline);
+      }
+      isTruncated = true;
+    }
+
+    const tree = parser.parse(parseContent);
     if (!tree || !tree.rootNode) {
       throw new Error(`Failed to parse content for language: ${language}`);
     }
-    // ルートノードにはフルテキストを含める
-    return this.convertToASTNode(tree.rootNode, true);
+    
+    // ルートノードにはフルテキストを含める（切り詰められた場合は部分的）
+    const astNode = this.convertToASTNode(tree.rootNode, true);
+    
+    // 切り詰められた場合はメタデータに記録
+    if (isTruncated) {
+      (astNode as any)._truncated = true;
+      (astNode as any)._originalLength = content.length;
+    }
+    
+    return astNode;
   }
 
   /**
