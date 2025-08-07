@@ -305,6 +305,9 @@ describe('UnifiedAnalysisEngine', () => {
         method.includes('collect') ||
         method.includes('extract') ||
         method.includes('run') ||
+        method.includes('should') ||  // shouldRunPlugin
+        method.includes('is') ||       // isLowQualityPattern
+        method.includes('create') ||   // createQualityIssue
         method === 'constructor'
       );
       
@@ -380,16 +383,31 @@ describe('UnifiedAnalysisEngine', () => {
 
   describe('パフォーマンステスト', () => {
     it('並列実行が有効な場合、パフォーマンスが向上する', async () => {
-      const slowPlugin: IPlugin = {
-        name: 'SlowPlugin',
+      // 異なる名前のプラグインを作成（同じ名前だと重複登録されない可能性がある）
+      const slowPlugin1: IPlugin = {
+        name: 'SlowPlugin1',
         analyze: jest.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(() => resolve([]), 100))
+          new Promise(resolve => setTimeout(() => resolve([]), 50))
+        )
+      };
+      
+      const slowPlugin2: IPlugin = {
+        name: 'SlowPlugin2',
+        analyze: jest.fn().mockImplementation(() => 
+          new Promise(resolve => setTimeout(() => resolve([]), 50))
+        )
+      };
+      
+      const slowPlugin3: IPlugin = {
+        name: 'SlowPlugin3',
+        analyze: jest.fn().mockImplementation(() => 
+          new Promise(resolve => setTimeout(() => resolve([]), 50))
         )
       };
 
-      engine.registerPlugin(slowPlugin);
-      engine.registerPlugin(slowPlugin);
-      engine.registerPlugin(slowPlugin);
+      engine.registerPlugin(slowPlugin1);
+      engine.registerPlugin(slowPlugin2);
+      engine.registerPlugin(slowPlugin3);
 
       // シーケンシャル実行
       engine.configure({ parallelExecution: false });
@@ -404,7 +422,13 @@ describe('UnifiedAnalysisEngine', () => {
       const parallelTime = Date.now() - parallelStart;
 
       // パラレル実行の方が速いことを確認
-      expect(parallelTime).toBeLessThan(sequentialTime);
+      // 並列実行の効果を検証（少なくとも20%高速化を期待）
+      expect(parallelTime).toBeLessThan(sequentialTime * 0.8);
+      
+      // 各プラグインが呼ばれたことを確認
+      expect(slowPlugin1.analyze).toHaveBeenCalled();
+      expect(slowPlugin2.analyze).toHaveBeenCalled();
+      expect(slowPlugin3.analyze).toHaveBeenCalled();
     });
   });
 });

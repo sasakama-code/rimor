@@ -25,6 +25,22 @@ import * as path from 'path';
  * @version 0.9.0
  */
 
+// 定数定義（マジックナンバーの除去）
+const DEFAULT_TIMEOUT_MS = 30000;
+const SCORE_THRESHOLD = {
+  EXCELLENT: 90,
+  GOOD: 70,
+  FAIR: 50
+} as const;
+const MAX_DEPTH = 20;
+const LOW_QUALITY_CONFIDENCE_THRESHOLD = 0.5;
+const PRIORITY_ORDER: Record<string, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3
+} as const;
+
 // analyzer.tsのAnalysisResult型
 export interface BasicAnalysisResult {
   totalFiles: number;
@@ -89,12 +105,14 @@ export class UnifiedAnalysisEngine {
   private legacyPluginManager: PluginManager;
   private qualityPluginManager: PluginManagerExtended;
   private configuration: AnalysisOptions;
+  private customPlugins: Map<string, any>;
 
   constructor() {
     this.legacyPluginManager = new PluginManager();
     this.qualityPluginManager = new PluginManagerExtended();
+    this.customPlugins = new Map();
     this.configuration = {
-      timeout: 30000,
+      timeout: DEFAULT_TIMEOUT_MS,
       skipPlugins: [],
       parallelExecution: false
     };
@@ -118,9 +136,74 @@ export class UnifiedAnalysisEngine {
    * カスタムプラグインの登録（拡張性のため）
    */
   registerCustomPlugin(plugin: any): void {
-    // 将来の拡張のためのメソッド
     // 開放閉鎖原則に従い、新しいプラグインタイプを追加可能にする
-    console.log('Custom plugin registered:', plugin.name);
+    if (this.isValidPlugin(plugin)) {
+      const pluginId = plugin.id || plugin.name || `custom-${Date.now()}`;
+      this.customPlugins.set(pluginId, plugin);
+      debug.info(`Custom plugin registered: ${pluginId}`);
+    } else {
+      debug.warn('Invalid plugin structure');
+    }
+  }
+
+  /**
+   * プラグインの妥当性チェック
+   */
+  private isValidPlugin(plugin: any): boolean {
+    return plugin && 
+           (typeof plugin.analyze === 'function' || 
+            typeof plugin.detectPatterns === 'function');
+  }
+
+  /**
+   * テストファイルの収集（Extract Method - Martin Fowler）
+   */
+  private async collectTestFiles(targetPath: string): Promise<string[]> {
+    const testFiles: string[] = [];
+    for await (const file of findTestFiles(targetPath)) {
+      testFiles.push(file);
+    }
+    
+    // ファイルが見つからない場合は、targetPath自体を対象とする
+    if (testFiles.length === 0) {
+      testFiles.push(targetPath);
+    }
+    
+    return testFiles;
+  }
+
+  /**
+   * プラグインを実行すべきか判定（Extract Method）
+   */
+  private shouldRunPlugin(plugin: IPlugin): boolean {
+    return !this.configuration.skipPlugins?.includes(plugin.name);
+  }
+
+  /**
+   * プラグインの安全な実行（Extract Method）
+   */
+  private async runPluginSafely(plugin: IPlugin, file: string): Promise<{ issues: Issue[], error: any }> {
+    try {
+      const issues = await this.runWithTimeout(
+        plugin.analyze(file),
+        this.configuration.timeout || DEFAULT_TIMEOUT_MS
+      );
+      return { issues, error: null };
+    } catch (error) {
+      const errorInfo = this.createErrorInfo(plugin.name, error);
+      debug.warn(`Plugin ${plugin.name} failed: ${error}`);
+      return { issues: [], error: errorInfo };
+    }
+  }
+
+  /**
+   * エラー情報の作成（Extract Method）
+   */
+  private createErrorInfo(pluginName: string, error: unknown): { pluginName: string; error: string } {
+    return {
+      pluginName,
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 
   /**
@@ -136,66 +219,13 @@ export class UnifiedAnalysisEngine {
       let fileCount = 0;
 
       try {
-        const testFiles: string[] = [];
-        for await (const file of findTestFiles(targetPath)) {
-          testFiles.push(file);
-        }
+        const testFiles = await this.collectTestFiles(targetPath);
         fileCount = testFiles.length;
 
         for (const file of testFiles) {
-          const plugins = this.legacyPluginManager.getPlugins();
-          
-          if (this.configuration.parallelExecution) {
-            // 並列実行
-            const promises = plugins
-              .filter(plugin => !this.configuration.skipPlugins?.includes(plugin.name))
-              .map(async plugin => {
-                try {
-                  const issues = await this.runWithTimeout(
-                    plugin.analyze(file),
-                    this.configuration.timeout || 30000
-                  );
-                  return { issues, error: null };
-                } catch (error) {
-                  const errorInfo: any = {
-                    pluginName: plugin.name,
-                    error: error instanceof Error ? error.message : String(error)
-                  };
-                  debug.warn(`Plugin ${plugin.name} failed: ${error}`);
-                  return { issues: [], error: errorInfo };
-                }
-              });
-            
-            const results = await Promise.all(promises);
-            for (const result of results) {
-              if (result.error) {
-                errors.push(result.error);
-              } else {
-                allIssues.push(...result.issues);
-              }
-            }
-          } else {
-            // シーケンシャル実行
-            for (const plugin of plugins) {
-              if (this.configuration.skipPlugins?.includes(plugin.name)) {
-                continue;
-              }
-
-              try {
-                const issues = await this.runWithTimeout(
-                  plugin.analyze(file),
-                  this.configuration.timeout || 30000
-                );
-                allIssues.push(...issues);
-              } catch (error) {
-                errors.push({
-                  pluginName: plugin.name,
-                  error: error instanceof Error ? error.message : String(error)
-                });
-                debug.warn(`Plugin ${plugin.name} failed: ${error}`);
-              }
-            }
-          }
+          const results = await this.runPluginsForFile(file);
+          allIssues.push(...results.issues);
+          errors.push(...results.errors);
         }
       } catch (error) {
         debug.error(`Analysis failed: ${error}`);
@@ -210,6 +240,46 @@ export class UnifiedAnalysisEngine {
         errors: errors // 常にerrorsプロパティを含める（空配列でも）
       };
     });
+  }
+
+  /**
+   * ファイルに対してプラグインを実行（Extract Method）
+   */
+  private async runPluginsForFile(file: string): Promise<{ issues: Issue[], errors: any[] }> {
+    const plugins = this.legacyPluginManager.getPlugins();
+    const issues: Issue[] = [];
+    const errors: any[] = [];
+
+    if (this.configuration.parallelExecution) {
+      // 並列実行
+      const promises = plugins
+        .filter(plugin => this.shouldRunPlugin(plugin))
+        .map(plugin => this.runPluginSafely(plugin, file));
+      
+      const results = await Promise.all(promises);
+      for (const result of results) {
+        if (result.error) {
+          errors.push(result.error);
+        } else {
+          issues.push(...result.issues);
+        }
+      }
+    } else {
+      // シーケンシャル実行
+      for (const plugin of plugins) {
+        if (!this.shouldRunPlugin(plugin)) {
+          continue;
+        }
+        const result = await this.runPluginSafely(plugin, file);
+        if (result.error) {
+          errors.push(result.error);
+        } else {
+          issues.push(...result.issues);
+        }
+      }
+    }
+
+    return { issues, errors };
   }
 
   /**
@@ -284,10 +354,10 @@ export class UnifiedAnalysisEngine {
       : 0;
 
     const scoreDistribution = {
-      excellent: scores.filter(s => s >= 90).length,
-      good: scores.filter(s => s >= 70 && s < 90).length,
-      fair: scores.filter(s => s >= 50 && s < 70).length,
-      poor: scores.filter(s => s < 50).length
+      excellent: scores.filter(s => s >= SCORE_THRESHOLD.EXCELLENT).length,
+      good: scores.filter(s => s >= SCORE_THRESHOLD.GOOD && s < SCORE_THRESHOLD.EXCELLENT).length,
+      fair: scores.filter(s => s >= SCORE_THRESHOLD.FAIR && s < SCORE_THRESHOLD.GOOD).length,
+      poor: scores.filter(s => s < SCORE_THRESHOLD.FAIR).length
     };
 
     const executionTime = Date.now() - startTime;
@@ -332,14 +402,31 @@ export class UnifiedAnalysisEngine {
       confidence: 0
     };
 
+    // allIssuesにエラー情報も含める
+    const allIssues = [
+      ...basicAnalysis.issues,
+      ...this.extractIssuesFromQualityResults(qualityResults)
+    ];
+    
+    // エラーがあればissueとして追加
+    if (basicAnalysis.errors && basicAnalysis.errors.length > 0) {
+      for (const error of basicAnalysis.errors) {
+        allIssues.push({
+          type: 'error',
+          severity: 'high',
+          message: `Plugin error in ${error.pluginName}: ${error.error}`,
+          file: targetPath,
+          line: 0,
+          column: 0
+        });
+      }
+    }
+
     return {
       basicAnalysis,
       qualityAnalysis,
       combinedScore: finalCombinedScore,
-      allIssues: [
-        ...basicAnalysis.issues,
-        ...this.extractIssuesFromQualityResults(qualityResults)
-      ]
+      allIssues
     };
   }
 
@@ -349,7 +436,15 @@ export class UnifiedAnalysisEngine {
   getPluginCount(): number {
     const legacyCount = this.legacyPluginManager.getPlugins().length;
     const qualityCount = this.qualityPluginManager.getPlugins().length;
-    return legacyCount + qualityCount;
+    const customCount = this.customPlugins.size;
+    return legacyCount + qualityCount + customCount;
+  }
+
+  /**
+   * 品質プラグインの取得
+   */
+  getQualityPlugins(): ITestQualityPlugin[] {
+    return this.qualityPluginManager.getPlugins();
   }
 
   /**
@@ -371,7 +466,7 @@ export class UnifiedAnalysisEngine {
 
   // ===== Private Helper Methods =====
 
-  private async analyzeAllWithQuality(targetPath: string): Promise<ExtendedAnalysisResult[]> {
+  async analyzeAllWithQuality(targetPath: string): Promise<ExtendedAnalysisResult[]> {
     const testFiles: string[] = [];
     for await (const file of findTestFiles(targetPath)) {
       testFiles.push(file);
@@ -390,7 +485,7 @@ export class UnifiedAnalysisEngine {
     return results;
   }
 
-  private aggregateScores(pluginResults: PluginResult[]): QualityScore {
+  aggregateScores(pluginResults: PluginResult[]): QualityScore {
     if (pluginResults.length === 0) {
       return {
         overall: 0,
@@ -426,28 +521,74 @@ export class UnifiedAnalysisEngine {
     return pluginResults.flatMap(r => r.improvements);
   }
 
+  /**
+   * 推奨事項の集約
+   */
+  aggregateRecommendations(recommendations: Improvement[][]): Improvement[] {
+    const uniqueRecommendations = new Map<string, Improvement>();
+    
+    for (const group of recommendations) {
+      for (const rec of group) {
+        const key = rec.id || rec.title;
+        if (!uniqueRecommendations.has(key)) {
+          uniqueRecommendations.set(key, rec);
+        }
+      }
+    }
+    
+    return Array.from(uniqueRecommendations.values())
+      .sort((a, b) => {
+        // 優先度でソート
+        return (PRIORITY_ORDER[a.priority] || 999) - (PRIORITY_ORDER[b.priority] || 999);
+      });
+  }
+
   private extractIssuesFromQualityResults(results: ExtendedAnalysisResult[]): Issue[] {
     const issues: Issue[] = [];
 
     for (const result of results) {
       for (const pluginResult of result.qualityAnalysis.pluginResults) {
-        // パターンから問題を抽出
-        for (const pattern of pluginResult.detectionResults) {
-          if (pattern.confidence < 0.5 && pattern.location) {
-            issues.push({
-              type: 'quality',
-              severity: 'medium',
-              message: `Low quality pattern detected: ${pattern.patternName || pattern.patternId || 'unknown'}`,
-              file: pattern.location.file,
-              line: pattern.location.line,
-              column: pattern.location.column
-            });
-          }
-        }
+        issues.push(...this.extractIssuesFromPatterns(pluginResult.detectionResults));
       }
     }
 
     return issues;
+  }
+
+  /**
+   * パターンからIssueを抽出（Extract Method）
+   */
+  private extractIssuesFromPatterns(patterns: DetectionResult[]): Issue[] {
+    const issues: Issue[] = [];
+    
+    for (const pattern of patterns) {
+      if (this.isLowQualityPattern(pattern)) {
+        issues.push(this.createQualityIssue(pattern));
+      }
+    }
+    
+    return issues;
+  }
+
+  /**
+   * 低品質パターンかどうか判定（Extract Method）
+   */
+  private isLowQualityPattern(pattern: DetectionResult): boolean {
+    return pattern.confidence < LOW_QUALITY_CONFIDENCE_THRESHOLD && !!pattern.location;
+  }
+
+  /**
+   * 品質Issueを作成（Extract Method）
+   */
+  private createQualityIssue(pattern: DetectionResult): Issue {
+    return {
+      type: 'quality',
+      severity: 'medium',
+      message: `Low quality pattern detected: ${pattern.patternName || pattern.patternId || 'unknown'}`,
+      file: pattern.location!.file,
+      line: pattern.location!.line,
+      column: pattern.location!.column
+    };
   }
 
   private async runWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
