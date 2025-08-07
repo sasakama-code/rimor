@@ -1,60 +1,36 @@
 /**
- * UnifiedAIFormatter
- * Issue #58: AIエージェント向けコンテキスト出力機能
+ * UnifiedAIFormatter v0.9.0
+ * UnifiedAIFormatterStrategyへのエイリアス（後方互換性維持）
  * 
- * DRY原則適用: ベースクラスから継承した実装
- * SOLID原則: 単一責任の原則 - AI JSON変換に特化
- * KISS原則: シンプルな変換ロジック
+ * @deprecated UnifiedAIFormatterStrategyを直接使用してください
  */
 
-import { UnifiedAIFormatterBase } from './unified-ai-formatter-base';
-import { 
-  UnifiedAnalysisResult, 
-  AIJsonOutput, 
-  UnifiedAIFormatterOptions 
-} from './types';
+import { UnifiedAIFormatterStrategy } from './UnifiedAIFormatterStrategy';
+import { UnifiedAnalysisResult, AIJsonOutput, UnifiedAIFormatterOptions } from './types';
 
 /**
- * UnifiedAnalysisResultからAI向けJSON形式への変換クラス
- * DRY原則: ベースクラスから共通ロジックを継承
+ * 後方互換性のためのエイリアスクラス
  */
-export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
+export class UnifiedAIFormatter {
+  private strategy: UnifiedAIFormatterStrategy;
 
-  /**
-   * UnifiedAnalysisResultをAI JSON形式に変換
-   * @param result NIST準拠の統合分析結果
-   * @param options フォーマッターオプション
-   * @returns AI向けJSON出力
-   */
+  constructor() {
+    this.strategy = new UnifiedAIFormatterStrategy();
+    this.strategy.setStrategy('base');
+    console.warn('UnifiedAIFormatter is deprecated. Use UnifiedAIFormatterStrategy instead.');
+  }
+
   formatAsAIJson(
     result: UnifiedAnalysisResult,
     options: UnifiedAIFormatterOptions = {}
   ): AIJsonOutput {
-    // includeRiskLevelsオプションでフィルタリング
-    if (options.includeRiskLevels && options.includeRiskLevels.length > 0) {
-      const filteredResult = {
-        ...result,
-        aiKeyRisks: result.aiKeyRisks.filter(risk => 
-          options.includeRiskLevels!.includes(risk.riskLevel)
-        )
-      };
-      return super.formatAsAIJsonInternal(filteredResult, {
-        htmlReportPath: options.htmlReportPath,
-        maxRisks: options.maxRisks || this.DEFAULT_MAX_RISKS
-      });
-    }
-    
-    // ベースクラスの実装を使用
-    return super.formatAsAIJsonInternal(result, {
-      htmlReportPath: options.htmlReportPath,
-      maxRisks: options.maxRisks || this.DEFAULT_MAX_RISKS
-    });
+    return this.strategy.format(result, options);
   }
 
-
-
-
-
-
-
+  formatAsAIJsonInternal(
+    result: UnifiedAnalysisResult,
+    options: UnifiedAIFormatterOptions = {}
+  ): AIJsonOutput {
+    return this.strategy.format(result, options);
+  }
 }
