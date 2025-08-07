@@ -108,7 +108,7 @@ export interface TestRealizationResult {
   /**
    * リスクレベル
    */
-  riskLevel: RiskLevel;
+  riskLevel: IntentRiskLevel;
   
   /**
    * テストファイルパス（レポート生成用）
@@ -207,15 +207,22 @@ export enum Severity {
 }
 
 /**
- * リスクレベル
+ * リスクレベル（レガシー定義）
+ * v0.8.0の小文字定義。v0.9.0以降は unified-analysis-result.ts のRiskLevel（大文字）を使用
  */
-export enum RiskLevel {
+export enum IntentRiskLevel {
   CRITICAL = 'critical',
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low',
   MINIMAL = 'minimal'
 }
+
+// 後方互換性のための型エイリアス（非推奨）
+/**
+ * @deprecated Use IntentRiskLevel or import RiskLevel from unified-analysis-result.ts
+ */
+export type RiskLevel = IntentRiskLevel;
 
 /**
  * テスト意図分析器インターフェース
@@ -242,5 +249,5 @@ export interface ITestIntentAnalyzer {
   /**
    * リスク評価
    */
-  assessRisk(gaps: TestGap[]): RiskLevel;
+  assessRisk(gaps: TestGap[]): IntentRiskLevel;
 }

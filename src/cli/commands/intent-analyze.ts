@@ -7,7 +7,7 @@
 import { TreeSitterParser } from '../../intent-analysis/TreeSitterParser';
 import { TestIntentExtractor } from '../../intent-analysis/TestIntentExtractor';
 import { TestIntentReporter } from '../../intent-analysis/TestIntentReporter';
-import { TestRealizationResult, RiskLevel } from '../../intent-analysis/ITestIntentAnalyzer';
+import { TestRealizationResult, IntentRiskLevel } from '../../intent-analysis/ITestIntentAnalyzer';
 import { TypeScriptAnalyzer } from '../../intent-analysis/TypeScriptAnalyzer';
 import { DomainInferenceEngine } from '../../intent-analysis/DomainInferenceEngine';
 import { BusinessLogicMapper } from '../../intent-analysis/BusinessLogicMapper';
@@ -118,7 +118,7 @@ export class IntentAnalyzeCommand {
           totalFiles: results.length,
           totalTests: results.reduce((sum, r) => sum + (r.actual?.assertions?.length || 0), 0),
           averageRealizationScore: results.reduce((sum, r) => sum + r.realizationScore, 0) / results.length,
-          highRiskTests: results.filter(r => r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL).length
+          highRiskTests: results.filter(r => r.riskLevel === IntentRiskLevel.HIGH || r.riskLevel === IntentRiskLevel.CRITICAL).length
         };
         
         if (options.output) {

@@ -32,7 +32,7 @@ export class CLI {
               alias: 'f',
               describe: '出力フォーマット',
               type: 'string',
-              choices: ['text', 'json', 'markdown', 'html'],
+              choices: ['text', 'json', 'markdown', 'html', 'ai-json'],
               default: 'text'
             })
             .option('json', {
@@ -51,6 +51,10 @@ export class CLI {
             })
             .option('output-html', {
               describe: '分析結果をHTML形式でファイルに出力',
+              type: 'string'
+            })
+            .option('output-ai-json', {
+              describe: '分析結果をAI JSON形式でファイルに出力',
               type: 'string'
             })
             .option('annotate', {
@@ -132,6 +136,7 @@ export class CLI {
             outputJson: argv['output-json'],
             outputMarkdown: argv['output-markdown'],
             outputHtml: argv['output-html'],
+            outputAiJson: argv['output-ai-json'],
             annotate: argv.annotate,
             annotateFormat: argv['annotate-format'] as 'inline' | 'block',
             annotateOutput: argv['annotate-output'],

@@ -12,7 +12,7 @@ import {
   ActualTestAnalysis,
   TestRealizationResult,
   TestGap,
-  RiskLevel,
+  IntentRiskLevel,
   TestAssertion,
   GapType,
   Severity
@@ -578,31 +578,31 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * リスク評価
    * NISTリスク評価システムを参考にシンプルに実装
    */
-  assessRisk(gaps: TestGap[]): RiskLevel {
+  assessRisk(gaps: TestGap[]): IntentRiskLevel {
     if (gaps.length === 0) {
-      return RiskLevel.MINIMAL;
+      return IntentRiskLevel.MINIMAL;
     }
 
     // 最も重要度の高いギャップを基準にリスクレベルを決定
     const severities = gaps.map(gap => gap.severity);
     
     if (severities.includes(Severity.CRITICAL)) {
-      return RiskLevel.CRITICAL;
+      return IntentRiskLevel.CRITICAL;
     }
     
     if (severities.includes(Severity.HIGH)) {
-      return RiskLevel.HIGH;
+      return IntentRiskLevel.HIGH;
     }
     
     if (severities.includes(Severity.MEDIUM)) {
-      return RiskLevel.MEDIUM;
+      return IntentRiskLevel.MEDIUM;
     }
     
     if (severities.includes(Severity.LOW)) {
-      return RiskLevel.LOW;
+      return IntentRiskLevel.LOW;
     }
     
-    return RiskLevel.MINIMAL;
+    return IntentRiskLevel.MINIMAL;
   }
 
   /**

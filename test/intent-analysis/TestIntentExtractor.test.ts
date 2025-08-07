@@ -5,7 +5,7 @@
 
 import { TestIntentExtractor } from '../../src/intent-analysis/TestIntentExtractor';
 import { TreeSitterParser, SupportedLanguage } from '../../src/intent-analysis/TreeSitterParser';
-import { TestType, TestIntent, ActualTestAnalysis, RiskLevel, GapType } from '../../src/intent-analysis/ITestIntentAnalyzer';
+import { TestType, TestIntent, ActualTestAnalysis, IntentRiskLevel, GapType } from '../../src/intent-analysis/ITestIntentAnalyzer';
 
 describe('TestIntentExtractor', () => {
   let extractor: TestIntentExtractor;
@@ -152,7 +152,7 @@ describe('TestIntentExtractor', () => {
       expect(result.actual).toBe(actual);
       expect(result.realizationScore).toBeGreaterThan(80); // 高いスコア（ギャップが少ない）
       expect(result.gaps).toHaveLength(0); // ギャップなし
-      expect(result.riskLevel).toBe(RiskLevel.MINIMAL);
+      expect(result.riskLevel).toBe(IntentRiskLevel.MINIMAL);
     });
 
     it('ギャップがある場合を正しく検出できる', async () => {
@@ -194,7 +194,7 @@ describe('TestIntentExtractor', () => {
       expect(result.gaps.length).toBeGreaterThan(0);
       expect(result.gaps.some(gap => gap.type === GapType.MISSING_ERROR_CASE)).toBe(true);
       expect(result.gaps.some(gap => gap.type === GapType.MISSING_EDGE_CASE)).toBe(true);
-      expect(result.riskLevel).toBe(RiskLevel.HIGH); // エラーケース不足はHIGHリスク
+      expect(result.riskLevel).toBe(IntentRiskLevel.HIGH); // エラーケース不足はHIGHリスク
     });
   });
 });

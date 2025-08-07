@@ -10,7 +10,7 @@ import {
   TestIntent,
   TestType,
   ActualTestAnalysis,
-  RiskLevel,
+  IntentRiskLevel,
   GapType,
   Severity
 } from '../../src/intent-analysis/ITestIntentAnalyzer';
@@ -30,7 +30,7 @@ describe('TestIntentReporter', () => {
           file: 'test/example.test.ts',
           description: '加算関数のテスト',
           realizationScore: 85,
-          riskLevel: RiskLevel.LOW,
+          riskLevel: IntentRiskLevel.LOW,
           gaps: [
             {
               type: GapType.MISSING_EDGE_CASE,
@@ -58,9 +58,9 @@ describe('TestIntentReporter', () => {
     it('リスクレベルに応じて適切な警告を表示する', () => {
       // Arrange
       const results: TestRealizationResult[] = [
-        createMockResult({ riskLevel: RiskLevel.CRITICAL }),
-        createMockResult({ riskLevel: RiskLevel.HIGH }),
-        createMockResult({ riskLevel: RiskLevel.MEDIUM })
+        createMockResult({ riskLevel: IntentRiskLevel.CRITICAL }),
+        createMockResult({ riskLevel: IntentRiskLevel.HIGH }),
+        createMockResult({ riskLevel: IntentRiskLevel.MEDIUM })
       ];
 
       // Act
@@ -133,7 +133,7 @@ describe('TestIntentReporter', () => {
           file: 'test/example.test.ts',
           description: '加算関数のテスト',
           realizationScore: 85,
-          riskLevel: RiskLevel.LOW
+          riskLevel: IntentRiskLevel.LOW
         })
       ];
 
@@ -151,8 +151,8 @@ describe('TestIntentReporter', () => {
     it('リスクレベルに応じて色分けされたバッジを表示する', () => {
       // Arrange
       const results: TestRealizationResult[] = [
-        createMockResult({ riskLevel: RiskLevel.CRITICAL }),
-        createMockResult({ riskLevel: RiskLevel.LOW })
+        createMockResult({ riskLevel: IntentRiskLevel.CRITICAL }),
+        createMockResult({ riskLevel: IntentRiskLevel.LOW })
       ];
 
       // Act
@@ -184,9 +184,9 @@ describe('TestIntentReporter', () => {
     it('複数ファイルの結果をサマリーとして生成できる', () => {
       // Arrange
       const results: TestRealizationResult[] = [
-        createMockResult({ file: 'test1.test.ts', riskLevel: RiskLevel.HIGH }),
-        createMockResult({ file: 'test2.test.ts', riskLevel: RiskLevel.LOW }),
-        createMockResult({ file: 'test3.test.ts', riskLevel: RiskLevel.CRITICAL })
+        createMockResult({ file: 'test1.test.ts', riskLevel: IntentRiskLevel.HIGH }),
+        createMockResult({ file: 'test2.test.ts', riskLevel: IntentRiskLevel.LOW }),
+        createMockResult({ file: 'test3.test.ts', riskLevel: IntentRiskLevel.CRITICAL })
       ];
 
       // Act
@@ -235,7 +235,7 @@ function createMockResult(overrides: any = {}): TestRealizationResult {
     actual: overrides.actual || defaultActual,
     gaps: overrides.gaps || [],
     realizationScore: overrides.realizationScore || 100,
-    riskLevel: overrides.riskLevel || RiskLevel.MINIMAL,
+    riskLevel: overrides.riskLevel || IntentRiskLevel.MINIMAL,
     file: overrides.file || 'test.test.ts',
     description: overrides.description || 'テストの説明'
   };

@@ -4,7 +4,7 @@
  * TDD Green Phase - テストを通す最小限の実装
  */
 
-import { TestRealizationResult, RiskLevel, Severity } from './ITestIntentAnalyzer';
+import { TestRealizationResult, IntentRiskLevel, Severity } from './ITestIntentAnalyzer';
 
 /**
  * レポートサマリー
@@ -171,16 +171,16 @@ export class TestIntentReporter {
       totalScore += result.realizationScore;
       
       switch (result.riskLevel) {
-        case RiskLevel.CRITICAL:
+        case IntentRiskLevel.CRITICAL:
           criticalRiskCount++;
           break;
-        case RiskLevel.HIGH:
+        case IntentRiskLevel.HIGH:
           highRiskCount++;
           break;
-        case RiskLevel.MEDIUM:
+        case IntentRiskLevel.MEDIUM:
           mediumRiskCount++;
           break;
-        case RiskLevel.LOW:
+        case IntentRiskLevel.LOW:
           lowRiskCount++;
           break;
       }
