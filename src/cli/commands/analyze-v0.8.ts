@@ -18,12 +18,13 @@ import * as path from 'path';
 export interface AnalyzeOptions {
   verbose?: boolean;
   path: string;
-  format?: 'text' | 'json' | 'markdown' | 'html';
+  format?: 'text' | 'json' | 'markdown' | 'html' | 'ai-json';
   
   // v0.8.0 新オプション
   outputJson?: string;      // JSON出力先ファイル
   outputMarkdown?: string;  // Markdown出力先ファイル
   outputHtml?: string;      // HTML出力先ファイル
+  outputAiJson?: string;    // AI JSON出力先ファイル (Issue #58)
   annotate?: boolean;       // インラインアノテーション生成
   annotateFormat?: 'inline' | 'block';  // アノテーション形式
   annotateOutput?: string;  // アノテーション出力先ディレクトリ
@@ -48,6 +49,7 @@ export interface AnalyzeOptions {
 export class AnalyzeCommandV8 {
   private cliSecurity: CLISecurity;
   private container: typeof container;
+  private generatedHtmlPath?: string; // HTMLレポートパスを保持
 
   constructor(customContainer?: typeof container, customCliSecurity?: CLISecurity) {
     this.cliSecurity = customCliSecurity || new CLISecurity(process.cwd(), DEFAULT_CLI_SECURITY_LIMITS);
@@ -219,10 +221,18 @@ export class AnalyzeCommandV8 {
         }
         
         if (result.success) {
+          // HTMLレポートパスを保存（AI JSON生成時に使用）
+          this.generatedHtmlPath = result.outputPath;
           console.log(await OutputFormatter.success(`HTMLレポートを生成しました: ${result.outputPath}`));
         } else {
           console.error(await OutputFormatter.error(`HTMLレポート生成に失敗しました: ${result.error}`));
         }
+      }
+      
+      // AI JSON出力 (Issue #58)
+      if (sanitizedOptions.format === 'ai-json' || sanitizedOptions.outputAiJson) {
+        await this.generateAIJson(analysisResult, sanitizedOptions);
+        return;
       }
       
       // デフォルト出力（コンソール）
@@ -279,6 +289,70 @@ export class AnalyzeCommandV8 {
   }
   
   /**
+   * AI JSON生成 (Issue #58)
+   * UnifiedAnalysisResultをAI向けJSON形式に変換して出力
+   */
+  private async generateAIJson(
+    analysisResult: any,
+    options: AnalyzeOptions
+  ): Promise<void> {
+    try {
+      // 簡易実装: 分析結果から直接AI JSONを生成
+      const issueCount = analysisResult?.issues?.length || 0;
+      const score = issueCount === 0 ? 100 : Math.max(0, 100 - issueCount * 10);
+      const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+      
+      const aiJson = {
+        overallAssessment: `プロジェクト品質評価結果:\n総合スコア: ${score}/100\nグレード: ${grade}\n\n検出された問題: ${issueCount}件`,
+        keyRisks: analysisResult?.issues?.slice(0, 10).map((issue: any) => ({
+          problem: issue.message || '問題が検出されました',
+          riskLevel: issue.severity === 'error' ? 'CRITICAL' : issue.severity === 'warning' ? 'HIGH' : 'MEDIUM',
+          context: {
+            filePath: issue.location?.file || 'unknown',
+            codeSnippet: '',
+            startLine: issue.location?.startLine || 0,
+            endLine: issue.location?.endLine || 0
+          },
+          suggestedAction: {
+            type: 'ADD_MISSING_TEST',
+            description: 'テストを追加してください',
+            example: ''
+          }
+        })) || [],
+        fullReportUrl: options.outputHtml || '.rimor/reports/index.html'
+      };
+      
+      // 出力
+      if (options.outputAiJson) {
+        const outputPath = path.resolve(options.outputAiJson);
+        const outputDir = path.dirname(outputPath);
+        
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(outputPath, JSON.stringify(aiJson, null, 2));
+        console.log(await OutputFormatter.success(`AI JSONレポートを生成しました: ${outputPath}`));
+      } else {
+        // コンソール出力
+        console.log(JSON.stringify(aiJson, null, 2));
+      }
+    } catch (error) {
+      // エラーの詳細を出力
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(await OutputFormatter.error(`AI JSON生成に失敗しました: ${errorMessage}`));
+      
+      // スタックトレースも出力（verboseモード時）
+      if (options.verbose && error instanceof Error) {
+        console.error('詳細:', error.stack);
+      }
+      
+      // エラーコード1で終了
+      process.exit(1);
+    }
+  }
+  
+  /**
    * アノテーション生成処理
    */
   private async generateAnnotations(
@@ -315,5 +389,176 @@ export class AnalyzeCommandV8 {
     } else {
       console.error(await OutputFormatter.error("このバージョンのReporterはアノテーション生成をサポートしていません"));
     }
+  }
+  
+  /**
+   * Taint解析結果を取得
+   * @param targetPath 分析対象パス
+   * @param analysisResult 既存の分析結果
+   * @returns TaintAnalysisResult
+   */
+  private async getTaintAnalysisResult(targetPath: string, analysisResult: any): Promise<any> {
+    try {
+      // 既存の分析結果からTaint関連の情報を抽出
+      if (analysisResult?.pluginResults?.['taint-analysis']) {
+        // 既にTaint解析が実行されている場合はその結果を使用
+        return this.convertToTaintAnalysisResult(analysisResult.pluginResults['taint-analysis']);
+      }
+      
+      // 分析結果からissuesを基にTaintAnalysisResultを生成
+      // 実際のTaint解析は重いため、既存の分析結果から変換する
+      if (analysisResult?.issues && Array.isArray(analysisResult.issues)) {
+        return this.convertIssuesToTaintResult(analysisResult.issues);
+      }
+      
+      // フォールバック: デフォルト値を返す
+      return this.getDefaultTaintResult();
+      
+    } catch (error) {
+      // エラー時はフォールバック
+      console.warn('Taint解析結果の取得に失敗しました。デフォルト値を使用します。', error);
+      return this.getDefaultTaintResult();
+    }
+  }
+  
+  /**
+   * デフォルトのTaintAnalysisResultを返す
+   */
+  private getDefaultTaintResult(): any {
+    return {
+      flows: [],
+      summary: {
+        totalFlows: 0,
+        criticalFlows: 0,
+        highFlows: 0,
+        mediumFlows: 0,
+        lowFlows: 0,
+        sourcesCount: 0,
+        sinksCount: 0,
+        sanitizersCount: 0
+      }
+    };
+  }
+  
+  /**
+   * 分析結果のissuesをTaintAnalysisResult形式に変換
+   */
+  private convertIssuesToTaintResult(issues: any[]): any {
+    // セキュリティ関連のissueをTaintフローとして扱う
+    const securityIssues = issues.filter(issue => 
+      issue.type?.includes('security') || 
+      issue.type?.includes('taint') ||
+      issue.type?.includes('injection') ||
+      issue.type?.includes('xss') ||
+      issue.type?.includes('sql') ||
+      issue.severity === 'critical' ||
+      issue.severity === 'high'
+    );
+    
+    const flows = securityIssues.map((issue, index) => ({
+      id: `flow-${index}`,
+      source: 'user-input',
+      sink: this.inferSinkFromIssue(issue),
+      taintLevel: this.mapSeverityToLevel(issue.severity),
+      path: [{
+        file: issue.file || 'unknown',
+        line: issue.line || 0
+      }]
+    }));
+    
+    const summary = {
+      totalFlows: flows.length,
+      criticalFlows: flows.filter(f => f.taintLevel === 'CRITICAL').length,
+      highFlows: flows.filter(f => f.taintLevel === 'HIGH').length,
+      mediumFlows: flows.filter(f => f.taintLevel === 'MEDIUM').length,
+      lowFlows: flows.filter(f => f.taintLevel === 'LOW').length,
+      sourcesCount: flows.length > 0 ? 1 : 0,
+      sinksCount: new Set(flows.map(f => f.sink)).size,
+      sanitizersCount: 0
+    };
+    
+    return { flows, summary };
+  }
+  
+  /**
+   * issueからsinkのタイプを推論
+   */
+  private inferSinkFromIssue(issue: any): string {
+    const type = issue.type?.toLowerCase() || '';
+    if (type.includes('sql')) return 'database';
+    if (type.includes('xss')) return 'html-output';
+    if (type.includes('command')) return 'shell-command';
+    if (type.includes('file')) return 'file-system';
+    return 'unknown-sink';
+  }
+  
+  /**
+   * プラグイン結果をTaintAnalysisResult形式に変換
+   */
+  private convertToTaintAnalysisResult(pluginResults: any): any {
+    // プラグイン結果からTaintAnalysisResult形式への変換
+    const flows = pluginResults.detections?.map((detection: any) => ({
+      id: detection.patternId,
+      source: detection.metadata?.source || 'unknown',
+      sink: detection.metadata?.sink || 'unknown',
+      taintLevel: detection.severity,
+      path: [detection.location]
+    })) || [];
+    
+    const summary = {
+      totalFlows: flows.length,
+      criticalFlows: flows.filter((f: any) => f.taintLevel === 'critical').length,
+      highFlows: flows.filter((f: any) => f.taintLevel === 'high').length,
+      mediumFlows: flows.filter((f: any) => f.taintLevel === 'medium').length,
+      lowFlows: flows.filter((f: any) => f.taintLevel === 'low').length,
+      sourcesCount: new Set(flows.map((f: any) => f.source)).size,
+      sinksCount: new Set(flows.map((f: any) => f.sink)).size,
+      sanitizersCount: 0
+    };
+    
+    return { flows, summary };
+  }
+  
+  /**
+   * プロジェクト解析結果をTaintAnalysisResult形式に変換
+   */
+  private convertProjectAnalysisToTaintResult(projectAnalysis: any): any {
+    // プロジェクト解析結果からの変換ロジック
+    const flows = projectAnalysis.issues?.map((issue: any) => ({
+      id: `flow-${issue.id || Math.random()}`,
+      source: issue.source || 'user-input',
+      sink: issue.sink || 'database',
+      taintLevel: this.mapSeverityToLevel(issue.severity),
+      path: issue.path || []
+    })) || [];
+    
+    const summary = {
+      totalFlows: flows.length,
+      criticalFlows: flows.filter((f: any) => f.taintLevel === 'CRITICAL').length,
+      highFlows: flows.filter((f: any) => f.taintLevel === 'HIGH').length,
+      mediumFlows: flows.filter((f: any) => f.taintLevel === 'MEDIUM').length,
+      lowFlows: flows.filter((f: any) => f.taintLevel === 'LOW').length,
+      sourcesCount: projectAnalysis.statistics?.sourcesCount || 0,
+      sinksCount: projectAnalysis.statistics?.sinksCount || 0,
+      sanitizersCount: projectAnalysis.statistics?.sanitizersCount || 0
+    };
+    
+    return { flows, summary };
+  }
+  
+  /**
+   * 重要度レベルのマッピング
+   */
+  private mapSeverityToLevel(severity: string): string {
+    const mapping: Record<string, string> = {
+      'error': 'CRITICAL',
+      'critical': 'CRITICAL',
+      'high': 'HIGH',
+      'warning': 'MEDIUM',
+      'medium': 'MEDIUM',
+      'info': 'LOW',
+      'low': 'LOW'
+    };
+    return mapping[severity?.toLowerCase()] || 'MEDIUM';
   }
 }

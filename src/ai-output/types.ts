@@ -219,6 +219,126 @@ export interface EnhancedAnalysisResult {
   };
 }
 
+// AI JSON出力形式 (Issue #58)
+export interface AIJsonOutput {
+  // AIが最初に読むべき全体状況と最重要問題点
+  overallAssessment: string;
+  
+  // 対処すべき問題の優先順位付きリスト
+  keyRisks: Array<{
+    // 問題点の簡潔な自然言語での説明
+    problem: string;
+    
+    // リスクレベル
+    riskLevel: string;
+    
+    // 修正に必要な最小限のコードスニペットと行番号
+    context: {
+      filePath: string;
+      codeSnippet: string;
+      startLine: number;
+      endLine: number;
+    };
+    
+    // AIが次にとるべき具体的なアクション
+    suggestedAction: {
+      type: string; // ADD_ASSERTION, SANITIZE_VARIABLE, etc.
+      description: string;
+      example?: string; // 具体的なコード例
+    };
+  }>;
+  
+  // 人間が確認するための詳細なHTMLレポートへのリンク
+  fullReportUrl: string;
+}
+
+// リスクレベルの定義 (Issue #58)
+export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+
+// AIエージェントへのアクション提案の種別 (Issue #58)
+export type AIActionType = 'ADD_ASSERTION' | 'SANITIZE_VARIABLE' | 'REFACTOR_COMPLEX_CODE' | 'ADD_MISSING_TEST';
+
+// 評価ディメンションごとの詳細なスコア内訳 (Issue #58)
+export interface ScoreBreakdown {
+  label: string;        // 例: "クリティカルリスク", "Unsafe Taint Flow"
+  calculation: string;  // 例: "-5点 x 21件"
+  deduction: number;    // 例: -105
+}
+
+// 多角的な評価ディメンション (Issue #58)
+export interface ReportDimension {
+  name: string;         // 例: "テスト意図実現度", "セキュリティリスク"
+  score: number;        // 100点満点のスコア
+  weight: number;       // 総合スコアへの寄与度 (0.0 ~ 1.0)
+  impact: number;       // 総合スコアへの実際の影響点 (score * weight)
+  breakdown: ScoreBreakdown[];
+}
+
+// 人間向けレポートとAI向け出力の双方に必要なサマリー情報 (Issue #58)
+export interface ExecutiveSummary {
+  overallScore: number;
+  overallGrade: 'A' | 'B' | 'C' | 'D' | 'F';
+  dimensions: ReportDimension[];
+  statistics: {
+    totalFiles: number;
+    totalTests: number;
+    riskCounts: Record<RiskLevel, number>; // { CRITICAL: 5, HIGH: 12, ... }
+  };
+}
+
+// レポートに表示される個別の問題の詳細 (Issue #58)
+export interface DetailedIssue {
+  filePath: string;
+  startLine: number;
+  endLine: number;
+  riskLevel: RiskLevel;
+  title: string;
+  description: string;
+  contextSnippet?: string; 
+}
+
+// AIエージェントが直接利用できる、構造化されたリスク情報 (Issue #58)
+export interface AIActionableRisk {
+  riskId: string; // 安定した一意のID
+  filePath: string;
+  riskLevel: RiskLevel;
+  title: string;
+  problem: string; // AI向けの問題説明
+  context: {
+    codeSnippet: string;
+    startLine: number;
+    endLine: number;
+  };
+  suggestedAction: {
+    type: AIActionType;
+    description: string;
+    example?: string; // 具体的なコード例
+  };
+}
+
+// Issue #52 が生成する統一された分析結果の最終形式 (Issue #58)
+export interface UnifiedAnalysisResult {
+  schemaVersion: "1.0";
+  summary: ExecutiveSummary;
+  detailedIssues: DetailedIssue[]; // 人間向けレポート用の全問題リスト
+  aiKeyRisks: AIActionableRisk[];  // AI向けの優先順位付き問題リスト
+}
+
+// UnifiedAIFormatterのオプション
+export interface UnifiedAIFormatterOptions {
+  // レポートの出力先パス
+  reportPath?: string;
+  
+  // 最大リスク数（デフォルト: 10）
+  maxRisks?: number;
+  
+  // 含めるリスクレベル
+  includeRiskLevels?: string[];
+  
+  // 実際のHTMLレポートパス (Issue #58)
+  htmlReportPath?: string;
+}
+
 // エラー処理
 export interface AIOutputError extends Error {
   code: 'CONTEXT_EXTRACTION_FAILED' | 'FORMAT_GENERATION_FAILED' | 'SIZE_LIMIT_EXCEEDED' | 'TOKEN_LIMIT_EXCEEDED';
