@@ -16,6 +16,13 @@ export class PluginManager {
   }
 
   /**
+   * 登録されているプラグインを取得
+   */
+  getPlugins(): IPlugin[] {
+    return [...this.plugins];
+  }
+
+  /**
    * レガシープラグイン（IPlugin実装）の登録
    */
   register(plugin: IPlugin): void {

@@ -38,6 +38,16 @@ export class PluginManagerExtended {
     this.qualityPlugins.push(plugin);
   }
 
+  // UnifiedAnalysisEngineとの互換性のため
+  registerPlugin(plugin: ITestQualityPlugin): void {
+    this.registerQualityPlugin(plugin);
+  }
+
+  // プラグインリストの取得
+  getPlugins(): ITestQualityPlugin[] {
+    return [...this.qualityPlugins];
+  }
+
   // レガシープラグインの登録（自動的にアダプターでラップ）
   registerLegacyPlugin(plugin: IPlugin): void {
     this.legacyPlugins.push(plugin);
@@ -46,6 +56,15 @@ export class PluginManagerExtended {
   // 後方互換性のための従来のregisterメソッド
   register(plugin: IPlugin): void {
     this.registerLegacyPlugin(plugin);
+  }
+
+  // ファイル品質分析（UnifiedAnalysisEngineとの互換性）
+  async analyzeFileQuality(
+    testFile: TestFile,
+    context: ProjectContext,
+    options: AnalysisOptions = {}
+  ): Promise<QualityAnalysisResult> {
+    return this.runQualityAnalysis(testFile, context, options);
   }
 
   // 新しい品質分析メソッド
