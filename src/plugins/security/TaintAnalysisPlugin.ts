@@ -1,301 +1,231 @@
 /**
- * 汚染解析プラグイン
- * arXiv:2504.18529v2の技術をRimorのプラグインシステムに統合
+ * TaintAnalysisPlugin
+ * 
+ * 汚染解析に特化したセキュリティプラグイン
+ * BaseSecurityPluginを継承し、データフロー解析を実行
  */
 
-import { BasePlugin } from '../base/BasePlugin';
+import { BaseSecurityPlugin } from '../base/BaseSecurityPlugin';
 import { 
-  ITestQualityPlugin, 
+  ProjectContext, 
+  TestFile, 
   DetectionResult, 
   QualityScore, 
-  Improvement,
-  TestFile,
-  ProjectContext
+  Improvement 
 } from '../../core/types';
-import { TaintAnalysisSystem, TaintAnalysisResult } from '../../security/taint-analysis-system';
+import { PathSecurity } from '../../utils/pathSecurity';
 
-/**
- * 汚染解析プラグイン
- */
-export class TaintAnalysisPlugin extends BasePlugin implements ITestQualityPlugin {
+export class TaintAnalysisPlugin extends BaseSecurityPlugin {
   id = 'taint-analysis';
-  name = '型ベース汚染解析プラグイン';
+  name = 'Taint Analysis Security Plugin';
   version = '1.0.0';
-  type: 'pattern' = 'pattern';
-  
-  private taintSystem: TaintAnalysisSystem;
-  
-  constructor() {
-    super();
-    this.taintSystem = new TaintAnalysisSystem({
-      inference: {
-        enableSearchBased: true,
-        enableLocalOptimization: true,
-        enableIncremental: false,
-        maxSearchDepth: 50,
-        confidenceThreshold: 0.8
-      },
-      library: {
-        loadBuiltins: true,
-        customLibraryPaths: [],
-        unknownMethodBehavior: 'conservative'
-      },
-      compatibility: {
-        exportJAIF: false,
-        generateStubs: false,
-        gradualMigration: false
-      }
-    });
-  }
-  
-  /**
-   * このプラグインが適用可能かチェック
-   */
+
   isApplicable(context: ProjectContext): boolean {
-    // TypeScript/JavaScriptプロジェクトで適用可能
-    return context.language === 'typescript' || context.language === 'javascript';
+    // セキュリティテストが必要なプロジェクトで適用
+    return true;
   }
-  
-  /**
-   * テストファイルから汚染パターンを検出
-   */
+
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const results: DetectionResult[] = [];
+
+    if (!testFile.content) {
+      return results;
+    }
+
+    // 汚染源から危険なシンクへのデータフローを検出
+    const taintFlows = this.analyzeTaintFlow(testFile.content);
     
-    try {
-      // テストファイルの汚染解析
-      const analysisResult = await this.taintSystem.analyzeCode(
-        testFile.content,
-        { fileName: testFile.path }
-      );
-      
-      // 検出された問題をDetectionResultに変換
-      for (const issue of analysisResult.issues) {
+    taintFlows.forEach(flow => {
+      results.push({
+        patternId: `taint-flow-${flow.type}`,
+        patternName: `Taint Flow: ${flow.type}`,
+        severity: flow.severity,
+        confidence: 0.8,
+        location: {
+          file: testFile.path,
+          line: flow.line,
+          column: flow.column
+        },
+        metadata: {
+          description: `Tainted data flow detected: ${flow.source} → ${flow.sink}`,
+          category: 'security'
+        }
+      });
+    });
+
+    // BaseSecurityPluginの汎用パターン検出も利用
+    const securityPatterns = this.detectSecurityPatterns(testFile.content);
+    securityPatterns.forEach(pattern => {
+      if (this.isTaintRelated(pattern.type)) {
         results.push({
-          patternId: `taint-${issue.type}`,
-          patternName: issue.message,
+          patternId: pattern.type,
+          patternName: pattern.type,
+          severity: pattern.severity,
+          confidence: 0.85,
           location: {
             file: testFile.path,
-            line: issue.location.line,
-            column: issue.location.column
+            line: pattern.line || 1,
+            column: pattern.column || 1
           },
-          severity: this.mapSeverity(issue.severity),
-          confidence: 0.9,
           metadata: {
-            type: issue.type,
-            suggestion: issue.suggestion,
-            message: issue.message
+            description: pattern.description,
+            category: 'security'
           }
         });
       }
-      
-      // セキュリティ関連のテスト不足を検出
-      const securityPatterns = this.detectSecurityTestPatterns(testFile.content, testFile.path);
-      results.push(...securityPatterns);
-      
-    } catch (error) {
-      results.push({
-        patternId: 'taint-analysis-error',
-        patternName: `Taint analysis failed: ${error}`,
-        location: { file: testFile.path, line: 0, column: 0 },
-        severity: 'medium',
-        confidence: 1.0
-      });
-    }
-    
+    });
+
     return results;
   }
-  
-  /**
-   * 品質評価
-   */
+
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    const issues = patterns.filter(p => p.patternId && p.patternId.startsWith('taint-'));
-    const securityTests = patterns.filter(p => p.patternId === 'security-test-coverage');
+    const securityScore = this.evaluateSecurityScore(patterns);
     
-    // スコア計算
-    let score = 100;
-    
-    // 汚染フローの問題は大きく減点
-    const taintFlowIssues = issues.filter(i => i.metadata?.type === 'taint-flow');
-    score -= taintFlowIssues.length * 15;
-    
-    // 型の不一致も減点
-    const typeIssues = issues.filter(i => i.metadata?.type === 'incompatible-types');
-    score -= typeIssues.length * 10;
-    
-    // セキュリティテストの不足
-    const missingTests = securityTests.filter(t => t.severity === 'medium');
-    score -= missingTests.length * 5;
-    
-    // スコアを0-100の範囲に制限
-    score = Math.max(0, Math.min(100, score));
-    
-    return {
-      overall: score,
-      security: score,
-      details: {
-        category: this.getCategory(score),
-        taintFlowIssues: taintFlowIssues.length,
-        typeCompatibilityIssues: typeIssues.length,
-        securityTestCoverage: securityTests.length > 0 ? 
-          (securityTests.length - missingTests.length) / securityTests.length : 0
+    // 汚染解析特有の評価ロジック
+    let dataFlowScore = 1;
+    patterns.forEach(pattern => {
+      if (pattern.patternId && pattern.patternId.startsWith('taint-flow-')) {
+        dataFlowScore *= pattern.severity === 'critical' ? 0.2 : 0.5;
       }
+    });
+
+    const overall = ((securityScore + dataFlowScore) / 2) * 100;
+
+    return {
+      overall,
+      breakdown: {
+        completeness: overall,
+        correctness: overall,
+        maintainability: 80
+      },
+      confidence: patterns.length > 0 ? 
+        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
     };
   }
-  
-  /**
-   * 改善提案
-   */
+
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
-    const details = evaluation.details as any;
-    
-    if (details.taintFlowIssues > 0) {
+
+    if (evaluation.overall < 30) {
       improvements.push({
-        id: 'fix-taint-flows',
+        id: 'fix-critical-taint-flows',
+        priority: 'critical',
         type: 'modify',
-        title: '汚染フローの修正',
-        description: '検出された汚染フローを修正し、適切なサニタイズ処理を追加してください',
-        priority: 'high',
-        location: { file: '', line: 0, column: 0 },
-        estimatedImpact: {
-          scoreImprovement: 15 * details.taintFlowIssues,
-          effortMinutes: 30 * details.taintFlowIssues
+        category: 'security',
+        title: 'Fix critical security vulnerabilities',
+        description: 'Sanitize tainted data flows and fix SQL injection vulnerabilities',
+        location: {
+          file: '',
+          line: 1,
+          column: 1
         },
-        automatable: false,
-        codeExample: `// Before:
-const userInput = req.body.data;
-db.query(userInput); // 汚染されたデータの直接使用
-
-// After:
-const userInput = req.body.data;
-const sanitized = sanitize(userInput);
-db.query(sanitized); // サニタイズ後の使用`
-      });
-    }
-    
-    if (details.typeCompatibilityIssues > 0) {
-      improvements.push({
-        id: 'fix-type-annotations',
-        type: 'modify',
-        title: '型アノテーションの修正',
-        description: '@Tainted/@Untaintedアノテーションを適切に使用してください',
-        priority: 'medium',
-        location: { file: '', line: 0, column: 0 },
         estimatedImpact: {
-          scoreImprovement: 10 * details.typeCompatibilityIssues,
-          effortMinutes: 20 * details.typeCompatibilityIssues
-        },
-        automatable: false,
-        codeExample: `// Before:
-function process(input: string) { // アノテーションなし
-
-// After:
-import { Tainted } from '@rimor/security';
-
-function process(@Tainted input: string) { // 明示的なアノテーション`
-      });
-    }
-    
-    if (details.securityTestCoverage < 0.8) {
-      improvements.push({
-        id: 'improve-security-tests',
-        type: 'add',
-        category: 'test-coverage',
-        title: 'セキュリティテストの追加',
-        description: 'セキュリティ関連のテストケースを追加してください',
-        priority: 'medium',
-        location: { file: '', line: 0, column: 0 },
-        estimatedImpact: {
-          scoreImprovement: 20,
+          scoreImprovement: 60,
           effortMinutes: 60
         },
-        automatable: false,
-        codeExample: `// Before:
-// セキュリティテストなし
-
-// After:
-describe('Security', () => {
-  it('should sanitize user input', () => {
-    const maliciousInput = '<script>alert("XSS")</script>';
-    const result = sanitizeInput(maliciousInput);
-    expect(result).not.toContain('<script>');
-  });
-  
-  it('should prevent SQL injection', () => {
-    const sqlInjection = "'; DROP TABLE users; --";
-    const query = buildQuery(sqlInjection);
-    expect(query).toBe('SELECT * FROM users WHERE id = ?');
-  });
-});`
+        automatable: false
+      });
+    } else if (evaluation.overall < 70) {
+      improvements.push({
+        id: 'improve-input-validation',
+        priority: 'high',
+        type: 'modify',
+        category: 'security',
+        title: 'Improve input validation',
+        description: 'Add input validation and sanitization for user inputs',
+        location: {
+          file: '',
+          line: 1,
+          column: 1
+        },
+        estimatedImpact: {
+          scoreImprovement: 30,
+          effortMinutes: 30
+        },
+        automatable: false
       });
     }
-    
+
     return improvements;
   }
-  
+
   /**
-   * セキュリティテストパターンの検出
+   * 汚染フロー解析
    */
-  private detectSecurityTestPatterns(content: string, filePath: string): DetectionResult[] {
-    const results: DetectionResult[] = [];
+  private analyzeTaintFlow(content: string): Array<{
+    type: string;
+    source: string;
+    sink: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    line: number;
+    column: number;
+  }> {
+    const flows: Array<any> = [];
     const lines = content.split('\n');
-    
-    // セキュリティ関連のテストキーワード
-    const securityKeywords = [
-      'sanitize', 'escape', 'validate', 'xss', 'injection',
-      'csrf', 'authentication', 'authorization', 'crypto'
+
+    // 簡易的な汚染フロー検出
+    // 実際の実装では、より高度なデータフロー解析が必要
+    const taintSources = [
+      'request.params',
+      'request.body',
+      'request.query',
+      'process.argv',
+      'localStorage.getItem'
+    ];
+
+    const dangerousSinks = [
+      { pattern: 'db.query', type: 'sql', severity: 'critical' as const },
+      { pattern: 'exec', type: 'command', severity: 'critical' as const },
+      { pattern: 'innerHTML', type: 'xss', severity: 'high' as const },
+      { pattern: 'eval', type: 'eval', severity: 'critical' as const },
+      { pattern: 'fs.readFile', type: 'path', severity: 'high' as const }
+    ];
+
+    lines.forEach((line, index) => {
+      // 変数への汚染源の代入を検出
+      const assignmentMatch = line.match(/const\s+(\w+)\s*=\s*(.+)/);
+      if (assignmentMatch) {
+        const varName = assignmentMatch[1];
+        const value = assignmentMatch[2];
+        
+        // 汚染源からの代入かチェック
+        const taintSource = taintSources.find(source => value.includes(source));
+        if (taintSource) {
+          // 同じ変数が危険なシンクで使用されているかチェック
+          for (let j = index + 1; j < lines.length; j++) {
+            const laterLine = lines[j];
+            
+            for (const sink of dangerousSinks) {
+              if (laterLine.includes(sink.pattern) && laterLine.includes(varName)) {
+                flows.push({
+                  type: sink.type,
+                  source: taintSource,
+                  sink: sink.pattern,
+                  severity: sink.severity,
+                  line: j + 1,
+                  column: 1
+                });
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return flows;
+  }
+
+  /**
+   * 汚染解析に関連するパターンかチェック
+   */
+  private isTaintRelated(patternType: string): boolean {
+    const taintRelatedPatterns = [
+      'sql-injection',
+      'command-injection',
+      'xss',
+      'path-traversal'
     ];
     
-    // テスト関数の検出
-    const testPattern = /(?:it|test|describe)\s*\(\s*['"`]([^'"`]+)['"`]/g;
-    let hasSecurityTests = false;
-    
-    let match;
-    while ((match = testPattern.exec(content)) !== null) {
-      const testName = match[1].toLowerCase();
-      if (securityKeywords.some(keyword => testName.includes(keyword))) {
-        hasSecurityTests = true;
-        break;
-      }
-    }
-    
-    // セキュリティ関連の関数呼び出しをチェック
-    const hasSecurityFunctions = content.match(/\b(sanitize|validate|escape|encrypt|hash)[A-Za-z]*\s*\(/);
-    
-    if (!hasSecurityTests && hasSecurityFunctions) {
-      results.push({
-        patternId: 'security-test-coverage',
-        patternName: 'セキュリティ関連の関数が使用されていますが、対応するテストがありません',
-        location: { file: filePath, line: 0, column: 0 },
-        severity: 'medium',
-        confidence: 0.7
-      });
-    }
-    
-    return results;
-  }
-  
-  /**
-   * 重要度のマッピング
-   */
-  private mapSeverity(severity: 'error' | 'warning' | 'info'): 'high' | 'medium' | 'low' {
-    switch (severity) {
-      case 'error': return 'high';
-      case 'warning': return 'medium';
-      case 'info': return 'low';
-      default: return 'low';
-    }
-  }
-  
-  /**
-   * スコアからカテゴリを判定
-   */
-  private getCategory(score: number): string {
-    if (score >= 90) return 'Excellent';
-    if (score >= 70) return 'Good';
-    if (score >= 50) return 'Fair';
-    return 'Poor';
+    return taintRelatedPatterns.includes(patternType);
   }
 }

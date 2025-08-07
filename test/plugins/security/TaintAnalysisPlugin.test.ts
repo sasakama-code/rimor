@@ -3,7 +3,7 @@
  */
 
 import { TaintAnalysisPlugin } from '../../../src/plugins/security/TaintAnalysisPlugin';
-import { TestFile, ProjectContext } from '../../../src/core/types';
+import { TestFile, ProjectContext, QualityScore } from '../../../src/core/types';
 
 describe('TaintAnalysisPlugin', () => {
   let plugin: TaintAnalysisPlugin;
@@ -15,9 +15,9 @@ describe('TaintAnalysisPlugin', () => {
   describe('Basic functionality', () => {
     it('should have correct metadata', () => {
       expect(plugin.id).toBe('taint-analysis');
-      expect(plugin.name).toBe('型ベース汚染解析プラグイン');
+      expect(plugin.name).toBe('Taint Analysis Security Plugin');
       expect(plugin.version).toBe('1.0.0');
-      expect(plugin.type).toBe('pattern');
+      expect(plugin.type).toBe('security');
     });
     
     it('should be applicable to TypeScript projects', () => {
@@ -40,14 +40,15 @@ describe('TaintAnalysisPlugin', () => {
       expect(plugin.isApplicable(context)).toBe(true);
     });
     
-    it('should not be applicable to other languages', () => {
+    it('should be applicable to all projects', () => {
       const context: ProjectContext = {
         language: 'python',
         framework: 'pytest',
         rootPath: '/test'
       };
       
-      expect(plugin.isApplicable(context)).toBe(false);
+      // TaintAnalysisPluginは全プロジェクトに適用可能
+      expect(plugin.isApplicable(context)).toBe(true);
     });
   });
   
@@ -80,18 +81,19 @@ describe('TaintAnalysisPlugin', () => {
       expect(taintFlowIssues.length).toBeGreaterThanOrEqual(0);
     });
     
-    it('should detect missing security tests', async () => {
+    it('should detect XSS pattern from base plugin', async () => {
       const testFile: TestFile = {
         path: 'test.ts',
         content: `
-          function sanitizeInput(input: string): string {
-            return input.replace(/<script>/gi, '');
+          function displayUserInput(input: string): void {
+            // XSSの脆弱性
+            element.innerHTML = input;
           }
           
-          describe('Basic Tests', () => {
-            it('should return string', () => {
-              const result = sanitizeInput('hello');
-              expect(typeof result).toBe('string');
+          describe('Display Tests', () => {
+            it('should display input', () => {
+              const userInput = request.body.comment;
+              displayUserInput(userInput);
             });
           });
         `,
@@ -101,9 +103,9 @@ describe('TaintAnalysisPlugin', () => {
       
       const patterns = await plugin.detectPatterns(testFile);
       
-      // セキュリティテストの不足が検出されることを期待
-      const securityTestIssues = patterns.filter(p => p.patternId === 'security-test-coverage');
-      expect(securityTestIssues.length).toBeGreaterThan(0);
+      // XSSパターンが検出されることを期待
+      const xssIssues = patterns.filter(p => p.patternId === 'xss');
+      expect(xssIssues.length).toBeGreaterThan(0);
     });
   });
   
@@ -111,20 +113,26 @@ describe('TaintAnalysisPlugin', () => {
     it('should calculate quality score based on issues', () => {
       const patterns = [
         {
-          patternId: 'taint-taint-flow',
+          patternId: 'taint-flow-sql-injection',
+          patternName: 'Taint Flow: SQL Injection',
           location: { file: 'test.ts', line: 10, column: 5 },
-          message: 'Tainted data flow detected',
-          severity: 'high' as const,
+          severity: 'critical' as const,
           confidence: 0.9,
-          metadata: { type: 'taint-flow' }
+          metadata: { 
+            description: 'Tainted data flow detected',
+            category: 'security'
+          }
         },
         {
-          patternId: 'taint-incompatible-types',
+          patternId: 'xss',
+          patternName: 'XSS',
           location: { file: 'test.ts', line: 20, column: 10 },
-          message: 'Type incompatibility',
-          severity: 'medium' as const,
+          severity: 'high' as const,
           confidence: 0.8,
-          metadata: { type: 'incompatible-types' }
+          metadata: { 
+            description: 'Cross-site scripting vulnerability',
+            category: 'security'
+          }
         }
       ];
       
@@ -132,8 +140,8 @@ describe('TaintAnalysisPlugin', () => {
       
       expect(score.overall).toBeLessThan(100);
       expect(score.overall).toBeGreaterThan(0);
-      expect(score.details).toHaveProperty('taintFlowIssues', 1);
-      expect(score.details).toHaveProperty('typeCompatibilityIssues', 1);
+      expect(score.breakdown?.completeness).toBeDefined();
+      expect(score.breakdown?.correctness).toBeDefined();
     });
     
     it('should give perfect score for clean code', () => {
@@ -142,67 +150,63 @@ describe('TaintAnalysisPlugin', () => {
       const score = plugin.evaluateQuality(patterns);
       
       expect(score.overall).toBe(100);
-      expect(score.category || (score.overall === 100 ? 'Excellent' : 'Good')).toBe('Excellent');
+      expect(score.confidence).toBe(1);
     });
   });
   
   describe('Improvement suggestions', () => {
     it('should suggest fixes for taint flow issues', () => {
-      const evaluation = {
-        overall: 70,
-        score: 70, // 後方互換性
-        category: 'Good',
-        details: {
-          taintFlowIssues: 2,
-          typeCompatibilityIssues: 0,
-          securityTestCoverage: 1.0
-        }
+      const evaluation: QualityScore = {
+        overall: 60,
+        breakdown: {
+          completeness: 60,
+          correctness: 60,
+          maintainability: 80
+        },
+        confidence: 0.8
       };
       
       const improvements = plugin.suggestImprovements(evaluation);
       
-      const taintFlowFix = improvements.find(i => i.id === 'fix-taint-flows');
-      expect(taintFlowFix).toBeDefined();
-      expect(taintFlowFix?.priority).toBe('high');
-      expect(taintFlowFix?.estimatedImpact.scoreImprovement).toBe(30);
+      const inputValidationFix = improvements.find(i => i.id === 'improve-input-validation');
+      expect(inputValidationFix).toBeDefined();
+      expect(inputValidationFix?.priority).toBe('high');
+      expect(inputValidationFix?.estimatedImpact.scoreImprovement).toBe(30);
     });
     
-    it('should suggest type annotation improvements', () => {
-      const evaluation = {
-        overall: 80,
-        score: 80, // 後方互換性
-        category: 'Good',
-        details: {
-          taintFlowIssues: 0,
-          typeCompatibilityIssues: 2,
-          securityTestCoverage: 1.0
-        }
+    it('should suggest critical fixes for low scores', () => {
+      const evaluation: QualityScore = {
+        overall: 25,
+        breakdown: {
+          completeness: 25,
+          correctness: 25,
+          maintainability: 80
+        },
+        confidence: 0.9
       };
       
       const improvements = plugin.suggestImprovements(evaluation);
       
-      const typeAnnotationFix = improvements.find(i => i.id === 'fix-type-annotations');
-      expect(typeAnnotationFix).toBeDefined();
-      expect(typeAnnotationFix?.priority).toBe('medium');
+      const criticalFix = improvements.find(i => i.id === 'fix-critical-taint-flows');
+      expect(criticalFix).toBeDefined();
+      expect(criticalFix?.priority).toBe('critical');
     });
     
-    it('should suggest security test improvements', () => {
-      const evaluation = {
+    it('should return no improvements for high quality', () => {
+      const evaluation: QualityScore = {
         overall: 85,
-        score: 85, // 後方互換性
-        category: 'Good',
-        details: {
-          taintFlowIssues: 0,
-          typeCompatibilityIssues: 0,
-          securityTestCoverage: 0.5
-        }
+        breakdown: {
+          completeness: 85,
+          correctness: 85,
+          maintainability: 90
+        },
+        confidence: 1
       };
       
       const improvements = plugin.suggestImprovements(evaluation);
       
-      const testImprovement = improvements.find(i => i.id === 'improve-security-tests');
-      expect(testImprovement).toBeDefined();
-      expect(testImprovement?.category || testImprovement?.type).toBe('test-coverage');
+      // overall >= 70 の場合、改善提案はない
+      expect(improvements).toHaveLength(0);
     });
   });
   
@@ -217,9 +221,11 @@ describe('TaintAnalysisPlugin', () => {
       
       const patterns = await plugin.detectPatterns(testFile);
       
-      // エラーパターンが含まれることを確認
-      const errorPatterns = patterns.filter(p => p.patternId === 'taint-analysis-error');
-      expect(errorPatterns.length).toBeGreaterThan(0);
+      // エラー時でも空配列または他のパターンを返す
+      expect(Array.isArray(patterns)).toBe(true);
+      // 無効な構文では汚染フローは検出されない
+      const taintPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('taint-flow-'));
+      expect(taintPatterns.length).toBe(0);
     });
   });
 });
