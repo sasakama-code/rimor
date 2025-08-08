@@ -119,7 +119,7 @@ export class AssertionExistencePlugin extends BasePlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness,
         correctness,
         maintainability: 80
@@ -137,7 +137,7 @@ export class AssertionExistencePlugin extends BasePlugin {
       improvements.push({
         id: 'add-assertions',
         priority: 'high',
-        type: 'modify',
+        type: 'fix-assertion',
         category: 'assertion-improvement',
         title: 'Add missing assertions',
         description: 'Add assertions to tests that currently have none',
@@ -146,17 +146,14 @@ export class AssertionExistencePlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 40,
-          effortMinutes: 15
-        },
-        automatable: false
+        estimatedImpact: 0.4,
+        autoFixable: false
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
         id: 'strengthen-assertions',
         priority: 'medium',
-        type: 'modify',
+        type: 'fix-assertion',
         category: 'assertion-improvement',
         title: 'Strengthen weak assertions',
         description: 'Replace weak assertions with more specific assertions',
@@ -165,11 +162,8 @@ export class AssertionExistencePlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 20,
-          effortMinutes: 10
-        },
-        automatable: false
+        estimatedImpact: 0.2,
+        autoFixable: false
       });
     }
 
@@ -192,7 +186,7 @@ export class AssertionExistencePlugin extends BasePlugin {
       if (!hasAssertions) {
         return [{
           type: 'missing-assertion',
-          severity: 'warning' as const,
+          severity: 'medium' as const,
           message: "アサーション（expect文など）が見つかりません"
         }];
       }

@@ -218,7 +218,7 @@ export class AIOptimizedFormatter {
   private buildQualityOverview(result: EnhancedAnalysisResult) {
     const projectScore = result.projectScore?.overallScore || 0;
     const projectGrade = result.projectScore?.grade || 'F';
-    const criticalIssues = result.issues.filter(issue => issue.severity === 'error').length;
+    const criticalIssues = result.issues.filter(issue => issue.severity === 'critical' || issue.severity === 'high').length;
     const totalIssues = result.issues.length;
 
     return {
@@ -389,7 +389,7 @@ export class AIOptimizedFormatter {
     steps: ActionStep[];
   }>> {
     const tasks = [];
-    const criticalIssues = result.issues.filter(issue => issue.severity === 'error');
+    const criticalIssues = result.issues.filter(issue => issue.severity === 'critical' || issue.severity === 'high');
 
     if (criticalIssues.length > 0) {
       tasks.push({
@@ -423,7 +423,7 @@ export class AIOptimizedFormatter {
    * 指示文構築
    */
   private buildInstructions(result: EnhancedAnalysisResult) {
-    const criticalCount = result.issues.filter(issue => issue.severity === 'error').length;
+    const criticalCount = result.issues.filter(issue => issue.severity === 'critical' || issue.severity === 'high').length;
     
     return {
       forHuman: `このプロジェクトには${result.issues.length}個の問題があり、そのうち${criticalCount}個が重要です。優先度順に修正を進めてください。`,

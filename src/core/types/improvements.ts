@@ -35,6 +35,7 @@ export interface Improvement {
   
   // Impact assessment
   estimatedImpact?: number; // 0.0-1.0
+  impact?: number | { scoreImprovement: number; effortMinutes: number }; // 後方互換性のため
   qualityImprovement?: {
     before: number;
     after: number;
@@ -48,6 +49,7 @@ export interface Improvement {
   
   // Automation
   autoFixable?: boolean;
+  automatable?: boolean; // エイリアスとして追加
   automationLevel?: 'none' | 'partial' | 'full';
   requiresReview?: boolean;
   
@@ -59,6 +61,8 @@ export interface Improvement {
   examples?: CodeExample[];
   references?: Reference[];
   tags?: string[];
+  suggestions?: string[];
+  codeExample?: string;
   
   // Metadata
   metadata?: BaseMetadata;

@@ -85,9 +85,13 @@ export {
 // セキュリティ格子システムのエクスポート
 export {
   SecurityLattice,
-  SecurityViolation,  
   LatticeAnalysisStats
 };
+
+// SecurityViolationとSecurityImprovementは他のファイルでも定義されているため、
+// 明示的に lattice.ts からインポートして再エクスポート
+export type { SecurityViolation } from './lattice';
+export type { SecurityImprovement } from './flow-types';
 
 
 // TestMethodはcore/typesからインポート
@@ -137,7 +141,7 @@ export interface MethodAnalysisResult {
   /** 品質メトリクス */
   metrics: SecurityTestMetrics;
   /** 改善提案 */
-  suggestions: SecurityImprovement[];
+  suggestions: import('./flow-types').SecurityImprovement[];
   /** 解析時間 */
   analysisTime: number;
 }
@@ -208,38 +212,7 @@ export interface IncrementalUpdate {
   resolvedIssues: string[];
 }
 
-/**
- * セキュリティ改善提案
- */
-export interface SecurityImprovement {
-  /** 改善ID */
-  id: string;
-  /** 優先度 */
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  /** 改善の種別 */
-  type: 'add-sanitizer' | 'add-validation' | 'fix-assertion' | 'enhance-coverage';
-  /** タイトル */
-  title: string;
-  /** 説明 */
-  description: string;
-  /** 位置 */
-  location: {
-    file: string;
-    line: number;
-    column: number;
-  };
-  /** 推奨されるコード */
-  suggestedCode?: string;
-  /** 影響の推定 */
-  estimatedImpact: {
-    /** セキュリティスコアの改善 */
-    securityImprovement: number;
-    /** 実装時間（分） */
-    implementationMinutes: number;
-  };
-  /** 自動修正可能かどうか */
-  automatable: boolean;
-}
+// SecurityImprovement は flow-types.ts で定義されているため削除
 
 /**
  * 型ベースセキュリティ解析の設定

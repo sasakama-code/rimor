@@ -24,6 +24,42 @@ export * from './improvements';
 // Domain dictionary types
 export * from './domain-dictionary';
 
+// Analysis types (any型除去用の詳細型定義)
+// 重複を避けるため、必要な型のみを選択的にエクスポート
+export {
+  BaseAnalysisResult,
+  FileAnalysisResult,
+  ProjectAnalysisResult,
+  AnalysisSummary,
+  TaintAnalysisResult,
+  TaintFlow,
+  TaintSummary,
+  SecurityAnalysisResult,
+  SecurityVulnerability,
+  ComplianceResult,
+  ComplianceViolation,
+  DependencyAnalysisResult,
+  DependencyInfo,
+  DependencyVulnerability,
+  OutdatedDependency,
+  CircularDependency
+} from './analysis-types';
+
+// Handler types (コールバック・ハンドラー用型定義)
+export * from './handler-types';
+
+// Security types (re-export from security module)
+export { 
+  BoundaryCondition,
+  ITypeBasedSecurityPlugin,
+  AuthTestCoverage,
+  AuthTestMetrics,
+  SecurityIssue,
+  SecurityTestMetrics
+} from '../../security/types/security';
+
+export { SecurityImprovement } from '../../security/types/flow-types';
+
 // Type guards
 export * from './type-guards';
 

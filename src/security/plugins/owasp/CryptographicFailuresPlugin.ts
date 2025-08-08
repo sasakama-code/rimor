@@ -300,7 +300,7 @@ export class CryptographicFailuresPlugin extends OWASPBasePlugin {
       security: securityScore,
       coverage: coverageScore,
       maintainability: maintainabilityScore,
-      breakdown: {
+      dimensions: {
         completeness: testCoverage,
         correctness: cryptoTests.length > 0 ? 75 - (weakCryptoUsage.length * 10) : 0,
         maintainability: maintainabilityScore * 100
@@ -308,13 +308,12 @@ export class CryptographicFailuresPlugin extends OWASPBasePlugin {
       confidence: patterns.length > 0 ? 
         patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 0,
       details: {
-        encryptionTestCoverage: hasEncryptionTest ? 100 : 0,
-        keyManagementTestCoverage: hasKeyManagementTest ? 100 : 0,
-        passwordHashingTestCoverage: hasPasswordHashingTest ? 100 : 0,
-        tlsTestCoverage: hasTLSTest ? 100 : 0,
-        weakAlgorithmsDetected: weakCryptoUsage.length,
-        totalCryptoTests: cryptoTests.length,
-        missingTests: missingTests.length
+        strengths: hasEncryptionTest ? ['暗号化テスト実装済み'] : [],
+        weaknesses: !hasEncryptionTest ? ['暗号化テスト不足'] : [],
+        suggestions: [],
+        validationCoverage: hasEncryptionTest ? 100 : 0,
+        sanitizerCoverage: hasKeyManagementTest ? 100 : 0,
+        boundaryCoverage: hasPasswordHashingTest ? 100 : 0
       }
     };
   }
@@ -326,18 +325,15 @@ export class CryptographicFailuresPlugin extends OWASPBasePlugin {
     const improvements: Improvement[] = [];
 
     // 暗号化テストが不足している場合
-    if (!evaluation.details?.encryptionTestCoverage) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 100) {
       improvements.push({
         id: 'add-encryption-tests',
         priority: 'critical',
-        type: 'add-encryption-tests',
+        type: 'add-test',
         title: '暗号化アルゴリズムテストの追加',
         description: 'データの暗号化・復号化が正しく行われることを検証するテストを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 25, 
-          effortMinutes: 40 
-        },
+        impact: 25,
         automatable: false,
         codeExample: `
 describe('Encryption Tests', () => {
@@ -360,18 +356,15 @@ describe('Encryption Tests', () => {
     }
 
     // 鍵管理テストが不足している場合
-    if (!evaluation.details?.keyManagementTestCoverage) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 100) {
       improvements.push({
         id: 'add-key-management-tests',
         priority: 'critical',
-        type: 'add-key-management-tests',
+        type: 'add-test',
         title: '暗号鍵管理テストの追加',
         description: '暗号鍵の安全な生成・保存・ローテーションをテストしてください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 50 
-        },
+        impact: 30,
         automatable: false,
         suggestions: [
           '鍵の安全な生成テスト',
@@ -383,18 +376,15 @@ describe('Encryption Tests', () => {
     }
 
     // パスワードハッシュテストが不足している場合
-    if (!evaluation.details?.passwordHashingTestCoverage) {
+    if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 100) {
       improvements.push({
         id: 'add-password-hashing-tests',
         priority: 'critical',
-        type: 'add-password-tests',
+        type: 'add-test',
         title: 'パスワードハッシュテストの追加',
         description: '安全なパスワードハッシュアルゴリズムの使用を検証してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 25, 
-          effortMinutes: 30 
-        },
+        impact: 25,
         automatable: false,
         codeExample: `
 it('should hash passwords with bcrypt or argon2', async () => {
@@ -415,37 +405,30 @@ it('should hash passwords with bcrypt or argon2', async () => {
     }
 
     // TLSテストが不足している場合
-    if (!evaluation.details?.tlsTestCoverage) {
+    if (!evaluation.dimensions?.security || evaluation.dimensions.security < 80) {
       improvements.push({
         id: 'add-tls-tests',
         priority: 'high',
-        type: 'add-tls-tests',
+        type: 'add-test',
         title: 'TLS/HTTPS設定テストの追加',
         description: '安全な通信設定を検証するテストを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 20, 
-          effortMinutes: 35 
-        },
+        impact: 20,
         automatable: false
       });
     }
 
     // 弱い暗号アルゴリズムが検出された場合
-    if (evaluation.details?.weakAlgorithmsDetected && evaluation.details.weakAlgorithmsDetected > 0) {
+    if (evaluation.details?.weaknesses && evaluation.details.weaknesses.length > 0) {
       improvements.push({
         id: 'replace-weak-algorithms',
         priority: 'critical',
-        type: 'fix-weak-crypto',
+        type: 'refactor',
         title: '弱い暗号アルゴリズムの置換',
-        description: `${evaluation.details.weakAlgorithmsDetected}個の弱い暗号アルゴリズムが検出されました。安全なアルゴリズムに置換してください`,
+        description: `${evaluation.details.weaknesses.length}個の弱い暗号アルゴリズムが検出されました。安全なアルゴリズムに置換してください`,
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 35, 
-          effortMinutes: 45 
-        },
-        automatable: true,
-        impact: 'critical'
+        impact: 35,
+        automatable: true
       });
     }
 

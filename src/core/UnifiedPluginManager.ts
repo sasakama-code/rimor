@@ -223,7 +223,16 @@ export class UnifiedPluginManager {
           pluginId: plugin.id,
           pluginName: plugin.name,
           detectionResults: [],
-          qualityScore: { overall: 0, score: 0, details: {} },
+          qualityScore: { 
+            overall: 0, 
+            dimensions: {}, 
+            confidence: 0.5,
+            details: {
+              strengths: [],
+              weaknesses: [],
+              suggestions: []
+            }
+          },
           improvements: [],
           executionTime: Date.now() - pluginStartTime,
           error: errorMessage
@@ -362,7 +371,7 @@ export class UnifiedPluginManager {
     // 品質スコアの平均
     const qualityScores = qualityResults.pluginResults
       .filter(r => !r.error)
-      .map(r => r.qualityScore.score || r.qualityScore.overall || 0);
+      .map(r => r.qualityScore.overall || 0);
     
     const avgQualityScore = qualityScores.length > 0
       ? qualityScores.reduce((a, b) => (a || 0) + (b || 0), 0) / qualityScores.length

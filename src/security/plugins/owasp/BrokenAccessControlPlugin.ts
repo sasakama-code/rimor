@@ -61,8 +61,15 @@ export class BrokenAccessControlPlugin {
       return {
         overall: 30,
         security: 30,
+        confidence: 0.8,
+        dimensions: {
+          security: 30,
+          completeness: 20
+        },
         details: {
-          message: 'アクセス制御テストが検出されませんでした'
+          strengths: [],
+          weaknesses: ['アクセス制御テストが検出されませんでした'],
+          suggestions: ['認証・認可に関するテストを追加してください']
         }
       };
     }
@@ -76,8 +83,15 @@ export class BrokenAccessControlPlugin {
       return {
         overall: 80,
         security: 80,
+        confidence: 0.9,
+        dimensions: {
+          security: 80,
+          completeness: 75
+        },
         details: {
-          message: 'アクセス制御テストが適切に実装されています'
+          strengths: ['アクセス制御テストが適切に実装されています'],
+          weaknesses: [],
+          suggestions: ['さらなるセキュリティテストの強化を検討してください']
         }
       };
     }
@@ -85,8 +99,15 @@ export class BrokenAccessControlPlugin {
     return {
       overall: 50,
       security: 50,
+      confidence: 0.7,
+      dimensions: {
+        security: 50,
+        completeness: 45
+      },
       details: {
-        message: '基本的なテストは存在しますが、アクセス制御の検証が不十分です'
+        strengths: ['基本的なテストは存在します'],
+        weaknesses: ['アクセス制御の検証が不十分です'],
+        suggestions: ['より詳細な認証・認可テストを追加してください']
       }
     };
   }
@@ -99,7 +120,7 @@ export class BrokenAccessControlPlugin {
       improvements.push({
         id: 'add-access-control-tests',
         priority: 'high',
-        type: 'test',
+        type: 'add-test',
         title: 'アクセス制御テストの実装',
         description: '認証・認可に関するテストが不足しています。401/403エラーのテスト、ロールベースアクセス制御のテストを追加してください。',
         location: {
@@ -107,10 +128,7 @@ export class BrokenAccessControlPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 50,
-          effortMinutes: 60
-        },
+        impact: 50,
         automatable: true
       });
     } else {
@@ -118,7 +136,7 @@ export class BrokenAccessControlPlugin {
       improvements.push({
         id: 'enhance-access-control-tests',
         priority: 'medium',
-        type: 'test',
+        type: 'add-test',
         title: 'アクセス制御テストの強化',
         description: 'より詳細な権限境界テストやセッション管理テストの追加を検討してください。',
         location: {
@@ -126,10 +144,7 @@ export class BrokenAccessControlPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 20,
-          effortMinutes: 30
-        },
+        impact: 20,
         automatable: true
       });
     }
@@ -183,7 +198,7 @@ export class BrokenAccessControlPlugin {
       issues.push({
         id: 'missing-auth-error-tests',
         type: 'missing-auth-test',
-        severity: 'error',
+        severity: 'critical',
         message: '認証・認可エラーのテストが見つかりません',
         location: {
           file: testFile.path,

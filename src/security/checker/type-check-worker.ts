@@ -12,24 +12,18 @@ import {
   TypeQualifierError,
   TypeGuards
 } from '../types/checker-framework-types';
+import {
+  TypeCheckWorkerMessage,
+  TypeCheckWorkerResult,
+  TypeInferenceWorkerResult,
+  LocalAnalysisResult,
+  MethodAnalysisContext,
+  TypeCheckWarning,
+  SecurityViolation,
+  CodeLocation
+} from './type-check-worker-types';
+import { SecurityIssue } from '../types';
 
-interface WorkerTask {
-  id: string;
-  method: {
-    name: string;
-    content: string;
-    filePath: string;
-  };
-  dependencies: Array<[string, any]>;
-}
-
-interface WorkerResult {
-  id: string;
-  success: boolean;
-  result?: any;
-  error?: string;
-  executionTime: number;
-}
 
 interface MethodCall {
   methodName: string;
@@ -81,7 +75,7 @@ function extractMethodCalls(code: string): MethodCall[] {
 /**
  * メッセージハンドラ
  */
-parentPort?.on('message', async (task: WorkerTask) => {
+parentPort?.on('message', async (task: TypeCheckWorkerMessage) => {
   const startTime = Date.now();
   
   // Validate task structure
@@ -96,17 +90,17 @@ parentPort?.on('message', async (task: WorkerTask) => {
   try {
     const result = await performTypeCheck(task);
     
-    const workerResult: WorkerResult = {
+    const workerResult: TypeCheckWorkerResult = {
       id: task.id,
-      success: result.typeCheckResult.success,
+      success: result.securityIssues.length === 0,
       result,
       executionTime: Math.max(1, Date.now() - startTime) // 最小1msを保証
     };
     
-    // 型チェックエラーがある場合はエラーメッセージを設定
-    if (!result.typeCheckResult.success && result.typeCheckResult.errors.length > 0) {
-      workerResult.error = result.typeCheckResult.errors
-        .map(err => err.message)
+    // セキュリティ問題がある場合はエラーメッセージを設定
+    if (result.securityIssues.length > 0) {
+      workerResult.error = result.securityIssues
+        .map(issue => issue.message)
         .join('; ');
     }
     
@@ -118,19 +112,19 @@ parentPort?.on('message', async (task: WorkerTask) => {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       executionTime: Date.now() - startTime
-    } as WorkerResult);
+    } as TypeCheckWorkerResult);
   }
 });
 
 /**
  * 型チェックの実行
  */
-async function performTypeCheck(task: WorkerTask) {
+async function performTypeCheck(task: TypeCheckWorkerMessage) {
   const startTime = Date.now();
   const errors: TypeQualifierError[] = [];
-  const warnings: Array<{ message: string; location?: any }> = [];
-  const inferredTypes = new Map<string, QualifiedType<any>>();
-  const securityIssues: any[] = [];
+  const warnings: TypeCheckWarning[] = [];
+  const inferredTypes = new Map<string, QualifiedType<unknown>>();
+  const securityIssues: SecurityIssue[] = [];
   
   // Validate task.method
   if (!task.method || !task.method.content) {
@@ -140,16 +134,11 @@ async function performTypeCheck(task: WorkerTask) {
       '@Untainted'
     ));
     return {
-      method: task.method || { name: 'unknown', content: '', filePath: 'unknown' },
-      typeCheckResult: {
-        success: false,
-        errors,
-        warnings
-      },
-      inferredTypes: [],
+      inferredTypes: new Map<string, QualifiedType<unknown>>(),
+      violations: [],
       securityIssues,
-      executionTime: Date.now() - startTime
-    };
+      warnings
+    } as TypeInferenceWorkerResult;
   }
   
   // 依存関係の検証とMapへの変換
@@ -218,7 +207,7 @@ async function performTypeCheck(task: WorkerTask) {
                 actual,
                 expected,
                 {
-                  file: task.method.filePath,
+                  file: task.method.filePath || 'unknown',
                   line: 0,
                   column: 0
                 }
@@ -231,18 +220,24 @@ async function performTypeCheck(task: WorkerTask) {
     
     // 推論された型をQualifiedTypeに変換
     inferenceState.typeMap.forEach((qualifier, variable) => {
-      const qualifiedType: QualifiedType<any> = qualifier === '@Tainted' 
-        ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as any
+      const qualifiedType: QualifiedType<unknown> = qualifier === '@Tainted' 
+        ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as QualifiedType<unknown>
         : qualifier === '@Untainted'
-        ? { __brand: '@Untainted', __value: variable } as any
-        : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as any;
+        ? { __brand: '@Untainted', __value: variable } as QualifiedType<unknown>
+        : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as QualifiedType<unknown>;
       
       inferredTypes.set(variable, qualifiedType);
     });
     
     // ステップ4: セキュリティ問題の検出
+    const methodContext: MethodAnalysisContext = {
+      name: task.method.name,
+      content: task.method.content || '',
+      filePath: task.method.filePath || 'unknown'
+    };
+    
     analyzeSecurityIssues(
-      task.method,
+      methodContext,
       inferredTypes,
       localAnalysis,
       securityIssues
@@ -250,7 +245,7 @@ async function performTypeCheck(task: WorkerTask) {
     
     // ステップ5: 追加の検証
     performAdditionalValidations(
-      task.method,
+      methodContext,
       inferredTypes,
       warnings
     );
@@ -279,26 +274,21 @@ async function performTypeCheck(task: WorkerTask) {
   }
   
   return {
-    method: task.method,
-    typeCheckResult: {
-      success: errors.length === 0,
-      errors,
-      warnings
-    },
-    inferredTypes: Array.from(inferredTypes.entries()),
+    inferredTypes,
+    violations: [],
     securityIssues,
-    executionTime: Date.now() - startTime
-  };
+    warnings
+  } as TypeInferenceWorkerResult;
 }
 
 /**
  * セキュリティ問題の解析
  */
 function analyzeSecurityIssues(
-  method: any,
-  inferredTypes: Map<string, QualifiedType<any>>,
-  localAnalysis: any,
-  issues: any[]
+  method: MethodAnalysisContext,
+  inferredTypes: Map<string, QualifiedType<unknown>>,
+  localAnalysis: LocalAnalysisResult,
+  issues: SecurityIssue[]
 ): void {
   // エスケープする汚染変数の検出
   if (localAnalysis.escapingVariables) {
@@ -307,15 +297,13 @@ function analyzeSecurityIssues(
       if (type && TypeGuards.isTainted(type)) {
         issues.push({
           id: `escape-${variable}`,
-          type: 'tainted-escape',
+          type: 'taint',
           severity: 'high',
           message: `Tainted variable ${variable} escapes method scope`,
           location: {
             file: method.filePath,
-            startLine: 0,
-            endLine: 0,
-            startColumn: 0,
-            endColumn: 0
+            line: 0,
+            column: 0
           }
         });
       }
@@ -333,15 +321,13 @@ function analyzeSecurityIssues(
             content.includes(`${sink}(\`.*${variable}`)) {
           issues.push({
             id: `unsanitized-${variable}-${sink}`,
-            type: 'unsanitized-taint-flow',
+            type: 'unsafe-taint-flow',
             severity: 'critical',
             message: `Tainted variable ${variable} used in dangerous sink ${sink}`,
             location: {
               file: method.filePath,
-              startLine: 0,
-              endLine: 0,
-              startColumn: 0,
-              endColumn: 0
+              line: 0,
+              column: 0
             }
           });
         }
@@ -354,9 +340,9 @@ function analyzeSecurityIssues(
  * 追加の検証
  */
 function performAdditionalValidations(
-  method: any,
-  inferredTypes: Map<string, QualifiedType<any>>,
-  warnings: any[]
+  method: MethodAnalysisContext,
+  inferredTypes: Map<string, QualifiedType<unknown>>,
+  warnings: TypeCheckWarning[]
 ): void {
   // PolyTaint型の未解決警告
   inferredTypes.forEach((type, variable) => {
@@ -385,7 +371,7 @@ function performAdditionalValidations(
   if (totalVars > 5 && taintedCount / totalVars > 0.8) {
     warnings.push({
       message: `Over 80% of variables are marked as @Tainted. Consider reviewing sanitization logic.`,
-      location: { file: method.filePath }
+      location: { file: method.filePath, line: 0 }
     });
   }
 }

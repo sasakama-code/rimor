@@ -96,7 +96,7 @@ export class ModernSecurityLattice {
     const qualifiedType = TaintLevelAdapter.toQualifiedType(
       value,
       level,
-      metadata?.source,
+      metadata?.sources?.[0],
       metadata
     );
     
@@ -191,12 +191,12 @@ export class ModernSecurityLattice {
         qualifier: '@Tainted' as TaintQualifier,
         confidence: 0.0,
         metadata: { 
-          source: TaintSource.USER_INPUT,
-          confidence: 0.0,
-          location: { line: 0, column: 0, file: 'system' },
-          tracePath: [],
-          securityRules: []
-        },
+          level: TaintLevel.UNKNOWN,
+          sources: [TaintSource.USER_INPUT],
+          sinks: [],
+          sanitizers: [],
+          propagationPath: []
+        } as TaintMetadata,
         severity: 'low',
         suggestedFix: 'No security analysis was performed'
       });
@@ -204,12 +204,12 @@ export class ModernSecurityLattice {
     
     for (const [variable, qualifiedType] of this.typeMap.entries()) {
       const metadata = this.metadataMap.get(variable) || { 
-        source: TaintSource.USER_INPUT,
-        confidence: 0.5,
-        location: { line: 0, column: 0, file: 'unknown' },
-        tracePath: [],
-        securityRules: []
-      };
+        level: TaintLevel.UNKNOWN,
+        sources: [TaintSource.USER_INPUT],
+        sinks: [],
+        sanitizers: [],
+        propagationPath: []
+      } as TaintMetadata;
       
       // @Taintedデータがサニタイズされずにシンクに到達していないかチェック
       if (TypeGuards.isTainted(qualifiedType)) {
@@ -277,7 +277,7 @@ export class ModernSecurityLattice {
     if (TypeGuards.isTainted(qualifiedType)) {
       const tainted = qualifiedType as TaintedType<T>;
       if (tainted.__confidence >= 0.75 && 
-          metadata.source === TaintSource.USER_INPUT) {
+          metadata.sources.includes(TaintSource.USER_INPUT)) {
         return 'critical';
       }
       if (tainted.__confidence >= 0.5) {

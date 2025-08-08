@@ -93,16 +93,17 @@ export class VulnerableComponentsPlugin {
       security,
       coverage: coverageScore,
       maintainability: 0.5,
-      breakdown: {
+      dimensions: {
         completeness: Math.round(coverageScore * 100),
         correctness: 50,
         maintainability: 50
       },
       confidence: 0.9,
       details: {
-        vulnerabilityScanCoverage,
-        dependencyCheckCoverage,
-        licenseCheckCoverage
+        strengths: hasVulnerabilityScan ? ['脆弱性スキャン実装済み'] : [],
+        weaknesses: !hasVulnerabilityScan ? ['脆弱性スキャン不足'] : [],
+        suggestions: [],
+        validationCoverage: vulnerabilityScanCoverage
       }
     };
   }
@@ -111,24 +112,18 @@ export class VulnerableComponentsPlugin {
     const improvements: Improvement[] = [];
     
     // 脆弱性スキャンテストの改善提案
-    if (!evaluation.details?.vulnerabilityScanCoverage || evaluation.details.vulnerabilityScanCoverage < 50) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 50) {
       improvements.push({
         id: 'add-vulnerability-scan-tests',
         title: '脆弱性スキャンテストの追加',
         description: '依存関係の脆弱性をチェックするテストを追加することで、セキュリティリスクを早期に発見できます。',
         priority: 'critical',
         type: 'add-test',
-        impact: 'high',
         category: 'security',
         location: { file: 'test/security/vulnerable-components.test.ts', line: 1, column: 0 },
         automatable: true,
-        estimatedImpact: {
-          scoreImprovement: 0.3,
-          effortMinutes: 30
-        },
-        suggestedCode: {
-          language: 'typescript',
-          code: `describe('Vulnerability Scan Tests', () => {
+        impact: 30,
+        suggestedCode: `describe('Vulnerability Scan Tests', () => {
   it('should check for known vulnerabilities', async () => {
     const result = await runVulnerabilityScan();
     expect(result.vulnerabilities).toHaveLength(0);
@@ -140,8 +135,7 @@ export class VulnerableComponentsPlugin {
     expect(auditResult.critical).toBe(0);
     expect(auditResult.high).toBe(0);
   });
-});`
-        },
+});`,
         codeExample: `describe('Vulnerability Scan Tests', () => {
   it('should check for known vulnerabilities', async () => {
     const result = await runVulnerabilityScan();
@@ -159,21 +153,17 @@ export class VulnerableComponentsPlugin {
     }
     
     // 依存関係チェックの改善提案
-    if (!evaluation.details?.dependencyCheckCoverage || evaluation.details.dependencyCheckCoverage < 50) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 50) {
       improvements.push({
         id: 'add-dependency-check-tests',
         title: '依存関係チェックテストの追加',
         description: '古い依存関係や更新が必要なパッケージを検出するテストを追加します。',
         priority: 'high',
         type: 'add-test',
-        impact: 'high',
         category: 'security',
         location: { file: 'test/security/vulnerable-components.test.ts', line: 20, column: 0 },
         automatable: true,
-        estimatedImpact: {
-          scoreImprovement: 0.2,
-          effortMinutes: 20
-        }
+        impact: 20
       });
     }
     

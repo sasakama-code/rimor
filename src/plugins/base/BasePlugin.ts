@@ -28,9 +28,8 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   async autoFix?(_testFile: TestFile, _improvements: Improvement[]): Promise<FixResult> {
     return {
       success: false,
-      applied: [],
-      failed: [],
-      summary: 'Auto-fix not implemented for this plugin'
+      modifiedFiles: [],
+      errors: ['Auto-fix not implemented for this plugin']
     };
   }
 
@@ -95,12 +94,12 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected createImprovement(
     id: string,
     priority: 'critical' | 'high' | 'medium' | 'low',
-    type: 'add' | 'modify' | 'remove' | 'refactor',
+    type: 'add-test' | 'fix-assertion' | 'improve-coverage' | 'refactor' | 'documentation' | 'performance' | 'security',
     title: string,
     description: string,
     location: CodeLocation,
-    estimatedImpact: { scoreImprovement: number; effortMinutes: number },
-    automatable: boolean = false
+    estimatedImpact: number,
+    autoFixable: boolean = false
   ): Improvement {
     return {
       id,
@@ -110,7 +109,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       description,
       location,
       estimatedImpact,
-      automatable
+      autoFixable
     };
   }
 
@@ -130,7 +129,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: overall,
         maintainability: 75

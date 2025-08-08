@@ -97,8 +97,21 @@ export type ValidatedInputTest = TestCase & {
 };
 
 /**
- * 認証テストカバレッジ
+ * 境界条件
  */
+// Security Plugin Interface
+export interface ITypeBasedSecurityPlugin {
+  id: string;
+  name: string;
+  version: string;
+  
+  // Main analysis methods
+  analyzeTestMethod(method: any): Promise<any>;
+  analyzeIncrementally?(update: any): Promise<any>;
+  generateReport?(): any;
+}
+
+// Auth Test Coverage - Union type for coverage categories
 export type AuthTestCoverage = 
   | 'success'
   | 'failure'
@@ -108,9 +121,17 @@ export type AuthTestCoverage =
   | 'csrf'
   | 'privilege-escalation';
 
-/**
- * 境界条件
- */
+// Auth Test Metrics - Interface for coverage metrics
+export interface AuthTestMetrics {
+  loginTests: number;
+  logoutTests: number;
+  tokenTests: number;
+  sessionTests: number;
+  permissionTests: number;
+  total: number;
+  percentage: number;
+}
+
 export interface BoundaryCondition {
   /** 境界の種別 */
   type: 'min' | 'max' | 'null' | 'empty' | 'invalid-format' | 'overflow';
@@ -163,7 +184,7 @@ export interface TestCase {
  */
 export interface TestStatement {
   /** 文の種別 */
-  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput' | 'entry';
+  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput' | 'entry' | 'setup' | 'action' | 'teardown' | 'declaration' | 'expression';
   /** 文の内容 */
   content: string;
   /** 位置情報 */
@@ -265,9 +286,23 @@ export interface CompileTimeResult {
   };
 }
 
-// SecurityIssueはcore/typesからインポート
-import { SecurityIssue as CoreSecurityIssue } from '../../core/types';
-export type SecurityIssue = CoreSecurityIssue;
+// SecurityIssue定義 - 前方互換性のため両方をサポート
+export interface SecurityIssue {
+  id: string;
+  type: 'taint' | 'injection' | 'validation' | 'authentication' | 'authorization' | 'unsafe-taint-flow' | 'missing-sanitizer' | 'SQL_INJECTION' | 'CODE_EXECUTION' | 'missing-auth-test' | 'insufficient-validation' | 'sanitization' | 'boundary';
+  severity: 'info' | 'low' | 'medium' | 'high' | 'critical' | 'error' | 'warning';
+  message: string;
+  location: {
+    file: string;
+    line: number;
+    column?: number;
+  };
+  evidence?: string[];
+  recommendation?: string;
+  fixSuggestion?: string;
+  cwe?: string;
+  owasp?: string;
+}
 
 /**
  * セキュリティテスト品質メトリクス

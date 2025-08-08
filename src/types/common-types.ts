@@ -34,88 +34,77 @@ export enum SecurityType {
 
 /**
  * 汚染レベル（TaintLevel）
- * データの汚染度を表す列挙型
+ * データの汚染度を表す型（文字列型に統一）
  */
-export enum TaintLevel {
-  /** 汚染されていない */
-  UNTAINTED = 0,
-  /** 汚染の可能性がある */
-  POSSIBLY_TAINTED = 1,
-  /** 汚染の可能性が高い */
-  LIKELY_TAINTED = 2,
-  /** 確実に汚染されている */
-  DEFINITELY_TAINTED = 3,
-  /** 高度に汚染されている */
-  HIGHLY_TAINTED = 4,
-  /** クリーン（レガシー互換） */
-  CLEAN = 0
-}
+export type TaintLevel = 'untainted' | 'tainted' | 'sanitized' | 'unknown' | 'possibly_tainted' | 'highly_tainted';
+
+// Enum values for runtime usage
+export const TaintLevel = {
+  UNTAINTED: 'untainted' as const,
+  TAINTED: 'tainted' as const,
+  SANITIZED: 'sanitized' as const,
+  UNKNOWN: 'unknown' as const,
+  // レガシー互換性と追加の汚染レベル
+  CLEAN: 'untainted' as const,  // CLEANをUNTAINTEDにマップ
+  DEFINITELY_TAINTED: 'tainted' as const,
+  LIKELY_TAINTED: 'tainted' as const,
+  POSSIBLY_TAINTED: 'possibly_tainted' as const,
+  HIGHLY_TAINTED: 'highly_tainted' as const
+} as const;
 
 /**
  * 汚染源の種類
  */
-export enum TaintSource {
-  /** ユーザー入力 */
-  USER_INPUT = 'user-input',
-  /** 外部API */
-  EXTERNAL_API = 'external-api',
-  /** 環境変数 */
-  ENVIRONMENT = 'environment',
-  /** ファイルシステム */
-  FILE_SYSTEM = 'file-system',
-  /** データベース */
-  DATABASE = 'database',
-  /** ネットワーク */
-  NETWORK = 'network'
-}
+export type TaintSource = 'user-input' | 'database' | 'file-system' | 'network' | 'environment' | 'unknown';
+
+// Enum values for runtime usage  
+export const TaintSource = {
+  USER_INPUT: 'user-input' as const,
+  DATABASE: 'database' as const,
+  FILE_SYSTEM: 'file-system' as const,
+  NETWORK: 'network' as const,
+  ENVIRONMENT: 'environment' as const,
+  UNKNOWN: 'unknown' as const,
+  // レガシー互換性のため
+  EXTERNAL_API: 'network' as const
+} as const;
 
 /**
  * セキュリティシンク（機密性の高い操作）
  */
-export enum SecuritySink {
-  /** データベースクエリ */
-  DATABASE_QUERY = 'database-query',
-  /** システムコマンド実行 */
-  SYSTEM_COMMAND = 'system-command',
-  /** JavaScriptコード実行 */
-  JAVASCRIPT_EXEC = 'javascript-exec',
-  /** HTML出力 */
-  HTML_OUTPUT = 'html-output',
-  /** ファイル書き込み */
-  FILE_WRITE = 'file-write',
-  /** ネットワーク送信 */
-  NETWORK_SEND = 'network-send',
-  /** テストアサーション */
-  TEST_ASSERTION = 'test-assertion'
-}
+export type SecuritySink = 'database' | 'file-system' | 'network' | 'command' | 'eval' | 'dom' | 'unknown';
+
+// Enum values for runtime usage
+export const SecuritySink = {
+  DATABASE: 'database' as const,
+  FILE_SYSTEM: 'file-system' as const,
+  NETWORK: 'network' as const,
+  COMMAND: 'command' as const,
+  EVAL: 'eval' as const,
+  DOM: 'dom' as const,
+  UNKNOWN: 'unknown' as const,
+  // レガシー互換性のため
+  DATABASE_QUERY: 'database' as const
+} as const;
 
 /**
  * サニタイザーの種類
  */
-export enum SanitizerType {
-  /** HTMLエスケープ */
-  HTML_ESCAPE = 'html-escape',
-  /** SQLエスケープ */
-  SQL_ESCAPE = 'sql-escape',
-  /** 入力検証 */
-  INPUT_VALIDATION = 'input-validation',
-  /** 型変換 */
-  TYPE_CONVERSION = 'type-conversion',
-  /** 文字列サニタイズ */
-  STRING_SANITIZE = 'string-sanitize',
-  /** 認証トークン */
-  AUTH_TOKEN = 'auth-token',
-  /** パスワードハッシュ */
-  PASSWORD_HASH = 'password-hash',
-  /** XSSフィルター */
-  XSS_FILTER = 'xss-filter',
-  /** CSRFトークン */
-  CSRF_TOKEN = 'csrf-token',
-  /** JSONパース */
-  JSON_PARSE = 'json-parse',
-  /** カスタム */
-  CUSTOM = 'custom'
-}
+export type SanitizerType = 'escape' | 'validate' | 'encode' | 'filter' | 'none';
+
+// Enum values for runtime usage
+export const SanitizerType = {
+  ESCAPE: 'escape' as const,
+  VALIDATE: 'validate' as const,
+  ENCODE: 'encode' as const,
+  FILTER: 'filter' as const,
+  NONE: 'none' as const,
+  // レガシー互換性のため
+  HTML_ESCAPE: 'escape' as const,
+  SQL_ESCAPE: 'escape' as const,
+  INPUT_VALIDATION: 'validate' as const,
+  TYPE_CONVERSION: 'validate' as const
+} as const;
 
 /**
  * 重要度レベル
@@ -142,10 +131,8 @@ export type QualityDimension =
   | 'performance'     // パフォーマンス
   | 'security';       // セキュリティ
 
-/**
- * 改善タイプ
- */
-export type ImprovementType = 'add' | 'modify' | 'remove' | 'refactor';
+// ImprovementTypeはcore/types/base-types.tsで定義済み
+// 重複を避けるためここでは定義しない
 
 /**
  * 改善優先度

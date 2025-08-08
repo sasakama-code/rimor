@@ -15,6 +15,15 @@ export interface QualityScore {
   // Additional custom dimensions
   customDimensions?: Record<string, number>;
   
+  // Security-specific score
+  security?: number; // 0.0-1.0
+  
+  // Coverage metrics
+  coverage?: number; // 0.0-1.0
+  
+  // Additional metrics
+  maintainability?: number; // 0.0-1.0
+  
   // Confidence in the score
   confidence: number; // 0.0-1.0
   
@@ -52,6 +61,13 @@ export interface QualityDetails {
   
   // Evidence
   evidence?: QualityEvidence[];
+  
+  // Security-specific metrics
+  validationCoverage?: number; // 0.0-1.0
+  sanitizerCoverage?: number; // 0.0-1.0
+  boundaryCoverage?: number; // 0.0-1.0
+  sanitizationQuality?: number; // 0.0-1.0
+  boundaryTestingScore?: number; // 0.0-1.0
 }
 
 // Quality metrics

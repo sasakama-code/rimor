@@ -50,7 +50,7 @@ export class TaintLevelAdapter {
     if (level <= TaintLevel.UNTAINTED) {
       return TypeConstructors.untainted(value, 'legacy-clean');
     } else {
-      const sourceStr = source || metadata?.source || 'legacy-taint';
+      const sourceStr = source || (metadata?.sources && metadata.sources[0]) || 'legacy-taint';
       return TypeConstructors.tainted(value, sourceStr, confidence);
     }
   }

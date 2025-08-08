@@ -15,9 +15,9 @@ import {
   TypeBasedSecurityAnalysis,
   ModularAnalysis,
   TypeBasedSecurityConfig,
-  SecurityType,
-  TaintSource
+  SecurityType
 } from '../types';
+import { TaintLevel, TaintSource } from '../../types/common-types';
 import {
   TaintQualifier,
   TypeConstructors,
@@ -29,7 +29,8 @@ import { MethodSignature } from '../types';
 import { ModularTestAnalyzer } from './modular';
 import { FlowSensitiveAnalyzer, FlowGraph } from './flow';
 import { SignatureBasedInference } from './inference';
-import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import { SecurityLattice } from '../types/lattice';
+import { SecurityViolation } from '../types/flow-types';
 import { ParallelTypeChecker, createParallelTypeChecker } from '../checker/parallel-type-checker';
 import * as os from 'os';
 
@@ -140,7 +141,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       const flowGraph = this.flowAnalyzer.trackSecurityDataFlow(method);
       
       // 各変数の汚染レベルを抽出
-      for (const node of flowGraph.nodes) {
+      for (const [nodeId, node] of flowGraph.nodes) {
         const variables = this.extractVariablesFromNode(node);
         variables.forEach(variable => {
           const currentType = taintMap.get(variable) || TypeConstructors.untainted(variable);
@@ -148,8 +149,8 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
           // node.outputTaintを新型システムに変換
           const nodeType = TaintLevelAdapter.toQualifiedType(
             variable,
-            node.outputTaint,
-            node.metadata?.source || TaintSource.USER_INPUT
+            node.outputTaint || TaintLevel.UNTAINTED,
+            node.metadata?.sources?.[0] || TaintSource.USER_INPUT
           );
           
           // より汚染度の高い型を選択（join操作）
@@ -166,9 +167,9 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    * レガシー互換メソッド（段階的移行のため）
    * @deprecated 新しいinferTaintTypesメソッドを使用してください
    */
-  async inferTaintLevels(testFile: TestCase): Promise<Map<string, number>> {
+  async inferTaintLevels(testFile: TestCase): Promise<Map<string, TaintLevel>> {
     const qualifiedTypes = await this.inferTaintTypes(testFile);
-    const legacyMap = new Map<string, number>();
+    const legacyMap = new Map<string, TaintLevel>();
     
     for (const [variable, qualifiedType] of qualifiedTypes) {
       const legacyLevel = TaintLevelAdapter.fromQualifiedType(qualifiedType);
@@ -213,17 +214,29 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * セキュリティ不変条件の検証
    */
-  async verifyInvariants(testFile: TestCase): Promise<SecurityViolation[]> {
+  async verifyInvariants(testFile: TestCase): Promise<import('../types/lattice').SecurityViolation[]> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const allViolations: SecurityViolation[] = [];
+    const allViolations: import('../types/lattice').SecurityViolation[] = [];
 
     for (const method of testMethods) {
       // フロー解析の実行
       const flowGraph = this.flowAnalyzer.trackSecurityDataFlow(method);
       
       // セキュリティ不変条件の検証
-      const violations = this.flowAnalyzer.verifySecurityInvariants(flowGraph);
-      allViolations.push(...violations);
+      const flowViolations = this.flowAnalyzer.verifySecurityInvariants(flowGraph);
+      
+      // flow-types.SecurityViolationをlattice.SecurityViolationに変換
+      const latticeViolations: import('../types/lattice').SecurityViolation[] = flowViolations.map(v => ({
+        type: v.type as any,
+        message: v.message || 'Security violation detected',
+        severity: (['info', 'error', 'warning'].includes(v.severity)) ? 'medium' : v.severity as ('low' | 'medium' | 'high' | 'critical'),
+        variable: v.variable || 'unknown',
+        taintLevel: v.taintLevel || 'unknown' as TaintLevel,
+        metadata: v.metadata || { level: 'unknown' as TaintLevel, sources: [], sinks: [], sanitizers: [] },
+        suggestedFix: v.suggestedFix || v.fix || 'Apply appropriate sanitization'
+      }));
+      
+      allViolations.push(...latticeViolations);
     }
 
     return allViolations;
@@ -264,7 +277,13 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       
       results.push({
         methodName: method.name,
-        issues: checkResult.securityIssues,
+        issues: checkResult.securityIssues.map(issue => ({
+          ...issue,
+          location: {
+            ...issue.location,
+            file: issue.location.file || method.filePath || 'unknown'
+          }
+        })),
         metrics: {
           securityCoverage: {
             authentication: 0, // TODO: 認証テストカバレッジを計算
@@ -368,14 +387,13 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
           if (!methods.some(m => m.name === methodName)) {
             methods.push({
               name: methodName,
+              type: 'test',
               filePath: testFile.file,
               content: methodContent,
-              signature: this.createMethodSignature(methodName, methodContent),
+              signature: methodName,
               location: {
-                startLine,
-                endLine: startLine + methodContent.split('\n').length - 1,
-                startColumn: 0,
-                endColumn: 0
+                start: { line: startLine, column: 0 } as import('../../core/types').Position,
+                end: { line: startLine + methodContent.split('\n').length - 1, column: 0 } as import('../../core/types').Position
               }
             });
             methodIndex++;

@@ -5,25 +5,27 @@
 
 import {
   TestMethod,
-  MethodAnalysisResult,
-  TaintAnalysisResult,
-  TypeInferenceResult,
-  MethodChange,
-  IncrementalUpdate,
   SecurityType,
   TaintLevel,
-  SecurityIssue,
-  SecurityTestMetrics,
-  SecurityImprovement,
   AuthTestCoverage,
   ITypeBasedSecurityPlugin,
-  FlowGraph,
   ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
   Improvement
 } from '../../core/types';
+import {
+  MethodAnalysisResult,
+  TaintAnalysisResult,
+  TypeInferenceResult,
+  MethodChange,
+  IncrementalUpdate,
+  SecurityIssue,
+  SecurityTestMetrics,
+  SecurityImprovement,
+  FlowGraph
+} from '../types/flow-types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
@@ -34,6 +36,16 @@ import {
   TypeGuards
 } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
+import {
+  AuthASTNode,
+  AuthTypeInferenceResult,
+  AuthTaintPath,
+  AuthCriticalFlow,
+  AnalysisError,
+  isAuthASTNode,
+  isAuthTypeInferenceResult
+} from './typed-auth-plugin-types';
+import { FlowNode } from '../types/flow-types';
 
 /**
  * 型ベース認証テスト品質プラグイン
@@ -108,7 +120,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
 
     return {
       overall: Math.round(score),
-      breakdown: {
+      dimensions: {
         completeness: authCoverage,
         correctness: this.calculateCorrectness(patterns),
         maintainability: this.calculateMaintainability(patterns)
@@ -123,7 +135,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (evaluation.breakdown?.completeness && evaluation.breakdown.completeness < 80) {
+    if (evaluation.dimensions?.completeness && evaluation.dimensions.completeness < 80) {
       improvements.push({
         id: 'auth-coverage-improvement',
         priority: 'high',
@@ -131,7 +143,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         title: '認証テストカバレッジの向上',
         description: '不足している認証シナリオのテストケースを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 20, effortMinutes: 30 },
+        impact: { scoreImprovement: 20, effortMinutes: 30 },
         automatable: false
       });
     }
@@ -173,11 +185,14 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       const suggestions = this.generateAuthSuggestions(issues, method);
 
       const result: MethodAnalysisResult = {
+        method,
         methodName: method.name,
-        issues,
+        flowGraph: flowGraph,
+        violations: taintResult.violations,
         metrics,
-        suggestions,
-        analysisTime: Date.now() - startTime
+        improvements: suggestions,
+        issues,
+        suggestions: suggestions.map(s => s.description) // string[]に変換
       };
 
       // キャッシュに保存
@@ -204,10 +219,10 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const violations: SecurityViolation[] = [];
 
     // 認証フローに特化した汚染解析
-    for (const node of flow.nodes) {
+    for (const [nodeId, node] of flow.nodes) {
       if (this.isAuthRelatedNode(node)) {
         const taintLevel = this.analyzeAuthNodeTaint(node);
-        lattice.setTaintLevel(node.id, taintLevel);
+        lattice.setTaintLevel(nodeId, taintLevel);
       }
     }
 
@@ -215,11 +230,22 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const authViolations = this.verifyAuthInvariants(flow, lattice);
     violations.push(...authViolations);
 
+    // TaintAnalysisResultに必要なプロパティを返す
+    const methodResults: MethodAnalysisResult[] = [];
+    const overallMetrics: SecurityTestMetrics = {
+      taintCoverage: 0,
+      sanitizerCoverage: 0,
+      sinkCoverage: 0,
+      securityAssertions: 0,
+      vulnerableFlows: violations.length
+    };
+    const improvements: SecurityImprovement[] = [];
+    
     return {
-      lattice,
+      methods: methodResults,
+      overallMetrics,
       violations,
-      taintPaths: this.extractAuthTaintPaths(flow),
-      criticalFlows: this.identifyAuthCriticalFlows(flow, violations)
+      improvements
     };
   }
 
@@ -228,7 +254,14 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    */
   async inferSecurityTypes(method: TestMethod): Promise<TypeInferenceResult> {
     // 認証メソッドに特化した型推論
-    return this.inferenceEngine.inferSecurityTypes(method);
+    const result = await this.inferenceEngine.inferSecurityTypes(method);
+    const authResult = result as AuthTypeInferenceResult;
+    return {
+      ...result,
+      inferredTypes: authResult.inferredTypes || {},
+      typeConstraints: authResult.typeConstraints || [],
+      typeErrors: authResult.typeErrors || []
+    } as TypeInferenceResult;
   }
 
   /**
@@ -249,7 +282,9 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           // 新規/変更されたメソッドを再解析
           const result = await this.analyzeMethod(change.method);
           updatedMethods.push(methodName);
-          newIssues.push(...result.issues);
+          if (result.issues) {
+            newIssues.push(...result.issues);
+          }
           break;
           
         case 'deleted':
@@ -261,11 +296,19 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       }
     }
 
+    const analysisResults: MethodAnalysisResult[] = [];
+    for (const methodName of updatedMethods) {
+      const cachedResult = this.analysisCache.get(this.generateCacheKey({ name: methodName, filePath: '', content: '' } as TestMethod));
+      if (cachedResult) {
+        analysisResults.push(cachedResult);
+      }
+    }
+
     return {
-      updatedMethods,
-      invalidatedCache,
-      newIssues,
-      resolvedIssues
+      changes,
+      affectedMethods: changes.map(c => c.method),
+      updatedMethods: analysisResults,
+      reanalysisRequired: newIssues.length > 0
     };
   }
 
@@ -332,14 +375,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   private isAuthRelatedTest(method: TestMethod): boolean {
     const authKeywords = ['auth', 'login', 'logout', 'signin', 'signout', 'token', 'password', 'credential'];
     const methodName = method.name.toLowerCase();
-    const methodContent = method.content.toLowerCase();
+    const methodContent = (method.content || '').toLowerCase();
     
     return authKeywords.some(keyword => 
       methodName.includes(keyword) || methodContent.includes(keyword)
     );
   }
 
-  private isAuthRelatedNode(node: any): boolean {
+  private isAuthRelatedNode(node: FlowNode): boolean {
+    if (!node.statement?.content) return false;
     const content = node.statement.content.toLowerCase();
     const authPatterns = ['login', 'auth', 'token', 'password', 'credential'];
     return authPatterns.some(pattern => content.includes(pattern));
@@ -348,7 +392,10 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * 認証ノードの汚染分析（新型システム版）
    */
-  private analyzeAuthNodeTaintType(node: any): QualifiedType<any> {
+  private analyzeAuthNodeTaintType(node: FlowNode): QualifiedType<unknown> {
+    if (!node.statement?.content) {
+      return TypeConstructors.untainted(node.statement || {});
+    }
     const content = node.statement.content.toLowerCase();
     
     // ユーザー入力（パスワード、認証情報）は高汚染
@@ -368,7 +415,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    * レガシー互換メソッド
    * @deprecated analyzeAuthNodeTaintTypeを使用してください
    */
-  private analyzeAuthNodeTaint(node: any): TaintLevel {
+  private analyzeAuthNodeTaint(node: FlowNode): TaintLevel {
     const qualifiedType = this.analyzeAuthNodeTaintType(node);
     return TaintLevelAdapter.fromQualifiedType(qualifiedType);
   }
@@ -379,18 +426,22 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     // 認証特有の不変条件をチェック
     // 例: パスワードが平文でアサートされていないか
     flow.nodes.forEach(node => {
-      const content = node.statement.content;
-      if (content.includes('password') && content.includes('expect') && !content.includes('hash')) {
+      const content = node.statement?.content;
+      if (content && content.includes('password') && content.includes('expect') && !content.includes('hash')) {
         violations.push({
           type: 'unsafe-assertion',
+          message: 'パスワードが平文でアサートされています',
           variable: 'password',
-          taintLevel: TaintLevel.DEFINITELY_TAINTED,
+          taintLevel: 'tainted',
           metadata: {
-            source: 'user-input' as any,
-            confidence: 0.9,
-            location: { file: '', line: 0, column: 0 },
-            tracePath: [],
-            securityRules: ['password-plaintext-check']
+            level: 'tainted',
+            sources: ['user-input'],
+            sinks: [],
+            sanitizers: [],
+            // confidence removed - not in TaintMetadata
+            // location removed - not in TaintMetadata
+            propagationPath: []
+            // tracePath and securityRules removed - not in TaintMetadata
           },
           severity: 'critical',
           suggestedFix: 'パスワードは平文ではなくハッシュ値でテストしてください'
@@ -401,12 +452,12 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     return violations;
   }
 
-  private extractAuthTaintPaths(flow: FlowGraph): any[] {
+  private extractAuthTaintPaths(flow: FlowGraph): AuthTaintPath[] {
     // 認証関連の汚染パスを抽出
     return [];
   }
 
-  private identifyAuthCriticalFlows(flow: FlowGraph, violations: SecurityViolation[]): any[] {
+  private identifyAuthCriticalFlows(flow: FlowGraph, violations: SecurityViolation[]): AuthCriticalFlow[] {
     // 認証関連のクリティカルフローを特定
     return [];
   }
@@ -422,7 +473,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     taintResult.violations.forEach(violation => {
       issues.push({
         id: `auth-${violation.type}-${method.name}`,
-        severity: violation.severity as any,
+        severity: violation.severity as SecurityIssue['severity'],
         type: 'unsafe-taint-flow',
         message: `認証テストで${violation.suggestedFix}`,
         location: { file: method.filePath, line: 0, column: 0 }
@@ -437,7 +488,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       issues.push({
         id: `auth-missing-${missing}-${method.name}`,
         severity: 'warning',
-        type: 'missing-auth-test',
+        type: 'authentication',
         message: `認証テストで${missing}のシナリオが不足しています`,
         location: { file: method.filePath, line: 0, column: 0 }
       });
@@ -447,7 +498,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private calculateAuthMetrics(method: TestMethod, taintResult: TaintAnalysisResult): SecurityTestMetrics {
-    const content = method.content.toLowerCase();
+    const content = (method.content || '').toLowerCase();
     
     // 認証関連のメトリクスを計算
     const hasLoginTest = content.includes('login');
@@ -459,15 +510,11 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       .filter(Boolean).length / 4;
 
     return {
-      securityCoverage: {
-        authentication: authCoverage * 100,
-        inputValidation: 50, // デフォルト値
-        apiSecurity: 30, // デフォルト値
-        overall: authCoverage * 100 * 0.8 + 20 // 認証重視
-      },
-      taintFlowDetection: taintResult.violations.length === 0 ? 1.0 : 0.5,
-      sanitizerCoverage: 0.7, // デフォルト値
-      invariantCompliance: taintResult.violations.length === 0 ? 1.0 : 0.3
+      taintCoverage: authCoverage,
+      sanitizerCoverage: 0.7,
+      sinkCoverage: 0.5,
+      securityAssertions: hasTokenTest || hasSessionTest ? 1 : 0,
+      vulnerableFlows: 0
     };
   }
 
@@ -475,16 +522,12 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const suggestions: SecurityImprovement[] = [];
 
     issues.forEach(issue => {
-      if (issue.type === 'missing-auth-test') {
+      if (issue.type === 'authentication') {
         suggestions.push({
-          id: `fix-${issue.id}`,
-          priority: 'high',
-          type: 'enhance-coverage',
-          title: '認証テストケースの追加',
+          type: 'add-assertion',
           description: issue.message,
           location: issue.location,
-          estimatedImpact: { securityImprovement: 25, implementationMinutes: 15 },
-          automatable: false
+          impact: 'high'
         });
       }
     });
@@ -493,7 +536,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private checkAuthCoverage(method: TestMethod, required: string[]): string[] {
-    const content = method.content.toLowerCase();
+    const content = method.content?.toLowerCase() || '';
     const missing: string[] = [];
 
     required.forEach(coverage => {
@@ -520,42 +563,93 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private generateCacheKey(method: TestMethod): string {
-    return `${method.filePath}:${method.name}:${method.content.length}`;
+    return `${method.filePath || 'unknown'}:${method.name}:${method.content?.length || 0}`;
   }
 
   private createEmptyResult(methodName: string, analysisTime: number): MethodAnalysisResult {
+    const emptyMethod: TestMethod = {
+      name: methodName,
+      filePath: '',
+      content: '',
+      type: 'test',
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+    };
     return {
+      method: emptyMethod,
       methodName,
-      issues: [],
+      flowGraph: { nodes: new Map(), edges: [], exitNodes: [] },
+      violations: [],
       metrics: {
-        securityCoverage: { authentication: 0, inputValidation: 0, apiSecurity: 0, overall: 0 },
-        taintFlowDetection: 0,
+        taintCoverage: 0,
         sanitizerCoverage: 0,
-        invariantCompliance: 0
+        sinkCoverage: 0,
+        securityAssertions: 0,
+        vulnerableFlows: 0
       },
-      suggestions: [],
-      analysisTime
+      improvements: [],
+      issues: [],
+      suggestions: []
     };
   }
 
-  private createErrorResult(methodName: string, error: any, analysisTime: number): MethodAnalysisResult {
+  private createErrorResult(methodName: string, error: unknown, analysisTime: number): MethodAnalysisResult {
+    const emptyMethod: TestMethod = {
+      name: methodName,
+      filePath: '',
+      content: '',
+      type: 'test',
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+    };
     return {
+      method: emptyMethod,
       methodName,
+      flowGraph: { nodes: new Map(), edges: [], exitNodes: [] },
+      violations: [],
+      metrics: {
+        taintCoverage: 0,
+        sanitizerCoverage: 0,
+        sinkCoverage: 0,
+        securityAssertions: 0,
+        vulnerableFlows: 0
+      },
+      improvements: [],
       issues: [{
         id: `error-${methodName}`,
-        severity: 'error',
-        type: 'missing-sanitizer', // fallback
+        severity: 'critical',
+        type: 'validation',
         message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
         location: { file: '', line: 0, column: 0 }
       }],
-      metrics: {
-        securityCoverage: { authentication: 0, inputValidation: 0, apiSecurity: 0, overall: 0 },
-        taintFlowDetection: 0,
-        sanitizerCoverage: 0,
-        invariantCompliance: 0
-      },
-      suggestions: [],
-      analysisTime
+      suggestions: []
     };
+  }
+
+  /**
+   * テストメソッドの分析（ITypeBasedSecurityPlugin準拠）
+   */
+  async analyzeTestMethod(method: TestMethod): Promise<MethodAnalysisResult> {
+    // TestMethodまたは汎用メソッドオブジェクトを処理
+    const testMethod: TestMethod = {
+      name: method.name || 'unknown',
+      filePath: method.filePath || '',
+      content: method.content || '',
+      type: 'test',
+      location: method.location || { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+    };
+
+    // 既存のanalyzeMethodを使用
+    const result = await this.analyzeMethod(testMethod);
+    
+    // レスポンスを整形
+    return {
+      method: testMethod,
+      methodName: result.methodName,
+      issues: result.issues,
+      metrics: result.metrics,
+      improvements: result.improvements,
+      suggestions: result.suggestions,
+      flowGraph: result.flowGraph,
+      violations: result.violations
+    } as MethodAnalysisResult;
   }
 }

@@ -135,16 +135,17 @@ export class InjectionPlugin {
       security,
       coverage: coverageScore,
       maintainability: 0.6,
-      breakdown: {
+      dimensions: {
         completeness: Math.round(coverageScore * 100),
         correctness: 60,
         maintainability: 60
       },
       confidence: 0.9,
       details: {
-        sqlInjectionCoverage,
-        commandInjectionCoverage,
-        inputValidationCoverage
+        strengths: hasSqlInjectionTest ? ['SQLインジェクション対策済み'] : [],
+        weaknesses: !hasSqlInjectionTest ? ['SQLインジェクション対策不足'] : [],
+        suggestions: [],
+        validationCoverage: sqlInjectionCoverage
       }
     };
   }
@@ -153,7 +154,7 @@ export class InjectionPlugin {
     const improvements: Improvement[] = [];
     
     // SQLインジェクション対策テストの改善提案
-    if (!evaluation.details?.sqlInjectionCoverage || evaluation.details.sqlInjectionCoverage < 50) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 50) {
       improvements.push({
         id: 'add-sql-injection-tests',
         title: 'SQLインジェクション対策テストの追加',
@@ -163,13 +164,8 @@ export class InjectionPlugin {
         category: 'security',
         location: { file: 'test/security/injection.test.ts', line: 1, column: 0 },
         automatable: true,
-        estimatedImpact: {
-          scoreImprovement: 0.35,
-          effortMinutes: 45
-        },
-        suggestedCode: {
-          language: 'typescript',
-          code: `describe('SQL Injection Prevention', () => {
+        impact: 35,
+        suggestedCode: `describe('SQL Injection Prevention', () => {
   it('should sanitize SQL input', () => {
     const maliciousInput = "'; DROP TABLE users; --";
     const sanitized = sanitizeSQL(maliciousInput);
@@ -186,8 +182,7 @@ export class InjectionPlugin {
   it('should reject malformed SQL queries', () => {
     expect(() => executeQuery(maliciousSQL)).toThrow();
   });
-});`
-        },
+});`,
         codeExample: `describe('SQL Injection Prevention', () => {
   it('should sanitize SQL input', () => {
     const maliciousInput = "'; DROP TABLE users; --";
@@ -200,7 +195,7 @@ export class InjectionPlugin {
     }
     
     // コマンドインジェクション対策の改善提案
-    if (!evaluation.details?.commandInjectionCoverage || evaluation.details.commandInjectionCoverage < 50) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 50) {
       improvements.push({
         id: 'add-command-injection-tests',
         title: 'コマンドインジェクション対策テストの追加',
@@ -210,15 +205,12 @@ export class InjectionPlugin {
         category: 'security',
         location: { file: 'test/security/injection.test.ts', line: 30, column: 0 },
         automatable: true,
-        estimatedImpact: {
-          scoreImprovement: 0.3,
-          effortMinutes: 30
-        }
+        impact: 30
       });
     }
     
     // 入力検証の改善提案
-    if (!evaluation.details?.inputValidationCoverage || evaluation.details.inputValidationCoverage < 50) {
+    if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 50) {
       improvements.push({
         id: 'add-input-validation-tests',
         title: '入力検証テストの追加',
@@ -228,10 +220,7 @@ export class InjectionPlugin {
         category: 'security',
         location: { file: 'test/security/injection.test.ts', line: 60, column: 0 },
         automatable: true,
-        estimatedImpact: {
-          scoreImprovement: 0.25,
-          effortMinutes: 25
-        }
+        impact: 25
       });
     }
     

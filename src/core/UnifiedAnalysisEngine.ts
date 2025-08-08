@@ -396,9 +396,9 @@ export class UnifiedAnalysisEngine {
     };
 
     // combinedScoreを必ず返す（デフォルト値を設定）
-    const finalCombinedScore = combinedScore || {
+    const finalCombinedScore: QualityScore = combinedScore || {
       overall: 0,
-      breakdown: { completeness: 0, correctness: 0, maintainability: 0 },
+      dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
       confidence: 0
     };
 
@@ -489,7 +489,7 @@ export class UnifiedAnalysisEngine {
     if (pluginResults.length === 0) {
       return {
         overall: 0,
-        breakdown: { completeness: 0, correctness: 0, maintainability: 0 },
+        dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
         confidence: 0
       };
     }
@@ -501,18 +501,18 @@ export class UnifiedAnalysisEngine {
     const overall = scores.reduce((sum, score, index) => 
       sum + score.overall * weights[index], 0) / totalWeight;
 
-    const breakdown = {
+    const dimensions = {
       completeness: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.completeness || 0) * weights[index], 0) / totalWeight,
+        sum + (score.dimensions?.completeness || 0) * weights[index], 0) / totalWeight,
       correctness: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.correctness || 0) * weights[index], 0) / totalWeight,
+        sum + (score.dimensions?.correctness || 0) * weights[index], 0) / totalWeight,
       maintainability: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.maintainability || 0) * weights[index], 0) / totalWeight
+        sum + (score.dimensions?.maintainability || 0) * weights[index], 0) / totalWeight
     };
 
     return {
       overall,
-      breakdown,
+      dimensions,
       confidence: totalWeight / pluginResults.length
     };
   }

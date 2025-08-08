@@ -379,3 +379,13 @@ export interface AnalysisCache {
   structures: Map<string, ProjectStructure>;
   expiry: Date;
 }
+
+// バージョン制約の型定義（any型除去用）
+export interface VersionConstraint {
+  package: string;
+  declaredVersion: string;
+  installedVersion?: string;
+  constraint: 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard';
+  hasVulnerability?: boolean;
+  suggestion?: string;
+}

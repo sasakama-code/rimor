@@ -309,7 +309,7 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
       security: securityScore,
       coverage: coverageScore,
       maintainability: maintainabilityScore,
-      breakdown: {
+      dimensions: {
         completeness: testCoverage,
         correctness: designTests.length > 0 ? 80 - (vulnerabilities.length * 15) : 0,
         maintainability: maintainabilityScore * 100
@@ -317,13 +317,10 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
       confidence: patterns.length > 0 ? 
         patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 0,
       details: {
-        threatModelingCoverage: hasThreatModelingTest ? 100 : 0,
-        businessLogicTestCoverage: hasBusinessLogicTest ? 100 : 0,
-        rateLimitingTestCoverage: hasRateLimitingTest ? 100 : 0,
-        defenseInDepthCoverage: hasDefenseInDepthTest ? 100 : 0,
-        designVulnerabilities: vulnerabilities.length,
-        totalDesignTests: designTests.length,
-        missingTests: missingTests.length
+        strengths: hasThreatModelingTest ? ['脅威モデリング実装済み'] : [],
+        weaknesses: !hasThreatModelingTest ? ['脅威モデリング不足'] : [],
+        suggestions: [],
+        validationCoverage: hasThreatModelingTest ? 100 : 0
       }
     };
   }
@@ -335,18 +332,15 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
     const improvements: Improvement[] = [];
 
     // 脅威モデリングテストが不足している場合
-    if (!evaluation.details?.threatModelingCoverage) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 100) {
       improvements.push({
         id: 'add-threat-modeling-tests',
         priority: 'critical',
-        type: 'add-threat-modeling',
+        type: 'add-test',
         title: '脅威モデリングテストの追加',
         description: 'STRIDEやDREADなどの手法を使用した脅威モデリングテストを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 35, 
-          effortMinutes: 60 
-        },
+        impact: 35,
         automatable: false,
         codeExample: `
 describe('Threat Modeling Tests', () => {
@@ -371,18 +365,15 @@ describe('Threat Modeling Tests', () => {
     }
 
     // ビジネスロジックテストが不足している場合
-    if (!evaluation.details?.businessLogicTestCoverage) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 100) {
       improvements.push({
         id: 'add-business-logic-tests',
         priority: 'high',
-        type: 'add-business-logic-tests',
+        type: 'add-test',
         title: 'ビジネスロジックセキュリティテストの追加',
         description: 'ビジネスルールの悪用を防ぐテストを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 45 
-        },
+        impact: 30,
         automatable: false,
         suggestions: [
           'トランザクションの一貫性テスト',
@@ -394,18 +385,15 @@ describe('Threat Modeling Tests', () => {
     }
 
     // レート制限テストが不足している場合
-    if (!evaluation.details?.rateLimitingTestCoverage) {
+    if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 100) {
       improvements.push({
         id: 'add-rate-limiting-tests',
         priority: 'high',
-        type: 'add-rate-limiting',
+        type: 'add-test',
         title: 'レート制限テストの追加',
         description: 'APIやリソースへの過剰なアクセスを防ぐテストを追加してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 25, 
-          effortMinutes: 30 
-        },
+        impact: 25,
         automatable: false,
         codeExample: `
 it('should enforce rate limiting', async () => {
@@ -423,37 +411,30 @@ it('should enforce rate limiting', async () => {
     }
 
     // 多層防御テストが不足している場合
-    if (!evaluation.details?.defenseInDepthCoverage) {
+    if (!evaluation.dimensions?.security || evaluation.dimensions.security < 80) {
       improvements.push({
         id: 'add-defense-in-depth-tests',
         priority: 'high',
-        type: 'add-layered-security',
+        type: 'add-test',
         title: '多層防御テストの追加',
         description: '複数のセキュリティ層が正しく機能することを検証してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 20, 
-          effortMinutes: 40 
-        },
+        impact: 20,
         automatable: false
       });
     }
 
     // 設計上の脆弱性が検出された場合
-    if (evaluation.details?.designVulnerabilities && evaluation.details.designVulnerabilities > 0) {
+    if (evaluation.details?.weaknesses && evaluation.details.weaknesses.length > 0) {
       improvements.push({
         id: 'fix-design-vulnerabilities',
         priority: 'critical',
-        type: 'fix-design-flaws',
+        type: 'refactor',
         title: '設計上の脆弱性の修正',
-        description: `${evaluation.details.designVulnerabilities}個の設計上の脆弱性が検出されました。セキュアな設計パターンに修正してください`,
+        description: `${evaluation.details.weaknesses.length}個の設計上の脆弱性が検出されました。セキュアな設計パターンに修正してください`,
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 40, 
-          effortMinutes: 90 
-        },
-        automatable: false,
-        impact: 'critical'
+        impact: 40,
+        automatable: false
       });
     }
 

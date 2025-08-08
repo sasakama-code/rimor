@@ -102,7 +102,7 @@ export class TestCompletenessPlugin extends BasePlugin {
 
     return {
       overall: completenessScore,
-      breakdown: {
+      dimensions: {
         completeness: completenessScore,
         correctness: 75,
         maintainability: 70
@@ -119,18 +119,18 @@ export class TestCompletenessPlugin extends BasePlugin {
       return improvements;
     }
 
-    const completenessScore = evaluation.breakdown?.completeness || 0;
+    const completenessScore = evaluation.dimensions?.completeness || 0;
     
     // 改善提案を生成（スコアベース）
     if (completenessScore < 30) {
       improvements.push(this.createImprovement(
         'empty-suite',
         'critical',
-        'add',
+        'add-test',
         'テストケースの実装',
         '空のテストスイートに具体的なテストケースを追加してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 40, effortMinutes: 90 }
+        0.4
       ));
     }
 
@@ -138,11 +138,11 @@ export class TestCompletenessPlugin extends BasePlugin {
       improvements.push(this.createImprovement(
         'completeness',
         'high',
-        'add',
+        'add-test',
         "",
         "",
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 30, effortMinutes: 60 }
+        0.3
       ));
     }
 
@@ -150,21 +150,21 @@ export class TestCompletenessPlugin extends BasePlugin {
       improvements.push(this.createImprovement(
         'edge-cases',
         'medium',
-        'add',
+        'add-test',
         'エッジケーステストの追加',
         '境界値、null値、空文字列、大きなデータサイズなどのエッジケースをテストしてください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 20, effortMinutes: 40 }
+        0.2
       ));
 
       improvements.push(this.createImprovement(
         'setup',
         'low',
-        'add',
+        'add-test',
         'セットアップ・ティアダウンの追加',
         'beforeEach/afterEachでテストの前処理・後処理を適切に行ってください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 10, effortMinutes: 20 }
+        0.1
       ));
     }
 

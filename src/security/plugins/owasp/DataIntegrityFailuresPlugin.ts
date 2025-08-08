@@ -203,12 +203,16 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
       security: securityScore,
       coverage: testCoverage,
       confidence: 0.85,
+      dimensions: {
+        completeness: testCoverage,
+        correctness: integrityTests.length > 0 ? 75 : 0,
+        maintainability: (hasSignatureTest ? 50 : 0) + (hasDeserializationTest ? 25 : 0) + (hasCicdTest ? 25 : 0)
+      },
       details: {
-        testCoverage,
-        signatureVerificationImplemented: hasSignatureTest,
-        deserializationSecure: hasDeserializationTest,
-        cicdSecurityImplemented: hasCicdTest,
-        missingTestsCount: missingTests.length
+        strengths: hasSignatureTest ? ['署名検証実装済み'] : [],
+        weaknesses: !hasSignatureTest ? ['署名検証不足'] : [],
+        suggestions: [],
+        validationCoverage: hasSignatureTest ? 100 : 0
       }
     };
   }
@@ -216,7 +220,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (!evaluation.details?.signatureVerificationImplemented) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 100) {
       improvements.push({
         id: 'add-signature-verification-tests',
         priority: 'critical',
@@ -224,15 +228,12 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         title: '署名検証テストの追加',
         description: 'パッケージ、コード、アップデートの署名検証テストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 35, 
-          effortMinutes: 45 
-        },
+        impact: 35,
         automatable: true
       });
     }
 
-    if (!evaluation.details?.deserializationSecure) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 50) {
       improvements.push({
         id: 'add-secure-deserialization-tests',
         priority: 'critical',
@@ -240,15 +241,12 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         title: '安全なデシリアライゼーションテストの追加',
         description: '信頼できないデータのデシリアライゼーションを防ぐテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 35, 
-          effortMinutes: 40 
-        },
+        impact: 35,
         automatable: true
       });
     }
 
-    if (!evaluation.details?.cicdSecurityImplemented) {
+    if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 50) {
       improvements.push({
         id: 'add-cicd-security-tests',
         priority: 'high',
@@ -256,10 +254,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         title: 'CI/CDパイプラインセキュリティテストの追加',
         description: 'ビルド、デプロイプロセスの完全性チェックテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 60 
-        },
+        impact: 30,
         automatable: true
       });
     }
@@ -272,10 +267,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         title: 'アップデート完全性テストの追加',
         description: '自動更新プロセスの署名検証と完全性チェックテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 25, 
-          effortMinutes: 30 
-        },
+        impact: 25,
         automatable: true
       });
     }

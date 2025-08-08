@@ -3,6 +3,8 @@
  */
 
 import { BaseMetadata, Position } from './base-types';
+// Re-export Position from base-types
+export { Position } from './base-types';
 
 // Package.json structure (properly typed, not any)
 export interface PackageJsonConfig {
@@ -279,6 +281,8 @@ export interface TestMethod {
   location: {
     start: Position;
     end: Position;
+    startLine?: number;
+    startColumn?: number;
   };
   async?: boolean;
   skip?: boolean;
@@ -287,4 +291,10 @@ export interface TestMethod {
   tags?: string[];
   assertions?: number;
   description?: string;
+  // 追加プロパティ（後方互換性のため）
+  content?: string;
+  body?: string;
+  filePath?: string;
+  signature?: string;
+  testType?: 'unit' | 'integration' | 'e2e' | 'security' | 'performance' | 'smoke';
 }

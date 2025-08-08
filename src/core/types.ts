@@ -19,4 +19,4 @@
  */
 
 // Re-export everything from the new type definitions for backward compatibility
-export * from './types';
+export * from './types/index';
