@@ -73,33 +73,12 @@ export class AnalyzerExtended {
     options: AnalysisOptions = {}
   ): Promise<ExtendedAnalysisResult> {
     this.engine.configure(options);
-    const results = await this.engine.analyzeAllWithQuality(filePath);
     
-    // Return the first result for single file analysis
-    if (results.length > 0) {
-      return results[0];
-    }
+    // UnifiedAnalysisEngineのanalyzeWithQualityメソッドを直接呼び出す
+    // contextは現在使用されていないが、将来の拡張のために保持
+    const result = await this.engine.analyzeWithQuality(filePath);
     
-    // Return empty result if no analysis was performed
-    return {
-      filePath,
-      qualityAnalysis: {
-        pluginResults: [],
-        executionStats: {
-          totalPlugins: 0,
-          successfulPlugins: 0,
-          failedPlugins: 0,
-          totalExecutionTime: 0
-        }
-      },
-      aggregatedScore: {
-        overall: 0,
-        breakdown: { completeness: 0, correctness: 0, maintainability: 0 },
-        confidence: 0
-      },
-      recommendations: [],
-      executionTime: 0
-    };
+    return result;
   }
 
   // バッチ分析
@@ -124,6 +103,22 @@ export class AnalyzerExtended {
       summary,
       files: batchResult.files
     };
+  }
+
+  // 複数ファイルの並列分析
+  async analyzeMultiple(
+    filePaths: string[],
+    context: ProjectContext,
+    options: AnalysisOptions = {}
+  ): Promise<ExtendedAnalysisResult[]> {
+    this.engine.configure(options);
+    
+    // 並列処理で各ファイルを分析
+    const analysisPromises = filePaths.map(filePath => 
+      this.analyzeWithQuality(filePath, context, options)
+    );
+    
+    return await Promise.all(analysisPromises);
   }
 
   // スコアの集約
