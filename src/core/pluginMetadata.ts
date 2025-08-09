@@ -7,7 +7,7 @@ export interface PluginParameter {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   required: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   description: string;
   validation?: {
     min?: number;

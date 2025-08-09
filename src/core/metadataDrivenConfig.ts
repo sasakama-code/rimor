@@ -147,7 +147,7 @@ export class MetadataDrivenConfigManager {
    * プラグイン固有設定の生成
    */
   private generatePluginConfig(metadata: PluginMetadata, options: ConfigGenerationOptions): PluginConfig {
-    const config: PluginConfig = {
+    const config: PluginConfig & Record<string, unknown> = {
       enabled: true,
       priority: this.calculatePluginPriority(metadata, options),
     };
@@ -155,7 +155,7 @@ export class MetadataDrivenConfigManager {
     // パラメータのデフォルト値を設定
     for (const param of metadata.parameters) {
       if (param.defaultValue !== undefined) {
-        (config as any)[param.name] = param.defaultValue;
+        config[param.name] = param.defaultValue;
       }
     }
     
@@ -163,11 +163,11 @@ export class MetadataDrivenConfigManager {
     if (options.targetEnvironment === 'ci') {
       // CI環境では高速化を優先
       if (metadata.performance.recommendedBatchSize) {
-        (config as any).batchSize = Math.min(metadata.performance.recommendedBatchSize * 2, 100);
+        config.batchSize = Math.min(metadata.performance.recommendedBatchSize * 2, 100);
       }
     } else if (options.targetEnvironment === 'development') {
       // 開発環境では詳細なフィードバックを優先
-      (config as any).verbose = true;
+      config.verbose = true;
     }
     
     return config;

@@ -183,5 +183,5 @@ export interface DomainDefinition {
   integrity: IntegrityHash;
   
   /** メタデータ */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
