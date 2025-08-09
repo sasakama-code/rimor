@@ -43,7 +43,7 @@ export const PLUGIN_REGISTRY = {
 } as const;
 
 // Plugin factory helper
-export function createPlugin(pluginName: string, config?: any) {
+export function createPlugin(pluginName: string, config?: Record<string, unknown>) {
   // 動的にプラグインをインポート・作成するヘルパー
   // 実際の使用時は各プラグインを直接インポートして使用することを推奨
   throw new Error(`Please import and instantiate ${pluginName} directly instead of using the factory.`);

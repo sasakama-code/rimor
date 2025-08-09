@@ -9,6 +9,7 @@ import {
   Improvement,
   PluginResult
 } from './types';
+import { TestMethod } from './types/project-context';
 import { errorHandler, ErrorType } from '../utils/errorHandler';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -346,13 +347,25 @@ export class UnifiedPluginManager {
   /**
    * テストケースの抽出（簡易実装）
    */
-  private extractTestCases(content: string): any[] {
-    const testRegex = /(?:it|test|describe)\s*\(['"]([^'"]+)['"]/g;
-    const testCases: any[] = [];
+  private extractTestCases(content: string): TestMethod[] {
+    const testRegex = /(?:(it|test|describe))\s*\(['"]([^'"]+)['"]/g;
+    const testCases: TestMethod[] = [];
     let match;
+    let lineNumber = 1;
     
     while ((match = testRegex.exec(content)) !== null) {
-      testCases.push({ name: match[1] });
+      // 簡易的な行番号計算
+      const beforeMatch = content.substring(0, match.index);
+      lineNumber = beforeMatch.split('\n').length;
+      
+      testCases.push({
+        name: match[2],
+        type: match[1] === 'describe' ? 'suite' : 'test',
+        location: {
+          start: { line: lineNumber, column: 0 },
+          end: { line: lineNumber, column: match[0].length }
+        }
+      });
     }
     
     return testCases;

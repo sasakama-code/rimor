@@ -5,6 +5,7 @@
 
 import { UnifiedAnalysisEngine, BasicAnalysisResult } from './UnifiedAnalysisEngine';
 import { IPlugin } from './types';
+import { Issue } from './types/base-types';
 
 /**
  * Legacy AnalysisResult for backward compatibility
@@ -12,7 +13,7 @@ import { IPlugin } from './types';
  */
 export interface AnalysisResult {
   totalFiles: number;
-  issues: any[];
+  issues: Issue[];
   executionTime: number;
 }
 

@@ -154,7 +154,14 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
     line: number;
     column: number;
   }> {
-    const flows: Array<any> = [];
+    const flows: Array<{
+      type: string;
+      source: string;
+      sink: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      line: number;
+      column: number;
+    }> = [];
     const lines = content.split('\n');
 
     // 簡易的な汚染フロー検出
