@@ -17,6 +17,7 @@ import {
 } from '../../core/types';
 import {
   MethodAnalysisResult,
+  TestMethodAnalysisResult,
   TaintAnalysisResult,
   TypeInferenceResult,
   MethodChange,
@@ -627,7 +628,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * テストメソッドの分析（ITypeBasedSecurityPlugin準拠）
    */
-  async analyzeTestMethod(method: TestMethod): Promise<MethodAnalysisResult> {
+  async analyzeTestMethod(method: TestMethod): Promise<TestMethodAnalysisResult> {
     // TestMethodまたは汎用メソッドオブジェクトを処理
     const testMethod: TestMethod = {
       name: method.name || 'unknown',
@@ -641,15 +642,19 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const result = await this.analyzeMethod(testMethod);
     
     // レスポンスを整形
-    return {
-      method: testMethod,
-      methodName: result.methodName,
-      issues: result.issues,
-      metrics: result.metrics,
-      improvements: result.improvements,
-      suggestions: result.suggestions,
-      flowGraph: result.flowGraph,
-      violations: result.violations
-    } as MethodAnalysisResult;
+    const testMethodResult: TestMethodAnalysisResult = {
+      taintFlow: {
+        nodes: result.flowGraph?.nodes || [],
+        edges: result.flowGraph?.edges || [],
+        exitNodes: result.flowGraph?.exitNodes || [],
+        sources: result.flowGraph?.taintSources?.map(s => s.variable || s.source || 'unknown') || [],
+        sanitizers: result.flowGraph?.sanitizers?.map(s => s.variable || 'unknown') || [],
+        sinks: result.flowGraph?.securitySinks?.map(s => s.sink || 'unknown') || []
+      },
+      issues: result.issues || [],
+      securityScore: 0.5 // デフォルトスコア
+    };
+    
+    return testMethodResult;
   }
 }

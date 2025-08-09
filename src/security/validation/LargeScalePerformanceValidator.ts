@@ -6,13 +6,70 @@
 import {
   TestCase,
   TypeBasedSecurityConfig,
-  MethodAnalysisResult
+  MethodAnalysisResult,
+  SecurityIssue
 } from '../types';
 import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { PerformanceBenchmark } from '../benchmarks/PerformanceBenchmark';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+/**
+ * システム情報の型定義
+ */
+interface SystemInfo {
+  cpu: {
+    model: string;
+    cores: number;
+  };
+  memory: {
+    total: number;
+  };
+  cpuModel: string;
+  cpuCores: number;
+  totalMemory: number;
+  nodeVersion: string;
+  platform: string;
+  osVersion: string;
+}
+
+/**
+ * スケーラビリティデータポイント
+ */
+interface ScalabilityDataPoint {
+  fileCount: number;
+  totalTime: number;
+  memoryUsed: number;
+  throughput: number;
+  executionTime: number;
+  timePerFile: number;
+  memoryUsage: number;
+}
+
+/**
+ * 処理済み解析結果
+ */
+interface ProcessedAnalysisResult {
+  issueCount: number;
+  issueTypeDistribution: Map<string, number>;
+  criticalIssues: number;
+  highPriorityIssues: number;
+  totalIssues: number;
+  issuesPerFile: number;
+}
+
+/**
+ * スケーラビリティ分析結果
+ */
+interface ScalabilityAnalysis {
+  complexity: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  regressionCoefficient: number;
+  scalabilityScore: number;
+  recommendedMaxFiles: number;
+}
 
 /**
  * 大規模プロジェクト設定
@@ -147,7 +204,7 @@ export interface ScalabilityTestResult {
 export class LargeScalePerformanceValidator {
   private securityEngine: TypeBasedSecurityEngine;
   private benchmark: PerformanceBenchmark;
-  private systemInfo: any;
+  private systemInfo: SystemInfo;
 
   constructor() {
     this.securityEngine = new TypeBasedSecurityEngine({
@@ -211,7 +268,7 @@ export class LargeScalePerformanceValidator {
     console.log(`ファイル数範囲: ${minFiles} - ${maxFiles}ファイル, ${steps}ステップ`);
     console.log('');
 
-    const scalabilityData: any[] = [];
+    const scalabilityData: ScalabilityDataPoint[] = [];
     const fileStep = Math.floor((maxFiles - minFiles) / steps);
 
     for (let i = 0; i <= steps; i++) {
@@ -238,6 +295,9 @@ export class LargeScalePerformanceValidator {
 
         scalabilityData.push({
           fileCount,
+          totalTime: executionTime,
+          memoryUsed: finalMemory - initialMemory,
+          throughput: fileCount / (executionTime / 1000),
           executionTime,
           timePerFile,
           memoryUsage: finalMemory - initialMemory
@@ -250,6 +310,9 @@ export class LargeScalePerformanceValidator {
         // エラーがあっても継続
         scalabilityData.push({
           fileCount,
+          totalTime: 0,
+          memoryUsed: 0,
+          throughput: 0,
           executionTime: 0,
           timePerFile: 0,
           memoryUsage: 0
@@ -371,7 +434,11 @@ export class LargeScalePerformanceValidator {
         speedupTarget: speedup >= 3.0 && speedup <= 20.0,
         actualSpeedup: speedup
       },
-      analysisResults
+      analysisResults: {
+        totalIssues: analysisResults.totalIssues,
+        issuesPerFile: analysisResults.issuesPerFile,
+        issueTypeDistribution: analysisResults.issueTypeDistribution
+      }
     };
 
     return result;
@@ -638,16 +705,19 @@ export class LargeScalePerformanceValidator {
   /**
    * 解析結果の処理
    */
-  private processAnalysisResults(analysisResult: any): any {
+  private processAnalysisResults(analysisResult: {issues?: SecurityIssue[]}): ProcessedAnalysisResult {
     const issues = analysisResult.issues || [];
     const issueTypeDistribution = new Map<string, number>();
 
-    issues.forEach((issue: any) => {
+    issues.forEach((issue: SecurityIssue) => {
       const count = issueTypeDistribution.get(issue.type) || 0;
       issueTypeDistribution.set(issue.type, count + 1);
     });
 
     return {
+      issueCount: issues.length,
+      criticalIssues: issues.filter((i: SecurityIssue) => i.severity === 'critical').length,
+      highPriorityIssues: issues.filter((i: SecurityIssue) => i.severity === 'high').length,
       totalIssues: issues.length,
       issuesPerFile: 0, // 後で計算
       issueTypeDistribution
@@ -657,11 +727,13 @@ export class LargeScalePerformanceValidator {
   /**
    * スケーラビリティ分析
    */
-  private analyzeScalability(data: any[]): any {
+  private analyzeScalability(data: ScalabilityDataPoint[]): ScalabilityAnalysis {
     if (data.length < 3) {
       return {
+        complexity: 'unknown',
         timeComplexity: 'O(?)',
         spaceComplexity: 'O(?)',
+        regressionCoefficient: 0,
         scalabilityScore: 5,
         recommendedMaxFiles: 1000
       };
@@ -674,7 +746,7 @@ export class LargeScalePerformanceValidator {
       const curr = data[i];
       if (prev.fileCount > 0 && curr.fileCount > 0) {
         const fileRatio = curr.fileCount / prev.fileCount;
-        const timeRatio = curr.executionTime / prev.executionTime;
+        const timeRatio = (curr.executionTime || curr.totalTime) / (prev.executionTime || prev.totalTime);
         timeGrowthRates.push(timeRatio / fileRatio);
       }
     }
@@ -701,8 +773,10 @@ export class LargeScalePerformanceValidator {
     const recommendedMaxFiles = Math.floor(10000 / Math.max(1, avgGrowthRate));
 
     return {
+      complexity: timeComplexity,
       timeComplexity,
       spaceComplexity: 'O(n)', // 簡略化
+      regressionCoefficient: avgGrowthRate,
       scalabilityScore,
       recommendedMaxFiles
     };
@@ -711,24 +785,25 @@ export class LargeScalePerformanceValidator {
   /**
    * システム情報の収集
    */
-  private collectSystemInfo(): any {
+  private collectSystemInfo(): SystemInfo {
     const cpus = os.cpus();
     const totalMemory = os.totalmem();
-    const freeMemory = os.freemem();
+    const totalMemoryGB = Math.round(totalMemory / 1024 / 1024 / 1024);
 
     return {
       cpu: {
         model: cpus[0].model,
-        cores: cpus.length,
-        speed: cpus[0].speed
+        cores: cpus.length
       },
       memory: {
-        total: Math.round(totalMemory / 1024 / 1024 / 1024),
-        free: Math.round(freeMemory / 1024 / 1024 / 1024),
-        used: Math.round((totalMemory - freeMemory) / 1024 / 1024 / 1024)
+        total: totalMemoryGB
       },
+      cpuModel: cpus[0].model,
+      cpuCores: cpus.length,
+      totalMemory: totalMemoryGB,
+      nodeVersion: process.version,
       platform: os.platform(),
-      arch: os.arch()
+      osVersion: os.release()
     };
   }
 

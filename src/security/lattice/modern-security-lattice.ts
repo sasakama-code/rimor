@@ -29,7 +29,7 @@ export class ModernSecurityLattice {
   private internalLattice: SecurityLattice;
   
   // 変数の型情報を新システムで管理
-  private typeMap: Map<string, QualifiedType<any>>;
+  private typeMap: Map<string, QualifiedType<unknown>>;
   private metadataMap: Map<string, TaintMetadata>;
 
   constructor() {
@@ -162,18 +162,17 @@ export class ModernSecurityLattice {
    * 転送関数（新型システム版）
    */
   transferFunction<T>(
-    stmt: any,
+    stmt: unknown,
     input: QualifiedType<T>
   ): QualifiedType<T> {
     // 内部でレガシー転送関数を使用し、結果を変換
     const legacyLevel = TaintLevelAdapter.fromQualifiedType(input);
-    const resultLevel = this.internalLattice['transferFunction'](stmt, legacyLevel);
+    const resultLevel = this.internalLattice['transferFunction'](stmt as any, legacyLevel);
     
-    // 新型システムに変換して返す
+    // 新型システムに変換して返す（sourceは省略）
     return TaintLevelAdapter.toQualifiedType(
       input.__value,
-      resultLevel,
-      stmt.source
+      resultLevel
     );
   }
 
@@ -234,7 +233,7 @@ export class ModernSecurityLattice {
    */
   refineType(
     variable: string,
-    condition: (value: any) => boolean,
+    condition: (value: unknown) => boolean,
     trueQualifier: TaintQualifier,
     falseQualifier: TaintQualifier
   ): void {
@@ -254,7 +253,7 @@ export class ModernSecurityLattice {
   /**
    * 変数の値を取得（内部使用）
    */
-  private getVariableValue(variable: string): any {
+  private getVariableValue(variable: string): unknown {
     const qualifiedType = this.typeMap.get(variable);
     return qualifiedType ? qualifiedType.__value : undefined;
   }
@@ -334,15 +333,15 @@ export class ModernSecurityLattice {
     variables: Array<{
       name: string;
       qualifier: TaintQualifier;
-      value: any;
-      metadata?: any;
+      value: unknown;
+      metadata?: unknown;
     }>;
   } {
     const variables: Array<{
       name: string;
       qualifier: TaintQualifier;
-      value: any;
-      metadata?: any;
+      value: unknown;
+      metadata?: unknown;
     }> = [];
     
     for (const [name, qualifiedType] of this.typeMap) {

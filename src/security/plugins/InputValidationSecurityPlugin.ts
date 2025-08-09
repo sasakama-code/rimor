@@ -1054,47 +1054,27 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * 増分解析（セキュリティプラグイン用）
    */
-  async analyzeIncrementally(changes: IncrementalChange[]): Promise<IncrementalAnalysisResult> {
-    const affectedTests: string[] = [];
-    const newIssuesFound: SecurityIssue[] = [];
-    const resolvedIssues: SecurityIssue[] = [];
+  async analyzeIncrementally(update: IncrementalChange): Promise<TestMethodAnalysisResult> {
+    // TestMethodを作成または取得
+    const testMethod: TestMethod = update.method && 'type' in update.method && 'location' in update.method
+      ? (update.method as unknown as TestMethod)
+      : {
+          name: update.methodName || update.method?.name || 'unnamed-method',
+          content: update.content || update.method?.content || '',
+          filePath: update.filePath || '',
+          type: 'test' as const,
+          location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+        };
     
-    for (const change of changes) {
-      // より柔軟な条件でchangeを処理
-      if (change.methodName || change.filePath || change.method?.name) {
-        const methodName = change.methodName || change.method?.name || 'unnamed-method';
-        affectedTests.push(methodName);
-        
-        // 新しい問題を検出
-        const content = change.content || change.method?.content || '';
-        const testMethod: TestMethod | undefined = change.method && 'type' in change.method && 'location' in change.method
-          ? (change.method as unknown as TestMethod)
-          : change.method ? {
-              name: change.method.name,
-              content: change.method.content || '',
-              filePath: change.filePath || '',
-              type: 'test' as const,
-              location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
-            }
-          : undefined;
-        const issues = this.detectSecurityIssues(content, testMethod);
-        newIssuesFound.push(...issues);
-      }
-    }
+    // テストメソッドを解析
+    const result = await this.analyzeTestMethod(testMethod);
     
-    // changesが空でない場合は最低1つのaffectedTestを返す
-    if (changes.length > 0 && affectedTests.length === 0) {
-      affectedTests.push('default-test-method');
-    }
-    
+    // 増分解析の追加情報を含める
     return {
-      affectedTests,
-      changesProcessed: changes.length,
-      qualityImprovement: Math.random() * 0.1 + 0.05, // 0.05-0.15の改善
-      newIssuesFound,
-      resolvedIssues,
-      securityImpact: this.assessSecurityImpact(changes) as 'high' | 'medium' | 'low'
-    };
+      ...result,
+      // 増分解析固有の情報があれば追加
+      isIncremental: true
+    } as TestMethodAnalysisResult;
   }
 
   private detectSecurityIssues(content: string, method?: TestMethod): SecurityIssue[] {
