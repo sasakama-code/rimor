@@ -11,7 +11,7 @@ export interface PluginConfig {
   enabled: boolean;
   excludeFiles?: string[];
   priority?: number;  // プラグイン実行優先度（高いほど先に実行）
-  [key: string]: any; // 動的プロパティサポート
+  [key: string]: unknown; // 動的プロパティサポート（型安全性向上）
 }
 
 export interface PluginMetadata {
