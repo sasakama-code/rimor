@@ -16,6 +16,7 @@ import { debug } from '../utils/debug';
 import { CacheManager } from './cacheManager';
 import { PerformanceMonitor } from './performanceMonitor';
 import { WorkerPool } from './workerPool';
+import { isNodeError, getErrorCode } from '../utils/errorGuards';
 
 /**
  * AST情報
@@ -143,9 +144,9 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
       }
       
       return files;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // ファイルが存在しない場合は空の配列を返す
-      if (error.code === 'ENOENT') {
+      if (isNodeError(error) && error.code === 'ENOENT') {
         console.warn(`Path not found: ${targetPath}`);
         return [];
       }

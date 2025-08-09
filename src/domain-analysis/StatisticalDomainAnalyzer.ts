@@ -18,6 +18,7 @@ import { HybridParser } from '../intent-analysis/HybridParser';
 import { MultilingualKeywordExtractor } from './MultilingualKeywordExtractor';
 import { DomainClusterer } from './DomainClusterer';
 import * as fs from 'fs/promises';
+import { isError, getErrorMessage } from '../utils/errorGuards';
 import * as path from 'path';
 import { glob } from 'glob';
 
@@ -142,10 +143,11 @@ export class StatisticalDomainAnalyzer {
       
       // 重複を除去
       return Array.from(new Set(allTokens));
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 32KB制限エラーの場合は警告を出さない
-      if (!error.message?.includes('Invalid argument')) {
-        console.warn(`Failed to extract tokens from ${filePath}:`, error.message);
+      const errorMessage = getErrorMessage(error);
+      if (!errorMessage.includes('Invalid argument')) {
+        console.warn(`Failed to extract tokens from ${filePath}:`, errorMessage);
       }
       // エラー時も基本的なトークン抽出を試みる
       try {
@@ -177,19 +179,26 @@ export class StatisticalDomainAnalyzer {
   /**
    * ASTノードからトークンを再帰的に抽出
    */
-  private extractTokensFromNode(node: any, tokens: string[]): void {
+  private extractTokensFromNode(node: unknown, tokens: string[]): void {
+    // nodeがオブジェクトであることを確認
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    
+    const nodeObj = node as Record<string, unknown>;
+    
     // 識別子、クラス名、関数名などを抽出
-    if (node.type === 'identifier' || 
-        node.type === 'property_identifier' ||
-        node.type === 'type_identifier') {
-      if (node.text && node.text.length > 2) { // 2文字以上のトークンのみ
-        tokens.push(node.text);
+    if (nodeObj.type === 'identifier' || 
+        nodeObj.type === 'property_identifier' ||
+        nodeObj.type === 'type_identifier') {
+      if (typeof nodeObj.text === 'string' && nodeObj.text.length > 2) { // 2文字以上のトークンのみ
+        tokens.push(nodeObj.text);
       }
     }
     
     // 子ノードを再帰的に処理
-    if (node.children) {
-      for (const child of node.children) {
+    if (nodeObj.children && Array.isArray(nodeObj.children)) {
+      for (const child of nodeObj.children) {
         this.extractTokensFromNode(child, tokens);
       }
     }
