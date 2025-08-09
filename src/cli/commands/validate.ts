@@ -6,6 +6,7 @@
 import { RealWorldProjectValidator, ValidationResult } from '../../security/validation/RealWorldProjectValidator';
 import { FrameworkTestGenerator, GenerationConfig } from '../../security/validation/FrameworkTestGenerator';
 import { AccuracyEvaluationSystem, AccuracyMetrics, DetailedAccuracyResult } from '../../security/validation/AccuracyEvaluationSystem';
+import { SampleProject, TestCase, FrameworkBreakdown } from './validate-types';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -263,7 +264,7 @@ export class ValidateCommand {
   /**
    * サンプルプロジェクト生成
    */
-  private async generateSampleProjects(): Promise<any[]> {
+  private async generateSampleProjects(): Promise<SampleProject[]> {
     // 実際の実装では、各フレームワークの代表的なプロジェクト構造を生成
     const currentDir = process.cwd();
     
@@ -334,8 +335,8 @@ export class ValidateCommand {
   /**
    * 検証結果からテストケースを収集
    */
-  private async collectTestCasesFromResults(results: ValidationResult[]): Promise<any[]> {
-    const testCases: any[] = [];
+  private async collectTestCasesFromResults(results: ValidationResult[]): Promise<TestCase[]> {
+    const testCases: TestCase[] = [];
     
     for (const result of results) {
       // 解析結果からテストケースオブジェクトを構築
@@ -582,8 +583,8 @@ export class ValidateCommand {
     return 8.5; // 平均8.5x速度向上を仮定
   }
 
-  private generateFrameworkBreakdown(results: ValidationResult[]): Record<string, any> {
-    const breakdown: Record<string, any> = {};
+  private generateFrameworkBreakdown(results: ValidationResult[]): FrameworkBreakdown {
+    const breakdown: FrameworkBreakdown = {};
     
     const frameworks = [...new Set(results.map(r => r.project.framework))];
     
