@@ -281,7 +281,10 @@ describe('ConfigSecurity Security Tests', () => {
       
       expect(result.isValid).toBe(true);
       expect(result.sanitizedConfig).toBeDefined();
-      expect(result.sanitizedConfig.plugins['test-existence'].enabled).toBe(true);
+      if (result.sanitizedConfig) {
+        const config = result.sanitizedConfig as Record<string, any>;
+        expect(config.plugins['test-existence'].enabled).toBe(true);
+      }
     });
 
     test('危険なパターンがサニタイズされる', async () => {
@@ -305,7 +308,10 @@ describe('ConfigSecurity Security Tests', () => {
       
       expect(result.isValid).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.sanitizedConfig.excludePatterns).not.toContain('../../../etc/passwd');
+      if (result.sanitizedConfig) {
+        const config = result.sanitizedConfig as Record<string, any>;
+        expect(config.excludePatterns).not.toContain('../../../etc/passwd');
+      }
     });
 
     test('無効なプラグイン設定がフィルタリングされる', async () => {
@@ -392,6 +398,138 @@ describe('ConfigSecurity Security Tests', () => {
       
       // 制限の更新確認は間接的（実際の制限値は非公開）
       expect(configSecurity).toBeDefined();
+    });
+  });
+
+  describe('型安全性テスト (v0.8.0)', () => {
+    test('ConfigValidationResult.sanitizedConfig はunknown型として扱われる', async () => {
+      const validConfig = {
+        plugins: {
+          'test-plugin': { enabled: true }
+        }
+      };
+      
+      const configPath = path.join(tempDir, 'valid.json');
+      fs.writeFileSync(configPath, JSON.stringify(validConfig));
+      
+      const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
+      
+      if (result.isValid && result.sanitizedConfig) {
+        // unknown型として扱われることを確認
+        const config = result.sanitizedConfig;
+        
+        // 型ガードやアサーションが必要
+        expect(typeof config).toBe('object');
+        expect(config).not.toBeNull();
+        
+        // プロパティアクセスには型チェックが必要
+        if (config && typeof config === 'object' && 'plugins' in config) {
+          expect(config.plugins).toBeDefined();
+        }
+      }
+    });
+
+    test('様々な型の設定値を安全に処理', async () => {
+      const mixedConfig = {
+        stringValue: 'text',
+        numberValue: 42,
+        booleanValue: true,
+        nullValue: null,
+        arrayValue: [1, 2, 3],
+        objectValue: { nested: 'data' },
+        plugins: {}
+      };
+      
+      const configPath = path.join(tempDir, 'mixed.json');
+      fs.writeFileSync(configPath, JSON.stringify(mixedConfig));
+      
+      const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
+      
+      expect(result.isValid).toBe(true);
+      if (result.sanitizedConfig) {
+        // unknown型として適切に処理されることを確認
+        const config = result.sanitizedConfig;
+        expect(config).toBeDefined();
+        expect(typeof config).toBe('object');
+      }
+    });
+
+    test('不正な型の設定値を検出して拒否', async () => {
+      // JSONでは表現できないが、文字列として不正な構造を作成
+      const invalidConfig = '{ "test": undefined }';
+      
+      const configPath = path.join(tempDir, 'invalid.json');
+      fs.writeFileSync(configPath, invalidConfig);
+      
+      const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
+      
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    test('配列内の要素の型チェック', async () => {
+      const arrayConfig = {
+        excludePatterns: ['valid', 123, null, { obj: 'invalid' }],
+        plugins: {}
+      };
+      
+      const configPath = path.join(tempDir, 'array-types.json');
+      fs.writeFileSync(configPath, JSON.stringify(arrayConfig));
+      
+      const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
+      
+      // 型の検証が行われることを確認
+      expect(result.warnings.length).toBeGreaterThan(0);
+      if (result.sanitizedConfig) {
+        const config = result.sanitizedConfig as Record<string, unknown>;
+        if (Array.isArray(config.excludePatterns)) {
+          // 文字列以外の要素がフィルタリングされることを確認
+          config.excludePatterns.forEach((pattern: unknown) => {
+            expect(typeof pattern).toBe('string');
+          });
+        }
+      }
+    });
+
+    test('深くネストされたオブジェクトの型安全性', async () => {
+      const nestedConfig = {
+        level1: {
+          level2: {
+            level3: {
+              value: 'deep'
+            }
+          }
+        },
+        plugins: {}
+      };
+      
+      const configPath = path.join(tempDir, 'nested.json');
+      fs.writeFileSync(configPath, JSON.stringify(nestedConfig));
+      
+      const result = await configSecurity.loadAndValidateConfig(configPath, tempDir);
+      
+      expect(result.isValid).toBe(true);
+      if (result.sanitizedConfig) {
+        // 深いネストへのアクセスには適切な型チェックが必要
+        const config = result.sanitizedConfig;
+        expect(config).toBeDefined();
+        
+        // 安全なアクセスのためのヘルパー関数
+        const safeAccess = (obj: unknown, ...keys: string[]): unknown => {
+          let current: unknown = obj;
+          for (const key of keys) {
+            if (current && typeof current === 'object' && key in current) {
+              current = (current as Record<string, unknown>)[key];
+            } else {
+              return undefined;
+            }
+          }
+          return current;
+        };
+        
+        const deepValue = safeAccess(config, 'level1', 'level2', 'level3', 'value');
+        expect(deepValue).toBe('deep');
+      }
     });
   });
 });
