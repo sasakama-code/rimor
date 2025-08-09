@@ -82,11 +82,11 @@ const createMockTest = (testPath: string = '/test/example.test.ts'): Test => ({
     config: {
       rootDir: '/test',
       transform: []
-    } as any,
-    hasteFS: {} as any,
-    resolver: {} as any,
-    moduleMap: {} as any
-  },
+    },
+    hasteFS: {},
+    resolver: {},
+    moduleMap: {}
+  } as any, // Test.contextの型が複雑なため、as anyを使用
   path: testPath,
   duration: 1000
 });

@@ -19,8 +19,8 @@ export interface TestErrorContext {
   error: {
     message: string;
     stack?: string;
-    actual?: any;
-    expected?: any;
+    actual?: unknown;
+    expected?: unknown;
   };
   
   // コードコンテキスト（Select Context）
@@ -50,7 +50,7 @@ export interface TestErrorContext {
   };
   
   // CIトレーサビリティ情報（オプション）
-  ciTraceability?: any;
+  ciTraceability?: unknown;
   
   // 推奨アクション（Compress Context）
   suggestedActions: SuggestedAction[];
@@ -86,7 +86,7 @@ export class TestErrorContextCollector {
    * テストエラーのコンテキストを収集
    */
   async collectErrorContext(
-    error: Error | any,
+    error: Error | unknown,
     testPath: string,
     testName: string,
     projectPath: string
@@ -136,20 +136,28 @@ export class TestErrorContextCollector {
   /**
    * エラー詳細の抽出
    */
-  private extractErrorDetails(error: Error | any): TestErrorContext['error'] {
+  private extractErrorDetails(error: Error | unknown): TestErrorContext['error'] {
+    // エラーオブジェクトの型ガード
+    const isErrorLike = (e: unknown): e is { message?: string; stack?: string } => {
+      return e !== null && typeof e === 'object';
+    };
+    
     const details: TestErrorContext['error'] = {
-      message: error?.message || String(error),
-      stack: error?.stack
+      message: (isErrorLike(error) && error.message) ? error.message : String(error),
+      stack: isErrorLike(error) ? error.stack : undefined
     };
     
     // Jest特有のエラー情報を抽出
-    if (error && typeof error === 'object') {
-      if ('matcherResult' in error) {
-        details.actual = error.matcherResult?.actual;
-        details.expected = error.matcherResult?.expected;
-      } else if ('actual' in error && 'expected' in error) {
-        details.actual = error.actual;
-        details.expected = error.expected;
+    if (error && typeof error === 'object' && error !== null) {
+      const errorObj = error as Record<string, unknown>;
+      
+      if ('matcherResult' in errorObj && errorObj.matcherResult && typeof errorObj.matcherResult === 'object') {
+        const matcherResult = errorObj.matcherResult as Record<string, unknown>;
+        details.actual = matcherResult.actual;
+        details.expected = matcherResult.expected;
+      } else if ('actual' in errorObj && 'expected' in errorObj) {
+        details.actual = errorObj.actual;
+        details.expected = errorObj.expected;
       }
     }
     
@@ -165,7 +173,7 @@ export class TestErrorContextCollector {
    * コードコンテキストの抽出
    */
   private async extractCodeContext(
-    error: Error | any,
+    error: Error | unknown,
     testPath: string,
     testName: string,
     projectPath: string
@@ -325,8 +333,16 @@ export class TestErrorContextCollector {
     return ErrorType.UNKNOWN;
   }
   
-  private extractFailedLine(error: Error | any): number {
-    if (!error?.stack) return 1;
+  private extractFailedLine(error: Error | unknown): number {
+    // 型ガードを使用してstackプロパティの存在を確認
+    const hasStack = (e: unknown): e is { stack: string } => {
+      return e !== null && 
+             typeof e === 'object' && 
+             'stack' in e && 
+             typeof (e as Record<string, unknown>).stack === 'string';
+    };
+    
+    if (!hasStack(error)) return 1;
     
     const stackLines = error.stack.split('\n');
     for (const line of stackLines) {
