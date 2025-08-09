@@ -10,12 +10,12 @@ import { debug } from '../utils/debug';
 /**
  * ワーカータスク
  */
-interface WorkerTask {
+interface WorkerTask<T = unknown> {
   id: string;
   type: 'analyze';
-  data: any;
-  resolve: (value: any) => void;
-  reject: (reason?: any) => void;
+  data: T;
+  resolve: (value: T) => void;
+  reject: (reason?: unknown) => void;
 }
 
 /**
@@ -24,7 +24,7 @@ interface WorkerTask {
 interface WorkerInfo {
   worker: Worker;
   busy: boolean;
-  taskQueue: WorkerTask[];
+  taskQueue: WorkerTask<unknown>[];
 }
 
 /**
@@ -33,7 +33,7 @@ interface WorkerInfo {
  */
 export class WorkerPool {
   private workers: WorkerInfo[] = [];
-  private taskQueue: WorkerTask[] = [];
+  private taskQueue: WorkerTask<unknown>[] = [];
   private initialized = false;
   
   constructor(private size: number = 4) {
@@ -79,17 +79,17 @@ export class WorkerPool {
   /**
    * タスクを実行
    */
-  async execute(type: string, data: any): Promise<any> {
+  async execute<T = unknown>(type: string, data: T): Promise<T> {
     if (!this.initialized) {
       throw new Error('Worker pool not initialized');
     }
     
     return new Promise((resolve, reject) => {
-      const task: WorkerTask = {
+      const task: WorkerTask<unknown> = {
         id: this.generateTaskId(),
         type: 'analyze',
-        data,
-        resolve,
+        data: data as unknown,
+        resolve: resolve as (value: unknown) => void,
         reject
       };
       
@@ -223,7 +223,7 @@ export class WorkerPool {
   /**
    * タスクを割り当て
    */
-  private assignTask(workerInfo: WorkerInfo, task: WorkerTask): void {
+  private assignTask(workerInfo: WorkerInfo, task: WorkerTask<unknown>): void {
     workerInfo.busy = true;
     workerInfo.taskQueue.push(task);
     
