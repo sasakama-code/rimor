@@ -15,6 +15,41 @@ import { Issue } from '../core/types';
 import { FileScore } from '../scoring/types';
 import { PathSecurity } from '../utils/pathSecurity';
 
+// 内部で使用する型定義
+interface FileAnalysisItem {
+  path: string;
+  score: number;
+  language?: string;
+  issues: Array<{
+    description: string;
+    severity: string;
+    location: {
+      startLine: number;
+    };
+    context: {
+      targetCode: {
+        content?: string;
+      };
+    };
+    fix: {
+      code: {
+        template: string;
+      };
+      explanation: string;
+    };
+  }>;
+}
+
+interface ActionableTask {
+  id: string;
+  priority: number;
+  type: string;
+  description: string;
+  automatable: boolean;
+  estimatedImpact: ImpactEstimation;
+  steps: ActionStep[];
+}
+
 /**
  * AI向け出力フォーマッター v0.6.0
  * 分析結果をAIツールが理解しやすい形式で出力
@@ -516,7 +551,7 @@ export class AIOptimizedFormatter {
     }
   }
 
-  private buildMarkdownHeader(metadata: any, qualityOverview: any): string {
+  private buildMarkdownHeader(metadata: Record<string, unknown>, qualityOverview: Record<string, unknown>): string {
     return `# Rimor Test Quality Analysis Report
 
 ## Project Context
@@ -531,7 +566,7 @@ Found ${qualityOverview.criticalIssues} critical issues requiring immediate atte
 `;
   }
 
-  private buildMarkdownFiles(fileAnalysis: any[], options: FormatterOptions): string {
+  private buildMarkdownFiles(fileAnalysis: FileAnalysisItem[], options: FormatterOptions): string {
     let markdown = '';
     
     for (const file of fileAnalysis) {
@@ -555,7 +590,7 @@ Found ${qualityOverview.criticalIssues} critical issues requiring immediate atte
     return markdown;
   }
 
-  private buildMarkdownTasks(actionableTasks: any[]): string {
+  private buildMarkdownTasks(actionableTasks: ActionableTask[]): string {
     let markdown = '## Automated Tasks\n\n';
     
     for (const task of actionableTasks) {
@@ -574,7 +609,7 @@ Found ${qualityOverview.criticalIssues} critical issues requiring immediate atte
     return markdown;
   }
 
-  private buildMarkdownInstructions(instructions: any): string {
+  private buildMarkdownInstructions(instructions: Record<string, unknown>): string {
     return `---
 
 ## Instructions for AI

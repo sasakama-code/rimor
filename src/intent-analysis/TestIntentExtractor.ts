@@ -647,7 +647,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     intent: TestIntent,
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<DomainInference | null> {
+  ): Promise<TestRealizationResult> {
     if (!this.domainEngine) {
       this.domainEngine = new DomainInferenceEngine();
     }
@@ -674,7 +674,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       actual
     );
 
-    return primaryDomain;
+    // 基本の評価結果を返す（ドメイン情報は内部で活用済み）
+    return baseResult;
   }
 
   /**
@@ -801,7 +802,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
     // クリティカルパスのカバレッジを判定
     const criticalFunctions = ['calculateTax', 'processPayment', 'validateOrder'];
-    const criticalPathCoverage = criticalFunctions.some(f => coveredFunctions.includes(f));
+    const criticalCoveredCount = criticalFunctions.filter(f => coveredFunctions.includes(f)).length;
+    const criticalPathCoverage = criticalFunctions.length > 0 ? criticalCoveredCount / criticalFunctions.length : 0;
 
     // ビジネスリスクの評価
     // calculateTaxがカバーされていればlowリスク
@@ -867,21 +869,18 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (domain && domain.domain === 'authentication') {
       suggestions.push({
         type: 'security',
-        category: 'security',
         priority: 'critical',
         impact: 'critical',
         description: '無効な認証情報でのテストを追加してください'
       });
       suggestions.push({
         type: 'security',
-        category: 'security',
         priority: 'critical',
         impact: 'critical',
         description: 'ブルートフォース攻撃への耐性テストを追加してください'
       });
       suggestions.push({
         type: 'security',
-        category: 'security',
         priority: 'high',
         impact: 'high',
         description: 'トークンの有効期限切れのテストを追加してください'
@@ -892,14 +891,12 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (domain && domain.domain === 'payment') {
       suggestions.push({
         type: 'reliability',
-        category: 'reliability',
         priority: 'critical',
         impact: 'critical',
         description: '決済失敗時のロールバックテストを追加してください'
       });
       suggestions.push({
         type: 'security',
-        category: 'security',
         priority: 'critical',
         impact: 'critical',
         description: 'クレジットカード情報の暗号化テストを追加してください'

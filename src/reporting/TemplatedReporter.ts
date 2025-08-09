@@ -100,7 +100,7 @@ export class TemplatedReporter {
   private prepareContext(
     data: StructuredAnalysisResult,
     options?: ReportGenerationOptions
-  ): any {
+  ): Record<string, unknown> {
     // オプションに基づいてデータをフィルタリング
     let filteredIssues = [...data.issues];
 
@@ -268,7 +268,7 @@ export class TemplatedReporter {
     });
 
     // デフォルト値
-    this.handlebars.registerHelper('default', (value: any, defaultValue: any) => {
+    this.handlebars.registerHelper('default', (value: unknown, defaultValue: unknown) => {
       return value !== undefined && value !== null ? value : defaultValue;
     });
 
@@ -281,21 +281,21 @@ export class TemplatedReporter {
       return a < b;
     });
 
-    this.handlebars.registerHelper('eq', (a: any, b: any) => {
+    this.handlebars.registerHelper('eq', (a: unknown, b: unknown) => {
       return a === b;
     });
 
-    this.handlebars.registerHelper('ne', (a: any, b: any) => {
+    this.handlebars.registerHelper('ne', (a: unknown, b: unknown) => {
       return a !== b;
     });
 
-    this.handlebars.registerHelper('and', (...args: any[]) => {
+    this.handlebars.registerHelper('and', (...args: unknown[]) => {
       // 最後の引数はHandlebarsのオプションオブジェクトなので除外
       const values = args.slice(0, -1);
       return values.every(v => !!v);
     });
 
-    this.handlebars.registerHelper('or', (...args: any[]) => {
+    this.handlebars.registerHelper('or', (...args: unknown[]) => {
       // 最後の引数はHandlebarsのオプションオブジェクトなので除外
       const values = args.slice(0, -1);
       return values.some(v => !!v);

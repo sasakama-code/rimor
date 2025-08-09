@@ -10,6 +10,7 @@ import { cleanupManager } from '../../utils/cleanupManager';
 // v0.4.1 セキュリティ強化
 import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
 import { PathSecurity } from '../../utils/pathSecurity';
+import { Issue } from '../../core/types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -247,18 +248,42 @@ export class AnalyzeCommand {
       .map(([name, _]) => name);
   }
   
-  private formatAsJson(result: any, targetPath: string, isParallel?: boolean): object {
-    const jsonOutput: any = {
+  private formatAsJson(result: {totalFiles: number; issues: Issue[]; executionTime?: number; cacheStats?: unknown; parallelStats?: unknown; performanceReport?: unknown}, targetPath: string, isParallel?: boolean): object {
+    interface JsonOutput {
+      summary: {
+        totalFiles: number;
+        issuesFound: number;
+        testCoverage: number;
+        executionTime?: number;
+      };
+      issues: unknown[];
+      targetPath: string;
+      config: {
+        targetPath: string;
+        enabledPlugins: string[];
+        format: string;
+        processingMode: string;
+      };
+      performance?: {
+        cacheStats?: unknown;
+        parallelStats?: unknown;
+        processingMode?: string;
+        performanceReport?: unknown;
+      };
+    }
+    
+    const jsonOutput: JsonOutput = {
       summary: {
         totalFiles: result.totalFiles,
         issuesFound: result.issues.length,
-        testCoverage: result.totalFiles > 0 ? Math.round(((result.totalFiles - result.issues.filter((i: any) => i.type === 'missing-test').length) / result.totalFiles) * 100) : 0,
+        testCoverage: result.totalFiles > 0 ? Math.round(((result.totalFiles - result.issues.filter((i: Issue) => i.type === 'missing-test').length) / result.totalFiles) * 100) : 0,
         executionTime: result.executionTime
       },
-      issues: result.issues.map((issue: any) => ({
+      issues: result.issues.map((issue: Issue) => ({
         ...issue,
         plugin: this.getPluginNameFromIssueType(issue.type)
       })),
+      targetPath,
       config: {
         targetPath,
         enabledPlugins: this.getEnabledPluginNames(),
