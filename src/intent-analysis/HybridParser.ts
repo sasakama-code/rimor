@@ -142,13 +142,14 @@ export class HybridParser {
         };
         this.parseStats.set(filePath, metadata);
         return { ast, metadata };
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         if (this.config.enableWarnings) {
-          console.warn(`TreeSitter parsing failed for ${filePath}: ${error.message}`);
+          console.warn(`TreeSitter parsing failed for ${filePath}: ${errorMessage}`);
         }
         // フォールバック
         if (this.config.enableFallback) {
-          return this.parseWithBabelFallback(content, filePath, originalSize, startTime, error.message);
+          return this.parseWithBabelFallback(content, filePath, originalSize, startTime, errorMessage);
         }
         throw error;
       }
@@ -159,13 +160,14 @@ export class HybridParser {
     if (this.config.enableSmartChunking && originalSize >= this.config.chunkingThreshold) {
       try {
         return await this.parseWithSmartChunking(filePath, originalSize, startTime);
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         if (this.config.enableWarnings) {
-          console.warn(`SmartChunking failed for ${filePath}: ${error.message}`);
+          console.warn(`SmartChunking failed for ${filePath}: ${errorMessage}`);
         }
         // SmartChunkingが失敗した場合はBabelにフォールバック
         if (this.config.enableFallback) {
-          return this.parseWithBabelFallback(content, filePath, originalSize, startTime, `SmartChunking failed: ${error.message}`);
+          return this.parseWithBabelFallback(content, filePath, originalSize, startTime, `SmartChunking failed: ${errorMessage}`);
         }
         throw error;
       }
@@ -250,11 +252,12 @@ export class HybridParser {
 
       this.parseStats.set(filePath, metadata);
       return { ast, metadata };
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       if (this.config.enableWarnings) {
-        console.warn(`Babel parsing also failed for ${filePath}: ${error.message}`);
+        console.warn(`Babel parsing also failed for ${filePath}: ${errorMessage}`);
       }
-      throw new Error(`Both parsers failed for ${filePath}: ${error.message}`);
+      throw new Error(`Both parsers failed for ${filePath}: ${errorMessage}`);
     }
   }
 
@@ -378,7 +381,7 @@ export class HybridParser {
       
       // 子ノードを再帰的に処理
       for (const key in node) {
-        const value = (node as any)[key];
+        const value = (node as unknown as Record<string, unknown>)[key];
         if (value && typeof value === 'object') {
           if (Array.isArray(value)) {
             for (const child of value) {

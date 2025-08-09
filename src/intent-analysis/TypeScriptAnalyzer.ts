@@ -347,8 +347,10 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
     };
     
     // 配列型の処理
-    if (type.symbol && type.symbol.name === 'Array' && (type as any).typeArguments) {
-      typeInfo.typeArguments = (type as any).typeArguments.map((arg: ts.Type) => 
+    // TypeScript内部APIを使用して型引数を取得
+    const typeRef = type as ts.TypeReference;
+    if (type.symbol && type.symbol.name === 'Array' && typeRef.typeArguments) {
+      typeInfo.typeArguments = typeRef.typeArguments.map((arg: ts.Type) => 
         this.convertToTypeInfo(arg)
       );
     }
