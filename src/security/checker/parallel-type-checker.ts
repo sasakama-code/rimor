@@ -11,10 +11,14 @@ import { Worker } from 'worker_threads';
 import { EventEmitter } from 'events';
 import {
   TestMethod,
+  TaintLevel,
+  TaintSource
+} from '../../core/types';
+import {
   MethodAnalysisResult,
   SecurityIssue,
   TypeInferenceResult
-} from '../../core/types';
+} from '../types/flow-types';
 import {
   TaintQualifier,
   QualifiedType,
@@ -47,7 +51,7 @@ export interface ParallelTypeCheckConfig {
 interface WorkerTask {
   id: string;
   method: TestMethod;
-  dependencies: Array<[string, QualifiedType<any>]>;
+  dependencies: Array<[string, QualifiedType<unknown>]>;
 }
 
 /**
@@ -67,7 +71,7 @@ interface WorkerResult {
 export interface MethodTypeCheckResult {
   method: TestMethod;
   typeCheckResult: TypeCheckResult;
-  inferredTypes: Map<string, QualifiedType<any>>;
+  inferredTypes: Map<string, QualifiedType<unknown>>;
   securityIssues: SecurityIssue[];
   executionTime: number;
 }
@@ -212,15 +216,15 @@ export class ParallelTypeChecker extends EventEmitter {
   /**
    * 依存関係の解析
    */
-  private async analyzeDependencies(methods: TestMethod[]): Promise<Map<string, Map<string, QualifiedType<any>>>> {
-    const dependencies = new Map<string, Map<string, QualifiedType<any>>>();
+  private async analyzeDependencies(methods: TestMethod[]): Promise<Map<string, Map<string, QualifiedType<unknown>>>> {
+    const dependencies = new Map<string, Map<string, QualifiedType<unknown>>>();
     
     // 簡易実装：メソッド間の依存関係を検出
     for (const method of methods) {
-      const deps = new Map<string, QualifiedType<any>>();
+      const deps = new Map<string, QualifiedType<unknown>>();
       
       // インポートや共有変数の検出
-      const imports = this.extractImports(method.content);
+      const imports = this.extractImports(method.content || '');
       for (const imp of imports) {
         // 既知の型情報から依存関係を解決
         if (this.results.has(imp)) {
@@ -408,31 +412,31 @@ export class ParallelTypeChecker extends EventEmitter {
   async performTypeCheck(task: WorkerTask): Promise<MethodTypeCheckResult> {
     const startTime = Date.now();
     const errors: TypeQualifierError[] = [];
-    const warnings: Array<{ message: string; location?: any }> = [];
-    const inferredTypes = new Map<string, QualifiedType<any>>();
+    const warnings: Array<{ message: string; location?: { file: string; line: number; column: number } }> = [];
+    const inferredTypes = new Map<string, QualifiedType<unknown>>();
     const securityIssues: SecurityIssue[] = [];
     
     try {
       // ローカル変数の最適化
       const localAnalysis = await this.localOptimizer.analyzeLocalVariables(
-        task.method.content,
-        task.method.name
+        task.method.content || '',
+        task.method.name || 'anonymous'
       );
       
       // 推論エンジンによる型推論
       const inferenceState = await this.inferenceEngine.inferTypes(
-        task.method.content,
-        task.method.filePath
+        task.method.content || '',
+        task.method.filePath || ''
       );
       
       // 型チェック
       inferenceState.typeMap.forEach((qualifier, variable) => {
         // TaintQualifierをQualifiedTypeに変換
-        const qualifiedType: QualifiedType<any> = qualifier === '@Tainted' 
-          ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as any
+        const qualifiedType: QualifiedType<unknown> = qualifier === '@Tainted' 
+          ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as QualifiedType<unknown>
           : qualifier === '@Untainted'
-          ? { __brand: '@Untainted', __value: variable } as any
-          : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as any;
+          ? { __brand: '@Untainted', __value: variable } as QualifiedType<unknown>
+          : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as QualifiedType<unknown>;
         
         inferredTypes.set(variable, qualifiedType);
         
@@ -445,7 +449,7 @@ export class ParallelTypeChecker extends EventEmitter {
             depType.__brand,
             qualifiedType.__brand,
             {
-              file: task.method.filePath,
+              file: task.method.filePath || '',
               line: 0,
               column: 0
             }
@@ -464,7 +468,7 @@ export class ParallelTypeChecker extends EventEmitter {
               severity: 'error',
               message: `Tainted variable ${variable} escapes method scope`,
               location: {
-                file: task.method.filePath,
+                file: task.method.filePath || '',
                 line: 0,
                 column: 0
               }

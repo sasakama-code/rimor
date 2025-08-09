@@ -169,12 +169,16 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
       security: securityScore,
       coverage: testCoverage,
       confidence: 0.85,
+      dimensions: {
+        completeness: testCoverage,
+        correctness: authTests.length > 0 ? 75 : 0,
+        maintainability: (hasPasswordTest ? 40 : 0) + (hasBruteForceTest ? 40 : 0) + (hasMfaTest ? 20 : 0)
+      },
       details: {
-        testCoverage,
-        passwordTestImplemented: hasPasswordTest,
-        bruteForceProtection: hasBruteForceTest,
-        mfaImplemented: hasMfaTest,
-        missingTestsCount: missingTests.length
+        strengths: hasPasswordTest ? ['パスワード強度テスト実装済み'] : [],
+        weaknesses: !hasPasswordTest ? ['パスワード強度テスト不足'] : [],
+        suggestions: [],
+        validationCoverage: hasPasswordTest ? 100 : 0
       }
     };
   }
@@ -182,7 +186,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (!evaluation.details?.passwordTestImplemented) {
+    if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 100) {
       improvements.push({
         id: 'add-password-strength-tests',
         priority: 'critical',
@@ -190,15 +194,12 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         title: 'パスワード強度テストの追加',
         description: 'パスワードの複雑性要件（長さ、大小文字、数字、特殊文字）を検証するテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 30 
-        },
+        impact: 30,
         automatable: true
       });
     }
 
-    if (!evaluation.details?.bruteForceProtection) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 100) {
       improvements.push({
         id: 'add-brute-force-tests',
         priority: 'critical',
@@ -206,15 +207,12 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         title: 'ブルートフォース対策テストの追加',
         description: 'ログイン試行回数制限、アカウントロックアウト、レート制限のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 45 
-        },
+        impact: 30,
         automatable: true
       });
     }
 
-    if (!evaluation.details?.mfaImplemented) {
+    if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 100) {
       improvements.push({
         id: 'add-mfa-tests',
         priority: 'high',
@@ -222,10 +220,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         title: '多要素認証テストの追加',
         description: 'TOTP、SMS、バックアップコードなどのMFA機能のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 20, 
-          effortMinutes: 60 
-        },
+        impact: 20,
         automatable: true
       });
     }
@@ -238,10 +233,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         title: 'セッション管理テストの追加',
         description: 'セッションタイムアウト、セッション固定攻撃対策、セキュアなセッション生成のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 25, 
-          effortMinutes: 40 
-        },
+        impact: 25,
         automatable: true
       });
     }

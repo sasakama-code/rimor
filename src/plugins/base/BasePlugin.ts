@@ -12,6 +12,7 @@ import {
   Feedback
 } from '../../core/types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
+import { LogMetadata, ErrorLogMetadata } from '../types/log-types';
 
 export abstract class BasePlugin implements ITestQualityPlugin {
   abstract id: string;
@@ -28,9 +29,8 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   async autoFix?(_testFile: TestFile, _improvements: Improvement[]): Promise<FixResult> {
     return {
       success: false,
-      applied: [],
-      failed: [],
-      summary: 'Auto-fix not implemented for this plugin'
+      modifiedFiles: [],
+      errors: ['Auto-fix not implemented for this plugin']
     };
   }
 
@@ -79,7 +79,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     location: CodeLocation,
     confidence: number,
     evidence: Evidence[],
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): DetectionResult {
     return {
       patternId,
@@ -95,12 +95,12 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected createImprovement(
     id: string,
     priority: 'critical' | 'high' | 'medium' | 'low',
-    type: 'add' | 'modify' | 'remove' | 'refactor',
+    type: 'add-test' | 'fix-assertion' | 'improve-coverage' | 'refactor' | 'documentation' | 'performance' | 'security',
     title: string,
     description: string,
     location: CodeLocation,
-    estimatedImpact: { scoreImprovement: number; effortMinutes: number },
-    automatable: boolean = false
+    estimatedImpact: number,
+    autoFixable: boolean = false
   ): Improvement {
     return {
       id,
@@ -110,7 +110,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       description,
       location,
       estimatedImpact,
-      automatable
+      autoFixable
     };
   }
 
@@ -130,7 +130,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: overall,
         maintainability: 75
@@ -180,24 +180,24 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   }
 
   // ヘルパーメソッド: ログ出力（将来的なログシステム連携用）
-  protected logDebug(message: string, metadata?: any): void {
+  protected logDebug(message: string, metadata?: LogMetadata): void {
     // MVP: コンソール出力、将来的には適切なログシステムに置き換え
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${this.name}] DEBUG:`, message, metadata || '');
     }
   }
 
-  protected logInfo(message: string, metadata?: any): void {
+  protected logInfo(message: string, metadata?: LogMetadata): void {
     if (process.env.NODE_ENV === 'development') {
       console.info(`[${this.name}] INFO:`, message, metadata || '');
     }
   }
 
-  protected logWarning(message: string, metadata?: any): void {
+  protected logWarning(message: string, metadata?: LogMetadata): void {
     console.warn(`[${this.name}] WARNING:`, message, metadata || '');
   }
 
-  protected logError(message: string, error?: any): void {
+  protected logError(message: string, error?: unknown): void {
     // 共通エラーハンドラーを使用
     errorHandler.handlePluginError(
       error instanceof Error ? error : new Error(message),

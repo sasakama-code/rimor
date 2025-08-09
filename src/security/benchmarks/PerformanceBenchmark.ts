@@ -677,21 +677,13 @@ ${methods.join('\n')}
     while ((match = methodPattern.exec(content)) !== null) {
       methods.push({
         name: match[1],
+        type: 'test',
         filePath: testCase.file,
         content: match[2],
-        signature: {
-          name: match[1],
-          parameters: [],
-          returnType: 'void',
-          annotations: [],
-          visibility: 'public',
-          isAsync: false
-        },
+        signature: match[1],
         location: {
-          startLine: 1,
-          endLine: 10,
-          startColumn: 0,
-          endColumn: 0
+          start: { line: 1, column: 0 },
+          end: { line: 10, column: 0 }
         }
       });
     }

@@ -119,7 +119,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: testCoverageScore * 100,
         correctness: securityScore * 100,
         maintainability: 80
@@ -136,7 +136,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
       improvements.push({
         id: 'add-security-tests',
         priority: 'high',
-        type: 'add',
+        type: 'security',
         category: 'security',
         title: 'Add missing security tests',
         description: 'Add security tests for authentication, authorization, and input validation',
@@ -145,17 +145,14 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 40,
-          effortMinutes: 45
-        },
-        automatable: false
+        estimatedImpact: 0.4,
+        autoFixable: false
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
         id: 'strengthen-security-tests',
         priority: 'medium',
-        type: 'modify',
+        type: 'security',
         category: 'security',
         title: 'Strengthen security tests',
         description: 'Improve existing security tests with more comprehensive scenarios',
@@ -164,11 +161,8 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 25,
-          effortMinutes: 30
-        },
-        automatable: false
+        estimatedImpact: 0.25,
+        autoFixable: false
       });
     }
 

@@ -1,4 +1,5 @@
-import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage } from './types';
+import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage, VersionConstraint } from './types';
+import { PackageJsonConfig } from '../core/types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
@@ -28,13 +29,13 @@ export class DependencyAnalyzer {
     }
 
     const packageJsonPath = path.join(projectPath, 'package.json');
-    let packageJson: any = {};
+    let packageJson: Partial<PackageJsonConfig> = {};
 
     // package.jsonの読み込み
     try {
       if (fs.existsSync(packageJsonPath)) {
         const content = fs.readFileSync(packageJsonPath, 'utf-8');
-        packageJson = JSON.parse(content);
+        packageJson = JSON.parse(content) as PackageJsonConfig;
       }
     } catch (error) {
       // package.jsonが不正な場合は空のオブジェクトを使用
@@ -45,7 +46,7 @@ export class DependencyAnalyzer {
     const lockFileInfo = await this.parseLockFiles(projectPath);
 
     // 依存関係情報を抽出
-    const projectDependencies = await this.extractProjectDependencies(packageJson, lockFileInfo, projectPath);
+    const projectDependencies = await this.extractProjectDependencies(packageJson as PackageJsonConfig, lockFileInfo, projectPath);
     const fileDependencies = await this.analyzeFileDependencies(projectPath);
 
     // 循環依存の検出
@@ -139,10 +140,10 @@ export class DependencyAnalyzer {
       return [];
     }
 
-    let packageJson: any;
+    let packageJson: PackageJsonConfig;
     try {
       const content = fs.readFileSync(packageJsonPath, 'utf-8');
-      packageJson = JSON.parse(content);
+      packageJson = JSON.parse(content) as PackageJsonConfig;
     } catch {
       return [];
     }
@@ -210,22 +211,22 @@ export class DependencyAnalyzer {
   /**
    * バージョン制約を分析
    */
-  async analyzeVersionConstraints(projectPath: string): Promise<any[]> {
+  async analyzeVersionConstraints(projectPath: string): Promise<VersionConstraint[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       return [];
     }
 
-    let packageJson: any;
+    let packageJson: PackageJsonConfig;
     try {
       const content = fs.readFileSync(packageJsonPath, 'utf-8');
-      packageJson = JSON.parse(content);
+      packageJson = JSON.parse(content) as PackageJsonConfig;
     } catch {
       return [];
     }
 
     const lockFileInfo = await this.parseLockFiles(projectPath);
-    const constraints: any[] = [];
+    const constraints: VersionConstraint[] = [];
 
     const allDependencies = {
       ...packageJson.dependencies || {},
@@ -236,10 +237,12 @@ export class DependencyAnalyzer {
       const installed = lockFileInfo.get(name);
       
       constraints.push({
-        name,
-        declared: declared as string,
-        installed: installed || 'not installed',
-        satisfies: installed ? this.checkVersionSatisfies(declared as string, installed) : false
+        package: name,
+        declaredVersion: declared as string,
+        installedVersion: installed,
+        constraint: this.getVersionConstraintType(declared as string),
+        hasVulnerability: false,
+        suggestion: installed ? undefined : 'パッケージがインストールされていません'
       });
     });
 
@@ -271,7 +274,7 @@ export class DependencyAnalyzer {
   // Private helper methods
 
   private async extractProjectDependencies(
-    packageJson: any, 
+    packageJson: PackageJsonConfig, 
     lockFileInfo: Map<string, string>, 
     projectPath: string
   ): Promise<ProjectDependency[]> {
@@ -432,7 +435,7 @@ export class DependencyAnalyzer {
     return packages;
   }
 
-  private parsePackageLock(packageLock: any): Map<string, string> {
+  private parsePackageLock(packageLock: Record<string, unknown>): Map<string, string> {
     const packages = new Map<string, string>();
     
     if (packageLock.packages) {
@@ -589,7 +592,18 @@ export class DependencyAnalyzer {
     return builtInModules.includes(moduleName);
   }
 
-  private isImplicitlyUsed(packageName: string, packageJson: any): boolean {
+  /**
+   * バージョン制約のタイプを判定
+   */
+  private getVersionConstraintType(version: string): 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard' {
+    if (version.startsWith('^')) return 'caret';
+    if (version.startsWith('~')) return 'tilde';
+    if (version.includes('*') || version.includes('x')) return 'wildcard';
+    if (version.includes('>') || version.includes('<') || version.includes('||')) return 'range';
+    return 'exact';
+  }
+
+  private isImplicitlyUsed(packageName: string, packageJson: PackageJsonConfig): boolean {
     // TypeScriptの型定義パッケージ
     if (packageName.startsWith('@types/')) {
       return true;

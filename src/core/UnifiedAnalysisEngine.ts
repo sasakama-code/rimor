@@ -105,7 +105,7 @@ export class UnifiedAnalysisEngine {
   private legacyPluginManager: PluginManager;
   private qualityPluginManager: PluginManagerExtended;
   private configuration: AnalysisOptions;
-  private customPlugins: Map<string, any>;
+  private customPlugins: Map<string, IPlugin | ITestQualityPlugin>;
 
   constructor() {
     this.legacyPluginManager = new PluginManager();
@@ -135,10 +135,11 @@ export class UnifiedAnalysisEngine {
   /**
    * カスタムプラグインの登録（拡張性のため）
    */
-  registerCustomPlugin(plugin: any): void {
+  registerCustomPlugin(plugin: IPlugin | ITestQualityPlugin): void {
     // 開放閉鎖原則に従い、新しいプラグインタイプを追加可能にする
     if (this.isValidPlugin(plugin)) {
-      const pluginId = plugin.id || plugin.name || `custom-${Date.now()}`;
+      // ITestQualityPluginの場合はidを持つ
+      const pluginId = ('id' in plugin ? plugin.id : undefined) || plugin.name || `custom-${Date.now()}`;
       this.customPlugins.set(pluginId, plugin);
       debug.info(`Custom plugin registered: ${pluginId}`);
     } else {
@@ -149,10 +150,14 @@ export class UnifiedAnalysisEngine {
   /**
    * プラグインの妥当性チェック
    */
-  private isValidPlugin(plugin: any): boolean {
-    return plugin && 
-           (typeof plugin.analyze === 'function' || 
-            typeof plugin.detectPatterns === 'function');
+  private isValidPlugin(plugin: unknown): boolean {
+    if (!plugin || typeof plugin !== 'object') {
+      return false;
+    }
+    
+    const p = plugin as Record<string, unknown>;
+    return (typeof p.analyze === 'function' || 
+            typeof p.detectPatterns === 'function');
   }
 
   /**
@@ -182,7 +187,7 @@ export class UnifiedAnalysisEngine {
   /**
    * プラグインの安全な実行（Extract Method）
    */
-  private async runPluginSafely(plugin: IPlugin, file: string): Promise<{ issues: Issue[], error: any }> {
+  private async runPluginSafely(plugin: IPlugin, file: string): Promise<{ issues: Issue[], error: { pluginName: string; error: string } | null }> {
     try {
       const issues = await this.runWithTimeout(
         plugin.analyze(file),
@@ -245,10 +250,10 @@ export class UnifiedAnalysisEngine {
   /**
    * ファイルに対してプラグインを実行（Extract Method）
    */
-  private async runPluginsForFile(file: string): Promise<{ issues: Issue[], errors: any[] }> {
+  private async runPluginsForFile(file: string): Promise<{ issues: Issue[], errors: Array<{ pluginName: string; error: string }> }> {
     const plugins = this.legacyPluginManager.getPlugins();
     const issues: Issue[] = [];
-    const errors: any[] = [];
+    const errors: Array<{ pluginName: string; error: string }> = [];
 
     if (this.configuration.parallelExecution) {
       // 並列実行
@@ -292,7 +297,7 @@ export class UnifiedAnalysisEngine {
     const projectContext: ProjectContext = {
       rootPath: path.dirname(filePath),
       testFramework: 'jest', // 仮の値
-      language: path.extname(filePath).slice(1) as any
+      language: path.extname(filePath).slice(1) as 'javascript' | 'typescript' | 'python' | 'java' | 'other'
     };
 
     // テストファイル情報の作成
@@ -396,9 +401,9 @@ export class UnifiedAnalysisEngine {
     };
 
     // combinedScoreを必ず返す（デフォルト値を設定）
-    const finalCombinedScore = combinedScore || {
+    const finalCombinedScore: QualityScore = combinedScore || {
       overall: 0,
-      breakdown: { completeness: 0, correctness: 0, maintainability: 0 },
+      dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
       confidence: 0
     };
 
@@ -489,7 +494,7 @@ export class UnifiedAnalysisEngine {
     if (pluginResults.length === 0) {
       return {
         overall: 0,
-        breakdown: { completeness: 0, correctness: 0, maintainability: 0 },
+        dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
         confidence: 0
       };
     }
@@ -501,18 +506,18 @@ export class UnifiedAnalysisEngine {
     const overall = scores.reduce((sum, score, index) => 
       sum + score.overall * weights[index], 0) / totalWeight;
 
-    const breakdown = {
+    const dimensions = {
       completeness: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.completeness || 0) * weights[index], 0) / totalWeight,
+        sum + (score.dimensions?.completeness || 0) * weights[index], 0) / totalWeight,
       correctness: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.correctness || 0) * weights[index], 0) / totalWeight,
+        sum + (score.dimensions?.correctness || 0) * weights[index], 0) / totalWeight,
       maintainability: scores.reduce((sum, score, index) => 
-        sum + (score.breakdown?.maintainability || 0) * weights[index], 0) / totalWeight
+        sum + (score.dimensions?.maintainability || 0) * weights[index], 0) / totalWeight
     };
 
     return {
       overall,
-      breakdown,
+      dimensions,
       confidence: totalWeight / pluginResults.length
     };
   }

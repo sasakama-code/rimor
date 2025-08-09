@@ -10,6 +10,7 @@
 import { DomainDefinition, IntegrityHash } from './types';
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
+import { isNodeError, getErrorMessage } from '../utils/errorGuards';
 
 /**
  * 整合性ハッシュ生成器
@@ -133,8 +134,8 @@ export class IntegrityHashGenerator {
           error: 'ファイルが改ざんされている可能性があります'
         };
       }
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (isNodeError(error) && error.code === 'ENOENT') {
         return {
           valid: false,
           definition: null,
@@ -144,7 +145,7 @@ export class IntegrityHashGenerator {
       return {
         valid: false,
         definition: null,
-        error: `ファイルの読み込みに失敗しました: ${error.message}`
+        error: `ファイルの読み込みに失敗しました: ${getErrorMessage(error)}`
       };
     }
   }
@@ -153,7 +154,7 @@ export class IntegrityHashGenerator {
    * ハッシュ計算用にデータを準備
    * integrityフィールドを除外し、正規化する
    */
-  private prepareDataForHash(definition: DomainDefinition): any {
+  private prepareDataForHash(definition: DomainDefinition): unknown {
     // Defensive Programming: 循環参照対策
     try {
       // integrityフィールドを除外したコピーを作成
@@ -173,7 +174,7 @@ export class IntegrityHashGenerator {
    * オブジェクトを正規化
    * 日付をISO文字列に変換し、決定論的な形式にする
    */
-  private normalizeObject(obj: any): any {
+  private normalizeObject(obj: unknown): unknown {
     if (obj === null || obj === undefined) {
       return obj;
     }
@@ -190,15 +191,15 @@ export class IntegrityHashGenerator {
 
     if (typeof obj === 'object') {
       // オブジェクトのプロパティをソートして正規化
-      const normalized: any = {};
+      const normalized: Record<string, unknown> = {};
       const keys = Object.keys(obj).sort();
       
       for (const key of keys) {
         // 循環参照チェック
-        if (obj[key] === obj) {
+        if ((obj as Record<string, unknown>)[key] === obj) {
           normalized[key] = '[Circular]';
         } else {
-          normalized[key] = this.normalizeObject(obj[key]);
+          normalized[key] = this.normalizeObject((obj as Record<string, unknown>)[key]);
         }
       }
       
@@ -213,7 +214,7 @@ export class IntegrityHashGenerator {
    * @param data - ハッシュ対象のデータ
    * @returns ハッシュ値（16進数文字列）
    */
-  private computeHash(data: any): string {
+  private computeHash(data: unknown): string {
     try {
       // データをJSON文字列に変換
       const jsonString = JSON.stringify(data);
@@ -234,7 +235,7 @@ export class IntegrityHashGenerator {
   /**
    * JSON.parse用のreviverで日付文字列をDateオブジェクトに変換
    */
-  private dateReviver(key: string, value: any): any {
+  private dateReviver(key: string, value: unknown): unknown {
     // ISO 8601形式の日付文字列をDateオブジェクトに変換
     if (typeof value === 'string') {
       const datePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;

@@ -20,23 +20,14 @@ export {
 };
 
 /**
- * 汚染情報のメタデータ
+ * 汚染情報のメタデータ（flow-types.tsとの統一）
  */
 export interface TaintMetadata {
-  /** 汚染源 */
-  source: TaintSource;
-  /** 汚染の信頼度 (0.0-1.0) */
-  confidence: number;
-  /** 汚染が検出された位置 */
-  location: {
-    file: string;
-    line: number;
-    column: number;
-  };
-  /** 汚染パスの追跡情報 */
-  tracePath: TaintTraceStep[];
-  /** 関連するセキュリティルール */
-  securityRules: string[];
+  level: TaintLevel;
+  sources: TaintSource[];
+  sinks: SecuritySink[];
+  sanitizers: SanitizerType[];
+  propagationPath?: string[];
 }
 
 /**
@@ -79,19 +70,49 @@ export type SafeValue<T> = T & {
  * 汚染レベルの格子演算
  */
 export class TaintLattice {
+  // 汚染レベルの順序マッピング
+  private static readonly LEVEL_ORDER: Record<string, number> = {
+    'untainted': 0,
+    'unknown': 1,
+    'possibly_tainted': 2,
+    'tainted': 3,
+    'highly_tainted': 4,
+    'sanitized': 0 // sanitizedはuntaintedと同等
+  };
+
   /**
    * 格子の結合演算（join）- より高い汚染レベルを選択
    * Dorothy Denningの格子理論に基づく
    */
   static join(a: TaintLevel, b: TaintLevel): TaintLevel {
-    return Math.max(a, b) as TaintLevel;
+    const aOrder = this.LEVEL_ORDER[a] ?? 1;
+    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    const maxOrder = Math.max(aOrder, bOrder);
+    
+    // 順序から対応するTaintLevelを取得
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === maxOrder && level !== 'sanitized') {
+        return level as TaintLevel;
+      }
+    }
+    return 'unknown';
   }
 
   /**
    * 格子の交わり演算（meet）- より低い汚染レベルを選択
    */
   static meet(a: TaintLevel, b: TaintLevel): TaintLevel {
-    return Math.min(a, b) as TaintLevel;
+    const aOrder = this.LEVEL_ORDER[a] ?? 1;
+    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    const minOrder = Math.min(aOrder, bOrder);
+    
+    // 順序から対応するTaintLevelを取得
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === minOrder && level !== 'sanitized') {
+        return level as TaintLevel;
+      }
+    }
+    return 'untainted';
   }
 
   /**
@@ -101,14 +122,16 @@ export class TaintLattice {
    * @returns a ≤ b の場合 true
    */
   static lessThanOrEqual(a: TaintLevel, b: TaintLevel): boolean {
-    return a <= b;
+    const aOrder = this.LEVEL_ORDER[a] ?? 1;
+    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    return aOrder <= bOrder;
   }
 
   /**
    * 格子の高さを取得
    */
   static height(level: TaintLevel): number {
-    return level;
+    return this.LEVEL_ORDER[level] ?? 1;
   }
 
   /**
@@ -127,11 +150,19 @@ export class TaintLattice {
         
       case SanitizerType.INPUT_VALIDATION:
         // 検証により1レベル下げる
-        return Math.max(TaintLevel.UNTAINTED, currentLevel - 1) as TaintLevel;
+        const currentOrder = this.LEVEL_ORDER[currentLevel] ?? 1;
+        const newOrder = Math.max(0, currentOrder - 1);
+        for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+          if (order === newOrder && level !== 'sanitized') {
+            return level as TaintLevel;
+          }
+        }
+        return TaintLevel.UNTAINTED;
         
       case SanitizerType.TYPE_CONVERSION:
         // 型変換は部分的な効果
-        return currentLevel >= TaintLevel.LIKELY_TAINTED
+        const currentOrder2 = this.LEVEL_ORDER[currentLevel] ?? 1;
+        return currentOrder2 >= 3 // 'tainted' or higher
           ? TaintLevel.POSSIBLY_TAINTED
           : TaintLevel.UNTAINTED;
           
@@ -146,16 +177,16 @@ export class TaintLattice {
    */
   static toString(level: TaintLevel): string {
     switch (level) {
-      case TaintLevel.UNTAINTED:
+      case 'untainted':
         return '⊥ (安全)';
-      case TaintLevel.POSSIBLY_TAINTED:
+      case 'possibly_tainted':
         return '? (要検証)';
-      case TaintLevel.LIKELY_TAINTED:
+      case 'tainted':
         return '! (注意)';
-      case TaintLevel.DEFINITELY_TAINTED:
-        return '⊤ (危険)';
-      case TaintLevel.HIGHLY_TAINTED:
+      case 'highly_tainted':
         return '⊤⊤ (最高危険度)';
+      case 'sanitized':
+        return '✓ (サニタイズ済み)';
       default:
         return '不明';
     }
@@ -164,15 +195,15 @@ export class TaintLattice {
   /**
    * 格子の底（最小要素）かどうかを判定
    */
-  isBottom(level: TaintLevel): boolean {
-    return level === TaintLevel.CLEAN;
+  static isBottom(level: TaintLevel): boolean {
+    return level === 'untainted' || level === 'sanitized';
   }
 
   /**
    * 格子の頂（最大要素）かどうかを判定
    */
-  isTop(level: TaintLevel): boolean {
-    return level === TaintLevel.HIGHLY_TAINTED;
+  static isTop(level: TaintLevel): boolean {
+    return level === 'highly_tainted';
   }
 }
 
@@ -180,7 +211,9 @@ export class TaintLattice {
  * 汚染レベルの比較関数
  */
 export function compareTaintLevels(a: TaintLevel, b: TaintLevel): number {
-  return a - b;
+  const aOrder = TaintLattice['LEVEL_ORDER'][a] ?? 1;
+  const bOrder = TaintLattice['LEVEL_ORDER'][b] ?? 1;
+  return aOrder - bOrder;
 }
 
 /**
@@ -217,7 +250,7 @@ export class TaintedValue {
    */
   static combine(value1: TaintedValue, value2: TaintedValue): TaintedValue {
     const combinedLevel = TaintLattice.join(value1.taintLevel, value2.taintLevel);
-    const combinedSource = value1.taintLevel >= value2.taintLevel ? value1.source : value2.source;
+    const combinedSource = compareTaintLevels(value1.taintLevel, value2.taintLevel) >= 0 ? value1.source : value2.source;
     
     return new TaintedValue(
       value1.value + value2.value,
@@ -243,8 +276,8 @@ export class Sanitizer {
     let newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type);
     
     // 効果率が100%未満の場合、部分的な効果を適用
-    if (this.effectiveness < 1.0 && newLevel === TaintLevel.CLEAN) {
-      newLevel = TaintLevel.POSSIBLY_TAINTED;
+    if (this.effectiveness < 1.0 && newLevel === 'untainted') {
+      newLevel = 'possibly_tainted';
     }
 
     // 実際のサニタイズ処理（簡略化）
@@ -266,14 +299,14 @@ export class TaintPropagation {
    */
   static propagate(operation: string, values: TaintedValue[]): TaintedValue {
     if (values.length === 0) {
-      return new TaintedValue('', TaintLevel.CLEAN, null);
+      return new TaintedValue('', 'untainted', null);
     }
 
-    let maxLevel = TaintLevel.CLEAN;
+    let maxLevel = 'untainted' as TaintLevel;
     let source: TaintSource | null = null;
 
     for (const value of values) {
-      if (value.taintLevel > maxLevel) {
+      if (compareTaintLevels(value.taintLevel, maxLevel) > 0) {
         maxLevel = value.taintLevel;
         source = value.source;
       }

@@ -25,9 +25,9 @@ export interface KeywordExtractionResult {
  * SOLID原則: 単一責任の原則（言語ごとに処理を分離）
  */
 export class MultilingualKeywordExtractor {
-  private englishTokenizer: any;
-  private japaneseTokenizer: any = null;
-  private japaneseTokenizerPromise: Promise<any> | null = null;
+  private englishTokenizer: natural.WordTokenizer;
+  private japaneseTokenizer: unknown = null;
+  private japaneseTokenizerPromise: Promise<unknown> | null = null;
   private stopWords: Set<string>;
 
   constructor() {
@@ -61,7 +61,7 @@ export class MultilingualKeywordExtractor {
           '../../node_modules/kuromoji/dict'
         );
         
-        kuromoji.builder({ dicPath }).build((err: any, tokenizer: any) => {
+        kuromoji.builder({ dicPath }).build((err: unknown, tokenizer: unknown) => {
           if (err) {
             console.warn('Failed to initialize kuromoji:', err);
             // エラー時は簡易的なトークナイザーを返す
@@ -164,6 +164,9 @@ export class MultilingualKeywordExtractor {
     // トークナイズ
     const tokens = this.englishTokenizer.tokenize(expandedText.toLowerCase());
     
+    // tokensがnullまたはundefinedの場合は空配列を返す
+    if (!tokens) return [];
+    
     // キーワードフィルタリング
     const keywords = tokens
       .filter((token: string) => {
@@ -191,7 +194,7 @@ export class MultilingualKeywordExtractor {
       
       // 名詞、動詞の語幹を抽出
       const keywords = tokens
-        .filter((token: any) => {
+        .filter((token: {pos?: string; surface_form: string; basic_form?: string}) => {
           const pos = token.pos?.split(',')[0];
           const posDetail = token.pos?.split(',')[1];
           
@@ -209,7 +212,7 @@ export class MultilingualKeywordExtractor {
           // 名詞、動詞（自立語のみ）、形容詞を抽出
           return pos === '名詞' || (pos === '動詞' && posDetail !== '非自立') || pos === '形容詞';
         })
-        .map((token: any) => {
+        .map((token: {pos?: string; surface_form: string; basic_form?: string}) => {
           // 動詞の場合は基本形を使用
           if (token.pos?.startsWith('動詞') && token.basic_form) {
             // 「する」などの汎用動詞の基本形も除外

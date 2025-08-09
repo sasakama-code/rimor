@@ -1,4 +1,4 @@
-import { ConfigLoader, RimorConfig } from '@/core/config';
+import { ConfigLoader, RimorConfig, PluginConfig } from '@/core/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -150,6 +150,86 @@ describe('ConfigLoader', () => {
       
       const config = await loader.loadConfig(tempDir);
       expect(config.output.format).toBe('json');
+    });
+  });
+
+  describe('PluginConfig type safety', () => {
+    it('should handle boolean enabled property', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true
+      };
+      expect(pluginConfig.enabled).toBe(true);
+    });
+
+    it('should handle excludeFiles array property', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true,
+        excludeFiles: ['*.test.ts', '*.spec.ts']
+      };
+      expect(pluginConfig.excludeFiles).toEqual(['*.test.ts', '*.spec.ts']);
+    });
+
+    it('should handle priority number property', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true,
+        priority: 10
+      };
+      expect(pluginConfig.priority).toBe(10);
+    });
+
+    it('should handle custom properties with proper types', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true,
+        customString: 'value',
+        customNumber: 42,
+        customBoolean: false,
+        customArray: [1, 2, 3],
+        customObject: { nested: 'data' }
+      };
+      
+      // 型安全性のテスト: unknown型として扱う
+      expect(typeof pluginConfig.customString).toBe('string');
+      expect(typeof pluginConfig.customNumber).toBe('number');
+      expect(typeof pluginConfig.customBoolean).toBe('boolean');
+      expect(Array.isArray(pluginConfig.customArray)).toBe(true);
+      expect(typeof pluginConfig.customObject).toBe('object');
+    });
+
+    it('should validate custom properties are not undefined by default', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true
+      };
+      
+      // 存在しないプロパティへのアクセス
+      expect(pluginConfig.nonExistentProperty).toBeUndefined();
+    });
+
+    it('should allow null values for custom properties', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true,
+        customNullable: null
+      };
+      
+      expect(pluginConfig.customNullable).toBeNull();
+    });
+
+    it('should handle complex nested structures', () => {
+      const pluginConfig: PluginConfig = {
+        enabled: true,
+        rules: {
+          maxLineLength: 100,
+          indentSize: 2,
+          checks: ['no-unused-vars', 'no-console']
+        }
+      };
+      
+      // 安全にアクセスするためのタイプガード
+      const rules = pluginConfig.rules;
+      if (rules && typeof rules === 'object' && !Array.isArray(rules)) {
+        expect((rules as any).maxLineLength).toBe(100);
+        expect((rules as any).indentSize).toBe(2);
+        expect(Array.isArray((rules as any).checks)).toBe(true);
+      }
     });
   });
 });

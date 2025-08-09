@@ -18,6 +18,13 @@ import {
   SecurityIssue,
   PotentialVulnerability
 } from './security';
+import {
+  SeverityLevel
+} from '../../types/common-types';
+import {
+  Position,
+  FlowPath
+} from './flow-types';
 
 /**
  * セキュリティ格子の実装
@@ -41,7 +48,7 @@ export class SecurityLattice {
    * 変数の汚染レベルを取得
    */
   getTaintLevel(variable: string): TaintLevel {
-    return this.lattice.get(variable) ?? TaintLevel.UNTAINTED;
+    return this.lattice.get(variable) ?? 'untainted';
   }
 
   /**
@@ -73,11 +80,11 @@ export class SecurityLattice {
     switch (stmt.type) {
       case 'sanitizer':
         // サニタイザー適用 - 汚染レベルを下げる
-        return TaintLevel.UNTAINTED;
+        return 'untainted';
 
       case 'userInput':
         // ユーザー入力 - 最高レベルの汚染
-        return TaintLevel.DEFINITELY_TAINTED;
+        return 'tainted';
 
       case 'assignment':
         // 代入 - 右辺の汚染を左辺に伝播
@@ -90,7 +97,7 @@ export class SecurityLattice {
       case 'methodCall':
         // メソッド呼び出し - 引数の汚染を考慮
         if (stmt.method && this.isSanitizer(stmt.method)) {
-          return TaintLevel.UNTAINTED;
+          return 'untainted';
         }
         return this.propagateMethodTaint(stmt, input);
 
@@ -111,13 +118,14 @@ export class SecurityLattice {
     // 簡単な式解析（実際の実装ではASTパースが必要）
     const variables = this.extractVariables(expression);
     if (variables.length === 0) {
-      return TaintLevel.UNTAINTED;
+      return 'untainted';
     }
 
     // すべての変数の汚染レベルを結合
-    return variables.reduce(
+    const untainted: TaintLevel = 'untainted';
+    return variables.reduce<TaintLevel>(
       (acc, variable) => this.join(acc, this.getTaintLevel(variable)),
-      TaintLevel.UNTAINTED as TaintLevel
+      untainted
     );
   }
 
@@ -161,12 +169,12 @@ export class SecurityLattice {
 
     // 引数の最大汚染レベルを取得
     const argTaints = stmt.arguments.map(arg => 
-      typeof arg === 'string' ? this.evaluateExpression(arg) : TaintLevel.UNTAINTED
+      typeof arg === 'string' ? this.evaluateExpression(arg) : 'untainted'
     );
 
     const maxArgTaint = argTaints.reduce(
       (max, taint) => this.join(max, taint),
-      TaintLevel.UNTAINTED
+      'untainted' as TaintLevel
     );
 
     return this.join(input, maxArgTaint);
@@ -183,7 +191,7 @@ export class SecurityLattice {
     const actualTaint = this.evaluateExpression(stmt.actual);
     
     // 汚染されたデータを直接アサートしている場合は警告
-    if (actualTaint >= TaintLevel.LIKELY_TAINTED && !stmt.isNegativeAssertion) {
+    if (actualTaint >= 'tainted' && !stmt.isNegativeAssertion) {
       // セキュリティ問題として記録（実際の実装では適切なロギングが必要）
       console.warn(`Potentially unsafe assertion: testing tainted data at line ${stmt.location.line}`);
     }
@@ -203,13 +211,14 @@ export class SecurityLattice {
 
       // 汚染されたデータがサニタイズされずにシンクに到達していないかチェック
       if (this.reachesSecuritySink(variable, metadata) && 
-          taintLevel >= TaintLevel.LIKELY_TAINTED) {
+          taintLevel >= 'tainted') {
         violations.push({
           type: 'unsanitized-taint-flow',
+          severity: this.calculateSeverity(taintLevel, metadata),
+          message: `Unsanitized taint flow detected for variable ${variable}`,
           variable,
           taintLevel,
           metadata,
-          severity: this.calculateSeverity(taintLevel, metadata),
           suggestedFix: this.generateSanitizationSuggestion(metadata)
         });
       }
@@ -223,9 +232,7 @@ export class SecurityLattice {
    */
   private reachesSecuritySink(variable: string, metadata: TaintMetadata): boolean {
     // 実装では、データフローグラフを使用してシンクへの到達性を判定
-    return metadata.tracePath.some(step => 
-      step.type === 'branch' && this.isSecuritySink(step.description)
-    );
+    return metadata.sinks.length > 0;
   }
 
   /**
@@ -242,15 +249,16 @@ export class SecurityLattice {
   private calculateSeverity(
     taintLevel: TaintLevel, 
     metadata: TaintMetadata
-  ): 'low' | 'medium' | 'high' | 'critical' {
-    if (taintLevel === TaintLevel.DEFINITELY_TAINTED && 
-        metadata.source === TaintSource.USER_INPUT) {
+  ): SeverityLevel {
+    const primarySource = metadata.sources[0];
+    if (taintLevel === 'tainted' && 
+        primarySource === TaintSource.USER_INPUT) {
       return 'critical';
     }
-    if (taintLevel >= TaintLevel.LIKELY_TAINTED) {
+    if (taintLevel >= 'tainted') {
       return 'high';
     }
-    if (taintLevel === TaintLevel.POSSIBLY_TAINTED) {
+    if (taintLevel === 'possibly_tainted') {
       return 'medium';
     }
     return 'low';
@@ -260,7 +268,8 @@ export class SecurityLattice {
    * サニタイズ提案の生成
    */
   private generateSanitizationSuggestion(metadata: TaintMetadata): string {
-    switch (metadata.source) {
+    const primarySource = metadata.sources[0];
+    switch (primarySource) {
       case TaintSource.USER_INPUT:
         return '入力値をescape()またはvalidate()でサニタイズしてください';
       case TaintSource.EXTERNAL_API:
@@ -296,17 +305,24 @@ export class SecurityLattice {
  */
 export interface SecurityViolation {
   /** 違反の種別 */
-  type: 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion' | 'sql-injection' | 'xss' | 'command-injection';
-  /** 関連する変数 */
-  variable: string;
-  /** 汚染レベル */
-  taintLevel: TaintLevel;
-  /** メタデータ */
-  metadata: TaintMetadata;
+  type: 'taint' | 'type' | 'flow' | 'invariant' | 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion' | 'sql-injection' | 'xss' | 'command-injection';
   /** 重要度 */
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: SeverityLevel;
+  /** メッセージ */
+  message: string;
+  /** 位置 */
+  location?: Position;
+  /** パス */
+  path?: FlowPath;
   /** 修正提案 */
-  suggestedFix: string;
+  fix?: string;
+  suggestedFix?: string;
+  /** 関連する変数 */
+  variable?: string;
+  /** 汚染レベル */
+  taintLevel?: TaintLevel;
+  /** メタデータ */
+  metadata?: TaintMetadata;
 }
 
 /**

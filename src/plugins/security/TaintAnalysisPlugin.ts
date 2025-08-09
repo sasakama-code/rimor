@@ -93,7 +93,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: overall,
         correctness: overall,
         maintainability: 80
@@ -110,7 +110,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
       improvements.push({
         id: 'fix-critical-taint-flows',
         priority: 'critical',
-        type: 'modify',
+        type: 'security',
         category: 'security',
         title: 'Fix critical security vulnerabilities',
         description: 'Sanitize tainted data flows and fix SQL injection vulnerabilities',
@@ -119,17 +119,14 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 60,
-          effortMinutes: 60
-        },
-        automatable: false
+        estimatedImpact: 0.6,
+        autoFixable: false
       });
     } else if (evaluation.overall < 70) {
       improvements.push({
         id: 'improve-input-validation',
         priority: 'high',
-        type: 'modify',
+        type: 'security',
         category: 'security',
         title: 'Improve input validation',
         description: 'Add input validation and sanitization for user inputs',
@@ -138,11 +135,8 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 30,
-          effortMinutes: 30
-        },
-        automatable: false
+        estimatedImpact: 0.3,
+        autoFixable: false
       });
     }
 
@@ -160,7 +154,14 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
     line: number;
     column: number;
   }> {
-    const flows: Array<any> = [];
+    const flows: Array<{
+      type: string;
+      source: string;
+      sink: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      line: number;
+      column: number;
+    }> = [];
     const lines = content.split('\n');
 
     // 簡易的な汚染フロー検出

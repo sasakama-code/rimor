@@ -14,6 +14,11 @@ import { TaintLevel } from './taint';
 export type TaintQualifier = '@Tainted' | '@Untainted' | '@PolyTaint';
 
 /**
+ * 伝播規則の型
+ */
+export type PropagationRule = 'any' | 'all';
+
+/**
  * 型クオリファイア階層
  * @Tainted が @Untainted のスーパータイプ
  */
@@ -62,7 +67,7 @@ export interface PolyTaintType<T> {
   readonly __brand: '@PolyTaint';
   readonly __value: T;
   readonly __parameterIndices: number[];
-  readonly __propagationRule: 'any' | 'all';
+  readonly __propagationRule: PropagationRule;
 }
 
 /**
@@ -75,16 +80,19 @@ export type QualifiedType<T> = TaintedType<T> | UntaintedType<T> | PolyTaintType
  * 型クオリファイアのガード関数
  */
 export const TypeGuards = {
-  isTainted<T>(value: any): value is TaintedType<T> {
-    return value && typeof value === 'object' && value.__brand === '@Tainted';
+  isTainted<T>(value: unknown): value is TaintedType<T> {
+    return value !== null && typeof value === 'object' && 
+           'value' in value && (value as Record<string, unknown>).__brand === '@Tainted';
   },
   
-  isUntainted<T>(value: any): value is UntaintedType<T> {
-    return value && typeof value === 'object' && value.__brand === '@Untainted';
+  isUntainted<T>(value: unknown): value is UntaintedType<T> {
+    return value !== null && typeof value === 'object' && 
+           '__brand' in value && (value as Record<string, unknown>).__brand === '@Untainted';
   },
   
-  isPolyTaint<T>(value: any): value is PolyTaintType<T> {
-    return value && typeof value === 'object' && value.__brand === '@PolyTaint';
+  isPolyTaint<T>(value: unknown): value is PolyTaintType<T> {
+    return value !== null && typeof value === 'object' && 
+           '__brand' in value && (value as Record<string, unknown>).__brand === '@PolyTaint';
   }
 };
 
@@ -123,7 +131,7 @@ export const TypeConstructors = {
   polyTaint<T>(
     value: T, 
     parameterIndices: number[] = [], 
-    propagationRule: 'any' | 'all' = 'any'
+    propagationRule: PropagationRule = 'any'
   ): PolyTaintType<T> {
     return {
       __brand: '@PolyTaint',
@@ -256,8 +264,8 @@ export class TypePropagation {
   static methodCall<T, R>(
     receiver: QualifiedType<T>,
     methodName: string,
-    args: QualifiedType<any>[],
-    method: (...args: any[]) => R
+    args: QualifiedType<unknown>[],
+    method: (...args: unknown[]) => R
   ): QualifiedType<R> {
     const argValues = args.map(arg => arg.__value);
     const result = method.apply(receiver.__value, argValues);
@@ -277,7 +285,7 @@ export class TypePropagation {
  * 論文のSection 4で説明されている手法
  */
 export class FlowSensitiveChecker {
-  private typeEnvironment: Map<string, QualifiedType<any>>;
+  private typeEnvironment: Map<string, QualifiedType<unknown>>;
   
   constructor() {
     this.typeEnvironment = new Map();
@@ -286,14 +294,14 @@ export class FlowSensitiveChecker {
   /**
    * 変数の型を更新
    */
-  updateType(varName: string, type: QualifiedType<any>): void {
+  updateType(varName: string, type: QualifiedType<unknown>): void {
     this.typeEnvironment.set(varName, type);
   }
   
   /**
    * 変数の現在の型を取得
    */
-  getType(varName: string): QualifiedType<any> | undefined {
+  getType(varName: string): QualifiedType<unknown> | undefined {
     return this.typeEnvironment.get(varName);
   }
   
@@ -302,7 +310,7 @@ export class FlowSensitiveChecker {
    */
   refineType(
     varName: string, 
-    condition: (value: any) => boolean,
+    condition: (value: unknown) => boolean,
     trueType: TaintQualifier,
     falseType: TaintQualifier
   ): void {
@@ -332,11 +340,11 @@ export class FlowSensitiveChecker {
 /**
  * 簡便なヘルパー関数
  */
-export function isTainted<T>(value: any): value is TaintedType<T> {
+export function isTainted<T>(value: unknown): value is TaintedType<T> {
   return TypeGuards.isTainted(value);
 }
 
-export function isUntainted<T>(value: any): value is UntaintedType<T> {
+export function isUntainted<T>(value: unknown): value is UntaintedType<T> {
   return TypeGuards.isUntainted(value);
 }
 
@@ -422,7 +430,7 @@ export class PolyTaintInstantiation {
   ): QualifiedType<T> {
     const relevantArgs = polyType.__parameterIndices.map(i => argumentTypes[i]);
     
-    if (polyType.__propagationRule === 'any') {
+    if (polyType.__propagationRule === ('any' as PropagationRule)) {
       // いずれかが@Taintedなら結果も@Tainted
       if (relevantArgs.some(arg => arg === '@Tainted')) {
         return TypeConstructors.tainted(polyType.__value, 'poly-instantiation');

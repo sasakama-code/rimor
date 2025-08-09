@@ -178,7 +178,7 @@ export abstract class BaseDomainPlugin extends BasePlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: domainCoverage,
         correctness: businessRuleCompliance,
         maintainability: terminologyConsistency
@@ -204,7 +204,7 @@ export abstract class BaseDomainPlugin extends BasePlugin {
       improvements.push({
         id: `fix-business-rule-${rule.id}`,
         priority: rule.priority,
-        type: 'add',
+        type: 'add-test',
         category: 'domain-compliance',
         title: `Add test for business rule: ${rule.name}`,
         description: rule.description,
@@ -213,11 +213,8 @@ export abstract class BaseDomainPlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 10,
-          effortMinutes: 30
-        },
-        automatable: false
+        estimatedImpact: 0.1,
+        autoFixable: false
       });
     }
 
@@ -226,7 +223,7 @@ export abstract class BaseDomainPlugin extends BasePlugin {
       improvements.push({
         id: 'improve-domain-coverage',
         priority: 'medium',
-        type: 'modify',
+        type: 'refactor',
         category: 'domain-coverage',
         title: 'Improve domain term coverage in tests',
         description: 'Add tests that cover more domain-specific scenarios',
@@ -235,11 +232,8 @@ export abstract class BaseDomainPlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 30,
-          effortMinutes: 60
-        },
-        automatable: false
+        estimatedImpact: 0.3,
+        autoFixable: false
       });
     }
 

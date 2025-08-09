@@ -100,7 +100,7 @@ export class TestExistencePlugin extends BasePlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness,
         correctness: overall,
         maintainability: 80
@@ -118,7 +118,7 @@ export class TestExistencePlugin extends BasePlugin {
       improvements.push({
         id: 'add-test-file',
         priority: 'high',
-        type: 'add',
+        type: 'add-test',
         category: 'test-creation',
         title: 'Create missing test file',
         description: 'Create test file for untested source files',
@@ -127,17 +127,14 @@ export class TestExistencePlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 50,
-          effortMinutes: 30
-        },
-        automatable: false
+        estimatedImpact: 0.5,
+        autoFixable: false
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
         id: 'add-test-cases',
         priority: 'medium',
-        type: 'modify',
+        type: 'improve-coverage',
         category: 'test-improvement',
         title: 'Add test cases',
         description: 'Add test cases to existing test files',
@@ -146,11 +143,8 @@ export class TestExistencePlugin extends BasePlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 30,
-          effortMinutes: 20
-        },
-        automatable: false
+        estimatedImpact: 0.3,
+        autoFixable: false
       });
     }
 
@@ -173,7 +167,7 @@ export class TestExistencePlugin extends BasePlugin {
       const maskedPath = PathSecurity.toRelativeOrMasked(filePath);
       return [{
         type: 'missing-test',
-        severity: 'error' as const,
+        severity: 'high' as const,
         message: `テストファイルが存在しません: ${maskedPath}`
       }];
     }

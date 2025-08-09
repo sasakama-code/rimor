@@ -141,12 +141,17 @@ export class SSRFPlugin extends OWASPBasePlugin {
     return {
       overall,
       security,
+      confidence: 0.85,
+      dimensions: {
+        completeness: coverage * 100,
+        correctness: ssrfTests.length > 0 ? 75 : 0,
+        maintainability: (hasSSRFPrevention ? 50 : 0) + (hasUrlValidation ? 50 : 0)
+      },
       details: {
-        coverage,
-        ssrfTestCount: ssrfTests.length,
-        missingTestCount: missingTests.length,
-        hasSSRFPrevention,
-        hasUrlValidation
+        strengths: hasSSRFPrevention ? ['SSRF防止実装済み'] : [],
+        weaknesses: !hasSSRFPrevention ? ['SSRF防止不足'] : [],
+        suggestions: [],
+        validationCoverage: hasSSRFPrevention ? 100 : 0
       }
     };
   }
@@ -158,14 +163,11 @@ export class SSRFPlugin extends OWASPBasePlugin {
     if (score < 0.7) {
       improvements.push({
         id: 'add-ssrf-tests',
-        type: 'missing-pattern',
+        type: 'add-test',
         title: 'SSRF防止テストの追加',
         description: 'サーバーサイドリクエストフォージェリ攻撃を防ぐテストを追加してください',
         priority: 'high',
-        estimatedImpact: {
-          scoreImprovement: 0.3,
-          effortMinutes: 45
-        },
+        impact: 30,
         location: {
           file: 'test/security.test.js',
           line: 0,

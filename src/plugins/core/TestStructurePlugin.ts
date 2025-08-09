@@ -114,7 +114,7 @@ export class TestStructurePlugin extends BasePlugin {
 
     return {
       overall: maintainabilityScore,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: 75,
         maintainability: maintainabilityScore
@@ -131,7 +131,7 @@ export class TestStructurePlugin extends BasePlugin {
       return improvements;
     }
 
-    const maintainabilityScore = evaluation.breakdown?.maintainability || 0;
+    const maintainabilityScore = evaluation.dimensions?.maintainability || 0;
     
     // 改善提案を生成（スコアベース）
     if (maintainabilityScore < 50) {
@@ -142,17 +142,17 @@ export class TestStructurePlugin extends BasePlugin {
         'AAAパターンの適用',
         'Arrange-Act-Assertパターンを使用してテストを構造化し、各段階を明確に分離してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 30, effortMinutes: 45 }
+        0.3
       ));
 
       improvements.push(this.createImprovement(
         'setup',
         'medium',
-        'add',
+        'add-test',
         'セットアップ・ティアダウンの追加',
         'beforeEach/afterEachを使用して適切なテスト環境の準備と後処理を行ってください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 20, effortMinutes: 30 }
+        0.2
       ));
     }
 
@@ -164,17 +164,17 @@ export class TestStructurePlugin extends BasePlugin {
         'ネスト構造の簡素化',
         'describeブロックのネストを2-3レベルに制限し、より平坦な構造に変更してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 15, effortMinutes: 25 }
+        0.15
       ));
 
       improvements.push(this.createImprovement(
         'naming',
         'low',
-        'modify',
+        'refactor',
         '一貫した命名規則の適用',
         'すべてのテストケースで「should + 動詞」の形式など、一貫した命名規則を使用してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 10, effortMinutes: 20 }
+        0.1
       ));
 
       improvements.push(this.createImprovement(
@@ -184,7 +184,7 @@ export class TestStructurePlugin extends BasePlugin {
         'テストファイルの分割',
         '大きなテストファイルを機能やクラスごとに複数のファイルに分割してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 15, effortMinutes: 40 }
+        0.15
       ));
     }
 

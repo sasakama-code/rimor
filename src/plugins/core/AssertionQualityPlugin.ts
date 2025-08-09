@@ -112,7 +112,7 @@ export class AssertionQualityPlugin extends BasePlugin {
 
     return {
       overall: correctnessScore,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: correctnessScore,
         maintainability: 75
@@ -129,28 +129,28 @@ export class AssertionQualityPlugin extends BasePlugin {
       return improvements;
     }
 
-    const correctnessScore = evaluation.breakdown?.correctness || 0;
+    const correctnessScore = evaluation.dimensions?.correctness || 0;
     
     // 改善提案を生成（スコアベース）
     if (correctnessScore < 50) {
       improvements.push(this.createImprovement(
         'weak-assertions',
         'high',
-        'modify',
+        'refactor',
         '具体的なアサーションの使用',
         'toBeTruthy()やtoBeDefined()ではなく、toBe()、toEqual()、toMatch()など具体的な値を検証するアサーションを使用してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 25, effortMinutes: 30 }
+        0.25
       ));
 
       improvements.push(this.createImprovement(
         'missing-assertions',
         'critical',
-        'add',
+        'add-test',
         'アサーションの追加',
         'テストケースに適切なアサーション文を追加して、期待される結果を明確に検証してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 40, effortMinutes: 45 }
+        0.4
       ));
     }
 
@@ -158,11 +158,11 @@ export class AssertionQualityPlugin extends BasePlugin {
       improvements.push(this.createImprovement(
         'variety',
         'medium',
-        'modify',
+        'refactor',
         '多様なアサーションの活用',
         'toMatch()、toContain()、toHaveLength()、toThrow()など、多様なアサーションメソッドを活用してください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 15, effortMinutes: 20 }
+        0.15
       ));
 
       improvements.push(this.createImprovement(
@@ -172,7 +172,7 @@ export class AssertionQualityPlugin extends BasePlugin {
         '定数の使用によるマジックナンバー除去',
         'アサーション内の数値リテラルを名前付き定数に置き換えて、テストの意図を明確にしてください',
         this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 10, effortMinutes: 15 }
+        0.1
       ));
     }
 

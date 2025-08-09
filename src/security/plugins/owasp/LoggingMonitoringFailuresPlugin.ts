@@ -135,12 +135,17 @@ export class LoggingMonitoringFailuresPlugin extends OWASPBasePlugin {
     return {
       overall,
       security,
+      confidence: 0.85,
+      dimensions: {
+        completeness: coverage * 100,
+        correctness: loggingTests.length > 0 ? 75 : 0,
+        maintainability: (hasSecurityLogging ? 50 : 0) + (hasAuditTrail ? 50 : 0)
+      },
       details: {
-        coverage,
-        loggingTestCount: loggingTests.length,
-        missingTestCount: missingTests.length,
-        hasSecurityLogging,
-        hasAuditTrail
+        strengths: hasSecurityLogging ? ['セキュリティログ実装済み'] : [],
+        weaknesses: !hasSecurityLogging ? ['セキュリティログ不足'] : [],
+        suggestions: [],
+        validationCoverage: hasSecurityLogging ? 100 : 0
       }
     };
   }
@@ -152,14 +157,11 @@ export class LoggingMonitoringFailuresPlugin extends OWASPBasePlugin {
     if (score < 0.7) {
       improvements.push({
         id: 'add-logging-tests',
-        type: 'missing-pattern',
+        type: 'add-test',
         title: 'セキュリティログテストの追加',
         description: 'セキュリティイベントのログ記録をテストしてください',
         priority: 'high',
-        estimatedImpact: {
-          scoreImprovement: 0.3,
-          effortMinutes: 30
-        },
+        impact: 30,
         location: {
           file: 'test/security.test.js',
           line: 0,

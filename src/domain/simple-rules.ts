@@ -265,9 +265,48 @@ export class SimpleDomainRules {
   /**
    * カスタムルールを追加
    */
-  addRule(rule: DomainRule): void {
-    this.rules.set(rule.id, rule);
-    debug.verbose(`Added custom rule: ${rule.id}`);
+  addRule(rule: DomainRule | unknown): void {
+    // 型の検証（インライン実装）
+    if (!rule || typeof rule !== 'object') {
+      throw new Error('Rule must be an object');
+    }
+    
+    const ruleObj = rule as Record<string, unknown>;
+    
+    if (!ruleObj.id || typeof ruleObj.id !== 'string') {
+      throw new Error('Rule must have a valid id');
+    }
+    
+    if (!ruleObj.name || typeof ruleObj.name !== 'string') {
+      throw new Error('Rule must have a valid name');
+    }
+    
+    if (!ruleObj.patterns || !Array.isArray(ruleObj.patterns)) {
+      throw new Error('Rule must have patterns array');
+    }
+    
+    const patterns = ruleObj.patterns as unknown[];
+    patterns.forEach((pattern: unknown) => {
+      if (!pattern || typeof pattern !== 'object') {
+        throw new Error('Pattern must be an object');
+      }
+      
+      const patternObj = pattern as Record<string, unknown>;
+      
+      if (!patternObj.type || typeof patternObj.type !== 'string' || 
+          !['regex', 'ast', 'keyword'].includes(patternObj.type)) {
+        throw new Error('Pattern must have a valid type');
+      }
+      
+      if (!patternObj.pattern || typeof patternObj.pattern !== 'string') {
+        throw new Error('Pattern must have a valid pattern string');
+      }
+    });
+    
+    // 検証済みなので型アサーションが安全
+    const validRule = rule as DomainRule;
+    this.rules.set(validRule.id, validRule);
+    debug.verbose(`Added custom rule: ${validRule.id}`);
   }
   
   /**
@@ -345,25 +384,38 @@ export class YamlRuleLoader {
   /**
    * ルールを検証
    */
-  private static validateRule(rule: any): void {
-    if (!rule.id || typeof rule.id !== 'string') {
+  private static validateRule(rule: unknown): void {
+    // 型ガード
+    if (!rule || typeof rule !== 'object') {
+      throw new Error('Rule must be an object');
+    }
+    
+    const ruleObj = rule as Record<string, unknown>;
+    if (!ruleObj.id || typeof ruleObj.id !== 'string') {
       throw new Error('Rule must have a valid id');
     }
     
-    if (!rule.name || typeof rule.name !== 'string') {
+    if (!ruleObj.name || typeof ruleObj.name !== 'string') {
       throw new Error('Rule must have a valid name');
     }
     
-    if (!rule.patterns || !Array.isArray(rule.patterns)) {
+    if (!ruleObj.patterns || !Array.isArray(ruleObj.patterns)) {
       throw new Error('Rule must have patterns array');
     }
     
-    rule.patterns.forEach((pattern: any) => {
-      if (!pattern.type || !['regex', 'ast', 'keyword'].includes(pattern.type)) {
+    const patterns = ruleObj.patterns as unknown[];
+    patterns.forEach((pattern: unknown) => {
+      if (!pattern || typeof pattern !== 'object') {
+        throw new Error('Pattern must be an object');
+      }
+      
+      const patternObj = pattern as Record<string, unknown>;
+      if (!patternObj.type || typeof patternObj.type !== 'string' || 
+          !['regex', 'ast', 'keyword'].includes(patternObj.type)) {
         throw new Error('Pattern must have a valid type');
       }
       
-      if (!pattern.pattern || typeof pattern.pattern !== 'string') {
+      if (!patternObj.pattern || typeof patternObj.pattern !== 'string') {
         throw new Error('Pattern must have a valid pattern string');
       }
     });

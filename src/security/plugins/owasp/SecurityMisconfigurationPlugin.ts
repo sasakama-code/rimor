@@ -170,11 +170,16 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
       security: securityScore,
       coverage: testCoverage,
       confidence: 0.85,
+      dimensions: {
+        completeness: testCoverage,
+        correctness: configTests.length > 0 ? 75 : 0,
+        maintainability: (hasSecurityHeaders ? 50 : 0) + (hasCorsConfig ? 50 : 0)
+      },
       details: {
-        testCoverage,
-        securityHeadersImplemented: hasSecurityHeaders,
-        corsConfigured: hasCorsConfig,
-        vulnerabilityCount: vulnerabilities.length
+        strengths: hasSecurityHeaders ? ['セキュリティヘッダー実装済み'] : [],
+        weaknesses: !hasSecurityHeaders ? ['セキュリティヘッダー不足'] : [],
+        suggestions: [],
+        validationCoverage: hasSecurityHeaders ? 100 : 0
       }
     };
   }
@@ -190,15 +195,12 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         title: 'セキュリティヘッダーテストの追加',
         description: 'HTTPセキュリティヘッダー（X-Frame-Options、CSP等）のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 30, 
-          effortMinutes: 30 
-        },
+        impact: 30,
         automatable: true
       });
     }
 
-    if (!evaluation.details?.corsConfigured) {
+    if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 100) {
       improvements.push({
         id: 'add-cors-tests',
         priority: 'high',
@@ -206,10 +208,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         title: 'CORS設定テストの追加',
         description: 'CORS（Cross-Origin Resource Sharing）の適切な設定をテストしてください',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { 
-          scoreImprovement: 20, 
-          effortMinutes: 20 
-        },
+        impact: 20,
         automatable: true
       });
     }

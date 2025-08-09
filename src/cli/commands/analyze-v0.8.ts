@@ -12,6 +12,18 @@ import { errorHandler } from '../../utils/errorHandler';
 import { cleanupManager } from '../../utils/cleanupManager';
 import { CLISecurity, DEFAULT_CLI_SECURITY_LIMITS } from '../../security/CLISecurity';
 import { PathSecurity } from '../../utils/pathSecurity';
+import {
+  AIJsonOutput,
+  AIRisk,
+  AnalysisResultWithPlugins,
+  PluginResult,
+  Detection,
+  TaintFlowData,
+  TaintSummaryData,
+  convertToAIJson
+} from './analyze-types';
+import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult } from '../../core/types';
+import { TaintLevel } from '../../core/types/analysis-types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -93,7 +105,7 @@ export class AnalyzeCommandV8 {
     const sanitizedOptions: AnalyzeOptions = {
       ...options,
       path: cliValidation.sanitizedArgs.path || options.path,
-      format: (cliValidation.sanitizedArgs.format || options.format) as any
+      format: (cliValidation.sanitizedArgs.format || options.format) as AnalyzeOptions['format']
     };
 
     // クリーンアップ実行
@@ -114,8 +126,8 @@ export class AnalyzeCommandV8 {
       const securityAuditor = this.container.get<ISecurityAuditor>(TYPES.SecurityAuditor);
       
       // 初期化
-      if ('initialize' in reporter) {
-        await (reporter as any).initialize();
+      if ('initialize' in reporter && typeof (reporter as Record<string, unknown>).initialize === 'function') {
+        await (reporter as { initialize(): Promise<void> }).initialize();
       }
       
       // 進行状況の表示（PIIマスキング適用）
@@ -293,7 +305,7 @@ export class AnalyzeCommandV8 {
    * UnifiedAnalysisResultをAI向けJSON形式に変換して出力
    */
   private async generateAIJson(
-    analysisResult: any,
+    analysisResult: AnalysisResultWithPlugins,
     options: AnalyzeOptions
   ): Promise<void> {
     try {
@@ -302,23 +314,26 @@ export class AnalyzeCommandV8 {
       const score = issueCount === 0 ? 100 : Math.max(0, 100 - issueCount * 10);
       const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
       
-      const aiJson = {
+      const aiJson: AIJsonOutput = {
         overallAssessment: `プロジェクト品質評価結果:\n総合スコア: ${score}/100\nグレード: ${grade}\n\n検出された問題: ${issueCount}件`,
-        keyRisks: analysisResult?.issues?.slice(0, 10).map((issue: any) => ({
-          problem: issue.message || '問題が検出されました',
-          riskLevel: issue.severity === 'error' ? 'CRITICAL' : issue.severity === 'warning' ? 'HIGH' : 'MEDIUM',
-          context: {
-            filePath: issue.location?.file || 'unknown',
-            codeSnippet: '',
-            startLine: issue.location?.startLine || 0,
-            endLine: issue.location?.endLine || 0
-          },
-          suggestedAction: {
-            type: 'ADD_MISSING_TEST',
-            description: 'テストを追加してください',
-            example: ''
-          }
-        })) || [],
+        keyRisks: (analysisResult?.issues?.slice(0, 10).map((issue) => {
+          const risk: AIRisk = {
+            problem: issue.message || '問題が検出されました',
+            riskLevel: this.mapSeverityToRiskLevel(issue.severity),
+            context: {
+              filePath: issue.file || 'unknown',
+              codeSnippet: '',
+              startLine: issue.line || 0,
+              endLine: issue.line || 0
+            },
+            suggestedAction: {
+              type: 'ADD_MISSING_TEST',
+              description: 'テストを追加してください',
+              example: ''
+            }
+          };
+          return risk;
+        }) || []) as AIRisk[],
         fullReportUrl: options.outputHtml || '.rimor/reports/index.html'
       };
       
@@ -356,8 +371,8 @@ export class AnalyzeCommandV8 {
    * アノテーション生成処理
    */
   private async generateAnnotations(
-    analysisResult: any,
-    reporter: any,
+    analysisResult: AnalysisResultWithPlugins,
+    reporter: IReporter & { generateAnnotations?: Function; printToConsole?: Function },
     options: AnalyzeOptions
   ): Promise<void> {
     // StructuredReporterImplのgenerateAnnotationsメソッドを使用
@@ -370,7 +385,7 @@ export class AnalyzeCommandV8 {
         includeDataFlow: options.includeDetails
       };
       
-      const result = await reporter.generateAnnotations(
+      const result = await (reporter.generateAnnotations as Function)(
         analysisResult,
         annotationOptions
       );
@@ -378,10 +393,14 @@ export class AnalyzeCommandV8 {
       if (result.success) {
         if (options.preview) {
           console.log(await OutputFormatter.header("アノテーションプレビュー"));
-          reporter.printToConsole(result.content!);
+          if (reporter.printToConsole) {
+            reporter.printToConsole(result.content!);
+          }
         } else {
           console.log(await OutputFormatter.success("アノテーションを生成しました"));
-          reporter.printToConsole(result.content!);
+          if (reporter.printToConsole) {
+            reporter.printToConsole(result.content!);
+          }
         }
       } else {
         console.error(await OutputFormatter.error(`アノテーション生成に失敗しました: ${result.error}`));
@@ -397,7 +416,7 @@ export class AnalyzeCommandV8 {
    * @param analysisResult 既存の分析結果
    * @returns TaintAnalysisResult
    */
-  private async getTaintAnalysisResult(targetPath: string, analysisResult: any): Promise<any> {
+  private async getTaintAnalysisResult(targetPath: string, analysisResult: AnalysisResultWithPlugins): Promise<TaintAnalysisResult> {
     try {
       // 既存の分析結果からTaint関連の情報を抽出
       if (analysisResult?.pluginResults?.['taint-analysis']) {
@@ -424,7 +443,7 @@ export class AnalyzeCommandV8 {
   /**
    * デフォルトのTaintAnalysisResultを返す
    */
-  private getDefaultTaintResult(): any {
+  private getDefaultTaintResult(): TaintAnalysisResult {
     return {
       flows: [],
       summary: {
@@ -436,14 +455,15 @@ export class AnalyzeCommandV8 {
         sourcesCount: 0,
         sinksCount: 0,
         sanitizersCount: 0
-      }
+      },
+      recommendations: []
     };
   }
   
   /**
    * 分析結果のissuesをTaintAnalysisResult形式に変換
    */
-  private convertIssuesToTaintResult(issues: any[]): any {
+  private convertIssuesToTaintResult(issues: Issue[]): TaintAnalysisResult {
     // セキュリティ関連のissueをTaintフローとして扱う
     const securityIssues = issues.filter(issue => 
       issue.type?.includes('security') || 
@@ -455,35 +475,37 @@ export class AnalyzeCommandV8 {
       issue.severity === 'high'
     );
     
-    const flows = securityIssues.map((issue, index) => ({
+    const flows: TaintFlow[] = securityIssues.map((issue, index) => ({
       id: `flow-${index}`,
       source: 'user-input',
       sink: this.inferSinkFromIssue(issue),
-      taintLevel: this.mapSeverityToLevel(issue.severity),
-      path: [{
+      taintLevel: this.mapSeverityToLevel(issue.severity) as TaintLevel,
+      path: [],
+      confidence: 0.8,
+      location: {
         file: issue.file || 'unknown',
         line: issue.line || 0
-      }]
+      }
     }));
     
     const summary = {
       totalFlows: flows.length,
-      criticalFlows: flows.filter(f => f.taintLevel === 'CRITICAL').length,
-      highFlows: flows.filter(f => f.taintLevel === 'HIGH').length,
-      mediumFlows: flows.filter(f => f.taintLevel === 'MEDIUM').length,
-      lowFlows: flows.filter(f => f.taintLevel === 'LOW').length,
+      criticalFlows: flows.filter(f => f.taintLevel === 'critical').length,
+      highFlows: flows.filter(f => f.taintLevel === 'high').length,
+      mediumFlows: flows.filter(f => f.taintLevel === 'medium').length,
+      lowFlows: flows.filter(f => f.taintLevel === 'low').length,
       sourcesCount: flows.length > 0 ? 1 : 0,
       sinksCount: new Set(flows.map(f => f.sink)).size,
       sanitizersCount: 0
     };
     
-    return { flows, summary };
+    return { flows, summary, recommendations: [] } as TaintAnalysisResult;
   }
   
   /**
    * issueからsinkのタイプを推論
    */
-  private inferSinkFromIssue(issue: any): string {
+  private inferSinkFromIssue(issue: Issue): string {
     const type = issue.type?.toLowerCase() || '';
     if (type.includes('sql')) return 'database';
     if (type.includes('xss')) return 'html-output';
@@ -495,70 +517,94 @@ export class AnalyzeCommandV8 {
   /**
    * プラグイン結果をTaintAnalysisResult形式に変換
    */
-  private convertToTaintAnalysisResult(pluginResults: any): any {
+  private convertToTaintAnalysisResult(pluginResults: PluginResult): TaintAnalysisResult {
     // プラグイン結果からTaintAnalysisResult形式への変換
-    const flows = pluginResults.detections?.map((detection: any) => ({
+    const flows: TaintFlow[] = pluginResults.detections?.map((detection) => ({
       id: detection.patternId,
       source: detection.metadata?.source || 'unknown',
       sink: detection.metadata?.sink || 'unknown',
-      taintLevel: detection.severity,
-      path: [detection.location]
+      taintLevel: this.mapSeverityToLevel(detection.severity) as TaintLevel,
+      path: [],
+      confidence: 0.8,
+      location: detection.location
     })) || [];
     
     const summary = {
       totalFlows: flows.length,
-      criticalFlows: flows.filter((f: any) => f.taintLevel === 'critical').length,
-      highFlows: flows.filter((f: any) => f.taintLevel === 'high').length,
-      mediumFlows: flows.filter((f: any) => f.taintLevel === 'medium').length,
-      lowFlows: flows.filter((f: any) => f.taintLevel === 'low').length,
-      sourcesCount: new Set(flows.map((f: any) => f.source)).size,
-      sinksCount: new Set(flows.map((f: any) => f.sink)).size,
+      criticalFlows: flows.filter((f) => f.taintLevel === 'critical').length,
+      highFlows: flows.filter((f) => f.taintLevel === 'high').length,
+      mediumFlows: flows.filter((f) => f.taintLevel === 'medium').length,
+      lowFlows: flows.filter((f) => f.taintLevel === 'low').length,
+      sourcesCount: new Set(flows.map((f) => f.source)).size,
+      sinksCount: new Set(flows.map((f) => f.sink)).size,
       sanitizersCount: 0
     };
     
-    return { flows, summary };
+    return { flows, summary, recommendations: [] } as TaintAnalysisResult;
   }
   
   /**
    * プロジェクト解析結果をTaintAnalysisResult形式に変換
    */
-  private convertProjectAnalysisToTaintResult(projectAnalysis: any): any {
+  private convertProjectAnalysisToTaintResult(projectAnalysis: ProjectAnalysisResult): TaintAnalysisResult {
     // プロジェクト解析結果からの変換ロジック
-    const flows = projectAnalysis.issues?.map((issue: any) => ({
-      id: `flow-${issue.id || Math.random()}`,
-      source: issue.source || 'user-input',
-      sink: issue.sink || 'database',
-      taintLevel: this.mapSeverityToLevel(issue.severity),
-      path: issue.path || []
+    const flows: TaintFlow[] = projectAnalysis.issues?.map((issue) => ({
+      id: `flow-${Math.random()}`,
+      source: 'user-input',
+      sink: 'database',
+      taintLevel: this.mapSeverityToLevel(issue.severity) as TaintLevel,
+      path: [],
+      confidence: 0.8
     })) || [];
     
     const summary = {
       totalFlows: flows.length,
-      criticalFlows: flows.filter((f: any) => f.taintLevel === 'CRITICAL').length,
-      highFlows: flows.filter((f: any) => f.taintLevel === 'HIGH').length,
-      mediumFlows: flows.filter((f: any) => f.taintLevel === 'MEDIUM').length,
-      lowFlows: flows.filter((f: any) => f.taintLevel === 'LOW').length,
-      sourcesCount: projectAnalysis.statistics?.sourcesCount || 0,
-      sinksCount: projectAnalysis.statistics?.sinksCount || 0,
-      sanitizersCount: projectAnalysis.statistics?.sanitizersCount || 0
+      criticalFlows: flows.filter((f) => f.taintLevel === 'critical').length,
+      highFlows: flows.filter((f) => f.taintLevel === 'high').length,
+      mediumFlows: flows.filter((f) => f.taintLevel === 'medium').length,
+      lowFlows: flows.filter((f) => f.taintLevel === 'low').length,
+      sourcesCount: 0,
+      sinksCount: 0,
+      sanitizersCount: 0
     };
     
-    return { flows, summary };
+    return { flows, summary, recommendations: [] } as TaintAnalysisResult;
   }
   
   /**
    * 重要度レベルのマッピング
    */
-  private mapSeverityToLevel(severity: string): string {
+  private mapSeverityToLevel(severity?: string): TaintLevel {
     const mapping: Record<string, string> = {
-      'error': 'CRITICAL',
-      'critical': 'CRITICAL',
-      'high': 'HIGH',
-      'warning': 'MEDIUM',
-      'medium': 'MEDIUM',
-      'info': 'LOW',
-      'low': 'LOW'
+      'error': 'critical',
+      'critical': 'critical',
+      'high': 'high',
+      'warning': 'medium',
+      'medium': 'medium',
+      'info': 'low',
+      'low': 'low'
     };
-    return mapping[severity?.toLowerCase()] || 'MEDIUM';
+    const key = severity?.toLowerCase();
+    return (key && mapping[key] ? mapping[key] : 'medium') as TaintLevel;
+  }
+
+  /**
+   * Severityをリスクレベルにマッピング
+   */
+  private mapSeverityToRiskLevel(severity?: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+    switch (severity?.toLowerCase()) {
+      case 'error':
+      case 'critical':
+        return 'CRITICAL';
+      case 'high':
+      case 'warning':
+        return 'HIGH';
+      case 'medium':
+        return 'MEDIUM';
+      case 'info':
+      case 'low':
+      default:
+        return 'LOW';
+    }
   }
 }

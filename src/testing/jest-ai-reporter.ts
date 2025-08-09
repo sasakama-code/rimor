@@ -1,5 +1,5 @@
 import type { Reporter, Test, TestResult, AggregatedResult } from '@jest/reporters';
-import { TestErrorContextCollector } from './error-context';
+import { TestErrorContextCollector, TestErrorContext } from './error-context';
 import { AITestErrorFormatter } from './ai-error-formatter';
 import { CITraceabilityCollector, CITraceability } from './ci-traceability';
 import * as fs from 'fs';
@@ -10,15 +10,25 @@ import { PathSecurity } from '../utils/pathSecurity';
  * Jest用AIエラーレポーター
  * Context Engineeringベースでエラー情報を収集・フォーマット
  */
+/**
+ * Jestレポーターオプション
+ */
+export interface JestAIReporterOptions {
+  outputPath?: string;
+  enableConsoleOutput?: boolean;
+  [key: string]: unknown;
+}
+
+
 export class JestAIReporter implements Reporter {
   private errorCollector: TestErrorContextCollector;
   private errorFormatter: AITestErrorFormatter;
-  private collectedErrors: any[] = [];
+  private collectedErrors: TestErrorContext[] = [];
   private outputPath: string;
   private enableConsoleOutput: boolean;
   private ciTraceability: CITraceability | null = null;
   
-  constructor(globalConfig: any, options: any = {}) {
+  constructor(globalConfig: unknown, options: JestAIReporterOptions = {}) {
     this.errorCollector = new TestErrorContextCollector();
     this.errorFormatter = new AITestErrorFormatter();
     
@@ -37,7 +47,7 @@ export class JestAIReporter implements Reporter {
   /**
    * テスト実行開始時
    */
-  onRunStart(results: AggregatedResult, options: any): void {
+  onRunStart(results: AggregatedResult, options: unknown): void {
     this.collectedErrors = [];
     
     // CI環境情報を収集
@@ -115,7 +125,7 @@ export class JestAIReporter implements Reporter {
   /**
    * テスト実行完了時
    */
-  async onRunComplete(contexts: Set<any>, results: AggregatedResult): Promise<void> {
+  async onRunComplete(contexts: Set<unknown>, results: AggregatedResult): Promise<void> {
     if (this.collectedErrors.length === 0) {
       if (this.enableConsoleOutput && process.env.CI !== 'true') {
         console.log('\n✅ すべてのテストがパスしました！\n');
@@ -176,8 +186,9 @@ export class JestAIReporter implements Reporter {
       const assertMatch = failureMessage.match(/expect\(.*?\)[\s\S]*?Expected: (.+?)\n[\s\S]*?Received: (.+?)(?:\n|$)/);
       if (assertMatch) {
         error.message = `Expected: ${assertMatch[1]}, Received: ${assertMatch[2]}`;
-        (error as any).expected = assertMatch[1];
-        (error as any).actual = assertMatch[2];
+        const errorWithDetails = error as Error & { expected?: string; actual?: string };
+        errorWithDetails.expected = assertMatch[1];
+        errorWithDetails.actual = assertMatch[2];
       } else {
         error.message = lines[0] || 'Unknown error';
       }
@@ -195,7 +206,19 @@ export class JestAIReporter implements Reporter {
   /**
    * コンソールにサマリーを出力
    */
-  private printSummary(report: any): void {
+  private printSummary(report: {
+    summary: {
+      totalErrors: number;
+      criticalErrors: number;
+      testFileCount: number;
+      estimatedFixTime: number;
+      commonPatterns: string[];
+    };
+    quickActions: Array<{
+      description: string;
+      command: string;
+    }>;
+  }): void {
     // CI環境では最小限の出力
     if (process.env.CI === 'true') {
       const maskedPath = PathSecurity.toRelativeOrMasked(this.outputPath);
@@ -216,14 +239,14 @@ export class JestAIReporter implements Reporter {
     
     if (report.summary.commonPatterns.length > 0) {
       console.log(`\n🔍 検出されたパターン:`);
-      report.summary.commonPatterns.forEach((pattern: string) => {
+      report.summary.commonPatterns.forEach((pattern) => {
         console.log(`  - ${pattern}`);
       });
     }
     
     if (report.quickActions.length > 0) {
       console.log(`\n💡 推奨アクション:`);
-      report.quickActions.forEach((action: any, index: number) => {
+      report.quickActions.forEach((action, index) => {
         console.log(`  ${index + 1}. ${action.description}`);
         console.log(`     $ ${action.command}`);
       });
