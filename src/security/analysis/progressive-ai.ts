@@ -18,6 +18,7 @@ import {
 import { FlowGraph } from './flow';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
 import { compareTaintLevels } from '../types/taint';
+import { FlowPath, ExtendedFlowNode, TaintPropagationStep } from './progressive-ai-types';
 
 /**
  * 型サマリー情報
@@ -96,9 +97,9 @@ export interface TaintPropagationDetail {
 }
 
 /**
- * 汚染伝播ステップ
+ * ローカル汚染伝播ステップ
  */
-export interface TaintPropagationStep {
+export interface LocalTaintPropagationStep {
   step: number;
   operation: string;
   taintChange: { from: TaintLevel; to: TaintLevel };
@@ -790,8 +791,8 @@ export class TypeAwareProgressiveAI {
           variable: node.id,
           initialTaint: node.inputTaint || 'untainted' as TaintLevel,
           finalTaint: node.outputTaint || 'untainted' as TaintLevel,
-          propagationSteps: this.extractPropagationSteps(node),
-          sanitizationPoints: this.findSanitizationPoints(node, flowGraph)
+          propagationSteps: this.extractPropagationSteps(node as ExtendedFlowNode),
+          sanitizationPoints: this.findSanitizationPoints(node as ExtendedFlowNode, flowGraph)
         });
       }
     });
@@ -816,7 +817,9 @@ export class TypeAwareProgressiveAI {
     return result.issues.map(issue => ({
       riskId: issue.id,
       category: this.categorizeIssue(issue),
-      severity: issue.severity as any,
+      severity: issue.severity === 'error' || issue.severity === 'warning' || issue.severity === 'info' 
+        ? 'medium' as const 
+        : issue.severity,
       description: issue.message,
       affectedCode: this.extractAffectedCode(issue),
       remediation: issue.fixSuggestion || '手動で修正が必要',
@@ -1044,30 +1047,30 @@ export class TypeAwareProgressiveAI {
   }
 
   // その他のヘルパーメソッド（簡易実装）
-  private assessPathRisk(path: any): string {
-    if (path.taintLevel >= TaintLevel.LIKELY_TAINTED && !path.passedThroughSanitizer) {
+  private assessPathRisk(path: FlowPath): string {
+    if (path.taintLevel && path.taintLevel >= TaintLevel.LIKELY_TAINTED && !path.passedThroughSanitizer) {
       return '高リスク: 汚染データが未処理';
     }
     return '低リスク';
   }
 
-  private extractPropagationSteps(node: any): TaintPropagationStep[] {
+  private extractPropagationSteps(node: ExtendedFlowNode): TaintPropagationStep[] {
     return []; // 簡易実装
   }
 
-  private findSanitizationPoints(node: any, flowGraph: FlowGraph): string[] {
+  private findSanitizationPoints(node: ExtendedFlowNode, flowGraph: FlowGraph): string[] {
     return []; // 簡易実装
   }
 
-  private extractPathVariables(path: any): string[] {
+  private extractPathVariables(path: FlowPath): string[] {
     return path.nodes;
   }
 
-  private identifyPathVulnerabilities(path: any): string[] {
+  private identifyPathVulnerabilities(path: FlowPath): string[] {
     return ['潜在的なインジェクション攻撃'];
   }
 
-  private generateMitigationSteps(path: any): string[] {
+  private generateMitigationSteps(path: FlowPath): string[] {
     return ['適切なサニタイザーの追加', '入力検証の強化'];
   }
 
@@ -1082,7 +1085,10 @@ export class TypeAwareProgressiveAI {
   }
 
   private countEdges(graph: FlowGraph): number {
-    return Array.from(graph.nodes.values()).reduce((total: number, node: any) => total + (node.successors?.length || 0), 0);
+    return Array.from(graph.nodes.values()).reduce((total: number, node) => {
+      const extNode = node as ExtendedFlowNode;
+      return total + (extNode.successors?.length || 0);
+    }, 0);
   }
 
   private calculateFlowComplexity(graph: FlowGraph): number {
