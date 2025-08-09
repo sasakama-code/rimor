@@ -13,6 +13,9 @@ import {
   SafeValue
 } from './taint';
 
+import { TestMethod } from '../../core/types/project-context';
+import { IncrementalChange, TestMethodAnalysisResult } from './flow-types';
+
 // 共通型定義からインポート
 import { SecurityType } from '../../types/common-types';
 
@@ -99,6 +102,21 @@ export type ValidatedInputTest = TestCase & {
 /**
  * 境界条件
  */
+// Security analysis report type
+export interface SecurityAnalysisReport {
+  summary: {
+    totalIssues: number;
+    criticalIssues: number;
+    highIssues: number;
+    mediumIssues: number;
+    lowIssues: number;
+  };
+  issues: SecurityIssue[];
+  metrics?: SecurityTestMetrics;
+  recommendations?: string[];
+  timestamp: Date;
+}
+
 // Security Plugin Interface
 export interface ITypeBasedSecurityPlugin {
   id: string;
@@ -106,9 +124,9 @@ export interface ITypeBasedSecurityPlugin {
   version: string;
   
   // Main analysis methods
-  analyzeTestMethod(method: any): Promise<any>;
-  analyzeIncrementally?(update: any): Promise<any>;
-  generateReport?(): any;
+  analyzeTestMethod(method: TestMethod): Promise<TestMethodAnalysisResult>;
+  analyzeIncrementally?(update: IncrementalChange): Promise<TestMethodAnalysisResult>;
+  generateReport?(): SecurityAnalysisReport;
 }
 
 // Auth Test Coverage - Union type for coverage categories
@@ -132,11 +150,14 @@ export interface AuthTestMetrics {
   percentage: number;
 }
 
+// Boundary value type definition
+export type BoundaryValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[];
+
 export interface BoundaryCondition {
   /** 境界の種別 */
   type: 'min' | 'max' | 'null' | 'empty' | 'invalid-format' | 'overflow';
   /** 境界値 */
-  value: any;
+  value: BoundaryValue;
   /** テスト済みかどうか */
   tested: boolean;
 }
@@ -199,7 +220,7 @@ export interface TestStatement {
   /** メソッド名（メソッド呼び出しの場合） */
   method?: string;
   /** 引数（メソッド呼び出しの場合） */
-  arguments?: any[];
+  arguments?: unknown[];
   /** 戻り値（メソッド呼び出しの場合） */
   returnValue?: string;
   /** アサーションの実際値 */
@@ -289,7 +310,7 @@ export interface CompileTimeResult {
 // SecurityIssue定義 - 前方互換性のため両方をサポート
 export interface SecurityIssue {
   id: string;
-  type: 'taint' | 'injection' | 'validation' | 'authentication' | 'authorization' | 'unsafe-taint-flow' | 'missing-sanitizer' | 'SQL_INJECTION' | 'CODE_EXECUTION' | 'missing-auth-test' | 'insufficient-validation' | 'sanitization' | 'boundary';
+  type: 'taint' | 'injection' | 'validation' | 'authentication' | 'authorization' | 'unsafe-taint-flow' | 'missing-sanitizer' | 'SQL_INJECTION' | 'CODE_EXECUTION' | 'missing-auth-test' | 'insufficient-validation' | 'sanitization' | 'boundary' | 'sql-injection' | 'command-injection' | 'code-injection' | 'vulnerable-dependency' | 'outdated-version';
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical' | 'error' | 'warning';
   message: string;
   location: {

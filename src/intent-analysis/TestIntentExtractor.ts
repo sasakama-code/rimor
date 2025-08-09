@@ -17,6 +17,40 @@ import {
   GapType,
   Severity
 } from './ITestIntentAnalyzer';
+
+// Type definitions for analysis results
+interface TestScenario {
+  description?: string;
+  context?: string;
+  testCases?: string[];
+  given?: string;
+  when?: string;
+  then?: string;
+}
+
+interface DomainGap {
+  type: string;
+  domain: string;
+  description: string;
+  recommendation?: string;
+  severity: Severity;
+}
+
+interface BusinessMapping {
+  domain: string;
+  functions: string[];
+  coveredFunctions: string[];
+  uncoveredFunctions: string[];
+  coverage: number;
+}
+
+interface Suggestion {
+  type: string;
+  description: string;
+  priority: string;
+  impact: string;
+  example?: string;
+}
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import { TreeSitterParser } from './TreeSitterParser';
 import { IntentPatternMatcher } from './IntentPatternMatcher';
@@ -176,7 +210,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   /**
    * テストシナリオを抽出
    */
-  private extractScenario(ast: ASTNode, testNode: ASTNode): any {
+  private extractScenario(ast: ASTNode, testNode: ASTNode): TestScenario | undefined {
     // describeブロックを探す
     const describeBlock = this.findParentDescribe(ast, testNode);
     
@@ -613,7 +647,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     intent: TestIntent,
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<any> {
+  ): Promise<DomainInference | null> {
     if (!this.domainEngine) {
       this.domainEngine = new DomainInferenceEngine();
     }
@@ -640,12 +674,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       actual
     );
 
-    return {
-      ...baseResult,
-      domainRelevance: primaryDomain,
-      businessImportance: primaryDomain.businessImportance,
-      domainSpecificGaps
-    };
+    return primaryDomain;
   }
 
   /**
@@ -655,8 +684,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     domain: DomainInference,
     intent: TestIntent,
     actual: ActualTestAnalysis
-  ): Promise<any[]> {
-    const gaps: any[] = [];
+  ): Promise<DomainGap[]> {
+    const gaps: DomainGap[] = [];
 
     // ユーザー管理ドメインの場合
     if (domain.domain === 'user-management') {
@@ -670,7 +699,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           type: 'MISSING_DOMAIN_REQUIREMENT',
           description: '認証・認可のテストが不足しています',
           domain: domain.domain,
-          severity: 'high'
+          recommendation: '認証・認可関連のテストケースを追加してください',
+          severity: Severity.HIGH
         });
       }
     }
@@ -687,7 +717,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           type: 'MISSING_DOMAIN_REQUIREMENT',
           description: '決済エラーのハンドリングテストが不足しています',
           domain: domain.domain,
-          severity: 'critical'
+          recommendation: '決済エラーハンドリングのテストケースを追加してください',
+          severity: Severity.CRITICAL
         });
       }
     }
@@ -703,7 +734,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testFilePath: string,
     ast: ASTNode,
     callGraph: CallGraphNode[]
-  ): Promise<any> {
+  ): Promise<BusinessMapping> {
     if (!this.businessMapper) {
       this.businessMapper = new BusinessLogicMapper();
     }
@@ -780,30 +811,30 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       ) ? 'high' : 'low';
 
     // 改善提案の生成
-    const suggestions: any[] = [];
+    const suggestions: Suggestion[] = [];
     if (uncoveredFunctions.includes('applyDiscounts')) {
       suggestions.push({
+        type: 'add-test',
         priority: 'high',
+        impact: 'high',
         description: '割引ロジックのテストを追加してください'
       });
     }
     if (uncoveredFunctions.includes('applyPromotions')) {
       suggestions.push({
+        type: 'add-test',
         priority: 'medium',
+        impact: 'medium',
         description: 'プロモーション適用ロジックのテストを追加してください'
       });
     }
 
     return {
-      businessLogicCoverage: {
-        coveredFunctions,
-        uncoveredFunctions,
-        criticalPathCoverage
-      },
-      riskAssessment: {
-        businessRisk
-      },
-      suggestions
+      domain: 'business',
+      functions: [...coveredFunctions, ...uncoveredFunctions],
+      coveredFunctions,
+      uncoveredFunctions,
+      coverage: criticalPathCoverage
     };
   }
 
@@ -815,8 +846,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testFilePath: string,
     ast: ASTNode,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<any[]> {
-    const suggestions: any[] = [];
+  ): Promise<Suggestion[]> {
+    const suggestions: Suggestion[] = [];
 
     // domainEngineが初期化されていない場合は初期化
     if (!this.domainEngine) {
@@ -835,33 +866,43 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     // 認証ドメインの場合
     if (domain && domain.domain === 'authentication') {
       suggestions.push({
+        type: 'security',
         category: 'security',
-        importance: 'critical',
-        suggestion: '無効な認証情報でのテストを追加してください'
+        priority: 'critical',
+        impact: 'critical',
+        description: '無効な認証情報でのテストを追加してください'
       });
       suggestions.push({
+        type: 'security',
         category: 'security',
-        importance: 'critical',
-        suggestion: 'ブルートフォース攻撃への耐性テストを追加してください'
+        priority: 'critical',
+        impact: 'critical',
+        description: 'ブルートフォース攻撃への耐性テストを追加してください'
       });
       suggestions.push({
+        type: 'security',
         category: 'security',
-        importance: 'high',
-        suggestion: 'トークンの有効期限切れのテストを追加してください'
+        priority: 'high',
+        impact: 'high',
+        description: 'トークンの有効期限切れのテストを追加してください'
       });
     }
 
     // 決済ドメインの場合
     if (domain && domain.domain === 'payment') {
       suggestions.push({
+        type: 'reliability',
         category: 'reliability',
-        importance: 'critical',
-        suggestion: '決済失敗時のロールバックテストを追加してください'
+        priority: 'critical',
+        impact: 'critical',
+        description: '決済失敗時のロールバックテストを追加してください'
       });
       suggestions.push({
+        type: 'security',
         category: 'security',
-        importance: 'critical',
-        suggestion: 'クレジットカード情報の暗号化テストを追加してください'
+        priority: 'critical',
+        impact: 'critical',
+        description: 'クレジットカード情報の暗号化テストを追加してください'
       });
     }
 

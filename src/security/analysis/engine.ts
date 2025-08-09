@@ -9,6 +9,7 @@ import {
   CompileTimeResult,
   SecurityIssue,
   TypeInferenceResult,
+  SecurityTypeAnnotation,
   MethodAnalysisResult,
   IncrementalResult,
   MethodChange,
@@ -18,6 +19,7 @@ import {
   SecurityType
 } from '../types';
 import { TaintLevel, TaintSource } from '../../types/common-types';
+import { SecurityImprovement, FlowNode } from '../types/flow-types';
 import {
   TaintQualifier,
   TypeConstructors,
@@ -132,9 +134,9 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * 汚染レベルの推論（新型システム版）
    */
-  async inferTaintTypes(testFile: TestCase): Promise<Map<string, QualifiedType<any>>> {
+  async inferTaintTypes(testFile: TestCase): Promise<Map<string, QualifiedType<unknown>>> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const taintMap = new Map<string, QualifiedType<any>>();
+    const taintMap = new Map<string, QualifiedType<unknown>>();
 
     for (const method of testMethods) {
       // フロー解析による汚染追跡
@@ -184,7 +186,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   async inferSecurityTypes(testFile: TestCase): Promise<TypeInferenceResult> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const allAnnotations: any[] = [];
+    const allAnnotations: SecurityTypeAnnotation[] = [];
     let totalTime = 0;
     let totalVariables = 0;
     let totalInferred = 0;
@@ -227,7 +229,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       
       // flow-types.SecurityViolationをlattice.SecurityViolationに変換
       const latticeViolations: import('../types/lattice').SecurityViolation[] = flowViolations.map(v => ({
-        type: v.type as any,
+        type: v.type,
         message: v.message || 'Security violation detected',
         severity: (['info', 'error', 'warning'].includes(v.severity)) ? 'medium' : v.severity as ('low' | 'medium' | 'high' | 'critical'),
         variable: v.variable || 'unknown',
@@ -475,11 +477,13 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   private aggregateAnalysisResults(methodResults: MethodAnalysisResult[]): AggregatedResult {
     const allIssues: SecurityIssue[] = [];
-    const allSuggestions: any[] = [];
+    const allSuggestions: SecurityImprovement[] = [];
 
     for (const result of methodResults) {
       allIssues.push(...result.issues);
-      allSuggestions.push(...result.suggestions);
+      if (result.suggestions) {
+        allSuggestions.push(...(result.suggestions as SecurityImprovement[]));
+      }
     }
 
     // 重複除去
@@ -553,9 +557,9 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * ノードから変数を抽出
    */
-  private extractVariablesFromNode(node: any): string[] {
+  private extractVariablesFromNode(node: FlowNode): string[] {
     const variables: string[] = [];
-    const content = node.statement.content;
+    const content = node.statement?.content || '';
     
     const matches = content.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [];
     matches.forEach((match: string) => {
@@ -570,7 +574,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * 平均信頼度の計算
    */
-  private calculateAverageConfidence(annotations: any[]): number {
+  private calculateAverageConfidence(annotations: SecurityTypeAnnotation[]): number {
     if (annotations.length === 0) return 0;
     const total = annotations.reduce((sum, annotation) => sum + (annotation.confidence || 0), 0);
     return total / annotations.length;
@@ -705,7 +709,7 @@ class Worker {
 // 関連するインターフェースの定義
 interface AggregatedResult {
   issues: SecurityIssue[];
-  suggestions: any[];
+  suggestions: SecurityImprovement[];
   totalMethods: number;
   averageScore: number;
 }

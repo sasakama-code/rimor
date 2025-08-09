@@ -4,6 +4,7 @@
  */
 
 import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement, SecurityIssue } from '../../../core/types';
+import { SeverityLevel } from '../../../types/common-types';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
 
 export class VulnerableComponentsPlugin {
@@ -58,7 +59,7 @@ export class VulnerableComponentsPlugin {
         location: { file: testFile.path, line: 0, column: 0 },
         confidence: 1.0,
         securityRelevance: 0.95,
-        severity: 'critical' as any,
+        severity: 'critical',
         metadata: { hasTest: false }
       });
     }
@@ -221,7 +222,7 @@ export class VulnerableComponentsPlugin {
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
-    const issues: any[] = []; // テストがany型を期待しているため
+    const issues: SecurityIssue[] = [];
     
     // 既知の脆弱なパッケージとバージョン
     const vulnerablePackages = [
@@ -241,12 +242,15 @@ export class VulnerableComponentsPlugin {
         const version = match[1];
         if (pkg.vulnerableVersions.some(v => version.includes(v.replace('.x.x', '')))) {
           issues.push({
+            id: 'vulnerable-dependency-' + Math.random().toString(36).substr(2, 9),
             type: 'vulnerable-dependency',
-            severity: pkg.severity as any,
+            severity: pkg.severity as SeverityLevel,
             message: `脆弱性のある${pkg.name}バージョン${version}が検出されました`,
-            file: 'package.json',
-            line: content.substring(0, match.index).split('\n').length,
-            column: 0,
+            location: {
+              file: 'package.json',
+              line: content.substring(0, match.index).split('\n').length,
+              column: 0
+            },
             recommendation: `${pkg.name}を最新の安全なバージョンに更新してください`
           });
         }
@@ -264,12 +268,15 @@ export class VulnerableComponentsPlugin {
       // 古いバージョンの検出（簡易的なチェック）
       if (version.match(/^[01]\./)) { // 0.x または 1.x
         issues.push({
+          id: 'outdated-version-' + Math.random().toString(36).substr(2, 9),
           type: 'outdated-version',
-          severity: 'medium' as any,
+          severity: 'medium' as SeverityLevel,
           message: `古いバージョンの${packageName}@${version}が使用されています`,
-          file: 'unknown',
-          line: content.substring(0, match.index).split('\n').length,
-          column: 0,
+          location: {
+            file: 'unknown',
+            line: content.substring(0, match.index).split('\n').length,
+            column: 0
+          },
           recommendation: `${packageName}を最新バージョンに更新してください`
         });
       }

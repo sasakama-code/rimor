@@ -100,7 +100,7 @@ export class InjectionPlugin {
         location: { file: testFile.path, line: 0, column: 0 },
         confidence: 1.0,
         securityRelevance: 0.95,
-        severity: 'critical' as any,
+        severity: 'critical',
         metadata: { hasTest: false }
       });
     }
@@ -289,7 +289,7 @@ export class InjectionPlugin {
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
-    const issues: any[] = []; // テストがany型を期待しているため
+    const issues: SecurityIssue[] = [];
     
     // SQLインジェクションパターンの検出
     const sqlPatterns = [
@@ -307,12 +307,15 @@ export class InjectionPlugin {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
         issues.push({
+          id: 'sql-injection-' + Math.random().toString(36).substr(2, 9),
           type: 'sql-injection',
           severity: 'critical',
           message: '文字列連結によるSQL構築は危険です。パラメータ化クエリを使用してください。',
-          file: 'unknown',
-          line: content.substring(0, match.index).split('\n').length,
-          column: 0,
+          location: {
+            file: 'unknown',
+            line: content.substring(0, match.index).split('\n').length,
+            column: 0
+          },
           recommendation: 'プリペアドステートメントまたはパラメータ化クエリを使用してください'
         });
       }
@@ -330,12 +333,15 @@ export class InjectionPlugin {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
         issues.push({
+          id: 'command-injection-' + Math.random().toString(36).substr(2, 9),
           type: 'command-injection',
           severity: 'critical',
           message: 'ユーザー入力を含むコマンド実行は危険です。',
-          file: 'unknown',
-          line: content.substring(0, match.index).split('\n').length,
-          column: 0,
+          location: {
+            file: 'unknown',
+            line: content.substring(0, match.index).split('\n').length,
+            column: 0
+          },
           recommendation: 'コマンドライン引数を適切にエスケープしてください'
         });
       }
@@ -352,12 +358,15 @@ export class InjectionPlugin {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
         issues.push({
+          id: 'code-injection-' + Math.random().toString(36).substr(2, 9),
           type: 'code-injection',
           severity: 'critical',
           message: '動的コード実行は重大なセキュリティリスクです。',
-          file: 'unknown',
-          line: content.substring(0, match.index).split('\n').length,
-          column: 0,
+          location: {
+            file: 'unknown',
+            line: content.substring(0, match.index).split('\n').length,
+            column: 0
+          },
           recommendation: 'evalやFunctionコンストラクタの使用を避けてください'
         });
       }

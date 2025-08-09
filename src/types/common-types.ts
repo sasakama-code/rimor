@@ -191,5 +191,5 @@ export interface BaseMetadata {
   name: string;
   description?: string;
   timestamp?: Date;
-  [key: string]: any;
+  [key: string]: unknown;
 }
