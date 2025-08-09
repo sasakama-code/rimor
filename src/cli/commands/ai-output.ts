@@ -1,4 +1,4 @@
-import { Analyzer } from '../../core/analyzer';
+import { Analyzer, AnalysisResult } from '../../core/analyzer';
 import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
@@ -8,6 +8,7 @@ import { FormatterOptions, EnhancedAnalysisResult } from '../../ai-output/types'
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { OutputFormatter } from '../output';
+import { Issue, PluginResult } from './ai-output-types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -235,7 +236,7 @@ export class AIOutputCommand {
    * スコアリング情報でAnalysisResultを拡張
    */
   private async enhanceWithScoring(
-    result: any, 
+    result: AnalysisResult, 
     targetPath: string, 
     options: AIOutputOptions
   ): Promise<EnhancedAnalysisResult> {
@@ -245,9 +246,34 @@ export class AIOutputCommand {
       
       // スコア計算（簡易版）
       const projectScore = {
+        projectPath: targetPath,
+        totalFiles: 0,
+        totalDirectories: 0,
         overallScore: 70,
-        grade: 'C',
-        fileScores: []
+        grade: 'C' as const,
+        fileScores: [],
+        directoryScores: [],
+        issuesByType: {},
+        weights: {
+          coverage: 0.3,
+          complexity: 0.2,
+          maintainability: 0.25,
+          security: 0.25,
+          plugins: {},
+          dimensions: {
+            completeness: 0.2,
+            correctness: 0.2,
+            maintainability: 0.2,
+            security: 0.2,
+            performance: 0.2
+          }
+        },
+        metadata: {
+          generatedAt: new Date(),
+          executionTime: 0,
+          pluginCount: 0,
+          issueCount: 0
+        }
       };
 
       return {
@@ -256,7 +282,7 @@ export class AIOutputCommand {
         fileScores: projectScore.fileScores,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath),
+          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
           testFramework: this.detectTestFramework(targetPath),
           filePatterns: {
             test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
@@ -275,7 +301,7 @@ export class AIOutputCommand {
         ...result,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath),
+          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
           testFramework: this.detectTestFramework(targetPath),
           filePatterns: {
             test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
@@ -358,9 +384,9 @@ export class AIOutputCommand {
   /**
    * 従来の分析結果をプラグイン結果形式に変換
    */
-  private convertToPluginResults(result: any, targetPath: string): Map<string, any[]> {
+  private convertToPluginResults(result: AnalysisResult, targetPath: string): Map<string, PluginResult[]> {
     // 簡易版: 空のMapを返す
-    return new Map<string, any[]>();
+    return new Map<string, PluginResult[]>();
   }
 
   /**
@@ -413,7 +439,7 @@ export class AIOutputCommand {
     }
   }
 
-  private issueToScore(issue: any): number {
+  private issueToScore(issue: Issue): number {
     switch (issue.severity || 'medium') {
       case 'error':
       case 'high':
