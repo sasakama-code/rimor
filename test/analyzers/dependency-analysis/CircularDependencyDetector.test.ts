@@ -39,8 +39,8 @@ describe('CircularDependencyDetector', () => {
 
       // Assert
       expect(cycles).toHaveLength(1);
-      expect(cycles[0].cycle).toEqual(['a.ts', 'b.ts', 'a.ts']);
-      expect(cycles[0].severity).toBe('high');
+      expect(cycles[0].files).toEqual(['a.ts', 'b.ts', 'a.ts']);
+      expect(cycles[0].severity).toBe('error');
     });
 
     it('3つのファイル間の循環依存を検出する', () => {
@@ -74,9 +74,9 @@ describe('CircularDependencyDetector', () => {
 
       // Assert
       expect(cycles).toHaveLength(1);
-      expect(cycles[0].cycle).toContain('a.ts');
-      expect(cycles[0].cycle).toContain('b.ts');
-      expect(cycles[0].cycle).toContain('c.ts');
+      expect(cycles[0].files).toContain('a.ts');
+      expect(cycles[0].files).toContain('b.ts');
+      expect(cycles[0].files).toContain('c.ts');
     });
 
     it('循環依存がない場合は空配列を返す', () => {
@@ -158,17 +158,17 @@ describe('CircularDependencyDetector', () => {
   describe('calculateSeverity', () => {
     it('2ファイルの循環は高重要度', () => {
       const cycle = ['a.ts', 'b.ts', 'a.ts'];
-      expect(detector.calculateSeverity(cycle)).toBe('high');
+      expect(detector.calculateSeverity(cycle)).toBe('error');
     });
 
     it('3-4ファイルの循環は中重要度', () => {
       const cycle = ['a.ts', 'b.ts', 'c.ts', 'a.ts'];
-      expect(detector.calculateSeverity(cycle)).toBe('medium');
+      expect(detector.calculateSeverity(cycle)).toBe('warning');
     });
 
     it('5ファイル以上の循環は低重要度', () => {
       const cycle = ['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'a.ts'];
-      expect(detector.calculateSeverity(cycle)).toBe('low');
+      expect(detector.calculateSeverity(cycle)).toBe('info');
     });
   });
 
@@ -176,8 +176,8 @@ describe('CircularDependencyDetector', () => {
     it('循環依存に対するリファクタリング提案を生成する', () => {
       // Arrange
       const cycle: CyclicDependency = {
-        cycle: ['a.ts', 'b.ts', 'a.ts'],
-        severity: 'high',
+        files: ['a.ts', 'b.ts', 'a.ts'],
+        severity: 'error',
         suggestion: ''
       };
 

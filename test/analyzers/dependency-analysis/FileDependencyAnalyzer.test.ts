@@ -38,7 +38,7 @@ describe('FileDependencyAnalyzer', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.imports).toHaveLength(5);
+      expect(result.imports).toHaveLength(4); // expressが重複除去されるため4つ
       expect(result.imports).toContain('express');
       expect(result.imports).toContain('path');
       expect(result.imports).toContain('./utils/helper');

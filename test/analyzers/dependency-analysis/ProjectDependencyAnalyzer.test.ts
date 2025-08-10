@@ -83,6 +83,9 @@ describe('ProjectDependencyAnalyzer', () => {
       const mockNodeModules = ['express', 'lodash', 'jest'];
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readdirSync as jest.Mock).mockReturnValue(mockNodeModules);
+      (fs.statSync as jest.Mock).mockReturnValue({
+        isDirectory: () => true
+      });
 
       // Act
       const packages = await analyzer.getInstalledPackages(mockProjectPath);
