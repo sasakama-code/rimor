@@ -79,8 +79,29 @@ export {
   isValidArray,
   isValidIssueArray,
   isValidDetectionResultArray,
-  isValidImprovementArray
+  isValidImprovementArray,
+  // Aliases for backward compatibility
+  isIssue,
+  isTestFile,
+  isDetectionResult,
+  isProjectContext
 } from './type-guards';
+
+// Export plugin type guards
+export {
+  isIPlugin,
+  isITestQualityPlugin
+} from './plugin-interface';
+
+// Export quality score type guard
+export {
+  isQualityScore
+} from './quality-score';
+
+// Export analysis result type guard
+export {
+  isAnalysisResult
+} from './analysis-result';
 
 // Import types for composite interfaces
 import type { 

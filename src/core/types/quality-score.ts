@@ -291,3 +291,32 @@ export interface QualityRule {
   message: string;
   autoFixable?: boolean;
 }
+
+// Type guard for QualityScore
+export function isQualityScore(value: unknown): value is QualityScore {
+  if (!value || typeof value !== 'object') return false;
+  const score = value as any;
+  
+  // Check required fields
+  if (typeof score.overall !== 'number' || score.overall < 0 || score.overall > 1) {
+    return false;
+  }
+  
+  if (typeof score.confidence !== 'number' || score.confidence < 0 || score.confidence > 1) {
+    return false;
+  }
+  
+  // Check dimensions if present
+  if (score.dimensions) {
+    if (typeof score.dimensions !== 'object') return false;
+    const validDimensions = ['completeness', 'correctness', 'maintainability', 'performance', 'security'];
+    for (const [key, value] of Object.entries(score.dimensions)) {
+      if (!validDimensions.includes(key)) return false;
+      if (typeof value !== 'number' || (value as number) < 0 || (value as number) > 1) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+}

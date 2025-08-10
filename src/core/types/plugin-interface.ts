@@ -239,3 +239,24 @@ export interface IPluginExecutor {
   executeAll(plugins: Array<IPlugin | ITestQualityPlugin>, context: AnalysisContext): Promise<PluginResult[]>;
   executeParallel(plugins: Array<IPlugin | ITestQualityPlugin>, context: AnalysisContext, maxConcurrency?: number): Promise<PluginResult[]>;
 }
+
+// Type guards for plugins
+export function isIPlugin(value: unknown): value is IPlugin {
+  if (!value || typeof value !== 'object') return false;
+  const plugin = value as any;
+  return typeof plugin.name === 'string' && 
+         typeof plugin.analyze === 'function';
+}
+
+export function isITestQualityPlugin(value: unknown): value is ITestQualityPlugin {
+  if (!value || typeof value !== 'object') return false;
+  const plugin = value as any;
+  return typeof plugin.id === 'string' &&
+         typeof plugin.name === 'string' &&
+         typeof plugin.version === 'string' &&
+         typeof plugin.type === 'string' &&
+         typeof plugin.isApplicable === 'function' &&
+         typeof plugin.detectPatterns === 'function' &&
+         typeof plugin.evaluateQuality === 'function' &&
+         typeof plugin.suggestImprovements === 'function';
+}

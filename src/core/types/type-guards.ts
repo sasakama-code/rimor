@@ -29,6 +29,27 @@ function isEnumValue<T extends string>(value: unknown, validValues: readonly T[]
   return typeof value === 'string' && validValues.includes(value as T);
 }
 
+// Extract Method: 共通の型チェックパターン（DRY原則）
+function validateOptionalString(value: unknown, fieldName: string): boolean {
+  return value === undefined || typeof value === 'string';
+}
+
+function validateOptionalNumber(value: unknown, fieldName: string): boolean {
+  return value === undefined || typeof value === 'number';
+}
+
+function validateOptionalBoolean(value: unknown, fieldName: string): boolean {
+  return value === undefined || typeof value === 'boolean';
+}
+
+function validateRequiredString(value: unknown, fieldName: string): boolean {
+  return typeof value === 'string';
+}
+
+function validateRequiredNumber(value: unknown, fieldName: string): boolean {
+  return typeof value === 'number';
+}
+
 // Type guard for PackageJsonConfig
 export function isValidPackageJson(value: unknown): value is PackageJsonConfig {
   if (!isObject(value)) return false;
@@ -194,6 +215,12 @@ export function isValidIssue(value: unknown): value is Issue {
   
   return true;
 }
+
+// Alias exports for backward compatibility
+export const isIssue = isValidIssue;
+export const isTestFile = isValidTestFile;
+export const isDetectionResult = isValidDetectionResult;
+export const isProjectContext = isValidProjectContext;
 
 // Type guard for DetectionResult
 export function isValidDetectionResult(value: unknown): value is DetectionResult {

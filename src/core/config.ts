@@ -386,3 +386,133 @@ export class ConfigLoader {
     this.configSecurity.updateLimits(newLimits);
   }
 }
+
+// シングルトンインスタンス
+const configLoader = new ConfigLoader();
+
+// エクスポート関数（後方互換性のため）
+export const loadConfig = (configPath?: string): RimorConfig => {
+  // 同期的なAPIを維持するため、事前に初期化されたデフォルト設定を返す
+  // 実際の設定ファイルの読み込みが必要な場合は、ConfigLoaderを直接使用
+  if (configPath && fs.existsSync(configPath)) {
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf-8');
+      const config = JSON.parse(configContent);
+      return mergeConfigs(DEFAULT_CONFIG, config);
+    } catch (error) {
+      console.error('Failed to load config:', error);
+    }
+  }
+  return DEFAULT_CONFIG;
+};
+
+export const validateConfig = (config: any, options?: { checkSecurity?: boolean }): boolean => {
+  // 基本的な検証
+  if (!config || typeof config !== 'object') {
+    return false;
+  }
+  
+  if (!config.plugins || typeof config.plugins !== 'object') {
+    return false;
+  }
+  
+  if (!config.output || typeof config.output !== 'object') {
+    return false;
+  }
+  
+  if (!['text', 'json'].includes(config.output.format)) {
+    return false;
+  }
+  
+  // セキュリティチェック
+  if (options?.checkSecurity) {
+    if (config.output.reportDir) {
+      // パストラバーサル攻撃の検出
+      if (config.output.reportDir.includes('../')) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+};
+
+// Extract Method: 深いマージロジックを個別関数に抽出（Martin Fowlerのリファクタリング手法）
+const deepMergePlugins = (
+  basePlugins: Record<string, PluginConfig>,
+  overridePlugins?: Record<string, PluginConfig>
+): Record<string, PluginConfig> => {
+  if (!overridePlugins) return { ...basePlugins };
+  
+  const merged = { ...basePlugins };
+  for (const [key, value] of Object.entries(overridePlugins)) {
+    merged[key] = merged[key] 
+      ? { ...merged[key], ...value }
+      : value;
+  }
+  return merged;
+};
+
+// Extract Method: オプショナルプロパティのマージを共通化
+const mergeOptionalProperty = <T>(
+  base?: T,
+  override?: T
+): T | undefined => {
+  if (!base && !override) return undefined;
+  return { ...base, ...override } as T;
+};
+
+export const mergeConfigs = (base: RimorConfig, override: Partial<RimorConfig>): RimorConfig => {
+  // KISS原則: シンプルで理解しやすい構造
+  return {
+    ...base,
+    ...override,
+    plugins: deepMergePlugins(base.plugins, override.plugins),
+    output: { ...base.output, ...override.output },
+    metadata: mergeOptionalProperty(base.metadata, override.metadata),
+    scoring: mergeOptionalProperty(base.scoring, override.scoring)
+  };
+};
+
+export const saveConfig = (config: RimorConfig, filePath: string): void => {
+  fs.writeFileSync(filePath, JSON.stringify(config, null, 2));
+};
+
+export const DEFAULT_CONFIG: RimorConfig = {
+  plugins: {
+    'test-existence': { enabled: true },
+    'assertion-exists': { enabled: true }
+  },
+  output: {
+    format: 'text',
+    verbose: false
+  }
+};
+
+export const registerPlugin = (metadata: PluginMetadata): void => {
+  configLoader.getAvailablePlugins().push(metadata);
+};
+
+export const getAvailablePlugins = (): string[] => {
+  return configLoader.getAvailablePlugins().map(p => p.name);
+};
+
+export const createDefaultConfig = (preset: string): RimorConfig => {
+  const config = { ...DEFAULT_CONFIG };
+  
+  if (preset === 'minimal') {
+    // 最小限のプラグインのみ
+    config.plugins = {
+      'test-existence': { enabled: true }
+    };
+  } else if (preset === 'all') {
+    // すべてのプラグインを有効化
+    const allPlugins: Record<string, PluginConfig> = {};
+    for (const plugin of configLoader.getAvailablePlugins()) {
+      allPlugins[plugin.name] = { enabled: true };
+    }
+    config.plugins = allPlugins;
+  }
+  
+  return config;
+};
