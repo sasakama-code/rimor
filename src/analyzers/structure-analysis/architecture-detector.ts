@@ -7,7 +7,7 @@
  * KISS原則: シンプルなパターンマッチング
  */
 
-import { ArchitecturePattern } from '../types';
+import { ArchitecturePattern, ArchitectureType } from '../types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -71,10 +71,10 @@ export class ArchitectureDetector {
 
       if (score > 0) {
         detectedPatterns.push({
-          type: patternName as any,
+          type: patternName.toLowerCase() as ArchitectureType,
           confidence: score * pattern.confidence,
           evidence,
-          characteristics: this.getCharacteristics(patternName)
+          suggestions: this.getSuggestions(patternName)
         });
       }
     }
@@ -87,10 +87,10 @@ export class ArchitectureDetector {
 
     // デフォルトはMonolithic
     return {
-      type: 'Monolithic',
+      type: 'monolithic',
       confidence: 0.5,
       evidence: ['No specific architecture pattern detected'],
-      characteristics: this.getCharacteristics('Monolithic')
+      suggestions: this.getSuggestions('Monolithic')
     };
   }
 
@@ -187,43 +187,43 @@ export class ArchitectureDetector {
   }
 
   /**
-   * アーキテクチャの特徴を取得
+   * アーキテクチャの提案を取得
    */
-  private getCharacteristics(pattern: string): string[] {
-    const characteristics: Record<string, string[]> = {
+  private getSuggestions(pattern: string): string[] {
+    const suggestions: Record<string, string[]> = {
       MVC: [
-        'Clear separation of concerns',
-        'Model-View-Controller pattern',
-        'Suitable for web applications'
+        'Maintain clear separation between models, views, and controllers',
+        'Avoid business logic in controllers',
+        'Keep views simple and focused on presentation'
       ],
       Layered: [
-        'Layer isolation',
-        'Top-down dependencies',
-        'Business logic separation'
+        'Ensure dependencies only go downward',
+        'Keep domain logic independent of infrastructure',
+        'Use dependency injection for flexibility'
       ],
       Microservices: [
-        'Service independence',
-        'Distributed architecture',
-        'Technology diversity support'
+        'Define clear service boundaries',
+        'Implement proper service discovery',
+        'Use API versioning for backward compatibility'
       ],
       Hexagonal: [
-        'Ports and adapters',
-        'Domain-centric design',
-        'Testability focus'
+        'Keep domain logic at the center',
+        'Use ports for defining contracts',
+        'Implement adapters for external integrations'
       ],
       CleanArchitecture: [
-        'Dependency rule',
-        'Framework independence',
-        'Testable business logic'
+        'Follow the dependency rule strictly',
+        'Keep frameworks and tools on the outer layers',
+        'Make business rules independent of UI and database'
       ],
       Monolithic: [
-        'Single deployment unit',
-        'Shared resources',
-        'Simple deployment'
+        'Consider modularizing the codebase',
+        'Implement clear module boundaries',
+        'Prepare for potential future microservices migration'
       ]
     };
 
-    return characteristics[pattern] || [];
+    return suggestions[pattern] || [];
   }
 
   /**

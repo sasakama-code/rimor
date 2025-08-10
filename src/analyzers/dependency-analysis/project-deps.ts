@@ -38,13 +38,13 @@ export class ProjectDependencyAnalyzer {
     ) as PackageJsonConfig;
 
     const result = {
-      dependencies: this.extractDependencies(packageJson.dependencies || {}),
-      devDependencies: this.extractDependencies(packageJson.devDependencies || {}),
+      dependencies: this.extractDependencies(packageJson.dependencies || {}, 'production'),
+      devDependencies: this.extractDependencies(packageJson.devDependencies || {}, 'development'),
       peerDependencies: packageJson.peerDependencies 
-        ? this.extractDependencies(packageJson.peerDependencies)
+        ? this.extractDependencies(packageJson.peerDependencies, 'peer')
         : undefined,
       optionalDependencies: packageJson.optionalDependencies
-        ? this.extractDependencies(packageJson.optionalDependencies)
+        ? this.extractDependencies(packageJson.optionalDependencies, 'optional')
         : undefined,
       vulnerabilities: await this.checkVulnerabilities(packageJson)
     };
@@ -90,12 +90,12 @@ export class ProjectDependencyAnalyzer {
   /**
    * 依存関係を抽出
    */
-  private extractDependencies(deps: Record<string, string>): ProjectDependency[] {
+  private extractDependencies(deps: Record<string, string>, depType: 'production' | 'development' | 'peer' | 'optional' = 'production'): ProjectDependency[] {
     return Object.entries(deps).map(([name, version]) => ({
       name,
       version,
-      type: this.getVersionConstraintType(version),
-      location: 'package.json'
+      type: depType,
+      usage: [] // TODO: 実際の使用状況を分析する必要がある
     }));
   }
 

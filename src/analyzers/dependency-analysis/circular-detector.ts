@@ -37,12 +37,13 @@ export class CircularDependencyDetector {
           const cycleKey = this.getCycleKey(cycle);
           if (!detectedCycles.has(cycleKey)) {
             detectedCycles.add(cycleKey);
+            const severity = this.calculateSeverity(cycle);
             cycles.push({
-              cycle,
-              severity: this.calculateSeverity(cycle),
+              files: cycle,
+              severity: severity as 'error' | 'warning' | 'info',
               suggestion: this.suggestRefactoring({ 
-                cycle, 
-                severity: this.calculateSeverity(cycle),
+                files: cycle, 
+                severity: severity as 'error' | 'warning' | 'info',
                 suggestion: ''
               })
             });
@@ -122,15 +123,15 @@ export class CircularDependencyDetector {
   /**
    * 循環の重要度を計算
    */
-  calculateSeverity(cycle: string[]): 'low' | 'medium' | 'high' {
+  calculateSeverity(cycle: string[]): 'error' | 'warning' | 'info' {
     const length = cycle.length - 1; // 最後の要素は最初の要素の繰り返し
     
     if (length <= 2) {
-      return 'high'; // 2ファイル間の直接的な循環
+      return 'error'; // 2ファイル間の直接的な循環
     } else if (length <= 4) {
-      return 'medium'; // 3-4ファイル間の循環
+      return 'warning'; // 3-4ファイル間の循環
     } else {
-      return 'low'; // 5ファイル以上の循環
+      return 'info'; // 5ファイル以上の循環
     }
   }
 
@@ -141,10 +142,10 @@ export class CircularDependencyDetector {
     const suggestions: string[] = [];
     const severity = cycle.severity;
 
-    if (severity === 'high') {
+    if (severity === 'error') {
       suggestions.push('Consider extracting common functionality to a separate module');
       suggestions.push('Use dependency injection or interfaces to break the direct dependency');
-    } else if (severity === 'medium') {
+    } else if (severity === 'warning') {
       suggestions.push('Review the module boundaries and responsibilities');
       suggestions.push('Consider using event-driven architecture or mediator pattern');
     } else {
@@ -167,13 +168,13 @@ export class CircularDependencyDetector {
   ): {
     affectedFiles: string[];
     testFiles: string[];
-    severity: 'low' | 'medium' | 'high' | 'critical';
+    severity: 'error' | 'warning' | 'info';
   } {
     const affectedFiles = new Set<string>();
     const testFiles = new Set<string>();
 
     // 循環に含まれるファイルを追加
-    for (const file of cycle.cycle) {
+    for (const file of cycle.files) {
       affectedFiles.add(file);
       
       // このファイルをインポートしている他のファイルを検索
@@ -189,11 +190,11 @@ export class CircularDependencyDetector {
     }
 
     // 影響度を計算
-    let severity: 'low' | 'medium' | 'high' | 'critical' = cycle.severity;
+    let severity: 'error' | 'warning' | 'info' = cycle.severity;
     if (affectedFiles.size > 10) {
-      severity = 'critical';
-    } else if (affectedFiles.size > 5 && severity !== 'high') {
-      severity = 'high';
+      severity = 'error';
+    } else if (affectedFiles.size > 5 && severity !== 'error') {
+      severity = 'warning';
     }
 
     return {

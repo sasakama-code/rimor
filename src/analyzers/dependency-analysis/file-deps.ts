@@ -29,7 +29,8 @@ export class FileDependencyAnalyzer {
     file: string;
     imports: string[];
     exports: string[];
-    importedBy?: string[];
+    dependsOn: string[];
+    dependedBy: string[];
     packageImports?: string[];
   }> {
     if (!fs.existsSync(filePath)) {
@@ -45,7 +46,8 @@ export class FileDependencyAnalyzer {
       file: filePath,
       imports,
       exports,
-      importedBy: [],
+      dependsOn: imports.filter(imp => this.getImportType(imp) === 'relative'),
+      dependedBy: [],
       packageImports
     };
   }
@@ -147,19 +149,19 @@ export class FileDependencyAnalyzer {
           file,
           imports: deps.imports.filter(imp => this.getImportType(imp) === 'relative'),
           exports: deps.exports,
-          importedBy: [],
-          packageImports: deps.packageImports || []
+          dependsOn: deps.imports.filter(imp => this.getImportType(imp) === 'relative'),
+          dependedBy: []
         });
       }
     }
 
-    // importedByを計算
+    // dependedByを計算
     for (const [file, deps] of graph.entries()) {
       for (const importPath of deps.imports) {
         const resolvedPath = this.resolveImportPath(file, importPath);
         const importedFile = graph.get(resolvedPath);
         if (importedFile) {
-          importedFile.importedBy.push(file);
+          importedFile.dependedBy.push(file);
         }
       }
     }
