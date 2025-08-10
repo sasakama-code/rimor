@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AnalysisOptions, RelatedFileInfo } from '../types';
 import { PathSecurity } from '../../utils/pathSecurity';
-import { LanguageAnalyzer } from './language';
+import { LanguageAnalyzer } from './language-parser';
 
 /**
  * ファイル構造解析機能

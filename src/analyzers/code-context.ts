@@ -6,11 +6,11 @@ import {
   ScopeInfo,
   RelatedFileInfo
 } from './types';
-import { AdvancedCodeContextAnalyzer as CoreAdvancedCodeContextAnalyzer } from './code-context/core';
+import { AdvancedCodeContextAnalyzer as CoreAdvancedCodeContextAnalyzer } from './code-analysis/context-extractor';
 import { ResourceLimitMonitor } from '../utils/resourceLimits';
-import { LanguageAnalyzer } from './code-context/language';
-import { ScopeAnalyzer } from './code-context/scope';
-import { FileAnalyzer } from './code-context/file';
+import { LanguageAnalyzer } from './code-analysis/language-parser';
+import { ScopeAnalyzer } from './code-analysis/scope-analyzer';
+import { FileAnalyzer } from './code-analysis/file-analyzer';
 
 /**
  * 高度なコードコンテキスト分析器 v0.6.0

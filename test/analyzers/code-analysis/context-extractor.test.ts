@@ -1,4 +1,4 @@
-import { AdvancedCodeContextAnalyzer } from '../../../src/analyzers/code-context/core';
+import { AdvancedCodeContextAnalyzer } from '../../../src/analyzers/code-analysis/context-extractor';
 import { Issue } from '../../../src/core/types';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -1,4 +1,4 @@
-import { FileAnalyzer } from '../../../src/analyzers/code-context/file';
+import { FileAnalyzer } from '../../../src/analyzers/code-analysis/file-analyzer';
 import * as fs from 'fs';
 import * as path from 'path';
 

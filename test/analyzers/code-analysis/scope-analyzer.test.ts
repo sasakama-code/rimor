@@ -1,4 +1,4 @@
-import { ScopeAnalyzer } from '../../../src/analyzers/code-context/scope';
+import { ScopeAnalyzer } from '../../../src/analyzers/code-analysis/scope-analyzer';
 
 describe('ScopeAnalyzer', () => {
   let analyzer: ScopeAnalyzer;

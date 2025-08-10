@@ -105,6 +105,15 @@ export class ScopeAnalyzer {
   }
 
   /**
+   * コンテンツからスコープ階層を分析
+   */
+  async analyzeScopeHierarchy(content: string, language: string): Promise<ScopeInfo[]> {
+    // 言語に依存しない基本的なスコープ分析を実行
+    // targetLineは1を使用（全体のスコープ階層を取得）
+    return this.analyzeScopeContext(content, 1);
+  }
+
+  /**
    * 特定の行のスコープを特定
    */
   findScopeAtLine(scopes: ScopeInfo[], targetLine: number): ScopeInfo | null {
