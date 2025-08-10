@@ -25,8 +25,8 @@ export type ReportFormat =
  */
 export interface IFormattingStrategy {
   name: string;
-  format(result: UnifiedAnalysisResult, options?: any): any;
-  formatAsync?(result: UnifiedAnalysisResult, options?: any): Promise<any>;
+  format(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): string | object;
+  formatAsync?(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object>;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface IFormattingStrategy {
  */
 export interface UnifiedReport {
   format: ReportFormat;
-  content: any;
+  content: string | object;
   timestamp: string;
   metadata?: {
     generatedBy: string;
@@ -61,7 +61,7 @@ export interface ReportGenerationOptions {
  * 後方互換性のための抽象
  */
 export interface ILegacyAdapter {
-  format(result: UnifiedAnalysisResult, options?: any): Promise<any>;
+  format(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object>;
   isDeprecated: boolean;
   deprecationMessage: string;
 }

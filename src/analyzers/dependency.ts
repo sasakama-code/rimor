@@ -1,5 +1,6 @@
 import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage, VersionConstraint } from './types';
 import { PackageJsonConfig } from '../core/types';
+import { PackageLockDependency } from './dependency-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
@@ -439,11 +440,12 @@ export class DependencyAnalyzer {
     const packages = new Map<string, string>();
     
     if (packageLock.packages) {
-      Object.entries(packageLock.packages).forEach(([path, info]: [string, any]) => {
+      Object.entries(packageLock.packages).forEach(([path, info]: [string, unknown]) => {
         if (path && path.startsWith('node_modules/')) {
           const name = path.replace('node_modules/', '');
-          if (info.version) {
-            packages.set(name, info.version);
+          const packageInfo = info as PackageLockDependency;
+          if (packageInfo?.version) {
+            packages.set(name, packageInfo.version);
           }
         }
       });

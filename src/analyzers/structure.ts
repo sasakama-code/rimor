@@ -445,7 +445,7 @@ export class ProjectStructureAnalyzer {
     return detected.sort((a, b) => b.confidence - a.confidence);
   }
 
-  private analyzeArchitecturePatterns(directories: string[], files: string[]): any {
+  private analyzeArchitecturePatterns(directories: string[], files: string[]): Record<string, unknown> {
     // アーキテクチャパターンの分析ロジック
     return {};
   }
@@ -699,7 +699,12 @@ export class ProjectStructureAnalyzer {
     return this.analyzeNamingPattern(classes, 'classes');
   }
 
-  private analyzeNamingPattern(names: string[], type: string): any {
+  private analyzeNamingPattern(names: string[], type: string): {
+    pattern: NamingPattern;
+    confidence: number;
+    examples: string[];
+    violations: string[];
+  } {
     if (names.length === 0) {
       return {
         pattern: 'unknown' as NamingPattern,
