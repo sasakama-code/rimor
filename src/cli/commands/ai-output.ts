@@ -330,7 +330,7 @@ export class AIOutputCommand {
     if (formatterOptions.format === 'markdown') {
       this.reportEngine.setStrategy(new MarkdownFormatter());
       const report = await this.reportEngine.generate(result as any);
-      output = report.content;
+      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
     } else {
       this.reportEngine.setStrategy(new AIJsonFormatter());
       const report = await this.reportEngine.generate(result as any);

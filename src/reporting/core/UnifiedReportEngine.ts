@@ -70,7 +70,7 @@ export class UnifiedReportEngine {
 
     try {
       // 戦略に応じたフォーマット処理
-      let content: any;
+      let content: string | object;
       
       // formatAsyncが定義されている場合は優先的に使用
       if (this.strategy.formatAsync) {
@@ -147,7 +147,7 @@ export class UnifiedReportEngine {
   private initializeLegacyAdapters(): void {
     // UnifiedAIFormatterのアダプター
     this.legacyAdapters.set('UnifiedAIFormatter', {
-      format: async (result: UnifiedAnalysisResult, options?: any) => {
+      format: async (result: UnifiedAnalysisResult, options?: ReportGenerationOptions) => {
         // AIJsonFormatterを内部で使用
         const { AIJsonFormatter } = await import('../formatters/AIJsonFormatter');
         const formatter = new AIJsonFormatter();
@@ -161,7 +161,7 @@ export class UnifiedReportEngine {
 
     // StructuredReporterのアダプター
     this.legacyAdapters.set('StructuredReporter', {
-      format: async (result: UnifiedAnalysisResult, options?: any) => {
+      format: async (result: UnifiedAnalysisResult, options?: ReportGenerationOptions) => {
         // MarkdownFormatterを内部で使用
         const formatter = new MarkdownFormatter();
         this.setStrategy(formatter);

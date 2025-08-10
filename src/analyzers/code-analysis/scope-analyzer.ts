@@ -105,6 +105,44 @@ export class ScopeAnalyzer {
   }
 
   /**
+   * コンテンツからスコープ階層を分析
+   */
+  async analyzeScopeHierarchy(content: string, language: string): Promise<ScopeInfo[]> {
+    // 言語に依存しない基本的なスコープ分析を実行
+    // targetLineは1を使用（全体のスコープ階層を取得）
+    return this.analyzeScopeContext(content, 1);
+  }
+
+  /**
+   * スコープの抽出（エイリアス）
+   * @deprecated analyzeScopeContextを使用してください
+   */
+  extractScopes(content: string, language: string): ScopeInfo[] {
+    // 同期的に処理を実行（後方互換性のため）
+    const scopes: ScopeInfo[] = [];
+    const lines = content.split('\n');
+    
+    // 簡易的なスコープ抽出
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmedLine = line.trim();
+      
+      if (trimmedLine.includes('{')) {
+        scopes.push({
+          type: 'block',
+          startLine: i + 1,
+          endLine: i + 1,
+          variables: [],
+          children: [],
+          level: 0
+        });
+      }
+    }
+    
+    return scopes;
+  }
+
+  /**
    * 特定の行のスコープを特定
    */
   findScopeAtLine(scopes: ScopeInfo[], targetLine: number): ScopeInfo | null {

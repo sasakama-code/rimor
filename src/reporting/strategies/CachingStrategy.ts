@@ -7,7 +7,7 @@
  * KISS原則: シンプルなキャッシュ実装
  */
 
-import { IFormattingStrategy } from '../core/types';
+import { IFormattingStrategy, ReportGenerationOptions } from '../core/types';
 import { UnifiedAnalysisResult } from '../../nist/types/unified-analysis-result';
 import * as crypto from 'crypto';
 
@@ -16,7 +16,7 @@ import * as crypto from 'crypto';
  */
 interface CacheEntry {
   key: string;
-  value: any;
+  value: string | object;
   timestamp: number;
   hits: number;
 }
@@ -40,7 +40,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュ付きフォーマット処理
    */
-  format(result: UnifiedAnalysisResult, options?: any): any {
+  format(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): string | object {
     const cacheKey = this.generateCacheKey(result, options);
     this.totalRequests++;
 
@@ -63,7 +63,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * 非同期版のキャッシュ付きフォーマット処理
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: any): Promise<any> {
+  async formatAsync(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object> {
     const cacheKey = this.generateCacheKey(result, options);
     this.totalRequests++;
 
@@ -75,7 +75,7 @@ export class CachingStrategy implements IFormattingStrategy {
     }
 
     // キャッシュミスの場合、基底戦略で処理
-    let formatted: any;
+    let formatted: string | object;
     
     if (this.baseStrategy.formatAsync) {
       formatted = await this.baseStrategy.formatAsync(result, options);
@@ -100,7 +100,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュ統計を取得
    */
-  getCacheStats(): any {
+  getCacheStats(): object {
     return {
       size: this.cache.size,
       maxSize: this.maxCacheSize,

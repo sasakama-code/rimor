@@ -704,4 +704,28 @@ export class LanguageAnalyzer {
   private isExported(line: string): boolean {
     return line.trimStart().startsWith('export ');
   }
+
+  /**
+   * 言語固有の機能を解析
+   */
+  parseLanguageSpecificFeatures(fileContent: string, language: string): any {
+    // 言語固有の機能解析を実装
+    // 将来的な拡張のためのプレースホルダー
+    const features: any = {
+      language,
+      hasAsync: false,
+      hasGenerics: false,
+      hasDecorators: false,
+      hasJSX: false
+    };
+
+    if (language === 'typescript' || language === 'javascript') {
+      features.hasAsync = /async\s+function|\basync\s+=>/m.test(fileContent);
+      features.hasGenerics = /<[A-Z]\w*>/m.test(fileContent);
+      features.hasDecorators = /@\w+\s*\(/m.test(fileContent);
+      features.hasJSX = /<[A-Z]\w*[^>]*>/m.test(fileContent);
+    }
+
+    return features;
+  }
 }

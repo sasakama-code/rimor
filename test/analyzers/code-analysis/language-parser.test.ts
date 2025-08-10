@@ -1,4 +1,4 @@
-import { LanguageAnalyzer } from '../../../src/analyzers/code-context/language';
+import { LanguageAnalyzer } from '../../../src/analyzers/code-analysis/language-parser';
 import * as fs from 'fs';
 
 jest.mock('fs');

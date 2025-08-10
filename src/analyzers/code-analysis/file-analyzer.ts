@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AnalysisOptions, RelatedFileInfo } from '../types';
 import { PathSecurity } from '../../utils/pathSecurity';
-import { LanguageAnalyzer } from './language';
+import { LanguageAnalyzer } from './language-parser';
 
 /**
  * ファイル構造解析機能
@@ -327,6 +327,41 @@ export class FileAnalyzer {
     const union = new Set([...words1, ...words2]);
     
     return union.size > 0 ? intersection.size / union.size : 0;
+  }
+
+  /**
+   * ファイル構造の分析
+   */
+  async analyzeFileStructure(filePath: string, projectPath: string): Promise<any> {
+    // ファイル構造の分析を実装
+    const safeFilePath = PathSecurity.safeResolve(filePath, projectPath, 'analyzeFileStructure');
+    if (!safeFilePath || !fs.existsSync(safeFilePath)) {
+      return {
+        exists: false,
+        path: filePath,
+        structure: null
+      };
+    }
+
+    const stats = fs.statSync(safeFilePath);
+    const content = fs.readFileSync(safeFilePath, 'utf-8');
+    const lines = content.split('\n');
+    const language = this.languageAnalyzer.detectLanguage(safeFilePath);
+
+    return {
+      exists: true,
+      path: safeFilePath,
+      structure: {
+        size: stats.size,
+        lines: lines.length,
+        language,
+        hasTests: /\.(test|spec)\.(js|ts|jsx|tsx)$/.test(safeFilePath),
+        imports: this.languageAnalyzer.extractImports(content, language),
+        exports: this.languageAnalyzer.extractExports(content, language),
+        functions: await this.extractFunctionNames(content, language),
+        lastModified: stats.mtime
+      }
+    };
   }
 
   /**

@@ -1,11 +1,18 @@
 import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage, VersionConstraint } from './types';
 import { PackageJsonConfig } from '../core/types';
+import { PackageLockDependency } from './dependency-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
+import { PackageAnalyzer } from './dependency-analysis/package-analyzer';
+import { UsageAnalyzer } from './dependency-analysis/usage-analyzer';
+import { ProjectDependencyAnalyzer } from './dependency-analysis/project-deps';
+import { FileDependencyAnalyzer } from './dependency-analysis/file-deps';
+import { CircularDependencyDetector } from './dependency-analysis/circular-detector';
 
 /**
- * 依存関係分析器
+ * 依存関係分析器（ファサードパターン）
+ * 後方互換性を維持しながら新しい分析クラスに処理を委譲
  * プロジェクトの依存関係を分析し、循環依存、未使用・不足している依存関係を検出
  */
 export class DependencyAnalyzer {
@@ -19,6 +26,21 @@ export class DependencyAnalyzer {
     '.idea',
     'coverage'
   ];
+  
+  // 新しい分析クラスのインスタンス
+  private packageAnalyzer: PackageAnalyzer;
+  private usageAnalyzer: UsageAnalyzer;
+  private projectDepsAnalyzer: ProjectDependencyAnalyzer;
+  private fileDepsAnalyzer: FileDependencyAnalyzer;
+  private circularDetector: CircularDependencyDetector;
+  
+  constructor() {
+    this.packageAnalyzer = new PackageAnalyzer();
+    this.usageAnalyzer = new UsageAnalyzer();
+    this.projectDepsAnalyzer = new ProjectDependencyAnalyzer();
+    this.fileDepsAnalyzer = new FileDependencyAnalyzer();
+    this.circularDetector = new CircularDependencyDetector();
+  }
 
   /**
    * プロジェクトの依存関係を包括的に分析
@@ -133,8 +155,18 @@ export class DependencyAnalyzer {
 
   /**
    * 未使用の依存関係を検出
+   * PackageAnalyzerに処理を委譲
    */
   async findUnusedDependencies(projectPath: string): Promise<string[]> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.findUnusedDependencies(projectPath);
+  }
+
+  /**
+   * 未使用の依存関係を検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async findUnusedDependenciesLegacy(projectPath: string): Promise<string[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       return [];
@@ -175,8 +207,18 @@ export class DependencyAnalyzer {
 
   /**
    * 不足している依存関係を検出
+   * PackageAnalyzerに処理を委譲
    */
   async findMissingDependencies(projectPath: string): Promise<string[]> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.findMissingDependencies(projectPath);
+  }
+
+  /**
+   * 不足している依存関係を検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async findMissingDependenciesLegacy(projectPath: string): Promise<string[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     let installedDependencies = new Set<string>();
 
@@ -210,8 +252,41 @@ export class DependencyAnalyzer {
 
   /**
    * バージョン制約を分析
+   * PackageAnalyzerに処理を委譲
    */
   async analyzeVersionConstraints(projectPath: string): Promise<VersionConstraint[]> {
+    // 新しい実装に委譲
+    const results = await this.packageAnalyzer.analyzeVersionConstraints(projectPath);
+    // 型を変換
+    return results.map(r => ({
+      package: r.package,
+      declaredVersion: r.constraint,
+      constraint: this.mapConstraintType(r.type),
+      hasVulnerability: r.isRisky,
+      suggestion: r.isRisky ? 'より安定したバージョン制約を検討してください' : undefined
+    }));
+  }
+
+  /**
+   * 制約タイプをマッピング
+   * @private
+   */
+  private mapConstraintType(type: string): 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard' {
+    switch (type) {
+      case 'exact': return 'exact';
+      case 'caret': return 'caret';
+      case 'tilde': return 'tilde';
+      case 'range': return 'range';
+      case 'any': return 'wildcard';
+      default: return 'range';
+    }
+  }
+
+  /**
+   * バージョン制約を分析（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async analyzeVersionConstraintsLegacy(projectPath: string): Promise<VersionConstraint[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       return [];
@@ -251,8 +326,18 @@ export class DependencyAnalyzer {
 
   /**
    * パッケージマネージャーを検出
+   * PackageAnalyzerに処理を委譲
    */
   async detectPackageManager(projectPath: string): Promise<string> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.detectPackageManager(projectPath);
+  }
+
+  /**
+   * パッケージマネージャーを検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async detectPackageManagerLegacy(projectPath: string): Promise<string> {
     // yarn.lockがあればyarn
     if (fs.existsSync(path.join(projectPath, 'yarn.lock'))) {
       return 'yarn';
@@ -439,11 +524,12 @@ export class DependencyAnalyzer {
     const packages = new Map<string, string>();
     
     if (packageLock.packages) {
-      Object.entries(packageLock.packages).forEach(([path, info]: [string, any]) => {
+      Object.entries(packageLock.packages).forEach(([path, info]: [string, unknown]) => {
         if (path && path.startsWith('node_modules/')) {
           const name = path.replace('node_modules/', '');
-          if (info.version) {
-            packages.set(name, info.version);
+          const packageInfo = info as PackageLockDependency;
+          if (packageInfo?.version) {
+            packages.set(name, packageInfo.version);
           }
         }
       });
