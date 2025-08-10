@@ -330,6 +330,41 @@ export class FileAnalyzer {
   }
 
   /**
+   * ファイル構造の分析
+   */
+  async analyzeFileStructure(filePath: string, projectPath: string): Promise<any> {
+    // ファイル構造の分析を実装
+    const safeFilePath = PathSecurity.safeResolve(filePath, projectPath, 'analyzeFileStructure');
+    if (!safeFilePath || !fs.existsSync(safeFilePath)) {
+      return {
+        exists: false,
+        path: filePath,
+        structure: null
+      };
+    }
+
+    const stats = fs.statSync(safeFilePath);
+    const content = fs.readFileSync(safeFilePath, 'utf-8');
+    const lines = content.split('\n');
+    const language = this.languageAnalyzer.detectLanguage(safeFilePath);
+
+    return {
+      exists: true,
+      path: safeFilePath,
+      structure: {
+        size: stats.size,
+        lines: lines.length,
+        language,
+        hasTests: /\.(test|spec)\.(js|ts|jsx|tsx)$/.test(safeFilePath),
+        imports: this.languageAnalyzer.extractImports(content, language),
+        exports: this.languageAnalyzer.extractExports(content, language),
+        functions: await this.extractFunctionNames(content, language),
+        lastModified: stats.mtime
+      }
+    };
+  }
+
+  /**
    * 関数名の抽出
    */
   private async extractFunctionNames(content: string, language: string): Promise<string[]> {

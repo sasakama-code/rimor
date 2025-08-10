@@ -65,6 +65,26 @@ export class CodeContextAnalyzer {
   ): Promise<RelatedFileInfo[]> {
     return this.fileAnalyzer.findRelatedFiles(targetFile, projectPath, options);
   }
+
+  /**
+   * スコープ階層の分析（エイリアス）
+   * @deprecated analyzeScopeContextを使用してください
+   */
+  async analyzeScopeHierarchy(content: string, targetLine: number): Promise<ScopeInfo[]> {
+    return this.analyzeScopeContext(content, targetLine);
+  }
+
+  /**
+   * 関連ファイルの検索（エイリアス）
+   * @deprecated detectRelatedCodeを使用してください
+   */
+  async findRelatedFiles(
+    targetFile: string,
+    projectPath: string,
+    options: AnalysisOptions = {}
+  ): Promise<RelatedFileInfo[]> {
+    return this.detectRelatedCode(targetFile, projectPath, options);
+  }
 }
 
 // 後方互換性のためのエクスポート

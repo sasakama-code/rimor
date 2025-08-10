@@ -32,6 +32,7 @@ describe('Code Context to Code Analysis Migration', () => {
     });
 
     it('古いcode-contextディレクトリが削除されていること', () => {
+      // code-contextディレクトリは削除済み
       expect(fs.existsSync(oldPath)).toBe(false);
     });
   });
