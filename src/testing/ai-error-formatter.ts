@@ -1,5 +1,6 @@
 import { TestErrorContext } from './error-context';
-import { AIOptimizedFormatter } from '../ai-output/formatter';
+import { UnifiedReportEngine } from '../reporting/core/UnifiedReportEngine';
+import { AIJsonFormatter } from '../reporting/formatters/AIJsonFormatter';
 import * as path from 'path';
 
 /**
@@ -85,10 +86,11 @@ interface QuickAction {
  */
 export class AITestErrorFormatter {
   private readonly VERSION = '0.8.0';
-  private aiOptimizedFormatter: AIOptimizedFormatter;
+  private reportEngine: UnifiedReportEngine;
   
   constructor() {
-    this.aiOptimizedFormatter = new AIOptimizedFormatter();
+    this.reportEngine = new UnifiedReportEngine();
+    this.reportEngine.setStrategy(new AIJsonFormatter());
   }
   
   /**

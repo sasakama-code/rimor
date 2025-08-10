@@ -3,7 +3,9 @@ import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
 import { AssertionExistsPlugin } from '../../plugins/assertionExists';
-import { AIOptimizedFormatter } from '../../ai-output/formatter';
+import { UnifiedReportEngine } from '../../reporting/core/UnifiedReportEngine';
+import { AIJsonFormatter } from '../../reporting/formatters/AIJsonFormatter';
+import { MarkdownFormatter } from '../../reporting/formatters/MarkdownFormatter';
 import { FormatterOptions, EnhancedAnalysisResult } from '../../ai-output/types';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
@@ -34,12 +36,12 @@ export interface AIOutputOptions {
  * 分析結果をAIツールが理解しやすい形式で出力
  */
 export class AIOutputCommand {
-  private formatter: AIOptimizedFormatter;
+  private reportEngine: UnifiedReportEngine;
   private analyzer!: Analyzer | ParallelAnalyzer | CachedAnalyzer;
   private config: RimorConfig | null = null;
 
   constructor() {
-    this.formatter = new AIOptimizedFormatter();
+    this.reportEngine = new UnifiedReportEngine();
   }
 
   /**
@@ -326,10 +328,13 @@ export class AIOutputCommand {
 
     // フォーマット別出力生成
     if (formatterOptions.format === 'markdown') {
-      output = await this.formatter.formatAsMarkdown(result, targetPath, formatterOptions);
+      this.reportEngine.setStrategy(new MarkdownFormatter());
+      const report = await this.reportEngine.generate(result as any);
+      output = report.content;
     } else {
-      const jsonOutput = await this.formatter.formatAsJSON(result, targetPath, formatterOptions);
-      output = JSON.stringify(jsonOutput, null, 2);
+      this.reportEngine.setStrategy(new AIJsonFormatter());
+      const report = await this.reportEngine.generate(result as any);
+      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
     }
 
     // 出力先の決定と保存
