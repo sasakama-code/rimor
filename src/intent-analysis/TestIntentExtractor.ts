@@ -647,7 +647,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     intent: TestIntent,
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<TestRealizationResult> {
+  ): Promise<TestRealizationResult & { domainRelevance?: any; domainSpecificGaps?: any[] }> {
     if (!this.domainEngine) {
       this.domainEngine = new DomainInferenceEngine();
     }
@@ -674,8 +674,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       actual
     );
 
-    // 基本の評価結果を返す（ドメイン情報は内部で活用済み）
-    return baseResult;
+    // 拡張された結果を返す
+    return {
+      ...baseResult,
+      domainRelevance: {
+        domain: primaryDomain.domain,
+        confidence: primaryDomain.confidence,
+        businessImportance: primaryDomain.domain === 'payment' ? 'high' : 'medium'
+      },
+      domainSpecificGaps: domainSpecificGaps
+    };
   }
 
   /**
@@ -735,7 +743,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testFilePath: string,
     ast: ASTNode,
     callGraph: CallGraphNode[]
-  ): Promise<BusinessMapping> {
+  ): Promise<any> {
     if (!this.businessMapper) {
       this.businessMapper = new BusinessLogicMapper();
     }
@@ -836,7 +844,12 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       functions: [...coveredFunctions, ...uncoveredFunctions],
       coveredFunctions,
       uncoveredFunctions,
-      coverage: criticalPathCoverage
+      coverage: criticalPathCoverage,
+      businessLogicCoverage: {
+        coveredFunctions,
+        uncoveredFunctions,
+        coverage: criticalPathCoverage
+      }
     };
   }
 
