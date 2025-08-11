@@ -135,7 +135,9 @@ export class IntegrityHashGenerator {
         };
       }
     } catch (error: unknown) {
-      if (isNodeError(error) && error.code === 'ENOENT') {
+      const errorMessage = getErrorMessage(error);
+      // ENOENTエラーを含むメッセージを検出
+      if (errorMessage.includes('ENOENT') || errorMessage.includes('no such file or directory')) {
         return {
           valid: false,
           definition: null,
@@ -145,7 +147,7 @@ export class IntegrityHashGenerator {
       return {
         valid: false,
         definition: null,
-        error: `ファイルの読み込みに失敗しました: ${getErrorMessage(error)}`
+        error: `ファイルの読み込みに失敗しました: ${errorMessage}`
       };
     }
   }

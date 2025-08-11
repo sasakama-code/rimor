@@ -17,17 +17,55 @@ describe('Type Safety Verification', () => {
       esModuleInterop: true,
       skipLibCheck: true,
       target: ts.ScriptTarget.ES2020,
-      module: ts.ModuleKind.CommonJS
+      module: ts.ModuleKind.CommonJS,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      noResolve: true
     };
 
     const host = ts.createCompilerHost(options);
     const originalGetSourceFile = host.getSourceFile;
+    const originalFileExists = host.fileExists;
+    const originalReadFile = host.readFile;
     
     host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
-      if (files[fileName] !== undefined) {
-        return ts.createSourceFile(fileName, files[fileName], languageVersion, true);
+      // Normalize the file name
+      const normalizedName = fileName.replace(/\\/g, '/');
+      const baseName = path.basename(normalizedName);
+      
+      if (files[baseName] !== undefined) {
+        return ts.createSourceFile(fileName, files[baseName], languageVersion, true);
+      }
+      if (files[normalizedName] !== undefined) {
+        return ts.createSourceFile(fileName, files[normalizedName], languageVersion, true);
+      }
+      // For relative imports like './types', check 'types.ts'
+      if (normalizedName.endsWith('/types')) {
+        const typesFile = files['types.ts'];
+        if (typesFile !== undefined) {
+          return ts.createSourceFile(fileName, typesFile, languageVersion, true);
+        }
       }
       return originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+    };
+
+    host.fileExists = (fileName: string): boolean => {
+      const normalizedName = fileName.replace(/\\/g, '/');
+      const baseName = path.basename(normalizedName);
+      return files[baseName] !== undefined || 
+             files[normalizedName] !== undefined ||
+             (normalizedName.endsWith('/types') && files['types.ts'] !== undefined) ||
+             originalFileExists(fileName);
+    };
+
+    host.readFile = (fileName: string): string | undefined => {
+      const normalizedName = fileName.replace(/\\/g, '/');
+      const baseName = path.basename(normalizedName);
+      if (files[baseName] !== undefined) return files[baseName];
+      if (files[normalizedName] !== undefined) return files[normalizedName];
+      if (normalizedName.endsWith('/types') && files['types.ts'] !== undefined) {
+        return files['types.ts'];
+      }
+      return originalReadFile(fileName);
     };
 
     const program = ts.createProgram(Object.keys(files), options, host);

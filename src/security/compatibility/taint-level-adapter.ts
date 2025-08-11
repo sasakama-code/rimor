@@ -27,7 +27,7 @@ export class TaintLevelAdapter {
    */
   static toTaintQualifier(level: TaintLevel): TaintQualifier {
     // CLEAN/UNTAINTEDは@Untaintedにマップ
-    if (level <= TaintLevel.UNTAINTED) {
+    if (level === 'untainted' || level === 'sanitized') {
       return '@Untainted';
     }
     // その他すべては@Taintedにマップ
@@ -47,7 +47,7 @@ export class TaintLevelAdapter {
     // 信頼度の計算（0.0-1.0の範囲）
     const confidence = this.calculateConfidence(level);
     
-    if (level <= TaintLevel.UNTAINTED) {
+    if (level === 'untainted' || level === 'sanitized') {
       return TypeConstructors.untainted(value, 'legacy-clean');
     } else {
       const sourceStr = source || (metadata?.sources && metadata.sources[0]) || 'legacy-taint';
@@ -61,13 +61,13 @@ export class TaintLevelAdapter {
    */
   static fromQualifiedType<T>(qualified: QualifiedType<T>): TaintLevel {
     if (qualified.__brand === '@Untainted') {
-      return TaintLevel.UNTAINTED;
+      return 'untainted';
     } else if (qualified.__brand === '@Tainted') {
       const tainted = qualified as TaintedType<T>;
       return this.confidenceToTaintLevel(tainted.__confidence);
     } else {
       // @PolyTaintは文脈依存なので、保守的にPOSSIBLY_TAINTEDとする
-      return TaintLevel.POSSIBLY_TAINTED;
+      return 'possibly_tainted';
     }
   }
 
@@ -76,16 +76,16 @@ export class TaintLevelAdapter {
    */
   private static calculateConfidence(level: TaintLevel): number {
     switch (level) {
-      case TaintLevel.CLEAN:
-      case TaintLevel.UNTAINTED:
+      case 'untainted':
+      case 'sanitized':
         return 0.0;
-      case TaintLevel.POSSIBLY_TAINTED:
+      case 'possibly_tainted':
         return 0.25;
-      case TaintLevel.LIKELY_TAINTED:
+      case 'unknown':
         return 0.5;
-      case TaintLevel.DEFINITELY_TAINTED:
+      case 'tainted':
         return 0.75;
-      case TaintLevel.HIGHLY_TAINTED:
+      case 'highly_tainted':
         return 1.0;
       default:
         return 0.5; // デフォルトは中間値
@@ -97,15 +97,15 @@ export class TaintLevelAdapter {
    */
   private static confidenceToTaintLevel(confidence: number): TaintLevel {
     if (confidence <= 0.0) {
-      return TaintLevel.UNTAINTED;
+      return 'untainted';
     } else if (confidence <= 0.25) {
-      return TaintLevel.POSSIBLY_TAINTED;
+      return 'possibly_tainted';
     } else if (confidence <= 0.5) {
-      return TaintLevel.LIKELY_TAINTED;
+      return 'unknown';
     } else if (confidence <= 0.75) {
-      return TaintLevel.DEFINITELY_TAINTED;
+      return 'tainted';
     } else {
-      return TaintLevel.HIGHLY_TAINTED;
+      return 'highly_tainted';
     }
   }
 
