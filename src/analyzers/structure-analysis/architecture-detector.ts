@@ -120,21 +120,40 @@ export class ArchitectureDetector {
    */
   private async getProjectFiles(projectPath: string): Promise<string[]> {
     const files: string[] = [];
+    const visited = new Set<string>(); // 循環参照を防ぐ
+    const maxDepth = 5; // 最大深度を制限
     
-    const walkDir = (dir: string) => {
-      const items = fs.readdirSync(dir);
+    const walkDir = (dir: string, depth: number = 0) => {
+      // 深度制限と循環参照チェック
+      if (depth > maxDepth || visited.has(dir)) {
+        return;
+      }
+      visited.add(dir);
       
-      for (const item of items) {
-        if (item.startsWith('.') || item === 'node_modules') continue;
+      try {
+        const items = fs.readdirSync(dir);
         
-        const itemPath = path.join(dir, item);
-        const stat = fs.statSync(itemPath);
-        
-        if (stat.isDirectory()) {
-          walkDir(itemPath);
-        } else if (stat.isFile()) {
-          files.push(path.basename(item));
+        for (const item of items) {
+          if (item.startsWith('.') || item === 'node_modules' || item === 'dist' || item === 'build') continue;
+          
+          const itemPath = path.join(dir, item);
+          
+          try {
+            const stat = fs.statSync(itemPath);
+            
+            if (stat.isDirectory()) {
+              walkDir(itemPath, depth + 1);
+            } else if (stat.isFile()) {
+              files.push(path.basename(item));
+            }
+          } catch (error) {
+            // ファイルアクセスエラーは無視
+            continue;
+          }
         }
+      } catch (error) {
+        // ディレクトリ読み込みエラーは無視
+        return;
       }
     };
 
@@ -217,9 +236,9 @@ export class ArchitectureDetector {
         'Make business rules independent of UI and database'
       ],
       Monolithic: [
-        'Consider modularizing the codebase',
-        'Implement clear module boundaries',
-        'Prepare for potential future microservices migration'
+        'Consider modularizing your codebase',
+        'Separate concerns into distinct modules',
+        'Extract reusable components'
       ]
     };
 
@@ -232,24 +251,27 @@ export class ArchitectureDetector {
   async analyzeFileStructure(projectPath: string): Promise<string[]> {
     const evidence: string[] = [];
     const files = await this.getProjectFiles(projectPath);
-
-    // 特定のパターンを探す
-    const patterns = {
-      'Controller': 'Controller files detected',
-      'Model': 'Model files detected',
-      'Service': 'Service files detected',
-      'Repository': 'Repository pattern detected',
-      'UseCase': 'Use case files detected',
-      'Entity': 'Entity files detected',
-      'Gateway': 'Gateway files detected'
-    };
-
-    for (const [pattern, message] of Object.entries(patterns)) {
-      if (files.some(file => file.includes(pattern))) {
-        evidence.push(message);
-      }
+    
+    // Controller files
+    if (files.some(f => f.includes('Controller'))) {
+      evidence.push('Controller files detected');
     }
-
+    
+    // Model files
+    if (files.some(f => f.includes('Model'))) {
+      evidence.push('Model files detected');
+    }
+    
+    // Service files
+    if (files.some(f => f.includes('Service'))) {
+      evidence.push('Service files detected');
+    }
+    
+    // Repository pattern
+    if (files.some(f => f.includes('Repository'))) {
+      evidence.push('Repository pattern detected');
+    }
+    
     return evidence;
   }
 }
