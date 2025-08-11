@@ -90,18 +90,27 @@ parentPort?.on('message', async (task: TypeCheckWorkerMessage) => {
   try {
     const result = await performTypeCheck(task);
     
+    // エラーの判定（セキュリティ問題またはviolationsがある場合）
+    const hasErrors = result.securityIssues.length > 0 || 
+                     (result.violations && result.violations.length > 0);
+    
     const workerResult: TypeCheckWorkerResult = {
       id: task.id,
-      success: result.securityIssues.length === 0,
+      success: !hasErrors,
       result,
       executionTime: Math.max(1, Date.now() - startTime) // 最小1msを保証
     };
     
-    // セキュリティ問題がある場合はエラーメッセージを設定
-    if (result.securityIssues.length > 0) {
-      workerResult.error = result.securityIssues
-        .map(issue => issue.message)
-        .join('; ');
+    // エラーメッセージの設定
+    if (hasErrors) {
+      const errors: string[] = [];
+      if (result.securityIssues.length > 0) {
+        errors.push(...result.securityIssues.map(issue => issue.message));
+      }
+      if (result.violations && result.violations.length > 0) {
+        errors.push(...result.violations.map(v => v.description || 'Type violation'));
+      }
+      workerResult.error = errors.join('; ');
     }
     
     parentPort?.postMessage(workerResult);
@@ -125,17 +134,22 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
   const warnings: TypeCheckWarning[] = [];
   const inferredTypes = new Map<string, QualifiedType<unknown>>();
   const securityIssues: SecurityIssue[] = [];
+  const violations: SecurityViolation[] = [];
   
   // Validate task.method
   if (!task.method || !task.method.content) {
-    errors.push(new TypeQualifierError(
-      'Invalid task: method or method.content is missing',
-      '@Tainted',
-      '@Untainted'
-    ));
+    violations.push({
+      type: 'type-error',
+      description: 'Invalid task: method or method.content is missing',
+      location: {
+        file: 'unknown',
+        line: 0,
+        column: 0
+      }
+    });
     return {
       inferredTypes: new Map<string, QualifiedType<unknown>>(),
-      violations: [],
+      violations,
       securityIssues,
       warnings
     } as TypeInferenceWorkerResult;
@@ -202,16 +216,26 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
             
             // @Tainted -> @Untaintedは許可されない
             if (actual === '@Tainted' && expected === '@Untainted') {
-              errors.push(new TypeQualifierError(
-                `Type mismatch: Cannot pass @Tainted value '${arg}' to ${call.methodName} which expects @Untainted (type error)`,
-                actual,
-                expected,
-                {
+              violations.push({
+                type: 'type-error',
+                description: `Type mismatch: Cannot pass @Tainted value '${arg}' to ${call.methodName} which expects @Untainted (type error)`,
+                location: {
                   file: task.method.filePath || 'unknown',
                   line: 0,
                   column: 0
                 }
-              ));
+              });
+              securityIssues.push({
+                id: `type-error-${call.methodName}-${arg}`,
+                type: 'validation',
+                severity: 'high',
+                message: `Type error: Cannot pass @Tainted value '${arg}' to ${call.methodName} which expects @Untainted`,
+                location: {
+                  file: task.method.filePath || 'unknown',
+                  line: 0,
+                  column: 0
+                }
+              });
             }
           }
         });
@@ -220,13 +244,26 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
     
     // 推論された型をQualifiedTypeに変換
     inferenceState.typeMap.forEach((qualifier, variable) => {
-      const qualifiedType: QualifiedType<unknown> = qualifier === '@Tainted' 
-        ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as QualifiedType<unknown>
-        : qualifier === '@Untainted'
-        ? { __brand: '@Untainted', __value: variable } as QualifiedType<unknown>
-        : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as QualifiedType<unknown>;
-      
-      inferredTypes.set(variable, qualifiedType);
+      if (qualifier === '@Tainted') {
+        inferredTypes.set(variable, { 
+          __brand: '@Tainted', 
+          __value: variable, 
+          __source: 'inferred', 
+          __confidence: 1.0 
+        } as QualifiedType<unknown>);
+      } else if (qualifier === '@Untainted') {
+        inferredTypes.set(variable, { 
+          __brand: '@Untainted', 
+          __value: variable 
+        } as QualifiedType<unknown>);
+      } else {
+        inferredTypes.set(variable, { 
+          __brand: '@PolyTaint', 
+          __value: variable, 
+          __parameterIndices: [], 
+          __propagationRule: 'any' 
+        } as QualifiedType<unknown>);
+      }
     });
     
     // ステップ4: セキュリティ問題の検出
@@ -253,29 +290,63 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (errorMessage.includes('syntax')) {
-      errors.push(new TypeQualifierError(
-        `Syntax error in code: ${errorMessage}`,
-        '@Tainted',
-        '@Untainted'
-      ));
+      violations.push({
+        type: 'syntax-error',
+        description: `Syntax error in code: ${errorMessage}`,
+        location: {
+          file: task.method.filePath || 'unknown',
+          line: 0,
+          column: 0
+        }
+      });
+      securityIssues.push({
+        id: 'syntax-error',
+        type: 'validation',
+        severity: 'high',
+        message: `syntax error: ${errorMessage}`,
+        location: {
+          file: task.method.filePath || 'unknown',
+          line: 0,
+          column: 0
+        }
+      });
     } else if (errorMessage.includes('type')) {
-      errors.push(new TypeQualifierError(
-        `Type error detected: ${errorMessage}`,
-        '@Tainted',
-        '@Untainted'
-      ));
+      violations.push({
+        type: 'type-error',
+        description: `Type error detected: ${errorMessage}`,
+        location: {
+          file: task.method.filePath || 'unknown',
+          line: 0,
+          column: 0
+        }
+      });
+      securityIssues.push({
+        id: 'type-error',
+        type: 'validation',
+        severity: 'high',
+        message: `type error: ${errorMessage}`,
+        location: {
+          file: task.method.filePath || 'unknown',
+          line: 0,
+          column: 0
+        }
+      });
     } else {
-      errors.push(new TypeQualifierError(
-        `Type checking failed: ${errorMessage}`,
-        '@Tainted',
-        '@Untainted'
-      ));
+      violations.push({
+        type: 'general-error',
+        description: `Type checking failed: ${errorMessage}`,
+        location: {
+          file: task.method.filePath || 'unknown',
+          line: 0,
+          column: 0
+        }
+      });
     }
   }
   
   return {
     inferredTypes,
-    violations: [],
+    violations,
     securityIssues,
     warnings
   } as TypeInferenceWorkerResult;

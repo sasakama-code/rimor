@@ -82,7 +82,7 @@ export type QualifiedType<T> = TaintedType<T> | UntaintedType<T> | PolyTaintType
 export const TypeGuards = {
   isTainted<T>(value: unknown): value is TaintedType<T> {
     return value !== null && typeof value === 'object' && 
-           'value' in value && (value as Record<string, unknown>).__brand === '@Tainted';
+           '__brand' in value && (value as Record<string, unknown>).__brand === '@Tainted';
   },
   
   isUntainted<T>(value: unknown): value is UntaintedType<T> {

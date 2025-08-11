@@ -40,10 +40,9 @@ export interface TypeInferenceWorkerResult {
  * Security violation details
  */
 export interface SecurityViolation {
-  variable: string;
-  type: QualifiedType<unknown>;
+  type: string;
+  description?: string;
   location: CodeLocation;
-  message: string;
 }
 
 /**
