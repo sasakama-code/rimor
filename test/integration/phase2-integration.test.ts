@@ -198,8 +198,9 @@ describe('Phase 2 Integration Tests', () => {
 
       expect(suggestions).toContainEqual(
         expect.objectContaining({
-          category: 'security',
-          suggestion: expect.stringContaining('無効な認証情報')
+          type: 'security',
+          priority: 'critical',
+          description: expect.stringContaining('無効な認証情報')
         })
       );
     });
