@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   ITestQualityPlugin,
   ProjectContext,
@@ -9,7 +10,8 @@ import {
   Evidence,
   CodeLocation,
   FixResult,
-  Feedback
+  Feedback,
+  Issue
 } from '../../core/types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
 import { LogMetadata, ErrorLogMetadata } from '../types/log-types';
@@ -160,6 +162,45 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       commentLines: commentLines.length,
       codeLines: nonEmptyLines.length - commentLines.length
     };
+  }
+
+  /**
+   * レガシーanalyzeメソッドのブリッジ実装
+   * 後方互換性のために提供
+   */
+  async analyze(filePath: string): Promise<Issue[]> {
+    // テストファイルのモックコンテキストを作成
+    const context: ProjectContext = {
+      rootPath: process.cwd(),
+      language: 'typescript',
+      framework: 'unknown',
+      testFramework: 'jest'
+    };
+
+    // isApplicableチェック
+    if (!this.isApplicable(context)) {
+      return [];
+    }
+
+    // テストファイルオブジェクトを作成
+    const testFile: TestFile = {
+      path: filePath,
+      content: this.isTestFile(filePath) ? 
+        (fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '') : ''
+    };
+
+    // パターン検出を実行
+    const patterns = await this.detectPatterns(testFile);
+    
+    // DetectionResultをIssueに変換
+    return patterns.map(pattern => ({
+      type: pattern.patternId || 'unknown',
+      severity: pattern.severity || 'medium',
+      message: (pattern.metadata?.description || `Pattern detected: ${pattern.patternName}`) as string,
+      file: pattern.location?.file || filePath,
+      line: pattern.location?.line || 1,
+      column: pattern.location?.column
+    }));
   }
 
   // ヘルパーメソッド: プロジェクト種別判定
