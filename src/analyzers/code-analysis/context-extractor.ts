@@ -211,9 +211,21 @@ export class AdvancedCodeContextAnalyzer {
     const startLine = 1;
     const endLine = lines.length;
     
-    // インポート・エクスポートの抽出（簡易実装）
+    // インポート・エクスポートの抽出
     const imports: Array<{ source: string }> = [];
     const exports: string[] = [];
+    
+    // Import文の抽出
+    const importRegex = /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+    const requireRegex = /require\s*\(['"]([^'"]+)['"]\)/g;
+    
+    let match;
+    while ((match = importRegex.exec(fileContent)) !== null) {
+      imports.push({ source: match[1] });
+    }
+    while ((match = requireRegex.exec(fileContent)) !== null) {
+      imports.push({ source: match[1] });
+    }
     
     // 使用APIの検出（簡易実装）
     const usedAPIs: string[] = [];
