@@ -20,9 +20,16 @@ export class AssertionQualityPlugin extends BasePlugin {
   private readonly STRONG_ASSERTION_PATTERNS = TestPatterns.STRONG_ASSERTIONS;
   private readonly MAGIC_NUMBER_PATTERN = TestPatterns.MAGIC_NUMBER_ASSERTIONS;
 
-  isApplicable(_context: ProjectContext): boolean {
-    // すべてのプロジェクトで適用可能
-    return true;
+  isApplicable(context: ProjectContext): boolean {
+    // JavaScriptテストフレームワークのみサポート
+    const supportedFrameworks = ['jest', 'mocha', 'jasmine', 'vitest', 'ava'];
+    
+    if (context.testFramework) {
+      return supportedFrameworks.includes(context.testFramework.toLowerCase());
+    }
+    
+    // フレームワークが指定されていない場合は、JavaScriptプロジェクトならtrue
+    return context.projectPath !== undefined;
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
@@ -30,6 +37,12 @@ export class AssertionQualityPlugin extends BasePlugin {
     const content = testFile.content;
 
     try {
+      // パターン0: 基本的なアサーションの検出
+      const basicAssertionPattern = this.detectBasicAssertions(content, testFile);
+      if (basicAssertionPattern) {
+        patterns.push(basicAssertionPattern);
+      }
+
       // パターン1: 高品質なアサーションの検出
       const highQualityPattern = this.detectHighQualityAssertions(content, testFile);
       if (highQualityPattern) {
@@ -343,6 +356,45 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.8
+        }]
+      );
+    }
+
+    return null;
+  }
+
+  private detectBasicAssertions(content: string, testFile: TestFile): DetectionResult | null {
+    // 基本的なアサーションパターンを検出
+    const basicPatterns = [
+      /expect\s*\([^)]+\)\s*\.\s*toBe\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toEqual\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toBeTruthy\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toBeFalsy\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toBeNull\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toBeDefined\s*\(/g,
+      /expect\s*\([^)]+\)\s*\.\s*toBeUndefined\s*\(/g
+    ];
+
+    let totalAssertions = 0;
+    for (const pattern of basicPatterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        totalAssertions += matches.length;
+      }
+    }
+
+    if (totalAssertions > 0) {
+      return this.createDetectionResult(
+        'basic-assertion',
+        'Basic Assertions',
+        this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
+        0.7,
+        [{
+          type: 'code',
+          description: `基本的なアサーション: ${totalAssertions}個の基本的な検証が見つかりました`,
+          location: this.createCodeLocation(testFile.path, 1, 1),
+          code: content.substring(0, 100) + '...',
+          confidence: 0.7
         }]
       );
     }

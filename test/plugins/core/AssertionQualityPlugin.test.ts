@@ -79,7 +79,8 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
       
       expect(patterns).toBeDefined();
       expect(patterns.length).toBeGreaterThan(0);
-      expect(patterns.some(p => p.patternName === 'basic-assertion')).toBe(true);
+      
+      expect(patterns.some(p => p.patternName === 'Basic Assertions')).toBe(true);
       expect(patterns.every(p => p.confidence > 0)).toBe(true);
     });
 
@@ -103,8 +104,8 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
       const patterns = await plugin.detectPatterns(testFile);
       
       const weakAssertions = patterns.filter(p => 
-        p.patternName === 'weak-assertion' || 
-        p.severity === 'low'
+        p.patternName === 'Weak Assertions' || 
+        p.patternName.toLowerCase().includes('weak')
       );
       
       expect(weakAssertions.length).toBeGreaterThan(0);
