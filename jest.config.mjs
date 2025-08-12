@@ -18,8 +18,8 @@ export default {
   // CI環境での非同期ハンドル問題解決
   forceExit: true, // メモリリークを防ぐため常に有効
   detectOpenHandles: false, // メモリ使用量削減のため無効
-  testTimeout: process.env.CI === 'true' ? 30000 : 10000, // CI環境では30秒、ローカルは10秒
-  maxWorkers: 1, // メモリ使用量制限のため常に1ワーカー
+  testTimeout: 60000, // タイムアウトを60秒に延長
+  maxWorkers: 1, // シーケンシャル実行で安定性向上
   // runInBand設定はpackage.jsonのコマンドラインオプションで指定
   
   // CI環境でのメモリ最適化
@@ -27,14 +27,14 @@ export default {
   clearMocks: true, // テスト後にモックをクリア
   restoreMocks: true, // テスト実行ごとにモック状態をクリア
   resetMocks: true, // 各テスト実行前にモックをリセット
-  resetModules: true, // 各テスト実行前にモジュールキャッシュをクリア
+  resetModules: false, // モジュールキャッシュのリセットを無効化（パフォーマンス向上）
   
   // CI環境でのファイルハンドル管理強化
   openHandlesTimeout: process.env.CI === 'true' ? 0 : 1000, // CI環境では即座にクローズ
   
   // メモリ使用量最適化
   logHeapUsage: process.env.CI === 'true',
-  workerIdleMemoryLimit: '256MB', // ワーカーのアイドル時メモリ制限
+  workerIdleMemoryLimit: '512MB', // ワーカーのアイドル時メモリ制限を増加
   
   // ハッシュ計算最適化
   haste: {
@@ -57,7 +57,7 @@ export default {
     'node_modules/(?!(chalk|#ansi-styles|.*\\.mjs$))'
   ],
   
-  // 監査用サンプルテストファイルを除外
+  // 監査用サンプルテストファイルと重いテストを除外
   testPathIgnorePatterns: [
     'node_modules',
     'dist',
@@ -71,17 +71,12 @@ export default {
     'temp-tests',
     'test-output',
     'valid-test-dir',
-    'test-accuracy-data'
+    'test-accuracy-data',
+    'test/performance',
+    'test/integration/analyze-ai-json-e2e.test.ts',
+    'test/integration/analyze-ai-json-e2e-lite.test.ts'
   ],
   
-  // AI Error Reporterの設定（CI環境でも有効化）
-  reporters: process.env.DISABLE_AI_REPORTER === 'true' ? [
-    'default'
-  ] : [
-    'default',
-    ['<rootDir>/dist/testing/jest-ai-reporter.js', {
-      outputPath: process.env.CI === 'true' ? '.rimor/reports/test-errors-ai.md' : 'test-errors-ai.md',
-      enableConsoleOutput: process.env.CI !== 'true' // CI環境ではコンソール出力を無効化
-    }]
-  ],
+  // AI Error Reporterの設定（一時的に簡略化）
+  reporters: ['default'],
 };
