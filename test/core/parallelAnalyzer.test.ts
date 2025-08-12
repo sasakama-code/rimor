@@ -9,19 +9,19 @@ class MockPlugin implements IPlugin {
   
   async analyze(filePath: string): Promise<Issue[]> {
     // シミュレートのため少し待機
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 5));
     
     if (filePath.includes('error')) {
       return [{
         type: 'mock-error',
-        severity: 'error',
+        severity: 'high',
         message: `Mock error in ${filePath}`
       }];
     }
     
     return [{
       type: 'mock-info',
-      severity: 'warning',
+      severity: 'medium',
       message: `Mock analysis of ${filePath}`
     }];
   }
@@ -32,11 +32,11 @@ class SlowMockPlugin implements IPlugin {
   
   async analyze(filePath: string): Promise<Issue[]> {
     // より長い処理時間をシミュレート
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 10));
     
     return [{
       type: 'slow-analysis',
-      severity: 'warning',
+      severity: 'medium',
       message: `Slow analysis of ${filePath}`
     }];
   }

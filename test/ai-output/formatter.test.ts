@@ -231,8 +231,8 @@ describe('AIOptimizedFormatter', () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
         issues: [
-          createMockIssue({ severity: 'error' }),
-          createMockIssue({ severity: 'warning' }),
+          createMockIssue({ severity: 'high' }),
+          createMockIssue({ severity: 'medium' }),
           createMockIssue({ severity: 'info' })
         ]
       };
@@ -272,7 +272,7 @@ describe('AIOptimizedFormatter', () => {
     it('実行可能なステップを生成できる', async () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
-        issues: [createMockIssue({ severity: 'error' })] // Need error severity for tasks
+        issues: [createMockIssue({ severity: 'high' })] // Need error severity for tasks
       };
       const formatted = await formatter.formatAsJSON(result, "/test/project", { format: 'json' });
 
@@ -285,8 +285,8 @@ describe('AIOptimizedFormatter', () => {
       const result: EnhancedAnalysisResult = {
         ...createMockAnalysisResult(),
         issues: [
-          createMockIssue({ severity: 'error', message: 'Fix security vulnerability' }),
-          createMockIssue({ severity: 'warning', message: 'Improve test coverage' }),
+          createMockIssue({ severity: 'high', message: 'Fix security vulnerability' }),
+          createMockIssue({ severity: 'medium', message: 'Improve test coverage' }),
           createMockIssue({ severity: 'info', message: 'Refactor legacy code' })
         ]
       };

@@ -159,7 +159,7 @@ describe('PluginManagerImpl', () => {
     it('should run a specific plugin successfully', async () => {
       const mockIssues: Issue[] = [{
         type: 'test-issue',
-        severity: 'error',
+        severity: 'high',
         message: 'Test issue found'
       }];
       
@@ -256,7 +256,7 @@ describe('PluginManagerImpl', () => {
         enabled: true
       }, async () => [{
         type: 'issue-1',
-        severity: 'error',
+        severity: 'high',
         message: 'Issue from plugin 1'
       }]);
       
@@ -267,7 +267,7 @@ describe('PluginManagerImpl', () => {
         enabled: true
       }, async () => [{
         type: 'issue-2',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Issue from plugin 2'
       }]);
       

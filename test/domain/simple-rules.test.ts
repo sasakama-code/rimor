@@ -25,7 +25,7 @@ describe('SimpleDomainRules', () => {
         name: 'テスト追加ルール',
         description: 'テスト用の追加ルール',
         category: 'security',
-        severity: 'error',
+        severity: 'high',
         patterns: [
           {
             type: 'keyword',
@@ -52,7 +52,7 @@ describe('SimpleDomainRules', () => {
         name: '削除テストルール',
         description: '削除テスト用',
         category: 'quality',
-        severity: 'warning',
+        severity: 'medium',
         patterns: [
           {
             type: 'regex',
@@ -77,7 +77,7 @@ describe('SimpleDomainRules', () => {
         name: 'ユニークカテゴリルール',
         description: 'カテゴリテスト用',
         category: 'maintainability',
-        severity: 'warning',
+        severity: 'medium',
         patterns: [
           {
             type: 'keyword',
@@ -102,7 +102,7 @@ describe('SimpleDomainRules', () => {
         name: 'テストルール',
         description: 'テスト',
         category: 'security',
-        severity: 'error',
+        severity: 'high',
         patterns: []
       };
       expect(() => rules.addRule(ruleWithoutId as any)).toThrow('Rule must have a valid id');
@@ -112,7 +112,7 @@ describe('SimpleDomainRules', () => {
         id: 'test-id',
         description: 'テスト',
         category: 'security',
-        severity: 'error',
+        severity: 'high',
         patterns: []
       };
       expect(() => rules.addRule(ruleWithoutName as any)).toThrow('Rule must have a valid name');
@@ -123,7 +123,7 @@ describe('SimpleDomainRules', () => {
         name: 'テストルール',
         description: 'テスト',
         category: 'security',
-        severity: 'error'
+        severity: 'high'
       };
       expect(() => rules.addRule(ruleWithoutPatterns as any)).toThrow('Rule must have patterns array');
 
@@ -133,7 +133,7 @@ describe('SimpleDomainRules', () => {
         name: 'テストルール',
         description: 'テスト',
         category: 'security',
-        severity: 'error',
+        severity: 'high',
         patterns: [{
           type: 'invalid',
           pattern: 'test',
@@ -149,7 +149,7 @@ describe('SimpleDomainRules', () => {
         name: '有効なルール',
         description: '有効なルールの説明',
         category: 'quality',
-        severity: 'warning',
+        severity: 'medium',
         patterns: [
           {
             type: 'regex',
@@ -183,7 +183,7 @@ describe('SimpleDomainRules', () => {
         name: '認証テスト',
         description: '認証機能のテストが必要です',
         category: 'security',
-        severity: 'error',
+        severity: 'high',
         patterns: [
           {
             type: 'keyword',
@@ -222,7 +222,7 @@ describe('SimpleDomainRules', () => {
         name: 'エラー重大度ルール',
         description: 'エラーレベルテスト',
         category: 'quality',
-        severity: 'error',
+        severity: 'high',
         patterns: [
           {
             type: 'keyword',
@@ -237,7 +237,7 @@ describe('SimpleDomainRules', () => {
         name: '警告重大度ルール',
         description: '警告レベルテスト',
         category: 'quality',
-        severity: 'warning',
+        severity: 'medium',
         patterns: [
           {
             type: 'keyword',

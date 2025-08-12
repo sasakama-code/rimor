@@ -84,7 +84,7 @@ describe('LegacyPluginAdapter', () => {
       const mockIssues: Issue[] = [
         {
           type: 'test-issue',
-          severity: 'error',
+          severity: 'high',
           message: 'Test issue from legacy plugin'
         }
       ];
@@ -142,7 +142,7 @@ describe('LegacyPluginAdapter', () => {
           if (!filePath.includes('.test.')) {
             return [{
               type: 'missing-test',
-              severity: 'error' as const,
+              severity: 'high' as const,
               message: `テストファイルが存在しません: ${filePath}`
             }];
           }

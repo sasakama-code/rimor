@@ -85,7 +85,7 @@ describe('IAnalysisEngine Interface', () => {
             line: 10,
             column: 5,
             message: 'Test issue',
-            severity: 'warning'
+            severity: 'medium'
           } as Issue
         ],
         executionTime: 500,

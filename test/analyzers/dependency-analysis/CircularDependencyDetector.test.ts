@@ -177,7 +177,7 @@ describe('CircularDependencyDetector', () => {
       // Arrange
       const cycle: CyclicDependency = {
         files: ['a.ts', 'b.ts', 'a.ts'],
-        severity: 'error',
+        severity: 'high',
         suggestion: ''
       };
 

@@ -143,7 +143,7 @@ describe('UserController', () => {
     test('should analyze TypeScript file and extract comprehensive context', async () => {
       const issue: Issue = {
         type: 'missing-assertion',
-        severity: 'error',
+        severity: 'high',
         message: 'Missing proper assertions',
         line: 21,
         file: path.join(testProjectPath, 'src/UserController.test.ts')
@@ -176,7 +176,7 @@ describe('UserController', () => {
     test('should handle complex TypeScript with classes and interfaces', async () => {
       const issue: Issue = {
         type: 'missing-error-handling',
-        severity: 'warning', 
+        severity: 'medium', 
         message: 'Missing error handling',
         line: 20,
         file: path.join(testProjectPath, 'src/UserController.ts')
@@ -206,7 +206,7 @@ describe('UserController', () => {
     test('should extract function-level context accurately', async () => {
       const issue: Issue = {
         type: 'missing-validation',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing input validation',
         line: 35,
         file: path.join(testProjectPath, 'src/UserController.ts')
@@ -229,7 +229,7 @@ describe('UserController', () => {
     test('should analyze scope context with variable tracking', async () => {
       const issue: Issue = {
         type: 'unused-variable',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Variable may be unused',
         line: 53,
         file: path.join(testProjectPath, 'src/UserController.ts')
@@ -263,7 +263,7 @@ describe('UserController', () => {
 
       const issue: Issue = {
         type: 'missing-test-coverage',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing test coverage for UserService interaction',
         line: 18,
         file: path.join(testProjectPath, 'src/UserController.test.ts')
@@ -405,7 +405,7 @@ const processOrder = async (order) => {
     test('should handle non-existent files gracefully', async () => {
       const issue: Issue = {
         type: 'missing-file',
-        severity: 'error',
+        severity: 'high',
         message: 'File not found',
         line: 1,
         file: '/non/existent/file.ts'
@@ -428,7 +428,7 @@ const processOrder = async (order) => {
       
       const issue: Issue = {
         type: 'syntax-error',
-        severity: 'error',
+        severity: 'high',
         message: 'Syntax error',
         line: 1,
         file: path.join(testProjectPath, 'src/broken.ts')
@@ -447,7 +447,7 @@ const processOrder = async (order) => {
     test('should complete analysis within reasonable time', async () => {
       const issue: Issue = {
         type: 'performance-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Performance test',
         line: 1,
         file: path.join(testProjectPath, 'src/UserController.ts')
@@ -476,7 +476,7 @@ const processOrder = async (order) => {
 
       const issue: Issue = {
         type: 'large-file-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Large file test',
         line: 500,
         file: path.join(testProjectPath, 'src/large.ts')

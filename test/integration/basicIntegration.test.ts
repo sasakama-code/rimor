@@ -92,7 +92,7 @@ describe('Basic Integration Tests', () => {
     it('should execute analysis with single plugin', async () => {
       const testIssues: Issue[] = [{
         type: 'test-missing',
-        severity: 'error',
+        severity: 'high',
         message: 'Test file is missing'
       }];
       
@@ -177,7 +177,7 @@ describe('Basic Integration Tests', () => {
         async analyze(_filePath: string) {
           return [{
             type: 'legacy-issue',
-            severity: 'warning' as const,
+            severity: 'medium' as const,
             message: 'Legacy plugin issue detected'
           }];
         }
@@ -207,7 +207,7 @@ describe('Basic Integration Tests', () => {
       const errorPlugin = new ErrorPlugin();
       const goodPlugin = new MockTestPlugin('good-plugin', 'Good Plugin', [{
         type: 'test-issue',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Test warning'
       }]);
 

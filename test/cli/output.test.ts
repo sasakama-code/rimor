@@ -32,8 +32,8 @@ describe('OutputFormatter', () => {
 
   test('issueList should format multiple issues', async () => {
     const issues = [
-      { severity: 'error', message: 'Error 1' },
-      { severity: 'warning', message: 'Warning 1' }
+      { severity: 'high', message: 'Error 1' },
+      { severity: 'medium', message: 'Warning 1' }
     ];
     const result = await OutputFormatter.issueList(issues);
     expect(result).toContain('1. ❌ Error 1');

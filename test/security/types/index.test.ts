@@ -258,7 +258,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         newIssues: [
           {
             id: 'NEW-001',
-            severity: 'warning',
+            severity: 'medium',
             type: 'missing-auth-test',
             message: '認証テストが不足しています',
             location: {

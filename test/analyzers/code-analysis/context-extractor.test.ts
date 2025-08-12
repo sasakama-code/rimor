@@ -16,7 +16,7 @@ describe('AdvancedCodeContextAnalyzer', () => {
   const mockIssue: Issue = {
     file: '/test/project/src/app.ts',
     message: 'Test issue',
-    severity: 'warning',
+    severity: 'medium',
     type: 'test-rule',
     line: 10
   };

@@ -13,7 +13,7 @@ describe('PluginManager', () => {
   it('should register and run single plugin', async () => {
     const manager = new PluginManager();
     const issues: Issue[] = [
-      { type: 'test-missing', severity: 'error', message: 'No test file found' }
+      { type: 'test-missing', severity: 'high', message: 'No test file found' }
     ];
     const plugin = new TestPlugin('test-plugin', issues);
     
@@ -26,10 +26,10 @@ describe('PluginManager', () => {
   it('should run multiple plugins and combine results', async () => {
     const manager = new PluginManager();
     const issues1: Issue[] = [
-      { type: 'test-missing', severity: 'error', message: 'No test file found' }
+      { type: 'test-missing', severity: 'high', message: 'No test file found' }
     ];
     const issues2: Issue[] = [
-      { type: 'assertion-missing', severity: 'warning', message: 'No assertions in test' }
+      { type: 'assertion-missing', severity: 'medium', message: 'No assertions in test' }
     ];
     
     manager.register(new TestPlugin('plugin1', issues1));

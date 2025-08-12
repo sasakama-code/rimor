@@ -73,7 +73,7 @@ describe('UnifiedAnalysisEngine', () => {
         pluginId: 'test-plugin',
         issues: [{
           type: 'test-issue',
-          severity: 'error',
+          severity: 'high',
           message: 'Test issue'
         }],
         executionTime: 10

@@ -293,7 +293,7 @@ describe('Scoring System Integration', () => {
         for (let i = 0; i < issueCount; i++) {
           issues.push({
             type: `issue-${i}`,
-            severity: score < 50 ? 'error' : 'warning',
+            severity: 'medium',
             message: `品質問題 ${i + 1}: ${filePath}`,
             line: i + 1,
             file: filePath
@@ -317,7 +317,7 @@ describe('Scoring System Integration', () => {
         return [
           {
             type: 'missing-assertion',
-            severity: 'warning',
+            severity: 'medium',
             message: 'アサーションが不足している可能性があります',
             line: 10,
             file: filePath
@@ -339,8 +339,8 @@ describe('Scoring System Integration', () => {
 
   function convertIssuesToPluginResults(issues: Issue[], pluginId: string): PluginResult[] {
     // Issue数に基づいてスコアを計算（簡単な変換）
-    const errorCount = issues.filter(i => i.severity === 'error').length;
-    const warningCount = issues.filter(i => i.severity === 'warning').length;
+    const errorCount = issues.filter(i => i.severity === 'high').length;
+    const warningCount = issues.filter(i => i.severity === 'medium').length;
     
     // スコア計算: エラーは-10点、警告は-5点
     const baseScore = 100;

@@ -74,7 +74,7 @@ describe('IPluginManager Interface', () => {
             line: 10,
             column: 5,
             message: 'Test issue',
-            severity: 'warning'
+            severity: 'medium'
           } as Issue
         ],
         executionTime: 200

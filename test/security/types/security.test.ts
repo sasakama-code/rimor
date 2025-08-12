@@ -253,7 +253,7 @@ describe('インターフェース定義のテスト', () => {
         issues: [
           {
             id: 'SEC-001',
-            severity: 'error',
+            severity: 'high',
             type: 'missing-sanitizer',
             message: 'ユーザー入力がサニタイズされていません',
             location: {

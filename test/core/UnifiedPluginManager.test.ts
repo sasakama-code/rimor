@@ -22,7 +22,7 @@ const createMockLegacyPlugin = (name: string): IPlugin => ({
       line: 1,
       column: 0,
       message: `Issue from ${name}`,
-      severity: 'warning' as const
+      severity: 'medium' as const
     }
   ])
 });

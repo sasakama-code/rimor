@@ -10,7 +10,7 @@ class MockPlugin implements IPlugin {
     if (this.shouldFindIssue && !filePath.includes('.test.')) {
       return [{
         type: 'test-missing',
-        severity: 'error',
+        severity: 'high',
         message: `No test file found for ${filePath}`
       }];
     }
