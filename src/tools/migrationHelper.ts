@@ -48,9 +48,9 @@ export class MigrationHelper {
   isLegacyPlugin(pluginCode: string): boolean {
     // レガシープラグインの特徴
     const legacyPatterns = [
-      /async\s+analyze\s*\(/,  // analyzeメソッドの存在
+      /async\s+analyze\s*\([^)]*\)/,  // analyzeメソッドの存在（引数含む）
       /\.name\s*=/,           // nameプロパティ
-      /severity\s*:\s*['"](?:error|warning|info)['"]/  // 旧形式のseverity
+      /severity\s*:\s*['"](?:error|warning|info|high|medium|low)['"]/  // 旧形式のseverity
     ];
 
     // 新プラグインの特徴
