@@ -136,4 +136,37 @@ export class AnalyzerExtended {
     const { readFile } = await import('fs/promises');
     return await readFile(filePath, 'utf-8');
   }
+
+  // Legacy analyze method for backward compatibility
+  async analyze(targetPath: string): Promise<any> {
+    const result = await this.engine.analyze(targetPath);
+    return result;
+  }
+
+  // Generate summary for batch results
+  generateSummary(results: ExtendedAnalysisResult[]): BatchAnalysisSummary {
+    const totalFiles = results.length;
+    const scores = results.map(r => r.aggregatedScore?.overall || 0);
+    const averageScore = scores.reduce((sum, score) => sum + score, 0) / totalFiles;
+    
+    const scoreDistribution = {
+      excellent: scores.filter(s => s >= 90).length,
+      good: scores.filter(s => s >= 70 && s < 90).length,
+      fair: scores.filter(s => s >= 50 && s < 70).length,
+      poor: scores.filter(s => s < 50).length
+    };
+
+    const commonIssues: string[] = [];
+    const totalRecommendations = results.reduce((sum, r) => 
+      sum + (r.recommendations?.length || 0), 0
+    );
+
+    return {
+      totalFiles,
+      averageScore,
+      scoreDistribution,
+      commonIssues,
+      totalRecommendations
+    };
+  }
 }

@@ -66,6 +66,7 @@ export class CachedAnalyzer {
   
   async analyze(targetPath: string): Promise<CachedAnalysisResult> {
     const startTime = Date.now();
+    this.lastAnalysisTime = startTime;
     const initialCacheStats = this.cacheManager.getStatistics();
     
     // パフォーマンス監視開始
@@ -352,6 +353,29 @@ export class CachedAnalyzer {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  /**
+   * キャッシュ統計情報を取得
+   */
+  getCacheStats(): CachedAnalysisResult['cacheStats'] {
+    const stats = this.cacheManager.getStats();
+    return {
+      cacheHits: stats.hits,
+      cacheMisses: stats.misses,
+      hitRatio: stats.hitRate,
+      filesFromCache: stats.hits,
+      filesAnalyzed: stats.misses
+    };
+  }
+
+  /**
+   * 最後の分析時刻を取得
+   */
+  private lastAnalysisTime: number = 0;
+  
+  getLastAnalysisTime(): number {
+    return this.lastAnalysisTime;
   }
 }
 

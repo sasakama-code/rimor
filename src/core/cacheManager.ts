@@ -295,6 +295,17 @@ export class CacheManager {
   getStatistics(): CacheStatistics {
     return { ...this.stats };
   }
+
+  /**
+   * キャッシュ統計の取得（エイリアス）
+   */
+  getStats(): { hits: number; misses: number; hitRate: number } {
+    return {
+      hits: this.stats.cacheHits,
+      misses: this.stats.cacheMisses,
+      hitRate: this.stats.hitRatio
+    };
+  }
   
   /**
    * キャッシュの詳細情報
