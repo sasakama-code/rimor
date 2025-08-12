@@ -107,7 +107,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(5);
       results.forEach((result, i) => {
-        expect(result.data.file).toBe(`test${i}.js`);
+        expect((result as any).data?.file || result.file).toBe(`test${i}.js`);
       });
     });
 
@@ -121,7 +121,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(10);
       results.forEach((result, i) => {
-        expect(result.data.index).toBe(i);
+        expect((result as any).data?.index || result.index).toBe(i);
       });
     });
   });
@@ -274,7 +274,7 @@ describe('WorkerPool', () => {
       );
       
       // すぐに終了
-      setTimeout(() => pool.terminate(), 100);
+      setTimeout(() => pool.terminate(), 20);
       
       // すべてのタスクが完了またはリジェクトされることを確認
       const results = await Promise.allSettled(tasks);

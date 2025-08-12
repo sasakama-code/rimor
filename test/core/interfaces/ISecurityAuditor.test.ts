@@ -268,7 +268,7 @@ describe('ISecurityAuditor Interface', () => {
       }
 
       const auditor = new MinimalAuditor();
-      expect(auditor.registerRule).toBeUndefined();
+      expect((auditor as any).registerRule).toBeUndefined();
     });
 
     it('should perform audit correctly', async () => {

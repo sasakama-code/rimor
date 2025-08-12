@@ -221,7 +221,7 @@ describe('IReporter Interface', () => {
       }
 
       const reporter = new MinimalReporter();
-      expect(reporter.generateCombinedReport).toBeUndefined();
+      expect((reporter as any).generateCombinedReport).toBeUndefined();
     });
   });
 

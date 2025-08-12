@@ -326,16 +326,19 @@ describe('UnifiedAnalysisEngine', () => {
 
     it('開放閉鎖原則: 新しいプラグインタイプを追加できる', () => {
       // カスタムプラグインインターフェースを実装
-      const customPlugin = {
+      const customPlugin: ITestQualityPlugin = {
         id: 'custom',
         name: 'CustomPlugin',
         version: '1.0.0',
-        type: 'custom' as const,
-        customMethod: jest.fn()
+        type: 'custom' as any,
+        isApplicable: jest.fn().mockReturnValue(true),
+        detectPatterns: jest.fn().mockResolvedValue([]),
+        evaluateQuality: jest.fn().mockReturnValue({ overall: 80, dimensions: {}, confidence: 0.8 }),
+        suggestImprovements: jest.fn().mockReturnValue([])
       };
 
       // 新しいプラグインタイプを登録できることを確認
-      expect(() => engine.registerCustomPlugin(customPlugin)).not.toThrow();
+      expect(() => engine.registerPlugin(customPlugin)).not.toThrow();
     });
 
     it('リスコフの置換原則: プラグインは互換性を保つ', async () => {

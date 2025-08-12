@@ -176,7 +176,6 @@ describe('Type Definitions', () => {
       it('有効なProjectContextオブジェクトを正しく判定する', () => {
         // Arrange
         const validContext: ProjectContext = {
-          projectRoot: '/path/to/project',
           framework: 'jest',
           language: 'typescript',
           testFiles: [],
@@ -313,7 +312,6 @@ describe('Type Definitions', () => {
       it('有効なAnalysisResultオブジェクトを正しく判定する', () => {
         // Arrange
         const validResult: AnalysisResult = {
-          projectRoot: '/project',
           timestamp: new Date(),
           results: [],
           summary: {

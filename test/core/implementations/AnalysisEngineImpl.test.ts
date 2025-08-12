@@ -55,7 +55,7 @@ describe('AnalysisEngineImpl', () => {
         totalFiles: 10,
         issues: [{
           type: 'test-issue',
-          severity: 'error',
+          severity: 'high',
           message: 'Test issue'
         }],
         executionTime: 100,
@@ -103,7 +103,7 @@ describe('AnalysisEngineImpl', () => {
   describe('generateAST', () => {
     it('should delegate to UnifiedAnalysisEngine.generateAST', async () => {
       const filePath = '/test/file.ts';
-      const expectedAST = {
+      const expectedAST: any = {
         fileName: filePath,
         sourceFile: {} as any // TypeScript SourceFileの完全なモックは複雑なので、anyを使用
       };
