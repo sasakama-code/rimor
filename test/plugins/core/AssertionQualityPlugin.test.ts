@@ -280,7 +280,7 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         dimensions: {
           correctness: 0.4,
           completeness: 0.2,
-          specificity: 0.3
+          maintainability: 0.3
         }
       };
       
@@ -300,8 +300,8 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         confidence: 0.95,
         dimensions: {
           correctness: 0.1,
-          completeness: 0.0,
-          coverage: 0.2
+          completeness: 0.2,
+          maintainability: 0.0
         }
       };
       
@@ -323,7 +323,7 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         dimensions: {
           correctness: 0.95,
           completeness: 0.85,
-          specificity: 0.9
+          maintainability: 0.9
         }
       };
       

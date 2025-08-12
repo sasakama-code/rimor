@@ -317,7 +317,7 @@ describe('BaseDomainPlugin', () => {
       
       const score: DomainQualityScore = {
         overall: 60,
-        breakdown: {
+        dimensions: {
           completeness: 60,
           correctness: 60,
           maintainability: 60
@@ -345,7 +345,7 @@ describe('BaseDomainPlugin', () => {
       
       const score: DomainQualityScore = {
         overall: 40,
-        breakdown: {
+        dimensions: {
           completeness: 40,
           correctness: 40,
           maintainability: 40
@@ -370,6 +370,8 @@ describe('BaseDomainPlugin', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
+          name: 'test-project',
+          version: '1.0.0',
           keywords: ['ecommerce', 'shopping', 'cart']
         }
       };

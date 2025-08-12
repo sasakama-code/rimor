@@ -400,10 +400,10 @@ export function validateUser(userData: any) {
       
       if (constraints.length > 0) {
         constraints.forEach(constraint => {
-          expect(constraint).toHaveProperty('name');
-          expect(constraint).toHaveProperty('declared');
-          expect(constraint).toHaveProperty('installed');
-          expect(constraint).toHaveProperty('satisfies');
+          expect(constraint).toHaveProperty('package');
+          expect(constraint).toHaveProperty('declaredVersion');
+          expect(constraint).toHaveProperty('installedVersion');
+          expect(constraint).toHaveProperty('constraint');
         });
       }
     });
@@ -412,9 +412,9 @@ export function validateUser(userData: any) {
       const constraints = await analyzer.analyzeVersionConstraints(testProjectPath);
 
       // バージョン制約が満たされているかチェック
-      const lodashConstraint = constraints.find(c => c.name === 'lodash');
+      const lodashConstraint = constraints.find(c => c.package === 'lodash');
       if (lodashConstraint) {
-        expect(typeof lodashConstraint.satisfies).toBe('boolean');
+        expect(typeof lodashConstraint.hasVulnerability).toBe('boolean');
       }
     });
   });

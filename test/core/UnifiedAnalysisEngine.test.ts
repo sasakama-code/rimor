@@ -338,7 +338,7 @@ describe('UnifiedAnalysisEngine', () => {
       };
 
       // 新しいプラグインタイプを登録できることを確認
-      expect(() => engine.registerPlugin(customPlugin)).not.toThrow();
+      expect(() => engine.registerQualityPlugin(customPlugin)).not.toThrow();
     });
 
     it('リスコフの置換原則: プラグインは互換性を保つ', async () => {
