@@ -3,7 +3,8 @@
  * TDD実装
  */
 
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement, SecurityIssue } from '../../../core/types';
+import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../core/types';
+import { SecurityIssue } from '../../../security/types/security';
 import { SeverityLevel } from '../../../types/common-types';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
 
