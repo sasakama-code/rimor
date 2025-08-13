@@ -20,7 +20,7 @@ jest.mock('worker_threads', () => {
         this.emit('message', {
           id: data.id,
           type: 'result',
-          data: { processed: true, data: data.data }
+          data: { ...data.data, issues: [] }
         });
       }, 50);
     }
@@ -93,8 +93,8 @@ describe('WorkerPool', () => {
       const result = await pool.execute('analyze', { file: 'test.js' });
       
       expect(result).toEqual({
-        processed: true,
-        data: { file: 'test.js' }
+        file: 'test.js',
+        issues: []
       });
     });
 
