@@ -328,6 +328,7 @@ export interface SecurityIssue {
     source: TaintSource;
     sink?: string;
     flow?: string[];
+    confidence?: number;
   };
 }
 
