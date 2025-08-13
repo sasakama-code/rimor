@@ -317,12 +317,18 @@ export interface SecurityIssue {
     file: string;
     line: number;
     column?: number;
+    method?: string; // テストで使用されているため追加
   };
   evidence?: string[];
   recommendation?: string;
   fixSuggestion?: string;
   cwe?: string;
   owasp?: string;
+  taintInfo?: { // テストで使用されているため追加
+    source: TaintSource;
+    sink?: string;
+    flow?: string[];
+  };
 }
 
 /**

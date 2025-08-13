@@ -16,6 +16,7 @@ import {
   SecurityTestMetrics,
   BoundaryCondition
 } from '../../../src/security/types';
+import { IncrementalChange } from '../../../src/security/types/flow-types';
 import {
   ProjectContext,
   TestFile,
@@ -524,20 +525,20 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
         `,
       };
 
-      const changes = [{
-        type: 'modified' as const,
-        oldMethod: originalMethod,
-        newMethod: modifiedMethod,
-        impact: 'medium' as const
-      }];
+      const change: IncrementalChange = {
+        type: 'modified',
+        methodName: 'handleInput',
+        filePath: 'test.ts',
+        content: modifiedMethod.content
+      };
 
-      const incrementalResult = await plugin.analyzeIncrementally(changes);
+      const incrementalResult = await plugin.analyzeIncrementally(change);
 
       expect(incrementalResult).toBeDefined();
-      expect(incrementalResult.affectedTests.length).toBe(1);
-      expect(incrementalResult.qualityImprovement).toBeGreaterThan(0);
-      expect(incrementalResult.newIssuesFound.length).toBeGreaterThanOrEqual(0);
-      expect(incrementalResult.resolvedIssues.length).toBeGreaterThanOrEqual(0);
+      expect(incrementalResult.affectedTests?.length ?? 0).toBe(1);
+      expect(incrementalResult.qualityImprovement ?? 0).toBeGreaterThan(0);
+      expect(incrementalResult.newIssuesFound?.length ?? 0).toBeGreaterThanOrEqual(0);
+      expect(incrementalResult.resolvedIssues?.length ?? 0).toBeGreaterThanOrEqual(0);
     });
   });
 

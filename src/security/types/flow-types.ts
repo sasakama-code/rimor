@@ -347,6 +347,11 @@ export interface TestMethodAnalysisResult {
     inputValidationCoverage: number;
     sanitizationCoverage: number;
   };
+  // テストで使用されているプロパティを追加
+  affectedTests?: any[];
+  qualityImprovement?: number;
+  newIssuesFound?: any[];
+  resolvedIssues?: any[];
 }
 
 // Security Issues
@@ -362,4 +367,9 @@ export interface SecurityIssue {
   owasp?: string;
   suggestedFix?: string;
   codeSnippet?: string;
+  taintInfo?: { // テストで使用されているため追加
+    source: TaintSource;
+    sink?: string;
+    flow?: string[];
+  };
 }

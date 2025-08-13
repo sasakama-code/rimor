@@ -67,6 +67,7 @@ export interface Position {
   column: number;
   offset?: number;
   file?: string; // ファイルパス（オプション）
+  method?: string; // メソッド名（テストで使用）
 }
 
 // Location types
