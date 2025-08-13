@@ -27,7 +27,7 @@ export default {
   clearMocks: true, // テスト後にモックをクリア
   restoreMocks: true, // テスト実行ごとにモック状態をクリア
   resetMocks: true, // 各テスト実行前にモックをリセット
-  resetModules: false, // モジュールキャッシュのリセットを無効化（パフォーマンス向上）
+  resetModules: true, // モジュールキャッシュをリセットしてグローバル状態汚染を防ぐ
   
   // CI環境でのファイルハンドル管理強化
   openHandlesTimeout: process.env.CI === 'true' ? 0 : 1000, // CI環境では即座にクローズ
