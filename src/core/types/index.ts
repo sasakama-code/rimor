@@ -42,7 +42,9 @@ export {
   DependencyInfo,
   DependencyVulnerability,
   OutdatedDependency,
-  CircularDependency
+  CircularDependency,
+  MethodAnalysisResult,
+  MethodChange
 } from './analysis-types';
 
 // Handler types (コールバック・ハンドラー用型定義)

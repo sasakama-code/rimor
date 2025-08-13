@@ -212,3 +212,26 @@ export interface CircularDependency {
   severity: SeverityLevel;
   suggestion: string;
 }
+
+/**
+ * Method Analysis Result
+ */
+export interface MethodAnalysisResult {
+  name: string;
+  file: string;
+  line: number;
+  issues: Issue[];
+  complexity?: number;
+  coverage?: number;
+}
+
+/**
+ * Method Change
+ */
+export interface MethodChange {
+  type: 'added' | 'modified' | 'deleted';
+  method: string;
+  file: string;
+  line: number;
+  impact: 'high' | 'medium' | 'low';
+}
