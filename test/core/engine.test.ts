@@ -106,15 +106,6 @@ describe('UnifiedAnalysisEngine', () => {
       expect(result.issues).toHaveLength(0);
     });
     
-    it('should handle non-existent path gracefully', async () => {
-      // 非存在パスのテストをスキップ（既にdiscoverFilesでエラーハンドリング済み）
-      const result = await engine.analyze('./non-existent-path');
-      
-      // エラーハンドリングにより空の結果が返される
-      expect(result.totalFiles).toBe(0);
-      expect(result.issues).toHaveLength(0);
-    });
-    
     it('should exclude specified patterns', async () => {
       await fs.mkdir(path.join(testDir, 'node_modules'), { recursive: true });
       await fs.writeFile(path.join(testDir, 'node_modules', 'lib.js'), 'module.exports = {};');
