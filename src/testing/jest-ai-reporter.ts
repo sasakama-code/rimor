@@ -27,6 +27,9 @@ export class JestAIReporter implements Reporter {
   private outputPath: string;
   private enableConsoleOutput: boolean;
   private ciTraceability: CITraceability | null = null;
+  private testRunStartTime: Date | null = null;
+  private totalFailedTests: number = 0;
+  private processedTestFiles: Set<string> = new Set();
   
   constructor(globalConfig: unknown, options: JestAIReporterOptions = {}) {
     this.errorCollector = new TestErrorContextCollector();
@@ -49,6 +52,9 @@ export class JestAIReporter implements Reporter {
    */
   onRunStart(results: AggregatedResult, options: unknown): void {
     this.collectedErrors = [];
+    this.testRunStartTime = new Date();
+    this.totalFailedTests = 0;
+    this.processedTestFiles.clear();
     
     // CI環境情報を収集
     this.ciTraceability = CITraceabilityCollector.collect();
@@ -59,6 +65,7 @@ export class JestAIReporter implements Reporter {
         console.log('\n🤖 AI Error Reporter: 有効');
       } else {
         console.log('\n🤖 AI Error Reporter: エラー収集を開始します...');
+        console.log(`📅 実行開始時刻: ${this.testRunStartTime.toISOString()}`);
         if (this.ciTraceability) {
           console.log(`📍 CI実行: ${this.ciTraceability.workflow} #${this.ciTraceability.runNumber}`);
         }
@@ -75,42 +82,74 @@ export class JestAIReporter implements Reporter {
     testResult: TestResult,
     results: AggregatedResult
   ): Promise<void> {
+    // 重複処理を防ぐ
+    if (this.processedTestFiles.has(test.path)) {
+      return;
+    }
+    this.processedTestFiles.add(test.path);
+    
     // 失敗したテストのみ処理
     if (testResult.numFailingTests === 0) {
       return;
+    }
+    
+    // 失敗テスト数を追跡
+    this.totalFailedTests += testResult.numFailingTests;
+    
+    // デバッグログ出力
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Reporter Debug] Processing ${test.path}: ${testResult.numFailingTests} failures`);
     }
     
     // エラーコンテキストの収集
     for (const assertion of testResult.testResults) {
       if (assertion.status === 'failed' && assertion.failureMessages.length > 0) {
         try {
-          // エラーオブジェクトの再構築
-          const error = this.reconstructError(assertion.failureMessages[0]);
-          
-          // コンテキスト収集
-          const context = await this.errorCollector.collectErrorContext(
-            error,
-            test.path,
-            assertion.fullName,
-            process.cwd()
-          );
-          
-          // CIトレーサビリティ情報を追加
-          if (this.ciTraceability) {
+          // 各エラーメッセージを処理（複数のエラーメッセージがある場合）
+          for (const failureMessage of assertion.failureMessages) {
+            if (!failureMessage || failureMessage.trim() === '') continue;
+            
+            // エラーオブジェクトの再構築
+            const error = this.reconstructError(failureMessage);
+            
+            // コンテキスト収集
+            const context = await this.errorCollector.collectErrorContext(
+              error,
+              test.path,
+              assertion.fullName,
+              process.cwd()
+            );
+            
+            // トレーサビリティ情報を追加（CIとローカル両方）
+            const traceabilityInfo = this.ciTraceability || {
+              runId: 'local',
+              runNumber: 'local',
+              workflow: 'local',
+              job: 'local',
+              actor: process.env.USER || 'unknown',
+              repository: 'local',
+              branch: 'local',
+              sha: 'local',
+              nodeVersion: process.version,
+              os: process.platform,
+              timestamp: this.testRunStartTime?.toISOString() || new Date().toISOString(),
+              errorHash: ''
+            };
+            
             context.ciTraceability = {
-              ...this.ciTraceability,
+              ...traceabilityInfo,
               errorHash: CITraceabilityCollector.generateErrorHash({
                 testFile: test.path,
                 testName: assertion.fullName,
-                errorMessage: assertion.failureMessages[0]
+                errorMessage: failureMessage
               })
             };
-          }
-          
-          this.collectedErrors.push(context);
-          
-          if (this.enableConsoleOutput && process.env.CI !== 'true') {
-            console.log(`  ❌ ${assertion.fullName}`);
+            
+            this.collectedErrors.push(context);
+            
+            if (this.enableConsoleOutput && process.env.CI !== 'true') {
+              console.log(`  ❌ ${assertion.fullName}`);
+            }
           }
         } catch (collectError) {
           // 収集エラーは無視（テスト実行を妨げない）
@@ -120,12 +159,26 @@ export class JestAIReporter implements Reporter {
         }
       }
     }
+    
+    // デバッグログ: 現在の収集状況
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Reporter Debug] Total errors collected so far: ${this.collectedErrors.length}`);
+    }
   }
   
   /**
    * テスト実行完了時
    */
   async onRunComplete(contexts: Set<unknown>, results: AggregatedResult): Promise<void> {
+    // デバッグログ: 最終的な収集状況
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`\n[AI Reporter Debug] Final report:`);
+      console.log(`  - Total failed tests (Jest): ${results.numFailedTests}`);
+      console.log(`  - Total failed test suites (Jest): ${results.numFailedTestSuites}`);
+      console.log(`  - Total errors collected: ${this.collectedErrors.length}`);
+      console.log(`  - Total test files processed: ${this.processedTestFiles.size}`);
+    }
+    
     if (this.collectedErrors.length === 0) {
       if (this.enableConsoleOutput && process.env.CI !== 'true') {
         console.log('\n✅ すべてのテストがパスしました！\n');
@@ -139,6 +192,22 @@ export class JestAIReporter implements Reporter {
         this.collectedErrors,
         process.cwd()
       );
+      
+      // 実行情報をレポートに追加
+      const endTime = new Date();
+      const duration = this.testRunStartTime 
+        ? Math.round((endTime.getTime() - this.testRunStartTime.getTime()) / 1000)
+        : undefined;
+      
+      (report as any).executionInfo = {
+        startTime: this.testRunStartTime?.toISOString() || new Date().toISOString(),
+        endTime: endTime.toISOString(),
+        duration: duration,
+        environment: process.env.CI === 'true' ? 'CI' : 'local',
+        totalFilesProcessed: this.processedTestFiles.size,
+        totalErrorsCollected: this.collectedErrors.length,
+        jestReportedFailures: results.numFailedTests
+      };
       
       // マークダウン形式で出力（PIIマスキング適用）
       const markdown = this.errorFormatter.formatAsMarkdown(report);
@@ -231,11 +300,22 @@ export class JestAIReporter implements Reporter {
     console.log('🤖 AI Error Report Summary');
     console.log('='.repeat(80));
     
+    // 実行日時を表示
+    if (this.testRunStartTime) {
+      console.log(`\n📅 実行日時: ${this.testRunStartTime.toISOString()}`);
+    }
+    
     console.log(`\n📊 統計:`);
     console.log(`  - 総エラー数: ${report.summary.totalErrors}`);
     console.log(`  - 重大エラー: ${report.summary.criticalErrors}`);
     console.log(`  - 影響ファイル: ${report.summary.testFileCount}`);
     console.log(`  - 推定修正時間: ${report.summary.estimatedFixTime}分`);
+    
+    // エラー数の不一致を警告
+    if (this.totalFailedTests > 0 && report.summary.totalErrors < this.totalFailedTests) {
+      console.log(`\n⚠️  警告: Jestが検出した失敗テスト数(${this.totalFailedTests})と記録されたエラー数(${report.summary.totalErrors})に差があります`);
+      console.log(`    一部のエラーが記録されていない可能性があります`);
+    }
     
     if (report.summary.commonPatterns.length > 0) {
       console.log(`\n🔍 検出されたパターン:`);

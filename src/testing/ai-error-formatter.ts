@@ -9,22 +9,36 @@ import * as path from 'path';
 export interface AITestErrorReport {
   version: string;
   format: 'ai-test-error';
+  executionDate: string;
   summary: ErrorSummary;
   errorGroups: ErrorGroup[];
   contextualInstructions: ContextualInstructions;
   quickActions: QuickAction[];
   ciTraceability?: CITraceabilityInfo;
+  executionInfo?: ExecutionInfo;
+}
+
+interface ExecutionInfo {
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  environment: string;
+  totalFilesProcessed?: number;
+  totalErrorsCollected?: number;
+  jestReportedFailures?: number;
 }
 
 interface CITraceabilityInfo {
   runId: string;
   runNumber: string;
   workflow: string;
+  job?: string;
+  actor?: string;
   repository: string;
   branch: string;
   sha: string;
   prNumber?: string;
-  deepLink: string;
+  deepLink?: string;
   prLink?: string;
   nodeVersion: string;
   os: string;
@@ -118,9 +132,13 @@ export class AITestErrorFormatter {
     // クイックアクションの生成
     const quickActions = this.generateQuickActions(errorGroups);
     
+    // 実行日時を取得
+    const executionDate = new Date().toISOString();
+    
     return {
       version: this.VERSION,
       format: 'ai-test-error',
+      executionDate,
       summary,
       errorGroups,
       contextualInstructions,
@@ -135,18 +153,51 @@ export class AITestErrorFormatter {
   formatAsMarkdown(report: AITestErrorReport): string {
     let markdown = '# テストエラー分析レポート\n\n';
     
-    // CIトレーサビリティ情報
-    if (report.ciTraceability) {
-      markdown += '## 🔍 CI実行情報\n';
-      markdown += `- **ワークフロー**: ${report.ciTraceability.workflow} #${report.ciTraceability.runNumber}\n`;
-      markdown += `- **リポジトリ**: ${report.ciTraceability.repository}\n`;
-      markdown += `- **ブランチ**: ${report.ciTraceability.branch}\n`;
-      markdown += `- **コミット**: ${report.ciTraceability.sha.substring(0, 7)}\n`;
-      if (report.ciTraceability.prNumber) {
-        markdown += `- **PR**: [#${report.ciTraceability.prNumber}](${report.ciTraceability.prLink})\n`;
+    // 実行日時情報
+    markdown += '## 📅 実行情報\n';
+    if (report.executionInfo) {
+      markdown += `- **実行開始**: ${new Date(report.executionInfo.startTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+      if (report.executionInfo.endTime) {
+        markdown += `- **実行終了**: ${new Date(report.executionInfo.endTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+        markdown += `- **実行時間**: ${report.executionInfo.duration}秒\n`;
       }
-      markdown += `- **CI実行**: [${report.ciTraceability.runId}](${report.ciTraceability.deepLink})\n`;
-      markdown += `- **実行環境**: Node.js ${report.ciTraceability.nodeVersion} on ${report.ciTraceability.os}\n`;
+      markdown += `- **実行環境**: ${report.executionInfo.environment}\n`;
+      if (report.executionInfo.totalFilesProcessed) {
+        markdown += `- **処理ファイル数**: ${report.executionInfo.totalFilesProcessed}\n`;
+      }
+      if (report.executionInfo.totalErrorsCollected !== undefined && report.executionInfo.jestReportedFailures !== undefined) {
+        markdown += `- **収集エラー数**: ${report.executionInfo.totalErrorsCollected} / Jest報告数: ${report.executionInfo.jestReportedFailures}\n`;
+        if (report.executionInfo.totalErrorsCollected < report.executionInfo.jestReportedFailures) {
+          markdown += `- **⚠️ 警告**: 一部のエラーが収集されていない可能性があります\n`;
+        }
+      }
+    } else {
+      markdown += `- **レポート生成日時**: ${new Date(report.executionDate).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+    }
+    markdown += '\n';
+    
+    // CIトレーサビリティ情報またはローカル実行情報
+    if (report.ciTraceability) {
+      if (report.ciTraceability.runId === 'local') {
+        markdown += '## 💻 ローカル実行情報\n';
+        markdown += `- **実行ユーザー**: ${report.ciTraceability.actor}\n`;
+        markdown += `- **実行環境**: Node.js ${report.ciTraceability.nodeVersion} on ${report.ciTraceability.os}\n`;
+        markdown += `- **実行時刻**: ${report.ciTraceability.timestamp}\n`;
+      } else {
+        markdown += '## 🔍 CI実行情報\n';
+        markdown += `- **ワークフロー**: ${report.ciTraceability.workflow} #${report.ciTraceability.runNumber}\n`;
+        markdown += `- **リポジトリ**: ${report.ciTraceability.repository}\n`;
+        markdown += `- **ブランチ**: ${report.ciTraceability.branch}\n`;
+        markdown += `- **コミット**: ${report.ciTraceability.sha.substring(0, 7)}\n`;
+        if (report.ciTraceability.prNumber) {
+          markdown += `- **PR**: [#${report.ciTraceability.prNumber}](${report.ciTraceability.prLink})\n`;
+        }
+        if (report.ciTraceability.deepLink) {
+          markdown += `- **CI実行**: [${report.ciTraceability.runId}](${report.ciTraceability.deepLink})\n`;
+        }
+        markdown += `- **実行環境**: Node.js ${report.ciTraceability.nodeVersion} on ${report.ciTraceability.os}\n`;
+        markdown += `- **実行時刻**: ${report.ciTraceability.timestamp}\n`;
+      }
       markdown += '\n';
     }
     
@@ -222,7 +273,12 @@ export class AITestErrorFormatter {
    * JSON形式で出力
    */
   formatAsJSON(report: AITestErrorReport): string {
-    return JSON.stringify(report, null, 2);
+    // 実行情報を含めてJSON出力
+    const reportWithExecutionInfo = {
+      ...report,
+      executionDate: report.executionDate || new Date().toISOString()
+    };
+    return JSON.stringify(reportWithExecutionInfo, null, 2);
   }
   
   /**
@@ -598,6 +654,13 @@ export class AITestErrorFormatter {
       };
       return total + (group.errors.length * timePerError[group.priority]);
     }, 0);
+    
+    // デバッグ情報：エラー数の不一致を警告
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Formatter Debug] Total errors to format: ${contexts.length}`);
+      console.log(`[AI Formatter Debug] Test files with errors: ${testFiles.size}`);
+      console.log(`[AI Formatter Debug] Error groups: ${groups.length}`);
+    }
     
     return {
       totalErrors: contexts.length,
