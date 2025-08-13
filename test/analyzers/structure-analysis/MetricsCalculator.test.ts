@@ -37,7 +37,7 @@ describe('MetricsCalculator', () => {
         '/project/test/index.test.ts'
       ];
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as any).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(`
         function calculateSum(a: number, b: number): number {
           if (a > 0) {
@@ -246,28 +246,32 @@ describe('MetricsCalculator', () => {
       // Arrange
       const metrics: ProjectMetrics = {
         complexity: {
-          average: 3.5,
-          max: 10,
-          distribution: { low: 5, medium: 3, high: 2, veryHigh: 1 }
+          averageCyclomaticComplexity: 3.5,
+          maxComplexity: 10,
+          complexFiles: [],
+          totalFunctions: 11,
+          averageFunctionLength: 15
         },
         maintainability: {
-          index: 75,
+          maintainabilityIndex: 75,
+          duplicatedCodePercentage: 5.2,
           averageFileSize: 150,
-          duplication: 5.2,
-          codeSmells: []
+          largeFiles: [],
+          longFunctions: []
         },
         testability: {
-          score: 80,
-          coverage: 0.75,
-          avgDependencies: 2.5,
-          avgMethodLength: 15
+          testCoverage: 0.75,
+          testableClasses: 8,
+          untestableClasses: 2,
+          mockability: 0.8
         },
         documentation: {
-          coverage: 0.6,
-          commentRatio: 0.15,
-          missingDocs: ['function1', 'class2']
+          documentedFunctions: 6,
+          documentedClasses: 4,
+          documentationCoverage: 0.6,
+          readmeQuality: 0.8
         }
-      } as ProjectMetrics;
+      };
 
       // Act
       const report = calculator.generateMetricsReport(metrics);
