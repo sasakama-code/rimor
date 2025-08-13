@@ -92,7 +92,7 @@ export class OutputFormatter {
     
     const lines = [c.bold('\n見つかった問題:')];
     issues.forEach((issue, index) => {
-      const severity = issue.severity === 'error' ? '❌' : '⚠️';
+      const severity = (issue.severity === 'error' || issue.severity === 'high') ? '❌' : '⚠️';
       const location = issue.line ? ` (行: ${issue.line})` : '';
       lines.push(`${index + 1}. ${severity} ${issue.message}${location}`);
     });
