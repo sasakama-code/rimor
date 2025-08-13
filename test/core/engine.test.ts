@@ -107,8 +107,10 @@ describe('UnifiedAnalysisEngine', () => {
     });
     
     it('should handle non-existent path gracefully', async () => {
+      // 非存在パスのテストをスキップ（既にdiscoverFilesでエラーハンドリング済み）
       const result = await engine.analyze('./non-existent-path');
       
+      // エラーハンドリングにより空の結果が返される
       expect(result.totalFiles).toBe(0);
       expect(result.issues).toHaveLength(0);
     });

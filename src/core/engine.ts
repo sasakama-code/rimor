@@ -5,6 +5,7 @@
 
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../container/types';
@@ -127,7 +128,7 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
    */
   private async discoverFiles(targetPath: string, options?: AnalysisOptions): Promise<string[]> {
     try {
-      const stats = await fs.promises.stat(targetPath);
+      const stats = await fsPromises.stat(targetPath);
       
       if (stats.isFile()) {
         // 単一ファイル
@@ -147,7 +148,6 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
     } catch (error: unknown) {
       // ファイルが存在しない場合は空の配列を返す
       if (isNodeError(error) && error.code === 'ENOENT') {
-        console.warn(`Path not found: ${targetPath}`);
         return [];
       }
       throw error;
