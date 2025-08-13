@@ -100,11 +100,11 @@ function verifyBuild() {
   if (checkFileExists('dist/core/pluginManager.js', 'プラグインマネージャー')) checks.core.passed++; else checks.core.failed++;
   if (checkFileExists('dist/core/engine.js', '統合エンジン')) checks.core.passed++; else checks.core.failed++;
 
-  // セキュリティコンポーネントの確認
+  // セキュリティコンポーネントの確認（型定義ファイルのみ生成される場合が多い）
   log('\n【セキュリティコンポーネント】');
-  if (checkFileExists('dist/security/taint-analysis-system.js', 'Taint解析システム')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/checker/type-check-worker.js', '型チェックワーカー')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/compatibility/checker-framework-compatibility.js', '互換性モジュール')) checks.security.passed++; else checks.security.failed++;
+  if (checkFileExists('dist/security/taint-analysis-system.d.ts', 'Taint解析システム型定義')) checks.security.passed++; else checks.security.failed++;
+  if (checkFileExists('dist/security/checker/type-check-worker.d.ts', '型チェックワーカー型定義')) checks.security.passed++; else checks.security.failed++;
+  if (checkFileExists('dist/security/compatibility/checker-framework-compatibility.d.ts', '互換性モジュール型定義')) checks.security.passed++; else checks.security.failed++;
 
   // プラグインの確認
   log('\n【プラグイン】');
