@@ -72,7 +72,7 @@ export const TaintSource = {
 /**
  * セキュリティシンク（機密性の高い操作）
  */
-export type SecuritySink = 'database' | 'file-system' | 'network' | 'command' | 'eval' | 'dom' | 'unknown';
+export type SecuritySink = 'database' | 'file-system' | 'network' | 'command' | 'eval' | 'dom' | 'unknown' | 'database-query' | 'html-output' | 'javascript-exec' | 'system-command' | 'file-write' | 'test-assertion';
 
 // Enum values for runtime usage
 export const SecuritySink = {
@@ -84,13 +84,18 @@ export const SecuritySink = {
   DOM: 'dom' as const,
   UNKNOWN: 'unknown' as const,
   // レガシー互換性のため
-  DATABASE_QUERY: 'database' as const
+  DATABASE_QUERY: 'database-query' as const,
+  HTML_OUTPUT: 'html-output' as const,
+  JAVASCRIPT_EXEC: 'javascript-exec' as const,
+  SYSTEM_COMMAND: 'system-command' as const,
+  FILE_WRITE: 'file-write' as const,
+  TEST_ASSERTION: 'test-assertion' as const
 } as const;
 
 /**
  * サニタイザーの種類
  */
-export type SanitizerType = 'escape' | 'validate' | 'encode' | 'filter' | 'none';
+export type SanitizerType = 'escape' | 'validate' | 'encode' | 'filter' | 'none' | 'html-escape' | 'sql-escape' | 'input-validation' | 'type-conversion' | 'string-sanitize' | 'json-parse';
 
 // Enum values for runtime usage
 export const SanitizerType = {
@@ -100,10 +105,12 @@ export const SanitizerType = {
   FILTER: 'filter' as const,
   NONE: 'none' as const,
   // レガシー互換性のため
-  HTML_ESCAPE: 'escape' as const,
-  SQL_ESCAPE: 'escape' as const,
-  INPUT_VALIDATION: 'validate' as const,
-  TYPE_CONVERSION: 'validate' as const
+  HTML_ESCAPE: 'html-escape' as const,
+  SQL_ESCAPE: 'sql-escape' as const,
+  INPUT_VALIDATION: 'input-validation' as const,
+  TYPE_CONVERSION: 'type-conversion' as const,
+  STRING_SANITIZE: 'string-sanitize' as const,
+  JSON_PARSE: 'json-parse' as const
 } as const;
 
 /**

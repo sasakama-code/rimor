@@ -329,6 +329,13 @@ export interface SecurityIssue {
     sink?: string;
     flow?: string[];
     confidence?: number;
+    location?: {
+      file: string;
+      line: number;
+      column: number;
+    };
+    tracePath?: string[];
+    securityRules?: string[];
   };
 }
 
