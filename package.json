@@ -8,12 +8,13 @@
     "rimor": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc && npm run copy:templates && npm run verify:build",
+    "build": "tsc && npm run copy:templates && npm run ensure:testing && npm run verify:build",
     "build:clean": "rm -rf dist && npm run build",
-    "build:simple": "tsc && npm run copy:templates",
-    "build:full": "rm -rf dist && tsc -p tsconfig.build.json && npm run copy:templates && npm run verify:build",
-    "build:ci": "tsc -p tsconfig.build.json && npm run copy:templates && npm run verify:build",
+    "build:simple": "tsc && npm run copy:templates && npm run ensure:testing",
+    "build:full": "rm -rf dist && tsc -p tsconfig.build.json && npm run copy:templates && npm run ensure:testing && npm run verify:build",
+    "build:ci": "tsc -p tsconfig.build.json && npm run copy:templates && npm run ensure:testing && npm run verify:build",
     "copy:templates": "mkdir -p dist/reporting/templates && cp -r src/reporting/templates/*.hbs dist/reporting/templates/",
+    "ensure:testing": "test -f dist/testing/error-context.js || npx tsc src/testing/*.ts --outDir dist --module commonjs --target ES2022 --esModuleInterop --skipLibCheck",
     "verify:build": "node scripts/verify-build.js",
     "lint": "npx tsc --noEmit",
     "test": "NODE_OPTIONS=\"--max-old-space-size=2048\" jest --forceExit --runInBand --detectOpenHandles=false --testPathIgnorePatterns=\"test/performance/\" --testPathIgnorePatterns=\"test/integration/\"",
