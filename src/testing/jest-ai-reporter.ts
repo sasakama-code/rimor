@@ -1,10 +1,10 @@
 import type { Reporter, Test, TestResult, AggregatedResult } from '@jest/reporters';
-import { TestErrorContextCollector, TestErrorContext } from './error-context';
-import { AITestErrorFormatter } from './ai-error-formatter';
-import { CITraceabilityCollector, CITraceability } from './ci-traceability';
+import { TestErrorContextCollector, TestErrorContext } from './error-context.js';
+import { AITestErrorFormatter } from './ai-error-formatter.js';
+import { CITraceabilityCollector, CITraceability } from './ci-traceability.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PathSecurity } from '../utils/pathSecurity';
+import { PathSecurity } from '../utils/pathSecurity.js';
 
 /**
  * Jest用AIエラーレポーター

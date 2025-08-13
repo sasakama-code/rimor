@@ -77,6 +77,12 @@ export default {
     'test/integration/analyze-ai-json-e2e-lite.test.ts'
   ],
   
-  // AI Error Reporterの設定（一時的に簡略化）
-  reporters: ['default'],
+  // AI Error Reporterの設定
+  reporters: [
+    'default',
+    ['<rootDir>/dist/testing/jest-ai-reporter.js', {
+      outputPath: '<rootDir>/test-errors-ai.md',
+      enableConsoleOutput: true
+    }]
+  ],
 };
