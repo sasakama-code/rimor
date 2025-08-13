@@ -5,7 +5,6 @@
 
 import Parser from 'tree-sitter';
 import JavaScript from 'tree-sitter-javascript';
-import TypeScript from 'tree-sitter-typescript';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -69,15 +68,23 @@ export class TreeSitterParser {
     this.parsers.set(SupportedLanguage.JAVASCRIPT, jsParser);
     this.parsers.set(SupportedLanguage.JSX, jsParser);
 
-    // TypeScriptパーサー
-    const tsParser = new Parser();
-    tsParser.setLanguage(TypeScript.typescript);
-    this.parsers.set(SupportedLanguage.TYPESCRIPT, tsParser);
+    // TypeScriptパーサー（エラーハンドリング付き）
+    try {
+      const TypeScript = require('tree-sitter-typescript');
+      const tsParser = new Parser();
+      tsParser.setLanguage(TypeScript.typescript);
+      this.parsers.set(SupportedLanguage.TYPESCRIPT, tsParser);
 
-    // TSXパーサー
-    const tsxParser = new Parser();
-    tsxParser.setLanguage(TypeScript.tsx);
-    this.parsers.set(SupportedLanguage.TSX, tsxParser);
+      // TSXパーサー
+      const tsxParser = new Parser();
+      tsxParser.setLanguage(TypeScript.tsx);
+      this.parsers.set(SupportedLanguage.TSX, tsxParser);
+    } catch (error) {
+      console.warn('TypeScript parser initialization failed:', error);
+      // TypeScriptパーサーが利用できない場合は、JavaScriptパーサーで代用
+      this.parsers.set(SupportedLanguage.TYPESCRIPT, jsParser);
+      this.parsers.set(SupportedLanguage.TSX, jsParser);
+    }
   }
 
   /**
