@@ -148,6 +148,7 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
     } catch (error: unknown) {
       // ファイルが存在しない場合は空の配列を返す
       if (isNodeError(error) && error.code === 'ENOENT') {
+        debug.verbose(`File not found: ${targetPath}, returning empty array`);
         return [];
       }
       throw error;
