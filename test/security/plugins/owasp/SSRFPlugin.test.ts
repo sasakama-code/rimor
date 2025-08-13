@@ -168,6 +168,8 @@ describe('SSRFPlugin', () => {
       const lowScore = {
         overall: 0.3,
         security: 0.3,
+        dimensions: {}, // QualityScore型に必要
+        confidence: 0.9, // QualityScore型に必要
         details: { coverage: 0.3 }
       };
 

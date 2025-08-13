@@ -167,7 +167,8 @@ describe('SecurityMisconfigurationPlugin', () => {
         overall: 0.3,
         security: 0.3,
         coverage: 30,
-        confidence: 0.9
+        confidence: 0.9,
+        dimensions: {} // QualityScore型に必要
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
