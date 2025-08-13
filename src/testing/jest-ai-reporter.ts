@@ -1,10 +1,10 @@
 import type { Reporter, Test, TestResult, AggregatedResult } from '@jest/reporters';
-import { TestErrorContextCollector, TestErrorContext } from './error-context.js';
-import { AITestErrorFormatter } from './ai-error-formatter.js';
-import { CITraceabilityCollector, CITraceability } from './ci-traceability.js';
+import { TestErrorContextCollector, TestErrorContext } from './error-context';
+import { AITestErrorFormatter } from './ai-error-formatter';
+import { CITraceabilityCollector, CITraceability } from './ci-traceability';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PathSecurity } from '../utils/pathSecurity.js';
+import { PathSecurity } from '../utils/pathSecurity';
 
 /**
  * Jest用AIエラーレポーター
@@ -24,11 +24,13 @@ export class JestAIReporter implements Reporter {
   private errorCollector: TestErrorContextCollector;
   private errorFormatter: AITestErrorFormatter;
   private collectedErrors: TestErrorContext[] = [];
+  private suiteErrors: Map<string, Error> = new Map();
   private outputPath: string;
   private enableConsoleOutput: boolean;
   private ciTraceability: CITraceability | null = null;
   private testRunStartTime: Date | null = null;
   private totalFailedTests: number = 0;
+  private totalFailedSuites: number = 0;
   private processedTestFiles: Set<string> = new Set();
   
   constructor(globalConfig: unknown, options: JestAIReporterOptions = {}) {
@@ -52,8 +54,10 @@ export class JestAIReporter implements Reporter {
    */
   onRunStart(results: AggregatedResult, options: unknown): void {
     this.collectedErrors = [];
+    this.suiteErrors.clear();
     this.testRunStartTime = new Date();
     this.totalFailedTests = 0;
+    this.totalFailedSuites = 0;
     this.processedTestFiles.clear();
     
     // CI環境情報を収集
@@ -87,6 +91,12 @@ export class JestAIReporter implements Reporter {
       return;
     }
     this.processedTestFiles.add(test.path);
+    
+    // スイートレベルのエラーをチェック（モジュール未検出、コンパイルエラーなど）
+    if (testResult.testExecError) {
+      this.totalFailedSuites++;
+      await this.collectSuiteError(test.path, testResult.testExecError);
+    }
     
     // 失敗したテストのみ処理
     if (testResult.numFailingTests === 0) {
@@ -206,7 +216,9 @@ export class JestAIReporter implements Reporter {
         environment: process.env.CI === 'true' ? 'CI' : 'local',
         totalFilesProcessed: this.processedTestFiles.size,
         totalErrorsCollected: this.collectedErrors.length,
-        jestReportedFailures: results.numFailedTests
+        jestReportedFailures: results.numFailedTests,
+        jestReportedFailedSuites: results.numFailedTestSuites,
+        totalSuiteErrors: this.suiteErrors.size
       };
       
       // マークダウン形式で出力（PIIマスキング適用）
@@ -270,6 +282,104 @@ export class JestAIReporter implements Reporter {
     }
     
     return error;
+  }
+  
+  /**
+   * スイートレベルのエラーを収集
+   */
+  private async collectSuiteError(testFilePath: string, execError: any): Promise<void> {
+    try {
+      const errorMessage = typeof execError === 'string' ? execError : 
+                          execError.message || 'Test suite execution failed';
+      
+      // モジュール未検出エラーのパターンをチェック
+      const isModuleNotFound = errorMessage.includes('Cannot find module') || 
+                              errorMessage.includes('Module not found');
+      const isCompilationError = errorMessage.includes('SyntaxError') || 
+                                 errorMessage.includes('TypeError') ||
+                                 errorMessage.includes('ReferenceError');
+      
+      // エラータイプを判定
+      const errorType = isModuleNotFound ? 'MODULE_NOT_FOUND' :
+                       isCompilationError ? 'COMPILATION_ERROR' :
+                       'SUITE_EXECUTION_ERROR';
+      
+      // エラーコンテキストを作成
+      const context: TestErrorContext = {
+        timestamp: new Date().toISOString(),
+        testFile: testFilePath,
+        testName: `[Test Suite] ${path.basename(testFilePath)}`,
+        errorType: errorType as any,
+        
+        error: {
+          message: errorMessage,
+          stack: execError.stack || ''
+        },
+        
+        codeContext: {
+          failedLine: 0,
+          failedCode: '',
+          surroundingCode: {
+            before: '',
+            after: ''
+          },
+          testStructure: {
+            describes: [],
+            currentTest: `[Suite] ${path.basename(testFilePath)}`,
+            hooks: []
+          }
+        },
+        
+        environment: {
+          nodeVersion: process.version,
+          ciEnvironment: process.env.CI === 'true',
+          memoryUsage: process.memoryUsage()
+        },
+        
+        relatedFiles: {
+          dependencies: [],
+          configFiles: []
+        },
+        
+        ciTraceability: this.ciTraceability || undefined,
+        
+        suggestedActions: [{
+          priority: errorType === 'MODULE_NOT_FOUND' ? 'high' :
+                   errorType === 'COMPILATION_ERROR' ? 'high' : 'medium',
+          action: this.generateSuiteErrorFix(errorType, errorMessage),
+          reasoning: `Test suite failed to load due to ${errorType}`
+        }]
+      };
+      
+      this.collectedErrors.push(context);
+      this.suiteErrors.set(testFilePath, execError);
+      
+      if (this.enableConsoleOutput && process.env.CI !== 'true') {
+        console.log(`  ⚠️ Suite Error [${errorType}]: ${path.basename(testFilePath)}`);
+      }
+    } catch (error) {
+      if (process.env.DEBUG_AI_REPORTER === 'true') {
+        console.error('Failed to collect suite error:', error);
+      }
+    }
+  }
+  
+  /**
+   * スイートエラーの修正提案を生成
+   */
+  private generateSuiteErrorFix(errorType: string, errorMessage: string): string {
+    switch (errorType) {
+      case 'MODULE_NOT_FOUND':
+        const moduleMatch = errorMessage.match(/Cannot find module ['"](.+?)['"]/);
+        const moduleName = moduleMatch ? moduleMatch[1] : 'unknown';
+        return `1. ビルドを実行: npm run build\n2. 依存関係を確認: npm install\n3. モジュールパスを確認: ${moduleName}`;
+      
+      case 'COMPILATION_ERROR':
+        return '1. TypeScriptのコンパイルエラーを確認: npx tsc --noEmit\n2. ビルドを再実行: npm run build:full';
+      
+      default:
+        return 'テストファイルの構文とインポートを確認してください';
+    }
   }
   
   /**
