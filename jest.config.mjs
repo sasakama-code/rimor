@@ -77,12 +77,18 @@ export default {
     'test/integration/analyze-ai-json-e2e-lite.test.ts'
   ],
   
-  // AI Error Reporterの設定
-  reporters: [
-    'default',
-    ['<rootDir>/dist/testing/jest-ai-reporter.js', {
-      outputPath: '<rootDir>/test-errors-ai.md',
-      enableConsoleOutput: true
-    }]
-  ],
+  // AI Error Reporterの設定（動的に設定）
+  reporters: (() => {
+    const reporters = ['default'];
+    
+    // CI環境またはDISABLE_AI_REPORTER=trueの場合は無効化
+    if (process.env.CI !== 'true' && process.env.DISABLE_AI_REPORTER !== 'true') {
+      reporters.push(['<rootDir>/dist/testing/jest-ai-reporter.js', {
+        // outputPathを削除してデフォルトの.rimor/reports/を使用
+        enableConsoleOutput: true
+      }]);
+    }
+    
+    return reporters;
+  })(),
 };
