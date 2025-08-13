@@ -107,7 +107,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(5);
       results.forEach((result, i) => {
-        expect((result as any).data?.file || result.file).toBe(`test${i}.js`);
+        expect((result as any).file).toBe(`test${i}.js`);
       });
     });
 
@@ -121,7 +121,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(10);
       results.forEach((result, i) => {
-        expect((result as any).data?.index || result.index).toBe(i);
+        expect((result as any).index).toBe(i);
       });
     });
   });

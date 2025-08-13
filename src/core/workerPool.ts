@@ -151,7 +151,8 @@ export class WorkerPool {
           switch (type) {
             case 'analyze':
               // 簡素化された分析実行
-              result = { issues: [] };
+              // データをそのまま結果に含める
+              result = { ...data, issues: [] };
               break;
             default:
               throw new Error(\`Unknown task type: \${type}\`);
