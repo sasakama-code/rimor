@@ -187,7 +187,7 @@ describe('Checker Framework Types', () => {
         taintedReceiver,
         'concat',
         [untaintedArg],
-        function(this: any, arg: string) { return this.value + arg; }
+        function(arg: string) { return (this as any).value + arg; }
       );
       
       expect(TypeGuards.isTainted(result)).toBe(true);

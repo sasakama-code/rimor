@@ -275,7 +275,7 @@ describe('インターフェース定義のテスト', () => {
       };
 
       expect(result.issues).toHaveLength(1);
-      expect(result.issues[0].severity).toBe('error');
+      expect(result.issues[0].severity).toBe('high');
       expect(result.runtimeImpact).toBe(0);
       expect(result.statistics.inferenceSuccessRate).toBe(0.92);
     });
