@@ -1,4 +1,32 @@
 
+import express, { Express } from 'express';
+import request from 'supertest';
+
+// ヘルパー関数のモック
+const sanitize = (input: string) => {
+  if (!input || typeof input !== 'string') return '';
+  return input.replace(/<script[^>]*>.*?<\/script>/gi, '')
+              .replace(/<[^>]+>/g, '');
+};
+
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) ? email : '';
+};
+
+const escapeHtml = (text: string) => {
+  if (!text || typeof text !== 'string') return '';
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;'
+  };
+  return text.replace(/[&<>"'\/]/g, char => map[char]);
+};
+
 describe('Input Validation Security Tests', () => {
   let app: Express;
 

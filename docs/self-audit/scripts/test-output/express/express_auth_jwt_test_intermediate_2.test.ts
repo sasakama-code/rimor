@@ -1,4 +1,20 @@
 
+import express, { Express } from 'express';
+import request from 'supertest';
+import jwt from 'jsonwebtoken';
+
+// ヘルパー関数のモック
+const sanitizeJWTPayload = (payload: any) => {
+  const sanitized = { ...payload };
+  if (sanitized.userId && typeof sanitized.userId === 'string') {
+    sanitized.userId = sanitized.userId.replace(/<script[^>]*>.*?<\/script>/gi, '');
+  }
+  if (sanitized.role && typeof sanitized.role === 'string') {
+    sanitized.role = sanitized.role.replace(/DROP TABLE/gi, '');
+  }
+  return sanitized;
+};
+
 describe('JWT Authentication Security Tests', () => {
   let app: Express;
   let server: any;
