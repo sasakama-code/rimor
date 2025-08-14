@@ -245,14 +245,22 @@ export class AITestErrorFormatter {
         markdown += error.context.failedAssertion;
         markdown += '\n```\n\n';
         
-        // 自動修正案を生成できない場合は修正案セクションを削除
-        if (error.suggestedFix.code !== '// 自動修正案を生成できません') {
+        // 有効な修正案がある場合のみ修正案セクションを表示
+        const hasValidFix = error.suggestedFix.code && 
+                           !error.suggestedFix.code.startsWith('// 自動修正案を生成できません') &&
+                           !error.suggestedFix.code.startsWith('// ') &&
+                           error.suggestedFix.confidence > 0.3;
+        
+        if (hasValidFix) {
           markdown += '**修正案**:\n';
           markdown += '```typescript\n';
           markdown += error.suggestedFix.code;
           markdown += '\n```\n';
+          markdown += `${error.suggestedFix.explanation} (信頼度: ${Math.round(error.suggestedFix.confidence * 100)}%)\n\n`;
+        } else {
+          // 修正案がない場合は説明のみ表示
+          markdown += `**対処方法**: ${error.suggestedFix.explanation}\n\n`;
         }
-        markdown += `${error.suggestedFix.explanation} (信頼度: ${Math.round(error.suggestedFix.confidence * 100)}%)\n\n`;
       });
     });
     
@@ -541,9 +549,9 @@ export class AITestErrorFormatter {
     
     // デフォルトの提案（修正案なし）
     return {
-      explanation: 'このエラーの自動修正案を生成できません。エラーメッセージと関連コードを確認して手動で修正してください。',
-      code: '// 自動修正案を生成できません',
-      confidence: 0.1
+      explanation: 'エラーメッセージとスタックトレースを確認して、問題の原因を特定してください。関連するソースファイルとテストコードの両方を確認することをお勧めします。',
+      code: '',
+      confidence: 0
     };
   }
   
