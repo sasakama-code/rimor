@@ -133,7 +133,13 @@ export abstract class UnifiedAIFormatterBase {
       'best-practice': 'Technical debt accumulation',
       'performance': 'Potential performance degradation',
       'security': 'Security vulnerabilities',
-      'documentation': 'Knowledge transfer difficulties'
+      'documentation': 'Knowledge transfer difficulties',
+      'error-handling': 'Application crashes and poor user experience',
+      'validation': 'Invalid data processing and corruption',
+      'code-quality': 'Code maintainability and readability issues',
+      'test-coverage': 'Insufficient test coverage for critical paths',
+      'file-system': 'File operation failures and data loss',
+      'syntax': 'Code compilation and runtime errors'
     };
 
     return impactMap[issue.category as IssueCategory] || 'Potential quality issues';

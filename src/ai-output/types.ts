@@ -330,6 +330,7 @@ export interface ExecutiveSummary {
   statistics: {
     totalFiles: number;
     totalTests: number;
+    totalIssues?: number; // 後方互換性のためオプショナル
     riskCounts: Record<RiskLevel, number>; // { CRITICAL: 5, HIGH: 12, ... }
   };
 }
@@ -347,6 +348,7 @@ export interface DetailedIssue {
 
 // AIエージェントが直接利用できる、構造化されたリスク情報 (Issue #58)
 export interface AIActionableRisk {
+  id?: string; // 後方互換性のためオプショナル（riskIdと同じ値）
   riskId: string; // 安定した一意のID
   filePath: string;
   riskLevel: RiskLevel;
