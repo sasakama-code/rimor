@@ -48,6 +48,18 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^chalk$': '<rootDir>/__mocks__/chalk.js',
+    // テスト用モックパッケージ
+    '^react$': '<rootDir>/test/fixtures/mock-packages/react.js',
+    '^@testing-library/react$': '<rootDir>/test/fixtures/mock-packages/@testing-library/react.js',
+    '^@nestjs/testing$': '<rootDir>/test/fixtures/mock-packages/@nestjs/testing.js',
+    '^@nestjs/core$': '<rootDir>/test/fixtures/mock-packages/@nestjs/core.js',
+    '^class-validator$': '<rootDir>/test/fixtures/mock-packages/class-validator.js',
+    '^class-transformer$': '<rootDir>/test/fixtures/mock-packages/class-transformer.js',
+    // 相対パスのモック
+    '^../components/UserProfile$': '<rootDir>/test/fixtures/mock-packages/components/UserProfile.js',
+    '^../dto/create-user.dto$': '<rootDir>/test/fixtures/mock-packages/dto/create-user.dto.js',
+    '^../dto/update-profile.dto$': '<rootDir>/test/fixtures/mock-packages/dto/update-profile.dto.js',
+    '^../utils/sanitizer$': '<rootDir>/test/fixtures/mock-packages/utils/sanitizer.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleDirectories: ['node_modules', '<rootDir>'],
