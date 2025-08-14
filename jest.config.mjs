@@ -34,7 +34,7 @@ export default {
   
   // メモリ使用量最適化
   logHeapUsage: process.env.CI === 'true',
-  workerIdleMemoryLimit: '512MB', // ワーカーのアイドル時メモリ制限を増加
+  workerIdleMemoryLimit: '1GB', // ワーカーのアイドル時メモリ制限を増加
   
   // ハッシュ計算最適化
   haste: {
