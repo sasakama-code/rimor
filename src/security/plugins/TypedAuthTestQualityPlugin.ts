@@ -20,7 +20,7 @@ import {
   TestMethodAnalysisResult,
   TaintAnalysisResult,
   TypeInferenceResult,
-  MethodChange,
+  SecurityMethodChange,
   IncrementalUpdate,
   SecurityIssue,
   SecurityTestMetrics,
@@ -268,7 +268,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * インクリメンタル更新
    */
-  async updateAnalysis(changes: MethodChange[]): Promise<IncrementalUpdate> {
+  async updateAnalysis(changes: SecurityMethodChange[]): Promise<IncrementalUpdate> {
     const updatedMethods: string[] = [];
     const invalidatedCache: string[] = [];
     const newIssues: SecurityIssue[] = [];

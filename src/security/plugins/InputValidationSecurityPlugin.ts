@@ -20,7 +20,7 @@ import {
   MethodAnalysisResult,
   TaintAnalysisResult,
   TypeInferenceResult,
-  MethodChange,
+  SecurityMethodChange,
   IncrementalUpdate,
   SecurityIssue,
   SecurityTestMetrics,
@@ -401,7 +401,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * インクリメンタル更新
    */
-  async updateAnalysis(changes: MethodChange[]): Promise<IncrementalUpdate> {
+  async updateAnalysis(changes: SecurityMethodChange[]): Promise<IncrementalUpdate> {
     const updatedMethods: string[] = [];
     const invalidatedCache: string[] = [];
     const newIssues: SecurityIssue[] = [];
