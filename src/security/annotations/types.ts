@@ -33,8 +33,11 @@ export interface TaintMetadata {
  * ポリモーフィック汚染メタデータ
  */
 export interface PolyTaintMetadata {
-  polymorphic: boolean;
+  level?: 'poly';
+  polymorphic?: boolean;
   description?: string;
+  parameterIndices?: number[];
+  propagationRule?: 'any' | 'all';
   timestamp: Timestamp;
 }
 

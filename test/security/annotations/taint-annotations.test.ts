@@ -66,8 +66,8 @@ describe('Taint Annotations', () => {
       );
       
       expect(metadata).toBeDefined();
-      expect(metadata.level).toBe('tainted');
-      expect(metadata.source).toBe('external-api');
+      expect(metadata?.level).toBe('tainted');
+      expect(metadata?.source).toBe('external-api');
     });
   });
   
@@ -85,11 +85,11 @@ describe('Taint Annotations', () => {
       const metadata = TaintAnnotationReader.getTaintMetadata(instance, 'sanitizedData');
       
       expect(metadata).toBeDefined();
-      expect(metadata.level).toBe('untainted');
-      expect(metadata.reason).toBe('safe');
+      expect(metadata?.level).toBe('untainted');
+      expect(metadata?.reason).toBe('safe');
       
       const validatedMetadata = TaintAnnotationReader.getTaintMetadata(instance, 'validatedInput');
-      expect(validatedMetadata.reason).toBe('validated');
+      expect(validatedMetadata?.reason).toBe('validated');
     });
     
     it('should mark method parameter as untainted', () => {
@@ -130,17 +130,17 @@ describe('Taint Annotations', () => {
       );
       
       expect(metadata).toBeDefined();
-      expect(metadata.level).toBe('poly');
-      expect(metadata.parameterIndices).toEqual([]);
-      expect(metadata.propagationRule).toBe('any');
+      expect(metadata?.level).toBe('poly');
+      expect(metadata?.parameterIndices).toEqual([]);
+      expect(metadata?.propagationRule).toBe('any');
       
       const combineMetadata = TaintAnnotationReader.getPolyTaintMetadata(
         TestClass.prototype,
         'combineData'
       );
       
-      expect(combineMetadata.parameterIndices).toEqual([0, 2]);
-      expect(combineMetadata.propagationRule).toBe('all');
+      expect(combineMetadata?.parameterIndices).toEqual([0, 2]);
+      expect(combineMetadata?.propagationRule).toBe('all');
     });
     
     it('should wrap method for taint propagation', () => {
@@ -174,8 +174,8 @@ describe('Taint Annotations', () => {
       );
       
       expect(metadata).toBeDefined();
-      expect(metadata.suppressed).toBe(true);
-      expect(metadata.reason).toBe('reviewed-safe');
+      expect(metadata?.suppressed).toBe(true);
+      expect(metadata?.reason).toBe('reviewed-safe');
     });
     
     it('should suppress warnings on properties', () => {
@@ -191,8 +191,8 @@ describe('Taint Annotations', () => {
       );
       
       expect(metadata).toBeDefined();
-      expect(metadata.suppressed).toBe(true);
-      expect(metadata.reason).toBe('legacy-code');
+      expect(metadata?.suppressed).toBe(true);
+      expect(metadata?.reason).toBe('legacy-code');
     });
   });
   
@@ -375,8 +375,8 @@ describe('Taint Annotations', () => {
         'data'
       );
       
-      expect(metadata.timestamp).toBeGreaterThanOrEqual(beforeTime);
-      expect(metadata.timestamp).toBeLessThanOrEqual(afterTime);
+      expect(metadata?.timestamp).toBeGreaterThanOrEqual(beforeTime);
+      expect(metadata?.timestamp).toBeLessThanOrEqual(afterTime);
     });
   });
 });
