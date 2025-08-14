@@ -38,8 +38,8 @@ describe('UsageAnalyzer', () => {
         `
       };
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string) => {
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
+      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
         return mockFileContents[filePath as keyof typeof mockFileContents] || '';
       });
 
@@ -62,7 +62,7 @@ describe('UsageAnalyzer', () => {
         const parser = require('@babel/parser');
       `;
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = await analyzer.findUsedPackages('/project');
@@ -83,7 +83,7 @@ describe('UsageAnalyzer', () => {
         }
       `;
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = await analyzer.findUsedPackages('/project');
@@ -102,7 +102,7 @@ describe('UsageAnalyzer', () => {
         import express from 'express';
       `;
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = await analyzer.findUsedPackages('/project');
@@ -136,8 +136,8 @@ describe('UsageAnalyzer', () => {
         `
       };
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string) => {
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
+      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
         return mockFileContents[filePath as keyof typeof mockFileContents] || '';
       });
 
@@ -163,8 +163,8 @@ describe('UsageAnalyzer', () => {
         '/project/src/utils.ts': `import lodash from 'lodash';`
       };
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string) => {
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
+      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
         return mockFileContents[filePath as keyof typeof mockFileContents] || '';
       });
 
@@ -195,7 +195,7 @@ function test() {
   const app = require('express')();
 }`;
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = await analyzer.findImportLocations('/project', 'express');
@@ -254,8 +254,8 @@ function test() {
         '/project/src/utils/helpers.ts': `import lodash from 'lodash';`
       };
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string) => {
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
+      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
         return mockFileContents[filePath as keyof typeof mockFileContents] || '';
       });
 

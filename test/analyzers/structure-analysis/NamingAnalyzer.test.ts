@@ -31,7 +31,7 @@ describe('NamingAnalyzer', () => {
         '/project/src/models/user-model.ts'
       ];
 
-      (mockGlob.sync as jest.Mock).mockReturnValue(mockFiles);
+      (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
       mockFs.readFileSync.mockReturnValue(`
         class UserService {}
         const userName = 'test';

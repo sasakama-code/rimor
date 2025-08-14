@@ -85,7 +85,9 @@ describe('LegacyPluginAdapter', () => {
         {
           type: 'test-issue',
           severity: 'high',
-          message: 'Test issue from legacy plugin'
+          message: 'Test issue from legacy plugin',
+          filePath: '/test/file.ts',
+          category: 'test-quality'
         }
       ];
       
@@ -143,7 +145,9 @@ describe('LegacyPluginAdapter', () => {
             return [{
               type: 'missing-test',
               severity: 'high' as const,
-              message: `テストファイルが存在しません: ${filePath}`
+              message: `テストファイルが存在しません: ${filePath}`,
+              filePath: filePath,
+              category: 'test-coverage'
             }];
           }
           return [];
@@ -195,8 +199,10 @@ describe('LegacyPluginAdapter', () => {
         await new Promise(resolve => setTimeout(resolve, 10));
         return [{
           type: `call-${callCount}`,
-          severity: 'info',
-          message: `Call ${callCount} for ${filePath}`
+          severity: 'info' as any,
+          message: `Call ${callCount} for ${filePath}`,
+          filePath: filePath,
+          category: 'test-quality'
         }];
       });
       

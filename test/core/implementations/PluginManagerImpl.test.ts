@@ -160,7 +160,9 @@ describe('PluginManagerImpl', () => {
       const mockIssues: Issue[] = [{
         type: 'test-issue',
         severity: 'high',
-        message: 'Test issue found'
+        message: 'Test issue found',
+        filePath: '/test/file.ts',
+        category: 'test-quality'
       }];
       
       const plugin = new MockPlugin({
@@ -254,10 +256,12 @@ describe('PluginManagerImpl', () => {
         name: 'Plugin 1',
         version: '1.0.0',
         enabled: true
-      }, async () => [{
+      }, async (filePath) => [{
         type: 'issue-1',
         severity: 'high',
-        message: 'Issue from plugin 1'
+        message: 'Issue from plugin 1',
+        filePath: filePath,
+        category: 'test-quality'
       }]);
       
       const plugin2 = new MockPlugin({
@@ -265,10 +269,12 @@ describe('PluginManagerImpl', () => {
         name: 'Plugin 2',
         version: '1.0.0',
         enabled: true
-      }, async () => [{
+      }, async (filePath) => [{
         type: 'issue-2',
         severity: 'medium',
-        message: 'Issue from plugin 2'
+        message: 'Issue from plugin 2',
+        filePath: filePath,
+        category: 'test-quality'
       }]);
       
       const plugin3 = new MockPlugin({
@@ -276,10 +282,12 @@ describe('PluginManagerImpl', () => {
         name: 'Plugin 3',
         version: '1.0.0',
         enabled: false // disabled
-      }, async () => [{
+      }, async (filePath) => [{
         type: 'issue-3',
-        severity: 'info',
-        message: 'Should not appear'
+        severity: 'info' as any,
+        message: 'Should not appear',
+        filePath: filePath,
+        category: 'test-quality'
       }]);
       
       pluginManager.register(plugin1);
@@ -306,10 +314,12 @@ describe('PluginManagerImpl', () => {
         name: 'Working Plugin',
         version: '1.0.0',
         enabled: true
-      }, async () => [{
+      }, async (filePath) => [{
         type: 'success',
-        severity: 'info',
-        message: 'Working'
+        severity: 'info' as any,
+        message: 'Working',
+        filePath: filePath,
+        category: 'test-quality'
       }]);
       
       const plugin2 = new MockPlugin({
@@ -377,10 +387,12 @@ describe('PluginManagerImpl', () => {
         name: 'Lifecycle Plugin',
         version: '1.0.0',
         enabled: true
-      }, async () => [{
+      }, async (filePath) => [{
         type: 'lifecycle-issue',
-        severity: 'info',
-        message: 'Lifecycle test'
+        severity: 'info' as any,
+        message: 'Lifecycle test',
+        filePath: filePath,
+        category: 'test-quality'
       }]);
       
       pluginManager.register(plugin);

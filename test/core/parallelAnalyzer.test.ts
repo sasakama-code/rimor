@@ -15,14 +15,18 @@ class MockPlugin implements IPlugin {
       return [{
         type: 'mock-error',
         severity: 'high',
-        message: `Mock error in ${filePath}`
+        message: `Mock error in ${filePath}`,
+        filePath: filePath,
+        category: 'test-quality'
       }];
     }
     
     return [{
       type: 'mock-info',
       severity: 'medium',
-      message: `Mock analysis of ${filePath}`
+      message: `Mock analysis of ${filePath}`,
+      filePath: filePath,
+      category: 'test-quality'
     }];
   }
 }
@@ -37,7 +41,9 @@ class SlowMockPlugin implements IPlugin {
     return [{
       type: 'slow-analysis',
       severity: 'medium',
-      message: `Slow analysis of ${filePath}`
+      message: `Slow analysis of ${filePath}`,
+      filePath: filePath,
+      category: 'performance'
     }];
   }
 }
