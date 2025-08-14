@@ -274,6 +274,20 @@ export interface TestFile {
   };
 }
 
+// Method signature structure for tests
+export interface MethodSignature {
+  name: string;
+  parameters: Array<{
+    name: string;
+    type?: string;
+    source?: 'user-input' | 'database' | 'api' | 'constant';
+  }>;
+  returnType?: string;
+  annotations: string[];
+  isAsync: boolean;
+  visibility?: 'private' | 'protected' | 'public';
+}
+
 // Test method structure
 export interface TestMethod {
   name: string;
@@ -283,18 +297,22 @@ export interface TestMethod {
     end: Position;
     startLine?: number;
     startColumn?: number;
+    endLine?: number;
+    endColumn?: number;
   };
   async?: boolean;
   skip?: boolean;
   only?: boolean;
   timeout?: number;
   tags?: string[];
-  assertions?: number;
+  assertions?: number | string[];
   description?: string;
   // 追加プロパティ（後方互換性のため）
   content?: string;
   body?: string;
   filePath?: string;
-  signature?: string;
+  signature?: string | MethodSignature;
   testType?: 'unit' | 'integration' | 'e2e' | 'security' | 'performance' | 'smoke';
+  // Security-related properties
+  securityRelevance?: number;
 }

@@ -24,6 +24,15 @@ export interface QualityScore {
   // Additional metrics
   maintainability?: number; // 0.0-1.0
   
+  // Breakdown of scores
+  breakdown?: {
+    completeness?: number;
+    reliability?: number;
+    effectiveness?: number;
+    maintainability?: number;
+    correctness?: number;
+  };
+  
   // Confidence in the score
   confidence: number; // 0.0-1.0
   

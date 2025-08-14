@@ -9,6 +9,10 @@ export * from './base-types';
 // Project context types
 export * from './project-context';
 
+// Re-export commonly used security types for convenience
+export type { IncrementalUpdate } from '../../security/types/flow-types';
+export type { MethodSignature } from './project-context';
+
 // Plugin interface types
 export * from './plugin-interface';
 
