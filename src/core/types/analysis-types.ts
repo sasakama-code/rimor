@@ -225,13 +225,17 @@ export interface MethodAnalysisResult {
   coverage?: number;
 }
 
+// Import TestMethod for type reference
+import { TestMethod } from './project-context';
+
 /**
  * Method Change
  */
 export interface MethodChange {
   type: 'added' | 'modified' | 'deleted';
-  method: string;
-  file: string;
-  line: number;
-  impact: 'high' | 'medium' | 'low';
+  method: string | TestMethod;
+  file?: string;
+  line?: number;
+  impact?: 'high' | 'medium' | 'low';
+  details?: string;
 }

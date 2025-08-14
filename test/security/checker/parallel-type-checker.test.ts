@@ -49,6 +49,7 @@ describe('ParallelTypeChecker', () => {
     it('単一メソッドの型チェックができる', async () => {
       const method: TestMethod = {
         name: 'testMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: `
           function testMethod(userId: string): ProcessResult {
@@ -66,7 +67,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 7, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 7, column: 0 },
+          startLine: 1, 
+          endLine: 7, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       const results = await checker.checkMethodsInParallel([method]);
@@ -81,6 +89,7 @@ describe('ParallelTypeChecker', () => {
     it('汚染データの型エラーを検出できる', async () => {
       const method: TestMethod = {
         name: 'unsafeMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: `
           function unsafeMethod(request: Request): void {
@@ -97,7 +106,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 10, endLine: 14, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 10, column: 0 },
+          end: { line: 14, column: 0 },
+          startLine: 10, 
+          endLine: 14, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       const results = await checker.checkMethodsInParallel([method]);
@@ -120,6 +136,7 @@ describe('ParallelTypeChecker', () => {
 
       const method: TestMethod = {
         name: 'slowMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: `
           function slowMethod(): void {
@@ -134,7 +151,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 10, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 10, column: 0 },
+          startLine: 1, 
+          endLine: 10, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       await expect(slowChecker.checkMethodsInParallel([method])).rejects.toThrow();
@@ -146,6 +170,7 @@ describe('ParallelTypeChecker', () => {
     it('複数メソッドを並列でチェックできる', async () => {
       const methods: TestMethod[] = Array.from({ length: 10 }, (_, i) => ({
         name: `method${i}`,
+        type: 'test',
         filePath: 'test.ts',
         content: `function method${i}(): number { return ${i}; }`,
         signature: {
@@ -155,7 +180,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: i * 10, column: 0 },
+          end: { line: i * 10 + 1, column: 0 },
+          startLine: i * 10, 
+          endLine: i * 10 + 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       }));
 
       const results = await checker.checkMethodsInParallel(methods);
@@ -173,6 +205,7 @@ describe('ParallelTypeChecker', () => {
       const methods: TestMethod[] = [
         {
           name: 'validMethod',
+          type: 'test',
           filePath: 'test.ts',
           content: 'function validMethod(): number { return 1; }',
           signature: {
@@ -182,10 +215,18 @@ describe('ParallelTypeChecker', () => {
             annotations: [],
             isAsync: false
           },
-          location: { startLine: 1, endLine: 1, startColumn: 0, endColumn: 0 }
+          location: { 
+            start: { line: 1, column: 0 },
+            end: { line: 1, column: 0 },
+            startLine: 1, 
+            endLine: 1, 
+            startColumn: 0, 
+            endColumn: 0 
+          }
         },
         {
           name: 'invalidMethod',
+          type: 'test',
           filePath: 'test.ts',
           content: null as any, // 不正な入力
           signature: {
@@ -195,17 +236,29 @@ describe('ParallelTypeChecker', () => {
             annotations: [],
             isAsync: false
           },
-          location: { startLine: 10, endLine: 10, startColumn: 0, endColumn: 0 }
+          location: { 
+            start: { line: 10, column: 0 },
+            end: { line: 10, column: 0 },
+            startLine: 10, 
+            endLine: 10, 
+            startColumn: 0, 
+            endColumn: 0 
+          }
         }
       ];
 
       const results = await checker.checkMethodsInParallel(methods);
       
-      // invalidMethodは処理に失敗するため、結果は1つのみ
-      expect(results.size).toBe(1);
+      // 両方のメソッドが処理される（nullコンテンツは空文字列として扱われる）
+      expect(results.size).toBe(2);
       const validResult = results.get('validMethod');
       expect(validResult).toBeDefined();
       expect(validResult!.securityIssues).toHaveLength(0);
+      
+      // invalidMethodも処理されるが、内容は空
+      const invalidResult = results.get('invalidMethod');
+      expect(invalidResult).toBeDefined();
+      expect(invalidResult!.method.name).toBe('invalidMethod');
     });
   });
 
@@ -213,6 +266,7 @@ describe('ParallelTypeChecker', () => {
     it('同じメソッドの結果をキャッシュする', async () => {
       const method: TestMethod = {
         name: 'cachedMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: 'function cachedMethod(): string { return "cached"; }',
         signature: {
@@ -222,7 +276,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 1, column: 0 },
+          startLine: 1, 
+          endLine: 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       // 初回実行
@@ -248,6 +309,7 @@ describe('ParallelTypeChecker', () => {
     it('clearCache()でキャッシュをクリアできる', async () => {
       const method: TestMethod = {
         name: 'testCache',
+        type: 'test',
         filePath: 'test.ts',
         content: 'function testCache(): number { return 1; }',
         signature: {
@@ -257,7 +319,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 1, column: 0 },
+          startLine: 1, 
+          endLine: 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       await checker.checkMethodsInParallel([method]);
@@ -276,6 +345,7 @@ describe('ParallelTypeChecker', () => {
     it('getStatistics()で統計情報を取得できる', async () => {
       const methods: TestMethod[] = Array.from({ length: 5 }, (_, i) => ({
         name: `statMethod${i}`,
+        type: 'test',
         filePath: 'test.ts',
         content: `function statMethod${i}(): number { return ${i}; }`,
         signature: {
@@ -285,7 +355,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: i * 10, column: 0 },
+          end: { line: i * 10 + 1, column: 0 },
+          startLine: i * 10, 
+          endLine: i * 10 + 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       }));
 
       await checker.checkMethodsInParallel(methods);
@@ -299,6 +376,7 @@ describe('ParallelTypeChecker', () => {
     it('並列処理が順次処理より高速である', async () => {
       const methods: TestMethod[] = Array.from({ length: 20 }, (_, i) => ({
         name: `perfMethod${i}`,
+        type: 'test',
         filePath: 'test.ts',
         content: `
           function perfMethod${i}(): boolean {
@@ -314,7 +392,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 5, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: i * 10, column: 0 },
+          end: { line: i * 10 + 5, column: 0 },
+          startLine: i * 10, 
+          endLine: i * 10 + 5, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       }));
 
       // 並列処理
@@ -345,6 +430,7 @@ describe('ParallelTypeChecker', () => {
     it('ワーカーのクラッシュから回復できる', async () => {
       const method: TestMethod = {
         name: 'crashTest',
+        type: 'test',
         filePath: 'test.ts',
         content: 'function crashTest(): void { process.exit(1); }', // ワーカーをクラッシュさせる
         signature: {
@@ -354,7 +440,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 1, column: 0 },
+          startLine: 1, 
+          endLine: 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
 
       // process.exit()はワーカー内で実行されても例外をスローしない
@@ -365,6 +458,7 @@ describe('ParallelTypeChecker', () => {
       // その後も正常に動作することを確認
       const normalMethod: TestMethod = {
         name: 'normalMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: 'function normalMethod(): boolean { return true; }',
         signature: {
@@ -374,7 +468,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 10, endLine: 10, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: 10, column: 0 },
+          end: { line: 10, column: 0 },
+          startLine: 10, 
+          endLine: 10, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       };
       
       const normalResults = await checker.checkMethodsInParallel([normalMethod]);
@@ -390,6 +491,7 @@ describe('ParallelTypeChecker', () => {
       // まずいくつかのタスクを実行
       const methods: TestMethod[] = Array.from({ length: 3 }, (_, i) => ({
         name: `cleanupTest${i}`,
+        type: 'test',
         filePath: 'test.ts',
         content: `function cleanupTest${i}(): number { return ${i}; }`,
         signature: {
@@ -399,7 +501,14 @@ describe('ParallelTypeChecker', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 1, startColumn: 0, endColumn: 0 }
+        location: { 
+          start: { line: i * 10, column: 0 },
+          end: { line: i * 10 + 1, column: 0 },
+          startLine: i * 10, 
+          endLine: i * 10 + 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
       }));
       
       const results = await testChecker.checkMethodsInParallel(methods);

@@ -74,20 +74,23 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
     it('テストメソッドを正しく定義できること', () => {
       const testMethod: TestMethod = {
         name: 'testAuthentication',
+        type: 'test',
         filePath: 'auth.test.ts',
         content: 'it("should authenticate user", () => { /* test */ })',
         body: '/* test body */',
         securityRelevance: 0.95,
-        assertions: ['expect(user).toBeDefined()'],
-        dependencies: ['authService', 'userRepository'],
+        assertions: 1,
         testType: 'security',
         signature: {
           name: 'testAuthentication',
           parameters: [],
+          returnType: 'void',
           annotations: ['@SecurityTest'],
           isAsync: true
         },
         location: {
+          start: { line: 10, column: 0 },
+          end: { line: 20, column: 50 },
           startLine: 10,
           endLine: 20,
           startColumn: 0,
@@ -98,7 +101,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       expect(testMethod.name).toBe('testAuthentication');
       expect(testMethod.securityRelevance).toBe(0.95);
       expect(testMethod.testType).toBe('security');
-      expect(testMethod.signature.isAsync).toBe(true);
+      expect((testMethod.signature as MethodSignature)?.isAsync).toBe(true);
     });
   });
 
@@ -186,15 +189,19 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         type: 'modified',
         method: {
           name: 'testAuth',
+          type: 'test',
           filePath: 'auth.test.ts',
           content: 'updated content',
           signature: {
             name: 'testAuth',
             parameters: [],
+            returnType: 'void',
             annotations: [],
             isAsync: false
           },
           location: {
+            start: { line: 10, column: 0 },
+            end: { line: 20, column: 50 },
             startLine: 10,
             endLine: 20,
             startColumn: 0,
@@ -309,8 +316,8 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       const improvementTypes: SecurityImprovement['type'][] = [
         'add-sanitizer',
         'add-validation',
-        'fix-assertion',
-        'enhance-coverage'
+        'add-assertion',
+        'fix-flow'
       ];
       improvementTypes.forEach(type => {
         expect(typeof type).toBe('string');

@@ -105,7 +105,7 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
       
       const weakAssertions = patterns.filter(p => 
         p.patternName === 'Weak Assertions' || 
-        p.patternName.toLowerCase().includes('weak')
+        (p.patternName && p.patternName.toLowerCase().includes('weak'))
       );
       
       expect(weakAssertions.length).toBeGreaterThan(0);

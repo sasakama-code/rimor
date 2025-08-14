@@ -10,23 +10,27 @@ import {
   TestFile,
   DetectionResult,
   QualityScore,
-  MethodChange,
   IncrementalUpdate,
   MethodSignature
 } from '../../../src/core/types';
+import { SecurityMethodChange } from '../../../src/security/types/flow-types';
 
 // テスト用のTestMethodを作成するヘルパー関数
 const createTestMethod = (name: string, content: string, filePath: string = 'auth.test.ts'): TestMethod => ({
   name,
+  type: 'test',
   content,
   filePath,
   signature: {
     name,
     parameters: [],
+    returnType: 'void',
     annotations: [],
     isAsync: content.includes('await')
   },
   location: {
+    start: { line: 1, column: 0 },
+    end: { line: content.split('\n').length, column: 100 },
     startLine: 1,
     endLine: content.split('\n').length,
     startColumn: 0,
@@ -322,6 +326,7 @@ describe('TypedAuthTestQualityPlugin', () => {
     it('認証関連のテストメソッドを解析できること', async () => {
       const method: TestMethod = {
         name: 'testLoginSuccess',
+        type: 'test',
         content: `
           const user = { username: 'test', password: 'password' };
           const result = await login(user);
@@ -331,10 +336,13 @@ describe('TypedAuthTestQualityPlugin', () => {
         signature: {
           name: 'testLoginSuccess',
           parameters: [],
+          returnType: 'void',
           annotations: [],
           isAsync: true
         },
         location: {
+          start: { line: 10, column: 0 },
+          end: { line: 14, column: 100 },
           startLine: 10,
           endLine: 14,
           startColumn: 0,
@@ -395,19 +403,21 @@ describe('TypedAuthTestQualityPlugin', () => {
       const flowGraph = await plugin.trackDataFlow(method);
       
       expect(flowGraph).toBeDefined();
-      expect(flowGraph.nodes.length).toBeGreaterThan(0);
+      expect(flowGraph.nodes.size).toBeGreaterThan(0);
     });
   });
   
   describe('updateAnalysis', () => {
     it('メソッドの追加を処理できること', async () => {
-      const changes: MethodChange[] = [
+      const changes: SecurityMethodChange[] = [
         {
           type: 'added',
           method: createTestMethod(
             'testNewAuth',
             'const token = login();'
           ),
+          changeType: 'added',
+          affectedFlows: [],
           details: 'New authentication method added'
         }
       ];
@@ -427,10 +437,12 @@ describe('TypedAuthTestQualityPlugin', () => {
       await plugin.analyzeMethod(method);
       
       // 削除の更新を実行
-      const changes: MethodChange[] = [
+      const changes: SecurityMethodChange[] = [
         {
           type: 'deleted',
           method,
+          changeType: 'deleted',
+          affectedFlows: [],
           details: 'Authentication method removed'
         }
       ];
@@ -445,6 +457,7 @@ describe('TypedAuthTestQualityPlugin', () => {
     it('汚染分析が実行されること', async () => {
       const method: TestMethod = {
         name: 'testTaintAnalysis',
+        type: 'test',
         content: `
           const userInput = request.body.password;
           const hashed = bcrypt.hash(userInput);
@@ -454,10 +467,13 @@ describe('TypedAuthTestQualityPlugin', () => {
         signature: {
           name: 'testTaintAnalysis',
           parameters: [],
+          returnType: 'void',
           annotations: [],
           isAsync: false
         },
         location: {
+          start: { line: 1, column: 0 },
+          end: { line: 4, column: 0 },
           startLine: 1,
           endLine: 4,
           startColumn: 0,
