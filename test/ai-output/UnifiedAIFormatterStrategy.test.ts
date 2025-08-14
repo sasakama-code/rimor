@@ -7,6 +7,7 @@ const mockAnalysisResult: UnifiedAnalysisResult = {
   summary: {
     overallScore: 75,
     overallGrade: 'B',
+    dimensions: [],
     statistics: {
       totalFiles: 10,
       totalTests: 50,
@@ -22,44 +23,59 @@ const mockAnalysisResult: UnifiedAnalysisResult = {
   },
   aiKeyRisks: [
     {
-      id: 'RISK-001',
-      problem: 'Critical security vulnerability',
+      riskId: 'RISK-001',
+      filePath: 'src/auth.ts',
       riskLevel: 'CRITICAL',
-      impact: 'High security risk',
-      solution: 'Fix immediately',
-      priority: 1,
-      estimatedEffort: '2h'
+      title: 'Critical security vulnerability',
+      problem: 'Critical security vulnerability',
+      context: {
+        codeSnippet: '',
+        startLine: 10,
+        endLine: 20
+      },
+      suggestedAction: {
+        type: 'SANITIZE_VARIABLE' as const,
+        description: 'Fix immediately',
+        example: '// Fix example code'
+      }
     },
     {
-      id: 'RISK-002',
-      problem: 'Memory leak detected',
+      riskId: 'RISK-002',
+      filePath: 'src/memory.ts',
       riskLevel: 'HIGH',
-      impact: 'Performance degradation',
-      solution: 'Refactor code',
-      priority: 2,
-      estimatedEffort: '4h'
+      title: 'Memory leak detected',
+      problem: 'Memory leak detected',
+      context: {
+        codeSnippet: '',
+        startLine: 100,
+        endLine: 110
+      },
+      suggestedAction: {
+        type: 'REFACTOR_COMPLEX_CODE' as const,
+        description: 'Refactor code',
+        example: '// Refactor example code'
+      }
     },
     {
-      id: 'RISK-003',
-      problem: 'Missing test coverage',
+      riskId: 'RISK-003',
+      filePath: 'src/tests.ts',
       riskLevel: 'MEDIUM',
-      impact: 'Low maintainability',
-      solution: 'Add unit tests',
-      priority: 3,
-      estimatedEffort: '6h'
+      title: 'Missing test coverage',
+      problem: 'Missing test coverage',
+      context: {
+        codeSnippet: '',
+        startLine: 200,
+        endLine: 210
+      },
+      suggestedAction: {
+        type: 'ADD_MISSING_TEST' as const,
+        description: 'Add unit tests',
+        example: '// Test example code'
+      }
     }
   ],
-  projectContext: {
-    projectPath: '/test/project',
-    framework: 'jest',
-    language: 'typescript',
-    testCoverage: 75
-  },
-  detailedAnalysis: {
-    categories: {},
-    trends: [],
-    recommendations: []
-  }
+  detailedIssues: [],
+  schemaVersion: "1.0" as const
 };
 
 describe('UnifiedAIFormatterStrategy', () => {
@@ -71,7 +87,7 @@ describe('UnifiedAIFormatterStrategy', () => {
 
   describe('基本機能', () => {
     it('インスタンスが正しく作成される', () => {
-      expect(formatter).toBeInstanceOf(UnifiedAIFormatterStrategy);
+      expect(formatter).toBeInstanceOf(UnifiedAIFormatter);
     });
 
     it('デフォルト戦略（Base）でフォーマットできる', () => {
@@ -92,7 +108,7 @@ describe('UnifiedAIFormatterStrategy', () => {
       const result = formatter.format(mockAnalysisResult, options);
       
       expect(result.actionableRisks).toHaveLength(2);
-      expect(result.actionableRisks.every(r => 
+      expect(result.actionableRisks.every((r: any) => 
         r.riskLevel === 'CRITICAL' || r.riskLevel === 'HIGH'
       )).toBeTruthy();
     });
@@ -198,13 +214,21 @@ describe('UnifiedAIFormatterStrategy', () => {
       const largeResult: UnifiedAnalysisResult = {
         ...mockAnalysisResult,
         aiKeyRisks: Array(100).fill(null).map((_, i) => ({
-          id: `RISK-${i}`,
-          problem: `Problem ${i}`,
+          riskId: `RISK-${i}`,
+          filePath: `src/file${i}.ts`,
           riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'][i % 5] as any,
-          impact: `Impact ${i}`,
-          solution: `Solution ${i}`,
-          priority: i,
-          estimatedEffort: `${i}h`
+          title: `Problem ${i}`,
+          problem: `Problem ${i}`,
+          context: {
+            codeSnippet: '',
+            startLine: i * 10,
+            endLine: i * 10 + 10
+          },
+          suggestedAction: {
+            type: 'ADD_ASSERTION' as const,
+            description: `Solution ${i}`,
+            example: `// Example ${i}`
+          }
         }))
       };
       

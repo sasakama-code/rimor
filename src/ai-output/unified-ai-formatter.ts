@@ -1,5 +1,5 @@
 /**
- * Unified AI formatter implementation
+ * Unified AI formatter implementation with strategy pattern
  */
 
 import {
@@ -15,9 +15,181 @@ import {
   RiskAssessment
 } from './unified-ai-formatter-base';
 
+import { UnifiedAnalysisResult, AIJsonOutput } from './types';
+
+// Strategy interface
+interface FormatterStrategy {
+  name: string;
+  format(result: any, options?: any): any;
+  formatAsync?(result: any, options?: any): Promise<any>;
+}
+
 export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
+  private strategies: Map<string, FormatterStrategy> = new Map();
+  private currentStrategy: string = 'base';
+
   constructor(options: UnifiedAIFormatterOptions = {}) {
     super(options);
+    this.initializeDefaultStrategies();
+  }
+
+  private initializeDefaultStrategies(): void {
+    // Base strategy
+    this.strategies.set('base', {
+      name: 'base',
+      format: (result: any) => this.baseFormat(result)
+    });
+
+    // Optimized strategy
+    this.strategies.set('optimized', {
+      name: 'optimized',
+      format: (result: any) => this.optimizedFormat(result)
+    });
+
+    // Parallel strategy
+    this.strategies.set('parallel', {
+      name: 'parallel',
+      format: (result: any) => this.baseFormat(result),
+      formatAsync: async (result: any) => this.parallelFormatAsync(result)
+    });
+  }
+
+  /**
+   * Set the formatting strategy
+   */
+  setStrategy(strategyName: string): void {
+    if (!this.strategies.has(strategyName)) {
+      throw new Error(`Unknown strategy: ${strategyName}`);
+    }
+    this.currentStrategy = strategyName;
+  }
+
+  /**
+   * Get available strategies
+   */
+  getAvailableStrategies(): string[] {
+    return Array.from(this.strategies.keys());
+  }
+
+  /**
+   * Register a custom strategy
+   */
+  registerStrategy(strategy: FormatterStrategy): void {
+    if (!strategy.name || !strategy.format) {
+      throw new Error('Strategy must have name and format method');
+    }
+    this.strategies.set(strategy.name, strategy);
+  }
+
+  /**
+   * Base format implementation
+   */
+  private baseFormat(result: any, options?: any): any {
+    // Handle UnifiedAnalysisResult
+    if (result.summary && result.aiKeyRisks) {
+      return {
+        overallAssessment: `プロジェクト品質評価結果: スコア ${result.summary.overallScore}`,
+        topIssues: result.aiKeyRisks.slice(0, 3),
+        actionableRisks: result.aiKeyRisks,
+        formattingStrategy: 'base'
+      };
+    }
+    
+    // Fallback to AnalysisResult format
+    if (result.issues) {
+      return this.formatAnalysisResult(result, options);
+    }
+    
+    throw new Error('Unsupported result format');
+  }
+
+  /**
+   * Optimized format implementation
+   */
+  private optimizedFormat(result: any, options?: any): any {
+    // Handle UnifiedAnalysisResult with optimization
+    if (result.summary && result.aiKeyRisks) {
+      const maxRisks = options?.maxRisks || 10;
+      return {
+        overallAssessment: `プロジェクト品質評価結果: スコア ${result.summary.overallScore}`,
+        topIssues: result.aiKeyRisks.slice(0, 3),
+        actionableRisks: result.aiKeyRisks.slice(0, maxRisks),
+        formattingStrategy: 'optimized'
+      };
+    }
+    
+    if (result.issues) {
+      return this.formatAnalysisResult(result, options);
+    }
+    
+    throw new Error('Unsupported result format');
+  }
+
+  /**
+   * Parallel format async implementation
+   */
+  private async parallelFormatAsync(result: any, options?: any): Promise<any> {
+    // Simulate parallel processing
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(this.baseFormat(result, options));
+      }, 10);
+    });
+  }
+
+  /**
+   * Format with current strategy
+   */
+  format(result: any, options?: any): any {
+    const strategy = this.strategies.get(this.currentStrategy);
+    if (!strategy) {
+      throw new Error(`Strategy ${this.currentStrategy} not found`);
+    }
+    
+    const output = strategy.format(result, options);
+    // Add formattingStrategy to output
+    if (output && typeof output === 'object') {
+      output.formattingStrategy = this.currentStrategy;
+    }
+    return output;
+  }
+
+  /**
+   * Format asynchronously
+   */
+  async formatAsync(result: any, options?: any): Promise<any> {
+    const strategy = this.strategies.get(this.currentStrategy);
+    if (!strategy) {
+      throw new Error(`Strategy ${this.currentStrategy} not found`);
+    }
+
+    if (strategy.formatAsync) {
+      const output = await strategy.formatAsync(result, options);
+      if (output && typeof output === 'object') {
+        output.formattingStrategy = this.currentStrategy;
+      }
+      return output;
+    }
+
+    // Fallback to sync format wrapped in promise
+    return Promise.resolve(this.format(result, options));
+  }
+
+  /**
+   * Format multiple results in batch
+   */
+  async formatBatch(results: any[]): Promise<any[]> {
+    if (this.currentStrategy === 'parallel') {
+      // Process in parallel
+      return Promise.all(results.map(r => this.formatAsync(r)));
+    }
+    
+    // Process sequentially
+    const formatted = [];
+    for (const result of results) {
+      formatted.push(await this.formatAsync(result));
+    }
+    return formatted;
   }
 
   /**
@@ -54,9 +226,9 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   }
 
   /**
-   * Format analysis results into unified AI output
+   * Legacy format for AnalysisResult (for base class compatibility)
    */
-  format(result: AnalysisResult, context?: ProjectContext): UnifiedAIOutput {
+  private formatAnalysisResult(result: AnalysisResult, context?: ProjectContext): UnifiedAIOutput {
     const keyRisks = this.assessRisks(result.issues);
     const summary = this.createSummary(result.issues);
     
