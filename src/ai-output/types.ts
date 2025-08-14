@@ -1,10 +1,58 @@
-import { Issue, ProjectContext } from '../core/types';
+import { Issue, ProjectContext, IssueSeverity, IssueCategory } from '../core/types';
 import { FileScore, ProjectScore } from '../scoring/types';
 
 /**
  * AI向け出力形式の型定義 v0.5.0
  * AI-Optimized-Output-Requirements-v0.5.0.mdに基づく実装
  */
+
+// AI formatted types for the formatter
+export interface AISummary {
+  totalIssues: number;
+  totalFiles: number;
+  overallScore: number;
+  severityDistribution: Record<IssueSeverity, number>;
+  categoryDistribution: Record<IssueCategory, number>;
+  topIssues: Array<{
+    category: IssueCategory;
+    severity: IssueSeverity;
+    count: number;
+    message: string;
+  }>;
+  keyFindings: string[];
+}
+
+export interface AIFormattedIssue {
+  category: IssueCategory;
+  severity: IssueSeverity;
+  message: string;
+  line?: number;
+  column?: number;
+  suggestion?: string;
+  impact: 'high' | 'medium' | 'low';
+  codeSnippet?: string;
+}
+
+export interface AIFormattedFile {
+  path: string;
+  issueCount: number;
+  issues: AIFormattedIssue[];
+  score: number;
+}
+
+export interface AIContext {
+  projectType: string;
+  framework: string;
+  testFramework: string;
+  languages: string[];
+  dependencies: Record<string, string> | string[];
+  configuration: {
+    hasTypeScript: boolean;
+    hasESLint: boolean;
+    hasPrettier: boolean;
+    hasJest: boolean;
+  };
+}
 
 // メイン出力構造
 export interface AIOptimizedOutput {

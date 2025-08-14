@@ -10,7 +10,8 @@ import {
   ConfidenceInfo,
   Issue
 } from './base-types';
-import { QualityDetails } from './quality-score';
+import { QualityDetails, QualityScore } from './quality-score';
+import { ProjectContext } from './project-context';
 
 // Pattern detection result
 export interface DetectionResult {
@@ -82,9 +83,13 @@ export interface AnalysisResult {
   // Metrics
   metrics?: FileMetrics;
   
-  // Quality assessment
+  // Quality assessment (compatible with legacy code)
+  score?: QualityScore;
   qualityScore?: number;
   qualityDetails?: QualityDetails;
+  
+  // Context
+  context?: ProjectContext;
   
   // Performance data
   analysisTime?: number;

@@ -240,12 +240,16 @@ export interface ASTNode {
 export interface ProjectContext {
   rootPath?: string;
   projectPath?: string;
+  type?: string; // Project type (e.g., 'node', 'web', 'library')
   language?: 'javascript' | 'typescript' | 'python' | 'java' | 'csharp' | 'go' | 'rust' | 'other';
+  languages?: string[]; // Multiple languages support
   testFramework?: string;
   framework?: string;
   packageJson?: PackageJsonConfig; // Properly typed, not any
   tsConfig?: TSConfig; // Properly typed, not any
-  dependencies?: string[];
+  dependencies?: Record<string, string> | string[]; // Support both formats
+  testFiles?: TestFile[]; // Test files in the project
+  sourceFiles?: string[]; // Source files in the project
   configuration?: Record<string, unknown>; // Using unknown instead of any
   customConfig?: Record<string, unknown>; // Using unknown instead of any
   filePatterns?: {

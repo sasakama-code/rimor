@@ -120,6 +120,21 @@ export interface BaseMetadata {
   [key: string]: unknown; // Allow extension with additional properties
 }
 
+// Issue severity levels
+export type IssueSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+// Issue categories
+export type IssueCategory = 
+  | 'test-quality' 
+  | 'coverage' 
+  | 'assertion' 
+  | 'pattern' 
+  | 'structure' 
+  | 'best-practice' 
+  | 'performance' 
+  | 'security' 
+  | 'documentation';
+
 // Issue representation
 export interface Issue {
   // Identification
@@ -127,7 +142,7 @@ export interface Issue {
   type: string;
   
   // Severity and priority
-  severity: SeverityLevel;
+  severity: IssueSeverity;
   priority?: number;
   
   // Description
@@ -135,12 +150,14 @@ export interface Issue {
   details?: string;
   
   // Location
+  filePath: string; // Required for compatibility
   file?: string;
   line?: number;
   endLine?: number;
   column?: number;
   endColumn?: number;
   location?: CodeLocation;
+  position?: Position;
   
   // Resolution
   recommendation?: string;
@@ -154,7 +171,7 @@ export interface Issue {
   // Source
   plugin?: string;
   rule?: string;
-  category?: string;
+  category: IssueCategory; // Required for compatibility
   
   // Additional info
   documentation?: string;
