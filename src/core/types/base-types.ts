@@ -133,7 +133,13 @@ export type IssueCategory =
   | 'best-practice' 
   | 'performance' 
   | 'security' 
-  | 'documentation';
+  | 'documentation'
+  | 'error-handling'
+  | 'validation'
+  | 'code-quality'
+  | 'test-coverage'
+  | 'file-system'
+  | 'syntax';
 
 // Issue representation
 export interface Issue {
