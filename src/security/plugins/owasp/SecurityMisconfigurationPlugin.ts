@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern } from './dependency-utils';
 
 /**
  * A05: Security Misconfiguration プラグイン
@@ -44,9 +45,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
       'helmet', 'cors', 'dotenv', 'config'
     ];
     
-    const hasWebFramework = context.dependencies?.some(dep =>
-      webFrameworks.some(fw => dep.includes(fw))
-    ) || false;
+    const hasWebFramework = hasDependencyPattern(context, webFrameworks);
 
     // 設定関連ファイルの確認
     const hasConfigFiles = context.filePatterns?.source?.some((pattern: string) =>

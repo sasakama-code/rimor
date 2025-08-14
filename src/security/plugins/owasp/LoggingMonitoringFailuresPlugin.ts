@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { getDependencyNames, hasDependency } from './dependency-utils';
 
 /**
  * A09: Security Logging and Monitoring Failures プラグイン
@@ -43,10 +44,10 @@ export class LoggingMonitoringFailuresPlugin extends OWASPBasePlugin {
       'rollbar', 'bugsnag', 'applicationinsights', 'datadog-metrics'
     ];
 
-    const deps = context.dependencies || [];
+    const deps = getDependencyNames(context);
     
     // いずれかのライブラリ/ツールが存在すればtrue
-    return deps.some(dep => 
+    return deps.some((dep: string) => 
       loggingLibs.includes(dep) || monitoringTools.includes(dep)
     );
   }
@@ -266,7 +267,7 @@ export class LoggingMonitoringFailuresPlugin extends OWASPBasePlugin {
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    const deps = context.dependencies || [];
+    const deps = getDependencyNames(context);
     
     // 基本的なログテスト
     tests.push(`// セキュリティイベントログテスト\ndescribe('Security Logging', () => {\n  it('should log authentication failures', () => {\n    const result = authenticate('invalid', 'wrong');\n    expect(logger.warn).toHaveBeenCalledWith(\n      expect.objectContaining({\n        event: 'auth_failure',\n        timestamp: expect.any(String),\n        ip: expect.any(String)\n      })\n    );\n  });\n  \n  it('should log access denied events', () => {\n    const result = accessResource('/admin', regularUser);\n    expect(logger.warn).toHaveBeenCalledWith(\n      expect.objectContaining({\n        event: 'access_denied',\n        resource: '/admin',\n        user: regularUser.id\n      })\n    );\n  });\n});`);
@@ -275,7 +276,8 @@ export class LoggingMonitoringFailuresPlugin extends OWASPBasePlugin {
     tests.push(`// 監査証跡テスト\ndescribe('Audit Trail', () => {\n  it('should record data modifications', () => {\n    const oldData = { id: 1, name: 'Old' };\n    const newData = { id: 1, name: 'New' };\n    updateRecord(oldData, newData);\n    \n    expect(auditLog.record).toHaveBeenCalledWith({\n      action: 'UPDATE',\n      before: oldData,\n      after: newData,\n      user: expect.any(String),\n      timestamp: expect.any(Date)\n    });\n  });\n});`);
     
     // モニタリングツール使用時のテスト
-    if (deps.some(dep => ['@sentry/node', 'elastic-apm-node'].includes(dep))) {
+    const monitoringDeps = ['@sentry/node', 'elastic-apm-node'];
+    if (deps.some((dep: string) => monitoringDeps.includes(dep))) {
       tests.push(`// アラートシステムテスト\ndescribe('Security Monitoring', () => {\n  it('should alert on suspicious patterns', () => {\n    // 5回の連続ログイン失敗\n    for (let i = 0; i < 5; i++) {\n      authenticate('user', 'wrong');\n    }\n    \n    expect(alertSystem.trigger).toHaveBeenCalledWith({\n      type: 'brute_force_attempt',\n      severity: 'high'\n    });\n  });\n});`);
     }
     

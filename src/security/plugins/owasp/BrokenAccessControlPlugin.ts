@@ -17,7 +17,17 @@ export class BrokenAccessControlPlugin {
 
   isApplicable(context: ProjectContext): boolean {
     const authLibraries = ['passport', 'jsonwebtoken'];
-    return context.dependencies?.some(dep => authLibraries.includes(dep)) || false;
+    const deps = context.dependencies;
+    
+    if (!deps) return false;
+    
+    if (Array.isArray(deps)) {
+      return authLibraries.some(lib => (deps as string[]).includes(lib));
+    } else if (typeof deps === 'object') {
+      return authLibraries.some(lib => lib in deps);
+    }
+    
+    return false;
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
@@ -329,9 +339,10 @@ export class BrokenAccessControlPlugin {
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    const hasExpress = context.dependencies?.includes('express');
-    const hasPassport = context.dependencies?.includes('passport');
-    const hasJWT = context.dependencies?.includes('jsonwebtoken');
+    const deps = context.dependencies;
+    const hasExpress = Array.isArray(deps) ? deps.includes('express') : (deps && typeof deps === 'object' && 'express' in deps);
+    const hasPassport = Array.isArray(deps) ? deps.includes('passport') : (deps && typeof deps === 'object' && 'passport' in deps);
+    const hasJWT = Array.isArray(deps) ? deps.includes('jsonwebtoken') : (deps && typeof deps === 'object' && 'jsonwebtoken' in deps);
     
     // 基本的な認証テスト
     tests.push(`

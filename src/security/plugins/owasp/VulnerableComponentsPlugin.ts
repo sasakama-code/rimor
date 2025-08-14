@@ -18,7 +18,15 @@ export class VulnerableComponentsPlugin {
 
   isApplicable(context: ProjectContext): boolean {
     // 依存関係が存在する場合は適用可能
-    return context.dependencies !== undefined && context.dependencies.length > 0;
+    if (!context.dependencies) return false;
+    
+    if (Array.isArray(context.dependencies)) {
+      return context.dependencies.length > 0;
+    } else if (typeof context.dependencies === 'object') {
+      return Object.keys(context.dependencies).length > 0;
+    }
+    
+    return false;
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {

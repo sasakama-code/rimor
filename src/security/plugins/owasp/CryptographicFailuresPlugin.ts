@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern } from './dependency-utils';
 
 /**
  * 暗号化テストパターン
@@ -141,9 +142,18 @@ export class CryptographicFailuresPlugin extends OWASPBasePlugin {
       'https', 'tls', '@aws-sdk/client-kms'
     ];
     
-    const hasCryptoLibrary = context.dependencies?.some(dep => 
-      cryptoLibraries.some(lib => dep.includes(lib))
-    ) || false;
+    let hasCryptoLibrary = false;
+    const deps = context.dependencies;
+    
+    if (Array.isArray(deps)) {
+      hasCryptoLibrary = (deps as string[]).some((dep: string) => 
+        cryptoLibraries.some(lib => dep.includes(lib))
+      );
+    } else if (deps && typeof deps === 'object') {
+      hasCryptoLibrary = cryptoLibraries.some(lib => 
+        Object.keys(deps as Record<string, string>).some(dep => dep.includes(lib))
+      );
+    }
 
     // 暗号化関連のファイルパターンをチェック
     const hasCryptoFiles = context.filePatterns?.source?.some((pattern: string) => 
@@ -551,13 +561,13 @@ it('should hash passwords with bcrypt or argon2', async () => {
     tests.push('パスワードの安全なハッシュ化テスト');
     
     // bcrypt使用時のテスト
-    if (context.dependencies?.some(dep => dep.includes('bcrypt'))) {
+    if (hasDependencyPattern(context, ['bcrypt'])) {
       tests.push('bcryptのコストファクター検証テスト');
       tests.push('bcryptのソルト生成テスト');
     }
 
     // JWT使用時のテスト
-    if (context.dependencies?.some(dep => dep.includes('jsonwebtoken'))) {
+    if (hasDependencyPattern(context, ['jsonwebtoken'])) {
       tests.push('JWT署名アルゴリズムの検証テスト');
       tests.push('JWT秘密鍵の安全な管理テスト');
     }

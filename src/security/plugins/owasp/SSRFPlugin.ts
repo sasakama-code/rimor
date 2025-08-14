@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern, getDependencyNames } from './dependency-utils';
 
 /**
  * A10: Server-Side Request Forgery (SSRF) プラグイン
@@ -42,12 +43,8 @@ export class SSRFPlugin extends OWASPBasePlugin {
       'url-parse', 'whatwg-url', 'url', 'querystring'
     ];
 
-    const deps = context.dependencies || [];
-    
     // いずれかのライブラリが存在すればtrue
-    return deps.some(dep => 
-      httpLibs.includes(dep) || urlLibs.includes(dep)
-    );
+    return hasDependencyPattern(context, [...httpLibs, ...urlLibs]);
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
@@ -294,7 +291,7 @@ export class SSRFPlugin extends OWASPBasePlugin {
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    const deps = context.dependencies || [];
+    const deps = getDependencyNames(context);
     
     // 基本的なSSRF防止テスト
     tests.push(`// SSRF防止テスト\ndescribe('SSRF Prevention', () => {\n  it('should block requests to internal IPs', () => {\n    const dangerousUrls = [\n      'http://169.254.169.254/latest/meta-data/',\n      'http://192.168.1.1/admin',\n      'http://10.0.0.1/config',\n      'http://localhost:8080/internal',\n      'http://127.0.0.1:3000/api'\n    ];\n    \n    dangerousUrls.forEach(url => {\n      expect(() => makeExternalRequest(url)).toThrow('Forbidden URL');\n    });\n  });\n  \n  it('should validate URL schemes', () => {\n    const dangerousSchemes = [\n      'file:///etc/passwd',\n      'ftp://internal.server/',\n      'gopher://example.com/',\n      'dict://example.com/'\n    ];\n    \n    dangerousSchemes.forEach(url => {\n      expect(isAllowedScheme(url)).toBe(false);\n    });\n  });\n});`);
@@ -303,7 +300,7 @@ export class SSRFPlugin extends OWASPBasePlugin {
     tests.push(`// URL許可リストテスト\ndescribe('URL Allowlist', () => {\n  it('should only allow whitelisted domains', () => {\n    const allowedDomains = ['api.example.com', 'cdn.example.com'];\n    const testUrls = [\n      { url: 'https://api.example.com/data', expected: true },\n      { url: 'https://evil.com/steal', expected: false },\n      { url: 'https://api.example.com.evil.com/', expected: false }\n    ];\n    \n    testUrls.forEach(({ url, expected }) => {\n      expect(isAllowedDomain(url, allowedDomains)).toBe(expected);\n    });\n  });\n});`);
     
     // HTTPクライアント使用時の追加テスト
-    if (deps.some(dep => ['axios', 'node-fetch', 'got'].includes(dep))) {
+    if (deps.some((dep: string) => ['axios', 'node-fetch', 'got'].includes(dep))) {
       tests.push(`// HTTPクライアントセキュリティテスト\ndescribe('HTTP Client Security', () => {\n  it('should timeout on slow responses', async () => {\n    const slowUrl = 'https://slowserver.example.com/';\n    await expect(\n      makeRequestWithTimeout(slowUrl, { timeout: 5000 })\n    ).rejects.toThrow('Request timeout');\n  });\n  \n  it('should limit redirect depth', async () => {\n    const redirectUrl = 'https://redirect.example.com/infinite';\n    await expect(\n      makeRequestWithRedirectLimit(redirectUrl, { maxRedirects: 5 })\n    ).rejects.toThrow('Too many redirects');\n  });\n});`);
     }
     

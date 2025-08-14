@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern, getDependencyNames } from './dependency-utils';
 
 /**
  * A08: Software and Data Integrity Failures プラグイン
@@ -50,17 +51,9 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
       'node-rsa', 'jsrsasign'
     ];
     
-    const hasCicdTool = context.dependencies?.some(dep =>
-      cicdTools.some(tool => dep.includes(tool))
-    ) || false;
-
-    const hasSerializationLib = context.dependencies?.some(dep =>
-      serializationLibs.some(lib => dep.includes(lib))
-    ) || false;
-
-    const hasSigningLib = context.dependencies?.some(dep =>
-      signingLibs.some(lib => dep.includes(lib))
-    ) || false;
+    const hasCicdTool = hasDependencyPattern(context, cicdTools);
+    const hasSerializationLib = hasDependencyPattern(context, serializationLibs);
+    const hasSigningLib = hasDependencyPattern(context, signingLibs);
 
     // CI/CD関連ファイルの確認
     const hasCicdFiles = context.filePatterns?.source?.some((pattern: string) =>
@@ -384,7 +377,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    const deps = context.dependencies || [];
+    const deps = getDependencyNames(context);
     
     // 基本的な署名検証テスト
     tests.push(`// 署名検証テスト
@@ -398,9 +391,8 @@ describe('Code Integrity Tests', () => {
 });`);
 
     // CI/CDツール使用時のテスト
-    if (deps.some(dep => 
-      ['@actions/core', 'semantic-release', 'jenkins', 'travis-ci'].includes(dep)
-    )) {
+    const cicdTools = ['@actions/core', 'semantic-release', 'jenkins', 'travis-ci'];
+    if (deps.some((dep: string) => cicdTools.includes(dep))) {
       tests.push(`// CI/CDパイプラインセキュリティテスト
 describe('CI/CD Security', () => {
   it('should validate deployment pipeline integrity', () => {
@@ -412,9 +404,8 @@ describe('CI/CD Security', () => {
     }
 
     // シリアライゼーション関連のテスト
-    if (deps.some(dep => 
-      ['serialize-javascript', 'node-serialize', 'js-yaml'].includes(dep)
-    )) {
+    const serializeTools = ['serialize-javascript', 'node-serialize', 'js-yaml'];
+    if (deps.some((dep: string) => serializeTools.includes(dep))) {
       tests.push(`// 安全なデシリアライゼーションテスト
 describe('Deserialization Security', () => {
   it('should reject malicious payloads', () => {

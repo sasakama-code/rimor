@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern, hasDependency } from './dependency-utils';
 
 /**
  * 設計セキュリティパターン
@@ -159,11 +160,8 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
     ) || false;
 
     // APIやサービス層のライブラリをチェック
-    const hasServiceLibraries = context.dependencies?.some(dep => 
-      dep.includes('express') || dep.includes('fastify') || 
-      dep.includes('koa') || dep.includes('nestjs') ||
-      dep.includes('graphql') || dep.includes('grpc')
-    ) || false;
+    const serviceLibraries = ['express', 'fastify', 'koa', 'nestjs', 'graphql', 'grpc'];
+    const hasServiceLibraries = hasDependencyPattern(context, serviceLibraries);
 
     return hasDesignFiles || hasServiceLibraries;
   }
@@ -554,16 +552,14 @@ it('should enforce rate limiting', async () => {
     tests.push('レート制限とクォータ管理テスト');
     
     // API使用時のテスト
-    if (context.dependencies?.some(dep => 
-        dep.includes('express') || dep.includes('fastify'))) {
+    if (hasDependencyPattern(context, ['express', 'fastify'])) {
       tests.push('APIエンドポイントのレート制限テスト');
       tests.push('APIバージョニングとの後方互換性テスト');
       tests.push('APIアクセスパターンの異常検知テスト');
     }
 
     // マイクロサービス使用時のテスト
-    if (context.dependencies?.some(dep => 
-        dep.includes('grpc') || dep.includes('rabbitmq'))) {
+    if (hasDependencyPattern(context, ['grpc', 'rabbitmq'])) {
       tests.push('サービス間通信のセキュリティテスト');
       tests.push('分散トランザクションの一貫性テスト');
       tests.push('サーキットブレーカーパターンテスト');

@@ -18,6 +18,7 @@ import {
   OWASPUtils,
   OWASPBasePlugin
 } from './IOWASPSecurityPlugin';
+import { hasDependencyPattern, hasDependency } from './dependency-utils';
 
 /**
  * A07: Identification and Authentication Failures プラグイン
@@ -38,9 +39,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
       'firebase-auth', '@aws-amplify/auth'
     ];
     
-    const hasAuthLibrary = context.dependencies?.some(dep =>
-      authLibraries.some(lib => dep.includes(lib))
-    ) || false;
+    const hasAuthLibrary = hasDependencyPattern(context, authLibraries);
 
     // 認証関連ファイルの確認
     const hasAuthFiles = context.filePatterns?.source?.some((pattern: string) =>
@@ -417,18 +416,18 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
     tests.push('JWT検証テスト');
 
     // フレームワーク固有のテスト
-    if (context.dependencies?.includes('passport')) {
+    if (hasDependency(context, 'passport')) {
       tests.push('Passport.js認証ミドルウェアテスト');
       tests.push('Passport戦略（Strategy）実装テスト');
     }
 
-    if (context.dependencies?.includes('jsonwebtoken')) {
+    if (hasDependency(context, 'jsonwebtoken')) {
       tests.push('JWT署名検証テスト');
       tests.push('JWT有効期限テスト');
       tests.push('JWTリフレッシュトークンテスト');
     }
 
-    if (context.dependencies?.includes('bcrypt')) {
+    if (hasDependency(context, 'bcrypt')) {
       tests.push('bcryptハッシュ強度テスト');
       tests.push('パスワードハッシュ比較テスト');
     }

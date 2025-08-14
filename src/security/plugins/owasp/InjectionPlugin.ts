@@ -6,6 +6,7 @@
 import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../core/types';
 import { SecurityIssue } from '../../../security/types/security';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
+import { getDependencyNames, hasDependency } from './dependency-utils';
 
 export class InjectionPlugin {
   readonly id = 'owasp-a03-injection';
@@ -26,7 +27,8 @@ export class InjectionPlugin {
     const cmdDependencies = ['child_process', 'exec-sh', 'shelljs', 'node-cmd'];
     
     // いずれかの依存関係が存在するかチェック
-    return context.dependencies.some(dep => 
+    const deps = getDependencyNames(context);
+    return deps.some(dep => 
       dbDependencies.includes(dep.toLowerCase()) || 
       cmdDependencies.includes(dep.toLowerCase())
     );
@@ -431,8 +433,8 @@ export class InjectionPlugin {
 });`);
     
     // データベース使用時の追加テスト
-    if (context.dependencies?.some(dep => 
-        ['mongodb', 'mongoose'].includes(dep.toLowerCase()))) {
+    const mongoDbDeps = ['mongodb', 'mongoose'];
+    if (mongoDbDeps.some(dep => hasDependency(context, dep))) {
       tests.push(`describe('NoSQLインジェクション対策', () => {
   it('MongoDBクエリインジェクションを防ぐ', () => {
     const userInput = { $ne: null };
