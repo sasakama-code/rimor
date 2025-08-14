@@ -136,9 +136,10 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
       const patterns = await plugin.detectPatterns(testFile);
       
       const strongAssertions = patterns.filter(p => 
-        p.patternName === 'strong-assertion' || 
-        p.patternName === 'deep-equality' ||
-        p.severity === 'info'
+        p.patternName === 'High Quality Assertions' || 
+        p.patternName === 'Basic Assertions' ||
+        p.patternId === 'high-quality-assertions' ||
+        p.patternId === 'basic-assertions'
       );
       
       expect(strongAssertions.length).toBeGreaterThan(0);
@@ -169,8 +170,9 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
       const patterns = await plugin.detectPatterns(testFile);
       
       const noAssertionPatterns = patterns.filter(p => 
-        p.patternName === 'no-assertion' || 
-        p.patternName === 'missing-assertion'
+        p.patternName === 'Missing Assertions' || 
+        p.patternId === 'missing-assertions' ||
+        p.patternId === 'no-assertion'
       );
       
       expect(noAssertionPatterns.length).toBeGreaterThan(0);

@@ -8,7 +8,7 @@ export class TestPatterns {
   // ===== 基本テスト構造パターン =====
   
   /** テストケース定義パターン */
-  static readonly TEST_CASE = /it\s*\(/g;
+  static readonly TEST_CASE = /(?:it|test)\s*\(/g;
   
   /** テストスイート定義パターン */
   static readonly DESCRIBE_SUITE = /describe\s*\(/g;

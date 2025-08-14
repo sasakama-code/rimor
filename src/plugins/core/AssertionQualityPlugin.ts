@@ -21,14 +21,21 @@ export class AssertionQualityPlugin extends BasePlugin {
   private readonly MAGIC_NUMBER_PATTERN = TestPatterns.MAGIC_NUMBER_ASSERTIONS;
 
   isApplicable(context: ProjectContext): boolean {
-    // JavaScriptテストフレームワークのみサポート
-    const supportedFrameworks = ['jest', 'mocha', 'jasmine', 'vitest', 'ava'];
+    // サポート対象のテストフレームワーク
+    const supportedFrameworks = ['jest', 'mocha', 'jasmine', 'vitest', 'ava', 'pytest', 'unittest'];
     
     if (context.testFramework) {
       return supportedFrameworks.includes(context.testFramework.toLowerCase());
     }
     
-    // フレームワークが指定されていない場合は、JavaScriptプロジェクトならtrue
+    // サポート対象の言語（アサーション品質分析は言語を問わず適用可能）
+    const supportedLanguages = ['javascript', 'typescript', 'js', 'ts', 'python', 'py'];
+    
+    if (context.language) {
+      return supportedLanguages.includes(context.language.toLowerCase());
+    }
+    
+    // フレームワークも言語も指定されていない場合は、プロジェクトパスがあればtrue
     return context.projectPath !== undefined;
   }
 
@@ -87,48 +94,84 @@ export class AssertionQualityPlugin extends BasePlugin {
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    let correctnessScore = 100;
+    // 基本スコアを50から開始（中立的なスタート）
+    let correctnessScore = 50;
+    let completenessScore = 50;
+    let maintainabilityScore = 50;
     const issues: string[] = [];
+    
+    let hasBasicAssertions = false;
+    let hasHighQualityAssertions = false;
+    let hasWeakAssertions = false;
+    let hasMissingAssertions = false;
 
     // パターンに基づいてスコアを調整
     patterns.forEach(pattern => {
       switch (pattern.patternId) {
+        case 'basic-assertions':
+          hasBasicAssertions = true;
+          correctnessScore += 10;
+          completenessScore += 10;
+          break;
         case 'high-quality-assertions':
-          // 高品質なアサーションがある場合はボーナス
-          correctnessScore = Math.min(100, correctnessScore + 10);
+          hasHighQualityAssertions = true;
+          // 高品質なアサーションがある場合は大幅ボーナス
+          correctnessScore += 30;
+          maintainabilityScore += 20;
+          completenessScore += 20;
           break;
         case 'weak-assertions':
-          correctnessScore -= 25;
-          issues.push("");
+          hasWeakAssertions = true;
+          correctnessScore -= 20;
+          maintainabilityScore -= 15;
+          issues.push("Weak assertions detected");
           break;
         case 'missing-assertions':
-          correctnessScore -= 40;
-          issues.push("");
+        case 'no-assertion':
+          hasMissingAssertions = true;
+          correctnessScore -= 30;
+          completenessScore -= 40;
+          issues.push("Missing assertions detected");
           break;
         case 'limited-assertion-variety':
-          correctnessScore -= 15;
-          issues.push("");
+          correctnessScore -= 10;
+          maintainabilityScore -= 10;
+          issues.push("Limited assertion variety");
           break;
         case 'magic-numbers-in-assertions':
-          correctnessScore -= 10;
-          issues.push("");
+          correctnessScore -= 5;
+          maintainabilityScore -= 10;
+          issues.push("Magic numbers in assertions");
           break;
       }
     });
+    
+    // パターンが全く検出されなかった場合は低スコア
+    if (patterns.length === 0) {
+      correctnessScore = 20;
+      completenessScore = 20;
+      maintainabilityScore = 30;
+    }
 
+    // スコアを0-100の範囲に正規化
     correctnessScore = Math.max(0, Math.min(100, correctnessScore));
+    completenessScore = Math.max(0, Math.min(100, completenessScore));
+    maintainabilityScore = Math.max(0, Math.min(100, maintainabilityScore));
 
     // 信頼度は検出されたパターンの平均信頼度
     const avgConfidence = patterns.length > 0 
       ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
-      : 1.0;
+      : 0.5; // パターンが検出されなかった場合は信頼度を下げる
+    
+    // 全体スコアは各次元の平均
+    const overallScore = (correctnessScore + completenessScore + maintainabilityScore) / 3;
 
     return {
-      overall: correctnessScore,
+      overall: overallScore / 100, // 0.0-1.0の範囲に正規化
       dimensions: {
-        completeness: 70,
-        correctness: correctnessScore,
-        maintainability: 75
+        completeness: completenessScore / 100,
+        correctness: correctnessScore / 100,
+        maintainability: maintainabilityScore / 100
       },
       confidence: avgConfidence
     };
@@ -137,7 +180,7 @@ export class AssertionQualityPlugin extends BasePlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
     
-    if (evaluation.overall >= 85) {
+    if (evaluation.overall >= 0.85) {
       // 高品質の場合は改善提案なし
       return improvements;
     }
@@ -145,15 +188,15 @@ export class AssertionQualityPlugin extends BasePlugin {
     const correctnessScore = evaluation.dimensions?.correctness || 0;
     
     // 改善提案を生成（スコアベース）
-    if (correctnessScore < 50) {
+    if (correctnessScore < 0.5) {
       improvements.push(this.createImprovement(
         'weak-assertions',
         'high',
-        'refactor',
+        'fix-assertion',
         '具体的なアサーションの使用',
         'toBeTruthy()やtoBeDefined()ではなく、toBe()、toEqual()、toMatch()など具体的な値を検証するアサーションを使用してください',
         this.createCodeLocation('unknown', 1, 1),
-        0.25
+        0.35
       ));
 
       improvements.push(this.createImprovement(
@@ -193,21 +236,21 @@ export class AssertionQualityPlugin extends BasePlugin {
   }
 
   private detectHighQualityAssertions(content: string, testFile: TestFile): DetectionResult | null {
-    const cleanContent = this.removeCommentsAndStrings(content);
+    // アサーション検出には生のコンテンツを使用（文字列リテラル内のパターンも検出するため）
     const strongAssertions = this.STRONG_ASSERTION_PATTERNS.reduce((count, pattern) => {
-      const matches = RegexHelper.resetAndMatch(pattern, cleanContent);
+      const matches = RegexHelper.resetAndMatch(pattern, content);
       return count + (matches ? matches.length : 0);
     }, 0);
 
-    const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE).length;
+    const testCases = this.findPatternInCode(content, TestPatterns.TEST_CASE).length;
     
-    // テストケースあたりの強いアサーション数が2以上で、3つ以上の異なるアサーションタイプが使われている場合
-    if (testCases > 0 && strongAssertions / testCases >= 2) {
+    // テストケースあたりの強いアサーション数が1以上で、2つ以上の異なるアサーションタイプが使われている場合
+    if (testCases > 0 && strongAssertions / testCases >= 1) {
       const usedPatternTypes = this.STRONG_ASSERTION_PATTERNS.filter(pattern => {
-        return RegexHelper.resetAndTest(pattern, cleanContent);
+        return RegexHelper.resetAndTest(pattern, content);
       }).length;
 
-      if (usedPatternTypes >= 3) {
+      if (usedPatternTypes >= 2) {
         return this.createDetectionResult(
           'high-quality-assertions',
           'High Quality Assertions',
@@ -262,7 +305,7 @@ export class AssertionQualityPlugin extends BasePlugin {
     const assertions = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT);
 
     // テストケースがあるのにアサーションがないか、極端に少ない場合
-    if (testCases.length > 0 && (assertions.length === 0 || assertions.length / testCases.length < 0.5)) {
+    if (testCases.length > 0 && (assertions.length === 0 || assertions.length / testCases.length < 0.3)) {
       return this.createDetectionResult(
         'missing-assertions',
         'Missing Assertions',
@@ -282,7 +325,8 @@ export class AssertionQualityPlugin extends BasePlugin {
   }
 
   private detectLimitedAssertionVariety(content: string, testFile: TestFile): DetectionResult | null {
-    const cleanContent = this.removeCommentsAndStrings(content);
+    // アサーション種類検出には生のコンテンツを使用
+    const cleanContent = content;
     const allAssertionPatterns = [...this.STRONG_ASSERTION_PATTERNS, ...this.WEAK_ASSERTION_PATTERNS];
     
     const usedPatterns = allAssertionPatterns.filter(pattern => {
@@ -312,8 +356,8 @@ export class AssertionQualityPlugin extends BasePlugin {
   }
 
   private detectMagicNumbersInAssertions(content: string, testFile: TestFile): DetectionResult | null {
-    const cleanContent = this.removeCommentsAndStrings(content);
-    const magicNumbers = this.findPatternInCode(cleanContent, this.MAGIC_NUMBER_PATTERN);
+    // マジックナンバー検出には生のコンテンツを使用
+    const magicNumbers = this.findPatternInCode(content, this.MAGIC_NUMBER_PATTERN);
     
     // 2個以上のマジックナンバーがある場合に検出（より緩い条件）
     if (magicNumbers.length >= 2) {
@@ -336,11 +380,11 @@ export class AssertionQualityPlugin extends BasePlugin {
   }
 
   private detectJestAdvancedPatterns(content: string, testFile: TestFile): DetectionResult | null {
-    const cleanContent = this.removeCommentsAndStrings(content);
+    // Jest高度パターン検出には生のコンテンツを使用
     const jestAdvancedPatterns = TestPatterns.JEST_ADVANCED;
 
     const advancedUsage = jestAdvancedPatterns.filter(pattern => {
-      return RegexHelper.resetAndTest(pattern, cleanContent);
+      return RegexHelper.resetAndTest(pattern, content);
     });
 
     // 2つ以上のJest高度機能が使われている場合
