@@ -35,7 +35,7 @@ describe('AssertionExistencePlugin', () => {
     test('should return true for projects with test framework', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: { devDependencies: { jest: '^27.0.0' } },
+        packageJson: { name: 'test-project', version: '1.0.0', devDependencies: { jest: '^27.0.0' } },
         testFramework: 'jest'
       };
 
@@ -45,7 +45,7 @@ describe('AssertionExistencePlugin', () => {
     test('should return true even without explicit test framework', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: {}
+        packageJson: { name: 'test-project', version: '1.0.0' }
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -238,7 +238,7 @@ describe('AssertionExistencePlugin', () => {
     test('should suggest adding assertions for tests without them', () => {
       const evaluation: QualityScore = {
         overall: 30,
-        breakdown: {
+        dimensions: {
           completeness: 50,
           correctness: 20,
           maintainability: 80

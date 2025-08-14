@@ -12,29 +12,36 @@ describe('PatternDetector', () => {
     
     // モックプロジェクト構造
     mockProjectStructure = {
-      rootPath: '/test/project',
       overview: {
+        rootPath: '/test/project',
         totalFiles: 50,
         totalDirectories: 10,
-        totalLines: 5000,
         languages: [
           { language: 'TypeScript', fileCount: 30, percentage: 60, extensions: ['.ts', '.tsx'] },
           { language: 'JavaScript', fileCount: 20, percentage: 40, extensions: ['.js', '.jsx'] }
         ],
         frameworks: [
           { name: 'React', confidence: 0.9, evidence: ['package.json'] }
-        ]
+        ],
+        testingFrameworks: [],
+        buildTools: []
       },
       directories: [
         {
           path: '/test/project/src',
-          purpose: 'source',
-          fileCount: 30
+          purpose: 'source' as const,
+          fileCount: 30,
+          subdirectories: ['components', 'utils', 'factories'],
+          patterns: [],
+          conventions: []
         },
         {
           path: '/test/project/src/factories',
-          purpose: 'source',
-          fileCount: 5
+          purpose: 'source' as const,
+          fileCount: 5,
+          subdirectories: [],
+          patterns: ['Factory'],
+          conventions: ['Factory suffix for factory classes']
         }
       ],
       architecture: {
@@ -43,12 +50,37 @@ describe('PatternDetector', () => {
         evidence: ['controllers/', 'models/', 'views/'],
         suggestions: ['Consider implementing dependency injection']
       },
-      namingConventions: {
-        files: { camelCase: 20, PascalCase: 10, kebabCase: 20, snakeCase: 0 },
-        directories: { camelCase: 5, PascalCase: 0, kebabCase: 5, snakeCase: 0 },
-        variables: { camelCase: 100, PascalCase: 0, kebabCase: 0, snakeCase: 0 },
-        functions: { camelCase: 50, PascalCase: 0, kebabCase: 0, snakeCase: 0 },
-        classes: { camelCase: 0, PascalCase: 30, kebabCase: 0, snakeCase: 0 }
+      conventions: {
+        files: { 
+          pattern: 'camelCase' as const,
+          confidence: 0.8,
+          examples: ['testFile.ts', 'anotherFile.js'],
+          violations: []
+        },
+        directories: { 
+          pattern: 'kebab-case' as const,
+          confidence: 0.9,
+          examples: ['test-utils', 'another-dir'],
+          violations: []
+        },
+        variables: { 
+          pattern: 'camelCase' as const,
+          confidence: 1.0,
+          examples: ['myVariable', 'anotherVar'],
+          violations: []
+        },
+        functions: { 
+          pattern: 'camelCase' as const,
+          confidence: 1.0,
+          examples: ['myFunction', 'doSomething'],
+          violations: []
+        },
+        classes: { 
+          pattern: 'PascalCase' as const,
+          confidence: 1.0,
+          examples: ['MyClass', 'AnotherClass'],
+          violations: []
+        }
       },
       metrics: {
         complexity: {

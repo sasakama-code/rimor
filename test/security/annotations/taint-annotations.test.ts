@@ -28,11 +28,11 @@ describe('Taint Annotations', () => {
       const metadata = TaintAnnotationReader.getTaintMetadata(instance, 'userInput');
       
       expect(metadata).toBeDefined();
-      expect(metadata.level).toBe('tainted');
-      expect(metadata.source).toBe('unknown');
+      expect(metadata?.level).toBe('tainted');
+      expect(metadata?.source).toBe('unknown');
       
       const formMetadata = TaintAnnotationReader.getTaintMetadata(instance, 'formData');
-      expect(formMetadata.source).toBe('form-data');
+      expect(formMetadata?.source).toBe('form-data');
     });
     
     it('should mark method parameter as tainted', () => {

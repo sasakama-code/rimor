@@ -58,6 +58,20 @@ const createMockFileScore = (overrides: Partial<FileScore> = {}): FileScore => (
   ...overrides
 });
 
+// Convert EnhancedAnalysisResult to AnalysisResult for formatter compatibility
+const toAnalysisResult = (enhanced: EnhancedAnalysisResult): any => ({
+  filePath: enhanced.issues[0]?.filePath || 'src/example.ts',
+  issues: enhanced.issues,
+  score: enhanced.projectScore ? {
+    overall: enhanced.projectScore.overallScore,
+    details: {},
+    grade: enhanced.projectScore.grade
+  } : undefined,
+  context: enhanced.projectContext,
+  metrics: undefined,
+  timestamp: new Date()
+});
+
 const createMockAnalysisResult = (): EnhancedAnalysisResult => ({
   issues: [createMockIssue()],
   totalFiles: 1,
@@ -146,7 +160,7 @@ describe('AIOptimizedFormatter', () => {
 
     it('バージョン情報を取得できる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = await formatter.formatAsJSON(result, '/test/project', { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), '/test/project', { format: 'json' });
       
       expect(formatted.version).toBeDefined();
       expect(typeof formatted.version).toBe('string');
@@ -156,7 +170,7 @@ describe('AIOptimizedFormatter', () => {
   describe('formatAsJson', () => {
     it('分析結果をJSON形式でフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = await formatter.formatAsJSON(result, '/test/project', { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), '/test/project', { format: 'json' });
 
       expect(formatted).toHaveProperty('version');
       expect(formatted).toHaveProperty('format');
@@ -177,7 +191,7 @@ describe('AIOptimizedFormatter', () => {
         optimizeForAI: true
       };
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", options);
 
       expect(formatted.files[0].issues[0].context).toBeDefined();
       expect(formatted.metadata).toBeDefined();
@@ -190,10 +204,10 @@ describe('AIOptimizedFormatter', () => {
         includeContext: true
       };
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", options);
 
-      formatted.files.forEach(file => {
-        file.issues.forEach(issue => {
+      formatted.files.forEach((file: any) => {
+        file.issues.forEach((issue: any) => {
           if (issue.context) {
             expect(issue.context).toHaveProperty('surroundingCode');
             expect(issue.context).toHaveProperty('targetCode');
@@ -206,7 +220,7 @@ describe('AIOptimizedFormatter', () => {
   describe('formatAsMarkdown', () => {
     it('分析結果をMarkdown形式でフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const markdown = await formatter.formatAsMarkdown(result, '/test/project', { format: 'markdown' });
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', { format: 'markdown' });
 
       expect(markdown).toContain('# Rimor Test Quality Analysis Report');
       expect(markdown).toContain('## Project Context');
@@ -222,7 +236,7 @@ describe('AIOptimizedFormatter', () => {
         includeContext: true
       };
 
-      const markdown = await formatter.formatAsMarkdown(result, '/test/project', options);
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', options);
 
       expect(markdown).toContain('**Quality Score**: 75/100');
       expect(markdown).toContain('File:');
@@ -235,7 +249,7 @@ describe('AIOptimizedFormatter', () => {
         issues: [
           createMockIssue({ severity: 'high' }),
           createMockIssue({ severity: 'medium' }),
-          createMockIssue({ severity: 'info' })
+          createMockIssue({ severity: 'low' })
         ]
       };
 
@@ -244,7 +258,7 @@ describe('AIOptimizedFormatter', () => {
         optimizeForAI: true
       };
 
-      const markdown = await formatter.formatAsMarkdown(result, '/test/project', options);
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', options);
 
       expect(markdown).toContain('error');
       expect(markdown).toBeDefined();
@@ -254,7 +268,7 @@ describe('AIOptimizedFormatter', () => {
   describe('フォーマット出力', () => {
     it('JSON形式で正しくフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const formatted = await formatter.formatAsJSON(result, '/test/project', { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), '/test/project', { format: 'json' });
 
       expect(formatted.version).toBeDefined();
       expect(formatted.format).toBe('ai-optimized');
@@ -263,7 +277,7 @@ describe('AIOptimizedFormatter', () => {
 
     it('Markdown形式で正しくフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const markdown = await formatter.formatAsMarkdown(result, '/test/project', { format: 'markdown' });
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', { format: 'markdown' });
 
       expect(markdown).toContain('# Rimor Test Quality Analysis Report');
       expect(markdown).toContain('**Quality Score**: 75/100');
@@ -276,7 +290,7 @@ describe('AIOptimizedFormatter', () => {
         ...createMockAnalysisResult(),
         issues: [createMockIssue({ severity: 'high' })] // Need error severity for tasks
       };
-      const formatted = await formatter.formatAsJSON(result, "/test/project", { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", { format: 'json' });
 
       expect(formatted.actionableTasks).toBeDefined();
       expect(formatted.actionableTasks).toBeInstanceOf(Array);
@@ -289,11 +303,11 @@ describe('AIOptimizedFormatter', () => {
         issues: [
           createMockIssue({ severity: 'high', message: 'Fix security vulnerability' }),
           createMockIssue({ severity: 'medium', message: 'Improve test coverage' }),
-          createMockIssue({ severity: 'info', message: 'Refactor legacy code' })
+          createMockIssue({ severity: 'low', message: 'Refactor legacy code' })
         ]
       };
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", { format: 'json' });
 
       expect(formatted.actionableTasks.length).toBeGreaterThan(0);
       expect(formatted.actionableTasks[0].description).toContain('重要な問題');
@@ -326,7 +340,7 @@ describe('AIOptimizedFormatter', () => {
         return originalExistsSyncMock?.(path) || false;
       });
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", options);
       const contextualizedIssue = formatted.files[0].issues[0];
 
       expect(contextualizedIssue.context).toBeDefined();
@@ -343,7 +357,7 @@ describe('AIOptimizedFormatter', () => {
         fileScores: []
       };
 
-      const formatted = await formatter.formatAsJSON(emptyResult, "/test/project", { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(emptyResult), "/test/project", { format: 'json' });
 
       expect(formatted.qualityOverview.totalIssues).toBe(0);
       expect(formatted.qualityOverview.criticalIssues).toBe(0);
@@ -359,7 +373,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", { format: 'json' });
 
       // パスが適切に処理されることを確認
       expect(formatted.files[0].path).toBeDefined();
@@ -382,7 +396,7 @@ describe('AIOptimizedFormatter', () => {
       };
 
       const startTime = Date.now();
-      const formatted = await formatter.formatAsJSON(result, "/test/project", { format: 'json' });
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", { format: 'json' });
       const endTime = Date.now();
 
       expect(formatted.files.length).toBeGreaterThan(0);
@@ -407,7 +421,7 @@ describe('AIOptimizedFormatter', () => {
         maxFileSize: 1000000
       };
 
-      const formatted = await formatter.formatAsJSON(result, "/test/project", options);
+      const formatted = await formatter.formatAsJSON(toAnalysisResult(result), "/test/project", options);
       const fileData = formatted.files.find(
         (file: any) => file.path === 'src/example.ts'
       );

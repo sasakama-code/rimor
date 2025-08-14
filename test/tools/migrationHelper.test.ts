@@ -128,12 +128,14 @@ export class TestExistencePlugin {
     });
 
     it('should create migration template', () => {
-      const legacyPlugin = {
+      const legacyPlugin: any = { // Use 'any' type to bypass IPlugin requirements for test
         name: 'assertion-checker',
         analyze: async (filePath: string) => [{
           type: 'weak-assertion',
           severity: 'medium' as const,
-          message: 'Weak assertion detected'
+          message: 'Weak assertion detected',
+          filePath: filePath,
+          category: 'test-quality' as const
         }]
       };
 
