@@ -413,6 +413,102 @@ export { processData };
     });
   });
 
+  describe('ANSIコードサニタイズ', () => {
+    it('エラーメッセージからANSIエスケープシーケンスを除去する', async () => {
+      // ANSIコードを含むエラーメッセージを作成
+      const ansiErrorMessage = `
+        \u001b[96mtest/example.test.ts\u001b[0m:\u001b[93m10\u001b[0m:\u001b[93m5\u001b[0m
+        \u001b[91mTypeError\u001b[0m: Cannot read property 'foo' of undefined
+        
+          \u001b[7m10\u001b[0m | const result = \u001b[91mdata.foo.bar\u001b[0m;
+             |                \u001b[91m~~~~~~~~\u001b[0m
+      `;
+      
+      const testResult = createMockTestResult({
+        numFailingTests: 1,
+        numPassingTests: 0,
+        failureMessage: ansiErrorMessage,
+        testResults: [{
+          ancestorTitles: ['ANSI Test'],
+          failureDetails: [],
+          failureMessages: [ansiErrorMessage],
+          fullName: 'ANSI Test should handle colored output',
+          location: { line: 10, column: 5 },
+          numPassingAsserts: 0,
+          status: 'failed',
+          title: 'should handle colored output',
+          duration: 10,
+          invocations: 1,
+          retryReasons: []
+        }]
+      });
+      
+      const test = createMockTest();
+      await reporter.onTestFileResult(test, testResult, createMockAggregatedResult());
+      
+      const aggregatedResult = createMockAggregatedResult();
+      aggregatedResult.success = false;
+      aggregatedResult.numFailedTests = 1;
+      
+      await reporter.onRunComplete(new Set(), aggregatedResult);
+      
+      // JSONレポートを確認
+      const jsonPath = path.join(testOutputDir, 'test-errors.json');
+      const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
+      
+      // ANSIコードが除去されていることを確認
+      expect(jsonContent).not.toContain('\\u001b');
+      expect(jsonContent).not.toContain('\u001b');
+      
+      // エラーメッセージの内容は保持されていることを確認
+      const parsed = JSON.parse(jsonContent);
+      expect(JSON.stringify(parsed)).toContain('TypeError');
+      expect(JSON.stringify(parsed)).toContain('Cannot read property');
+      
+      // マークダウンレポートも確認
+      const mdPath = path.join(testOutputDir, 'test-errors.md');
+      const mdContent = fs.readFileSync(mdPath, 'utf-8');
+      
+      // ANSIコードが除去されていることを確認
+      expect(mdContent).not.toContain('\u001b');
+      expect(mdContent).toContain('TypeError');
+    });
+    
+    it('複雑なANSIコードを含むTypeScriptエラーを処理する', async () => {
+      // TypeScriptコンパイルエラー風のメッセージ
+      const tsErrorMessage = `\u001b[96msrc/test.ts\u001b[0m:\u001b[93m2\u001b[0m:\u001b[93m26\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2307: \u001b[0mCannot find module 'class-validator'.
+
+\u001b[7m2\u001b[0m import { validate } from 'class-validator';
+\u001b[7m \u001b[0m \u001b[91m                         ~~~~~~~~~~~~~~~~~\u001b[0m`;
+      
+      const testResult = createMockTestResult({
+        numFailingTests: 1,
+        testExecError: {
+          message: tsErrorMessage,
+          stack: ''
+        }
+      });
+      
+      const test = createMockTest();
+      await reporter.onTestFileResult(test, testResult, createMockAggregatedResult());
+      
+      const aggregatedResult = createMockAggregatedResult();
+      aggregatedResult.success = false;
+      aggregatedResult.numFailedTestSuites = 1;
+      
+      await reporter.onRunComplete(new Set(), aggregatedResult);
+      
+      const jsonPath = path.join(testOutputDir, 'test-errors.json');
+      const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
+      const parsed = JSON.parse(jsonContent);
+      
+      // ANSIコードが除去され、エラー内容が保持されていることを確認
+      expect(JSON.stringify(parsed)).not.toContain('\\u001b');
+      expect(JSON.stringify(parsed)).toContain('TS2307');
+      expect(JSON.stringify(parsed)).toContain('class-validator');
+    });
+  });
+
   describe('エラーハンドリング', () => {
     it('無効な出力パスを処理する', async () => {
       const invalidReporter = new JestAIReporter({}, {

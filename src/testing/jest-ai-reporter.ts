@@ -5,6 +5,7 @@ import { CITraceabilityCollector, CITraceability } from './ci-traceability';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
+import { sanitizeForAIReport } from '../utils/stringSanitizer';
 
 /**
  * Jest用AIエラーレポーター
@@ -255,30 +256,35 @@ export class JestAIReporter implements Reporter {
   private reconstructError(failureMessage: string): Error {
     const error = new Error();
     
-    // Jestのエラーメッセージフォーマットを解析
-    const lines = failureMessage.split('\n');
+    // ANSIエスケープシーケンスを除去してからパース
+    const sanitizedMessage = sanitizeForAIReport(failureMessage);
     
-    // エラーメッセージの抽出
-    const messageMatch = failureMessage.match(/Error: (.+?)(?:\n|$)/);
-    if (messageMatch) {
-      error.message = messageMatch[1];
+    // Jestのエラーメッセージフォーマットを解析
+    const lines = sanitizedMessage.split('\n');
+    
+    // エラーメッセージの抽出（様々なエラータイプに対応）
+    const errorTypeMatch = sanitizedMessage.match(/(Error|TypeError|ReferenceError|SyntaxError|RangeError): (.+?)(?:\n|$)/);
+    if (errorTypeMatch) {
+      error.message = `${errorTypeMatch[1]}: ${errorTypeMatch[2]}`;
     } else {
       // アサーションエラーの場合
-      const assertMatch = failureMessage.match(/expect\(.*?\)[\s\S]*?Expected: (.+?)\n[\s\S]*?Received: (.+?)(?:\n|$)/);
+      const assertMatch = sanitizedMessage.match(/expect\(.*?\)[\s\S]*?Expected: (.+?)\n[\s\S]*?Received: (.+?)(?:\n|$)/);
       if (assertMatch) {
         error.message = `Expected: ${assertMatch[1]}, Received: ${assertMatch[2]}`;
         const errorWithDetails = error as Error & { expected?: string; actual?: string };
         errorWithDetails.expected = assertMatch[1];
         errorWithDetails.actual = assertMatch[2];
       } else {
-        error.message = lines[0] || 'Unknown error';
+        // その他のエラーメッセージパターン
+        const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
+        error.message = firstNonEmptyLine || 'Unknown error';
       }
     }
     
-    // スタックトレースの抽出
-    const stackStart = failureMessage.indexOf('    at ');
+    // スタックトレースの抽出（サニタイズ済み）
+    const stackStart = sanitizedMessage.indexOf('    at ');
     if (stackStart !== -1) {
-      error.stack = failureMessage.substring(stackStart);
+      error.stack = sanitizedMessage.substring(stackStart);
     }
     
     return error;
@@ -289,8 +295,11 @@ export class JestAIReporter implements Reporter {
    */
   private async collectSuiteError(testFilePath: string, execError: any): Promise<void> {
     try {
-      const errorMessage = typeof execError === 'string' ? execError : 
+      const rawErrorMessage = typeof execError === 'string' ? execError : 
                           execError.message || 'Test suite execution failed';
+      
+      // エラーメッセージをサニタイズ
+      const errorMessage = sanitizeForAIReport(rawErrorMessage);
       
       // モジュール未検出エラーのパターンをチェック
       const isModuleNotFound = errorMessage.includes('Cannot find module') || 
@@ -313,7 +322,7 @@ export class JestAIReporter implements Reporter {
         
         error: {
           message: errorMessage,
-          stack: execError.stack || ''
+          stack: sanitizeForAIReport(execError.stack || '')
         },
         
         codeContext: {
