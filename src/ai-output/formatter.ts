@@ -25,6 +25,37 @@ export class AIOptimizedFormatter {
   private readonly maxFilesInOutput = 100;
 
   /**
+   * Format analysis results as JSON for AI consumption
+   */
+  async formatAsJSON(result: AnalysisResult, projectPath: string, options: any = {}): Promise<any> {
+    const output = this.format(result);
+    return {
+      ...output,
+      projectPath,
+      format: options.format || 'json'
+    };
+  }
+
+  /**
+   * Format analysis results as Markdown for AI consumption
+   */
+  async formatAsMarkdown(result: AnalysisResult, projectPath: string, options: any = {}): Promise<string> {
+    const output = this.format(result);
+    const markdown = `# Analysis Report
+
+## Summary
+- Total Issues: ${output.qualityOverview.totalIssues}
+- Total Files: ${output.files.length}
+- Quality Score: ${output.qualityOverview.projectScore}
+- Quality Grade: ${output.qualityOverview.projectGrade}
+
+## Issues by File
+${output.files.map(f => `### ${f.path}\n${f.issues.map((i: any) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
+`;
+    return markdown;
+  }
+
+  /**
    * Format analysis results for AI consumption
    */
   format(result: AnalysisResult, context?: ProjectContext): AIOptimizedOutput {

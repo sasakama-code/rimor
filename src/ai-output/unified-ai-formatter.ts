@@ -21,6 +21,39 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   }
 
   /**
+   * Format UnifiedAnalysisResult as AI-optimized JSON
+   */
+  formatAsAIJson(unifiedResult: any, options: any = {}): any {
+    // Validate input
+    if (!unifiedResult) {
+      throw new Error('Invalid UnifiedAnalysisResult');
+    }
+    
+    if (!unifiedResult.summary || !unifiedResult.aiKeyRisks) {
+      throw new Error('Missing required fields');
+    }
+
+    // Transform and return
+    return {
+      keyRisks: unifiedResult.aiKeyRisks.filter((risk: any) => {
+        if (options.minRiskLevel) {
+          const levels = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+          const minIndex = levels.indexOf(options.minRiskLevel);
+          const riskIndex = levels.indexOf(risk.riskLevel);
+          return riskIndex >= minIndex;
+        }
+        return true;
+      }),
+      summary: unifiedResult.summary,
+      actionableTasks: unifiedResult.actionableTasks || [],
+      metadata: {
+        timestamp: new Date().toISOString(),
+        options
+      }
+    };
+  }
+
+  /**
    * Format analysis results into unified AI output
    */
   format(result: AnalysisResult, context?: ProjectContext): UnifiedAIOutput {
