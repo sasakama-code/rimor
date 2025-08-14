@@ -386,6 +386,8 @@ describe('BaseDomainPlugin', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
+          name: 'healthcare-system',
+          version: '1.0.0',
           description: 'A healthcare management system for hospitals'
         }
       };
@@ -400,7 +402,8 @@ describe('BaseDomainPlugin', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
-          name: 'my-app'
+          name: 'my-app',
+          version: '1.0.0'
         }
       };
       
@@ -416,6 +419,8 @@ describe('BaseDomainPlugin', () => {
       const ecommerceContext: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
+          name: 'ecommerce-app',
+          version: '1.0.0',
           keywords: ['ecommerce']
         }
       };
@@ -423,6 +428,8 @@ describe('BaseDomainPlugin', () => {
       const otherContext: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
+          name: 'gaming-app',
+          version: '1.0.0',
           keywords: ['gaming']
         }
       };

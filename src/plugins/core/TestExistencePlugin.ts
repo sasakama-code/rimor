@@ -168,7 +168,9 @@ export class TestExistencePlugin extends BasePlugin {
       return [{
         type: 'missing-test',
         severity: 'high' as const,
-        message: `テストファイルが存在しません: ${maskedPath}`
+        message: `テストファイルが存在しません: ${maskedPath}`,
+        filePath: filePath,
+        category: 'test-quality' as const
       }];
     }
 

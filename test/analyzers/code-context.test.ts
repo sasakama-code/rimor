@@ -146,7 +146,9 @@ describe('UserController', () => {
         severity: 'high',
         message: 'Missing proper assertions',
         line: 21,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-quality' as const
       };
 
       const options: AnalysisOptions = {
@@ -179,7 +181,9 @@ describe('UserController', () => {
         severity: 'medium', 
         message: 'Missing error handling',
         line: 20,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'error-handling' as const
       };
 
       const options: AnalysisOptions = {
@@ -209,7 +213,9 @@ describe('UserController', () => {
         severity: 'medium',
         message: 'Missing input validation',
         line: 35,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'validation' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -232,7 +238,9 @@ describe('UserController', () => {
         severity: 'medium',
         message: 'Variable may be unused',
         line: 53,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'code-quality' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -266,7 +274,9 @@ describe('UserController', () => {
         severity: 'medium',
         message: 'Missing test coverage for UserService interaction',
         line: 18,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-coverage' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -408,7 +418,9 @@ const processOrder = async (order) => {
         severity: 'high',
         message: 'File not found',
         line: 1,
-        file: '/non/existent/file.ts'
+        file: '/non/existent/file.ts',
+        filePath: '/non/existent/file.ts',
+        category: 'file-system' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {});
@@ -431,7 +443,9 @@ const processOrder = async (order) => {
         severity: 'high',
         message: 'Syntax error',
         line: 1,
-        file: path.join(testProjectPath, 'src/broken.ts')
+        file: path.join(testProjectPath, 'src/broken.ts'),
+        filePath: path.join(testProjectPath, 'src/broken.ts'),
+        category: 'syntax' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -450,7 +464,9 @@ const processOrder = async (order) => {
         severity: 'medium',
         message: 'Performance test',
         line: 1,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'performance' as const
       };
 
       const startTime = Date.now();
@@ -479,7 +495,9 @@ const processOrder = async (order) => {
         severity: 'medium',
         message: 'Large file test',
         line: 500,
-        file: path.join(testProjectPath, 'src/large.ts')
+        file: path.join(testProjectPath, 'src/large.ts'),
+        filePath: path.join(testProjectPath, 'src/large.ts'),
+        category: 'performance' as const
       };
 
       const startTime = Date.now();

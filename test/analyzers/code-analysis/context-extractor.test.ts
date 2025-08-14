@@ -15,10 +15,12 @@ describe('AdvancedCodeContextAnalyzer', () => {
   const mockProjectPath = '/test/project';
   const mockIssue: Issue = {
     file: '/test/project/src/app.ts',
+    filePath: '/test/project/src/app.ts',
     message: 'Test issue',
     severity: 'medium',
     type: 'test-rule',
-    line: 10
+    line: 10,
+    category: 'test-quality' as const
   };
 
   beforeEach(() => {

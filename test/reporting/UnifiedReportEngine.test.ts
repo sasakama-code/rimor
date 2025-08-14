@@ -153,9 +153,12 @@ describe('UnifiedReportEngine', () => {
       
       expect(report).toBeDefined();
       expect(report.format).toBe('executive-summary');
-      expect(report.content).toHaveProperty('executiveSummary');
-      expect(report.content.executiveSummary).toHaveProperty('overallScore');
-      expect(report.content).toHaveProperty('recommendations');
+      
+      // Type assertion for content object
+      const content = report.content as any;
+      expect(content).toHaveProperty('executiveSummary');
+      expect(content.executiveSummary).toHaveProperty('overallScore');
+      expect(content).toHaveProperty('recommendations');
     });
   });
 

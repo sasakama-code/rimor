@@ -193,14 +193,38 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     const patterns = await this.detectPatterns(testFile);
     
     // DetectionResultをIssueに変換
-    return patterns.map(pattern => ({
-      type: pattern.patternId || 'unknown',
-      severity: pattern.severity || 'medium',
-      message: (pattern.metadata?.description || `Pattern detected: ${pattern.patternName}`) as string,
-      file: pattern.location?.file || filePath,
-      line: pattern.location?.line || 1,
-      column: pattern.location?.column
-    }));
+    return patterns.map(pattern => {
+      const file = pattern.location?.file || filePath;
+      // SeverityLevelをIssueSeverityに変換
+      const severity = this.mapSeverityLevel(pattern.severity || 'medium');
+      return {
+        type: pattern.patternId || 'unknown',
+        severity,
+        message: (pattern.metadata?.description || `Pattern detected: ${pattern.patternName}`) as string,
+        filePath: file,
+        file: file,
+        line: pattern.location?.line || 1,
+        column: pattern.location?.column,
+        category: 'pattern' as const
+      } as Issue;
+    });
+  }
+
+  // ヘルパーメソッド: SeverityLevelをIssueSeverityに変換
+  private mapSeverityLevel(level: string): 'low' | 'medium' | 'high' | 'critical' {
+    switch (level) {
+      case 'info':
+      case 'low':
+        return 'low';
+      case 'medium':
+        return 'medium';
+      case 'high':
+        return 'high';
+      case 'critical':
+        return 'critical';
+      default:
+        return 'medium';
+    }
   }
 
   // ヘルパーメソッド: プロジェクト種別判定

@@ -138,12 +138,14 @@ export class AdvancedCodeContextAnalyzer {
   ): Promise<ExtractedCodeContext> {
     const issue: Issue = {
       type: 'context',
+      filePath: filePath,
       file: filePath,
       line: 0,
       column: 0,
       rule: 'extraction',
-      severity: 'info',
-      message: 'Context extraction'
+      severity: 'low',
+      message: 'Context extraction',
+      category: 'documentation'
     };
     
     const projectPath = path.dirname(filePath);

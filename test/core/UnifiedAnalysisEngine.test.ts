@@ -60,9 +60,11 @@ describe('UnifiedAnalysisEngine', () => {
         type: 'error',
         message: 'Test issue',
         file: '/test/file.ts',
+        filePath: '/test/file.ts',
         line: 1,
         column: 1,
-        severity: 'high'
+        severity: 'high',
+        category: 'test-quality' as const
       };
 
       const mockPlugin: IPlugin = {

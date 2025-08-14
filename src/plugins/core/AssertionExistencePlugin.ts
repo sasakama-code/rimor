@@ -187,7 +187,9 @@ export class AssertionExistencePlugin extends BasePlugin {
         return [{
           type: 'missing-assertion',
           severity: 'medium' as const,
-          message: "アサーション（expect文など）が見つかりません"
+          message: "アサーション（expect文など）が見つかりません",
+          filePath: filePath,
+          category: 'assertion' as const
         }];
       }
 

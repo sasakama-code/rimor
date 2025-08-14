@@ -328,6 +328,7 @@ describe('インターフェース定義のテスト', () => {
     it('セキュリティ違反を正しく定義できること', () => {
       const violation: SecurityViolation = {
         type: 'unsanitized-taint-flow',
+        message: 'Unsanitized user input flows to database',
         variable: 'userInput',
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
         metadata: {

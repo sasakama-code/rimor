@@ -420,10 +420,12 @@ export class UnifiedAnalysisEngine {
           type: 'error',
           severity: 'high',
           message: `Plugin error in ${error.pluginName}: ${error.error}`,
+          filePath: targetPath,
           file: targetPath,
           line: 0,
-          column: 0
-        });
+          column: 0,
+          category: 'structure'
+        } as Issue);
       }
     }
 
@@ -586,14 +588,17 @@ export class UnifiedAnalysisEngine {
    * 品質Issueを作成（Extract Method）
    */
   private createQualityIssue(pattern: DetectionResult): Issue {
+    const filePath = pattern.location?.file || '';
     return {
       type: 'quality',
       severity: 'medium',
       message: `Low quality pattern detected: ${pattern.patternName || pattern.patternId || 'unknown'}`,
-      file: pattern.location!.file,
-      line: pattern.location!.line,
-      column: pattern.location!.column
-    };
+      filePath,
+      file: filePath,
+      line: pattern.location?.line || 0,
+      column: pattern.location?.column,
+      category: 'pattern'
+    } as Issue;
   }
 
   private async runWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {

@@ -245,11 +245,13 @@ describe('UnifiedAnalysisResult', () => {
         {
           type: 'test-type',
           file: '/test/file1.ts',
+          filePath: '/test/file1.ts',
           line: 10,
           column: 5,
           severity: 'high',
           message: 'Test issue',
-          plugin: 'test-plugin'
+          plugin: 'test-plugin',
+          category: 'test-quality' as const
         }
       ];
       
@@ -302,29 +304,35 @@ describe('UnifiedAnalysisResult', () => {
         {
           type: 'test',
           file: '/test/file1.ts',
+          filePath: '/test/file1.ts',
           line: 1,
           column: 1,
           severity: 'high',
           message: 'Issue 1',
-          plugin: 'plugin1'
+          plugin: 'plugin1',
+          category: 'test-quality' as const
         },
         {
           type: 'test',
           file: '/test/file2.ts',
+          filePath: '/test/file2.ts',
           line: 2,
           column: 2,
           severity: 'medium',
           message: 'Issue 2',
-          plugin: 'plugin1'
+          plugin: 'plugin1',
+          category: 'test-quality' as const
         },
         {
           type: 'test',
           file: '/test/file1.ts',
+          filePath: '/test/file1.ts',
           line: 3,
           column: 3,
           severity: 'high',
           message: 'Issue 3',
-          plugin: 'plugin2'
+          plugin: 'plugin2',
+          category: 'test-quality' as const
         }
       ];
       

@@ -94,7 +94,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     
     if (Array.isArray(context.dependencies)) {
       // 新しい構造: dependencies が配列
-      hasWebLibrary = webLibraries.some(lib => context.dependencies!.includes(lib));
+      hasWebLibrary = webLibraries.some(lib => (context.dependencies as string[]).includes(lib));
     } else if (context.packageJson) {
       // 旧構造: packageJson オブジェクト
       hasWebLibrary = webLibraries.some(lib => 

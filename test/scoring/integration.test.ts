@@ -296,7 +296,9 @@ describe('Scoring System Integration', () => {
             severity: 'medium',
             message: `品質問題 ${i + 1}: ${filePath}`,
             line: i + 1,
-            file: filePath
+            file: filePath,
+            filePath: filePath,
+            category: 'test-quality' as const
           });
         }
         

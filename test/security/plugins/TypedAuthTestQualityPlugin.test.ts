@@ -290,6 +290,7 @@ describe('TypedAuthTestQualityPlugin', () => {
     it('カバレッジが低い場合に改善提案を生成すること', () => {
       const evaluation: QualityScore = {
         overall: 50,
+        dimensions: {},
         breakdown: {
           completeness: 50,
           correctness: 80,
@@ -308,6 +309,7 @@ describe('TypedAuthTestQualityPlugin', () => {
     it('カバレッジが十分な場合は改善提案を生成しないこと', () => {
       const evaluation: QualityScore = {
         overall: 90,
+        dimensions: {},
         breakdown: {
           completeness: 90,
           correctness: 90,
@@ -417,8 +419,7 @@ describe('TypedAuthTestQualityPlugin', () => {
             'const token = login();'
           ),
           changeType: 'added',
-          affectedFlows: [],
-          details: 'New authentication method added'
+          affectedFlows: []
         }
       ];
       
@@ -442,14 +443,15 @@ describe('TypedAuthTestQualityPlugin', () => {
           type: 'deleted',
           method,
           changeType: 'deleted',
-          affectedFlows: [],
-          details: 'Authentication method removed'
+          affectedFlows: []
         }
       ];
       
       const result = await plugin.updateAnalysis(changes);
       
-      expect(result.invalidatedCache.length).toBeGreaterThan(0);
+      // IncrementalUpdateにはinvalidatedCacheプロパティがないため、
+      // updatedMethodsまたはaffectedMethodsを確認
+      expect(result.affectedMethods.length).toBeGreaterThan(0);
     });
   });
   
