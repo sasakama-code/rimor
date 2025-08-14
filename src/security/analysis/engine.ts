@@ -12,14 +12,13 @@ import {
   SecurityTypeAnnotation,
   MethodAnalysisResult,
   IncrementalResult,
-  MethodChange,
   TypeBasedSecurityAnalysis,
   ModularAnalysis,
   TypeBasedSecurityConfig,
   SecurityType
 } from '../types';
 import { TaintLevel, TaintSource } from '../../types/common-types';
-import { SecurityImprovement, FlowNode } from '../types/flow-types';
+import { SecurityImprovement, FlowNode, SecurityMethodChange } from '../types/flow-types';
 import {
   TaintQualifier,
   TypeConstructors,
@@ -254,7 +253,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * インクリメンタル解析
    */
-  async incrementalAnalyze(changes: MethodChange[]): Promise<IncrementalResult> {
+  async incrementalAnalyze(changes: SecurityMethodChange[]): Promise<IncrementalResult> {
     const changedMethods = changes.map(change => change.method);
     return this.modularAnalyzer.incrementalAnalyze(changedMethods);
   }

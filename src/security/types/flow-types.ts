@@ -246,11 +246,19 @@ export interface SecurityTestMetrics {
 
 // Security Improvements
 export interface SecurityImprovement {
+  id?: string;
   type: 'add-sanitizer' | 'add-validation' | 'add-assertion' | 'fix-flow';
+  title?: string;
   location: Position;
   description: string;
   suggestedCode?: string;
   impact: 'low' | 'medium' | 'high';
+  priority?: 'low' | 'medium' | 'high';
+  estimatedImpact?: {
+    securityImprovement: number;
+    implementationMinutes: number;
+  };
+  automatable?: boolean;
 }
 
 // Method Analysis
@@ -262,6 +270,7 @@ export interface MethodAnalysisResult {
   typeAnalysis?: TypeFlowAnalysisResult;
   violations: SecurityViolation[];
   metrics: SecurityTestMetrics;
+  analysisTime?: number;
   improvements: SecurityImprovement[];
   issues?: SecurityIssue[];
   suggestions?: string[];
@@ -283,7 +292,7 @@ export interface TypeInferenceResult {
 }
 
 // Incremental Analysis
-export interface MethodChange {
+export interface SecurityMethodChange {
   method: TestMethod;
   type?: 'added' | 'modified' | 'deleted';
   changeType: 'added' | 'modified' | 'deleted';
@@ -291,7 +300,7 @@ export interface MethodChange {
 }
 
 export interface IncrementalUpdate {
-  changes: MethodChange[];
+  changes: SecurityMethodChange[];
   affectedMethods: TestMethod[];
   updatedMethods?: MethodAnalysisResult[];
   reanalysisRequired: boolean;

@@ -11,13 +11,13 @@ import {
   SecurityTestMetrics,
   SecurityImprovement,
   IncrementalResult,
-  MethodChange,
   TaintLevel,
   SecurityType,
   SecurityRequirement,
   TypeInferenceResult,
   SecurityTypeAnnotation
 } from '../types';
+import { SecurityMethodChange } from '../types/flow-types';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
 import { FlowGraph, FlowSensitiveAnalyzer } from './flow';
 

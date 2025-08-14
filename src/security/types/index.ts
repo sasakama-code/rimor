@@ -21,6 +21,8 @@ import {
   TaintLattice
 } from './taint';
 
+import { SecurityMethodChange } from './flow-types';
+
 import {
   SecurityValidation,
   SecurityRequirement,
@@ -261,7 +263,7 @@ export interface ModularAnalysis {
   analyzeMethod(method: TestMethod): Promise<MethodAnalysisResult>;
   
   /** インクリメンタル解析 */
-  incrementalAnalyze(changes: MethodChange[]): Promise<IncrementalResult>;
+  incrementalAnalyze(changes: SecurityMethodChange[]): Promise<IncrementalResult>;
   
   /** 並列解析 */
   analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]>;
