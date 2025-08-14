@@ -85,6 +85,7 @@ export class ParallelTypeChecker extends EventEmitter {
   private activeWorkers = 0;
   private workerStates: Map<Worker, boolean> = new Map(); // true = busy, false = idle
   private results: Map<string, MethodTypeCheckResult> = new Map();
+  private currentTasks: Map<string, WorkerTask> = new Map(); // Store current tasks
   private inferenceEngine: SearchBasedInferenceEngine;
   private localOptimizer: LocalInferenceOptimizer;
 
@@ -297,6 +298,9 @@ export class ParallelTypeChecker extends EventEmitter {
             reject(new Error(`Task ${task.id} timed out`));
           }, this.config.methodTimeout);
           
+          // タスクを保存
+          this.currentTasks.set(task.id, task);
+          
           // 結果待ち
           const handler = (result: WorkerResult) => {
             if (result.id === task.id) {
@@ -304,6 +308,8 @@ export class ParallelTypeChecker extends EventEmitter {
               this.workerStates.set(availableWorker!, false); // Mark as idle
               this.activeWorkers--;
               availableWorker!.off('message', handler);
+              // タスクをクリーンアップ
+              this.currentTasks.delete(task.id);
               resolve();
             }
           };
@@ -379,9 +385,39 @@ export class ParallelTypeChecker extends EventEmitter {
   /**
    * ワーカー結果の処理
    */
-  private handleWorkerResult(result: WorkerResult, worker: Worker): void {
+  private handleWorkerResult(result: any, worker: Worker): void {
+    // ワーカーから返されるのはTypeCheckWorkerResult型
+    // それをMethodTypeCheckResultに変換する必要がある
     if (result.success && result.result) {
-      this.results.set(result.id, result.result);
+      // タスクを見つける（メソッド情報を取得するため）
+      const task = this.currentTasks.get(result.id);
+      if (!task) {
+        console.error(`Task not found for result ${result.id}`);
+        return;
+      }
+      
+      // MethodTypeCheckResultを構築
+      const methodResult: MethodTypeCheckResult = {
+        method: task.method,
+        typeCheckResult: {
+          success: result.success,
+          errors: [],
+          warnings: result.result.warnings || []
+        },
+        inferredTypes: result.result.inferredTypes || new Map(),
+        securityIssues: result.result.securityIssues || [],
+        executionTime: result.executionTime
+      };
+      
+      // エラーがある場合は追加
+      if (result.result.violations && result.result.violations.length > 0) {
+        methodResult.typeCheckResult.success = false;
+        methodResult.typeCheckResult.errors = result.result.violations.map((v: any) => 
+          new TypeQualifierError(v.description || 'Type violation', '@Untainted', '@Tainted')
+        );
+      }
+      
+      this.results.set(result.id, methodResult);
       
       if (this.config.debug) {
         console.log(`✓ Type checked ${result.id} in ${result.executionTime}ms`);

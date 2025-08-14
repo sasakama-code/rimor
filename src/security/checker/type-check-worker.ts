@@ -136,11 +136,11 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
   const securityIssues: SecurityIssue[] = [];
   const violations: SecurityViolation[] = [];
   
-  // Validate task.method
-  if (!task.method || !task.method.content) {
+  // Validate task.method and provide defaults
+  if (!task.method) {
     violations.push({
       type: 'type-error',
-      description: 'Invalid task: method or method.content is missing',
+      description: 'Invalid task: method is missing',
       location: {
         file: 'unknown',
         line: 0,
@@ -154,6 +154,9 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
       warnings
     } as TypeInferenceWorkerResult;
   }
+  
+  // Use empty string if content is missing
+  const methodContent = task.method.content || '';
   
   // 依存関係の検証とMapへの変換
   if (!task.dependencies || !Array.isArray(task.dependencies)) {
@@ -169,25 +172,25 @@ async function performTypeCheck(task: TypeCheckWorkerMessage) {
   
   try {
     // 構文チェック（簡易版）
-    if (task.method.content.includes('const x = ;')) {
+    if (methodContent.includes('const x = ;')) {
       throw new Error('syntax error: unexpected token');
     }
     
     // ステップ1: ローカル変数の解析
     const localAnalysis = await localOptimizer.analyzeLocalVariables(
-      task.method.content,
+      methodContent,
       task.method.name
     );
     
     // ステップ2: 型推論
     const inferenceState = await inferenceEngine.inferTypes(
-      task.method.content,
+      methodContent,
       task.method.filePath
     );
     
     // ステップ3: 依存関係を考慮した型チェック
     // まず、メソッド呼び出しを解析
-    const methodCalls = extractMethodCalls(task.method.content);
+    const methodCalls = extractMethodCalls(methodContent);
     
     // 依存関係の型情報を適用
     methodCalls.forEach(call => {
