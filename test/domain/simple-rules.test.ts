@@ -25,7 +25,7 @@ describe('SimpleDomainRules', () => {
         name: 'テスト追加ルール',
         description: 'テスト用の追加ルール',
         category: 'security',
-        severity: 'high',
+        severity: 'error',
         patterns: [
           {
             type: 'keyword',
@@ -102,7 +102,7 @@ describe('SimpleDomainRules', () => {
         name: 'テストルール',
         description: 'テスト',
         category: 'security',
-        severity: 'high',
+        severity: 'error',
         patterns: []
       };
       expect(() => rules.addRule(ruleWithoutId as any)).toThrow('Rule must have a valid id');
@@ -112,7 +112,7 @@ describe('SimpleDomainRules', () => {
         id: 'test-id',
         description: 'テスト',
         category: 'security',
-        severity: 'high',
+        severity: 'error',
         patterns: []
       };
       expect(() => rules.addRule(ruleWithoutName as any)).toThrow('Rule must have a valid name');
@@ -133,7 +133,7 @@ describe('SimpleDomainRules', () => {
         name: 'テストルール',
         description: 'テスト',
         category: 'security',
-        severity: 'high',
+        severity: 'error',
         patterns: [{
           type: 'invalid',
           pattern: 'test',
@@ -183,7 +183,7 @@ describe('SimpleDomainRules', () => {
         name: '認証テスト',
         description: '認証機能のテストが必要です',
         category: 'security',
-        severity: 'high',
+        severity: 'error',
         patterns: [
           {
             type: 'keyword',
@@ -222,7 +222,7 @@ describe('SimpleDomainRules', () => {
         name: 'エラー重大度ルール',
         description: 'エラーレベルテスト',
         category: 'quality',
-        severity: 'high',
+        severity: 'error',
         patterns: [
           {
             type: 'keyword',

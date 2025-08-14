@@ -11,7 +11,9 @@ class MockPlugin implements IPlugin {
       return [{
         type: 'test-missing',
         severity: 'high',
-        message: `No test file found for ${filePath}`
+        message: `No test file found for ${filePath}`,
+        filePath: filePath,
+        category: 'test-quality' as const
       }];
     }
     return [];

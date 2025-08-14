@@ -56,7 +56,9 @@ describe('AnalysisEngineImpl', () => {
         issues: [{
           type: 'test-issue',
           severity: 'high',
-          message: 'Test issue'
+          message: 'Test issue',
+          filePath: '/test/path',
+          category: 'test-quality' as const
         }],
         executionTime: 100,
         metadata: {

@@ -16,8 +16,9 @@ describe('PackageAnalyzer', () => {
 
   describe('detectPackageManager', () => {
     it('should detect yarn when yarn.lock exists', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('yarn.lock');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('yarn.lock');
       });
 
       const result = await analyzer.detectPackageManager('/test/project');
@@ -25,8 +26,9 @@ describe('PackageAnalyzer', () => {
     });
 
     it('should detect pnpm when pnpm-lock.yaml exists', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('pnpm-lock.yaml');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('pnpm-lock.yaml');
       });
 
       const result = await analyzer.detectPackageManager('/test/project');
@@ -34,8 +36,9 @@ describe('PackageAnalyzer', () => {
     });
 
     it('should detect npm when package-lock.json exists', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('package-lock.json');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('package-lock.json');
       });
 
       const result = await analyzer.detectPackageManager('/test/project');
@@ -68,8 +71,9 @@ describe('PackageAnalyzer', () => {
         }
       };
 
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('package.json');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('package.json');
       });
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockPackageJson));
 
@@ -137,8 +141,9 @@ describe('PackageAnalyzer', () => {
         }
       };
 
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('package.json');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('package.json');
       });
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockPackageJson));
 
@@ -240,8 +245,9 @@ lodash@~4.17.21:
   integrity sha512-yyy
 `;
 
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('yarn.lock');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('yarn.lock');
       });
       mockFs.readFileSync.mockReturnValue(mockYarnLock);
 
@@ -264,8 +270,9 @@ lodash@~4.17.21:
         }
       };
 
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        return filePath.endsWith('package-lock.json');
+      mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
+        const path = filePath.toString();
+        return path.endsWith('package-lock.json');
       });
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockPackageLock));
 
@@ -289,8 +296,11 @@ express@^4.18.0:
       };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockImplementation((filePath: string) => {
-        if (filePath.endsWith('yarn.lock')) {
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const path = typeof filePath === 'string' ? filePath : 
+                     typeof filePath === 'number' ? filePath.toString() : 
+                     filePath.toString();
+        if (path.endsWith('yarn.lock')) {
           return mockYarnLock;
         }
         return JSON.stringify(mockPackageLock);

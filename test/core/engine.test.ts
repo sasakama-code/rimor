@@ -74,7 +74,9 @@ describe('UnifiedAnalysisEngine', () => {
         issues: [{
           type: 'test-issue',
           severity: 'high',
-          message: 'Test issue'
+          message: 'Test issue',
+          filePath: 'test.ts',
+          category: 'test-quality' as const
         }],
         executionTime: 10
       }]);

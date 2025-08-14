@@ -172,6 +172,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('インクリメンタル解析が正しく動作する', async () => {
       const updatedMethod: TestMethod = {
         name: 'updatedMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: 'const x = getUserInput(); processUnsafe(x);',
         body: 'const x = getUserInput(); processUnsafe(x);',
@@ -272,7 +273,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: ['@Tainted'],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 1, startColumn: 1, endColumn: 50 }
+        location: { 
+          start: { line: i * 10, column: 1 },
+          end: { line: i * 10 + 1, column: 50 },
+          startLine: i * 10, endLine: i * 10 + 1, startColumn: 1, endColumn: 50 
+        }
       }));
 
       const startTime = Date.now();
@@ -323,6 +328,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('不正な入力に対して適切にエラーを処理する', async () => {
       const invalidMethod: TestMethod = {
         name: '',
+        type: 'test',
         filePath: 'test.ts',
         content: null as any,
         body: null as any,

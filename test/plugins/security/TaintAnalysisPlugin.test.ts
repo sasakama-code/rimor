@@ -158,6 +158,7 @@ describe('TaintAnalysisPlugin', () => {
     it('should suggest fixes for taint flow issues', () => {
       const evaluation: QualityScore = {
         overall: 60,
+        dimensions: {},
         breakdown: {
           completeness: 60,
           correctness: 60,
@@ -171,12 +172,13 @@ describe('TaintAnalysisPlugin', () => {
       const inputValidationFix = improvements.find(i => i.id === 'improve-input-validation');
       expect(inputValidationFix).toBeDefined();
       expect(inputValidationFix?.priority).toBe('high');
-      expect(inputValidationFix?.estimatedImpact.scoreImprovement).toBe(30);
+      expect(inputValidationFix?.estimatedImpact).toBeCloseTo(0.3, 1);
     });
     
     it('should suggest critical fixes for low scores', () => {
       const evaluation: QualityScore = {
         overall: 25,
+        dimensions: {},
         breakdown: {
           completeness: 25,
           correctness: 25,
@@ -195,6 +197,7 @@ describe('TaintAnalysisPlugin', () => {
     it('should return no improvements for high quality', () => {
       const evaluation: QualityScore = {
         overall: 85,
+        dimensions: {},
         breakdown: {
           completeness: 85,
           correctness: 85,

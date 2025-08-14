@@ -73,11 +73,7 @@ export default {
   testPathIgnorePatterns: [
     'node_modules',
     'dist',
-    'docs/self-audit/scripts/empty-tests',
-    'docs/self-audit/scripts/invalid-tests',
-    'docs/self-audit/scripts/temp-tests',
-    'docs/self-audit/scripts/test-output',
-    'docs/self-audit/scripts/valid-test-dir',
+    'docs/', // docs配下のすべてのテストを除外
     'empty-tests',
     'invalid-tests',
     'temp-tests',

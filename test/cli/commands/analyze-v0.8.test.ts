@@ -89,7 +89,9 @@ describe('AnalyzeCommand v0.8 - Type Safety', () => {
             message: 'テストが不足しています',
             severity: 'high',
             file: 'src/index.ts',
-            line: 10
+            line: 10,
+            filePath: 'src/index.ts',
+            category: 'test-quality' as const
           }
         ],
         qualityScore: {

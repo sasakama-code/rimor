@@ -4,10 +4,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 jest.mock('fs');
-jest.mock('../../../src/analyzers/code-context/language');
-jest.mock('../../../src/analyzers/code-context/scope');
-jest.mock('../../../src/analyzers/code-context/file');
-jest.mock('../../../src/analyzers/code-context/utils');
+jest.mock('../../../src/analyzers/code-analysis/language-parser');
+jest.mock('../../../src/analyzers/code-analysis/scope-analyzer');
+jest.mock('../../../src/analyzers/code-analysis/file-analyzer');
+jest.mock('../../../src/analyzers/code-analysis/utils');
 jest.mock('../../../src/utils/pathSecurity');
 
 describe('AdvancedCodeContextAnalyzer', () => {

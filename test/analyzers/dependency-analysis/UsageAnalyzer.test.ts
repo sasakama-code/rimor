@@ -39,8 +39,11 @@ describe('UsageAnalyzer', () => {
       };
 
       (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
-        return mockFileContents[filePath as keyof typeof mockFileContents] || '';
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const path = typeof filePath === 'string' ? filePath : 
+                     typeof filePath === 'number' ? filePath.toString() : 
+                     filePath.toString();
+        return mockFileContents[path as keyof typeof mockFileContents] || '';
       });
 
       const result = await analyzer.findUsedPackages('/project');
@@ -137,8 +140,11 @@ describe('UsageAnalyzer', () => {
       };
 
       (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
-        return mockFileContents[filePath as keyof typeof mockFileContents] || '';
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const path = typeof filePath === 'string' ? filePath : 
+                     typeof filePath === 'number' ? filePath.toString() : 
+                     filePath.toString();
+        return mockFileContents[path as keyof typeof mockFileContents] || '';
       });
 
       const result = await analyzer.analyzeUsageFrequency('/project');
@@ -164,8 +170,11 @@ describe('UsageAnalyzer', () => {
       };
 
       (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
-        return mockFileContents[filePath as keyof typeof mockFileContents] || '';
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const path = typeof filePath === 'string' ? filePath : 
+                     typeof filePath === 'number' ? filePath.toString() : 
+                     filePath.toString();
+        return mockFileContents[path as keyof typeof mockFileContents] || '';
       });
 
       const result = await analyzer.findImportLocations('/project', 'express');
@@ -255,8 +264,11 @@ function test() {
       };
 
       (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
-      mockFs.readFileSync.mockImplementation((filePath: string | number) => {
-        return mockFileContents[filePath as keyof typeof mockFileContents] || '';
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const path = typeof filePath === 'string' ? filePath : 
+                     typeof filePath === 'number' ? filePath.toString() : 
+                     filePath.toString();
+        return mockFileContents[path as keyof typeof mockFileContents] || '';
       });
 
       const result = await analyzer.analyzeImportDepth('/project');

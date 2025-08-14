@@ -27,14 +27,18 @@ describe('StructuredReporter', () => {
             file: 'src/auth.ts',
             line: 25,
             severity: 'high',
-            message: 'No test file found for auth.ts'
+            message: 'No test file found for auth.ts',
+            filePath: 'src/auth.ts',
+            category: 'test-quality' as const
           },
           {
             type: 'insufficient-assertion',
             file: 'src/user.test.ts',
             line: 15,
             severity: 'medium',
-            message: 'Test has no assertions'
+            message: 'Test has no assertions',
+            filePath: 'src/user.test.ts',
+            category: 'assertion' as const
           }
         ],
         executionTime: 1500
