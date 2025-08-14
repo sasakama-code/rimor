@@ -322,7 +322,9 @@ describe('Scoring System Integration', () => {
             severity: 'medium',
             message: 'アサーションが不足している可能性があります',
             line: 10,
-            file: filePath
+            file: filePath,
+            filePath: filePath,
+            category: 'assertion'
           }
         ];
       }

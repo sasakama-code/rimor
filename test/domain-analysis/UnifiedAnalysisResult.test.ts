@@ -386,6 +386,8 @@ describe('UnifiedAnalysisResult', () => {
           severity: 'critical',
           message: 'Critical issue',
           file: '/test/file.ts',
+          filePath: '/test/file.ts',
+          category: 'test-quality',
           line: 1,
           column: 1
         }

@@ -299,6 +299,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
           column: 10
         },
         suggestedCode: 'const safe = escapeHtml(userInput);',
+        impact: 'high',
         estimatedImpact: {
           securityImprovement: 0.3,
           implementationMinutes: 5
@@ -309,7 +310,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       expect(improvement.priority).toBe('high');
       expect(improvement.type).toBe('add-sanitizer');
       expect(improvement.automatable).toBe(true);
-      expect(improvement.estimatedImpact.implementationMinutes).toBe(5);
+      expect(improvement.estimatedImpact?.implementationMinutes).toBe(5);
     });
 
     it('すべての改善タイプが使用できること', () => {

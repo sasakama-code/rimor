@@ -20,6 +20,8 @@ const createMockIssue = (overrides: Partial<Issue> = {}): Issue => ({
   type: 'MISSING_TEST',
   severity: 'medium',
   file: 'src/example.ts',
+  filePath: overrides.filePath || overrides.file || 'src/example.ts',
+  category: 'test-quality',
   line: 10,
   column: 5,
   message: 'Test coverage is missing',

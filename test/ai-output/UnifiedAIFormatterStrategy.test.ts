@@ -1,4 +1,5 @@
-import { UnifiedAIFormatterStrategy, FormattingStrategy } from '../../src/ai-output/UnifiedAIFormatterStrategy';
+import { UnifiedAIFormatter } from '../../src/ai-output/unified-ai-formatter';
+import { FormattingStrategy } from '../../src/ai-output/adapter';
 import { UnifiedAnalysisResult, AIJsonOutput, UnifiedAIFormatterOptions } from '../../src/ai-output/types';
 
 // テスト用のモックデータ
@@ -8,6 +9,7 @@ const mockAnalysisResult: UnifiedAnalysisResult = {
     overallGrade: 'B',
     statistics: {
       totalFiles: 10,
+      totalTests: 50,
       totalIssues: 5,
       riskCounts: {
         CRITICAL: 1,
@@ -61,10 +63,10 @@ const mockAnalysisResult: UnifiedAnalysisResult = {
 };
 
 describe('UnifiedAIFormatterStrategy', () => {
-  let formatter: UnifiedAIFormatterStrategy;
+  let formatter: UnifiedAIFormatter;
 
   beforeEach(() => {
-    formatter = new UnifiedAIFormatterStrategy();
+    formatter = new UnifiedAIFormatter();
   });
 
   describe('基本機能', () => {
