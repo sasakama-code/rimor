@@ -241,7 +241,7 @@ describe('TypedAuthTestQualityPlugin', () => {
       
       const score = plugin.evaluateQuality(patterns);
       
-      expect(score.overall).toBe(100);
+      expect(score.overall).toBe(1.0); // 0.0-1.0の範囲に正規化済み
       expect(score.breakdown?.completeness).toBe(100);
     });
     
@@ -258,7 +258,7 @@ describe('TypedAuthTestQualityPlugin', () => {
       
       const score = plugin.evaluateQuality(patterns);
       
-      expect(score.overall).toBeLessThan(50);
+      expect(score.overall).toBeLessThan(0.5); // 0.0-1.0の範囲に正規化済み
       expect(score.breakdown?.completeness).toBe(25); // 1/4 = 25%
     });
     
@@ -289,8 +289,12 @@ describe('TypedAuthTestQualityPlugin', () => {
   describe('suggestImprovements', () => {
     it('カバレッジが低い場合に改善提案を生成すること', () => {
       const evaluation: QualityScore = {
-        overall: 50,
-        dimensions: {},
+        overall: 0.5, // 0.0-1.0の範囲に正規化
+        dimensions: {
+          completeness: 0.5, // 0.0-1.0の範囲に正規化
+          correctness: 0.8,
+          maintainability: 0.8
+        },
         breakdown: {
           completeness: 50,
           correctness: 80,
@@ -425,7 +429,9 @@ describe('TypedAuthTestQualityPlugin', () => {
       
       const result = await plugin.updateAnalysis(changes);
       
-      expect(result.updatedMethods).toContain('testNewAuth');
+      // updatedMethodsはMethodAnalysisResult[]型なので、メソッド名を抽出して確認
+      const updatedMethodNames = result.updatedMethods?.map(m => m.methodName) || [];
+      expect(updatedMethodNames).toContain('testNewAuth');
     });
     
     it('メソッドの削除でキャッシュが無効化されること', async () => {

@@ -107,24 +107,32 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    * 品質評価（既存インターフェース対応）
    */
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    let score = 100;
-    let authCoverage = 0;
-    
     // 認証カバレッジの計算
     const requiredPatterns = ['login-success', 'login-failure', 'token-validation', 'session-management'];
     const coveredPatterns = patterns.filter(p => 
       p.patternId && requiredPatterns.includes(p.patternId)
     );
     
-    authCoverage = coveredPatterns.length / requiredPatterns.length * 100;
-    score = Math.min(score, authCoverage);
+    // 0.0-1.0の範囲で計算
+    const authCoverage = coveredPatterns.length / requiredPatterns.length;
+    const correctness = this.calculateCorrectness(patterns) / 100; // 0.0-1.0に正規化
+    const maintainability = this.calculateMaintainability(patterns) / 100; // 0.0-1.0に正規化
+    
+    // overallスコアを計算（0.0-1.0の範囲）
+    const score = Math.min(1.0, authCoverage);
 
     return {
-      overall: Math.round(score),
+      overall: score, // 0.0-1.0の範囲
       dimensions: {
-        completeness: authCoverage,
-        correctness: this.calculateCorrectness(patterns),
-        maintainability: this.calculateMaintainability(patterns)
+        completeness: authCoverage, // 0.0-1.0の範囲
+        correctness: correctness, // 0.0-1.0の範囲
+        maintainability: maintainability // 0.0-1.0の範囲
+      },
+      // 後方互換性のためbreakdownも提供（100スケール）
+      breakdown: {
+        completeness: authCoverage * 100,
+        correctness: correctness * 100,
+        maintainability: maintainability * 100
       },
       confidence: this.calculateConfidence(patterns)
     };
@@ -136,7 +144,8 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
 
-    if (evaluation.dimensions?.completeness && evaluation.dimensions.completeness < 80) {
+    // 0.0-1.0の範囲で判定（0.8未満を低カバレッジとする）
+    if (evaluation.dimensions?.completeness !== undefined && evaluation.dimensions.completeness < 0.8) {
       improvements.push({
         id: 'auth-coverage-improvement',
         priority: 'high',
@@ -193,7 +202,8 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         metrics,
         improvements: suggestions,
         issues,
-        suggestions: suggestions.map(s => s.description) // string[]に変換
+        suggestions: suggestions.map(s => s.description), // string[]に変換
+        analysisTime: Date.now() - startTime // 分析時間を追加
       };
 
       // キャッシュに保存
@@ -274,6 +284,8 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const newIssues: SecurityIssue[] = [];
     const resolvedIssues: string[] = [];
 
+    const analysisResults: MethodAnalysisResult[] = [];
+    
     for (const change of changes) {
       const methodName = change.method.name;
       
@@ -283,6 +295,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           // 新規/変更されたメソッドを再解析
           const result = await this.analyzeMethod(change.method);
           updatedMethods.push(methodName);
+          analysisResults.push(result); // 解析結果を直接追加
           if (result.issues) {
             newIssues.push(...result.issues);
           }
@@ -297,18 +310,10 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       }
     }
 
-    const analysisResults: MethodAnalysisResult[] = [];
-    for (const methodName of updatedMethods) {
-      const cachedResult = this.analysisCache.get(this.generateCacheKey({ name: methodName, filePath: '', content: '' } as TestMethod));
-      if (cachedResult) {
-        analysisResults.push(cachedResult);
-      }
-    }
-
     return {
       changes,
       affectedMethods: changes.map(c => c.method),
-      updatedMethods: analysisResults,
+      updatedMethods: analysisResults, // MethodAnalysisResult[]を返す
       reanalysisRequired: newIssues.length > 0
     };
   }
@@ -589,7 +594,8 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       },
       improvements: [],
       issues: [],
-      suggestions: []
+      suggestions: [],
+      analysisTime: analysisTime
     };
   }
 
@@ -621,7 +627,8 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
         location: { file: '', line: 0, column: 0 }
       }],
-      suggestions: []
+      suggestions: [],
+      analysisTime: analysisTime
     };
   }
 
