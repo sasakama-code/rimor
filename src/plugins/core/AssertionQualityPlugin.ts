@@ -262,7 +262,8 @@ export class AssertionQualityPlugin extends BasePlugin {
             location: this.createCodeLocation(testFile.path, 1, 1),
             code: content.substring(0, 100) + '...',
             confidence: 0.9
-          }]
+          }],
+          'info'
         );
       }
     }
@@ -292,7 +293,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.8
-        }]
+        }],
+        'medium'
       );
     }
 
@@ -317,7 +319,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.9
-        }]
+        }],
+        'high'
       );
     }
 
@@ -348,7 +351,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.7
-        }]
+        }],
+        'medium'
       );
     }
 
@@ -372,7 +376,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.6
-        }]
+        }],
+        'low'
       );
     }
 
@@ -400,7 +405,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.8
-        }]
+        }],
+        'info'
       );
     }
 
@@ -439,7 +445,8 @@ export class AssertionQualityPlugin extends BasePlugin {
           location: this.createCodeLocation(testFile.path, 1, 1),
           code: content.substring(0, 100) + '...',
           confidence: 0.7
-        }]
+        }],
+        'info'
       );
     }
 

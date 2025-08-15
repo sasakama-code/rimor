@@ -81,6 +81,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     location: CodeLocation,
     confidence: number,
     evidence: Evidence[],
+    severity: 'info' | 'high' | 'medium' | 'low' | 'critical' = 'info',
     metadata?: Record<string, unknown>
   ): DetectionResult {
     return {
@@ -89,6 +90,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       location,
       confidence: Math.max(0, Math.min(1, confidence)), // 0-1の範囲に制限
       evidence,
+      severity,
       metadata
     };
   }
