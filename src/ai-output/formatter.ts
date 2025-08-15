@@ -41,16 +41,31 @@ export class AIOptimizedFormatter {
    */
   async formatAsMarkdown(result: AnalysisResult, projectPath: string, options: any = {}): Promise<string> {
     const output = this.format(result);
-    const markdown = `# Analysis Report
+    const markdown = `# Rimor Test Quality Analysis Report
+
+## Project Context
+- Project Path: ${projectPath}
+- Root Path: ${output.context.rootPath || 'Unknown'}
+- Dependencies: ${Object.keys(output.context.dependencies || {}).length} packages
 
 ## Summary
 - Total Issues: ${output.qualityOverview.totalIssues}
 - Total Files: ${output.files.length}
-- Quality Score: ${output.qualityOverview.projectScore}
+- **Quality Score**: ${Math.round(output.qualityOverview.projectScore * 100)}/100
 - Quality Grade: ${output.qualityOverview.projectGrade}
 
+## Critical Issues Summary
+${output.files.filter(f => f.issues.some((i: any) => i.severity === 'critical'))
+  .map(f => `- ${f.path}: ${f.issues.filter((i: any) => i.severity === 'critical').length} critical issues`)
+  .join('\n') || '- No critical issues found'}
+
 ## Issues by File
-${output.files.map(f => `### ${f.path}\n${f.issues.map((i: any) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
+${output.files.map(f => `## File: ${f.path}
+Score: ${Math.round((f.score || 0.75) * 100)}/100
+${f.issues.map((i: any) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
+
+## Instructions for AI
+${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No specific instructions'}
 `;
     return markdown;
   }
@@ -82,7 +97,8 @@ ${output.files.map(f => `### ${f.path}\n${f.issues.map((i: any) => `- ${i.severi
         totalIssues: result.issues.length
       },
       actionableTasks: [],
-      insights: []
+      insights: [],
+      instructions: this.generateInstructions(result) // instructionsプロパティを追加
     } as any; // Type assertion to handle interface differences
   }
 
@@ -346,6 +362,46 @@ ${output.files.map(f => `### ${f.path}\n${f.issues.map((i: any) => `- ${i.severi
     if (score >= 0.7) return 'C';
     if (score >= 0.6) return 'D';
     return 'F';
+  }
+
+  /**
+   * Generate instructions for fixing issues
+   */
+  private generateInstructions(result: AnalysisResult): string[] {
+    const instructions: string[] = [];
+    
+    // 重大な問題がある場合の指示
+    const criticalIssues = result.issues.filter(i => i.severity === 'critical');
+    if (criticalIssues.length > 0) {
+      instructions.push('優先度: まず重大な問題から修正してください');
+    }
+    
+    // カテゴリごとの指示
+    const issuesByCategory = this.groupIssuesByCategory(result.issues);
+    for (const [category, issues] of Object.entries(issuesByCategory)) {
+      if (issues.length > 0) {
+        instructions.push(`${category}: ${issues.length}件の問題を修正してください`);
+      }
+    }
+    
+    return instructions;
+  }
+
+  /**
+   * Group issues by category
+   */
+  private groupIssuesByCategory(issues: Issue[]): Record<string, Issue[]> {
+    const grouped: Record<string, Issue[]> = {};
+    
+    for (const issue of issues) {
+      const category = issue.category || 'その他';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(issue);
+    }
+    
+    return grouped;
   }
   
   /**
