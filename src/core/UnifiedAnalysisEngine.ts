@@ -440,8 +440,8 @@ export class UnifiedAnalysisEngine {
    * プラグイン数の取得
    */
   getPluginCount(): number {
-    const legacyCount = this.legacyPluginManager.getPlugins().length;
-    const qualityCount = this.qualityPluginManager.getPlugins().length;
+    const legacyCount = this.legacyPluginManager.getLegacyPlugins().length;
+    const qualityCount = this.qualityPluginManager.getQualityPlugins().length;
     const customCount = this.customPlugins.size;
     return legacyCount + qualityCount + customCount;
   }

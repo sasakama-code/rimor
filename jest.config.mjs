@@ -66,7 +66,7 @@ export default {
   
   // CI環境対応のため基本設定のみ
   transformIgnorePatterns: [
-    'node_modules/(?!(chalk|#ansi-styles|.*\\.mjs$))'
+    'node_modules/(?!(chalk|#ansi-styles|inquirer|.*\\.mjs$))'
   ],
   
   // 監査用サンプルテストファイルと重いテストを除外

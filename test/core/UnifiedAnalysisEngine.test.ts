@@ -55,7 +55,7 @@ describe('UnifiedAnalysisEngine', () => {
     });
 
     it('基本的な分析を実行できる', async () => {
-      const testPath = '/test/path';
+      const testPath = './test/fixtures';
       const mockIssue: Issue = {
         type: 'error',
         message: 'Test issue',
@@ -83,7 +83,7 @@ describe('UnifiedAnalysisEngine', () => {
     });
 
     it('分析結果に実行時間が含まれる', async () => {
-      const testPath = '/test/path';
+      const testPath = './test/fixtures';
       const result = await engine.analyze(testPath);
       
       expect(result.executionTime).toBeDefined();
@@ -103,6 +103,7 @@ describe('UnifiedAnalysisEngine', () => {
         detectPatterns: jest.fn().mockResolvedValue([]),
         evaluateQuality: jest.fn().mockReturnValue({
           overall: 80,
+          dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
           confidence: 0.9
         }),
@@ -113,7 +114,7 @@ describe('UnifiedAnalysisEngine', () => {
     });
 
     it('拡張分析（analyzeWithQuality）を実行できる', async () => {
-      const testPath = '/test/path';
+      const testPath = './test/fixtures';
       const mockQualityPlugin: ITestQualityPlugin = {
         id: 'quality-plugin',
         name: 'QualityPlugin',
@@ -155,7 +156,7 @@ describe('UnifiedAnalysisEngine', () => {
     });
 
     it('バッチ分析を実行できる', async () => {
-      const testPaths = ['/test/path1', '/test/path2', '/test/path3'];
+      const testPaths = ['./test/fixtures', './test/integration', './test/performance'];
       
       const mockQualityPlugin: ITestQualityPlugin = {
         id: 'quality-plugin',
@@ -211,6 +212,7 @@ describe('UnifiedAnalysisEngine', () => {
         detectPatterns: jest.fn().mockResolvedValue([]),
         evaluateQuality: jest.fn().mockReturnValue({
           overall: 80,
+          dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
           confidence: 0.9
         }),
@@ -220,7 +222,7 @@ describe('UnifiedAnalysisEngine', () => {
       engine.registerPlugin(mockLegacyPlugin);
       engine.registerQualityPlugin(mockQualityPlugin);
 
-      const result = await engine.analyzeUnified('/test/path');
+      const result = await engine.analyzeUnified('./test/fixtures');
       
       expect(result).toBeDefined();
       expect(result.basicAnalysis).toBeDefined();
@@ -250,6 +252,7 @@ describe('UnifiedAnalysisEngine', () => {
         detectPatterns: jest.fn().mockResolvedValue([]),
         evaluateQuality: jest.fn().mockReturnValue({
           overall: 80,
+          dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
           confidence: 0.9
         }),
@@ -283,7 +286,7 @@ describe('UnifiedAnalysisEngine', () => {
 
       engine.registerPlugin(errorPlugin);
       
-      const result = await engine.analyze('/test/path');
+      const result = await engine.analyze('./test/fixtures');
       
       // エラーが発生してもクラッシュしない
       expect(result).toBeDefined();
@@ -359,7 +362,7 @@ describe('UnifiedAnalysisEngine', () => {
       engine.registerPlugin(plugin2);
       
       // 両方のプラグインが同じように動作することを確認
-      const result = await engine.analyze('/test/path');
+      const result = await engine.analyze('./test/fixtures');
       expect(result).toBeDefined();
     });
 
@@ -417,13 +420,13 @@ describe('UnifiedAnalysisEngine', () => {
       // シーケンシャル実行
       engine.configure({ parallelExecution: false });
       const sequentialStart = Date.now();
-      await engine.analyze('/test/path');
+      await engine.analyze('./test/fixtures');
       const sequentialTime = Date.now() - sequentialStart;
 
       // パラレル実行
       engine.configure({ parallelExecution: true });
       const parallelStart = Date.now();
-      await engine.analyze('/test/path');
+      await engine.analyze('./test/fixtures');
       const parallelTime = Date.now() - parallelStart;
 
       // パラレル実行の方が速いことを確認

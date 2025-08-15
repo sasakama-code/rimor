@@ -28,10 +28,10 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       const report = monitor.endSession();
       
       expect(report).toBeDefined();
-      expect(report.totalTime).toBeGreaterThanOrEqual(0);
-      expect(report.totalMemory).toBeGreaterThanOrEqual(0);
+      expect(report.totalMetrics.processingTime).toBeGreaterThanOrEqual(0);
+      expect(report.totalMetrics.memoryUsage.heapUsed).toBeGreaterThanOrEqual(0);
       expect(report.summary).toBeDefined();
-      expect(report.summary.totalPluginExecutions).toBe(0);
+      expect(report.summary.totalPlugins).toBe(0);
     });
   });
 
@@ -50,11 +50,11 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       
       const endTime = Date.now();
       const duration = endTime - startTime;
-      monitor.endPluginExecution(id, pluginName, filePath, duration, 0);
+      monitor.endPluginExecution(pluginName, filePath, id, []);
       
       const report = monitor.endSession();
-      expect(report.totalTime).toBeGreaterThanOrEqual(expectedDuration - 10); // 誤差許容
-      expect(report.totalTime).toBeLessThan(expectedDuration + 50); // 妥当な範囲内
+      expect(report.totalMetrics.processingTime).toBeGreaterThanOrEqual(expectedDuration - 10); // 誤差許容
+      expect(report.totalMetrics.processingTime).toBeLessThan(expectedDuration + 50); // 妥当な範囲内
     });
 
     it('複数プラグインの実行を同時に測定する', async () => {
@@ -69,23 +69,23 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       const id1 = monitor.startPluginExecution(plugin1, file);
       await new Promise(resolve => setTimeout(resolve, 10));
       const duration1 = Date.now() - start1;
-      monitor.endPluginExecution(id1, plugin1, file, duration1, 100);
+      monitor.endPluginExecution(plugin1, file, id1, []);
       
       const start2 = Date.now();
       const id2 = monitor.startPluginExecution(plugin2, file);
       await new Promise(resolve => setTimeout(resolve, 5));
       const duration2 = Date.now() - start2;
-      monitor.endPluginExecution(id2, plugin2, file, duration2, 50);
+      monitor.endPluginExecution(plugin2, file, id2, []);
       
       const start3 = Date.now();
       const id3 = monitor.startPluginExecution(plugin3, file);
       await new Promise(resolve => setTimeout(resolve, 5));
       const duration3 = Date.now() - start3;
-      monitor.endPluginExecution(id3, plugin3, file, duration3, 25);
+      monitor.endPluginExecution(plugin3, file, id3, []);
       
       const report = monitor.endSession();
-      expect(report.summary.totalPluginExecutions).toBe(3);
-      expect(report.totalTime).toBeGreaterThanOrEqual(20);
+      expect(report.summary.totalPlugins).toBe(3);
+      expect(report.totalMetrics.processingTime).toBeGreaterThanOrEqual(20);
     });
 
     it('複数プラグインのパフォーマンスを正しく記録する', async () => {
@@ -100,19 +100,19 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       const id1 = monitor.startPluginExecution(plugin1, file);
       await new Promise(resolve => setTimeout(resolve, 5));
       const duration1 = Date.now() - start1;
-      monitor.endPluginExecution(id1, plugin1, file, duration1, 1000);
+      monitor.endPluginExecution(plugin1, file, id1, []);
       
       // 2番目のプラグイン実行
       const start2 = Date.now();
       const id2 = monitor.startPluginExecution(plugin2, file);
       await new Promise(resolve => setTimeout(resolve, 5));
       const duration2 = Date.now() - start2;
-      monitor.endPluginExecution(id2, plugin2, file, duration2, 500);
+      monitor.endPluginExecution(plugin2, file, id2, []);
       
       const report = monitor.endSession();
-      expect(report.summary.totalPluginExecutions).toBe(2);
-      expect(report.totalTime).toBeGreaterThanOrEqual(10);
-      expect(report.summary.totalMemoryUsed).toBeGreaterThan(0);
+      expect(report.summary.totalPlugins).toBe(2);
+      expect(report.totalMetrics.processingTime).toBeGreaterThanOrEqual(10);
+      expect(report.summary.memoryPeakUsage).toBeGreaterThan(0);
     });
   });
 
@@ -132,16 +132,16 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
         const id = monitor.startPluginExecution(plugin.name, 'test.ts');
         await new Promise(resolve => setTimeout(resolve, plugin.delay));
         const duration = Date.now() - start;
-        monitor.endPluginExecution(id, plugin.name, 'test.ts', duration, 1000);
+        monitor.endPluginExecution(plugin.name, 'test.ts', id, []);
       }
       
       const report = monitor.endSession();
       
       expect(report).toBeDefined();
-      expect(report.summary.totalPluginExecutions).toBe(3);
+      expect(report.summary.totalPlugins).toBe(3);
       expect(report.summary.fastestPlugin).toBeDefined();
       expect(report.summary.slowestPlugin).toBeDefined();
-      expect(report.totalTime).toBeGreaterThanOrEqual(40);
+      expect(report.totalMetrics.processingTime).toBeGreaterThanOrEqual(40);
     });
 
     it('詳細レポートの表示メソッドが正しく動作する', () => {
@@ -161,10 +161,10 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       // いくつかのプラグインを実行
       const id1 = monitor.startPluginExecution('before-reset', 'test.ts');
       await new Promise(resolve => setTimeout(resolve, 10));
-      monitor.endPluginExecution(id1, 'before-reset', 'test.ts', 10, 100);
+      monitor.endPluginExecution('before-reset', 'test.ts', id1, []);
       
       const reportBefore = monitor.endSession();
-      expect(reportBefore.summary.totalPluginExecutions).toBe(1);
+      expect(reportBefore.summary.totalPlugins).toBe(1);
       
       // リセット
       monitor.reset();
@@ -173,10 +173,10 @@ describe('PerformanceMonitor - パフォーマンス測定の実質的検証', (
       monitor.startSession();
       const id2 = monitor.startPluginExecution('after-reset', 'test2.ts');
       await new Promise(resolve => setTimeout(resolve, 5));
-      monitor.endPluginExecution(id2, 'after-reset', 'test2.ts', 5, 50);
+      monitor.endPluginExecution('after-reset', 'test2.ts', id2, []);
       
       const reportAfter = monitor.endSession();
-      expect(reportAfter.summary.totalPluginExecutions).toBe(1);
+      expect(reportAfter.summary.totalPlugins).toBe(1);
     });
 
     it('シングルトンパターンが正しく動作する', () => {

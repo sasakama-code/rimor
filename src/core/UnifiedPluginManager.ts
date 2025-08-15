@@ -164,6 +164,19 @@ export class UnifiedPluginManager {
   }
 
   /**
+   * 後方互換性のためのエイリアス
+   * テストから使用される
+   */
+  async run(filePath: string): Promise<{ issues: Issue[]; errors?: Array<{ pluginName: string; error: string }> }> {
+    const issues = await this.runLegacyPlugins(filePath);
+    const errors: Array<{ pluginName: string; error: string }> = [];
+    
+    // エラーハンドリング（必要に応じて追加）
+    
+    return { issues, errors: errors.length > 0 ? errors : undefined };
+  }
+
+  /**
    * 品質分析の実行
    * pluginManagerExtended.tsの機能を継承
    */
