@@ -1,4 +1,4 @@
-import { Analyzer } from '../../src/core/analyzer';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
 import { IPlugin, Issue } from '../../src/core/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -20,7 +20,7 @@ class MockPlugin implements IPlugin {
   }
 }
 
-describe('Analyzer', () => {
+describe('UnifiedAnalysisEngine (Analyzer backward compatibility)', () => {
   const testDir = './test-fixtures-analyzer';
   
   beforeEach(async () => {
@@ -36,7 +36,7 @@ describe('Analyzer', () => {
     await fs.writeFile(path.join(testDir, 'src', 'example.ts'), 'export const foo = 1;');
     await fs.writeFile(path.join(testDir, 'src', 'example.test.ts'), 'test("foo", () => {});');
     
-    const analyzer = new Analyzer();
+    const analyzer = new UnifiedAnalysisEngine();
     analyzer.registerPlugin(new MockPlugin('test-existence'));
     
     const results = await analyzer.analyze(testDir);
@@ -48,7 +48,7 @@ describe('Analyzer', () => {
   });
   
   it('should handle empty directories', async () => {
-    const analyzer = new Analyzer();
+    const analyzer = new UnifiedAnalysisEngine();
     analyzer.registerPlugin(new MockPlugin('test-existence'));
     
     const results = await analyzer.analyze(testDir);
@@ -61,7 +61,7 @@ describe('Analyzer', () => {
   it('should run multiple plugins', async () => {
     await fs.writeFile(path.join(testDir, 'src', 'example.ts'), 'export const foo = 1;');
     
-    const analyzer = new Analyzer();
+    const analyzer = new UnifiedAnalysisEngine();
     analyzer.registerPlugin(new MockPlugin('plugin1'));
     analyzer.registerPlugin(new MockPlugin('plugin2'));
     

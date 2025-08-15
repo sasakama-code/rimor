@@ -1,4 +1,4 @@
-import { Analyzer, AnalysisResult } from '../../core/analyzer';
+import { UnifiedAnalysisEngine, BasicAnalysisResult } from '../../core/UnifiedAnalysisEngine';
 import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
@@ -37,7 +37,7 @@ export interface AIOutputOptions {
  */
 export class AIOutputCommand {
   private reportEngine: UnifiedReportEngine;
-  private analyzer!: Analyzer | ParallelAnalyzer | CachedAnalyzer;
+  private analyzer!: UnifiedAnalysisEngine | ParallelAnalyzer | CachedAnalyzer;
   private config: RimorConfig | null = null;
 
   constructor() {
@@ -204,7 +204,7 @@ export class AIOutputCommand {
         enableStats: options.verbose
       });
     } else {
-      this.analyzer = new Analyzer();
+      this.analyzer = new UnifiedAnalysisEngine();
     }
     
     // プラグインの動的登録
@@ -235,10 +235,10 @@ export class AIOutputCommand {
   }
 
   /**
-   * スコアリング情報でAnalysisResultを拡張
+   * スコアリング情報でBasicAnalysisResultを拡張
    */
   private async enhanceWithScoring(
-    result: AnalysisResult, 
+    result: BasicAnalysisResult, 
     targetPath: string, 
     options: AIOutputOptions
   ): Promise<EnhancedAnalysisResult> {
@@ -389,7 +389,7 @@ export class AIOutputCommand {
   /**
    * 従来の分析結果をプラグイン結果形式に変換
    */
-  private convertToPluginResults(result: AnalysisResult, targetPath: string): Map<string, PluginResult[]> {
+  private convertToPluginResults(result: BasicAnalysisResult, targetPath: string): Map<string, PluginResult[]> {
     // 簡易版: 空のMapを返す
     return new Map<string, PluginResult[]>();
   }

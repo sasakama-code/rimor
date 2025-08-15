@@ -9,8 +9,7 @@ import {
   Improvement,
   PluginResult
 } from './types';
-import { PluginManager } from './pluginManager';
-import { PluginManagerExtended } from './pluginManagerExtended';
+import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { findTestFiles } from './fileDiscovery';
 import { debug } from '../utils/debug';
 import * as fs from 'fs/promises';
@@ -102,14 +101,14 @@ export interface AnalysisOptions {
  * 統一分析エンジンクラス
  */
 export class UnifiedAnalysisEngine {
-  private legacyPluginManager: PluginManager;
-  private qualityPluginManager: PluginManagerExtended;
+  private legacyPluginManager: UnifiedPluginManager;
+  private qualityPluginManager: UnifiedPluginManager;
   private configuration: AnalysisOptions;
   private customPlugins: Map<string, IPlugin | ITestQualityPlugin>;
 
   constructor() {
-    this.legacyPluginManager = new PluginManager();
-    this.qualityPluginManager = new PluginManagerExtended();
+    this.legacyPluginManager = new UnifiedPluginManager();
+    this.qualityPluginManager = new UnifiedPluginManager();
     this.customPlugins = new Map();
     this.configuration = {
       timeout: DEFAULT_TIMEOUT_MS,
@@ -251,7 +250,7 @@ export class UnifiedAnalysisEngine {
    * ファイルに対してプラグインを実行（Extract Method）
    */
   private async runPluginsForFile(file: string): Promise<{ issues: Issue[], errors: Array<{ pluginName: string; error: string }> }> {
-    const plugins = this.legacyPluginManager.getPlugins();
+    const plugins = this.legacyPluginManager.getLegacyPlugins();
     const issues: Issue[] = [];
     const errors: Array<{ pluginName: string; error: string }> = [];
 
@@ -451,7 +450,7 @@ export class UnifiedAnalysisEngine {
    * 品質プラグインの取得
    */
   getQualityPlugins(): ITestQualityPlugin[] {
-    return this.qualityPluginManager.getPlugins();
+    return this.qualityPluginManager.getQualityPlugins();
   }
 
   /**

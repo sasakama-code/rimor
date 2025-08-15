@@ -1,4 +1,4 @@
-import { Analyzer } from '../../core/analyzer';
+import { UnifiedAnalysisEngine } from '../../core/UnifiedAnalysisEngine';
 import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
@@ -29,7 +29,7 @@ export interface AnalyzeOptions {
 }
 
 export class AnalyzeCommand {
-  private analyzer!: Analyzer | ParallelAnalyzer | CachedAnalyzer;
+  private analyzer!: UnifiedAnalysisEngine | ParallelAnalyzer | CachedAnalyzer;
   private config: RimorConfig | null = null;
   private cliSecurity: CLISecurity;
 
@@ -58,7 +58,7 @@ export class AnalyzeCommand {
       });
     } else {
       // キャッシュ無効で順次処理の場合
-      this.analyzer = new Analyzer();
+      this.analyzer = new UnifiedAnalysisEngine();
     }
     
     // 設定に基づいて動的にプラグインを登録

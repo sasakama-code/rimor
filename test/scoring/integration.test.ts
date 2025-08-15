@@ -1,7 +1,7 @@
 import { ScoreAggregator } from '../../src/scoring/aggregator';
 import { ScoreCalculatorV2 } from '../../src/scoring/calculator';
-import { PluginManager } from '../../src/core/pluginManager';
-import { Analyzer } from '../../src/core/analyzer';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
 import { 
   PluginResult,
   WeightConfig,
@@ -13,14 +13,14 @@ import path from 'path';
 describe('Scoring System Integration', () => {
   let calculator: ScoreCalculatorV2;
   let aggregator: ScoreAggregator;
-  let pluginManager: PluginManager;
-  let analyzer: Analyzer;
+  let pluginManager: UnifiedPluginManager;
+  let analyzer: UnifiedAnalysisEngine;
 
   beforeEach(() => {
     calculator = new ScoreCalculatorV2();
     aggregator = new ScoreAggregator(calculator);
-    pluginManager = new PluginManager();
-    analyzer = new Analyzer();
+    pluginManager = new UnifiedPluginManager();
+    analyzer = new UnifiedAnalysisEngine();
   });
 
   describe('End-to-End Workflow', () => {

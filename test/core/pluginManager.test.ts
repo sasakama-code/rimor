@@ -1,4 +1,4 @@
-import { PluginManager } from '../../src/core/pluginManager';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
 import { IPlugin, Issue } from '../../src/core/types';
 
 class TestPlugin implements IPlugin {
@@ -9,9 +9,9 @@ class TestPlugin implements IPlugin {
   }
 }
 
-describe('PluginManager', () => {
+describe('PluginManager (後方互換性テスト)', () => {
   it('should register and run single plugin', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const issues: Issue[] = [
       { type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
@@ -24,7 +24,7 @@ describe('PluginManager', () => {
   });
   
   it('should run multiple plugins and combine results', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const issues1: Issue[] = [
       { type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
@@ -42,7 +42,7 @@ describe('PluginManager', () => {
   });
   
   it('should handle plugin errors gracefully', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const errorPlugin: IPlugin = {
       name: 'error-plugin',
       analyze: async () => {

@@ -4,7 +4,7 @@
  */
 
 import { IPlugin, Issue } from './types';
-import { PluginManager } from './pluginManager';
+import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -28,11 +28,11 @@ export interface ParallelOptions {
 }
 
 export class ParallelAnalyzer {
-  private pluginManager: PluginManager;
+  private pluginManager: UnifiedPluginManager;
   private options: Required<ParallelOptions>;
   
   constructor(options: ParallelOptions = {}) {
-    this.pluginManager = new PluginManager();
+    this.pluginManager = new UnifiedPluginManager();
     this.options = {
       batchSize: options.batchSize ?? 10,
       maxConcurrency: options.maxConcurrency ?? 4,

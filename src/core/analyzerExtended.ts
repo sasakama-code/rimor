@@ -15,7 +15,7 @@ import {
   QualityScore,
   Improvement
 } from './types';
-import { AnalysisOptions } from './pluginManagerExtended';
+import { AnalysisOptions } from './UnifiedPluginManager';
 
 /**
  * Legacy ExtendedAnalysisResult for backward compatibility

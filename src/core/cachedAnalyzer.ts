@@ -4,7 +4,7 @@
  */
 
 import { IPlugin, Issue } from './types';
-import { PluginManager } from './pluginManager';
+import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { CacheManager } from './cacheManager';
 import { PerformanceMonitor, PerformanceReport } from './performanceMonitor';
 import { errorHandler } from '../utils/errorHandler';
@@ -38,13 +38,13 @@ export interface CachedAnalysisOptions {
 }
 
 export class CachedAnalyzer {
-  private pluginManager: PluginManager;
+  private pluginManager: UnifiedPluginManager;
   private cacheManager: CacheManager;
   private performanceMonitor: PerformanceMonitor;
   private options: Required<CachedAnalysisOptions>;
   
   constructor(options: CachedAnalysisOptions = {}) {
-    this.pluginManager = new PluginManager();
+    this.pluginManager = new UnifiedPluginManager();
     this.performanceMonitor = PerformanceMonitor.getInstance();
     this.options = {
       enableCache: options.enableCache ?? true,
@@ -95,7 +95,7 @@ export class CachedAnalyzer {
       }
       
       // Phase 2: キャッシュ対応分析
-      const registeredPlugins = this.pluginManager.getRegisteredPlugins();
+      const registeredPlugins = this.pluginManager.getLegacyPlugins();
       
       for (const filePath of files) {
         const fileIssues = await this.analyzeFileWithCache(filePath, registeredPlugins);
