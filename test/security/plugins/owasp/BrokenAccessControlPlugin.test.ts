@@ -163,7 +163,9 @@ describe('BrokenAccessControlPlugin', () => {
       const plugin = new BrokenAccessControlPlugin();
       const evaluation = {
         overall: 30,
-        security: 30
+        security: 30,
+        dimensions: {},
+        confidence: 0.8
       };
       
       const result = plugin.suggestImprovements(evaluation);
@@ -176,6 +178,8 @@ describe('BrokenAccessControlPlugin', () => {
       const evaluation = {
         overall: 30,
         security: 30,
+        dimensions: {},
+        confidence: 0.8,
         details: {
           message: 'アクセス制御テストが検出されませんでした'
         }
@@ -192,6 +196,8 @@ describe('BrokenAccessControlPlugin', () => {
       const evaluation = {
         overall: 80,
         security: 80,
+        dimensions: {},
+        confidence: 0.9,
         details: {
           message: 'アクセス制御テストが適切に実装されています'
         }

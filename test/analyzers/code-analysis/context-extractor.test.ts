@@ -36,10 +36,10 @@ describe('AdvancedCodeContextAnalyzer', () => {
     PathSecurity.safeResolve = jest.fn((filePath) => filePath);
     
     // 各アナライザーのモック設定
-    const { LanguageAnalyzer } = require('../../../src/analyzers/code-context/language');
-    const { ScopeAnalyzer } = require('../../../src/analyzers/code-context/scope');
-    const { FileAnalyzer } = require('../../../src/analyzers/code-context/file');
-    const { CodeContextUtils } = require('../../../src/analyzers/code-context/utils');
+    const { LanguageAnalyzer } = require('../../../src/analyzers/code-analysis/language-parser');
+    const { ScopeAnalyzer } = require('../../../src/analyzers/code-analysis/scope-analyzer');
+    const { FileAnalyzer } = require('../../../src/analyzers/code-analysis/file-analyzer');
+    const { CodeContextUtils } = require('../../../src/analyzers/code-analysis/utils');
     
     // LanguageAnalyzerのモック
     LanguageAnalyzer.prototype.detectLanguage = jest.fn().mockReturnValue('typescript');

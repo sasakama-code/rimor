@@ -22,15 +22,15 @@ describe('CircularDependencyDetector', () => {
           file: 'a.ts',
           imports: ['b.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['b.ts'],
+          dependedBy: []
         },
         {
           file: 'b.ts',
           imports: ['a.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['a.ts'],
+          dependedBy: []
         }
       ];
 
@@ -50,22 +50,22 @@ describe('CircularDependencyDetector', () => {
           file: 'a.ts',
           imports: ['b.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['b.ts'],
+          dependedBy: []
         },
         {
           file: 'b.ts',
           imports: ['c.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['c.ts'],
+          dependedBy: []
         },
         {
           file: 'c.ts',
           imports: ['a.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['a.ts'],
+          dependedBy: []
         }
       ];
 
@@ -86,22 +86,22 @@ describe('CircularDependencyDetector', () => {
           file: 'a.ts',
           imports: ['b.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['b.ts'],
+          dependedBy: []
         },
         {
           file: 'b.ts',
           imports: ['c.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['c.ts'],
+          dependedBy: []
         },
         {
           file: 'c.ts',
           imports: [],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: [],
+          dependedBy: []
         }
       ];
 
@@ -120,30 +120,30 @@ describe('CircularDependencyDetector', () => {
           file: 'a.ts',
           imports: ['b.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['b.ts'],
+          dependedBy: []
         },
         {
           file: 'b.ts',
           imports: ['a.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: ['a.ts'],
+          dependedBy: []
         },
         // 第2の循環
         {
           file: 'x.ts',
           imports: ['y.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: [],
+          dependedBy: []
         },
         {
           file: 'y.ts',
           imports: ['x.ts'],
           exports: [],
-          importedBy: [],
-          packageImports: []
+          dependsOn: [],
+          dependedBy: []
         }
       ];
 
