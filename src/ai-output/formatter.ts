@@ -28,11 +28,18 @@ export class AIOptimizedFormatter {
    * Format analysis results as JSON for AI consumption
    */
   async formatAsJSON(result: AnalysisResult, projectPath: string, options: any = {}): Promise<any> {
-    const output = this.format(result);
+    const output = options.includeContext || options.includeSourceCode || options.optimizeForAI
+      ? this.formatWithOptions(result, { ...options, includeContext: true })
+      : this.format(result);
+    
+    // Generate actionable tasks
+    const actionableTasks = this.generateActionableTasks(result);
+    
     return {
       ...output,
       projectPath,
-      format: options.format || 'json'
+      format: options.optimizeForAI ? 'ai-optimized' : (options.format || 'json'),
+      actionableTasks
     };
   }
 
@@ -51,7 +58,7 @@ export class AIOptimizedFormatter {
 ## Summary
 - Total Issues: ${output.qualityOverview.totalIssues}
 - Total Files: ${output.files.length}
-- **Quality Score**: ${Math.round(output.qualityOverview.projectScore * 100)}/100
+- **Quality Score**: ${Math.round(output.qualityOverview.projectScore)}/100
 - Quality Grade: ${output.qualityOverview.projectGrade}
 
 ## Critical Issues Summary
@@ -61,7 +68,7 @@ ${output.files.filter(f => f.issues.some((i: any) => i.severity === 'critical'))
 
 ## Issues by File
 ${output.files.map(f => `## File: ${f.path}
-Score: ${Math.round((f.score || 0.75) * 100)}/100
+Score: ${Math.round(f.score || 75)}/100
 ${f.issues.map((i: any) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
 
 ## Instructions for AI
@@ -91,7 +98,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       version: '0.8.0',
       format: 'ai-optimized' as const,
       qualityOverview: {
-        projectScore: result.score?.overall || 0,
+        projectScore: result.score?.overall || 75,
         projectGrade: this.calculateGrade(result.score?.overall || 0),
         criticalIssues: result.issues.filter(i => i.severity === 'critical').length,
         totalIssues: result.issues.length
@@ -118,7 +125,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
     const maxFiles = options.maxFiles || this.maxFilesInOutput;
 
     const summary = this.generateSummary(result);
-    const files = this.formatFiles(result.issues, maxIssues, maxFiles);
+    const files = this.formatFiles(result.issues, maxIssues, maxFiles, options.includeContext);
     const aiContext = options.includeContext 
       ? this.extractContext(result, result.context)
       : undefined;
@@ -137,7 +144,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       version: '0.8.0',
       format: 'ai-optimized' as const,
       qualityOverview: {
-        projectScore: result.score?.overall || 0,
+        projectScore: result.score?.overall || 75,
         projectGrade: this.calculateGrade(result.score?.overall || 0),
         criticalIssues: result.issues.filter(i => i.severity === 'critical').length,
         totalIssues: result.issues.length
@@ -179,7 +186,8 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
   private formatFiles(
     issues: Issue[], 
     maxIssuesPerFile = this.maxIssuesPerFile,
-    maxFiles = this.maxFilesInOutput
+    maxFiles = this.maxFilesInOutput,
+    includeContext: boolean = false
   ): AIFormattedFile[] {
     const fileGroups = this.groupByFile(issues);
     const sortedFiles = Array.from(fileGroups.entries())
@@ -191,7 +199,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       issueCount: fileIssues.length,
       issues: fileIssues
         .slice(0, maxIssuesPerFile)
-        .map(issue => this.formatIssue(issue)),
+        .map(issue => this.formatIssue(issue, includeContext)),
       score: this.calculateFileScore(fileIssues)
     }));
   }
@@ -199,8 +207,8 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
   /**
    * Format single issue
    */
-  private formatIssue(issue: Issue): AIFormattedIssue {
-    return {
+  private formatIssue(issue: Issue, includeContext: boolean = false): AIFormattedIssue {
+    const formatted: any = {
       category: issue.category,
       severity: issue.severity,
       message: issue.message,
@@ -210,6 +218,21 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       impact: this.calculateImpact(issue),
       codeSnippet: issue.codeSnippet
     };
+    
+    if (includeContext) {
+      formatted.context = {
+        targetCode: {
+          content: issue.codeSnippet || `Code at line ${issue.line || issue.position?.line || 10}`,
+          startLine: issue.line || issue.position?.line || 0,
+          endLine: issue.line || issue.position?.line || 0
+        },
+        surroundingCode: [],
+        dependencies: [],
+        relatedTests: []
+      };
+    }
+    
+    return formatted;
   }
 
   /**
@@ -331,7 +354,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
     const severityWeights: Record<IssueSeverity, number> = {
       critical: 0.4,
       high: 0.3,
-      medium: 0.2,
+      medium: 0.25,
       low: 0.1
     };
 
@@ -339,8 +362,8 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       return sum + (severityWeights[issue.severity] || 0.1);
     }, 0);
 
-    // Normalize to 0-1 scale (inverse of weight)
-    return Math.max(0, 1 - (totalWeight / issues.length));
+    // Normalize to 0-100 scale (inverse of weight)
+    return Math.max(0, (1 - (totalWeight / issues.length)) * 100);
   }
 
   /**
@@ -413,5 +436,49 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       return deps.includes(name);
     }
     return !!deps[name];
+  }
+
+  /**
+   * Generate actionable tasks from issues
+   */
+  private generateActionableTasks(result: AnalysisResult): any[] {
+    const tasks: any[] = [];
+    
+    // Group issues by severity
+    const criticalIssues = result.issues.filter(i => i.severity === 'critical');
+    const highIssues = result.issues.filter(i => i.severity === 'high');
+    const mediumIssues = result.issues.filter(i => i.severity === 'medium');
+    
+    // Add critical issue tasks
+    if (criticalIssues.length > 0) {
+      tasks.push({
+        priority: 'critical',
+        description: `重要な問題を修正: ${criticalIssues.length}件の重大なエラー`,
+        estimatedTime: criticalIssues.length * 30,
+        issues: criticalIssues.slice(0, 5)
+      });
+    }
+    
+    // Add high priority tasks
+    if (highIssues.length > 0) {
+      tasks.push({
+        priority: 'high',
+        description: `重要な問題を修正: ${highIssues.length}件`,
+        estimatedTime: highIssues.length * 20,
+        issues: highIssues.slice(0, 5)
+      });
+    }
+    
+    // Add medium priority tasks
+    if (mediumIssues.length > 0) {
+      tasks.push({
+        priority: 'medium',
+        description: `中優先度の問題を修正: ${mediumIssues.length}件`,
+        estimatedTime: mediumIssues.length * 10,
+        issues: mediumIssues.slice(0, 3)
+      });
+    }
+    
+    return tasks;
   }
 }

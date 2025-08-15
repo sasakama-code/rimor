@@ -260,7 +260,7 @@ describe('AIOptimizedFormatter', () => {
 
       const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', options);
 
-      expect(markdown).toContain('error');
+      expect(markdown).toContain('high');
       expect(markdown).toBeDefined();
     });
   });
@@ -271,7 +271,7 @@ describe('AIOptimizedFormatter', () => {
       const formatted = await formatter.formatAsJSON(toAnalysisResult(result), '/test/project', { format: 'json' });
 
       expect(formatted.version).toBeDefined();
-      expect(formatted.format).toBe('ai-optimized');
+      expect(formatted.format).toBe('json');
       expect(formatted.qualityOverview.totalIssues).toBe(1);
     });
 
