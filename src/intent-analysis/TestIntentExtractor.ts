@@ -51,6 +51,7 @@ interface Suggestion {
   impact: string;
   example?: string;
 }
+import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import { TreeSitterParser } from './TreeSitterParser';
 import { IntentPatternMatcher } from './IntentPatternMatcher';

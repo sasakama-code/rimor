@@ -519,6 +519,11 @@ export class UnifiedAnalysisEngine {
     return {
       overall,
       dimensions,
+      breakdown: {
+        completeness: dimensions.completeness,
+        correctness: dimensions.correctness,
+        maintainability: dimensions.maintainability
+      },
       confidence: totalWeight / pluginResults.length
     };
   }

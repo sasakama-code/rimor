@@ -15,6 +15,7 @@ import {
   TypeInferenceResult,
   MethodAnalysisResult
 } from '../types';
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { FlowGraph } from './flow';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
 import { compareTaintLevels } from '../types/taint';
@@ -246,6 +247,7 @@ export interface ComprehensiveAnalysisReport {
 /**
  * リスク評価
  */
+// Migrated to CoreTypes
 export interface RiskAssessment {
   overallRisk: 'low' | 'medium' | 'high' | 'critical';
   riskFactors: RiskFactor[];

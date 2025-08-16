@@ -185,6 +185,7 @@ export class AssertionExistencePlugin extends BasePlugin {
 
       if (!hasAssertions) {
         return [{
+          id: `assertion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: 'missing-assertion',
           severity: 'medium' as const,
           message: "アサーション（expect文など）が見つかりません",

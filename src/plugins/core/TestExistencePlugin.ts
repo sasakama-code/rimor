@@ -166,6 +166,7 @@ export class TestExistencePlugin extends BasePlugin {
     if (!exists) {
       const maskedPath = PathSecurity.toRelativeOrMasked(filePath);
       return [{
+        id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'missing-test',
         severity: 'high' as const,
         message: `テストファイルが存在しません: ${maskedPath}`,

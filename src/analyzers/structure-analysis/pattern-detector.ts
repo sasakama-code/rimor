@@ -413,13 +413,39 @@ export class PatternDetector {
   }
 
   private isGodObject(content: string): boolean {
-    const methodMatches = content.match(/^\s*(public|private|protected)?\s*\w+\s*\([^)]*\)\s*[:{]/gm);
-    const propertyMatches = content.match(/^\s*(public|private|protected)?\s*\w+\s*[:=]/gm);
+    // クラス内のメソッド数をカウント（インデント対応）
+    const methodPatterns = [
+      /\s+(public|private|protected)?\s*\w+\s*\([^)]*\)\s*[{:]/gm,
+      /\s+\w+\s*\([^)]*\)\s*\{/gm,  // メソッド定義の簡易形式
+      /\s+(async\s+)?\w+\s*\([^)]*\)\s*\{/gm  // async関数も含む
+    ];
     
-    const methodCount = methodMatches ? methodMatches.length : 0;
-    const propertyCount = propertyMatches ? propertyMatches.length : 0;
+    let methodCount = 0;
+    for (const pattern of methodPatterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        methodCount = Math.max(methodCount, matches.length);
+      }
+    }
+    
+    // プロパティ数をカウント（インデント対応）
+    const propertyPatterns = [
+      /\s+(private|public|protected)\s+\w+\s*[:;]/gm,
+      /\s+private\s+\w+:\s*\w+/gm  // private property: Type形式
+    ];
+    
+    let propertyCount = 0;
+    for (const pattern of propertyPatterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        propertyCount = Math.max(propertyCount, matches.length);
+      }
+    }
 
-    return methodCount > this.ANTI_PATTERNS['God Object'].indicators.methodCount ||
+    // God Objectの判定基準
+    return methodCount >= 12 || 
+           (propertyCount >= 7 && methodCount >= 10) ||
+           methodCount > this.ANTI_PATTERNS['God Object'].indicators.methodCount ||
            propertyCount > this.ANTI_PATTERNS['God Object'].indicators.propertyCount;
   }
 

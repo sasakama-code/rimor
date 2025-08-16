@@ -55,21 +55,25 @@ export class UsageAnalyzer {
     const packages = new Set<string>();
     
     // glob.syncの呼び出し（モック環境を考慮）
-    let files: string[];
-    const globResult = glob.sync(projectPath);
+    let files: string[] = [];
     
-    // glob.syncが配列を直接返す場合（モック環境）
-    if (Array.isArray(globResult)) {
-      files = globResult;
-    } else {
-      // 実環境では正しいパスパターンで再実行
-      try {
-        files = glob.sync(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
+    try {
+      // モック環境では、glob.syncが直接ファイルパスの配列を返すことがある
+      const globFunc = glob.sync as any;
+      
+      // まずパターンなしでglob.syncを呼び出す（モック環境）
+      if (typeof globFunc === 'function') {
+        const result = globFunc(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
           ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
         });
-      } catch (e) {
-        files = [];
+        
+        if (Array.isArray(result)) {
+          files = result;
+        }
       }
+    } catch (e) {
+      // エラーが発生した場合は空配列
+      files = [];
     }
 
     for (const file of files) {
@@ -93,21 +97,22 @@ export class UsageAnalyzer {
     const frequency = new Map<string, number>();
     
     // glob.syncの呼び出し（モック環境を考慮）
-    let files: string[];
-    const globResult = glob.sync(projectPath);
+    let files: string[] = [];
     
-    // glob.syncが配列を直接返す場合（モック環境）
-    if (Array.isArray(globResult)) {
-      files = globResult;
-    } else {
-      // 実環境では正しいパスパターンで再実行
-      try {
-        files = glob.sync(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
+    try {
+      const globFunc = glob.sync as any;
+      
+      if (typeof globFunc === 'function') {
+        const result = globFunc(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
           ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
         });
-      } catch (e) {
-        files = [];
+        
+        if (Array.isArray(result)) {
+          files = result;
+        }
       }
+    } catch (e) {
+      files = [];
     }
 
     for (const file of files) {
@@ -134,21 +139,22 @@ export class UsageAnalyzer {
     const locations: ImportLocation[] = [];
     
     // glob.syncの呼び出し（モック環境を考慮）
-    let files: string[];
-    const globResult = glob.sync(projectPath);
+    let files: string[] = [];
     
-    // glob.syncが配列を直接返す場合（モック環境）
-    if (Array.isArray(globResult)) {
-      files = globResult;
-    } else {
-      // 実環境では正しいパスパターンで再実行
-      try {
-        files = glob.sync(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
+    try {
+      const globFunc = glob.sync as any;
+      
+      if (typeof globFunc === 'function') {
+        const result = globFunc(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
           ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
         });
-      } catch (e) {
-        files = [];
+        
+        if (Array.isArray(result)) {
+          files = result;
+        }
       }
+    } catch (e) {
+      files = [];
     }
 
     for (const file of files) {
@@ -181,21 +187,22 @@ export class UsageAnalyzer {
     const deepImports: Array<{ path: string; depth: number }> = [];
     
     // glob.syncの呼び出し（モック環境を考慮）
-    let files: string[];
-    const globResult = glob.sync(projectPath);
+    let files: string[] = [];
     
-    // glob.syncが配列を直接返す場合（モック環境）
-    if (Array.isArray(globResult)) {
-      files = globResult;
-    } else {
-      // 実環境では正しいパスパターンで再実行
-      try {
-        files = glob.sync(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
+    try {
+      const globFunc = glob.sync as any;
+      
+      if (typeof globFunc === 'function') {
+        const result = globFunc(path.join(projectPath, '**/*.{js,ts,jsx,tsx}'), {
           ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
         });
-      } catch (e) {
-        files = [];
+        
+        if (Array.isArray(result)) {
+          files = result;
+        }
       }
+    } catch (e) {
+      files = [];
     }
 
     for (const file of files) {

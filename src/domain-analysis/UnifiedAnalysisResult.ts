@@ -382,7 +382,7 @@ function calculateStatistics(issues: BaseIssue[]): StaticAnalysisSection['statis
     bySeverity[severity] = (bySeverity[severity] || 0) + 1;
     
     // プラグイン別カウント
-    const plugin = issue.plugin || 'unknown';
+    const plugin = (issue as any).plugin || 'unknown';
     byPlugin[plugin] = (byPlugin[plugin] || 0) + 1;
     
     // ファイル別カウント

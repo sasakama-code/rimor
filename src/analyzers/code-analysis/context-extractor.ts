@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Issue } from '../../core/types';
+import { Issue, ExtendedIssue } from '../../core/types';
 import { 
   AnalysisOptions, 
   ExtractedCodeContext, 
@@ -136,7 +136,8 @@ export class AdvancedCodeContextAnalyzer {
     filePath: string,
     options: AnalysisOptions = {}
   ): Promise<ExtractedCodeContext> {
-    const issue: Issue = {
+    const issue: ExtendedIssue = {
+      id: `context-${Date.now()}`,
       type: 'context',
       filePath: filePath,
       file: filePath,

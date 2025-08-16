@@ -6,6 +6,7 @@
  * DRY原則: 共通処理の一元化
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import { RiskLevelMigrator } from './risk-level-migrator';
 
@@ -84,11 +85,11 @@ export function isRiskAboveThreshold(riskLevel: RiskLevel, threshold: RiskLevel)
  */
 export function getRiskColor(riskLevel: RiskLevel): string {
   const colors: Record<RiskLevel, string> = {
-    [RiskLevel.CRITICAL]: '#FF0000', // 赤
-    [RiskLevel.HIGH]: '#FF8800',     // オレンジ
-    [RiskLevel.MEDIUM]: '#FFCC00',   // 黄色
-    [RiskLevel.LOW]: '#88CC00',      // 黄緑
-    [RiskLevel.MINIMAL]: '#00CC00'   // 緑
+    [CoreTypes.RiskLevel.CRITICAL]: '#FF0000', // 赤
+    [CoreTypes.RiskLevel.HIGH]: '#FF8800',     // オレンジ
+    [CoreTypes.RiskLevel.MEDIUM]: '#FFCC00',   // 黄色
+    [CoreTypes.RiskLevel.LOW]: '#88CC00',      // 黄緑
+    [CoreTypes.RiskLevel.MINIMAL]: '#00CC00'   // 緑
   };
   return colors[riskLevel];
 }
@@ -100,11 +101,11 @@ export function getRiskColor(riskLevel: RiskLevel): string {
  */
 export function getRiskIcon(riskLevel: RiskLevel): string {
   const icons: Record<RiskLevel, string> = {
-    [RiskLevel.CRITICAL]: '🔴',
-    [RiskLevel.HIGH]: '🟠',
-    [RiskLevel.MEDIUM]: '🟡',
-    [RiskLevel.LOW]: '🟢',
-    [RiskLevel.MINIMAL]: '⚪'
+    [CoreTypes.RiskLevel.CRITICAL]: '🔴',
+    [CoreTypes.RiskLevel.HIGH]: '🟠',
+    [CoreTypes.RiskLevel.MEDIUM]: '🟡',
+    [CoreTypes.RiskLevel.LOW]: '🟢',
+    [CoreTypes.RiskLevel.MINIMAL]: '⚪'
   };
   return icons[riskLevel];
 }
@@ -116,11 +117,11 @@ export function getRiskIcon(riskLevel: RiskLevel): string {
  */
 export function getRiskLevelJapanese(riskLevel: RiskLevel): string {
   const japanese: Record<RiskLevel, string> = {
-    [RiskLevel.CRITICAL]: '致命的',
-    [RiskLevel.HIGH]: '高',
-    [RiskLevel.MEDIUM]: '中',
-    [RiskLevel.LOW]: '低',
-    [RiskLevel.MINIMAL]: '最小'
+    [CoreTypes.RiskLevel.CRITICAL]: '致命的',
+    [CoreTypes.RiskLevel.HIGH]: '高',
+    [CoreTypes.RiskLevel.MEDIUM]: '中',
+    [CoreTypes.RiskLevel.LOW]: '低',
+    [CoreTypes.RiskLevel.MINIMAL]: '最小'
   };
   return japanese[riskLevel];
 }

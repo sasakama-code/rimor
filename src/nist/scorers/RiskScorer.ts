@@ -9,6 +9,7 @@
  * Defensive Programming: 入力検証とエラーハンドリング
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import { 
   Threat, 
@@ -95,6 +96,7 @@ export interface RecommendedAction {
 /**
  * リスクアセスメント
  */
+// Migrated to CoreTypes
 export interface RiskAssessmentInfo {
   riskLevel: RiskLevel;
   score: number;
@@ -130,7 +132,7 @@ export class RiskScorer {
     // リスクマトリクス計算（NIST SP 800-30準拠）
     // CRITICALセキュリティとHIGH可能性の組み合わせはCRITICALになる
     if (vulnerability.severity === 'CRITICAL' && likelihoodScore >= 80) {
-      return RiskLevel.CRITICAL;
+      return CoreTypes.RiskLevel.CRITICAL;
     }
 
     // HIGHとHIGHの組み合わせはHIGHになるように調整
@@ -144,10 +146,10 @@ export class RiskScorer {
    */
   findHighestRisk(pairs: Array<{threat: Threat, vulnerability: Vulnerability}>): RiskLevel {
     if (!pairs || pairs.length === 0) {
-      return RiskLevel.MINIMAL;
+      return CoreTypes.RiskLevel.MINIMAL;
     }
 
-    let highestRisk = RiskLevel.MINIMAL;
+    let highestRisk = CoreTypes.RiskLevel.MINIMAL;
     const riskPriority = this.getRiskPriorityMap();
 
     for (const pair of pairs) {
@@ -256,19 +258,19 @@ export class RiskScorer {
     for (const risk of risks) {
       // リスクレベル別カウント
       switch (risk.riskLevel) {
-        case RiskLevel.CRITICAL:
+        case CoreTypes.RiskLevel.CRITICAL:
           counts.criticalCount++;
           break;
-        case RiskLevel.HIGH:
+        case CoreTypes.RiskLevel.HIGH:
           counts.highCount++;
           break;
-        case RiskLevel.MEDIUM:
+        case CoreTypes.RiskLevel.MEDIUM:
           counts.mediumCount++;
           break;
-        case RiskLevel.LOW:
+        case CoreTypes.RiskLevel.LOW:
           counts.lowCount++;
           break;
-        case RiskLevel.MINIMAL:
+        case CoreTypes.RiskLevel.MINIMAL:
           counts.minimalCount++;
           break;
       }
@@ -303,7 +305,7 @@ export class RiskScorer {
         categoryMap[risk.category] = {
           count: 0,
           averageScore: 0,
-          maxRiskLevel: RiskLevel.MINIMAL,
+          maxRiskLevel: CoreTypes.RiskLevel.MINIMAL,
           risks: []
         };
       }
@@ -377,7 +379,7 @@ export class RiskScorer {
     const actions: RecommendedAction[] = [];
 
     // CRITICALリスクの場合
-    if (riskAssessment.riskLevel === RiskLevel.CRITICAL) {
+    if (riskAssessment.riskLevel === CoreTypes.RiskLevel.CRITICAL) {
       actions.push({
         priority: 'IMMEDIATE',
         action: '直ちにシステムを隔離し、緊急対応チームを招集',
@@ -389,7 +391,7 @@ export class RiskScorer {
     // カテゴリ別の推奨アクション
     if (riskAssessment.category === 'INJECTION') {
       actions.push({
-        priority: riskAssessment.riskLevel === RiskLevel.CRITICAL ? 'IMMEDIATE' : 'HIGH',
+        priority: riskAssessment.riskLevel === CoreTypes.RiskLevel.CRITICAL ? 'IMMEDIATE' : 'HIGH',
         action: '入力検証とサニタイゼーションの実装',
         estimatedEffort: '4-8時間',
         expectedRiskReduction: 40
@@ -445,20 +447,20 @@ export class RiskScorer {
   }
 
   private scoreToRiskLevel(score: number): RiskLevel {
-    if (score >= 90) return RiskLevel.CRITICAL;
-    if (score >= 70) return RiskLevel.HIGH;
-    if (score >= 50) return RiskLevel.MEDIUM;
-    if (score >= 30) return RiskLevel.LOW;
-    return RiskLevel.MINIMAL;
+    if (score >= 90) return CoreTypes.RiskLevel.CRITICAL;
+    if (score >= 70) return CoreTypes.RiskLevel.HIGH;
+    if (score >= 50) return CoreTypes.RiskLevel.MEDIUM;
+    if (score >= 30) return CoreTypes.RiskLevel.LOW;
+    return CoreTypes.RiskLevel.MINIMAL;
   }
 
   private getRiskPriorityMap(): Record<RiskLevel, number> {
     return {
-      [RiskLevel.CRITICAL]: 5,
-      [RiskLevel.HIGH]: 4,
-      [RiskLevel.MEDIUM]: 3,
-      [RiskLevel.LOW]: 2,
-      [RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.CRITICAL]: 5,
+      [CoreTypes.RiskLevel.HIGH]: 4,
+      [CoreTypes.RiskLevel.MEDIUM]: 3,
+      [CoreTypes.RiskLevel.LOW]: 2,
+      [CoreTypes.RiskLevel.MINIMAL]: 1
     };
   }
 

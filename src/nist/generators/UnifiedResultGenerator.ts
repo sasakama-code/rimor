@@ -7,6 +7,7 @@
  * KISS原則: シンプルな統合フロー
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { PriorityEngine } from '../priority/PriorityEngine';
 import { TaintVulnerabilityAdapter } from '../adapters/TaintVulnerabilityAdapter';
 import { NistRiskEvaluator } from '../evaluators/NistRiskEvaluator';
@@ -334,16 +335,16 @@ export class UnifiedResultGenerator {
   private mapTaintLevelToRiskLevel(taintLevel: TaintLevel): RiskLevel {
     switch (taintLevel) {
       case TaintLevel.CRITICAL:
-        return RiskLevel.CRITICAL;
+        return CoreTypes.RiskLevel.CRITICAL;
       case TaintLevel.HIGH:
-        return RiskLevel.HIGH;
+        return CoreTypes.RiskLevel.HIGH;
       case TaintLevel.MEDIUM:
-        return RiskLevel.MEDIUM;
+        return CoreTypes.RiskLevel.MEDIUM;
       case TaintLevel.LOW:
-        return RiskLevel.LOW;
+        return CoreTypes.RiskLevel.LOW;
       case TaintLevel.SAFE:
       default:
-        return RiskLevel.MINIMAL;
+        return CoreTypes.RiskLevel.MINIMAL;
     }
   }
 
@@ -450,11 +451,11 @@ export class UnifiedResultGenerator {
    */
   private countRisksByLevel(taintResult: TaintAnalysisResult): Record<RiskLevel, number> {
     return {
-      [RiskLevel.CRITICAL]: taintResult.summary.criticalFlows,
-      [RiskLevel.HIGH]: taintResult.summary.highFlows,
-      [RiskLevel.MEDIUM]: taintResult.summary.mediumFlows,
-      [RiskLevel.LOW]: taintResult.summary.lowFlows,
-      [RiskLevel.MINIMAL]: 0
+      [CoreTypes.RiskLevel.CRITICAL]: taintResult.summary.criticalFlows,
+      [CoreTypes.RiskLevel.HIGH]: taintResult.summary.highFlows,
+      [CoreTypes.RiskLevel.MEDIUM]: taintResult.summary.mediumFlows,
+      [CoreTypes.RiskLevel.LOW]: taintResult.summary.lowFlows,
+      [CoreTypes.RiskLevel.MINIMAL]: 0
     };
   }
 
@@ -463,11 +464,11 @@ export class UnifiedResultGenerator {
    */
   private getRiskPriority(riskLevel: RiskLevel): number {
     const priorities: Record<RiskLevel, number> = {
-      [RiskLevel.CRITICAL]: 5,
-      [RiskLevel.HIGH]: 4,
-      [RiskLevel.MEDIUM]: 3,
-      [RiskLevel.LOW]: 2,
-      [RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.CRITICAL]: 5,
+      [CoreTypes.RiskLevel.HIGH]: 4,
+      [CoreTypes.RiskLevel.MEDIUM]: 3,
+      [CoreTypes.RiskLevel.LOW]: 2,
+      [CoreTypes.RiskLevel.MINIMAL]: 1
     };
     return priorities[riskLevel];
   }

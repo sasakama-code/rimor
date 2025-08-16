@@ -9,6 +9,7 @@
  * Defensive Programming: 入力検証とエラーハンドリング
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import { ImpactLevel } from '../types/nist-types';
 
@@ -249,19 +250,19 @@ export class ImpactEvaluator {
     let urgency: CriticalPathImpact['urgency'];
 
     if (criticalPath.businessValue === 'CRITICAL' && criticalPath.downTimeImpact === 'SEVERE') {
-      riskLevel = RiskLevel.CRITICAL;
+      riskLevel = CoreTypes.RiskLevel.CRITICAL;
       businessImpactScore = 95;
       urgency = 'IMMEDIATE';
     } else if (isHighValue && isSevereImpact) {
-      riskLevel = RiskLevel.HIGH;
+      riskLevel = CoreTypes.RiskLevel.HIGH;
       businessImpactScore = 85;
       urgency = 'URGENT';
     } else if (isHighValue || isSevereImpact) {
-      riskLevel = RiskLevel.MEDIUM;
+      riskLevel = CoreTypes.RiskLevel.MEDIUM;
       businessImpactScore = 70;
       urgency = 'PLANNED';
     } else {
-      riskLevel = RiskLevel.LOW;
+      riskLevel = CoreTypes.RiskLevel.LOW;
       businessImpactScore = 40;
       urgency = 'DEFERRED';
     }
@@ -354,14 +355,14 @@ export class ImpactEvaluator {
     // GDPR等の重要な規制
     if (compliance.regulation === 'GDPR' || compliance.regulation === 'HIPAA') {
       if (compliance.violationType === 'DATA_BREACH' && compliance.affectedRecords >= 1000) {
-        riskLevel = RiskLevel.CRITICAL;
+        riskLevel = CoreTypes.RiskLevel.CRITICAL;
         reputationalDamage = 'SEVERE';
       } else {
-        riskLevel = RiskLevel.HIGH;
+        riskLevel = CoreTypes.RiskLevel.HIGH;
         reputationalDamage = 'HIGH';
       }
     } else {
-      riskLevel = RiskLevel.MEDIUM;
+      riskLevel = CoreTypes.RiskLevel.MEDIUM;
       reputationalDamage = 'MODERATE';
     }
 
@@ -442,7 +443,7 @@ export class ImpactEvaluator {
       risks.push(pathImpact.riskLevel);
       totalScore += pathImpact.businessImpactScore;
       scoreCount++;
-      if (pathImpact.riskLevel === RiskLevel.CRITICAL) {
+      if (pathImpact.riskLevel === CoreTypes.RiskLevel.CRITICAL) {
         primaryConcern = 'クリティカルパスへの重大な影響';
         recommendations.push('クリティカルパスの冗長化と復旧計画の策定');
       }
@@ -452,7 +453,7 @@ export class ImpactEvaluator {
     if (affectedAssets && affectedAssets.length > 0) {
       const scope = this.calculateImpactScope(affectedAssets);
       if (scope.criticalAssets > 0) {
-        risks.push(RiskLevel.HIGH);
+        risks.push(CoreTypes.RiskLevel.HIGH);
         recommendations.push('重要資産の保護強化');
       }
     }
@@ -461,11 +462,11 @@ export class ImpactEvaluator {
     if (downtime) {
       const financial = this.calculateFinancialImpact(downtime);
       if (financial.severity === 'CRITICAL') {
-        risks.push(RiskLevel.CRITICAL);
+        risks.push(CoreTypes.RiskLevel.CRITICAL);
         primaryConcern = '重大な財務損失のリスク';
         recommendations.push('ダウンタイム最小化対策の実施');
       } else if (financial.severity === 'HIGH') {
-        risks.push(RiskLevel.HIGH);
+        risks.push(CoreTypes.RiskLevel.HIGH);
       }
     }
 
@@ -473,7 +474,7 @@ export class ImpactEvaluator {
     if (compliance) {
       const complianceImpact = this.assessComplianceImpact(compliance);
       risks.push(complianceImpact.riskLevel);
-      if (complianceImpact.riskLevel === RiskLevel.CRITICAL) {
+      if (complianceImpact.riskLevel === CoreTypes.RiskLevel.CRITICAL) {
         primaryConcern = '規制違反による重大なリスク';
         recommendations.push('コンプライアンス体制の強化');
       }
@@ -483,7 +484,7 @@ export class ImpactEvaluator {
     if (incident) {
       const reputation = this.assessReputationImpact(incident);
       if (reputation.severity === 'HIGH') {
-        risks.push(RiskLevel.HIGH);
+        risks.push(CoreTypes.RiskLevel.HIGH);
         recommendations.push('危機管理計画の策定とPR対策');
       }
     }
@@ -569,15 +570,15 @@ export class ImpactEvaluator {
     // リスクレベルの決定
     let riskLevel: RiskLevel;
     if (impacts.business.severity === 'CRITICAL' || combinedScore >= 90) {
-      riskLevel = RiskLevel.CRITICAL;
+      riskLevel = CoreTypes.RiskLevel.CRITICAL;
     } else if (combinedScore >= 70) {
-      riskLevel = RiskLevel.HIGH;
+      riskLevel = CoreTypes.RiskLevel.HIGH;
     } else if (combinedScore >= 50) {
-      riskLevel = RiskLevel.MEDIUM;
+      riskLevel = CoreTypes.RiskLevel.MEDIUM;
     } else if (combinedScore >= 30) {
-      riskLevel = RiskLevel.LOW;
+      riskLevel = CoreTypes.RiskLevel.LOW;
     } else {
-      riskLevel = RiskLevel.MINIMAL;
+      riskLevel = CoreTypes.RiskLevel.MINIMAL;
     }
 
     return {
@@ -752,19 +753,19 @@ export class ImpactEvaluator {
    */
   private getHighestRiskLevel(risks: RiskLevel[]): RiskLevel {
     if (risks.length === 0) {
-      return RiskLevel.MINIMAL;
+      return CoreTypes.RiskLevel.MINIMAL;
     }
 
     const priority: Record<RiskLevel, number> = {
-      [RiskLevel.CRITICAL]: 5,
-      [RiskLevel.HIGH]: 4,
-      [RiskLevel.MEDIUM]: 3,
-      [RiskLevel.LOW]: 2,
-      [RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.CRITICAL]: 5,
+      [CoreTypes.RiskLevel.HIGH]: 4,
+      [CoreTypes.RiskLevel.MEDIUM]: 3,
+      [CoreTypes.RiskLevel.LOW]: 2,
+      [CoreTypes.RiskLevel.MINIMAL]: 1
     };
 
     return risks.reduce((highest, current) => {
       return priority[current] > priority[highest] ? current : highest;
-    }, RiskLevel.MINIMAL);
+    }, CoreTypes.RiskLevel.MINIMAL);
   }
 }

@@ -103,8 +103,12 @@ export class CachedAnalyzer {
         
         if (fileIssues.fromCache) {
           filesFromCache++;
+          this.lastCacheStats.filesFromCache++;
+          this.lastCacheStats.cacheHits++;
         } else {
           filesAnalyzed++;
+          this.lastCacheStats.filesAnalyzed++;
+          this.lastCacheStats.cacheMisses++;
         }
       }
       
@@ -515,8 +519,12 @@ export class CachedAnalyzer {
         
         if (fileIssues.fromCache) {
           filesFromCache++;
+          this.lastCacheStats.filesFromCache++;
+          this.lastCacheStats.cacheHits++;
         } else {
           filesAnalyzed++;
+          this.lastCacheStats.filesAnalyzed++;
+          this.lastCacheStats.cacheMisses++;
         }
       }
       

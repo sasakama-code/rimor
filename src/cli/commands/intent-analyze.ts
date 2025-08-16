@@ -4,6 +4,7 @@
  * TDD Green Phase - テストを通す最小限の実装
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { TreeSitterParser } from '../../intent-analysis/TreeSitterParser';
 import { TestIntentExtractor } from '../../intent-analysis/TestIntentExtractor';
 import { TestIntentReporter } from '../../intent-analysis/TestIntentReporter';

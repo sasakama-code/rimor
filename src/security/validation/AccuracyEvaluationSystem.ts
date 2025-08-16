@@ -184,6 +184,7 @@ export interface TestCaseAccuracyResult {
 /**
  * 問題種別精度
  */
+// Migrated to CoreTypes
 export interface IssueTypeAccuracy {
   /** 問題の種別 */
   issueType: string;

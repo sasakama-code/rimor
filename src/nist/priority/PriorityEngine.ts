@@ -8,6 +8,7 @@
  * Defensive Programming: 入力検証とエラーハンドリング
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import {
   RiskPriorityRequest,
@@ -123,11 +124,11 @@ export class PriorityEngine {
    */
   private calculateBaseRiskScore(riskLevel: RiskLevel): number {
     const scores: Record<RiskLevel, number> = {
-      [RiskLevel.CRITICAL]: 100,
-      [RiskLevel.HIGH]: 80,
-      [RiskLevel.MEDIUM]: 60,
-      [RiskLevel.LOW]: 40,
-      [RiskLevel.MINIMAL]: 20
+      [CoreTypes.RiskLevel.CRITICAL]: 100,
+      [CoreTypes.RiskLevel.HIGH]: 80,
+      [CoreTypes.RiskLevel.MEDIUM]: 60,
+      [CoreTypes.RiskLevel.LOW]: 40,
+      [CoreTypes.RiskLevel.MINIMAL]: 20
     };
     return scores[riskLevel];
   }

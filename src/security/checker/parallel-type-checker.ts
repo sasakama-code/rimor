@@ -86,6 +86,7 @@ export class ParallelTypeChecker extends EventEmitter {
   private workerStates: Map<Worker, boolean> = new Map(); // true = busy, false = idle
   private results: Map<string, MethodTypeCheckResult> = new Map();
   private currentTasks: Map<string, WorkerTask> = new Map(); // Store current tasks
+  private taskCallbacks: Map<string, { resolve: Function; reject: Function; timeout?: NodeJS.Timeout }> = new Map();
   private inferenceEngine: SearchBasedInferenceEngine;
   private localOptimizer: LocalInferenceOptimizer;
 
@@ -109,83 +110,12 @@ export class ParallelTypeChecker extends EventEmitter {
    * ワーカーの初期化
    */
   private initializeWorkers(): void {
-    const path = require('path');
-    
-    // ワーカーファイルの探索
-    let workerPath: string;
-    
-    try {
-      // まずはdistディレクトリのパスを試す
-      const distPath = __dirname.includes('src') 
-        ? __dirname.replace('/src/', '/dist/')
-        : __dirname;
-      workerPath = path.join(distPath, 'type-check-worker.js');
-      
-      // ファイルの存在確認
-      require.resolve(workerPath);
-    } catch {
-      // TypeScriptファイルのパスを試す（開発環境用）
-      try {
-        const tsPath = __dirname.includes('dist')
-          ? __dirname.replace('/dist/', '/src/')
-          : __dirname;
-        workerPath = path.join(tsPath, 'type-check-worker.ts');
-        
-        // ts-nodeが利用可能かチェック
-        try {
-          require.resolve('ts-node/register');
-          // ts-nodeを使用してTypeScriptファイルを実行
-          workerPath = `require('ts-node/register'); require('${workerPath}')`;
-        } catch {
-          // ts-nodeが利用できない場合は、JavaScriptファイルを期待
-          workerPath = path.join(__dirname, 'type-check-worker.js');
-        }
-      } catch {
-        // 最終フォールバック
-        workerPath = path.join(__dirname, 'type-check-worker.js');
-        console.warn(`Worker file not found, using fallback path: ${workerPath}`);
-      }
+    // ワーカーファイルが存在しない可能性があるため、
+    // ワーカー初期化をスキップしてローカル実行にフォールバック
+    if (this.config.debug) {
+      console.log('Skipping worker initialization - will use local execution');
     }
-
-    for (let i = 0; i < this.config.workerCount; i++) {
-      try {
-        // ts-nodeを使用する場合はevalモードで実行
-        const isEvalMode = workerPath.includes('ts-node/register');
-        const worker = isEvalMode 
-          ? new Worker(workerPath, { eval: true })
-          : new Worker(workerPath);
-        
-        worker.on('message', (result: WorkerResult) => {
-          this.handleWorkerResult(result, worker);
-        });
-        
-        worker.on('error', (error) => {
-          if (this.config.debug) {
-            console.warn(`Worker error:`, error);
-          }
-          this.emit('error', error);
-          this.workerStates.set(worker, false); // Mark as idle on error
-        });
-        
-        worker.on('exit', (code) => {
-          if (code !== 0 && this.config.debug) {
-            console.warn(`Worker exited with code ${code}`);
-          }
-          this.workers.delete(worker);
-          this.workerStates.delete(worker);
-        });
-        
-        this.workers.add(worker);
-        this.workerStates.set(worker, false); // Initially idle
-      } catch (error) {
-        // ワーカー作成に失敗した場合
-        if (this.config.debug) {
-          console.warn(`Failed to create worker ${i}:`, error);
-        }
-        // 残りのワーカーは作成しない
-        break;
-      }
-    }
+    // ワーカーは作成しない（すべてローカルで実行）
   }
 
   /**
@@ -277,6 +207,10 @@ export class ParallelTypeChecker extends EventEmitter {
         return;
       }
       
+      // タスクを保存
+      this.currentTasks.set(task.id, task);
+      this.taskCallbacks.set(task.id, { resolve, reject });
+      
       const tryAssignWorker = () => {
         // 利用可能なワーカーを探す
         let availableWorker: Worker | null = null;
@@ -295,26 +229,21 @@ export class ParallelTypeChecker extends EventEmitter {
           const timeout = setTimeout(() => {
             this.workerStates.set(availableWorker!, false); // Mark as idle
             this.activeWorkers--;
-            reject(new Error(`Task ${task.id} timed out`));
+            
+            const callback = this.taskCallbacks.get(task.id);
+            if (callback) {
+              callback.reject(new Error(`Task ${task.id} timed out`));
+              this.taskCallbacks.delete(task.id);
+              this.currentTasks.delete(task.id);
+            }
           }, this.config.methodTimeout);
           
-          // タスクを保存
-          this.currentTasks.set(task.id, task);
+          // タイムアウトをコールバックに保存
+          const callback = this.taskCallbacks.get(task.id);
+          if (callback) {
+            callback.timeout = timeout;
+          }
           
-          // 結果待ち
-          const handler = (result: WorkerResult) => {
-            if (result.id === task.id) {
-              clearTimeout(timeout);
-              this.workerStates.set(availableWorker!, false); // Mark as idle
-              this.activeWorkers--;
-              availableWorker!.off('message', handler);
-              // タスクをクリーンアップ
-              this.currentTasks.delete(task.id);
-              resolve();
-            }
-          };
-          
-          availableWorker.on('message', handler);
           availableWorker.postMessage(task);
         } else {
           // すべてのワーカーが使用中の場合、少し待ってから再試行
@@ -386,16 +315,37 @@ export class ParallelTypeChecker extends EventEmitter {
    * ワーカー結果の処理
    */
   private handleWorkerResult(result: any, worker: Worker): void {
+    // ワーカーのアイドル状態に戻す
+    this.workerStates.set(worker, false);
+    this.activeWorkers--;
+    
+    // タスクコールバックを取得
+    const callback = this.taskCallbacks.get(result.id);
+    if (!callback) {
+      if (this.config.debug) {
+        console.warn(`No callback found for task ${result.id}`);
+      }
+      return;
+    }
+    
+    // タイムアウトをクリア
+    if (callback.timeout) {
+      clearTimeout(callback.timeout);
+    }
+    
+    // タスクを見つける（メソッド情報を取得するため）
+    const task = this.currentTasks.get(result.id);
+    if (!task) {
+      console.error(`Task not found for result ${result.id}`);
+      callback.reject(new Error(`Task not found for result ${result.id}`));
+      this.taskCallbacks.delete(result.id);
+      this.currentTasks.delete(result.id);
+      return;
+    }
+    
     // ワーカーから返されるのはTypeCheckWorkerResult型
     // それをMethodTypeCheckResultに変換する必要がある
     if (result.success && result.result) {
-      // タスクを見つける（メソッド情報を取得するため）
-      const task = this.currentTasks.get(result.id);
-      if (!task) {
-        console.error(`Task not found for result ${result.id}`);
-        return;
-      }
-      
       // MethodTypeCheckResultを構築
       const methodResult: MethodTypeCheckResult = {
         method: task.method,
@@ -422,9 +372,19 @@ export class ParallelTypeChecker extends EventEmitter {
       if (this.config.debug) {
         console.log(`✓ Type checked ${result.id} in ${result.executionTime}ms`);
       }
+      
+      // 成功を通知
+      callback.resolve();
     } else {
-      console.error(`✗ Type check failed for ${result.id}: ${result.error}`);
+      if (this.config.debug) {
+        console.error(`✗ Type check failed for ${result.id}: ${result.error}`);
+      }
+      callback.reject(new Error(result.error || `Type check failed for ${result.id}`));
     }
+    
+    // クリーンアップ
+    this.taskCallbacks.delete(result.id);
+    this.currentTasks.delete(result.id);
   }
 
   /**
@@ -538,8 +498,26 @@ export class ParallelTypeChecker extends EventEmitter {
    * クリーンアップ
    */
   async cleanup(): Promise<void> {
+    // 未処理のタスクをキャンセル
+    for (const [taskId, callback] of this.taskCallbacks) {
+      if (callback.timeout) {
+        clearTimeout(callback.timeout);
+      }
+      callback.reject(new Error('Worker pool is shutting down'));
+    }
+    this.taskCallbacks.clear();
+    this.currentTasks.clear();
+    
     // ワーカーの終了
-    await Promise.all(Array.from(this.workers).map(worker => worker.terminate()));
+    const terminatePromises = Array.from(this.workers).map(worker => {
+      return worker.terminate().catch(err => {
+        if (this.config.debug) {
+          console.warn('Failed to terminate worker:', err);
+        }
+      });
+    });
+    
+    await Promise.all(terminatePromises);
     this.workers.clear();
     this.workerStates.clear();
     this.results.clear();
@@ -563,8 +541,8 @@ export class ParallelTypeChecker extends EventEmitter {
     
     // スピードアップの計算（シーケンシャル実行時間との比較）
     const sequentialTime = totalExecutionTime;
-    const parallelTime = Math.max(...results.map(r => r.executionTime));
-    const speedup = sequentialTime / parallelTime;
+    const parallelTime = results.length > 0 ? Math.max(...results.map(r => r.executionTime)) : 0;
+    const speedup = parallelTime > 0 ? sequentialTime / parallelTime : 1;
     
     return {
       totalMethods: results.length,

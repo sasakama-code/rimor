@@ -6,6 +6,7 @@
  * Defensive Programming: 入力検証とエラーハンドリング
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import {
   ThreatSource,
@@ -163,12 +164,12 @@ export class NistRiskEvaluator {
 
     // 特別なケース: すべてHIGH以上の場合はCRITICAL
     if (threatScore >= 0.8 && vulnScore >= 0.67 && impactScore >= 0.8) {
-      return RiskLevel.CRITICAL;
+      return CoreTypes.RiskLevel.CRITICAL;
     }
     
     // 特別なケース: すべてLOW以下の場合はMINIMAL
     if (threatScore <= 0.4 && vulnScore <= 0.33 && impactScore <= 0.4) {
-      return RiskLevel.MINIMAL;
+      return CoreTypes.RiskLevel.MINIMAL;
     }
 
     return this.scoreToRiskLevel(riskScore);
@@ -247,7 +248,7 @@ export class NistRiskEvaluator {
   generateRecommendations(riskLevel: RiskLevel | string): RiskRecommendation[] {
     const recommendations: RiskRecommendation[] = [];
 
-    if (riskLevel === 'CRITICAL' || riskLevel === RiskLevel.CRITICAL) {
+    if (riskLevel === 'CRITICAL' || riskLevel === CoreTypes.RiskLevel.CRITICAL) {
       recommendations.push({
         priority: 'CRITICAL',
         action: '即座にシステムを隔離し、緊急対応チームを招集',
@@ -264,7 +265,7 @@ export class NistRiskEvaluator {
         complexity: 'HIGH',
         estimatedCost: 'MEDIUM'
       });
-    } else if (riskLevel === 'HIGH' || riskLevel === RiskLevel.HIGH) {
+    } else if (riskLevel === 'HIGH' || riskLevel === CoreTypes.RiskLevel.HIGH) {
       recommendations.push({
         priority: 'HIGH',
         action: '影響範囲を特定し、一時的な緩和策を実施',
@@ -273,7 +274,7 @@ export class NistRiskEvaluator {
         complexity: 'MEDIUM',
         estimatedCost: 'MEDIUM'
       });
-    } else if (riskLevel === 'MEDIUM' || riskLevel === RiskLevel.MEDIUM) {
+    } else if (riskLevel === 'MEDIUM' || riskLevel === CoreTypes.RiskLevel.MEDIUM) {
       recommendations.push({
         priority: 'MEDIUM',
         action: '定期的な監視を強化し、異常を早期検出',
@@ -282,7 +283,7 @@ export class NistRiskEvaluator {
         complexity: 'LOW',
         estimatedCost: 'LOW'
       });
-    } else if (riskLevel === 'LOW' || riskLevel === RiskLevel.LOW) {
+    } else if (riskLevel === 'LOW' || riskLevel === CoreTypes.RiskLevel.LOW) {
       recommendations.push({
         priority: 'LOW',
         action: '次回の定期メンテナンスで対応を検討',
@@ -360,11 +361,11 @@ export class NistRiskEvaluator {
   }
 
   private scoreToRiskLevel(score: number): RiskLevel {
-    if (score >= 0.8) return RiskLevel.CRITICAL;
-    if (score >= 0.6) return RiskLevel.HIGH;
-    if (score >= 0.4) return RiskLevel.MEDIUM;
-    if (score >= 0.2) return RiskLevel.LOW;
-    return RiskLevel.MINIMAL;
+    if (score >= 0.8) return CoreTypes.RiskLevel.CRITICAL;
+    if (score >= 0.6) return CoreTypes.RiskLevel.HIGH;
+    if (score >= 0.4) return CoreTypes.RiskLevel.MEDIUM;
+    if (score >= 0.2) return CoreTypes.RiskLevel.LOW;
+    return CoreTypes.RiskLevel.MINIMAL;
   }
 
   private riskLevelToScore(riskLevel: RiskLevel | string): number {

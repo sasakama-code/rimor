@@ -6,6 +6,7 @@
  * KISS原則: シンプルで明確な変換処理
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
 import { Severity as OldSeverity, IntentRiskLevel as OldRiskLevel } from '../../intent-analysis/ITestIntentAnalyzer';
 
@@ -40,10 +41,10 @@ export class RiskLevelMigrator {
    */
   migrateFromSeverity(severity: OldSeverity): RiskLevel {
     const mapping: Record<string, RiskLevel> = {
-      'critical': RiskLevel.CRITICAL,
-      'high': RiskLevel.HIGH,
-      'medium': RiskLevel.MEDIUM,
-      'low': RiskLevel.LOW
+      'critical': CoreTypes.RiskLevel.CRITICAL,
+      'high': CoreTypes.RiskLevel.HIGH,
+      'medium': CoreTypes.RiskLevel.MEDIUM,
+      'low': CoreTypes.RiskLevel.LOW
     };
 
     const severityValue = severity.toLowerCase();
@@ -51,7 +52,7 @@ export class RiskLevelMigrator {
     
     if (!mapped) {
       // SeverityにMINIMALは存在しないため、デフォルトでLOWを返す
-      return RiskLevel.LOW;
+      return CoreTypes.RiskLevel.LOW;
     }
     
     return mapped;
@@ -62,11 +63,11 @@ export class RiskLevelMigrator {
    */
   migrateFromOldRiskLevel(oldRiskLevel: OldRiskLevel): RiskLevel {
     const mapping: Record<string, RiskLevel> = {
-      'critical': RiskLevel.CRITICAL,
-      'high': RiskLevel.HIGH,
-      'medium': RiskLevel.MEDIUM,
-      'low': RiskLevel.LOW,
-      'minimal': RiskLevel.MINIMAL
+      'critical': CoreTypes.RiskLevel.CRITICAL,
+      'high': CoreTypes.RiskLevel.HIGH,
+      'medium': CoreTypes.RiskLevel.MEDIUM,
+      'low': CoreTypes.RiskLevel.LOW,
+      'minimal': CoreTypes.RiskLevel.MINIMAL
     };
 
     const riskValue = oldRiskLevel.toLowerCase();
@@ -88,15 +89,15 @@ export class RiskLevelMigrator {
     
     switch (normalizedValue) {
       case 'CRITICAL':
-        return RiskLevel.CRITICAL;
+        return CoreTypes.RiskLevel.CRITICAL;
       case 'HIGH':
-        return RiskLevel.HIGH;
+        return CoreTypes.RiskLevel.HIGH;
       case 'MEDIUM':
-        return RiskLevel.MEDIUM;
+        return CoreTypes.RiskLevel.MEDIUM;
       case 'LOW':
-        return RiskLevel.LOW;
+        return CoreTypes.RiskLevel.LOW;
       case 'MINIMAL':
-        return RiskLevel.MINIMAL;
+        return CoreTypes.RiskLevel.MINIMAL;
       default:
         throw new Error(`Unknown risk level: ${value}`);
     }
@@ -106,7 +107,7 @@ export class RiskLevelMigrator {
    * SeverityにはMINIMALが存在しないため、デフォルトのMINIMALレベルを返す
    */
   getDefaultMinimalLevel(): RiskLevel {
-    return RiskLevel.MINIMAL;
+    return CoreTypes.RiskLevel.MINIMAL;
   }
 
   /**
@@ -158,11 +159,11 @@ export class RiskLevelMigrator {
    */
   getPriority(riskLevel: RiskLevel): number {
     const priorities: Record<RiskLevel, number> = {
-      [RiskLevel.CRITICAL]: 5,
-      [RiskLevel.HIGH]: 4,
-      [RiskLevel.MEDIUM]: 3,
-      [RiskLevel.LOW]: 2,
-      [RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.CRITICAL]: 5,
+      [CoreTypes.RiskLevel.HIGH]: 4,
+      [CoreTypes.RiskLevel.MEDIUM]: 3,
+      [CoreTypes.RiskLevel.LOW]: 2,
+      [CoreTypes.RiskLevel.MINIMAL]: 1
     };
     return priorities[riskLevel];
   }
@@ -179,7 +180,7 @@ export class RiskLevelMigrator {
    */
   getHighestRisk(levels: RiskLevel[]): RiskLevel {
     if (levels.length === 0) {
-      return RiskLevel.MINIMAL;
+      return CoreTypes.RiskLevel.MINIMAL;
     }
     return levels.reduce((highest, current) => this.getHigherRisk(highest, current));
   }
