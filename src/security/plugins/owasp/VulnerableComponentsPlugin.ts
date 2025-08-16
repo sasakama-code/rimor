@@ -7,6 +7,7 @@ import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } 
 import { SecurityIssue } from '../../../security/types/security';
 import { SeverityLevel } from '../../../types/common-types';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
+import { VulnerableComponentsQualityDetails } from './types';
 
 export class VulnerableComponentsPlugin {
   readonly id = 'owasp-a06-vulnerable-components';
@@ -113,8 +114,10 @@ export class VulnerableComponentsPlugin {
         strengths: hasVulnerabilityScan ? ['脆弱性スキャン実装済み'] : [],
         weaknesses: !hasVulnerabilityScan ? ['脆弱性スキャン不足'] : [],
         suggestions: [],
-        validationCoverage: vulnerabilityScanCoverage
-      }
+        validationCoverage: vulnerabilityScanCoverage,
+        vulnerabilityScanCoverage,
+        dependencyCheckCoverage
+      } as VulnerableComponentsQualityDetails
     };
   }
 

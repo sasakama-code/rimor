@@ -181,7 +181,9 @@ describe('BrokenAccessControlPlugin', () => {
         dimensions: {},
         confidence: 0.8,
         details: {
-          message: 'アクセス制御テストが検出されませんでした'
+          strengths: [],
+          weaknesses: ['アクセス制御テストが検出されませんでした'],
+          suggestions: ['アクセス制御テストを追加してください']
         }
       };
       
@@ -199,7 +201,9 @@ describe('BrokenAccessControlPlugin', () => {
         dimensions: {},
         confidence: 0.9,
         details: {
-          message: 'アクセス制御テストが適切に実装されています'
+          strengths: ['アクセス制御テストが適切に実装されています'],
+          weaknesses: [],
+          suggestions: []
         }
       };
       

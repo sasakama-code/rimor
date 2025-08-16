@@ -11,6 +11,7 @@ import {
   Improvement,
   SecurityIssue
 } from '../../../core/types';
+import { CryptographicFailuresQualityDetails } from './types';
 import {
   IOWASPSecurityPlugin,
   OWASPCategory,
@@ -323,8 +324,9 @@ export class CryptographicFailuresPlugin extends OWASPBasePlugin {
         suggestions: [],
         validationCoverage: hasEncryptionTest ? 100 : 0,
         sanitizerCoverage: hasKeyManagementTest ? 100 : 0,
-        boundaryCoverage: hasPasswordHashingTest ? 100 : 0
-      }
+        boundaryCoverage: hasPasswordHashingTest ? 100 : 0,
+        weakAlgorithmsDetected: weakCryptoUsage.length
+      } as CryptographicFailuresQualityDetails
     };
   }
 

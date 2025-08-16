@@ -169,7 +169,14 @@ describe('LoggingMonitoringFailuresPlugin', () => {
       const lowScore = {
         overall: 0.3,
         security: 0.3,
-        details: { coverage: 0.3 }
+        dimensions: {},
+        confidence: 0.8,
+        details: {
+          strengths: [],
+          weaknesses: ['ログカバレッジ不足'],
+          suggestions: ['ログ出力を追加'],
+          coverage: 0.3
+        }
       };
 
       const improvements = plugin.suggestImprovements(lowScore);

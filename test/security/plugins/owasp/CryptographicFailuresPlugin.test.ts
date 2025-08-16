@@ -5,6 +5,7 @@
 
 import { CryptographicFailuresPlugin } from '../../../../src/security/plugins/owasp/CryptographicFailuresPlugin';
 import { ProjectContext, TestFile } from '../../../../src/core/types';
+import { CryptographicFailuresQualityDetails } from '../../../../src/security/plugins/owasp/types';
 
 describe('CryptographicFailuresPlugin', () => {
   let plugin: CryptographicFailuresPlugin;
@@ -150,7 +151,7 @@ describe('CryptographicFailuresPlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
       expect(score.overall).toBeLessThan(0.5);
-      expect(score.details?.weakAlgorithmsDetected).toBe(2);
+      expect((score.details as CryptographicFailuresQualityDetails)?.weakAlgorithmsDetected).toBe(2);
     });
   });
 
@@ -164,6 +165,9 @@ describe('CryptographicFailuresPlugin', () => {
         confidence: 0.9,
         dimensions: {}, // QualityScore型に必要
         details: {
+          strengths: [],
+          weaknesses: ['暗号化テスト不足'],
+          suggestions: ['暗号化テストを追加'],
           testCoverage: 30
         }
       };

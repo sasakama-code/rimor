@@ -170,7 +170,12 @@ describe('SSRFPlugin', () => {
         security: 0.3,
         dimensions: {}, // QualityScore型に必要
         confidence: 0.9, // QualityScore型に必要
-        details: { coverage: 0.3 }
+        details: {
+          strengths: [],
+          weaknesses: ['SSRF対策不足'],
+          suggestions: ['URL検証を追加'],
+          coverage: 0.3
+        }
       };
 
       const improvements = plugin.suggestImprovements(lowScore);

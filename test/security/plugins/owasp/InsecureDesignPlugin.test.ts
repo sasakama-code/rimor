@@ -185,8 +185,12 @@ describe('InsecureDesignPlugin', () => {
         overall: 0.3,
         security: 0.3,
         coverage: 30,
+        dimensions: {},
         confidence: 0.9,
         details: {
+          strengths: [],
+          weaknesses: ['脅威モデリングカバレッジ不足'],
+          suggestions: ['ビジネスロジックテストを追加'],
           threatModelingCoverage: 0,
           businessLogicTestCoverage: 0
         }

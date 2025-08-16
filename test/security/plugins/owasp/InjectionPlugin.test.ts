@@ -4,6 +4,7 @@
  */
 
 import { InjectionPlugin } from '../../../../src/security/plugins/owasp/InjectionPlugin';
+import { InjectionQualityDetails } from '../../../../src/security/plugins/owasp/types';
 import { OWASPCategory } from '../../../../src/security/plugins/owasp/IOWASPSecurityPlugin';
 import { ProjectContext, TestFile } from '../../../../src/core/types';
 
@@ -164,8 +165,8 @@ describe('User Service', () => {
       
       expect(score.overall).toBeGreaterThan(0.7);
       expect(score.security).toBeGreaterThan(0.7);
-      expect(score.details?.sqlInjectionCoverage).toBe(100);
-      expect(score.details?.commandInjectionCoverage).toBe(100);
+      expect((score.details as InjectionQualityDetails)?.sqlInjectionCoverage).toBe(100);
+      expect((score.details as InjectionQualityDetails)?.commandInjectionCoverage).toBe(100);
     });
 
     it('不完全なテストに低スコアを付ける', () => {
@@ -185,7 +186,7 @@ describe('User Service', () => {
       
       expect(score.overall).toBeLessThan(0.5);
       expect(score.security).toBeLessThan(0.5);
-      expect(score.details?.sqlInjectionCoverage).toBe(0);
+      expect((score.details as InjectionQualityDetails)?.sqlInjectionCoverage).toBe(0);
     });
   });
 
@@ -196,9 +197,13 @@ describe('User Service', () => {
         security: 0.3,
         coverage: 0.2,
         maintainability: 0.0,
+        dimensions: {},
         breakdown: { completeness: 20, correctness: 0, maintainability: 0 },
         confidence: 0.9,
         details: {
+          strengths: [],
+          weaknesses: ['SQLインジェクション対策が不足'],
+          suggestions: ['入力検証を追加'],
           sqlInjectionCoverage: 0,
           commandInjectionCoverage: 0,
           inputValidationCoverage: 0

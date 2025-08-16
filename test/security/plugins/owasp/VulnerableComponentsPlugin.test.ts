@@ -6,6 +6,7 @@
 import { VulnerableComponentsPlugin } from '../../../../src/security/plugins/owasp/VulnerableComponentsPlugin';
 import { OWASPCategory } from '../../../../src/security/plugins/owasp/IOWASPSecurityPlugin';
 import { ProjectContext, TestFile } from '../../../../src/core/types';
+import { VulnerableComponentsQualityDetails } from '../../../../src/security/plugins/owasp/types';
 
 describe('VulnerableComponentsPlugin', () => {
   let plugin: VulnerableComponentsPlugin;
@@ -151,8 +152,8 @@ describe('Basic Tests', () => {
       
       expect(score.overall).toBeGreaterThan(0.7);
       expect(score.security).toBeGreaterThan(0.7);
-      expect(score.details?.vulnerabilityScanCoverage).toBe(100);
-      expect(score.details?.dependencyCheckCoverage).toBe(100);
+      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(100);
+      expect((score.details as VulnerableComponentsQualityDetails)?.dependencyCheckCoverage).toBe(100);
     });
 
     it('不完全なテストに低スコアを付ける', () => {
@@ -172,7 +173,7 @@ describe('Basic Tests', () => {
       
       expect(score.overall).toBeLessThan(0.5);
       expect(score.security).toBeLessThan(0.5);
-      expect(score.details?.vulnerabilityScanCoverage).toBe(0);
+      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(0);
     });
   });
 
@@ -183,9 +184,13 @@ describe('Basic Tests', () => {
         security: 0.3,
         coverage: 0.2,
         maintainability: 0.0,
+        dimensions: {},
         breakdown: { completeness: 20, correctness: 0, maintainability: 0 },
         confidence: 0.9,
         details: {
+          strengths: [],
+          weaknesses: ['脆弱性スキャン不足'],
+          suggestions: ['依存関係チェックを追加'],
           vulnerabilityScanCoverage: 0,
           dependencyCheckCoverage: 0,
           licenseCheckCoverage: 0

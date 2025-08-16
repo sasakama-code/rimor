@@ -7,6 +7,7 @@ import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } 
 import { SecurityIssue } from '../../../security/types/security';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
 import { getDependencyNames, hasDependency } from './dependency-utils';
+import { InjectionQualityDetails } from './types';
 
 export class InjectionPlugin {
   readonly id = 'owasp-a03-injection';
@@ -148,8 +149,10 @@ export class InjectionPlugin {
         strengths: hasSqlInjectionTest ? ['SQLインジェクション対策済み'] : [],
         weaknesses: !hasSqlInjectionTest ? ['SQLインジェクション対策不足'] : [],
         suggestions: [],
-        validationCoverage: sqlInjectionCoverage
-      }
+        validationCoverage: sqlInjectionCoverage,
+        sqlInjectionCoverage,
+        commandInjectionCoverage
+      } as InjectionQualityDetails
     };
   }
 

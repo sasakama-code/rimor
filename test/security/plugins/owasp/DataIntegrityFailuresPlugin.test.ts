@@ -171,8 +171,12 @@ describe('DataIntegrityFailuresPlugin', () => {
         overall: 0.3,
         security: 0.3,
         coverage: 30,
+        dimensions: {},
         confidence: 0.9,
         details: {
+          strengths: [],
+          weaknesses: ['署名検証未実装'],
+          suggestions: ['デシリアライゼーション保護を追加'],
           signatureVerificationImplemented: false,
           deserializationSecure: false,
           cicdSecurityImplemented: false
