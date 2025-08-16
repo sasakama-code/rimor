@@ -4,6 +4,9 @@
 
 import { QualityDimension, BaseMetadata } from './base-types';
 
+// Re-export QualityDimension for external use
+export { QualityDimension } from './base-types';
+
 // Quality score
 export interface QualityScore {
   // Overall score

@@ -35,8 +35,8 @@ import {
 
 describe('エクスポートのテスト', () => {
   it('taint.tsからの型が正しくエクスポートされていること', () => {
-    // Enumの値を確認
-    expect(TaintLevel.CLEAN).toBe(0);
+    // Enumの値を確認（TaintLevelは文字列値）
+    expect(TaintLevel.CLEAN).toBe('untainted');
     expect(TaintSource.USER_INPUT).toBe('user-input');
     expect(SecuritySink.DATABASE_QUERY).toBe('database-query');
     expect(SanitizerType.HTML_ESCAPE).toBe('html-escape');

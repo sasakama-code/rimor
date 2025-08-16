@@ -8,6 +8,7 @@
 import { BaseSecurityPlugin } from '../../../src/plugins/base/BaseSecurityPlugin';
 import { BasePlugin } from '../../../src/plugins/base/BasePlugin';
 import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../src/core/types';
+import { createDefaultQualityScore } from '../../helpers/quality-score.helper';
 
 // テスト用の具象クラス
 class TestSecurityPlugin extends BaseSecurityPlugin {
@@ -40,8 +41,15 @@ class TestSecurityPlugin extends BaseSecurityPlugin {
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     const securityScore = this.evaluateSecurityScore(patterns);
-    return {
+    return createDefaultQualityScore({
       overall: securityScore * 100,
+      dimensions: {
+        completeness: securityScore,
+        correctness: 1.0,
+        maintainability: 0.8,
+        performance: 0.8,
+        security: securityScore
+      },
       breakdown: {
         completeness: securityScore * 100,
         correctness: 100,
@@ -49,7 +57,7 @@ class TestSecurityPlugin extends BaseSecurityPlugin {
       },
       confidence: patterns.length > 0 ? 
         patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
-    };
+    });
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
@@ -66,7 +74,8 @@ class TestSecurityPlugin extends BaseSecurityPlugin {
           line: 1,
           column: 1
         },
-        estimatedImpact: {
+        estimatedImpact: 0.5,
+        impact: {
           scoreImprovement: 50,
           effortMinutes: 30
         },
@@ -375,7 +384,10 @@ describe('BaseSecurityPlugin', () => {
     test('should properly implement isApplicable', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: {},
+        packageJson: {
+          name: 'test-project',
+          version: '1.0.0'
+        },
         testFramework: 'jest'
       };
 
