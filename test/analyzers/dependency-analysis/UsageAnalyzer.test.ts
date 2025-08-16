@@ -308,7 +308,7 @@ function test() {
         ['axios', 1]
       ]);
 
-      jest.spyOn(analyzer, 'findUsedPackages').mockResolvedValue(mockPackages);
+      jest.spyOn(analyzer, 'findUsedPackages').mockResolvedValue(Array.from(mockPackages));
       jest.spyOn(analyzer, 'analyzeUsageFrequency').mockResolvedValue(mockFrequency);
 
       const report = await analyzer.generateUsageReport('/project');
