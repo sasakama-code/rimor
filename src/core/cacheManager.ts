@@ -7,6 +7,7 @@ import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import * as zlib from 'zlib';
 import { Issue } from './types';
 import { errorHandler } from '../utils/errorHandler';
 
@@ -30,6 +31,7 @@ export interface CacheStatistics {
   avgFileSize: number;
   oldestEntry: number;
   newestEntry: number;
+  evictions?: number;
 }
 
 export interface CacheOptions {
@@ -717,6 +719,73 @@ export class CacheManager {
         undefined,
         "",
         { cacheFilePath: this.cacheFilePath },
+        true
+      );
+    }
+  }
+
+  /**
+   * キャッシュの最大サイズを設定（後方互換性のため）
+   */
+  setMaxCacheSize(size: number): void {
+    this.options.maxEntries = size;
+  }
+
+  /**
+   * キャッシュをファイルに保存（後方互換性のため）
+   */
+  async saveToDisk(filePath?: string): Promise<void> {
+    const targetPath = filePath || this.cacheFilePath;
+    
+    try {
+      const cacheData = {
+        version: 1,
+        timestamp: Date.now(),
+        entries: Array.from(this.cache.entries()),
+        stats: this.stats
+      };
+      
+      const compressed = zlib.gzipSync(JSON.stringify(cacheData));
+      await fs.writeFile(targetPath, compressed);
+    } catch (error) {
+      errorHandler.handleError(
+        error,
+        undefined,
+        "",
+        { cacheFilePath: targetPath },
+        true
+      );
+    }
+  }
+
+  /**
+   * キャッシュをファイルから読み込み（後方互換性のため）
+   */
+  async loadFromDisk(filePath?: string): Promise<void> {
+    const targetPath = filePath || this.cacheFilePath;
+    
+    try {
+      if (!fsSync.existsSync(targetPath)) {
+        return;
+      }
+      
+      const compressed = await fs.readFile(targetPath);
+      const decompressed = zlib.gunzipSync(compressed);
+      const data = JSON.parse(decompressed.toString());
+      
+      if (this.validateCacheData(data)) {
+        this.cache.clear();
+        for (const [key, value] of data.entries) {
+          this.cache.set(key, value);
+        }
+        this.stats = data.stats || this.stats;
+      }
+    } catch (error) {
+      errorHandler.handleError(
+        error,
+        undefined,
+        "",
+        { cacheFilePath: targetPath },
         true
       );
     }
