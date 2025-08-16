@@ -378,16 +378,23 @@ export class CachedAnalyzer {
   } {
     const stats = this.cacheManager.getStats();
     const fullStats = this.cacheManager.getStatistics();
+    
+    // 内部で管理している統計も考慮
+    const totalHits = stats.hits + (this.lastCacheStats.cacheHits || 0);
+    const totalMisses = stats.misses + (this.lastCacheStats.cacheMisses || 0);
+    const totalFilesFromCache = this.lastCacheStats.filesFromCache || totalHits;
+    const totalFilesAnalyzed = this.lastCacheStats.filesAnalyzed || totalMisses;
+    
     return {
       // 既存の形式（互換性のため）
-      cacheHits: stats.hits,
-      cacheMisses: stats.misses,
+      cacheHits: totalHits,
+      cacheMisses: totalMisses,
       hitRatio: stats.hitRate,
-      filesFromCache: stats.hits,
-      filesAnalyzed: stats.misses,
+      filesFromCache: totalFilesFromCache,
+      filesAnalyzed: totalFilesAnalyzed,
       // テストが期待する形式
-      hits: stats.hits,
-      misses: stats.misses,
+      hits: totalHits,
+      misses: totalMisses,
       size: fullStats.totalEntries,
       evictions: fullStats.evictions || 0
     };
