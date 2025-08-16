@@ -379,17 +379,17 @@ export class CachedAnalyzer {
     const stats = this.cacheManager.getStats();
     const fullStats = this.cacheManager.getStatistics();
     
-    // 内部で管理している統計も考慮
-    const totalHits = stats.hits + (this.lastCacheStats.cacheHits || 0);
-    const totalMisses = stats.misses + (this.lastCacheStats.cacheMisses || 0);
-    const totalFilesFromCache = this.lastCacheStats.filesFromCache || totalHits;
-    const totalFilesAnalyzed = this.lastCacheStats.filesAnalyzed || totalMisses;
+    // 内部統計がある場合はそれを使用、なければCacheManagerの統計を使用
+    const totalHits = this.lastCacheStats.cacheHits > 0 ? this.lastCacheStats.cacheHits : stats.hits;
+    const totalMisses = this.lastCacheStats.cacheMisses > 0 ? this.lastCacheStats.cacheMisses : stats.misses;
+    const totalFilesFromCache = this.lastCacheStats.filesFromCache > 0 ? this.lastCacheStats.filesFromCache : totalHits;
+    const totalFilesAnalyzed = this.lastCacheStats.filesAnalyzed > 0 ? this.lastCacheStats.filesAnalyzed : totalMisses;
     
     return {
       // 既存の形式（互換性のため）
       cacheHits: totalHits,
       cacheMisses: totalMisses,
-      hitRatio: stats.hitRate,
+      hitRatio: totalHits + totalMisses > 0 ? totalHits / (totalHits + totalMisses) : 0,
       filesFromCache: totalFilesFromCache,
       filesAnalyzed: totalFilesAnalyzed,
       // テストが期待する形式

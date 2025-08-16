@@ -184,11 +184,11 @@ export class PatternDetector {
    * God Object アンチパターンの検出
    */
   private isGodObject(content: string): boolean {
-    // クラス内のメソッド数をカウント（マルチラインも考慮）
+    // クラス内のメソッド数をカウント（インデントを考慮）
     const methodPatterns = [
-      /^\s*(public|private|protected)?\s*\w+\s*\([^)]*\)\s*[{:]/gm,
-      /^\s*\w+\([^)]*\)\s*\{/gm,  // メソッド定義の簡易形式
-      /^\s*(async\s+)?\w+\s*\([^)]*\)\s*\{/gm  // async関数も含む
+      /\s+(public|private|protected)?\s*\w+\s*\([^)]*\)\s*[{:]/gm,
+      /\s+\w+\([^)]*\)\s*\{/gm,  // メソッド定義の簡易形式
+      /\s+(async\s+)?\w+\s*\([^)]*\)\s*\{/gm  // async関数も含む
     ];
     
     let methodCount = 0;
@@ -199,10 +199,10 @@ export class PatternDetector {
       }
     }
     
-    // プロパティ数をカウント（改善された検出）
+    // プロパティ数をカウント（インデントを考慮）
     const propertyPatterns = [
-      /^\s*(private|public|protected)\s+\w+\s*[:;]/gm,
-      /^\s*private\s+\w+:\s*\w+/gm  // private property: Type形式
+      /\s+(private|public|protected)\s+\w+\s*[:;]/gm,
+      /\s+private\s+\w+:\s*\w+/gm  // private property: Type形式
     ];
     
     let propertyCount = 0;
