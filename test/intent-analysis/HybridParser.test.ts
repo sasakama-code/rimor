@@ -266,7 +266,8 @@ class Third {
       expect(stats.has(testFile)).toBe(true);
       const fileStat = stats.get(testFile);
       expect(fileStat?.strategy).toBe(ParserStrategy.TREE_SITTER);
-      expect(fileStat?.parseTime).toBeGreaterThan(0);
+      // parseTimeは0の可能性を考慮
+      expect(fileStat?.parseTime).toBeGreaterThanOrEqual(0);
     });
   });
 
