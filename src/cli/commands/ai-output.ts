@@ -68,9 +68,18 @@ export class AIOutputCommand {
       // Analyzerの初期化と分析実行
       await this.initializeAnalyzer(targetPath, options);
       const analysisResult = await this.analyzer.analyze(targetPath);
+      
+      // analyze()メソッドがIssue[]を返すため、結果を整形
+      const normalizedResult = Array.isArray(analysisResult) 
+        ? {
+            totalFiles: 1,
+            issues: analysisResult,
+            executionTime: 0
+          }
+        : analysisResult;
 
       // スコアリング情報の追加
-      const enhancedResult = await this.enhanceWithScoring(analysisResult, targetPath, options);
+      const enhancedResult = await this.enhanceWithScoring(normalizedResult, targetPath, options);
 
       // AI向けフォーマット設定
       const formatterOptions: FormatterOptions = {

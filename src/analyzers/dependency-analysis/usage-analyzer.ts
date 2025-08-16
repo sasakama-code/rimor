@@ -52,7 +52,7 @@ export class UsageAnalyzer {
   /**
    * プロジェクト内で使用されているパッケージを検出
    */
-  async findUsedPackages(projectPath: string): Promise<Set<string>> {
+  async findUsedPackages(projectPath: string): Promise<string[]> {
     const usedPackages = new Set<string>();
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
@@ -76,7 +76,7 @@ export class UsageAnalyzer {
       }
     }
 
-    return usedPackages;
+    return Array.from(usedPackages);
   }
 
   /**
@@ -264,7 +264,7 @@ export class UsageAnalyzer {
     usageStatistics.sort((a, b) => b.frequency - a.frequency);
 
     return {
-      totalPackages: packages.size,
+      totalPackages: packages.length,
       usageStatistics,
       categories
     };

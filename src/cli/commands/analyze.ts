@@ -191,8 +191,16 @@ export class AnalyzeCommand {
         }
       }
       
-      const result = await this.analyzer.analyze(targetPath);
+      const analysisResult = await this.analyzer.analyze(targetPath);
       
+      // analyze()メソッドがIssue[]を返すため、結果を整形
+      const result = Array.isArray(analysisResult) 
+        ? {
+            totalFiles: 1, // デフォルト値
+            issues: analysisResult,
+            executionTime: 0
+          }
+        : analysisResult;
       
       // 結果の表示
       if (format === 'json') {
@@ -225,7 +233,7 @@ export class AnalyzeCommand {
       }
       
       // 終了コード設定
-      if (result.issues.length > 0) {
+      if (result.issues && result.issues.length > 0) {
         process.exit(1);
       }
       
