@@ -4,7 +4,8 @@
  */
 
 // Severity levels for issues and security concerns
-export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical';
+// Migrated to CoreTypes
+// export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical'; // Removed duplicate definition
 
 // Security-related types
 export type SecurityThreatType = 'xss' | 'sql-injection' | 'path-traversal' | 'command-injection' | 'other';
@@ -36,8 +37,12 @@ export enum SecurityType {
 }
 
 // 共通型定義からインポート（重複を避けるため）
+import { CoreTypes, TypeGuards, TypeUtils } from './core-definitions';
 import type { TaintLevel, TaintSource, SecuritySink, SanitizerType } from '../../types/common-types';
 export type { TaintLevel, TaintSource, SecuritySink, SanitizerType };
+
+// Re-export Issue from CoreTypes for backward compatibility
+export type { Issue, SeverityLevel } from './core-definitions';
 
 // Plugin types
 export type PluginType = 'core' | 'framework' | 'pattern' | 'domain' | 'security' | 'custom';
@@ -120,29 +125,17 @@ export interface BaseMetadata {
   [key: string]: unknown; // Allow extension with additional properties
 }
 
-// Issue severity levels
-export type IssueSeverity = 'low' | 'medium' | 'high' | 'critical';
+// Issue severity levels - Alias for SeverityLevel
+// Migrated to CoreTypes
+import type { SeverityLevel, IssueCategory } from './core-definitions';
+export type IssueSeverity = SeverityLevel;
 
-// Issue categories
-export type IssueCategory = 
-  | 'test-quality' 
-  | 'coverage' 
-  | 'assertion' 
-  | 'pattern' 
-  | 'structure' 
-  | 'best-practice' 
-  | 'performance' 
-  | 'security' 
-  | 'documentation'
-  | 'error-handling'
-  | 'validation'
-  | 'code-quality'
-  | 'test-coverage'
-  | 'file-system'
-  | 'syntax';
+// Issue categories - Re-export from CoreTypes
+export type { IssueCategory };
 
 // Issue representation
-export interface Issue {
+// Migrated to CoreTypes
+export interface BaseIssue {
   // Identification
   id?: string;
   type: string;

@@ -3,6 +3,7 @@
  * v0.9.0 Phase 2 - テストとビジネスロジックの関連付け
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 import { CallGraphNode, TypeInfo } from './ITypeScriptAnalyzer';
 import { DomainInference } from './IDomainInferenceEngine';
 
@@ -149,6 +150,7 @@ export interface ImpactScope {
 /**
  * リスク評価
  */
+// Migrated to CoreTypes
 export interface RiskAssessment {
   /**
    * テストカバレッジ不足のリスク

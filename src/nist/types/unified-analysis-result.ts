@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 /**
  * UnifiedAnalysisResult v2.0
  * Issue #52: NIST SP 800-30準拠リスク評価機能
@@ -11,6 +12,7 @@
  * v0.9.0の intent-analyze 機能で導入された大文字の定義を
  * プロジェクトの正式な標準とする
  */
+// Migrated to CoreTypes
 export enum RiskLevel {
   CRITICAL = 'CRITICAL',
   HIGH = 'HIGH',

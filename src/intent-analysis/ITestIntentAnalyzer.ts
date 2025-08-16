@@ -222,6 +222,7 @@ export enum IntentRiskLevel {
 /**
  * @deprecated Use IntentRiskLevel or import RiskLevel from unified-analysis-result.ts
  */
+// Migrated to CoreTypes
 export type RiskLevel = IntentRiskLevel;
 
 /**

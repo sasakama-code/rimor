@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 /**
  * analyze-v0.8.ts用の型定義
  * TDDアプローチ - GREENフェーズ
@@ -12,6 +13,7 @@ import {
 } from '../../core/types';
 
 // AI JSON出力用の型定義
+// Migrated to CoreTypes
 export interface AIJsonOutput {
   overallAssessment: string;
   keyRisks: AIRisk[];

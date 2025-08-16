@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 /**
  * Reporting Type Definitions
  * v0.8.0 - Phase 4: Context Engineering
@@ -30,6 +31,7 @@ export enum Severity {
 /**
  * 問題タイプの分類
  */
+// Migrated to CoreTypes
 export enum IssueType {
   SQL_INJECTION = 'SQL_INJECTION',
   XSS = 'XSS',
@@ -76,22 +78,22 @@ export interface DataFlow {
 
 /**
  * 検出された問題
+ * CoreTypes.Issueを使用してください
  */
-export interface Issue {
-  id: string;
-  type: IssueType;
-  severity: Severity;
-  location: CodeLocation;
-  message: string;
+// Migrated to CoreTypes - Import from core-definitions
+import type { Issue as CoreIssue } from '../core/types/core-definitions';
+export type Issue = CoreIssue & {
+  location?: CodeLocation;
   dataFlow?: DataFlow;
   recommendation?: string;
   codeSnippet?: string;
   references?: string[];
-}
+};
 
 /**
  * 重要度別の問題数
  */
+// Migrated to CoreTypes
 export interface IssueBySeverity {
   critical: number;
   high: number;

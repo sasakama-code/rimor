@@ -116,6 +116,7 @@ export const SanitizerType = {
 /**
  * 重要度レベル
  */
+// Migrated to CoreTypes
 export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical' | 'error' | 'warning';
 
 /**

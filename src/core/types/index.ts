@@ -6,6 +6,9 @@
 // Base types
 export * from './base-types';
 
+// Core definitions (ExtendedIssue含む)
+export { ExtendedIssue, IssueCategory } from './core-definitions';
+
 // Project context types
 export * from './project-context';
 
@@ -122,6 +125,7 @@ import type {
   AnalysisContext as AnalysisContextType,
   AnalysisOptions as AnalysisOptionsType
 } from './analysis-result';
+import { CoreTypes, TypeGuards, TypeUtils } from './core-definitions';
 import type { QualityScore as QualityScoreType } from './quality-score';
 import type { Improvement as ImprovementType } from './improvements';
 import type { 
@@ -152,7 +156,7 @@ export interface PluginExecutionContext {
 }
 
 // Type aliases for common patterns
-export type IssueMap = Map<string, IssueType[]>;
+// Migrated to CoreTypes - export type IssueMap = Map<string, IssueType[]>;
 export type QualityScoreMap = Map<string, QualityScoreType>;
 export type ImprovementMap = Map<string, ImprovementType[]>;
 export type DetectionResultMap = Map<string, DetectionResultType[]>;

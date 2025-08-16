@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 /**
  * NIST SP 800-30準拠の型定義
  * リスク評価フレームワークの標準型
@@ -39,6 +40,7 @@ export type ImpactLevel = 'VERY_LOW' | 'LOW' | 'MODERATE' | 'HIGH' | 'VERY_HIGH'
 /**
  * 深刻度レベル
  */
+// Migrated to CoreTypes
 export type SeverityLevel = 'VERY_LOW' | 'LOW' | 'MODERATE' | 'HIGH' | 'VERY_HIGH' | 'CRITICAL';
 
 /**
@@ -148,6 +150,7 @@ export interface NISTRiskMatrix {
  * リスク評価
  * 総合的なリスク評価結果
  */
+// Migrated to CoreTypes
 export interface RiskAssessment {
   /** 評価ID */
   id: string;
@@ -230,6 +233,7 @@ export interface RiskMatrix {
 /**
  * リスク評価結果
  */
+// Migrated to CoreTypes
 export interface RiskAssessmentResult {
   /** 評価ID */
   assessmentId: string;

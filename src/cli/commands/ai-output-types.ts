@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 /**
  * ai-output.ts用の型定義
  * Issue #63: any型の削減と型安全性の向上
@@ -22,16 +23,11 @@ export interface AnalysisResult {
 
 /**
  * Issue型定義
+ * CoreTypes.Issueを使用
  */
-export interface Issue {
-  type: string;
-  severity?: 'error' | 'high' | 'warning' | 'medium' | 'info' | 'low';
-  message: string;
-  line?: number;
-  column?: number;
-  file?: string;
-  rule?: string;
-}
+// Migrated to CoreTypes - Import from core-definitions
+import type { Issue } from '../../core/types/core-definitions';
+export type { Issue };
 
 /**
  * プラグイン結果の型定義
