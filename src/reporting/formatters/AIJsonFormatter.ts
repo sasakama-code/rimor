@@ -8,13 +8,14 @@
  * KISS原則: シンプルなJSON生成
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { BaseFormatter } from './BaseFormatter';
 import { 
   UnifiedAnalysisResult, 
   RiskLevel,
   AIActionableRisk 
 } from '../../nist/types/unified-analysis-result';
-import { AIJsonOutput } from '../../ai-output/types';
+import { AIJsonOutput } from '../../core/types/core-definitions';
 
 /**
  * AI向けJSON形式のフォーマッター

@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 import { Issue, ProjectContext, IssueSeverity, IssueCategory } from '../core/types';
 import { FileScore, ProjectScore } from '../scoring/types';
 
@@ -202,6 +203,7 @@ export interface FileAnalysisSection {
   issues: IssueSection[];
 }
 
+// Migrated to CoreTypes
 export interface IssueSection {
   id: string;
   title: string;
@@ -268,6 +270,7 @@ export interface EnhancedAnalysisResult {
 }
 
 // AI JSON出力形式 (Issue #58)
+// Migrated to CoreTypes
 export interface AIJsonOutput {
   // AIが最初に読むべき全体状況と最重要問題点
   overallAssessment: string;
@@ -301,6 +304,7 @@ export interface AIJsonOutput {
 }
 
 // リスクレベルの定義 (Issue #58)
+// Migrated to CoreTypes
 export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
 
 // AIエージェントへのアクション提案の種別 (Issue #58)
@@ -343,6 +347,10 @@ export interface DetailedIssue {
   riskLevel: RiskLevel;
   title: string;
   description: string;
+  type?: string;
+  severity?: string;
+  message?: string;
+  category?: string;
   contextSnippet?: string; 
 }
 

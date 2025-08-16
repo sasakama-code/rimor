@@ -22,7 +22,7 @@ import {
 } from './types';
 import { AnalysisResult as CoreAnalysisResult } from '../core/interfaces/IAnalysisEngine';
 import { SecurityAuditResult, SecurityThreat } from '../core/interfaces/ISecurityAuditor';
-import { Issue as CoreIssue } from '../core/types';
+import { Issue as CoreIssue, ExtendedIssue } from '../core/types';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
@@ -129,7 +129,11 @@ export class StructuredReporter {
     };
 
     issues.forEach(issue => {
-      counts[issue.severity]++;
+      // Map severity to IssueBySeverity keys
+      const mappedSeverity = this.mapToIssueBySeverity(issue.severity);
+      if (mappedSeverity in counts) {
+        counts[mappedSeverity as keyof IssueBySeverity]++;
+      }
     });
 
     return counts;
@@ -160,7 +164,8 @@ export class StructuredReporter {
   /**
    * 個別の問題を変換
    */
-  private convertIssue(coreIssue: CoreIssue, index: number, basePath: string): Issue {
+  private convertIssue(coreIssue: CoreIssue | ExtendedIssue, index: number, basePath: string): Issue {
+    const extIssue = coreIssue as ExtendedIssue;
     const id = this.generateIssueId(coreIssue.type, index);
     const type = this.mapIssueType(coreIssue.type);
     const severity = this.mapSeverity(coreIssue.severity);
@@ -171,16 +176,17 @@ export class StructuredReporter {
       type,
       severity,
       location,
-      message: coreIssue.message
-    };
+      message: coreIssue.message,
+      category: coreIssue.category
+    } as Issue;
 
     // オプショナルフィールドの追加
-    if (coreIssue.recommendation) {
-      issue.recommendation = coreIssue.recommendation;
+    if (extIssue.recommendation) {
+      issue.recommendation = extIssue.recommendation;
     }
 
-    if (coreIssue.codeSnippet) {
-      issue.codeSnippet = coreIssue.codeSnippet;
+    if (extIssue.codeSnippet) {
+      issue.codeSnippet = extIssue.codeSnippet;
     }
 
     // データフロー情報があれば追加
@@ -213,8 +219,9 @@ export class StructuredReporter {
           startLine: threat.line || 1,
           endLine: threat.line || 1
         },
-        message: threat.message || 'Security vulnerability detected'
-      };
+        message: threat.message || 'Security vulnerability detected',
+        category: 'security' // セキュリティカテゴリを追加
+      } as Issue;
 
       // 推奨事項を追加
       if (threat.recommendation) {
@@ -303,6 +310,23 @@ export class StructuredReporter {
     };
 
     return severityMap[coreSeverity.toLowerCase()] || Severity.LOW;
+  }
+
+  /**
+   * SeverityLevelをIssueBySeverityのキーにマップ
+   */
+  private mapToIssueBySeverity(severity: string): keyof IssueBySeverity {
+    const mappingTable: Record<string, keyof IssueBySeverity> = {
+      'critical': 'critical',
+      'error': 'high',  // errorをhighにマップ
+      'high': 'high',
+      'warning': 'medium',  // warningをmediumにマップ
+      'medium': 'medium',
+      'low': 'low',
+      'info': 'info'
+    };
+
+    return mappingTable[severity.toLowerCase()] || 'low';
   }
 
   /**
@@ -429,7 +453,7 @@ export class StructuredReporter {
         plugins[pluginName] = {
           executed: true,
           issues: result.issues.filter(
-            issue => issue.plugin === pluginName
+            issue => (issue as any).plugin === pluginName
           ).length
         };
       });
@@ -468,9 +492,9 @@ export class StructuredReporter {
     const parts = [
       issue.type,
       issue.severity,
-      issue.location.file,
-      issue.location.startLine,
-      issue.location.endLine
+      issue.location?.file || '',
+      issue.location?.startLine || 0,
+      issue.location?.endLine || 0
     ];
 
     return crypto

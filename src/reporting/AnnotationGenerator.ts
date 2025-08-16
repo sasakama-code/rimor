@@ -14,6 +14,7 @@ import {
   DataFlow,
   AnnotationOptions
 } from './types';
+import { SeverityLevel } from '../core/types';
 
 interface AnnotationLine {
   lineNumber: number;
@@ -49,7 +50,7 @@ export class AnnotationGenerator {
     const parts: string[] = [];
 
     // プレフィックスと重要度
-    parts.push(`${prefix}-${this.getSeverityTag(issue.severity)}:`);
+    parts.push(`${prefix}-${this.getSeverityTag(issue.severity as any)}:`);
 
     // 問題タイプ
     parts.push(`[${issue.severity}]`);
@@ -136,6 +137,7 @@ export class AnnotationGenerator {
     const annotationsByFile = new Map<string, AnnotationLine[]>();
 
     issues.forEach(issue => {
+      if (!issue.location) return;
       const file = issue.location.file;
       if (!annotationsByFile.has(file)) {
         annotationsByFile.set(file, []);
@@ -173,6 +175,7 @@ export class AnnotationGenerator {
     // ファイル別にグループ化
     const issuesByFile = new Map<string, Issue[]>();
     issues.forEach(issue => {
+      if (!issue.location) return;
       const file = issue.location.file;
       if (!issuesByFile.has(file)) {
         issuesByFile.set(file, []);
@@ -186,10 +189,10 @@ export class AnnotationGenerator {
       lines.push('');
       
       // 行番号でソート
-      fileIssues.sort((a, b) => a.location.startLine - b.location.startLine);
+      fileIssues.sort((a, b) => (a.location?.startLine || 0) - (b.location?.startLine || 0));
       
       fileIssues.forEach(issue => {
-        lines.push(`### Line ${issue.location.startLine}: ${issue.type}`);
+        lines.push(`### Line ${issue.location?.startLine || 0}: ${issue.type}`);
         lines.push('');
         lines.push('```');
         lines.push(this.generateAnnotation(issue, { format: 'inline' }));
@@ -209,7 +212,7 @@ export class AnnotationGenerator {
   /**
    * 重要度タグを取得
    */
-  private getSeverityTag(severity: Severity): string {
+  private getSeverityTag(severity: Severity | SeverityLevel): string {
     const tags: Record<Severity, string> = {
       [Severity.CRITICAL]: 'CRITICAL',
       [Severity.HIGH]: 'HIGH',
@@ -217,7 +220,7 @@ export class AnnotationGenerator {
       [Severity.LOW]: 'LOW',
       [Severity.INFO]: 'INFO'
     };
-    return tags[severity] || 'UNKNOWN';
+    return tags[severity as Severity] || 'UNKNOWN';
   }
 
   /**

@@ -205,17 +205,29 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
       throw new Error('Missing required fields');
     }
 
+    // Filter and limit key risks
+    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: any) => {
+      if (options.minRiskLevel) {
+        const levels = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+        const minIndex = levels.indexOf(options.minRiskLevel);
+        const riskIndex = levels.indexOf(risk.riskLevel);
+        return riskIndex >= minIndex;
+      }
+      return true;
+    });
+
+    // Prioritize CRITICAL and HIGH risks, limit to 10
+    const prioritizedRisks = filteredRisks
+      .slice(0, 10);
+
+    // Create overall assessment
+    const overallAssessment = this.createOverallAssessment(unifiedResult);
+
     // Transform and return
     return {
-      keyRisks: unifiedResult.aiKeyRisks.filter((risk: any) => {
-        if (options.minRiskLevel) {
-          const levels = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-          const minIndex = levels.indexOf(options.minRiskLevel);
-          const riskIndex = levels.indexOf(risk.riskLevel);
-          return riskIndex >= minIndex;
-        }
-        return true;
-      }),
+      overallAssessment,
+      keyRisks: prioritizedRisks,
+      fullReportUrl: options.reportPath || this.DEFAULT_REPORT_PATH,
       summary: unifiedResult.summary,
       actionableTasks: unifiedResult.actionableTasks || [],
       metadata: {
@@ -223,6 +235,27 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
         options
       }
     };
+  }
+
+  private createOverallAssessment(unifiedResult: any): string {
+    const summary = unifiedResult.summary;
+    const score = summary.overallScore || summary.projectScore || 0;
+    const grade = summary.overallGrade || summary.projectGrade || 'N/A';
+    const critical = summary.statistics?.riskCounts?.CRITICAL || summary.criticalIssues || 0;
+    const high = summary.statistics?.riskCounts?.HIGH || summary.highIssues || 0;
+    
+    if (unifiedResult.aiKeyRisks && unifiedResult.aiKeyRisks.length === 0) {
+      return '問題は検出されませんでした。';
+    }
+    
+    const assessment = `総合スコア: ${score}/100\nグレード: ${grade}\nCRITICAL: ${critical}件, HIGH: ${high}件`;
+    
+    if (unifiedResult.aiKeyRisks && unifiedResult.aiKeyRisks.length > 0) {
+      const topRisk = unifiedResult.aiKeyRisks[0];
+      return `${assessment}\n最重要問題: ${topRisk.title || topRisk.problem || topRisk.description}`;
+    }
+    
+    return assessment;
   }
 
   /**

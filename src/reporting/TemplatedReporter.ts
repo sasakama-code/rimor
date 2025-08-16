@@ -106,13 +106,13 @@ export class TemplatedReporter {
 
     if (options?.severityFilter && options.severityFilter.length > 0) {
       filteredIssues = filteredIssues.filter(
-        issue => options.severityFilter!.includes(issue.severity)
+        issue => options.severityFilter!.includes(issue.severity as any)
       );
     }
 
     if (options?.typeFilter && options.typeFilter.length > 0) {
       filteredIssues = filteredIssues.filter(
-        issue => options.typeFilter!.includes(issue.type)
+        issue => options.typeFilter!.includes(issue.type as any)
       );
     }
 

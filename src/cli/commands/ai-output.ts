@@ -1,3 +1,4 @@
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { UnifiedAnalysisEngine, BasicAnalysisResult } from '../../core/UnifiedAnalysisEngine';
 import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
@@ -6,7 +7,7 @@ import { AssertionExistsPlugin } from '../../plugins/assertionExists';
 import { UnifiedReportEngine } from '../../reporting/core/UnifiedReportEngine';
 import { AIJsonFormatter } from '../../reporting/formatters/AIJsonFormatter';
 import { MarkdownFormatter } from '../../reporting/formatters/MarkdownFormatter';
-import { FormatterOptions, EnhancedAnalysisResult } from '../../ai-output/types';
+import { FormatterOptions, EnhancedAnalysisResult } from '../../core/types/unified-types';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { OutputFormatter } from '../output';
@@ -294,12 +295,7 @@ export class AIOutputCommand {
         projectContext: {
           rootPath: targetPath,
           language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
-          testFramework: this.detectTestFramework(targetPath),
-          filePatterns: {
-            test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
-            source: ['**/*.{js,ts}'],
-            ignore: ['node_modules/**', 'dist/**']
-          }
+          testFramework: this.detectTestFramework(targetPath)
         }
       };
     } catch (error) {
@@ -313,12 +309,7 @@ export class AIOutputCommand {
         projectContext: {
           rootPath: targetPath,
           language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
-          testFramework: this.detectTestFramework(targetPath),
-          filePatterns: {
-            test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
-            source: ['**/*.{js,ts}'],
-            ignore: ['node_modules/**', 'dist/**']
-          }
+          testFramework: this.detectTestFramework(targetPath)
         }
       };
     }

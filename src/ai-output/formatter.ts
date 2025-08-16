@@ -6,6 +6,7 @@ import {
   AnalysisResult,
   ProjectContext,
   Issue,
+  ExtendedIssue,
   IssueCategory,
   IssueSeverity,
   TestFile,
@@ -207,24 +208,26 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
   /**
    * Format single issue
    */
-  private formatIssue(issue: Issue, includeContext: boolean = false): AIFormattedIssue {
+  private formatIssue(issue: Issue | ExtendedIssue, includeContext: boolean = false): AIFormattedIssue {
+    // ExtendedIssueの場合はそのプロパティを使用
+    const extIssue = issue as ExtendedIssue;
     const formatted: any = {
       category: issue.category,
       severity: issue.severity,
       message: issue.message,
-      line: issue.position?.line,
-      column: issue.position?.column,
-      suggestion: issue.suggestedFix,
+      line: extIssue.position?.line || issue.line,
+      column: extIssue.position?.column || issue.column,
+      suggestion: extIssue.suggestedFix || issue.suggestion,
       impact: this.calculateImpact(issue),
-      codeSnippet: issue.codeSnippet
+      codeSnippet: extIssue.codeSnippet
     };
     
     if (includeContext) {
       formatted.context = {
         targetCode: {
-          content: issue.codeSnippet || `Code at line ${issue.line || issue.position?.line || 10}`,
-          startLine: issue.line || issue.position?.line || 0,
-          endLine: issue.line || issue.position?.line || 0
+          content: extIssue.codeSnippet || `Code at line ${issue.line || extIssue.position?.line || 10}`,
+          startLine: issue.line || extIssue.position?.line || 0,
+          endLine: issue.line || extIssue.position?.line || 0
         },
         surroundingCode: [],
         dependencies: [],
@@ -335,7 +338,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
     const groups = new Map<string, Issue[]>();
     
     issues.forEach(issue => {
-      const file = issue.filePath;
+      const file = issue.filePath || issue.file || 'unknown';
       if (!groups.has(file)) {
         groups.set(file, []);
       }
@@ -353,9 +356,12 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
 
     const severityWeights: Record<IssueSeverity, number> = {
       critical: 0.4,
+      error: 0.3,     // same as high
       high: 0.3,
+      warning: 0.25,  // same as medium
       medium: 0.25,
-      low: 0.1
+      low: 0.1,
+      info: 0.05
     };
 
     const totalWeight = issues.reduce((sum, issue) => {

@@ -8,6 +8,7 @@
  * KISS原則: シンプルなサマリー生成
  */
 
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { BaseFormatter } from './BaseFormatter';
 import { 
   UnifiedAnalysisResult, 
@@ -181,7 +182,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
     // 優先度順にアクションを追加
     
     // 1. CRITICALリスクの対応
-    const criticalRisks = aiKeyRisks.filter(r => r.riskLevel === RiskLevel.CRITICAL);
+    const criticalRisks = aiKeyRisks.filter(r => r.riskLevel === CoreTypes.RiskLevel.CRITICAL);
     criticalRisks.slice(0, 3).forEach(risk => {
       const action = typeof risk.suggestedAction === 'string' 
         ? risk.suggestedAction 
@@ -192,7 +193,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
     });
     
     // 2. HIGHリスクの対応
-    const highRisks = aiKeyRisks.filter(r => r.riskLevel === RiskLevel.HIGH);
+    const highRisks = aiKeyRisks.filter(r => r.riskLevel === CoreTypes.RiskLevel.HIGH);
     highRisks.slice(0, 2).forEach(risk => {
       const action = typeof risk.suggestedAction === 'string' 
         ? risk.suggestedAction 
