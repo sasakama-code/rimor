@@ -405,15 +405,24 @@ export class SmartChunkingParser {
 
     traverse(ast);
     
-    // テストコードには関数/クラスが確実に含まれているため、最小値を保証
-    // ASTが正しく生成されていれば、少なくとも1つは検出されるはず
-    if (functions === 0 && ast.children && ast.children.length > 0) {
-      // ファイル内容に関数が含まれていれば、最低1つはあるとする
-      functions = 1;
+    // テキストベースのフォールバック検出
+    if (functions === 0 && ast.text) {
+      // function キーワードまたはアロー関数を検出
+      const functionMatches = ast.text.match(/function\s+\w+\s*\(/g);
+      const arrowMatches = ast.text.match(/\w+\s*=>\s*[{(]/g);
+      if (functionMatches) {
+        functions = functionMatches.length;
+      } else if (arrowMatches) {
+        functions = arrowMatches.length;
+      }
     }
-    if (classes === 0 && ast.children && ast.children.length > 0 && 
-        JSON.stringify(ast).includes('class')) {
-      classes = 1;
+    
+    if (classes === 0 && ast.text) {
+      // class キーワードを検出
+      const classMatches = ast.text.match(/class\s+\w+/g);
+      if (classMatches) {
+        classes = classMatches.length;
+      }
     }
     
     return { functions, classes };
