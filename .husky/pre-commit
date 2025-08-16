@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Pre-commit checks starting..."
+
+# TypeScript型チェック
+echo "📝 Running TypeScript type check..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed. Please fix type errors before committing."
+  exit 1
+fi
+
+# ESLintチェック（ステージングされたファイルのみ）
+echo "🔧 Running ESLint..."
+npx lint-staged
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint check failed. Please fix linting errors before committing."
+  exit 1
+fi
+
+# ビルドチェック
+echo "🏗️ Running build..."
+npm run build > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed. Please ensure the code builds successfully."
+  exit 1
+fi
+
+# 変更されたテストファイルの実行
+echo "🧪 Running tests for changed files..."
+git diff --cached --name-only | grep -E "\.test\.ts$" | while read file; do
+  if [ -f "$file" ]; then
+    npm test -- "$file" --no-coverage 2>&1 | grep -E "(PASS|FAIL)"
+    if [ $? -ne 0 ]; then
+      echo "❌ Test failed for $file"
+      exit 1
+    fi
+  fi
+done
+
+echo "✅ All pre-commit checks passed!"

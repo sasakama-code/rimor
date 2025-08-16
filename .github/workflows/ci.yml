@@ -5,10 +5,12 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
   pull-requests: write
+  checks: write
 
 jobs:
   # ジョブ1: ビルドと基本検証
