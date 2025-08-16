@@ -244,11 +244,13 @@ describe('IPluginManager Interface', () => {
         },
         analyze: async (filePath: string) => {
           return [{
-            file: filePath,
+            type: 'test-issue',
+            filePath: filePath,
             line: 1,
             column: 1,
             message: 'Test issue',
-            severity: 'info'
+            severity: 'low',
+            category: 'testing'
           } as Issue];
         }
       };

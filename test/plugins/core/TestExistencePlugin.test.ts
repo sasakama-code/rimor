@@ -37,7 +37,10 @@ describe('TestExistencePlugin', () => {
     test('should always return true for core plugin', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: {},
+        packageJson: {
+          name: 'test-project',
+          version: '1.0.0'
+        },
         testFramework: 'jest'
       };
 
@@ -152,6 +155,11 @@ describe('TestExistencePlugin', () => {
           correctness: 100,
           maintainability: 80
         },
+        dimensions: {
+          completeness: 0,
+          correctness: 1.0,
+          maintainability: 0.8
+        },
         confidence: 0.9
       };
 
@@ -178,6 +186,11 @@ describe('TestExistencePlugin', () => {
           correctness: 100,
           maintainability: 80
         },
+        dimensions: {
+          completeness: 0.5,
+          correctness: 1.0,
+          maintainability: 0.8
+        },
         confidence: 0.8
       };
 
@@ -203,6 +216,11 @@ describe('TestExistencePlugin', () => {
           completeness: 100,
           correctness: 100,
           maintainability: 90
+        },
+        dimensions: {
+          completeness: 1.0,
+          correctness: 1.0,
+          maintainability: 0.9
         },
         confidence: 1
       };

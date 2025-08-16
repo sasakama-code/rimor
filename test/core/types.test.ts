@@ -7,8 +7,9 @@
 import {
   // Base types
   Issue,
-  SeverityLevel,
+  IssueSeverity,
   Position,
+  SeverityLevel,
   
   // Plugin types
   IPlugin,
@@ -48,12 +49,12 @@ describe('Type Definitions', () => {
         // Arrange
         const validIssue: Issue = {
           type: 'error',
-          file: 'test.ts',
+          filePath: 'test.ts',
           line: 10,
           column: 5,
-          severity: 'high' as SeverityLevel,
+          severity: 'high' as IssueSeverity,
           message: 'Test issue',
-          rule: 'test-rule'
+          category: 'test-quality'
         };
 
         // Act & Assert
@@ -312,12 +313,12 @@ describe('Type Definitions', () => {
       it('有効なAnalysisResultオブジェクトを正しく判定する', () => {
         // Arrange
         const validResult: AnalysisResult = {
+          filePath: 'test.ts',
+          issues: [],
           timestamp: new Date(),
-          results: [],
-          summary: {
-            totalFiles: 10,
-            filesWithIssues: 3,
-            totalIssues: 5
+          metrics: {
+            lines: 100,
+            complexity: 5
           }
         };
 

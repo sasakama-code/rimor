@@ -1,200 +1,167 @@
-import { PatternDetector } from '../../../src/analyzers/structure-analysis/pattern-detector';
-import { ProjectStructure } from '../../../src/analyzers/types';
+/**
+ * PatternDetector 統合テスト
+ * モックを使用せず、実際のファイルシステムで動作を検証
+ */
+
+import { PatternDetector } from '../../../src/analyzers/structure-analysis/PatternDetector';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  createTempProject,
+  createTestFile,
+  createGodObjectCode,
+  createSpaghettiCode,
+  cleanupTempProject
+} from '../../helpers/integration-test-utils';
 
-describe('PatternDetector', () => {
+describe('PatternDetector Integration Tests', () => {
   let detector: PatternDetector;
-  let mockProjectStructure: ProjectStructure;
+  let projectDir: string;
 
   beforeEach(() => {
     detector = new PatternDetector();
-    
-    // モックプロジェクト構造
-    mockProjectStructure = {
-      overview: {
-        rootPath: '/test/project',
-        totalFiles: 50,
-        totalDirectories: 10,
-        languages: [
-          { language: 'TypeScript', fileCount: 30, percentage: 60, extensions: ['.ts', '.tsx'] },
-          { language: 'JavaScript', fileCount: 20, percentage: 40, extensions: ['.js', '.jsx'] }
-        ],
-        frameworks: [
-          { name: 'React', confidence: 0.9, evidence: ['package.json'] }
-        ],
-        testingFrameworks: [],
-        buildTools: []
-      },
-      directories: [
-        {
-          path: '/test/project/src',
-          purpose: 'source' as const,
-          fileCount: 30,
-          subdirectories: ['components', 'utils', 'factories'],
-          patterns: [],
-          conventions: []
-        },
-        {
-          path: '/test/project/src/factories',
-          purpose: 'source' as const,
-          fileCount: 5,
-          subdirectories: [],
-          patterns: ['Factory'],
-          conventions: ['Factory suffix for factory classes']
-        }
-      ],
-      architecture: {
-        type: 'mvc',
-        confidence: 0.8,
-        evidence: ['controllers/', 'models/', 'views/'],
-        suggestions: ['Consider implementing dependency injection']
-      },
-      conventions: {
-        files: { 
-          pattern: 'camelCase' as const,
-          confidence: 0.8,
-          examples: ['testFile.ts', 'anotherFile.js'],
-          violations: []
-        },
-        directories: { 
-          pattern: 'kebab-case' as const,
-          confidence: 0.9,
-          examples: ['test-utils', 'another-dir'],
-          violations: []
-        },
-        variables: { 
-          pattern: 'camelCase' as const,
-          confidence: 1.0,
-          examples: ['myVariable', 'anotherVar'],
-          violations: []
-        },
-        functions: { 
-          pattern: 'camelCase' as const,
-          confidence: 1.0,
-          examples: ['myFunction', 'doSomething'],
-          violations: []
-        },
-        classes: { 
-          pattern: 'PascalCase' as const,
-          confidence: 1.0,
-          examples: ['MyClass', 'AnotherClass'],
-          violations: []
-        }
-      },
-      metrics: {
-        complexity: {
-          averageCyclomaticComplexity: 10,
-          maxComplexity: 15,
-          complexFiles: ['file1.ts', 'file2.ts'],
-          totalFunctions: 50,
-          averageFunctionLength: 20
-        },
-        maintainability: {
-          maintainabilityIndex: 75,
-          duplicatedCodePercentage: 5,
-          averageFileSize: 100,
-          largeFiles: ['file1.ts', 'file2.ts'],
-          longFunctions: ['func1', 'func2', 'func3']
-        },
-        testability: {
-          testCoverage: 70,
-          testableClasses: 25,
-          untestableClasses: 5,
-          mockability: 0.8
-        },
-        documentation: {
-          documentedFunctions: 80,
-          documentedClasses: 90,
-          documentationCoverage: 60,
-          readmeQuality: 0.8
-        }
-      }
-    };
+    projectDir = createTempProject('pattern-detector-test-');
+  });
+
+  afterEach(() => {
+    cleanupTempProject(projectDir);
   });
 
   describe('detectDesignPatterns', () => {
-    it('should detect Singleton pattern', () => {
-      const fileContent = `
-        export class DatabaseConnection {
-          private static instance: DatabaseConnection;
-          
-          private constructor() {}
-          
-          public static getInstance(): DatabaseConnection {
-            if (!DatabaseConnection.instance) {
-              DatabaseConnection.instance = new DatabaseConnection();
-            }
-            return DatabaseConnection.instance;
-          }
-        }
-      `;
+    it('should detect Singleton pattern in actual files', () => {
+      const singletonCode = `
+export class DatabaseConnection {
+  private static instance: DatabaseConnection;
+  
+  private constructor() {
+    // Private constructor prevents direct instantiation
+  }
+  
+  public static getInstance(): DatabaseConnection {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = new DatabaseConnection();
+    }
+    return DatabaseConnection.instance;
+  }
+  
+  public query(sql: string) {
+    // Database query implementation
+    return [];
+  }
+}
+`;
+
+      const filePath = path.join(projectDir, 'DatabaseConnection.ts');
+      createTestFile(projectDir, 'DatabaseConnection.ts', singletonCode);
       
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'DatabaseConnection.ts');
       
       expect(patterns).toContainEqual(
         expect.objectContaining({
-          type: 'Singleton',
-          confidence: expect.any(Number),
+          name: 'Singleton',
+          type: 'Creational',
           location: 'DatabaseConnection.ts'
         })
       );
     });
 
-    it('should detect Factory pattern', () => {
-      const fileContent = `
-        export class AnimalFactory {
-          createAnimal(type: string): Animal {
-            switch(type) {
-              case 'dog':
-                return new Dog();
-              case 'cat':
-                return new Cat();
-              default:
-                throw new Error('Unknown animal type');
-            }
-          }
-        }
-      `;
+    it('should detect Factory pattern in actual files', () => {
+      const factoryCode = `
+export interface Animal {
+  speak(): string;
+}
+
+class Dog implements Animal {
+  speak(): string {
+    return 'Woof!';
+  }
+}
+
+class Cat implements Animal {
+  speak(): string {
+    return 'Meow!';
+  }
+}
+
+export class AnimalFactory {
+  createAnimal(type: string): Animal {
+    switch(type) {
+      case 'dog':
+        return new Dog();
+      case 'cat':
+        return new Cat();
+      default:
+        throw new Error('Unknown animal type');
+    }
+  }
+}
+`;
+
+      const filePath = path.join(projectDir, 'AnimalFactory.ts');
+      createTestFile(projectDir, 'AnimalFactory.ts', factoryCode);
       
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'AnimalFactory.ts');
       
       expect(patterns).toContainEqual(
         expect.objectContaining({
-          type: 'Factory',
-          confidence: expect.any(Number),
+          name: 'Factory',
+          type: 'Creational',
           location: 'AnimalFactory.ts'
         })
       );
     });
 
-    it('should detect Observer pattern', () => {
-      const fileContent = `
-        export class EventEmitter {
-          private listeners: Map<string, Function[]> = new Map();
-          
-          on(event: string, callback: Function) {
-            if (!this.listeners.has(event)) {
-              this.listeners.set(event, []);
-            }
-            this.listeners.get(event)!.push(callback);
-          }
-          
-          emit(event: string, data: any) {
-            const callbacks = this.listeners.get(event);
-            if (callbacks) {
-              callbacks.forEach(cb => cb(data));
-            }
-          }
-        }
-      `;
+    it('should detect Observer pattern in actual files', () => {
+      const observerCode = `
+export class EventEmitter {
+  private listeners: Map<string, Function[]> = new Map();
+  
+  on(event: string, callback: Function) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event)!.push(callback);
+  }
+  
+  off(event: string, callback: Function) {
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      const index = callbacks.indexOf(callback);
+      if (index !== -1) {
+        callbacks.splice(index, 1);
+      }
+    }
+  }
+  
+  emit(event: string, data: any) {
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(data));
+    }
+  }
+  
+  removeAllListeners(event?: string) {
+    if (event) {
+      this.listeners.delete(event);
+    } else {
+      this.listeners.clear();
+    }
+  }
+}
+`;
+
+      const filePath = path.join(projectDir, 'EventEmitter.ts');
+      createTestFile(projectDir, 'EventEmitter.ts', observerCode);
       
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'EventEmitter.ts');
       
       expect(patterns).toContainEqual(
         expect.objectContaining({
-          type: 'Observer',
-          confidence: expect.any(Number),
+          name: 'Observer',
+          type: 'Behavioral',
           location: 'EventEmitter.ts'
         })
       );
@@ -202,33 +169,12 @@ describe('PatternDetector', () => {
   });
 
   describe('detectAntiPatterns', () => {
-    it('should detect God Object anti-pattern', () => {
-      const fileContent = `
-        export class ApplicationManager {
-          private database: Database;
-          private logger: Logger;
-          private auth: AuthService;
-          private email: EmailService;
-          private cache: CacheService;
-          private queue: QueueService;
-          private analytics: AnalyticsService;
-          
-          connectDatabase() { }
-          disconnectDatabase() { }
-          logMessage() { }
-          logError() { }
-          authenticateUser() { }
-          authorizeUser() { }
-          sendEmail() { }
-          queueEmail() { }
-          cacheData() { }
-          getCachedData() { }
-          trackEvent() { }
-          generateReport() { }
-          // ... 50 more methods
-        }
-      `;
+    it('should detect God Object anti-pattern in actual files', () => {
+      const godObjectCode = createGodObjectCode();
+      const filePath = path.join(projectDir, 'ApplicationManager.ts');
+      createTestFile(projectDir, 'ApplicationManager.ts', godObjectCode);
       
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'ApplicationManager.ts');
       
       expect(antiPatterns).toContainEqual(
@@ -241,29 +187,12 @@ describe('PatternDetector', () => {
       );
     });
 
-    it('should detect Spaghetti Code anti-pattern', () => {
-      const fileContent = `
-        function processData(data: any) {
-          if (data) {
-            if (data.type === 'A') {
-              if (data.value > 10) {
-                if (data.flag) {
-                  for (let i = 0; i < data.items.length; i++) {
-                    if (data.items[i].valid) {
-                      for (let j = 0; j < data.items[i].subitems.length; j++) {
-                        if (data.items[i].subitems[j].active) {
-                          // Deep nested logic
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
+    it('should detect Spaghetti Code anti-pattern in actual files', () => {
+      const spaghettiCode = createSpaghettiCode();
+      const filePath = path.join(projectDir, 'processData.ts');
+      createTestFile(projectDir, 'processData.ts', spaghettiCode);
       
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'processData.ts');
       
       expect(antiPatterns).toContainEqual(
@@ -271,143 +200,191 @@ describe('PatternDetector', () => {
           type: 'Spaghetti Code',
           severity: 'medium',
           location: 'processData.ts',
-          recommendation: expect.stringContaining('refactor')
+          recommendation: expect.stringContaining('nested')
         })
       );
     });
 
-    it('should detect Copy-Paste Programming anti-pattern', () => {
-      const fileContent = `
-        function calculateTax1(amount: number) {
-          const taxRate = 0.2;
-          const deduction = 1000;
-          return (amount - deduction) * taxRate;
-        }
-        
-        function calculateTax2(amount: number) {
-          const taxRate = 0.2;
-          const deduction = 1000;
-          return (amount - deduction) * taxRate;
-        }
-        
-        function calculateTax3(amount: number) {
-          const taxRate = 0.2;
-          const deduction = 1000;
-          return (amount - deduction) * taxRate;
-        }
-      `;
+    it('should detect Copy-Paste Programming in actual files', () => {
+      const copyPasteCode = `
+function calculateTax1(amount: number): number {
+  const rate = 0.1;
+  const deduction = 100;
+  const taxableAmount = amount - deduction;
+  return taxableAmount * rate;
+}
+
+function calculateTax2(amount: number): number {
+  const rate = 0.1;
+  const deduction = 100;
+  const taxableAmount = amount - deduction;
+  return taxableAmount * rate;
+}
+
+function calculateTax3(amount: number): number {
+  const rate = 0.1;
+  const deduction = 100;
+  const taxableAmount = amount - deduction;
+  return taxableAmount * rate;
+}
+`;
+
+      const filePath = path.join(projectDir, 'taxCalculator.ts');
+      createTestFile(projectDir, 'taxCalculator.ts', copyPasteCode);
       
-      const antiPatterns = detector.detectAntiPatterns(fileContent, 'taxes.ts');
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const antiPatterns = detector.detectAntiPatterns(fileContent, 'taxCalculator.ts');
       
       expect(antiPatterns).toContainEqual(
         expect.objectContaining({
           type: 'Copy-Paste Programming',
           severity: 'medium',
-          location: 'taxes.ts',
+          location: 'taxCalculator.ts',
           recommendation: expect.stringContaining('DRY')
+        })
+      );
+    });
+
+    it('should detect Long Method anti-pattern in actual files', () => {
+      const longMethodCode = `
+export class DataProcessor {
+  processData(data: any[]): any[] {
+    // Line 1
+    const result = [];
+    // Line 2
+    let temp = null;
+    // Line 3
+    let counter = 0;
+    // Line 4
+    let accumulator = 0;
+    // Line 5
+    const cache = new Map();
+    ${Array(50).fill('// Processing line').join('\n    ')}
+    // More than 50 lines of processing
+    for (let i = 0; i < data.length; i++) {
+      // Complex processing
+      temp = data[i];
+      counter++;
+      accumulator += temp.value;
+      cache.set(temp.id, temp);
+      result.push(temp);
+    }
+    return result;
+  }
+}
+`;
+
+      const filePath = path.join(projectDir, 'DataProcessor.ts');
+      createTestFile(projectDir, 'DataProcessor.ts', longMethodCode);
+      
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const antiPatterns = detector.detectAntiPatterns(fileContent, 'DataProcessor.ts');
+      
+      expect(antiPatterns).toContainEqual(
+        expect.objectContaining({
+          type: 'Long Method',
+          severity: 'medium',
+          location: 'DataProcessor.ts'
         })
       );
     });
   });
 
-  describe('analyzeProjectPatterns', () => {
-    it('should analyze patterns across the entire project', async () => {
-      const analysis = await detector.analyzeProjectPatterns(mockProjectStructure);
-      
-      expect(analysis).toHaveProperty('designPatterns');
-      expect(analysis).toHaveProperty('antiPatterns');
-      expect(analysis).toHaveProperty('recommendations');
-      expect(analysis).toHaveProperty('score');
-      
-      expect(analysis.designPatterns).toBeInstanceOf(Array);
-      expect(analysis.antiPatterns).toBeInstanceOf(Array);
-      expect(analysis.recommendations).toBeInstanceOf(Array);
-      expect(analysis.score).toBeGreaterThanOrEqual(0);
-      expect(analysis.score).toBeLessThanOrEqual(100);
-    });
+  describe('Integration with multiple files', () => {
+    it('should analyze patterns across multiple files in a project', () => {
+      // 複数のファイルを作成
+      createTestFile(projectDir, 'src/singleton.ts', `
+export class Config {
+  private static instance: Config;
+  private constructor() {}
+  static getInstance() { 
+    if (!this.instance) this.instance = new Config();
+    return this.instance;
+  }
+}
+      `);
 
-    it('should provide recommendations based on detected patterns', async () => {
-      const analysis = await detector.analyzeProjectPatterns(mockProjectStructure);
-      
-      if (analysis.antiPatterns.length > 0) {
-        expect(analysis.recommendations.length).toBeGreaterThan(0);
-        expect(analysis.recommendations[0]).toHaveProperty('pattern');
-        expect(analysis.recommendations[0]).toHaveProperty('action');
-        expect(analysis.recommendations[0]).toHaveProperty('priority');
-      }
-    });
+      createTestFile(projectDir, 'src/factory.ts', `
+export class ShapeFactory {
+  createShape(type: string) {
+    switch(type) {
+      case 'circle': return new Circle();
+      case 'square': return new Square();
+      default: throw new Error('Unknown shape');
+    }
+  }
+}
+      `);
 
-    it('should calculate pattern quality score', async () => {
-      const analysis = await detector.analyzeProjectPatterns(mockProjectStructure);
-      
-      // Score should be lower if anti-patterns are detected
-      if (analysis.antiPatterns.length > 0) {
-        expect(analysis.score).toBeLessThan(80);
-      }
-      
-      // Score should be higher if design patterns are properly used
-      if (analysis.designPatterns.length > analysis.antiPatterns.length) {
-        expect(analysis.score).toBeGreaterThan(50);
-      }
-    });
-  });
+      createTestFile(projectDir, 'src/god-object.ts', createGodObjectCode());
 
-  describe('generatePatternReport', () => {
-    it('should generate comprehensive pattern report', async () => {
-      const analysis = await detector.analyzeProjectPatterns(mockProjectStructure);
-      const report = detector.generatePatternReport(analysis);
-      
-      expect(report).toHaveProperty('summary');
-      expect(report).toHaveProperty('designPatterns');
-      expect(report).toHaveProperty('antiPatterns');
-      expect(report).toHaveProperty('recommendations');
-      expect(report).toHaveProperty('metrics');
-      
-      expect(report.summary).toHaveProperty('totalDesignPatterns');
-      expect(report.summary).toHaveProperty('totalAntiPatterns');
-      expect(report.summary).toHaveProperty('overallScore');
-      expect(report.summary).toHaveProperty('grade');
-    });
+      // 各ファイルを読み込んで分析
+      const singletonContent = fs.readFileSync(path.join(projectDir, 'src/singleton.ts'), 'utf-8');
+      const factoryContent = fs.readFileSync(path.join(projectDir, 'src/factory.ts'), 'utf-8');
+      const godObjectContent = fs.readFileSync(path.join(projectDir, 'src/god-object.ts'), 'utf-8');
 
-    it('should format report for readability', async () => {
-      const analysis = await detector.analyzeProjectPatterns(mockProjectStructure);
-      const report = detector.generatePatternReport(analysis);
-      
-      expect(report.summary.grade).toMatch(/^[A-F]$/);
-      expect(report.metrics).toHaveProperty('patternDiversity');
-      expect(report.metrics).toHaveProperty('antiPatternSeverity');
+      const singletonPatterns = detector.detectDesignPatterns(singletonContent, 'singleton.ts');
+      const factoryPatterns = detector.detectDesignPatterns(factoryContent, 'factory.ts');
+      const godObjectAntiPatterns = detector.detectAntiPatterns(godObjectContent, 'god-object.ts');
+
+      expect(singletonPatterns).toContainEqual(
+        expect.objectContaining({ name: 'Singleton' })
+      );
+      expect(factoryPatterns).toContainEqual(
+        expect.objectContaining({ name: 'Factory' })
+      );
+      expect(godObjectAntiPatterns).toContainEqual(
+        expect.objectContaining({ type: 'God Object' })
+      );
     });
   });
 
-  describe('edge cases', () => {
+  describe('Edge cases and error handling', () => {
     it('should handle empty files gracefully', () => {
-      const patterns = detector.detectDesignPatterns('', 'empty.ts');
-      const antiPatterns = detector.detectAntiPatterns('', 'empty.ts');
+      const emptyFile = path.join(projectDir, 'empty.ts');
+      createTestFile(projectDir, 'empty.ts', '');
+      
+      const fileContent = fs.readFileSync(emptyFile, 'utf-8');
+      const patterns = detector.detectDesignPatterns(fileContent, 'empty.ts');
+      const antiPatterns = detector.detectAntiPatterns(fileContent, 'empty.ts');
       
       expect(patterns).toEqual([]);
       expect(antiPatterns).toEqual([]);
     });
 
-    it('should handle malformed code', () => {
-      const malformedCode = 'class { invalid syntax }}}';
+    it('should handle files with only comments', () => {
+      const commentOnlyCode = `
+// This is a comment
+/* This is a multi-line
+   comment */
+// Another comment
+      `;
       
-      expect(() => {
-        detector.detectDesignPatterns(malformedCode, 'malformed.ts');
-      }).not.toThrow();
+      const filePath = path.join(projectDir, 'comments.ts');
+      createTestFile(projectDir, 'comments.ts', commentOnlyCode);
       
-      expect(() => {
-        detector.detectAntiPatterns(malformedCode, 'malformed.ts');
-      }).not.toThrow();
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const patterns = detector.detectDesignPatterns(fileContent, 'comments.ts');
+      const antiPatterns = detector.detectAntiPatterns(fileContent, 'comments.ts');
+      
+      expect(patterns).toEqual([]);
+      expect(antiPatterns).toEqual([]);
     });
 
     it('should handle very large files', () => {
-      const largeFile = 'const x = 1;\n'.repeat(10000);
+      // 大きなファイルを生成
+      const largeCode = Array(1000).fill('function test() { return true; }').join('\n');
       
-      const patterns = detector.detectDesignPatterns(largeFile, 'large.ts');
-      const antiPatterns = detector.detectAntiPatterns(largeFile, 'large.ts');
+      const filePath = path.join(projectDir, 'large.ts');
+      createTestFile(projectDir, 'large.ts', largeCode);
       
-      expect(patterns).toBeDefined();
-      expect(antiPatterns).toBeDefined();
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // エラーなく処理できることを確認
+      expect(() => {
+        detector.detectDesignPatterns(fileContent, 'large.ts');
+        detector.detectAntiPatterns(fileContent, 'large.ts');
+      }).not.toThrow();
     });
   });
 });

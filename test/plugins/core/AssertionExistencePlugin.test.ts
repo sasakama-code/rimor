@@ -259,9 +259,9 @@ describe('AssertionExistencePlugin', () => {
           effortMinutes: expect.any(Number)
         })
       });
-      if (typeof improvements[0].estimatedImpact === 'object' && improvements[0].estimatedImpact !== null && 'scoreImprovement' in improvements[0].estimatedImpact) {
-        expect(improvements[0].estimatedImpact.scoreImprovement).toBeGreaterThan(0);
-      } else if (typeof improvements[0].estimatedImpact === 'number') {
+      if (improvements[0].impact && typeof improvements[0].impact === 'object' && 'scoreImprovement' in improvements[0].impact) {
+        expect(improvements[0].impact.scoreImprovement).toBeGreaterThan(0);
+      } else if (improvements[0].estimatedImpact && typeof improvements[0].estimatedImpact === 'number') {
         expect(improvements[0].estimatedImpact).toBeGreaterThan(0);
       }
     });

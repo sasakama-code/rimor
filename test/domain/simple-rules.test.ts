@@ -52,7 +52,7 @@ describe('SimpleDomainRules', () => {
         name: '削除テストルール',
         description: '削除テスト用',
         category: 'quality',
-        severity: 'medium',
+        severity: 'warning',
         patterns: [
           {
             type: 'regex',
@@ -77,7 +77,7 @@ describe('SimpleDomainRules', () => {
         name: 'ユニークカテゴリルール',
         description: 'カテゴリテスト用',
         category: 'maintainability',
-        severity: 'medium',
+        severity: 'warning',
         patterns: [
           {
             type: 'keyword',
@@ -149,7 +149,7 @@ describe('SimpleDomainRules', () => {
         name: '有効なルール',
         description: '有効なルールの説明',
         category: 'quality',
-        severity: 'medium',
+        severity: 'warning',
         patterns: [
           {
             type: 'regex',
@@ -237,7 +237,7 @@ describe('SimpleDomainRules', () => {
         name: '警告重大度ルール',
         description: '警告レベルテスト',
         category: 'quality',
-        severity: 'medium',
+        severity: 'warning',
         patterns: [
           {
             type: 'keyword',

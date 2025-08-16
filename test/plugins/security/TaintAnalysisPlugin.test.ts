@@ -140,8 +140,8 @@ describe('TaintAnalysisPlugin', () => {
       
       expect(score.overall).toBeLessThan(100);
       expect(score.overall).toBeGreaterThan(0);
-      expect(score.breakdown?.completeness).toBeDefined();
-      expect(score.breakdown?.correctness).toBeDefined();
+      expect(score.dimensions?.completeness).toBeDefined();
+      expect(score.dimensions?.correctness).toBeDefined();
     });
     
     it('should give perfect score for clean code', () => {

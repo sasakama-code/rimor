@@ -96,10 +96,10 @@ describe('UnifiedAIFormatter', () => {
       const result = formatter.formatAsAIJson(unifiedResult, options);
       
       // Assert
-      const riskLevels = result.keyRisks.map(r => r.riskLevel);
+      const riskLevels = result.keyRisks.map((r: any) => r.riskLevel);
       expect(riskLevels[0]).toBe('CRITICAL');
       expect(riskLevels[1]).toBe('HIGH');
-      expect(riskLevels.filter(l => l === 'LOW')).toHaveLength(0);
+      expect(riskLevels.filter((l: string) => l === 'LOW')).toHaveLength(0);
       expect(result.keyRisks).toHaveLength(2);
     });
 
@@ -117,7 +117,7 @@ describe('UnifiedAIFormatter', () => {
     it('fullReportUrlにHTMLレポートへのパスを設定する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      const options = { reportPath: '.rimor/reports' };
+      const options = { reportPath: '.rimor/reports/index.html' };
       
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
@@ -160,8 +160,7 @@ describe('UnifiedAIFormatter', () => {
       const unifiedResult = createMockUnifiedResult();
       const actualHtmlPath = '/projects/rimor/.rimor/reports/analysis-report.html';
       const options = { 
-        reportPath: '.rimor/reports',
-        htmlReportPath: actualHtmlPath
+        reportPath: actualHtmlPath
       };
       
       // Act
@@ -174,7 +173,7 @@ describe('UnifiedAIFormatter', () => {
     it('HTMLレポートパスが指定されない場合はデフォルトパスを使用する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      const options = { reportPath: '.rimor/reports' };
+      const options = {};
       
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
