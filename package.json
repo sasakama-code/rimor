@@ -13,6 +13,8 @@
     "build:simple": "tsc && npm run copy:templates && npm run ensure:testing",
     "build:full": "rm -rf dist && tsc -p tsconfig.build.json && npm run copy:templates && npm run ensure:testing && npm run verify:build",
     "build:ci": "tsc -p tsconfig.build.json && npm run copy:templates && npm run ensure:testing && npm run verify:build",
+    "build:fast": "tsc --incremental && npm run copy:templates && npm run ensure:testing",
+    "build:watch": "tsc --watch --incremental",
     "copy:templates": "mkdir -p dist/reporting/templates && cp -r src/reporting/templates/*.hbs dist/reporting/templates/",
     "ensure:testing": "test -f dist/testing/error-context.js || npx tsc src/testing/*.ts --outDir dist --module commonjs --target ES2022 --esModuleInterop --skipLibCheck",
     "verify:build": "node scripts/verify-build.js",
@@ -61,7 +63,16 @@
     "benchmark:arxiv-paper": "NODE_OPTIONS=\"--max-old-space-size=4096\" ts-node scripts/benchmark-arxiv-paper.ts",
     "dev:test": "DISABLE_AI_REPORTER=true jest --watch",
     "ci:local": "CI=true npm run build:full && CI=true npm test",
-    "clean:all": "rm -rf dist node_modules coverage temp test-errors-ai.* .jest-cache"
+    "clean:all": "rm -rf dist node_modules coverage temp test-errors-ai.* .jest-cache",
+    "docs:build": "typedoc",
+    "docs:clean": "rm -rf docs/api docs/api-markdown",
+    "docs:build:markdown": "typedoc --plugin typedoc-plugin-markdown --out docs/api-markdown",
+    "docs:serve": "npx http-server docs/api -p 8080 -o",
+    "type:coverage": "node scripts/type-coverage.js",
+    "type:check-circular": "node scripts/check-circular-deps.js",
+    "type:convert-any": "node scripts/convert-any-to-unknown.js",
+    "type:convert-any:dry": "node scripts/convert-any-to-unknown.js src --dry-run",
+    "type:report": "npm run type:coverage && npm run type:check-circular"
   },
   "keywords": [
     "testing",
@@ -114,7 +125,10 @@
     "jsonwebtoken": "^9.0.2",
     "lint-staged": "^16.1.5",
     "supertest": "^6.3.3",
-    "ts-jest": "^29.1.0"
+    "ts-jest": "^29.1.0",
+    "typedoc": "^0.28.10",
+    "typedoc-plugin-markdown": "^4.8.1",
+    "typedoc-plugin-mermaid": "^1.12.0"
   },
   "engines": {
     "node": ">=16.0.0"

@@ -210,7 +210,7 @@ export class IntentAnalyzeCommand {
           console.log(`ワーカー ${index + 1} 開始: ${chunk.length} ファイル`);
         }
         
-        worker.on('message', (result: any) => {
+        worker.on('message', (result: unknown) => {
           if (result.error) {
             reject(new Error(result.error));
           } else {

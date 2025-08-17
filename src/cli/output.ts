@@ -1,5 +1,5 @@
 
-let chalkInstance: any = null;
+let chalkInstance: typeof import('chalk').default | null = null;
 let chalkPromise: Promise<any> | null = null;
 
 function getChalk() {

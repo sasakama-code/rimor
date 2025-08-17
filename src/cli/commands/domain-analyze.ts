@@ -153,7 +153,7 @@ export class DomainAnalyzeCommand {
         this.outputText(domainDefinition, domainFile);
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error(chalk.red(`エラーが発生しました: ${error.message}`));
       if (options.verbose) {
         console.error(error.stack);

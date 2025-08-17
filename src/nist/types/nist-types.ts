@@ -278,5 +278,5 @@ export interface RiskItem {
   /** リスクレベル */
   level: string;
   /** その他のプロパティ */
-  [key: string]: any;
+  [key: string]: unknown;
 }

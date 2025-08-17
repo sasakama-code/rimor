@@ -71,7 +71,7 @@ export interface CategoryRisk {
   count: number;
   averageScore: number;
   maxRiskLevel: RiskLevel;
-  risks: any[];
+  risks: unknown[];
 }
 
 /**

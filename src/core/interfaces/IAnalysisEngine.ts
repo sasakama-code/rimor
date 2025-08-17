@@ -4,6 +4,8 @@
  */
 
 import { Issue } from '../types';
+// 統一型定義をインポート
+import { AnalysisResult as UnifiedAnalysisResult } from '../../types/analysis';
 
 /**
  * ASTノード型定義（v0.9.0）
@@ -19,19 +21,9 @@ export interface ASTNode {
 
 /**
  * 分析結果
+ * 統一型を使用し、後方互換性のためにエクスポート
  */
-export interface AnalysisResult {
-  totalFiles: number;
-  issues: Issue[];
-  executionTime: number;
-  pluginsExecuted?: string[];  // 実行されたプラグインのリスト
-  metadata?: {
-    parallelProcessed?: boolean;
-    cacheUtilized?: boolean;
-    filesFromCache?: number;
-    filesAnalyzed?: number;
-  };
-}
+export type AnalysisResult = UnifiedAnalysisResult;
 
 /**
  * 分析オプション
