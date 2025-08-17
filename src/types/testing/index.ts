@@ -245,35 +245,40 @@ export interface TestCase extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTestCase(obj: unknown): obj is TestCase {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.status === 'string' &&
-    ['pending', 'running', 'passed', 'failed', 'skipped'].includes(obj.status);
+    'id' in obj &&
+    'name' in obj &&
+    'status' in obj &&
+    typeof (obj as any).id === 'string' &&
+    typeof (obj as any).name === 'string' &&
+    typeof (obj as any).status === 'string' &&
+    ['pending', 'running', 'passed', 'failed', 'skipped'].includes((obj as any).status));
 }
 
 /**
  * 型ガード: テストメタデータを持つかどうかを判定
  */
 export function hasTestMetadata(obj: unknown): obj is TestCaseWithMetadata {
-  return obj &&
-    obj.metadata &&
-    typeof obj.metadata === 'object' &&
-    (obj.metadata.executionTime === undefined || typeof obj.metadata.executionTime === 'number');
+  return obj !== null &&
+    typeof obj === 'object' &&
+    'metadata' in obj &&
+    (obj as any).metadata !== null &&
+    typeof (obj as any).metadata === 'object' &&
+    ((obj as any).metadata.executionTime === undefined || typeof (obj as any).metadata.executionTime === 'number');
 }
 
 /**
  * 型ガード: アサーション情報を持つかどうかを判定
  */
 export function hasAssertions(obj: unknown): obj is TestCaseWithAssertions {
-  const testObj = obj as TestCaseWithAssertions;
-  return testObj &&
-    testObj.assertions &&
-    Array.isArray(testObj.assertions) &&
-    testObj.assertions.every((a) => 
+  return !!(obj !== null &&
+    typeof obj === 'object' &&
+    'assertions' in obj &&
+    Array.isArray((obj as any).assertions) &&
+    (obj as any).assertions.every((a: any) => 
       a.type && a.expected !== undefined && a.actual !== undefined && typeof a.passed === 'boolean'
-    );
+    ));
 }
 
 /**

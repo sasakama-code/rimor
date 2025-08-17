@@ -250,36 +250,48 @@ export interface DomainAnalysisResult {
  * 型ガード: DomainContextかどうかを判定
  */
 export function isDomainContext(obj: unknown): obj is DomainContext {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.name === 'string' &&
-    obj.category &&
-    obj.layer &&
-    Array.isArray(obj.entities);
+    'name' in obj &&
+    'category' in obj &&
+    'layer' in obj &&
+    'entities' in obj &&
+    typeof (obj as any).name === 'string' &&
+    (obj as any).category !== undefined &&
+    (obj as any).layer !== undefined &&
+    Array.isArray((obj as any).entities));
 }
 
 /**
  * 型ガード: DomainEntityかどうかを判定
  */
 export function isDomainEntity(obj: unknown): obj is DomainEntity {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    obj.type &&
-    Array.isArray(obj.properties);
+    'id' in obj &&
+    'name' in obj &&
+    'type' in obj &&
+    'properties' in obj &&
+    typeof (obj as any).id === 'string' &&
+    typeof (obj as any).name === 'string' &&
+    (obj as any).type !== undefined &&
+    Array.isArray((obj as any).properties);
 }
 
 /**
  * 型ガード: DomainEventかどうかを判定
  */
 export function isDomainEvent(obj: unknown): obj is DomainEvent {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.name === 'string' &&
-    typeof obj.timestamp === 'string' &&
-    typeof obj.aggregateId === 'string' &&
-    obj.payload;
+    'name' in obj &&
+    'timestamp' in obj &&
+    'aggregateId' in obj &&
+    'payload' in obj &&
+    typeof (obj as any).name === 'string' &&
+    typeof (obj as any).timestamp === 'string' &&
+    typeof (obj as any).aggregateId === 'string' &&
+    (obj as any).payload !== undefined;
 }
 
 /**

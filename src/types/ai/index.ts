@@ -379,26 +379,36 @@ export interface AIOutputError extends Error {
  * 型ガード: AIOptimizedOutputかどうかを判定
  */
 export function isAIOptimizedOutput(obj: unknown): obj is AIOptimizedOutput {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    obj.format === 'ai-optimized' &&
-    obj.version &&
-    obj.metadata &&
-    obj.context &&
-    obj.qualityOverview &&
-    Array.isArray(obj.files);
+    'format' in obj &&
+    'version' in obj &&
+    'metadata' in obj &&
+    'context' in obj &&
+    'qualityOverview' in obj &&
+    'files' in obj &&
+    (obj as any).format === 'ai-optimized' &&
+    (obj as any).version !== undefined &&
+    (obj as any).metadata !== undefined &&
+    (obj as any).context !== undefined &&
+    (obj as any).qualityOverview !== undefined &&
+    Array.isArray((obj as any).files));
 }
 
 /**
  * 型ガード: AIFormattedIssueかどうかを判定
  */
 export function isAIFormattedIssue(obj: unknown): obj is AIFormattedIssue {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.category === 'string' &&
-    typeof obj.severity === 'string' &&
-    typeof obj.message === 'string' &&
-    ['high', 'medium', 'low'].includes(obj.impact);
+    'category' in obj &&
+    'severity' in obj &&
+    'message' in obj &&
+    'impact' in obj &&
+    typeof (obj as any).category === 'string' &&
+    typeof (obj as any).severity === 'string' &&
+    typeof (obj as any).message === 'string' &&
+    ['high', 'medium', 'low'].includes((obj as any).impact));
 }
 
 /**

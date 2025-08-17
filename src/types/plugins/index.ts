@@ -273,11 +273,14 @@ export interface IPluginManager {
  * 型ガード: IPluginかどうかを判定
  */
 export function isPlugin(obj: unknown): obj is IPlugin {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.name === 'string' &&
-    obj.type &&
-    typeof obj.execute === 'function';
+    'name' in obj &&
+    'type' in obj &&
+    'execute' in obj &&
+    typeof (obj as any).name === 'string' &&
+    (obj as any).type !== undefined &&
+    typeof (obj as any).execute === 'function';
 }
 
 /**

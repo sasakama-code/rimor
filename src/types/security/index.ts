@@ -219,23 +219,27 @@ export interface TaintAnalysisResult extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTaintAnalysisResult(obj: unknown): obj is TaintAnalysisResult {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    Array.isArray(obj.flows) &&
-    obj.summary &&
-    typeof obj.summary === 'object' &&
-    typeof obj.summary.totalFlows === 'number' &&
-    Array.isArray(obj.recommendations);
+    'flows' in obj &&
+    'summary' in obj &&
+    'recommendations' in obj &&
+    Array.isArray((obj as any).flows) &&
+    (obj as any).summary !== null &&
+    typeof (obj as any).summary === 'object' &&
+    typeof (obj as any).summary.totalFlows === 'number' &&
+    Array.isArray((obj as any).recommendations);
 }
 
 /**
  * 型ガード: セキュリティ違反を含むかどうかを判定
  */
 export function hasSecurityViolations(obj: unknown): obj is TaintAnalysisWithViolations {
-  return obj &&
-    obj.violations &&
-    Array.isArray(obj.violations) &&
-    obj.violations.every((v) => 
+  return obj !== null &&
+    typeof obj === 'object' &&
+    'violations' in obj &&
+    Array.isArray((obj as any).violations) &&
+    (obj as any).violations.every((v: any) => 
       v.type && v.severity && v.source && v.sink && v.description
     );
 }
@@ -244,11 +248,13 @@ export function hasSecurityViolations(obj: unknown): obj is TaintAnalysisWithVio
  * 型ガード: アノテーションを含むかどうかを判定
  */
 export function hasAnnotations(obj: unknown): obj is TaintAnalysisWithAnnotations {
-  return obj &&
-    obj.annotations &&
-    typeof obj.annotations === 'object' &&
-    Array.isArray(obj.annotations.taintedProperties) &&
-    Array.isArray(obj.annotations.untaintedProperties);
+  return obj !== null &&
+    typeof obj === 'object' &&
+    'annotations' in obj &&
+    (obj as any).annotations !== null &&
+    typeof (obj as any).annotations === 'object' &&
+    Array.isArray((obj as any).annotations.taintedProperties) &&
+    Array.isArray((obj as any).annotations.untaintedProperties);
 }
 
 /**

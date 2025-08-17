@@ -214,23 +214,30 @@ export interface TaskRegistry {
  * 型ガード: WorkerTaskかどうかを判定
  */
 export function isWorkerTask(obj: unknown): obj is WorkerTask {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.type === 'string' &&
-    obj.payload !== undefined &&
-    typeof obj.createdAt === 'string';
+    'id' in obj &&
+    'type' in obj &&
+    'payload' in obj &&
+    'createdAt' in obj &&
+    typeof (obj as any).id === 'string' &&
+    typeof (obj as any).type === 'string' &&
+    (obj as any).payload !== undefined &&
+    typeof (obj as any).createdAt === 'string');
 }
 
 /**
  * 型ガード: TaskResultかどうかを判定
  */
 export function isTaskResult(obj: unknown): obj is TaskResult {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.taskId === 'string' &&
-    typeof obj.success === 'boolean' &&
-    typeof obj.executionTime === 'number';
+    'taskId' in obj &&
+    'success' in obj &&
+    'executionTime' in obj &&
+    typeof (obj as any).taskId === 'string' &&
+    typeof (obj as any).success === 'boolean' &&
+    typeof (obj as any).executionTime === 'number');
 }
 
 /**

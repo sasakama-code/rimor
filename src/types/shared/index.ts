@@ -285,25 +285,34 @@ export interface ProjectMetrics {
  * 型ガード: DesignPatternかどうかを判定
  */
 export function isDesignPattern(obj: unknown): obj is DesignPattern {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    obj.type &&
-    typeof obj.name === 'string' &&
-    obj.location &&
-    typeof obj.confidence === 'number';
+    'type' in obj &&
+    'name' in obj &&
+    'location' in obj &&
+    'confidence' in obj &&
+    (obj as any).type !== undefined &&
+    typeof (obj as any).name === 'string' &&
+    (obj as any).location !== undefined &&
+    typeof (obj as any).confidence === 'number';
 }
 
 /**
  * 型ガード: AntiPatternかどうかを判定
  */
 export function isAntiPattern(obj: unknown): obj is AntiPattern {
-  return obj &&
+  return obj !== null &&
     typeof obj === 'object' &&
-    obj.type &&
-    typeof obj.name === 'string' &&
-    obj.location &&
-    obj.severity &&
-    Array.isArray(obj.refactoringSuggestions);
+    'type' in obj &&
+    'name' in obj &&
+    'location' in obj &&
+    'severity' in obj &&
+    'refactoringSuggestions' in obj &&
+    (obj as any).type !== undefined &&
+    typeof (obj as any).name === 'string' &&
+    (obj as any).location !== undefined &&
+    (obj as any).severity !== undefined &&
+    Array.isArray((obj as any).refactoringSuggestions);
 }
 
 /**

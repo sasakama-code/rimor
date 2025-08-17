@@ -129,32 +129,37 @@ export interface AnalysisResult extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isAnalysisResult(obj: unknown): obj is AnalysisResult {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    typeof obj.totalFiles === 'number' &&
-    Array.isArray(obj.issues) &&
-    typeof obj.executionTime === 'number';
+    'totalFiles' in obj &&
+    'issues' in obj &&
+    'executionTime' in obj &&
+    typeof (obj as any).totalFiles === 'number' &&
+    Array.isArray((obj as any).issues) &&
+    typeof (obj as any).executionTime === 'number');
 }
 
 /**
  * 型ガード: プラグインメタデータを持つかどうかを判定
  */
 export function hasPluginMetadata(obj: unknown): obj is AnalysisResultWithPlugins {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    (obj.pluginsExecuted === undefined || Array.isArray(obj.pluginsExecuted)) &&
-    (obj.pluginResults === undefined || typeof obj.pluginResults === 'object');
+    (!('pluginsExecuted' in obj) || (obj as any).pluginsExecuted === undefined || Array.isArray((obj as any).pluginsExecuted)) &&
+    (!('pluginResults' in obj) || (obj as any).pluginResults === undefined || typeof (obj as any).pluginResults === 'object'));
 }
 
 /**
  * 型ガード: 並列処理統計を持つかどうかを判定
  */
 export function hasParallelStats(obj: unknown): obj is AnalysisResultWithParallelStats {
-  return obj &&
+  return !!(obj !== null &&
     typeof obj === 'object' &&
-    obj.parallelStats &&
-    typeof obj.parallelStats.batchCount === 'number' &&
-    typeof obj.parallelStats.threadsUsed === 'number';
+    'parallelStats' in obj &&
+    (obj as any).parallelStats !== null &&
+    typeof (obj as any).parallelStats === 'object' &&
+    typeof (obj as any).parallelStats.batchCount === 'number' &&
+    typeof (obj as any).parallelStats.threadsUsed === 'number');
 }
 
 /**
