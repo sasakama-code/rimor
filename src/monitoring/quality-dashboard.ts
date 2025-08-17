@@ -346,10 +346,10 @@ export class QualityDashboard {
         const report = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
         const issues = report.issues || [];
         
-        const critical = issues.filter((i: any) => i.severity === 'critical').length;
-        const high = issues.filter((i: any) => i.severity === 'high').length;
-        const medium = issues.filter((i: any) => i.severity === 'medium').length;
-        const low = issues.filter((i: any) => i.severity === 'low').length;
+        const critical = issues.filter((i: { severity: string }) => i.severity === 'critical').length;
+        const high = issues.filter((i: { severity: string }) => i.severity === 'high').length;
+        const medium = issues.filter((i: { severity: string }) => i.severity === 'medium').length;
+        const low = issues.filter((i: { severity: string }) => i.severity === 'low').length;
         
         // スコア計算（重み付き）
         const totalWeighted = critical * 10 + high * 5 + medium * 2 + low;
