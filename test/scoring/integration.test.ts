@@ -292,6 +292,7 @@ describe('Scoring System Integration', () => {
         
         for (let i = 0; i < issueCount; i++) {
           issues.push({
+            id: `issue-${i}`,
             type: `issue-${i}`,
             severity: 'medium',
             message: `品質問題 ${i + 1}: ${filePath}`,
@@ -318,6 +319,7 @@ describe('Scoring System Integration', () => {
         
         return [
           {
+            id: 'missing-assertion-1',
             type: 'missing-assertion',
             severity: 'medium',
             message: 'アサーションが不足している可能性があります',
