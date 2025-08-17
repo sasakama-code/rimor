@@ -293,7 +293,7 @@ export class JestAIReporter implements Reporter {
   /**
    * スイートレベルのエラーを収集
    */
-  private async collectSuiteError(testFilePath: string, execError: any): Promise<void> {
+  private async collectSuiteError(testFilePath: string, execError: unknown): Promise<void> {
     try {
       const rawErrorMessage = typeof execError === 'string' ? execError : 
                           execError.message || 'Test suite execution failed';
