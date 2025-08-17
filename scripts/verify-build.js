@@ -100,11 +100,25 @@ function verifyBuild() {
   if (checkFileExists('dist/core/pluginManager.js', 'プラグインマネージャー')) checks.core.passed++; else checks.core.failed++;
   if (checkFileExists('dist/core/engine.js', '統合エンジン')) checks.core.passed++; else checks.core.failed++;
 
-  // セキュリティコンポーネントの確認（型定義ファイルのみ生成される場合が多い）
+  // セキュリティコンポーネントの確認（JSファイルまたは型定義ファイル）
   log('\n【セキュリティコンポーネント】');
-  if (checkFileExists('dist/security/taint-analysis-system.d.ts', 'Taint解析システム型定義')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/checker/type-check-worker.d.ts', '型チェックワーカー型定義')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/compatibility/checker-framework-compatibility.d.ts', '互換性モジュール型定義')) checks.security.passed++; else checks.security.failed++;
+  const hasError1 = hasError;
+  const taintAnalysisExists = checkFileExists('dist/security/taint-analysis-system.js', 'Taint解析システム') || 
+                               checkFileExists('dist/security/taint-analysis-system.d.ts', 'Taint解析システム型定義');
+  hasError = hasError1; // Reset error flag for OR condition
+  if (taintAnalysisExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
+  
+  const hasError2 = hasError;
+  const typeCheckWorkerExists = checkFileExists('dist/security/checker/type-check-worker.js', '型チェックワーカー') ||
+                                 checkFileExists('dist/security/checker/type-check-worker.d.ts', '型チェックワーカー型定義');
+  hasError = hasError2; // Reset error flag for OR condition
+  if (typeCheckWorkerExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
+  
+  const hasError3 = hasError;
+  const compatibilityExists = checkFileExists('dist/security/compatibility/checker-framework-compatibility.js', '互換性モジュール') ||
+                               checkFileExists('dist/security/compatibility/checker-framework-compatibility.d.ts', '互換性モジュール型定義');
+  hasError = hasError3; // Reset error flag for OR condition
+  if (compatibilityExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
 
   // プラグインの確認
   log('\n【プラグイン】');
