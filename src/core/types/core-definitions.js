@@ -34,26 +34,37 @@ var CoreTypes;
 var TypeGuards;
 (function (TypeGuards) {
     function isRiskLevel(value) {
-        return Object.values(CoreTypes.RiskLevel).includes(value);
+        return typeof value === 'string' &&
+            ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'].includes(value);
     }
     TypeGuards.isRiskLevel = isRiskLevel;
     function isSeverityLevel(value) {
-        return ['critical', 'high', 'medium', 'low', 'info'].includes(value);
+        return typeof value === 'string' &&
+            ['critical', 'high', 'medium', 'low', 'info'].includes(value);
     }
     TypeGuards.isSeverityLevel = isSeverityLevel;
     function isIssue(value) {
-        return value &&
+        return !!(value !== null &&
+            typeof value === 'object' &&
+            'id' in value &&
+            'type' in value &&
+            'severity' in value &&
+            'message' in value &&
             typeof value.id === 'string' &&
             typeof value.type === 'string' &&
             isSeverityLevel(value.severity) &&
-            typeof value.message === 'string';
+            typeof value.message === 'string');
     }
     TypeGuards.isIssue = isIssue;
     function isRiskAssessment(value) {
-        return value &&
+        return !!(value !== null &&
+            typeof value === 'object' &&
+            'riskLevel' in value &&
+            'category' in value &&
+            'description' in value &&
             isRiskLevel(value.riskLevel) &&
             typeof value.category === 'string' &&
-            typeof value.description === 'string';
+            typeof value.description === 'string');
     }
     TypeGuards.isRiskAssessment = isRiskAssessment;
 })(TypeGuards || (exports.TypeGuards = TypeGuards = {}));

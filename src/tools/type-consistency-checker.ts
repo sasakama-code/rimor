@@ -260,10 +260,12 @@ if (require.main === module) {
     console.log(`レポート生成: ${reportPath}`);
     
     if (conflicts.length > 0) {
-      const unifiedPath = path.join(__dirname, '../core/types/unified-types.ts');
-      fs.mkdirSync(path.dirname(unifiedPath), { recursive: true });
-      checker.generateUnifiedTypes(unifiedPath);
-      console.log(`統一型定義生成: ${unifiedPath}`);
+      // unified-types.tsは廃止されました (issue #77)
+      // 新しい型定義は src/types/ 配下のモジュールを使用してください
+      // const unifiedPath = path.join(__dirname, '../core/types/unified-types.ts');
+      // fs.mkdirSync(path.dirname(unifiedPath), { recursive: true });
+      // checker.generateUnifiedTypes(unifiedPath);
+      // console.log(`統一型定義生成: ${unifiedPath}`);
     }
   })();
 }

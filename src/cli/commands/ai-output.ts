@@ -7,7 +7,7 @@ import { AssertionExistsPlugin } from '../../plugins/assertionExists';
 import { UnifiedReportEngine } from '../../reporting/core/UnifiedReportEngine';
 import { AIJsonFormatter } from '../../reporting/formatters/AIJsonFormatter';
 import { MarkdownFormatter } from '../../reporting/formatters/MarkdownFormatter';
-import { FormatterOptions, EnhancedAnalysisResult } from '../../core/types/unified-types';
+import { FormatterOptions, EnhancedAnalysisResult } from '../../ai-output/types';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { OutputFormatter } from '../output';

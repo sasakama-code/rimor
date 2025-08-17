@@ -24,15 +24,5 @@
     "demo",
     "**/__tests__/**",
     "**/__mocks__/**"
-  ],
-  "references": [
-    { "path": "./src/types/ai" },
-    { "path": "./src/types/analysis" },
-    { "path": "./src/types/domain" },
-    { "path": "./src/types/plugins" },
-    { "path": "./src/types/security" },
-    { "path": "./src/types/shared" },
-    { "path": "./src/types/testing" },
-    { "path": "./src/types/workers" }
   ]
 }
