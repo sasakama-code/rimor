@@ -296,7 +296,7 @@ export class JestAIReporter implements Reporter {
   private async collectSuiteError(testFilePath: string, execError: unknown): Promise<void> {
     try {
       const rawErrorMessage = typeof execError === 'string' ? execError : 
-                          execError.message || 'Test suite execution failed';
+                          (execError as any)?.message || 'Test suite execution failed';
       
       // エラーメッセージをサニタイズ
       const errorMessage = sanitizeForAIReport(rawErrorMessage);
@@ -322,7 +322,7 @@ export class JestAIReporter implements Reporter {
         
         error: {
           message: errorMessage,
-          stack: sanitizeForAIReport(execError.stack || '')
+          stack: sanitizeForAIReport((execError as any)?.stack || '')
         },
         
         codeContext: {
@@ -361,7 +361,7 @@ export class JestAIReporter implements Reporter {
       };
       
       this.collectedErrors.push(context);
-      this.suiteErrors.set(testFilePath, execError);
+      this.suiteErrors.set(testFilePath, execError as Error);
       
       if (this.enableConsoleOutput && process.env.CI !== 'true') {
         console.log(`  ⚠️ Suite Error [${errorType}]: ${path.basename(testFilePath)}`);

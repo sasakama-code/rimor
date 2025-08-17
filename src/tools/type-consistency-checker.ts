@@ -106,7 +106,7 @@ export class TypeConsistencyChecker {
    */
   private hasExportModifier(node: ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration): boolean {
     if (!node.modifiers) return false;
-    return node.modifiers.some((m: ts.Modifier) => m.kind === ts.SyntaxKind.ExportKeyword);
+    return node.modifiers.some((m: any) => m.kind === ts.SyntaxKind.ExportKeyword);
   }
 
   /**

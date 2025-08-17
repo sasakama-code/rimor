@@ -154,8 +154,9 @@ export class DomainAnalyzeCommand {
       }
 
     } catch (error) {
-      console.error(chalk.red(`エラーが発生しました: ${error.message}`));
-      if (options.verbose) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`エラーが発生しました: ${errorMessage}`));
+      if (options.verbose && error instanceof Error) {
         console.error(error.stack);
       }
       // エラー時には非ゼロの終了コードを返す

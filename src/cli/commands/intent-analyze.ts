@@ -211,13 +211,14 @@ export class IntentAnalyzeCommand {
         }
         
         worker.on('message', (result: unknown) => {
-          if (result.error) {
-            reject(new Error(result.error));
+          const workerResult = result as any;
+          if (workerResult && workerResult.error) {
+            reject(new Error(workerResult.error));
           } else {
             if (options.verbose) {
               console.log(`ワーカー ${index + 1} 完了`);
             }
-            resolve(result.results);
+            resolve(workerResult && workerResult.results ? workerResult.results : []);
           }
         });
         

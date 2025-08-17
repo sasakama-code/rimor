@@ -368,23 +368,25 @@ export const validateConfig = (config: unknown, options?: { checkSecurity?: bool
     return false;
   }
   
-  if (!config.plugins || typeof config.plugins !== 'object') {
+  const typedConfig = config as any;
+  
+  if (!typedConfig.plugins || typeof typedConfig.plugins !== 'object') {
     return false;
   }
   
-  if (!config.output || typeof config.output !== 'object') {
+  if (!typedConfig.output || typeof typedConfig.output !== 'object') {
     return false;
   }
   
-  if (!['text', 'json'].includes(config.output.format)) {
+  if (!['text', 'json'].includes(typedConfig.output.format)) {
     return false;
   }
   
   // セキュリティチェック
   if (options?.checkSecurity) {
-    if (config.output.reportDir) {
+    if (typedConfig.output.reportDir) {
       // パストラバーサル攻撃の検出
-      if (config.output.reportDir.includes('../')) {
+      if (typedConfig.output.reportDir.includes('../')) {
         return false;
       }
     }

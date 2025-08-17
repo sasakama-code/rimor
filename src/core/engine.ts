@@ -40,7 +40,7 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   private astCache: Map<string, ASTInfo> = new Map();
   
   constructor(
-    @inject(TYPES.PluginManager) private pluginManager: IPluginManager
+    private pluginManager: IPluginManager
   ) {
     this.cacheManager = CacheManager.getInstance();
     this.performanceMonitor = PerformanceMonitor.getInstance();
