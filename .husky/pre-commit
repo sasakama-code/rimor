@@ -39,4 +39,25 @@ git diff --cached --name-only | grep -E "\.test\.ts$" | while read file; do
   fi
 done
 
+# any型の使用チェック
+echo "🔍 Checking any type usage..."
+NEW_ANY_COUNT=$(grep -r ": any" src --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | tr -d ' ')
+echo "  Current any type usage: $NEW_ANY_COUNT"
+
+if [ "$NEW_ANY_COUNT" -gt "560" ]; then
+  echo "❌ any型の使用が増加しています（現在: $NEW_ANY_COUNT、上限: 560）"
+  echo "💡 ヒント: 'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+  exit 1
+fi
+
+# 循環参照チェック（警告のみ）
+if [ -f "scripts/check-circular-deps.js" ]; then
+  echo "🔍 Checking circular dependencies..."
+  node scripts/check-circular-deps.js > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "⚠️  循環参照が検出されました。詳細は 'node scripts/check-circular-deps.js' で確認してください。"
+    # 警告のみで、コミットはブロックしない
+  fi
+fi
+
 echo "✅ All pre-commit checks passed!"

@@ -1,0 +1,194 @@
+name: Type Check & Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 毎日午前2時に実行（JST 11:00）
+    - cron: '0 17 * * *'
+
+jobs:
+  type-coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build TypeScript
+      run: npm run build:simple
+      continue-on-error: true
+    
+    - name: Type Check with strict mode
+      run: npx tsc --noEmit --strict
+      continue-on-error: true
+    
+    - name: Measure Type Coverage
+      id: type-coverage
+      run: |
+        node scripts/type-coverage.js || true
+        
+        # 結果をGitHub Outputに保存
+        if [ -f ".rimor/reports/type-coverage/type-coverage.json" ]; then
+          COVERAGE=$(jq '.metrics.coverage' .rimor/reports/type-coverage/type-coverage.json)
+          ANY_COUNT=$(jq '.metrics.totalAnyUsages' .rimor/reports/type-coverage/type-coverage.json)
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "any_count=$ANY_COUNT" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check Circular Dependencies
+      id: circular-deps
+      run: |
+        node scripts/check-circular-deps.js || true
+        
+        if [ -f ".rimor/reports/dependencies/circular-deps.json" ]; then
+          CIRCULAR_COUNT=$(jq '.circularDependencies | length' .rimor/reports/dependencies/circular-deps.json)
+          echo "circular_count=$CIRCULAR_COUNT" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Upload Type Coverage Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: type-coverage-report
+        path: |
+          .rimor/reports/type-coverage/
+          .rimor/reports/dependencies/
+        retention-days: 30
+    
+    - name: Comment PR with Type Metrics
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const coverage = '${{ steps.type-coverage.outputs.coverage }}' || 'N/A';
+          const anyCount = '${{ steps.type-coverage.outputs.any_count }}' || 'N/A';
+          const circularCount = '${{ steps.circular-deps.outputs.circular_count }}' || '0';
+          
+          const comment = `## 🔍 型品質レポート
+          
+          ### メトリクス
+          | 項目 | 値 | 目標 | 状態 |
+          |------|-----|------|------|
+          | 型カバレッジ | ${coverage}% | 95% | ${coverage >= 95 ? '✅' : '⚠️'} |
+          | any型使用数 | ${anyCount} | <50 | ${anyCount < 50 ? '✅' : '❌'} |
+          | 循環参照 | ${circularCount} | 0 | ${circularCount == 0 ? '✅' : '❌'} |
+          
+          ### 推奨アクション
+          ${anyCount > 50 ? '- any型を段階的にunknown型に移行してください' : ''}
+          ${circularCount > 0 ? '- 循環参照を解消してください' : ''}
+          ${coverage < 95 ? '- 型定義を強化してください' : ''}
+          
+          詳細レポートはアーティファクトをダウンロードしてご確認ください。`;
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body: comment
+          });
+    
+    - name: Create Type Coverage Badge
+      if: github.ref == 'refs/heads/main'
+      run: |
+        COVERAGE="${{ steps.type-coverage.outputs.coverage }}"
+        COLOR="red"
+        
+        if [ "$(echo "$COVERAGE >= 95" | bc)" -eq 1 ]; then
+          COLOR="green"
+        elif [ "$(echo "$COVERAGE >= 90" | bc)" -eq 1 ]; then
+          COLOR="yellow"
+        elif [ "$(echo "$COVERAGE >= 80" | bc)" -eq 1 ]; then
+          COLOR="orange"
+        fi
+        
+        echo "Type Coverage: $COVERAGE% - Color: $COLOR"
+    
+  any-reduction:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Auto-convert any to unknown (dry-run)
+      run: |
+        echo "🔄 Analyzing any type usage for auto-conversion..."
+        node scripts/convert-any-to-unknown.js src --dry-run > conversion-report.txt
+        
+        if grep -q "変更ファイル数: [1-9]" conversion-report.txt; then
+          echo "📝 Potential any to unknown conversions found"
+          cat conversion-report.txt
+          
+          # Create an issue if conversions are possible
+          echo "TODO: Create GitHub issue for any type reduction"
+        else
+          echo "✅ No any type conversions needed"
+        fi
+    
+    - name: Upload Conversion Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: any-conversion-report
+        path: |
+          conversion-report.txt
+          .rimor/reports/type-migration/
+        retention-days: 7
+
+  quality-gate:
+    runs-on: ubuntu-latest
+    needs: [type-coverage]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Check Quality Gates
+      run: |
+        COVERAGE="${{ needs.type-coverage.outputs.coverage }}"
+        ANY_COUNT="${{ needs.type-coverage.outputs.any_count }}"
+        CIRCULAR_COUNT="${{ needs.type-coverage.outputs.circular_count }}"
+        
+        FAILED=false
+        
+        # 型カバレッジチェック（警告のみ）
+        if [ "$(echo "$COVERAGE < 95" | bc)" -eq 1 ]; then
+          echo "⚠️ Warning: Type coverage is below 95% (current: $COVERAGE%)"
+        fi
+        
+        # any型チェック（エラー：増加した場合）
+        if [ "$ANY_COUNT" -gt "560" ]; then
+          echo "❌ Error: any type usage has increased (current: $ANY_COUNT, limit: 560)"
+          FAILED=true
+        fi
+        
+        # 循環参照チェック（エラー：新規追加）
+        if [ "$CIRCULAR_COUNT" -gt "1" ]; then
+          echo "❌ Error: New circular dependencies detected (current: $CIRCULAR_COUNT)"
+          FAILED=true
+        fi
+        
+        if [ "$FAILED" = true ]; then
+          echo "❌ Type quality gates failed"
+          exit 1
+        else
+          echo "✅ Type quality gates passed"
+        fi
