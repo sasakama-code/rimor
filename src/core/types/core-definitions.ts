@@ -311,26 +311,37 @@ export namespace CoreTypes {
  */
 export namespace TypeGuards {
   export function isRiskLevel(value: unknown): value is CoreTypes.RiskLevel {
-    return Object.values(CoreTypes.RiskLevel).includes(value);
+    return typeof value === 'string' && 
+      ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'].includes(value as string);
   }
 
   export function isSeverityLevel(value: unknown): value is CoreTypes.SeverityLevel {
-    return ['critical', 'high', 'medium', 'low', 'info'].includes(value);
+    return typeof value === 'string' && 
+      ['critical', 'high', 'medium', 'low', 'info'].includes(value as string);
   }
 
   export function isIssue(value: unknown): value is CoreTypes.Issue {
-    return value &&
-      typeof value.id === 'string' &&
-      typeof value.type === 'string' &&
-      isSeverityLevel(value.severity) &&
-      typeof value.message === 'string';
+    return !!(value !== null &&
+      typeof value === 'object' &&
+      'id' in value &&
+      'type' in value &&
+      'severity' in value &&
+      'message' in value &&
+      typeof (value as any).id === 'string' &&
+      typeof (value as any).type === 'string' &&
+      isSeverityLevel((value as any).severity) &&
+      typeof (value as any).message === 'string');
   }
 
   export function isRiskAssessment(value: unknown): value is CoreTypes.RiskAssessment {
-    return value &&
-      isRiskLevel(value.riskLevel) &&
-      typeof value.category === 'string' &&
-      typeof value.description === 'string';
+    return !!(value !== null &&
+      typeof value === 'object' &&
+      'riskLevel' in value &&
+      'category' in value &&
+      'description' in value &&
+      isRiskLevel((value as any).riskLevel) &&
+      typeof (value as any).category === 'string' &&
+      typeof (value as any).description === 'string');
   }
 }
 

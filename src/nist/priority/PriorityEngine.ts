@@ -110,7 +110,7 @@ export class PriorityEngine {
       throw new Error('Missing required parameters: affectedComponents or dependencies');
     }
     
-    if (!Object.values(RiskLevel).includes(request.riskLevel)) {
+    if (!['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'].includes(request.riskLevel)) {
       throw new Error('Invalid risk level');
     }
     

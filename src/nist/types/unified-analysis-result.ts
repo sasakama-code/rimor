@@ -13,13 +13,7 @@ import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definiti
  * プロジェクトの正式な標準とする
  */
 // Migrated to CoreTypes
-export enum RiskLevel {
-  CRITICAL = 'CRITICAL',
-  HIGH = 'HIGH',
-  MEDIUM = 'MEDIUM',
-  LOW = 'LOW',
-  MINIMAL = 'MINIMAL'
-}
+export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
 
 /**
  * AIエージェントへのアクション提案の種別

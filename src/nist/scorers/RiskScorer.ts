@@ -155,7 +155,7 @@ export class RiskScorer {
     for (const pair of pairs) {
       const risk = this.applyNistMatrix(pair.threat, pair.vulnerability);
       if (riskPriority[risk] > riskPriority[highestRisk]) {
-        highestRisk = risk;
+        highestRisk = risk as CoreTypes.RiskLevel;
       }
     }
 
@@ -323,8 +323,8 @@ export class RiskScorer {
 
     // 平均スコアの計算
     for (const category of Object.values(categoryMap)) {
-      const totalScore = category.risks.reduce((sum, risk) => sum + risk.score, 0);
-      category.averageScore = totalScore / category.count;
+      const totalScore = category.risks.reduce((sum, risk: any) => sum + (risk.score || 0), 0);
+      category.averageScore = (totalScore as number) / category.count;
     }
 
     return categoryMap;
