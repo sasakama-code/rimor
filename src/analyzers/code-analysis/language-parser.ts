@@ -414,7 +414,7 @@ export class LanguageAnalyzer {
             variables.push({
               name: cleanName,
               line: lineNumber,
-              type: 'any', // デストラクチャリングの型推論は複雑なので any とする
+              type: 'unknown', // デストラクチャリングの型推論は複雑なので unknown とする
               scope: this.determineScope([line], 0),
               isConst: match[1] === 'const',
               isExported: this.isExported(line),
@@ -708,10 +708,10 @@ export class LanguageAnalyzer {
   /**
    * 言語固有の機能を解析
    */
-  parseLanguageSpecificFeatures(fileContent: string, language: string): any {
+  parseLanguageSpecificFeatures(fileContent: string, language: string): Record<string, unknown> {
     // 言語固有の機能解析を実装
     // 将来的な拡張のためのプレースホルダー
-    const features: any = {
+    const features: Record<string, unknown> = {
       language,
       hasAsync: false,
       hasGenerics: false,

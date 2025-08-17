@@ -3,9 +3,11 @@
  * 自動生成: 2025-08-16T16:46:34.070Z
  */
 
+import * as ts from 'typescript';
+
 // 注意: FormattingStrategyは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/ai-output/adapter.ts
-export type FormattingStrategy = any;
+export type FormattingStrategy = unknown;
 
 // 注意: AISummaryは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/ai-output/types.ts
@@ -432,7 +434,7 @@ export interface UnifiedAIFormatterOptions {
 // 選択元: /Users/sasakama/Projects/Rimor/src/ai-output/types.ts
 export interface AIOutputError extends Error {
   code: 'CONTEXT_EXTRACTION_FAILED' | 'FORMAT_GENERATION_FAILED' | 'SIZE_LIMIT_EXCEEDED' | 'TOKEN_LIMIT_EXCEEDED';
-  details?: any;
+  details?: unknown;
 }
 
 // 注意: RiskAssessmentは7箇所で定義されています
@@ -458,15 +460,15 @@ export interface UnifiedAIOutput {
     highIssues: number;
     overallRisk: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   };
-  context?: any;
+  context?: unknown;
 }
 
 // 注意: FormatterStrategyは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/ai-output/unified-ai-formatter.ts
 interface FormatterStrategy {
   name: string;
-  format(result: any, options?: any): any;
-  formatAsync?(result: any, options?: any): Promise<any>;
+  format(result: unknown, options?: unknown): unknown;
+  formatAsync?(result: unknown, options?: unknown): Promise<unknown>;
 }
 
 // 注意: ImportLocationは3箇所で定義されています
@@ -3288,27 +3290,27 @@ export interface IImprovementEngine {
 // 注意: TestAnalysisResultは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
 export interface TestAnalysisResult {
-  file: TestFileType;
-  issues: IssueType[];
-  detectionResults: DetectionResultType[];
-  qualityScore: QualityScoreType;
-  improvements: ImprovementType[];
-  domainContext?: DomainContextType;
+  file: TestFile;
+  issues: Issue[];
+  detectionResults: DetectionResult[];
+  qualityScore: QualityScore;
+  improvements: Improvement[];
+  domainContext?: DomainContext;
 }
 
 // 注意: PluginExecutionContextは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
 export interface PluginExecutionContext {
-  project: ProjectContextType;
-  file: TestFileType;
-  analysis: AnalysisContextType;
-  dictionary?: DomainDictionaryType;
-  options?: AnalysisOptionsType;
+  project: ProjectContext;
+  file: TestFile;
+  analysis: AnalysisContext;
+  dictionary?: DomainDictionary;
+  options?: AnalysisOptions;
 }
 
 // 注意: QualityScoreMapは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
-export type QualityScoreMap = Map<string, QualityScoreType>;
+export type QualityScoreMap = Map<string, QualityScore>;
 
 // 注意: ImprovementMapは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
@@ -3316,7 +3318,7 @@ export type ImprovementMap = Map<string, ImprovementType[]>;
 
 // 注意: DetectionResultMapは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
-export type DetectionResultMap = Map<string, DetectionResultType[]>;
+export type DetectionResultMap = Map<string, DetectionResult[]>;
 
 // 注意: DeepPartialは2箇所で定義されています
 // 選択元: /Users/sasakama/Projects/Rimor/src/core/types/index.ts
@@ -4132,7 +4134,7 @@ export interface DomainAnalysisSection {
   terms?: Record<string, { count: number; files: string[] }>;
   
   /** ビジネスルール（統計用） */
-  rules?: any[];
+  rules?: unknown[];
 }
 
 // 注意: DomainIssueは2箇所で定義されています
@@ -5774,7 +5776,7 @@ export interface CategoryRisk {
   count: number;
   averageScore: number;
   maxRiskLevel: RiskLevel;
-  risks: any[];
+  risks: unknown[];
 }
 
 // 注意: RiskTrendは2箇所で定義されています
@@ -5990,7 +5992,7 @@ export interface RiskItem {
   /** リスクレベル */
   level: string;
   /** その他のプロパティ */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // 注意: BusinessImpactは2箇所で定義されています
@@ -8500,10 +8502,10 @@ export interface TestMethodAnalysisResult {
     sanitizationCoverage: number;
   };
   // テストで使用されているプロパティを追加
-  affectedTests?: any[];
+  affectedTests?: unknown[];
   qualityImprovement?: number;
-  newIssuesFound?: any[];
-  resolvedIssues?: any[];
+  newIssuesFound?: unknown[];
+  resolvedIssues?: unknown[];
 }
 
 // 注意: SecurityIssueは3箇所で定義されています

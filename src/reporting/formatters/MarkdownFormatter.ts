@@ -22,7 +22,7 @@ export class MarkdownFormatter extends BaseFormatter {
    * Markdown形式でレポートを生成
    * Template Methodパターンの具体実装
    */
-  protected doFormat(result: UnifiedAnalysisResult, options?: any): string {
+  protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string {
     const markdown: string[] = [];
 
     // ヘッダー
@@ -60,7 +60,7 @@ export class MarkdownFormatter extends BaseFormatter {
       markdown.push('## 主要なリスク');
       markdown.push('');
 
-      const maxRisks = options?.maxRisks || 10;
+      const maxRisks = (options?.maxRisks as number) ?? 10;
       const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
 
       risksToShow.forEach((risk, index) => {
@@ -107,15 +107,15 @@ export class MarkdownFormatter extends BaseFormatter {
       // dimensionsが配列の場合とオブジェクトの場合の両方に対応
       const dimensions = Array.isArray(result.summary.dimensions) 
         ? result.summary.dimensions
-        : Object.entries(result.summary.dimensions as any).map(([name, data]) => ({
+        : Object.entries(result.summary.dimensions as Record<string, { score?: number; grade?: string }>).map(([name, data]) => ({
             name,
-            ...(data as any)
+            ...data
           }));
 
-      dimensions.forEach((dimension: any) => {
+      dimensions.forEach((dimension: { name?: string; score?: number; grade?: string; [key: string]: unknown }) => {
         const name = dimension.name || Object.keys(dimension)[0];
-        const score = dimension.score || dimension[name]?.score;
-        const grade = dimension.grade || dimension[name]?.grade;
+        const score = dimension.score;
+        const grade = dimension.grade;
         
         if (name && score !== undefined) {
           markdown.push(`- **${name}**: スコア ${score}/100, グレード ${grade || 'N/A'}`);

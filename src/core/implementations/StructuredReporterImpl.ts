@@ -285,7 +285,7 @@ export class StructuredReporterImpl implements IReporter {
    * 構造化データからレポートを生成
    */
   private async generateReportFromStructured(
-    structuredResult: any,
+    structuredResult: import('../../reporting/types').StructuredAnalysisResult,
     options: ReportOptions
   ): Promise<ReportResult> {
     let content: string;
@@ -343,7 +343,7 @@ export class StructuredReporterImpl implements IReporter {
   /**
    * HTML形式のレポートを生成（簡易実装）
    */
-  private async generateHtmlReport(structuredResult: any): Promise<string> {
+  private async generateHtmlReport(structuredResult: import('../../reporting/types').StructuredAnalysisResult): Promise<string> {
     const markdown = await this.templatedReporter.generateDetailedReport(
       structuredResult
     );

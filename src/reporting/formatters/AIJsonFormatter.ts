@@ -29,11 +29,11 @@ export class AIJsonFormatter extends BaseFormatter {
    * AI向けJSON形式でレポートを生成
    * Template Methodパターンの具体実装
    */
-  protected doFormat(result: UnifiedAnalysisResult, options?: any): AIJsonOutput {
+  protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): AIJsonOutput {
     const { summary, aiKeyRisks = [] } = result;
     
     // リスクのフィルタリングとソート（ベースクラスのメソッドを使用）
-    let filteredRisks = this.filterRisksByLevel(aiKeyRisks, options?.includeRiskLevels);
+    let filteredRisks = this.filterRisksByLevel(aiKeyRisks, options?.includeRiskLevels as string[] | undefined);
     filteredRisks = this.sortRisksByPriority(filteredRisks);
     
     // 最大数で制限
@@ -59,7 +59,7 @@ export class AIJsonFormatter extends BaseFormatter {
     return {
       overallAssessment,
       keyRisks,
-      fullReportUrl: options?.htmlReportPath || '.rimor/reports/index.html'
+      fullReportUrl: (options?.htmlReportPath as string) || '.rimor/reports/index.html'
     };
   }
 
@@ -116,7 +116,7 @@ export class AIJsonFormatter extends BaseFormatter {
   /**
    * suggestedActionをオブジェクト形式にフォーマット
    */
-  private formatActionObject(action: any): { type: string; description: string; example?: string } {
+  private formatActionObject(action: string | { type?: string; description?: string; example?: string } | undefined): { type: string; description: string; example?: string } {
     if (!action) {
       return {
         type: 'review',
@@ -131,10 +131,11 @@ export class AIJsonFormatter extends BaseFormatter {
       };
     }
     
+    const actionObj = action as { type?: string; description?: string; example?: string };
     return {
-      type: action.type || 'refactor',
-      description: action.description || '改善が必要です',
-      example: action.example
+      type: actionObj.type || 'refactor',
+      description: actionObj.description || '改善が必要です',
+      example: actionObj.example
     };
   }
 }

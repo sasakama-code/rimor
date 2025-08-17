@@ -121,7 +121,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュキーを生成
    */
-  private generateCacheKey(result: UnifiedAnalysisResult, options?: any): string {
+  private generateCacheKey(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): string {
     // 結果とオプションのハッシュを生成
     const data = {
       schemaVersion: result.schemaVersion,
@@ -138,7 +138,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュから取得
    */
-  private getFromCache(key: string): any | null {
+  private getFromCache(key: string): string | object | null {
     const entry = this.cache.get(key);
     
     if (!entry) {
@@ -161,7 +161,7 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュに保存
    */
-  private putToCache(key: string, value: any): void {
+  private putToCache(key: string, value: string | object): void {
     // キャッシュサイズ制限チェック
     if (this.cache.size >= this.maxCacheSize) {
       this.evictOldestEntry();

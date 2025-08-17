@@ -44,7 +44,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * Template Methodパターン: フォーマット処理の共通フロー
    */
-  format(result: UnifiedAnalysisResult, options?: any): any {
+  format(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string | object {
     // 入力検証（共通）
     this.validateInput(result);
     
@@ -55,13 +55,13 @@ export abstract class BaseFormatter implements IFormattingStrategy {
     const formatted = this.doFormat(preprocessed, options);
     
     // 後処理（オプション）
-    return this.postprocess(formatted, options);
+    return this.postprocess(formatted, options) as string | object;
   }
 
   /**
    * 非同期版のフォーマット処理
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: any): Promise<any> {
+  async formatAsync(result: UnifiedAnalysisResult, options?: Record<string, unknown>): Promise<string | object> {
     return this.format(result, options);
   }
 
@@ -86,7 +86,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * 前処理（オプション、サブクラスでオーバーライド可能）
    */
-  protected preprocess(result: UnifiedAnalysisResult, options?: any): UnifiedAnalysisResult {
+  protected preprocess(result: UnifiedAnalysisResult, options?: Record<string, unknown>): UnifiedAnalysisResult {
     return result;
   }
 
@@ -94,12 +94,12 @@ export abstract class BaseFormatter implements IFormattingStrategy {
    * 具体的なフォーマット処理（サブクラスで実装必須）
    * Template Methodパターンの抽象メソッド
    */
-  protected abstract doFormat(result: UnifiedAnalysisResult, options?: any): any;
+  protected abstract doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string | object;
 
   /**
    * 後処理（オプション、サブクラスでオーバーライド可能）
    */
-  protected postprocess(formatted: any, options?: any): any {
+  protected postprocess(formatted: string | object, options?: Record<string, unknown>): string | object {
     return formatted;
   }
 
@@ -177,7 +177,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * 推奨アクションのフォーマット（共通）
    */
-  protected formatSuggestedAction(action: any): string {
+  protected formatSuggestedAction(action: unknown): string {
     if (!action) {
       return '改善アクションの検討が必要です';
     }
@@ -225,7 +225,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * 最大リスク数の取得（共通）
    */
-  protected getMaxRisks(options?: any): number {
+  protected getMaxRisks(options?: Record<string, unknown>): number {
     const maxRisks = options?.maxRisks || 10;
     return Math.min(maxRisks, 100); // 最大100件に制限
   }

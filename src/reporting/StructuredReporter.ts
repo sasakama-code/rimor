@@ -362,7 +362,7 @@ export class StructuredReporter {
   /**
    * 脆弱性の位置情報を変換
    */
-  private convertVulnLocation(vulnLocation: any, basePath: string): CodeLocation {
+  private convertVulnLocation(vulnLocation: { file?: string; line?: number; endLine?: number; column?: number; endColumn?: number }, basePath: string): CodeLocation {
     return {
       file: path.relative(basePath, vulnLocation.file || ''),
       startLine: vulnLocation.line || 1,
@@ -418,7 +418,7 @@ export class StructuredReporter {
   /**
    * モジュール別のカバレッジを計算
    */
-  private calculateModuleCoverage(result: CoreAnalysisResult): Record<string, any> {
+  private calculateModuleCoverage(result: CoreAnalysisResult): Record<string, { coverage: number; testedFiles: number; untestedFiles: number }> {
     // 簡易実装：将来的にはモジュール情報を詳細に解析
     return {
       'src': {
@@ -453,7 +453,7 @@ export class StructuredReporter {
         plugins[pluginName] = {
           executed: true,
           issues: result.issues.filter(
-            issue => (issue as any).plugin === pluginName
+            issue => (issue as ExtendedIssue & { plugin?: string }).plugin === pluginName
           ).length
         };
       });
@@ -511,7 +511,7 @@ export class StructuredReporter {
     // 循環参照を検出するためのWeakSet
     const seen = new WeakSet();
     
-    const replacer = (key: string, value: any): any => {
+    const replacer = (key: string, value: unknown): unknown => {
       if (value && typeof value === 'object') {
         // 循環参照のチェック
         if (seen.has(value)) {
@@ -521,7 +521,7 @@ export class StructuredReporter {
         
         // 配列でない場合はキーをソート
         if (!Array.isArray(value)) {
-          const sorted: any = {};
+          const sorted: Record<string, unknown> = {};
           Object.keys(value).sort().forEach(k => {
             sorted[k] = value[k];
           });

@@ -27,7 +27,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
    * エグゼクティブサマリー形式でレポートを生成
    * Template Methodパターンの具体実装
    */
-  protected doFormat(result: UnifiedAnalysisResult, options?: any): any {
+  protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): ExecutiveSummary {
 
     // 主要な推奨事項を生成
     const recommendations = this.generateRecommendations(result);
@@ -103,7 +103,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
             ...(data as any)
           }));
       
-      dimensions.forEach((dimension: any) => {
+      dimensions.forEach((dimension: Record<string, unknown>) => {
         const score = dimension.score || dimension[dimension.name]?.score;
         const name = dimension.name || Object.keys(dimension)[0];
         
@@ -137,7 +137,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
   /**
    * リスクサマリーを生成
    */
-  private generateRiskSummary(result: UnifiedAnalysisResult): any {
+  private generateRiskSummary(result: UnifiedAnalysisResult): Record<string, unknown> {
     const { aiKeyRisks = [] } = result;
     
     // リスクをカテゴリー別に分類
@@ -218,7 +218,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
   /**
    * リスクをカテゴリー分類
    */
-  private categorizeRisk(risk: any): string {
+  private categorizeRisk(risk: { filePath: string }): string {
     const filePath = risk.filePath.toLowerCase();
     
     if (filePath.includes('test') || filePath.includes('spec')) {

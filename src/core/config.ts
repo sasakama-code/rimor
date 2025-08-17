@@ -3,67 +3,23 @@ import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { errorHandler } from '../utils/errorHandler';
-import { metadataDrivenConfigManager, ConfigGenerationOptions } from './metadataDrivenConfig';
+import { metadataDrivenConfigManager } from './metadataDrivenConfig';
 import { pluginMetadataRegistry } from './pluginMetadata';
 import { ConfigSecurity, DEFAULT_CONFIG_SECURITY_LIMITS } from '../security/ConfigSecurity';
+import type { 
+  PluginConfig, 
+  PluginMetadata, 
+  RimorConfig, 
+  ConfigGenerationOptions 
+} from './types/config-types';
 
-export interface PluginConfig {
-  enabled: boolean;
-  excludeFiles?: string[];
-  priority?: number;  // プラグイン実行優先度（高いほど先に実行）
-  [key: string]: unknown; // 動的プロパティサポート（型安全性向上）
-}
-
-export interface PluginMetadata {
-  name: string;
-  displayName?: string;
-  description?: string;
-  defaultConfig: PluginConfig;
-}
-
-export interface RimorConfig {
-  excludePatterns?: string[];
-  plugins: Record<string, PluginConfig>;
-  output: {
-    format: 'text' | 'json';
-    verbose: boolean;
-    reportDir?: string;  // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
-  };
-  metadata?: {
-    generatedAt?: string;
-    preset?: string;
-    targetEnvironment?: string;
-    pluginCount?: number;
-    estimatedExecutionTime?: number;
-  };
-  scoring?: {
-    enabled?: boolean;
-    weights?: {
-      plugins?: Record<string, number>;
-      dimensions?: {
-        completeness?: number;
-        correctness?: number;
-        maintainability?: number;
-        performance?: number;
-        security?: number;
-      };
-      fileTypes?: Record<string, number>;
-    };
-    gradeThresholds?: {
-      A?: number;
-      B?: number;
-      C?: number;
-      D?: number;
-      F?: number;
-    };
-    options?: {
-      enableTrends?: boolean;
-      enablePredictions?: boolean;
-      cacheResults?: boolean;
-      reportFormat?: 'detailed' | 'summary' | 'minimal';
-    };
-  };
-}
+// 型定義を再エクスポート（後方互換性のため）
+export type { 
+  PluginConfig, 
+  PluginMetadata, 
+  RimorConfig, 
+  ConfigGenerationOptions 
+};
 
 export class ConfigLoader {
   private static readonly CONFIG_FILENAMES = [
@@ -406,7 +362,7 @@ export const loadConfig = (configPath?: string): RimorConfig => {
   return DEFAULT_CONFIG;
 };
 
-export const validateConfig = (config: any, options?: { checkSecurity?: boolean }): boolean => {
+export const validateConfig = (config: unknown, options?: { checkSecurity?: boolean }): boolean => {
   // 基本的な検証
   if (!config || typeof config !== 'object') {
     return false;

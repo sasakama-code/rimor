@@ -21,9 +21,9 @@ export class ParallelStrategy implements IFormattingStrategy {
   private readonly maxWorkers: number;
   private workerPool: Worker[] = [];
   private taskQueue: Array<{
-    resolve: (value: any) => void;
-    reject: (error: any) => void;
-    data: any;
+    resolve: (value: UnifiedAnalysisResult) => void;
+    reject: (error: Error) => void;
+    data: UnifiedAnalysisResult;
   }> = [];
   private activeWorkers = 0;
 
@@ -39,7 +39,7 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * 並列処理でフォーマット
    */
-  format(result: UnifiedAnalysisResult, options?: any): any {
+  format(result: UnifiedAnalysisResult, options?: Record<string, unknown>): UnifiedAnalysisResult {
     // 同期版は基底戦略をそのまま使用
     // （並列処理の利点が少ないため）
     return this.baseStrategy.format(result, options);
@@ -48,7 +48,7 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * 非同期版の並列処理フォーマット
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: any): Promise<any> {
+  async formatAsync(result: UnifiedAnalysisResult, options?: Record<string, unknown>): Promise<UnifiedAnalysisResult> {
     // 小さいデータの場合は直接処理
     if (this.isSmallData(result)) {
       if (this.baseStrategy.formatAsync) {
@@ -64,7 +64,7 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * 並列処理の統計を取得
    */
-  getParallelStats(): any {
+  getParallelStats(): Record<string, unknown> {
     return {
       maxWorkers: this.maxWorkers,
       activeWorkers: this.activeWorkers,
@@ -99,8 +99,8 @@ export class ParallelStrategy implements IFormattingStrategy {
    */
   private async processInParallel(
     result: UnifiedAnalysisResult, 
-    options?: any
-  ): Promise<any> {
+    options?: Record<string, unknown>
+  ): Promise<UnifiedAnalysisResult> {
     // データを分割
     const chunks = this.splitData(result);
     
@@ -151,8 +151,8 @@ export class ParallelStrategy implements IFormattingStrategy {
    */
   private async processChunk(
     chunk: UnifiedAnalysisResult,
-    options?: any
-  ): Promise<any> {
+    options?: Record<string, unknown>
+  ): Promise<UnifiedAnalysisResult> {
     // 実際のワーカー実装の代わりに、
     // ここでは基底戦略を直接使用（簡略化）
     if (this.baseStrategy.formatAsync) {
@@ -165,9 +165,9 @@ export class ParallelStrategy implements IFormattingStrategy {
    * 結果を結合
    */
   private mergeResults(
-    processedChunks: any[], 
+    processedChunks: UnifiedAnalysisResult[], 
     originalResult: UnifiedAnalysisResult
-  ): any {
+  ): UnifiedAnalysisResult {
     // 戦略に応じた結合処理
     const strategyName = this.baseStrategy.name;
     
@@ -190,8 +190,8 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * AI JSON結果を結合
    */
-  private mergeAIJsonResults(chunks: any[], original: UnifiedAnalysisResult): any {
-    const keyRisks: any[] = [];
+  private mergeAIJsonResults(chunks: UnifiedAnalysisResult[], original: UnifiedAnalysisResult): UnifiedAnalysisResult {
+    const keyRisks: Array<Record<string, unknown>> = [];
     
     chunks.forEach(chunk => {
       if (chunk.keyRisks) {

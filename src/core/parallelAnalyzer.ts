@@ -8,18 +8,11 @@ import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+// 統一型定義をインポート
+import { AnalysisResultWithParallelStats } from '../types/analysis';
 
-export interface AnalysisResult {
-  totalFiles: number;
-  issues: Issue[];
-  executionTime: number;
-  parallelStats: {
-    batchCount: number;
-    avgBatchTime: number;
-    maxBatchTime: number;
-    concurrencyLevel: number;
-  };
-}
+// 後方互換性のための型エイリアス
+export type AnalysisResult = AnalysisResultWithParallelStats;
 
 export interface ParallelOptions {
   batchSize?: number;        // バッチあたりのファイル数（デフォルト: 10）

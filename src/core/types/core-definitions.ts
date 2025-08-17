@@ -310,15 +310,15 @@ export namespace CoreTypes {
  * 型ガード関数
  */
 export namespace TypeGuards {
-  export function isRiskLevel(value: any): value is CoreTypes.RiskLevel {
+  export function isRiskLevel(value: unknown): value is CoreTypes.RiskLevel {
     return Object.values(CoreTypes.RiskLevel).includes(value);
   }
 
-  export function isSeverityLevel(value: any): value is CoreTypes.SeverityLevel {
+  export function isSeverityLevel(value: unknown): value is CoreTypes.SeverityLevel {
     return ['critical', 'high', 'medium', 'low', 'info'].includes(value);
   }
 
-  export function isIssue(value: any): value is CoreTypes.Issue {
+  export function isIssue(value: unknown): value is CoreTypes.Issue {
     return value &&
       typeof value.id === 'string' &&
       typeof value.type === 'string' &&
@@ -326,7 +326,7 @@ export namespace TypeGuards {
       typeof value.message === 'string';
   }
 
-  export function isRiskAssessment(value: any): value is CoreTypes.RiskAssessment {
+  export function isRiskAssessment(value: unknown): value is CoreTypes.RiskAssessment {
     return value &&
       isRiskLevel(value.riskLevel) &&
       typeof value.category === 'string' &&

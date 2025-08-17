@@ -104,7 +104,7 @@ export class TypeConsistencyChecker {
   /**
    * export修飾子の確認
    */
-  private hasExportModifier(node: any): boolean {
+  private hasExportModifier(node: ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration): boolean {
     if (!node.modifiers) return false;
     return node.modifiers.some((m: ts.Modifier) => m.kind === ts.SyntaxKind.ExportKeyword);
   }

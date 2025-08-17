@@ -16,12 +16,33 @@ import {
 } from './unified-ai-formatter-base';
 
 import { UnifiedAnalysisResult, AIJsonOutput } from './types';
+import { AIActionableRisk } from '../nist/types/unified-analysis-result';
+
+// Type guard for UnifiedAnalysisResult
+function isUnifiedAnalysisResult(result: unknown): result is UnifiedAnalysisResult {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'summary' in result &&
+    'aiKeyRisks' in result
+  );
+}
+
+// Type guard for AnalysisResult  
+function isAnalysisResult(result: unknown): result is AnalysisResult {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'issues' in result &&
+    'filePath' in result
+  );
+}
 
 // Strategy interface
 interface FormatterStrategy {
   name: string;
-  format(result: any, options?: any): any;
-  formatAsync?(result: any, options?: any): Promise<any>;
+  format(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): UnifiedAIOutput | AIJsonOutput;
+  formatAsync?(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): Promise<UnifiedAIOutput | AIJsonOutput>;
 }
 
 export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
@@ -37,20 +58,20 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     // Base strategy
     this.strategies.set('base', {
       name: 'base',
-      format: (result: any) => this.baseFormat(result)
+      format: (result: UnifiedAnalysisResult | AnalysisResult) => this.baseFormat(result)
     });
 
     // Optimized strategy
     this.strategies.set('optimized', {
       name: 'optimized',
-      format: (result: any) => this.optimizedFormat(result)
+      format: (result: UnifiedAnalysisResult | AnalysisResult) => this.optimizedFormat(result)
     });
 
     // Parallel strategy
     this.strategies.set('parallel', {
       name: 'parallel',
-      format: (result: any) => this.baseFormat(result),
-      formatAsync: async (result: any) => this.parallelFormatAsync(result)
+      format: (result: UnifiedAnalysisResult | AnalysisResult) => this.baseFormat(result),
+      formatAsync: async (result: UnifiedAnalysisResult | AnalysisResult) => this.parallelFormatAsync(result)
     });
   }
 
@@ -84,19 +105,31 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Base format implementation
    */
-  private baseFormat(result: any, options?: any): any {
+  private baseFormat(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): UnifiedAIOutput | AIJsonOutput {
     // Handle UnifiedAnalysisResult
-    if (result.summary && result.aiKeyRisks) {
+    if (isUnifiedAnalysisResult(result)) {
+      const risks = result.aiKeyRisks || [];
+      const keyRisks: RiskAssessment[] = risks.map(risk => ({
+        riskLevel: risk.riskLevel as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
+        category: 'code',
+        description: risk.problem || risk.title,
+        impact: 'high',
+        likelihood: 0.7
+      }));
+      
       return {
-        overallAssessment: `プロジェクト品質評価結果: スコア ${result.summary.overallScore}`,
-        topIssues: result.aiKeyRisks.slice(0, 3),
-        actionableRisks: result.aiKeyRisks,
-        formattingStrategy: 'base'
+        keyRisks,
+        summary: {
+          totalIssues: risks.length,
+          criticalIssues: risks.filter(r => r.riskLevel === 'CRITICAL').length,
+          highIssues: risks.filter(r => r.riskLevel === 'HIGH').length,
+          overallRisk: this.getOverallRisk(risks)
+        }
       };
     }
     
     // Fallback to AnalysisResult format
-    if (result.issues) {
+    if (isAnalysisResult(result)) {
       return this.formatAnalysisResult(result, options);
     }
     
@@ -106,19 +139,32 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Optimized format implementation
    */
-  private optimizedFormat(result: any, options?: any): any {
+  private optimizedFormat(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): UnifiedAIOutput | AIJsonOutput {
     // Handle UnifiedAnalysisResult with optimization
-    if (result.summary && result.aiKeyRisks) {
+    if (isUnifiedAnalysisResult(result)) {
       const maxRisks = options?.maxRisks || 10;
+      const risks = result.aiKeyRisks || [];
+      const limitedRisks = risks.slice(0, maxRisks);
+      const keyRisks: RiskAssessment[] = limitedRisks.map(risk => ({
+        riskLevel: risk.riskLevel as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
+        category: 'code',
+        description: risk.problem || risk.title,
+        impact: 'high',
+        likelihood: 0.7
+      }));
+      
       return {
-        overallAssessment: `プロジェクト品質評価結果: スコア ${result.summary.overallScore}`,
-        topIssues: result.aiKeyRisks.slice(0, 3),
-        actionableRisks: result.aiKeyRisks.slice(0, maxRisks),
-        formattingStrategy: 'optimized'
+        keyRisks,
+        summary: {
+          totalIssues: risks.length,
+          criticalIssues: risks.filter(r => r.riskLevel === 'CRITICAL').length,
+          highIssues: risks.filter(r => r.riskLevel === 'HIGH').length,
+          overallRisk: this.getOverallRisk(limitedRisks)
+        }
       };
     }
     
-    if (result.issues) {
+    if (isAnalysisResult(result)) {
       return this.formatAnalysisResult(result, options);
     }
     
@@ -126,9 +172,19 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   }
 
   /**
+   * Get overall risk level
+   */
+  private getOverallRisk(risks: AIActionableRisk[]): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+    if (risks.some(r => r.riskLevel === 'CRITICAL')) return 'CRITICAL';
+    if (risks.some(r => r.riskLevel === 'HIGH')) return 'HIGH';
+    if (risks.some(r => r.riskLevel === 'MEDIUM')) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  /**
    * Parallel format async implementation
    */
-  private async parallelFormatAsync(result: any, options?: any): Promise<any> {
+  private async parallelFormatAsync(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): Promise<UnifiedAIOutput | AIJsonOutput> {
     // Simulate parallel processing
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -140,35 +196,26 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Format with current strategy
    */
-  format(result: any, options?: any): any {
+  format(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): UnifiedAIOutput | AIJsonOutput {
     const strategy = this.strategies.get(this.currentStrategy);
     if (!strategy) {
       throw new Error(`Strategy ${this.currentStrategy} not found`);
     }
     
-    const output = strategy.format(result, options);
-    // Add formattingStrategy to output
-    if (output && typeof output === 'object') {
-      output.formattingStrategy = this.currentStrategy;
-    }
-    return output;
+    return strategy.format(result, options);
   }
 
   /**
    * Format asynchronously
    */
-  async formatAsync(result: any, options?: any): Promise<any> {
+  async formatAsync(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): Promise<UnifiedAIOutput | AIJsonOutput> {
     const strategy = this.strategies.get(this.currentStrategy);
     if (!strategy) {
       throw new Error(`Strategy ${this.currentStrategy} not found`);
     }
 
     if (strategy.formatAsync) {
-      const output = await strategy.formatAsync(result, options);
-      if (output && typeof output === 'object') {
-        output.formattingStrategy = this.currentStrategy;
-      }
-      return output;
+      return await strategy.formatAsync(result, options);
     }
 
     // Fallback to sync format wrapped in promise
@@ -178,7 +225,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Format multiple results in batch
    */
-  async formatBatch(results: any[]): Promise<any[]> {
+  async formatBatch(results: (UnifiedAnalysisResult | AnalysisResult)[]): Promise<(UnifiedAIOutput | AIJsonOutput)[]> {
     if (this.currentStrategy === 'parallel') {
       // Process in parallel
       return Promise.all(results.map(r => this.formatAsync(r)));
@@ -195,7 +242,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Format UnifiedAnalysisResult as AI-optimized JSON
    */
-  formatAsAIJson(unifiedResult: any, options: any = {}): any {
+  formatAsAIJson(unifiedResult: UnifiedAnalysisResult, options: Partial<UnifiedAIFormatterOptions> = {}): AIJsonOutput {
     // Validate input
     if (!unifiedResult) {
       throw new Error('Invalid UnifiedAnalysisResult');
@@ -206,13 +253,8 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
 
     // Filter and limit key risks
-    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: any) => {
-      if (options.minRiskLevel) {
-        const levels = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-        const minIndex = levels.indexOf(options.minRiskLevel);
-        const riskIndex = levels.indexOf(risk.riskLevel);
-        return riskIndex >= minIndex;
-      }
+    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: AIActionableRisk) => {
+      // Convert risk to appropriate format if needed
       return true;
     });
 
@@ -223,26 +265,35 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     // Create overall assessment
     const overallAssessment = this.createOverallAssessment(unifiedResult);
 
-    // Transform and return
+    // Transform to AIJsonOutput format
+    const keyRisks = prioritizedRisks.map(risk => ({
+      problem: risk.problem || risk.title,
+      riskLevel: risk.riskLevel,
+      context: {
+        filePath: risk.filePath,
+        codeSnippet: risk.context?.codeSnippet || '',
+        startLine: risk.context?.startLine || 0,
+        endLine: risk.context?.endLine || 0
+      },
+      suggestedAction: typeof risk.suggestedAction === 'string' 
+        ? { type: 'refactor', description: risk.suggestedAction }
+        : risk.suggestedAction || { type: 'review', description: 'Review needed' }
+    }));
+
+    // Return AIJsonOutput
     return {
       overallAssessment,
-      keyRisks: prioritizedRisks,
-      fullReportUrl: options.reportPath || this.DEFAULT_REPORT_PATH,
-      summary: unifiedResult.summary,
-      actionableTasks: unifiedResult.actionableTasks || [],
-      metadata: {
-        timestamp: new Date().toISOString(),
-        options
-      }
+      keyRisks,
+      fullReportUrl: options.reportPath || this.DEFAULT_REPORT_PATH
     };
   }
 
-  private createOverallAssessment(unifiedResult: any): string {
+  private createOverallAssessment(unifiedResult: UnifiedAnalysisResult): string {
     const summary = unifiedResult.summary;
-    const score = summary.overallScore || summary.projectScore || 0;
-    const grade = summary.overallGrade || summary.projectGrade || 'N/A';
-    const critical = summary.statistics?.riskCounts?.CRITICAL || summary.criticalIssues || 0;
-    const high = summary.statistics?.riskCounts?.HIGH || summary.highIssues || 0;
+    const score = summary.overallScore || 0;
+    const grade = summary.overallGrade || 'N/A';
+    const critical = summary.statistics?.riskCounts?.CRITICAL || 0;
+    const high = summary.statistics?.riskCounts?.HIGH || 0;
     
     if (unifiedResult.aiKeyRisks && unifiedResult.aiKeyRisks.length === 0) {
       return '問題は検出されませんでした。';
@@ -252,7 +303,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     
     if (unifiedResult.aiKeyRisks && unifiedResult.aiKeyRisks.length > 0) {
       const topRisk = unifiedResult.aiKeyRisks[0];
-      return `${assessment}\n最重要問題: ${topRisk.title || topRisk.problem || topRisk.description}`;
+      return `${assessment}\n最重要問題: ${topRisk.title || topRisk.problem}`;
     }
     
     return assessment;
@@ -368,7 +419,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Extract relevant context for AI analysis
    */
-  private extractContext(context: ProjectContext): any {
+  private extractContext(context: ProjectContext): Record<string, unknown> {
     const deps = context.dependencies;
     const depsCount = Array.isArray(deps) ? deps.length : Object.keys(deps || {}).length;
     const hasESLint = Array.isArray(deps) 

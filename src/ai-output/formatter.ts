@@ -28,7 +28,16 @@ export class AIOptimizedFormatter {
   /**
    * Format analysis results as JSON for AI consumption
    */
-  async formatAsJSON(result: AnalysisResult, projectPath: string, options: any = {}): Promise<any> {
+  async formatAsJSON(
+    result: AnalysisResult, 
+    projectPath: string, 
+    options: Partial<{
+      includeContext: boolean;
+      includeSourceCode: boolean;
+      optimizeForAI: boolean;
+      format: string;
+    }> = {}
+  ): Promise<AIOptimizedOutput & { projectPath: string; actionableTasks: unknown[] }> {
     const output = options.includeContext || options.includeSourceCode || options.optimizeForAI
       ? this.formatWithOptions(result, { ...options, includeContext: true })
       : this.format(result);
@@ -39,7 +48,6 @@ export class AIOptimizedFormatter {
     return {
       ...output,
       projectPath,
-      format: options.optimizeForAI ? 'ai-optimized' : (options.format || 'json'),
       actionableTasks
     };
   }
@@ -47,7 +55,14 @@ export class AIOptimizedFormatter {
   /**
    * Format analysis results as Markdown for AI consumption
    */
-  async formatAsMarkdown(result: AnalysisResult, projectPath: string, options: any = {}): Promise<string> {
+  async formatAsMarkdown(
+    result: AnalysisResult, 
+    projectPath: string, 
+    options: Partial<{
+      includeDetails: boolean;
+      maxIssues: number;
+    }> = {}
+  ): Promise<string> {
     const output = this.format(result);
     const markdown = `# Rimor Test Quality Analysis Report
 
@@ -63,14 +78,14 @@ export class AIOptimizedFormatter {
 - Quality Grade: ${output.qualityOverview.projectGrade}
 
 ## Critical Issues Summary
-${output.files.filter(f => f.issues.some((i: any) => i.severity === 'critical'))
-  .map(f => `- ${f.path}: ${f.issues.filter((i: any) => i.severity === 'critical').length} critical issues`)
+${output.files.filter(f => f.issues.some((i) => i.severity === 'critical'))
+  .map(f => `- ${f.path}: ${f.issues.filter((i) => i.severity === 'critical').length} critical issues`)
   .join('\n') || '- No critical issues found'}
 
 ## Issues by File
 ${output.files.map(f => `## File: ${f.path}
 Score: ${Math.round(f.score || 75)}/100
-${f.issues.map((i: any) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
+    ${f.issues.map((i) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
 
 ## Instructions for AI
 ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No specific instructions'}

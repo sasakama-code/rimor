@@ -34,7 +34,7 @@ export class HTMLFormatter extends BaseFormatter {
    * HTML形式でレポートを生成
    * Template Methodパターンの具体実装
    */
-  protected doFormat(result: UnifiedAnalysisResult, options?: any): string {
+  protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string {
     const html: string[] = [];
 
     // HTMLヘッダー
@@ -108,7 +108,7 @@ export class HTMLFormatter extends BaseFormatter {
       html.push('    <section class="risks-section">');
       html.push('      <h2>主要なリスク</h2>');
       
-      const maxRisks = options?.maxRisks || 10;
+      const maxRisks = (options?.maxRisks as number) ?? 10;
       const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
       
       risksToShow.forEach((risk, index) => {
@@ -314,7 +314,7 @@ export class HTMLFormatter extends BaseFormatter {
   /**
    * リスク統計HTMLを生成
    */
-  private generateRiskStats(riskCounts: any): string {
+  private generateRiskStats(riskCounts: Record<string, number>): string {
     const html: string[] = [];
     
     Object.entries(riskCounts).forEach(([level, count]) => {

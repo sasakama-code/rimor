@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "../../",
+    "outDir": "../../../dist",
+    "tsBuildInfoFile": "../../../dist/types/ai.tsbuildinfo"
+  },
+  "include": [
+    "./**/*.ts",
+    "../../core/types/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
