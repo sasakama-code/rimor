@@ -112,7 +112,7 @@ export class MarkdownFormatter extends BaseFormatter {
             ...data
           }));
 
-      dimensions.forEach((dimension: { name?: string; score?: number; grade?: string; [key: string]: unknown }) => {
+      dimensions.forEach((dimension: any) => {
         const name = dimension.name || Object.keys(dimension)[0];
         const score = dimension.score;
         const grade = dimension.grade;

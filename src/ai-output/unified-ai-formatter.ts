@@ -130,7 +130,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     
     // Fallback to AnalysisResult format
     if (isAnalysisResult(result)) {
-      return this.formatAnalysisResult(result, options);
+      return this.formatAnalysisResult(result, options as ProjectContext);
     }
     
     throw new Error('Unsupported result format');
@@ -165,7 +165,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
     
     if (isAnalysisResult(result)) {
-      return this.formatAnalysisResult(result, options);
+      return this.formatAnalysisResult(result, options as ProjectContext);
     }
     
     throw new Error('Unsupported result format');
@@ -174,7 +174,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Get overall risk level
    */
-  private getOverallRisk(risks: AIActionableRisk[]): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+  private getOverallRisk(risks: any[]): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     if (risks.some(r => r.riskLevel === 'CRITICAL')) return 'CRITICAL';
     if (risks.some(r => r.riskLevel === 'HIGH')) return 'HIGH';
     if (risks.some(r => r.riskLevel === 'MEDIUM')) return 'MEDIUM';
@@ -196,13 +196,19 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Format with current strategy
    */
-  format(result: UnifiedAnalysisResult | AnalysisResult, options?: UnifiedAIFormatterOptions): UnifiedAIOutput | AIJsonOutput {
+  format(result: AnalysisResult, context?: ProjectContext): UnifiedAIOutput {
+    // Convert context to options for backward compatibility
+    const options: UnifiedAIFormatterOptions | undefined = context ? {
+      includeContext: true,
+      reportPath: (context as any).reportPath || (context as any).rootPath
+    } : undefined;
+    
     const strategy = this.strategies.get(this.currentStrategy);
     if (!strategy) {
       throw new Error(`Strategy ${this.currentStrategy} not found`);
     }
     
-    return strategy.format(result, options);
+    return strategy.format(result, options) as UnifiedAIOutput;
   }
 
   /**
@@ -219,7 +225,10 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
 
     // Fallback to sync format wrapped in promise
-    return Promise.resolve(this.format(result, options));
+    if (isAnalysisResult(result)) {
+      return Promise.resolve(this.format(result, options as ProjectContext));
+    }
+    return Promise.resolve(strategy.format(result, options));
   }
 
   /**
@@ -253,7 +262,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
 
     // Filter and limit key risks
-    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: AIActionableRisk) => {
+    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: any) => {
       // Convert risk to appropriate format if needed
       return true;
     });
@@ -312,7 +321,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Legacy format for AnalysisResult (for base class compatibility)
    */
-  private formatAnalysisResult(result: AnalysisResult, context?: ProjectContext): UnifiedAIOutput {
+  private formatAnalysisResult(result: AnalysisResult, context?: ProjectContext | UnifiedAIFormatterOptions): UnifiedAIOutput {
     const keyRisks = this.assessRisks(result.issues);
     const summary = this.createSummary(result.issues);
     
@@ -326,7 +335,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
 
     if (this.options.includeContext && context) {
-      output.context = this.extractContext(context);
+      output.context = this.extractContext(context as ProjectContext);
     }
 
     return output;

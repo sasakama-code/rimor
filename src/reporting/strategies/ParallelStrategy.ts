@@ -42,7 +42,7 @@ export class ParallelStrategy implements IFormattingStrategy {
   format(result: UnifiedAnalysisResult, options?: Record<string, unknown>): UnifiedAnalysisResult {
     // 同期版は基底戦略をそのまま使用
     // （並列処理の利点が少ないため）
-    return this.baseStrategy.format(result, options);
+    return this.baseStrategy.format(result, options) as UnifiedAnalysisResult;
   }
 
   /**
@@ -52,9 +52,9 @@ export class ParallelStrategy implements IFormattingStrategy {
     // 小さいデータの場合は直接処理
     if (this.isSmallData(result)) {
       if (this.baseStrategy.formatAsync) {
-        return this.baseStrategy.formatAsync(result, options);
+        return this.baseStrategy.formatAsync(result, options) as Promise<UnifiedAnalysisResult>;
       }
-      return Promise.resolve(this.baseStrategy.format(result, options));
+      return Promise.resolve(this.baseStrategy.format(result, options) as UnifiedAnalysisResult);
     }
 
     // 大きいデータの場合は並列処理
@@ -107,9 +107,9 @@ export class ParallelStrategy implements IFormattingStrategy {
     if (chunks.length === 1) {
       // 分割不要の場合は通常処理
       if (this.baseStrategy.formatAsync) {
-        return this.baseStrategy.formatAsync(result, options);
+        return this.baseStrategy.formatAsync(result, options) as Promise<UnifiedAnalysisResult>;
       }
-      return Promise.resolve(this.baseStrategy.format(result, options));
+      return Promise.resolve(this.baseStrategy.format(result, options) as UnifiedAnalysisResult);
     }
 
     // 各チャンクを並列処理
@@ -156,9 +156,9 @@ export class ParallelStrategy implements IFormattingStrategy {
     // 実際のワーカー実装の代わりに、
     // ここでは基底戦略を直接使用（簡略化）
     if (this.baseStrategy.formatAsync) {
-      return this.baseStrategy.formatAsync(chunk, options);
+      return this.baseStrategy.formatAsync(chunk, options) as Promise<UnifiedAnalysisResult>;
     }
-    return Promise.resolve(this.baseStrategy.format(chunk, options));
+    return Promise.resolve(this.baseStrategy.format(chunk, options) as UnifiedAnalysisResult);
   }
 
   /**
@@ -176,10 +176,10 @@ export class ParallelStrategy implements IFormattingStrategy {
         return this.mergeAIJsonResults(processedChunks, originalResult);
       
       case 'markdown':
-        return this.mergeMarkdownResults(processedChunks);
+        return this.mergeMarkdownResults(processedChunks as any) as unknown as UnifiedAnalysisResult;
       
       case 'html':
-        return this.mergeHtmlResults(processedChunks, originalResult);
+        return this.mergeHtmlResults(processedChunks as any, originalResult) as unknown as UnifiedAnalysisResult;
       
       default:
         // デフォルトは最初のチャンクを返す
@@ -194,16 +194,15 @@ export class ParallelStrategy implements IFormattingStrategy {
     const keyRisks: Array<Record<string, unknown>> = [];
     
     chunks.forEach(chunk => {
-      if (chunk.keyRisks) {
-        keyRisks.push(...chunk.keyRisks);
+      if ((chunk as any).aiKeyRisks) {
+        keyRisks.push(...(chunk as any).aiKeyRisks);
       }
     });
     
     return {
-      overallAssessment: chunks[0].overallAssessment,
-      keyRisks,
-      fullReportUrl: chunks[0].fullReportUrl
-    };
+      ...original,
+      aiKeyRisks: keyRisks
+    } as unknown as UnifiedAnalysisResult;
   }
 
   /**

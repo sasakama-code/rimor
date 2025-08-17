@@ -186,8 +186,9 @@ export abstract class BaseFormatter implements IFormattingStrategy {
       return action;
     }
     
-    if (action.description) {
-      return action.description;
+    const actionObj = action as any;
+    if (actionObj && actionObj.description) {
+      return actionObj.description;
     }
     
     return JSON.stringify(action);
@@ -226,7 +227,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
    * 最大リスク数の取得（共通）
    */
   protected getMaxRisks(options?: Record<string, unknown>): number {
-    const maxRisks = options?.maxRisks || 10;
+    const maxRisks = (options?.maxRisks as number) || 10;
     return Math.min(maxRisks, 100); // 最大100件に制限
   }
 }

@@ -523,7 +523,7 @@ export class StructuredReporter {
         if (!Array.isArray(value)) {
           const sorted: Record<string, unknown> = {};
           Object.keys(value).sort().forEach(k => {
-            sorted[k] = value[k];
+            sorted[k] = (value as any)[k];
           });
           return sorted;
         }

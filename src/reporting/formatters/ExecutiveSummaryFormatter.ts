@@ -50,12 +50,12 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
     const actionItems = this.generateActionItems(result);
 
     return {
-      executiveSummary,
+      summary: executiveSummary,
       keyMetrics,
       riskSummary,
       actionItems,
       recommendations
-    };
+    } as unknown as ExecutiveSummary;
   }
 
   /**
@@ -104,7 +104,7 @@ export class ExecutiveSummaryFormatter extends BaseFormatter {
           }));
       
       dimensions.forEach((dimension: Record<string, unknown>) => {
-        const score = dimension.score || dimension[dimension.name]?.score;
+        const score = dimension.score || (dimension as any)[dimension.name as string]?.score;
         const name = dimension.name || Object.keys(dimension)[0];
         
         if (score < 70) {
