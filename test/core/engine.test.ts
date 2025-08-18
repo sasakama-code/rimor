@@ -72,6 +72,7 @@ describe('UnifiedAnalysisEngine', () => {
       mockPluginManager.setMockResults([{
         pluginId: 'test-plugin',
         issues: [{
+          id: 'test-issue-id',
           type: 'test-issue',
           severity: 'high',
           message: 'Test issue',

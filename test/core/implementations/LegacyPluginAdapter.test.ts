@@ -83,6 +83,7 @@ describe('LegacyPluginAdapter', () => {
     it('should delegate analyze to legacy plugin', async () => {
       const mockIssues: Issue[] = [
         {
+          id: 'test-issue-id',
           type: 'test-issue',
           severity: 'high',
           message: 'Test issue from legacy plugin',
@@ -143,6 +144,7 @@ describe('LegacyPluginAdapter', () => {
         analyze: async (filePath: string) => {
           if (!filePath.includes('.test.')) {
             return [{
+              id: 'missing-test-id',
               type: 'missing-test',
               severity: 'high' as const,
               message: `テストファイルが存在しません: ${filePath}`,
@@ -198,6 +200,7 @@ describe('LegacyPluginAdapter', () => {
         callCount++;
         await new Promise(resolve => setTimeout(resolve, 10));
         return [{
+          id: `call-${callCount}-id`,
           type: `call-${callCount}`,
           severity: 'info' as any,
           message: `Call ${callCount} for ${filePath}`,

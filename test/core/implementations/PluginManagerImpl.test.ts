@@ -158,6 +158,7 @@ describe('PluginManagerImpl', () => {
   describe('run', () => {
     it('should run a specific plugin successfully', async () => {
       const mockIssues: Issue[] = [{
+        id: 'issue-1',
         type: 'test-issue',
         severity: 'high',
         message: 'Test issue found',
@@ -257,6 +258,7 @@ describe('PluginManagerImpl', () => {
         version: '1.0.0',
         enabled: true
       }, async (filePath) => [{
+        id: 'plugin1-issue-1',
         type: 'issue-1',
         severity: 'high',
         message: 'Issue from plugin 1',
@@ -270,6 +272,7 @@ describe('PluginManagerImpl', () => {
         version: '1.0.0',
         enabled: true
       }, async (filePath) => [{
+        id: 'plugin2-issue-1',
         type: 'issue-2',
         severity: 'medium',
         message: 'Issue from plugin 2',
@@ -283,6 +286,7 @@ describe('PluginManagerImpl', () => {
         version: '1.0.0',
         enabled: false // disabled
       }, async (filePath) => [{
+        id: 'plugin3-issue-1',
         type: 'issue-3',
         severity: 'info' as any,
         message: 'Should not appear',
@@ -315,6 +319,7 @@ describe('PluginManagerImpl', () => {
         version: '1.0.0',
         enabled: true
       }, async (filePath) => [{
+        id: 'success-issue-1',
         type: 'success',
         severity: 'info' as any,
         message: 'Working',
@@ -388,6 +393,7 @@ describe('PluginManagerImpl', () => {
         version: '1.0.0',
         enabled: true
       }, async (filePath) => [{
+        id: 'lifecycle-issue-1',
         type: 'lifecycle-issue',
         severity: 'info' as any,
         message: 'Lifecycle test',

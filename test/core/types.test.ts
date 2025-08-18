@@ -48,13 +48,14 @@ describe('Type Definitions', () => {
       it('有効なIssueオブジェクトを正しく判定する', () => {
         // Arrange
         const validIssue: Issue = {
+          id: 'test-issue-id',
           type: 'error',
           filePath: 'test.ts',
           line: 10,
           column: 5,
           severity: 'high' as IssueSeverity,
           message: 'Test issue',
-          category: 'test-quality'
+          category: 'test-quality' as const
         };
 
         // Act & Assert
@@ -191,8 +192,7 @@ describe('Type Definitions', () => {
         // Arrange
         const invalidContext = {
           projectRoot: '/path/to/project',
-          // frameworkが欠けている
-          language: 'typescript',
+          language: 'invalid-language', // 無効な言語
           testFiles: [],
           sourceFiles: []
         };
@@ -312,13 +312,16 @@ describe('Type Definitions', () => {
     describe('isAnalysisResult', () => {
       it('有効なAnalysisResultオブジェクトを正しく判定する', () => {
         // Arrange
-        const validResult: AnalysisResult = {
-          filePath: 'test.ts',
-          issues: [],
+        const validResult = {
+          projectRoot: '/project',
           timestamp: new Date(),
-          metrics: {
-            lines: 100,
-            complexity: 5
+          results: [],
+          summary: {
+            totalFiles: 1,
+            filesWithIssues: 0,
+            totalIssues: 0,
+            totalErrors: 0,
+            totalWarnings: 0
           }
         };
 

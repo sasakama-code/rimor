@@ -216,7 +216,8 @@ describe('統一TestCase型の仕様', () => {
   describe('型ガード', () => {
     it('isTestCase型ガードが正しく動作すること', () => {
       const isTestCase = (obj: any): boolean => {
-        return obj &&
+        return obj !== null &&
+          obj !== undefined &&
           typeof obj === 'object' &&
           typeof obj.id === 'string' &&
           typeof obj.name === 'string' &&

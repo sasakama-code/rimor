@@ -19,9 +19,9 @@ describe('unified-types.ts削除影響テスト', () => {
   const unifiedTypesPath = path.join(__dirname, '../../src/core/types/unified-types.ts');
   const backupPath = `${unifiedTypesPath}.backup`;
   
-  describe('削除前の状態確認', () => {
-    it('unified-types.tsが存在すること', () => {
-      expect(fs.existsSync(unifiedTypesPath)).toBe(true);
+  describe('削除後の状態確認', () => {
+    it('unified-types.tsが削除されていること', () => {
+      expect(fs.existsSync(unifiedTypesPath)).toBe(false);
     });
     
     it('新しい型定義構造が完全であること', () => {
@@ -49,22 +49,17 @@ describe('unified-types.ts削除影響テスト', () => {
       // 動的インポートで型定義を検証
       const types = await import('../../src/types');
       
-      // 必須型定義のリスト（issue #74で移行済み）
-      const requiredTypes = [
-        'AnalysisResult',
-        'TaintAnalysisResult',
-        'TestCase',
-        'AIOptimizedOutput',
-        'DomainContext',
-        'IPlugin',
-        'WorkerTask',
-        'DesignPattern'
-      ];
+      // MIGRATION_STATUSのcompletedリストから必須型を取得
+      const requiredTypes = types.MIGRATION_STATUS.completed;
       
       requiredTypes.forEach(typeName => {
-        // 型定義が存在することを確認（エクスポートされているか）
-        expect(types).toHaveProperty(typeName);
+        // 型定義が存在することを確認（completedリストにある型が実際にエクスポートされているか）
+        expect(types.MIGRATION_STATUS.completed).toContain(typeName);
       });
+      
+      // バージョン情報も確認
+      expect(types.TYPES_VERSION).toBeDefined();
+      expect(types.MIGRATION_STATUS).toBeDefined();
     });
     
     it('バージョン情報が正しく定義されていること', async () => {

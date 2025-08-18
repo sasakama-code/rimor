@@ -198,7 +198,8 @@ describe('統一TaintAnalysisResult型の仕様', () => {
   describe('型ガード', () => {
     it('isTaintAnalysisResult型ガードが正しく動作すること', () => {
       const isTaintAnalysisResult = (obj: any): boolean => {
-        return obj &&
+        return obj !== null &&
+          obj !== undefined &&
           typeof obj === 'object' &&
           Array.isArray(obj.flows) &&
           obj.summary &&

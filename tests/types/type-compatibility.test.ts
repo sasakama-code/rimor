@@ -9,7 +9,7 @@
 import { describe, it, expect } from '@jest/globals';
 import type { 
   AnalysisResult as UnifiedAnalysisResult 
-} from '../../src/core/types/unified-types';
+} from '../../src/core/types/analysis-result';
 import type { 
   AnalysisResult as CoreAnalysisResult 
 } from '../../src/core/analyzer';
@@ -171,7 +171,9 @@ describe('TestCase型の互換性テスト', () => {
 describe('型ガードの動作確認', () => {
   it('isAnalysisResult型ガードが正しく動作すること', () => {
     const isAnalysisResult = (obj: any): obj is CoreAnalysisResult => {
-      return obj &&
+      return obj !== null &&
+        obj !== undefined &&
+        typeof obj === 'object' &&
         typeof obj.totalFiles === 'number' &&
         Array.isArray(obj.issues) &&
         typeof obj.executionTime === 'number';
@@ -197,7 +199,9 @@ describe('型ガードの動作確認', () => {
 
   it('isTaintAnalysisResult型ガードが正しく動作すること', () => {
     const isTaintAnalysisResult = (obj: any): boolean => {
-      return obj &&
+      return obj !== null &&
+        obj !== undefined &&
+        typeof obj === 'object' &&
         Array.isArray(obj.flows) &&
         obj.summary &&
         typeof obj.summary.totalFlows === 'number';

@@ -57,6 +57,7 @@ describe('UnifiedAnalysisEngine', () => {
     it('基本的な分析を実行できる', async () => {
       const testPath = './test/fixtures';
       const mockIssue: Issue = {
+        id: 'test-issue-1',
         type: 'error',
         message: 'Test issue',
         file: '/test/file.ts',

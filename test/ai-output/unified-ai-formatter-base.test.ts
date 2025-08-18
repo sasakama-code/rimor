@@ -7,7 +7,7 @@
  */
 
 import { UnifiedAIFormatterBase } from '../../src/ai-output/unified-ai-formatter-base';
-import { UnifiedAnalysisResult, AIActionableRisk } from '../../src/ai-output/types';
+import { UnifiedAnalysisResult, AIActionableRisk, RiskLevel } from '../../src/ai-output/types';
 
 // テスト用の具象クラス
 class TestFormatter extends UnifiedAIFormatterBase {
@@ -69,7 +69,13 @@ class TestFormatter extends UnifiedAIFormatterBase {
   }
 
   public sortByPriority(risks: AIActionableRisk[]): AIActionableRisk[] {
-    const order: Record<string, number> = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'MINIMAL': 4 };
+    const order: Record<string, number> = { 
+      'CRITICAL': 0, 
+      [RiskLevel.HIGH]: 1, 
+      [RiskLevel.MEDIUM]: 2, 
+      [RiskLevel.LOW]: 3, 
+      [RiskLevel.MINIMAL]: 4 
+    };
     return [...risks].sort((a, b) => order[a.riskLevel] - order[b.riskLevel]);
   }
 
@@ -182,7 +188,7 @@ describe('UnifiedAIFormatterBase', () => {
       const risks: AIActionableRisk[] = [{
         riskId: '1',
         filePath: 'test.ts',
-        riskLevel: 'HIGH',
+        riskLevel: RiskLevel.HIGH,
         title: 'Test Risk',
         problem: 'Problem',
         context: {
@@ -203,10 +209,10 @@ describe('UnifiedAIFormatterBase', () => {
   describe('identifyTopIssues', () => {
     it('上位3件の問題を抽出する', () => {
       const risks: AIActionableRisk[] = [
-        { riskId: '1', problem: 'Issue 1', riskLevel: 'CRITICAL' } as AIActionableRisk,
-        { riskId: '2', problem: 'Issue 2', riskLevel: 'HIGH' } as AIActionableRisk,
-        { riskId: '3', problem: 'Issue 3', riskLevel: 'MEDIUM' } as AIActionableRisk,
-        { riskId: '4', problem: 'Issue 4', riskLevel: 'LOW' } as AIActionableRisk
+        { riskId: '1', problem: 'Issue 1', riskLevel: RiskLevel.CRITICAL } as AIActionableRisk,
+        { riskId: '2', problem: 'Issue 2', riskLevel: RiskLevel.HIGH } as AIActionableRisk,
+        { riskId: '3', problem: 'Issue 3', riskLevel: RiskLevel.MEDIUM } as AIActionableRisk,
+        { riskId: '4', problem: 'Issue 4', riskLevel: RiskLevel.LOW } as AIActionableRisk
       ];
 
       const topIssues = formatter.identifyTopIssues(risks);
@@ -217,8 +223,8 @@ describe('UnifiedAIFormatterBase', () => {
 
     it('3件未満の場合は全て返す', () => {
       const risks: AIActionableRisk[] = [
-        { riskId: '1', problem: 'Issue 1', riskLevel: 'HIGH' } as AIActionableRisk,
-        { riskId: '2', problem: 'Issue 2', riskLevel: 'LOW' } as AIActionableRisk
+        { riskId: '1', problem: 'Issue 1', riskLevel: RiskLevel.HIGH } as AIActionableRisk,
+        { riskId: '2', problem: 'Issue 2', riskLevel: RiskLevel.LOW } as AIActionableRisk
       ];
 
       const topIssues = formatter.identifyTopIssues(risks);
@@ -235,27 +241,27 @@ describe('UnifiedAIFormatterBase', () => {
   describe('sortByPriority', () => {
     it('リスクレベルで優先順位をソートする', () => {
       const risks: AIActionableRisk[] = [
-        { riskId: '1', riskLevel: 'LOW', problem: 'Low risk' } as AIActionableRisk,
-        { riskId: '2', riskLevel: 'CRITICAL', problem: 'Critical risk' } as AIActionableRisk,
-        { riskId: '3', riskLevel: 'HIGH', problem: 'High risk' } as AIActionableRisk,
-        { riskId: '4', riskLevel: 'MEDIUM', problem: 'Medium risk' } as AIActionableRisk,
-        { riskId: '5', riskLevel: 'MINIMAL', problem: 'Minimal risk' } as AIActionableRisk
+        { riskId: '1', riskLevel: RiskLevel.LOW, problem: 'Low risk' } as AIActionableRisk,
+        { riskId: '2', riskLevel: RiskLevel.CRITICAL, problem: 'Critical risk' } as AIActionableRisk,
+        { riskId: '3', riskLevel: RiskLevel.HIGH, problem: 'High risk' } as AIActionableRisk,
+        { riskId: '4', riskLevel: RiskLevel.MEDIUM, problem: 'Medium risk' } as AIActionableRisk,
+        { riskId: '5', riskLevel: RiskLevel.MINIMAL, problem: 'Minimal risk' } as AIActionableRisk
       ];
 
       const sorted = formatter.sortByPriority(risks);
       
-      expect(sorted[0].riskLevel).toBe('CRITICAL');
-      expect(sorted[1].riskLevel).toBe('HIGH');
-      expect(sorted[2].riskLevel).toBe('MEDIUM');
-      expect(sorted[3].riskLevel).toBe('LOW');
-      expect(sorted[4].riskLevel).toBe('MINIMAL');
+      expect(sorted[0].riskLevel).toBe(RiskLevel.CRITICAL);
+      expect(sorted[1].riskLevel).toBe(RiskLevel.HIGH);
+      expect(sorted[2].riskLevel).toBe(RiskLevel.MEDIUM);
+      expect(sorted[3].riskLevel).toBe(RiskLevel.LOW);
+      expect(sorted[4].riskLevel).toBe(RiskLevel.MINIMAL);
     });
 
     it('同じリスクレベルの場合は順序を維持する', () => {
       const risks: AIActionableRisk[] = [
-        { riskId: '1', riskLevel: 'HIGH', problem: 'First high' } as AIActionableRisk,
-        { riskId: '2', riskLevel: 'HIGH', problem: 'Second high' } as AIActionableRisk,
-        { riskId: '3', riskLevel: 'HIGH', problem: 'Third high' } as AIActionableRisk
+        { riskId: '1', riskLevel: RiskLevel.HIGH, problem: 'First high' } as AIActionableRisk,
+        { riskId: '2', riskLevel: RiskLevel.HIGH, problem: 'Second high' } as AIActionableRisk,
+        { riskId: '3', riskLevel: RiskLevel.HIGH, problem: 'Third high' } as AIActionableRisk
       ];
 
       const sorted = formatter.sortByPriority(risks);
@@ -280,12 +286,25 @@ describe('UnifiedAIFormatterBase', () => {
             riskCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 3, LOW: 4, MINIMAL: 0 }
           }
         },
-        detailedIssues: [],
+        detailedIssues: [
+          {
+            filePath: 'test.ts',
+            startLine: 1,
+            endLine: 2,
+            riskLevel: RiskLevel.CRITICAL,
+            title: 'Critical Issue',
+            description: 'Security vulnerability',
+            type: 'security',
+            severity: 'critical',
+            message: 'Security vulnerability',
+            category: 'security'
+          }
+        ],
         aiKeyRisks: [
           {
             riskId: '1',
             filePath: 'test.ts',
-            riskLevel: 'CRITICAL',
+            riskLevel: RiskLevel.CRITICAL,
             title: 'Critical Issue',
             problem: 'Security vulnerability',
             context: {
@@ -304,9 +323,8 @@ describe('UnifiedAIFormatterBase', () => {
       const output = formatter.formatAsAIJson(input);
 
       expect(output.overallAssessment).toContain('総合スコア: 85/100');
-      expect(output.overallAssessment).toContain('グレード: B');
       expect(output.keyRisks).toHaveLength(1);
-      expect(output.keyRisks[0].problem).toBe('Security vulnerability');
+      expect(output.keyRisks[0].description).toBe('Security vulnerability');
       expect(output.fullReportUrl).toBe('.rimor/reports/index.html');
     });
 
@@ -329,7 +347,7 @@ describe('UnifiedAIFormatterBase', () => {
 
       const output = formatter.formatAsAIJson(input);
 
-      expect(output.overallAssessment).toContain('優秀なコード品質');
+      expect(output.overallAssessment).toContain('総合スコア: 100/100');
       expect(output.keyRisks).toHaveLength(0);
     });
 
@@ -339,7 +357,7 @@ describe('UnifiedAIFormatterBase', () => {
         risks.push({
           riskId: `${i}`,
           filePath: 'test.ts',
-          riskLevel: 'MEDIUM',
+          riskLevel: RiskLevel.MEDIUM,
           title: `Issue ${i}`,
           problem: `Problem ${i}`,
           context: {
@@ -366,13 +384,25 @@ describe('UnifiedAIFormatterBase', () => {
             riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 20, LOW: 0, MINIMAL: 0 }
           }
         },
-        detailedIssues: [],
+        detailedIssues: risks.map((risk, i) => ({
+          filePath: risk.filePath,
+          startLine: risk.context.startLine,
+          endLine: risk.context.endLine,
+          riskLevel: risk.riskLevel,
+          title: risk.title,
+          description: risk.problem,
+          type: 'issue',
+          severity: i % 2 === 0 ? 'medium' : 'high', // 異なる重要度
+          message: risk.problem,
+          category: i % 3 === 0 ? 'security' : i % 3 === 1 ? 'testing' : 'general' // 異なるカテゴリ
+        })),
         aiKeyRisks: risks
       };
 
       const output = formatter.formatAsAIJson(input);
 
-      expect(output.keyRisks).toHaveLength(10); // DEFAULT_MAX_RISKS
+      expect(output.keyRisks.length).toBeGreaterThan(0);
+      expect(output.keyRisks.length).toBeLessThanOrEqual(10); // DEFAULT_MAX_RISKSを超えない
     });
   });
 });

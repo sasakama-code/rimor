@@ -13,12 +13,12 @@ import { VulnerabilityEvaluator } from '../../../src/nist/evaluators/Vulnerabili
 import { NistRiskEvaluator } from '../../../src/nist/evaluators/NistRiskEvaluator';
 import {
   UnifiedAnalysisResult,
-  RiskLevel,
   AIActionType,
   ExecutiveSummary,
   DetailedIssue,
   AIActionableRisk
 } from '../../../src/nist/types/unified-analysis-result';
+import { CoreTypes } from '../../../src/core/types/core-definitions';
 import { 
   TaintAnalysisResult, 
   TaintLevel 
@@ -121,7 +121,7 @@ describe('UnifiedResultGenerator', () => {
       expect(summary.overallGrade).toMatch(/[D|F]/);
       expect(summary.dimensions).toHaveLength(3);
       expect(summary.statistics.totalFiles).toBeGreaterThan(0);
-      expect(summary.statistics.riskCounts[RiskLevel.CRITICAL]).toBe(1);
+      expect(summary.statistics.riskCounts[CoreTypes.RiskLevel.CRITICAL]).toBe(1);
     });
 
     it('詳細な問題リストを生成する', async () => {
@@ -152,7 +152,7 @@ describe('UnifiedResultGenerator', () => {
 
       expect(issue.filePath).toBe('session.ts');
       expect(issue.startLine).toBe(75);
-      expect(issue.riskLevel).toBe(RiskLevel.HIGH);
+      expect(issue.riskLevel).toBe(CoreTypes.RiskLevel.HIGH);
       expect(issue.title).toContain('認証');
       expect(issue.description).toContain('認証バイパスの可能性');
       expect(issue.contextSnippet).toBeDefined();
@@ -196,7 +196,7 @@ describe('UnifiedResultGenerator', () => {
 
       expect(aiRisks).toHaveLength(2);
       expect(aiRisks[0].riskId).toBe('FLOW-002');
-      expect(aiRisks[0].riskLevel).toBe(RiskLevel.HIGH);
+      expect(aiRisks[0].riskLevel).toBe(CoreTypes.RiskLevel.HIGH);
       expect(aiRisks[0].suggestedAction.type).toBe(AIActionType.SANITIZE_VARIABLE);
       expect(aiRisks[0].suggestedAction.example).toBeDefined();
     });

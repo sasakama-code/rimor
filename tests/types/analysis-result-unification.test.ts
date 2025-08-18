@@ -154,7 +154,8 @@ describe('統一AnalysisResult型の仕様', () => {
   describe('型ガード', () => {
     it('isAnalysisResult型ガードが正しく動作すること', () => {
       const isAnalysisResult = (obj: any): boolean => {
-        return obj &&
+        return obj !== null &&
+          obj !== undefined &&
           typeof obj === 'object' &&
           typeof obj.totalFiles === 'number' &&
           Array.isArray(obj.issues) &&

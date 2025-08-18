@@ -40,16 +40,11 @@ describe('MetadataDrivenConfigManager', () => {
         recommendedBatchSize: 25
       },
       targetFiles: {
-        include: ['**/*.test.ts'],
-        exclude: ['**/node_modules/**']
+        patterns: ['**/*.test.ts'],
+        excludePatterns: ['**/node_modules/**']
       },
-      issueTypes: [
-        {
-          type: 'test-issue',
-          severity: 'warning',
-          description: 'Test issue detected'
-        }
-      ]
+      // issueTypesは現在のPluginMetadata型には存在しない
+      // 必要に応じて拡張可能
     };
     
     pluginMetadataRegistry.register(testMetadata);
@@ -68,7 +63,7 @@ describe('MetadataDrivenConfigManager', () => {
       const pluginNames = Object.keys(config.plugins);
       const lightweightPlugins = pluginNames.filter(name => {
         const metadata = pluginMetadataRegistry.get(name);
-        return metadata?.performance.memoryUsage === 'low';
+        return metadata?.performance?.memoryUsage === 'low';
       });
       
       expect(lightweightPlugins.length).toBeGreaterThan(0);
@@ -106,7 +101,7 @@ describe('MetadataDrivenConfigManager', () => {
       const pluginNames = Object.keys(config.plugins);
       pluginNames.forEach(name => {
         const metadata = pluginMetadataRegistry.get(name);
-        expect(metadata?.performance.estimatedTimePerFile).toBeLessThanOrEqual(15);
+        expect(metadata?.performance?.estimatedTimePerFile).toBeLessThanOrEqual(15);
       });
     });
     
@@ -179,10 +174,9 @@ describe('MetadataDrivenConfigManager', () => {
           memoryUsage: 'medium'
         },
         targetFiles: {
-          include: ['**/*.ts'],
-          exclude: []
-        },
-        issueTypes: []
+          patterns: ['**/*.ts'],
+          excludePatterns: []
+        }
       };
       
       pluginMetadataRegistry.register(dependentPlugin);
@@ -242,7 +236,7 @@ describe('MetadataDrivenConfigManager', () => {
       // メモリ使用量の制限により、medium/highメモリプラグインは除外される
       Object.keys(optimized.plugins).forEach(pluginName => {
         const metadata = pluginMetadataRegistry.get(pluginName);
-        expect(metadata?.performance.memoryUsage).toBe('low');
+        expect(metadata?.performance?.memoryUsage).toBe('low');
       });
     });
     
@@ -332,10 +326,9 @@ describe('MetadataDrivenConfigManager', () => {
           memoryUsage: 'low'
         },
         targetFiles: {
-          include: ['**/*.ts'],
-          exclude: []
-        },
-        issueTypes: []
+          patterns: ['**/*.ts'],
+          excludePatterns: []
+        }
       };
       
       pluginMetadataRegistry.register(dependentPlugin);
@@ -378,10 +371,9 @@ describe('MetadataDrivenConfigManager', () => {
             memoryUsage: 'high'
           },
           targetFiles: {
-            include: ['**/*.ts'],
-            exclude: []
-          },
-          issueTypes: []
+            patterns: ['**/*.ts'],
+            excludePatterns: []
+          }
         };
         
         pluginMetadataRegistry.register(heavyPlugin);

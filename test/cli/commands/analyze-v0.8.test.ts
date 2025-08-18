@@ -85,6 +85,7 @@ describe('AnalyzeCommand v0.8 - Type Safety', () => {
         projectPath: '/test/project',
         issues: [
           {
+            id: 'missing-test-id',
             type: 'missing-test',
             message: 'テストが不足しています',
             severity: 'high',

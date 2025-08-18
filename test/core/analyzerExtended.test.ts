@@ -178,6 +178,7 @@ describe('AnalyzerExtended', () => {
       name: 'legacy-test-plugin',
       async analyze(_filePath: string) {
         return [{
+          id: 'legacy-issue-id',
           type: 'legacy-issue',
           severity: 'medium' as const,
           message: 'Legacy plugin issue detected',

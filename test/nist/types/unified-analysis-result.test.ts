@@ -13,22 +13,22 @@ import {
   AIActionableRisk,
   ReportDimension,
   ScoreBreakdown,
-  RiskLevel,
   AIActionType
 } from '../../../src/nist/types/unified-analysis-result';
+import { CoreTypes } from '../../../src/core/types/core-definitions';
 
 describe('UnifiedAnalysisResult v2.0', () => {
   describe('RiskLevel Enum', () => {
     it('大文字のリスクレベルを定義する', () => {
-      expect(RiskLevel.CRITICAL).toBe('CRITICAL');
-      expect(RiskLevel.HIGH).toBe('HIGH');
-      expect(RiskLevel.MEDIUM).toBe('MEDIUM');
-      expect(RiskLevel.LOW).toBe('LOW');
-      expect(RiskLevel.MINIMAL).toBe('MINIMAL');
+      expect(CoreTypes.RiskLevel.CRITICAL).toBe('CRITICAL');
+      expect(CoreTypes.RiskLevel.HIGH).toBe('HIGH');
+      expect(CoreTypes.RiskLevel.MEDIUM).toBe('MEDIUM');
+      expect(CoreTypes.RiskLevel.LOW).toBe('LOW');
+      expect(CoreTypes.RiskLevel.MINIMAL).toBe('MINIMAL');
     });
 
     it('すべての必要なリスクレベルが存在する', () => {
-      const levels = Object.values(RiskLevel);
+      const levels = Object.values(CoreTypes.RiskLevel);
       expect(levels).toHaveLength(5);
       expect(levels).toContain('CRITICAL');
       expect(levels).toContain('HIGH');
@@ -161,7 +161,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
         filePath: '/src/auth/login.ts',
         startLine: 42,
         endLine: 58,
-        riskLevel: RiskLevel.CRITICAL,
+        riskLevel: CoreTypes.RiskLevel.CRITICAL,
         title: 'SQLインジェクションの脆弱性',
         description: 'ユーザー入力が直接SQLクエリに使用されています',
         contextSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`'
@@ -170,7 +170,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
       expect(issue.filePath).toBeDefined();
       expect(issue.startLine).toBeGreaterThan(0);
       expect(issue.endLine).toBeGreaterThanOrEqual(issue.startLine);
-      expect(Object.values(RiskLevel)).toContain(issue.riskLevel);
+      expect(Object.values(CoreTypes.RiskLevel)).toContain(issue.riskLevel);
       expect(issue.title).toBeDefined();
       expect(issue.description).toBeDefined();
     });
@@ -181,7 +181,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
       const risk: AIActionableRisk = {
         riskId: 'SQL-INJ-001',
         filePath: '/src/auth/login.ts',
-        riskLevel: RiskLevel.CRITICAL,
+        riskLevel: CoreTypes.RiskLevel.CRITICAL,
         title: 'SQLインジェクションの脆弱性',
         problem: 'ユーザー入力がサニタイズされずにSQLクエリに使用',
         context: {
@@ -198,7 +198,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
 
       expect(risk.riskId).toBeDefined();
       expect(risk.filePath).toBeDefined();
-      expect(Object.values(RiskLevel)).toContain(risk.riskLevel);
+      expect(Object.values(CoreTypes.RiskLevel)).toContain(risk.riskLevel);
       expect(risk.title).toBeDefined();
       expect(risk.problem).toBeDefined();
       expect(risk.context).toBeDefined();
@@ -249,7 +249,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
             filePath: '/src/api/user.ts',
             startLine: 10,
             endLine: 20,
-            riskLevel: RiskLevel.HIGH,
+            riskLevel: CoreTypes.RiskLevel.HIGH,
             title: '認証バイパスの可能性',
             description: 'トークン検証が不完全です'
           }
@@ -258,7 +258,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
           {
             riskId: 'AUTH-001',
             filePath: '/src/api/user.ts',
-            riskLevel: RiskLevel.HIGH,
+            riskLevel: CoreTypes.RiskLevel.HIGH,
             title: '認証バイパスの可能性',
             problem: 'JWTトークンの署名検証が欠落',
             context: {
@@ -351,19 +351,19 @@ describe('型の後方互換性', () => {
     type OldSeverity = 'critical' | 'high' | 'medium' | 'low';
     
     // マッピング関数のテスト
-    const mapSeverityToRiskLevel = (severity: OldSeverity): RiskLevel => {
-      const mapping: Record<OldSeverity, RiskLevel> = {
-        'critical': RiskLevel.CRITICAL,
-        'high': RiskLevel.HIGH,
-        'medium': RiskLevel.MEDIUM,
-        'low': RiskLevel.LOW
+    const mapSeverityToRiskLevel = (severity: OldSeverity): CoreTypes.RiskLevel => {
+      const mapping: Record<OldSeverity, CoreTypes.RiskLevel> = {
+        'critical': CoreTypes.RiskLevel.CRITICAL,
+        'high': CoreTypes.RiskLevel.HIGH,
+        'medium': CoreTypes.RiskLevel.MEDIUM,
+        'low': CoreTypes.RiskLevel.LOW
       };
       return mapping[severity];
     };
 
-    expect(mapSeverityToRiskLevel('critical')).toBe(RiskLevel.CRITICAL);
-    expect(mapSeverityToRiskLevel('high')).toBe(RiskLevel.HIGH);
-    expect(mapSeverityToRiskLevel('medium')).toBe(RiskLevel.MEDIUM);
-    expect(mapSeverityToRiskLevel('low')).toBe(RiskLevel.LOW);
+    expect(mapSeverityToRiskLevel('critical')).toBe(CoreTypes.RiskLevel.CRITICAL);
+    expect(mapSeverityToRiskLevel('high')).toBe(CoreTypes.RiskLevel.HIGH);
+    expect(mapSeverityToRiskLevel('medium')).toBe(CoreTypes.RiskLevel.MEDIUM);
+    expect(mapSeverityToRiskLevel('low')).toBe(CoreTypes.RiskLevel.LOW);
   });
 });

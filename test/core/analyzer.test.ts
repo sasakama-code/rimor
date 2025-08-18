@@ -9,6 +9,7 @@ class MockPlugin implements IPlugin {
   async analyze(filePath: string): Promise<Issue[]> {
     if (this.shouldFindIssue && !filePath.includes('.test.')) {
       return [{
+        id: 'test-missing-id',
         type: 'test-missing',
         severity: 'high',
         message: `No test file found for ${filePath}`,

@@ -243,6 +243,7 @@ describe('UnifiedAnalysisResult', () => {
       
       const staticIssues: Issue[] = [
         {
+          id: 'issue-1',
           type: 'test-type',
           file: '/test/file1.ts',
           filePath: '/test/file1.ts',
@@ -250,7 +251,6 @@ describe('UnifiedAnalysisResult', () => {
           column: 5,
           severity: 'high',
           message: 'Test issue',
-          plugin: 'test-plugin',
           category: 'test-quality' as const
         }
       ];
@@ -302,6 +302,7 @@ describe('UnifiedAnalysisResult', () => {
       
       const staticIssues: Issue[] = [
         {
+          id: 'issue-2',
           type: 'test',
           file: '/test/file1.ts',
           filePath: '/test/file1.ts',
@@ -309,10 +310,11 @@ describe('UnifiedAnalysisResult', () => {
           column: 1,
           severity: 'high',
           message: 'Issue 1',
-          plugin: 'plugin1',
-          category: 'test-quality' as const
-        },
+          category: 'test-quality' as const,
+          plugin: 'plugin1'
+        } as Issue & { plugin: string },
         {
+          id: 'issue-3',
           type: 'test',
           file: '/test/file2.ts',
           filePath: '/test/file2.ts',
@@ -320,10 +322,11 @@ describe('UnifiedAnalysisResult', () => {
           column: 2,
           severity: 'medium',
           message: 'Issue 2',
-          plugin: 'plugin1',
-          category: 'test-quality' as const
-        },
+          category: 'test-quality' as const,
+          plugin: 'plugin2'
+        } as Issue & { plugin: string },
         {
+          id: 'issue-4',
           type: 'test',
           file: '/test/file1.ts',
           filePath: '/test/file1.ts',
@@ -331,9 +334,9 @@ describe('UnifiedAnalysisResult', () => {
           column: 3,
           severity: 'high',
           message: 'Issue 3',
-          plugin: 'plugin2',
-          category: 'test-quality' as const
-        }
+          category: 'test-quality' as const,
+          plugin: 'plugin1'
+        } as Issue & { plugin: string }
       ];
       
       const metadata: AnalysisMetadata = {
@@ -382,6 +385,7 @@ describe('UnifiedAnalysisResult', () => {
       
       const staticIssues: Issue[] = [
         {
+          id: 'issue-critical',
           type: 'critical',
           severity: 'critical',
           message: 'Critical issue',

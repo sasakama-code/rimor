@@ -14,7 +14,8 @@ import {
   ReportFormat,
   UnifiedReport 
 } from '../../src/reporting/core/types';
-import { UnifiedAnalysisResult, RiskLevel, AIActionType } from '../../src/nist/types/unified-analysis-result';
+import { UnifiedAnalysisResult, AIActionType } from '../../src/nist/types/unified-analysis-result';
+import { CoreTypes } from '../../src/core/types/core-definitions';
 import { AIJsonFormatter } from '../../src/reporting/formatters/AIJsonFormatter';
 import { MarkdownFormatter } from '../../src/reporting/formatters/MarkdownFormatter';
 import { HTMLFormatter } from '../../src/reporting/formatters/HTMLFormatter';
@@ -65,7 +66,7 @@ describe('UnifiedReportEngine', () => {
           riskId: 'risk-001',
           title: 'Missing test coverage',
           problem: 'Critical path lacks test coverage',
-          riskLevel: RiskLevel.HIGH,
+          riskLevel: CoreTypes.RiskLevel.HIGH,
           filePath: 'src/core/analyzer.ts',
           context: {
             codeSnippet: 'function analyze() { ... }',
@@ -156,8 +157,8 @@ describe('UnifiedReportEngine', () => {
       
       // Type assertion for content object
       const content = report.content as any;
-      expect(content).toHaveProperty('executiveSummary');
-      expect(content.executiveSummary).toHaveProperty('overallScore');
+      expect(content).toHaveProperty('summary');
+      expect(content.summary).toHaveProperty('overallScore');
       expect(content).toHaveProperty('recommendations');
     });
   });
@@ -292,7 +293,7 @@ describe('UnifiedReportEngine', () => {
           riskId: `risk-${index}`,
           title: `Risk ${index}`,
           problem: `Problem ${index}`,
-          riskLevel: [RiskLevel.CRITICAL, RiskLevel.HIGH, RiskLevel.MEDIUM, RiskLevel.LOW, RiskLevel.MINIMAL][index % 5],
+          riskLevel: [CoreTypes.RiskLevel.CRITICAL, CoreTypes.RiskLevel.HIGH, CoreTypes.RiskLevel.MEDIUM, CoreTypes.RiskLevel.LOW, CoreTypes.RiskLevel.MINIMAL][index % 5],
           filePath: `src/file${index}.ts`,
           context: {
             codeSnippet: `code ${index}`,

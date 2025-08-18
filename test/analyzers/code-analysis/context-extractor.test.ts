@@ -14,6 +14,7 @@ describe('AdvancedCodeContextAnalyzer', () => {
   let analyzer: AdvancedCodeContextAnalyzer;
   const mockProjectPath = '/test/project';
   const mockIssue: Issue = {
+    id: 'test-issue-id',
     file: '/test/project/src/app.ts',
     filePath: '/test/project/src/app.ts',
     message: 'Test issue',

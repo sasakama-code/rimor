@@ -111,8 +111,9 @@ describe('TestExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeLessThan(50);
-      expect(score.breakdown?.completeness).toBe(0);
+      // missing-test-file: completeness = 0, coverage = 0, overall = (0 + 0) / 2 = 0
+      expect(score.overall).toBeCloseTo(0, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(0, 1);
     });
 
     test('should return high score when no issues detected', () => {
@@ -120,8 +121,9 @@ describe('TestExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeGreaterThan(90);
-      expect(score.breakdown?.completeness).toBe(100);
+      // 問題なし: completeness = 100, coverage = 100, overall = (100 + 100) / 2 = 100
+      expect(score.overall).toBeCloseTo(100, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(100, 1);
     });
 
     test('should return medium score for empty test file', () => {
@@ -139,10 +141,9 @@ describe('TestExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeGreaterThan(40);
-      expect(score.overall).toBeLessThan(70);
-      expect(score.breakdown?.completeness).toBeGreaterThan(0);
-      expect(score.breakdown?.completeness).toBeLessThan(100);
+      // empty-test-file: completeness = 50, coverage = 50, overall = (50 + 50) / 2 = 50
+      expect(score.overall).toBeCloseTo(50, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(50, 1);
     });
   });
 
@@ -168,13 +169,10 @@ describe('TestExistencePlugin', () => {
       expect(improvements).toHaveLength(1);
       expect(improvements[0]).toMatchObject({
         priority: 'high',
-        type: 'add',
+        type: 'add-test',
         category: 'test-creation',
         title: expect.stringContaining('Create missing test file'),
-        estimatedImpact: expect.objectContaining({
-          scoreImprovement: expect.any(Number),
-          effortMinutes: expect.any(Number)
-        })
+        estimatedImpact: expect.any(Number)
       });
     });
 
@@ -199,13 +197,10 @@ describe('TestExistencePlugin', () => {
       expect(improvements).toHaveLength(1);
       expect(improvements[0]).toMatchObject({
         priority: 'medium',
-        type: 'modify',
+        type: 'improve-coverage',
         category: 'test-improvement',
         title: expect.stringContaining('Add test cases'),
-        estimatedImpact: expect.objectContaining({
-          scoreImprovement: expect.any(Number),
-          effortMinutes: expect.any(Number)
-        })
+        estimatedImpact: expect.any(Number)
       });
     });
 

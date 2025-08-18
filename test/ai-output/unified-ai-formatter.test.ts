@@ -15,7 +15,7 @@ import {
   DetailedIssue,
   AIActionableRisk
 } from '../../src/nist/types/unified-analysis-result';
-import { AIJsonOutput } from '../../src/ai-output/types';
+import { AIJsonOutput, UnifiedAIFormatterOptions } from '../../src/ai-output/types';
 
 describe('UnifiedAIFormatter', () => {
   let formatter: UnifiedAIFormatter;
@@ -88,7 +88,7 @@ describe('UnifiedAIFormatter', () => {
     it('CRITICALとHIGHリスクを優先的に含める', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResultWithMultipleRisks();
-      const options = {
+      const options: UnifiedAIFormatterOptions = {
         includeRiskLevels: ['CRITICAL', 'HIGH']
       };
       
@@ -97,9 +97,9 @@ describe('UnifiedAIFormatter', () => {
       
       // Assert
       const riskLevels = result.keyRisks.map((r: any) => r.riskLevel);
-      expect(riskLevels[0]).toBe('CRITICAL');
-      expect(riskLevels[1]).toBe('HIGH');
-      expect(riskLevels.filter((l: string) => l === 'LOW')).toHaveLength(0);
+      expect(riskLevels[0]).toBe(RiskLevel.CRITICAL);
+      expect(riskLevels[1]).toBe(RiskLevel.HIGH);
+      expect(riskLevels.filter((l: any) => l === RiskLevel.LOW)).toHaveLength(0);
       expect(result.keyRisks).toHaveLength(2);
     });
 

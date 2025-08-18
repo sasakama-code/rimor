@@ -54,6 +54,7 @@ describe('AnalysisEngineImpl', () => {
       const expectedResult: AnalysisResult = {
         totalFiles: 10,
         issues: [{
+          id: 'test-issue-id',
           type: 'test-issue',
           severity: 'high',
           message: 'Test issue',

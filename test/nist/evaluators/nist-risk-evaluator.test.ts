@@ -163,7 +163,7 @@ describe('NistRiskEvaluator', () => {
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
-      expect(riskLevel).toBe(RiskLevel.CRITICAL);
+      expect(riskLevel).toBe('CRITICAL');
     });
 
     it('低脅威・低脆弱性の場合のリスクレベル', () => {
@@ -174,7 +174,7 @@ describe('NistRiskEvaluator', () => {
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
-      expect(riskLevel).toBe(RiskLevel.MINIMAL);
+      expect(riskLevel).toBe('MINIMAL');
     });
 
     it('高脅威・低脆弱性の場合のリスクレベル', () => {
@@ -185,7 +185,7 @@ describe('NistRiskEvaluator', () => {
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
-      expect(riskLevel).toBe(RiskLevel.MEDIUM);
+      expect(riskLevel).toBe('MEDIUM');
     });
   });
 
@@ -231,7 +231,7 @@ describe('NistRiskEvaluator', () => {
       
       expect(result).toBeDefined();
       expect(result.overallRiskLevel).toBeDefined();
-      expect(Object.values(RiskLevel)).toContain(result.overallRiskLevel);
+      expect(Object.values(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'])).toContain(result.overallRiskLevel);
       expect(result.recommendations).toBeInstanceOf(Array);
       expect(result.recommendations.length).toBeGreaterThan(0);
     });
@@ -257,9 +257,9 @@ describe('NistRiskEvaluator', () => {
 
   describe('リスク優先度の計算', () => {
     it('リスクレベルから優先度を計算する', () => {
-      const criticalPriority = evaluator.getRiskPriority(RiskLevel.CRITICAL);
-      const highPriority = evaluator.getRiskPriority(RiskLevel.HIGH);
-      const lowPriority = evaluator.getRiskPriority(RiskLevel.LOW);
+      const criticalPriority = evaluator.getRiskPriority('CRITICAL');
+      const highPriority = evaluator.getRiskPriority('HIGH');
+      const lowPriority = evaluator.getRiskPriority('LOW');
 
       expect(criticalPriority).toBeGreaterThan(highPriority);
       expect(highPriority).toBeGreaterThan(lowPriority);
@@ -267,24 +267,24 @@ describe('NistRiskEvaluator', () => {
 
     it('複数のリスクをソートする', () => {
       const risks = [
-        { id: '1', level: RiskLevel.LOW },
-        { id: '2', level: RiskLevel.CRITICAL },
-        { id: '3', level: RiskLevel.MEDIUM },
-        { id: '4', level: RiskLevel.HIGH }
+        { id: '1', level: 'LOW' },
+        { id: '2', level: 'CRITICAL' },
+        { id: '3', level: 'MEDIUM' },
+        { id: '4', level: 'HIGH' }
       ];
 
       const sorted = evaluator.sortByRiskPriority(risks);
       
-      expect(sorted[0].level).toBe(RiskLevel.CRITICAL);
-      expect(sorted[1].level).toBe(RiskLevel.HIGH);
-      expect(sorted[2].level).toBe(RiskLevel.MEDIUM);
-      expect(sorted[3].level).toBe(RiskLevel.LOW);
+      expect(sorted[0].level).toBe('CRITICAL');
+      expect(sorted[1].level).toBe('HIGH');
+      expect(sorted[2].level).toBe('MEDIUM');
+      expect(sorted[3].level).toBe('LOW');
     });
   });
 
   describe('推奨事項の生成', () => {
     it('リスクレベルに応じた推奨事項を生成する', () => {
-      const recommendations = evaluator.generateRecommendations(RiskLevel.CRITICAL);
+      const recommendations = evaluator.generateRecommendations('CRITICAL');
       
       expect(recommendations).toBeInstanceOf(Array);
       expect(recommendations.length).toBeGreaterThan(0);
@@ -294,7 +294,7 @@ describe('NistRiskEvaluator', () => {
     });
 
     it('低リスクの場合の推奨事項', () => {
-      const recommendations = evaluator.generateRecommendations(RiskLevel.MINIMAL);
+      const recommendations = evaluator.generateRecommendations('MINIMAL');
       
       expect(recommendations).toBeInstanceOf(Array);
       expect(recommendations.length).toBeGreaterThan(0);

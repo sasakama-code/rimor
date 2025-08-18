@@ -142,6 +142,7 @@ describe('UserController', () => {
   describe('analyzeCodeContext', () => {
     test('should analyze TypeScript file and extract comprehensive context', async () => {
       const issue: Issue = {
+        id: 'test-issue-1',
         type: 'missing-assertion',
         severity: 'high',
         message: 'Missing proper assertions',
@@ -177,6 +178,7 @@ describe('UserController', () => {
 
     test('should handle complex TypeScript with classes and interfaces', async () => {
       const issue: Issue = {
+        id: 'test-issue-2',
         type: 'missing-error-handling',
         severity: 'medium', 
         message: 'Missing error handling',
@@ -209,6 +211,7 @@ describe('UserController', () => {
 
     test('should extract function-level context accurately', async () => {
       const issue: Issue = {
+        id: 'test-issue-3',
         type: 'missing-validation',
         severity: 'medium',
         message: 'Missing input validation',
@@ -234,6 +237,7 @@ describe('UserController', () => {
 
     test('should analyze scope context with variable tracking', async () => {
       const issue: Issue = {
+        id: 'test-issue-4',
         type: 'unused-variable',
         severity: 'medium',
         message: 'Variable may be unused',
@@ -270,6 +274,7 @@ describe('UserController', () => {
       fs.writeFileSync(path.join(testProjectPath, 'src/services/UserService.ts'), serviceCode);
 
       const issue: Issue = {
+        id: 'test-issue-5',
         type: 'missing-test-coverage',
         severity: 'medium',
         message: 'Missing test coverage for UserService interaction',
@@ -414,6 +419,7 @@ const processOrder = async (order) => {
   describe('Error Handling', () => {
     test('should handle non-existent files gracefully', async () => {
       const issue: Issue = {
+        id: 'test-issue-6',
         type: 'missing-file',
         severity: 'high',
         message: 'File not found',
@@ -439,6 +445,7 @@ const processOrder = async (order) => {
       fs.writeFileSync(path.join(testProjectPath, 'src/broken.ts'), malformedCode);
       
       const issue: Issue = {
+        id: 'test-issue-7',
         type: 'syntax-error',
         severity: 'high',
         message: 'Syntax error',
@@ -460,6 +467,7 @@ const processOrder = async (order) => {
   describe('Performance', () => {
     test('should complete analysis within reasonable time', async () => {
       const issue: Issue = {
+        id: 'test-issue-8',
         type: 'performance-test',
         severity: 'medium',
         message: 'Performance test',
@@ -491,6 +499,7 @@ const processOrder = async (order) => {
       fs.writeFileSync(path.join(testProjectPath, 'src/large.ts'), largeCode);
 
       const issue: Issue = {
+        id: 'test-issue-9',
         type: 'large-file-test',
         severity: 'medium',
         message: 'Large file test',

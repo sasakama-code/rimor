@@ -22,31 +22,31 @@ describe('RiskLevel Enum移行', () => {
       it('Severity.CRITICALをRiskLevel.CRITICALに変換する', () => {
         const oldValue = OldSeverity.CRITICAL;
         const newValue = migrator.migrateFromSeverity(oldValue);
-        expect(newValue).toBe(RiskLevel.CRITICAL);
+        expect(newValue).toBe('CRITICAL');
       });
 
       it('Severity.HIGHをRiskLevel.HIGHに変換する', () => {
         const oldValue = OldSeverity.HIGH;
         const newValue = migrator.migrateFromSeverity(oldValue);
-        expect(newValue).toBe(RiskLevel.HIGH);
+        expect(newValue).toBe('HIGH');
       });
 
       it('Severity.MEDIUMをRiskLevel.MEDIUMに変換する', () => {
         const oldValue = OldSeverity.MEDIUM;
         const newValue = migrator.migrateFromSeverity(oldValue);
-        expect(newValue).toBe(RiskLevel.MEDIUM);
+        expect(newValue).toBe('MEDIUM');
       });
 
       it('Severity.LOWをRiskLevel.LOWに変換する', () => {
         const oldValue = OldSeverity.LOW;
         const newValue = migrator.migrateFromSeverity(oldValue);
-        expect(newValue).toBe(RiskLevel.LOW);
+        expect(newValue).toBe('LOW');
       });
 
       it('Severityに存在しないMINIMALのデフォルト処理', () => {
         // SeverityにはMINIMALが存在しないため、LOWをMINIMALにマップ
         const newValue = migrator.getDefaultMinimalLevel();
-        expect(newValue).toBe(RiskLevel.MINIMAL);
+        expect(newValue).toBe('MINIMAL');
       });
     });
 
@@ -54,63 +54,63 @@ describe('RiskLevel Enum移行', () => {
       it('旧RiskLevel.criticalを新RiskLevel.CRITICALに変換する', () => {
         const oldValue = OldRiskLevel.CRITICAL;
         const newValue = migrator.migrateFromOldRiskLevel(oldValue);
-        expect(newValue).toBe(RiskLevel.CRITICAL);
+        expect(newValue).toBe('CRITICAL');
       });
 
       it('旧RiskLevel.highを新RiskLevel.HIGHに変換する', () => {
         const oldValue = OldRiskLevel.HIGH;
         const newValue = migrator.migrateFromOldRiskLevel(oldValue);
-        expect(newValue).toBe(RiskLevel.HIGH);
+        expect(newValue).toBe('HIGH');
       });
 
       it('旧RiskLevel.mediumを新RiskLevel.MEDIUMに変換する', () => {
         const oldValue = OldRiskLevel.MEDIUM;
         const newValue = migrator.migrateFromOldRiskLevel(oldValue);
-        expect(newValue).toBe(RiskLevel.MEDIUM);
+        expect(newValue).toBe('MEDIUM');
       });
 
       it('旧RiskLevel.lowを新RiskLevel.LOWに変換する', () => {
         const oldValue = OldRiskLevel.LOW;
         const newValue = migrator.migrateFromOldRiskLevel(oldValue);
-        expect(newValue).toBe(RiskLevel.LOW);
+        expect(newValue).toBe('LOW');
       });
 
       it('旧RiskLevel.minimalを新RiskLevel.MINIMALに変換する', () => {
         const oldValue = OldRiskLevel.MINIMAL;
         const newValue = migrator.migrateFromOldRiskLevel(oldValue);
-        expect(newValue).toBe(RiskLevel.MINIMAL);
+        expect(newValue).toBe('MINIMAL');
       });
     });
 
     describe('文字列値からの移行', () => {
       it('文字列 "critical" を RiskLevel.CRITICAL に変換する', () => {
         const newValue = migrator.migrateFromString('critical');
-        expect(newValue).toBe(RiskLevel.CRITICAL);
+        expect(newValue).toBe('CRITICAL');
       });
 
       it('文字列 "CRITICAL" を RiskLevel.CRITICAL に変換する', () => {
         const newValue = migrator.migrateFromString('CRITICAL');
-        expect(newValue).toBe(RiskLevel.CRITICAL);
+        expect(newValue).toBe('CRITICAL');
       });
 
       it('文字列 "high" を RiskLevel.HIGH に変換する', () => {
         const newValue = migrator.migrateFromString('high');
-        expect(newValue).toBe(RiskLevel.HIGH);
+        expect(newValue).toBe('HIGH');
       });
 
       it('文字列 "medium" を RiskLevel.MEDIUM に変換する', () => {
         const newValue = migrator.migrateFromString('medium');
-        expect(newValue).toBe(RiskLevel.MEDIUM);
+        expect(newValue).toBe('MEDIUM');
       });
 
       it('文字列 "low" を RiskLevel.LOW に変換する', () => {
         const newValue = migrator.migrateFromString('low');
-        expect(newValue).toBe(RiskLevel.LOW);
+        expect(newValue).toBe('LOW');
       });
 
       it('文字列 "minimal" を RiskLevel.MINIMAL に変換する', () => {
         const newValue = migrator.migrateFromString('minimal');
-        expect(newValue).toBe(RiskLevel.MINIMAL);
+        expect(newValue).toBe('MINIMAL');
       });
 
       it('不正な文字列の場合はエラーをスローする', () => {
@@ -130,10 +130,10 @@ describe('RiskLevel Enum移行', () => {
         const newValues = migrator.migrateSeverityBatch(oldValues);
 
         expect(newValues).toEqual([
-          RiskLevel.CRITICAL,
-          RiskLevel.HIGH,
-          RiskLevel.MEDIUM,
-          RiskLevel.LOW
+          'CRITICAL',
+          'HIGH',
+          'MEDIUM',
+          'LOW'
         ]);
       });
 
@@ -149,11 +149,11 @@ describe('RiskLevel Enum移行', () => {
         const newValues = migrator.migrateOldRiskLevelBatch(oldValues);
 
         expect(newValues).toEqual([
-          RiskLevel.CRITICAL,
-          RiskLevel.HIGH,
-          RiskLevel.MEDIUM,
-          RiskLevel.LOW,
-          RiskLevel.MINIMAL
+          'CRITICAL',
+          'HIGH',
+          'MEDIUM',
+          'LOW',
+          'MINIMAL'
         ]);
       });
     });
@@ -216,10 +216,10 @@ describe('RiskLevel Enum移行', () => {
       // 動的インポートを使用
       const { severityToRiskLevel } = await import('../../src/nist/utils/risk-level-helpers');
       
-      expect(severityToRiskLevel('critical')).toBe(RiskLevel.CRITICAL);
-      expect(severityToRiskLevel('high')).toBe(RiskLevel.HIGH);
-      expect(severityToRiskLevel('medium')).toBe(RiskLevel.MEDIUM);
-      expect(severityToRiskLevel('low')).toBe(RiskLevel.LOW);
+      expect(severityToRiskLevel('critical')).toBe('CRITICAL');
+      expect(severityToRiskLevel('high')).toBe('HIGH');
+      expect(severityToRiskLevel('medium')).toBe('MEDIUM');
+      expect(severityToRiskLevel('low')).toBe('LOW');
     });
 
     it('riskLevelToString関数が正しく動作する', async () => {

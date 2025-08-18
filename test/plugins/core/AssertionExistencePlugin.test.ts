@@ -165,9 +165,10 @@ describe('AssertionExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeLessThan(50);
-      expect(score.breakdown?.correctness).toBeLessThan(50);
-      expect(score.breakdown?.completeness).toBeLessThan(100);
+      // 実際の計算: correctness = 100 * 0.3 = 30, completeness = 100 * 0.5 = 50, overall = (30 + 50) / 2 = 40
+      expect(score.overall).toBeCloseTo(40, 1);
+      expect(score.breakdown?.correctness).toBeCloseTo(30, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(50, 1);
     });
 
     test('should return medium score for weak assertions', () => {
@@ -185,10 +186,10 @@ describe('AssertionExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeGreaterThan(40);
-      expect(score.overall).toBeLessThan(80);
-      expect(score.breakdown?.correctness).toBeGreaterThan(40);
-      expect(score.breakdown?.correctness).toBeLessThan(80);
+      // 実際の計算: correctness = 100 * 0.6 = 60, completeness = 100 * 0.8 = 80, overall = (60 + 80) / 2 = 70
+      expect(score.overall).toBeCloseTo(70, 1);
+      expect(score.breakdown?.correctness).toBeCloseTo(60, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(80, 1);
     });
 
     test('should return high score when no issues detected', () => {
@@ -196,9 +197,10 @@ describe('AssertionExistencePlugin', () => {
 
       const score = plugin.evaluateQuality(patterns);
 
-      expect(score.overall).toBeGreaterThan(90);
-      expect(score.breakdown?.correctness).toBe(100);
-      expect(score.breakdown?.completeness).toBe(100);
+      // 問題なしの場合: correctness = 100, completeness = 100, overall = (100 + 100) / 2 = 100
+      expect(score.overall).toBeCloseTo(100, 1);
+      expect(score.breakdown?.correctness).toBeCloseTo(100, 1);
+      expect(score.breakdown?.completeness).toBeCloseTo(100, 1);
     });
 
     test('should aggregate scores for multiple issues', () => {
@@ -251,19 +253,12 @@ describe('AssertionExistencePlugin', () => {
       expect(improvements).toHaveLength(1);
       expect(improvements[0]).toMatchObject({
         priority: 'high',
-        type: 'modify',
+        type: 'fix-assertion',
         category: 'assertion-improvement',
         title: expect.stringContaining('Add missing assertions'),
-        estimatedImpact: expect.objectContaining({
-          scoreImprovement: expect.any(Number),
-          effortMinutes: expect.any(Number)
-        })
+        estimatedImpact: expect.any(Number)
       });
-      if (improvements[0].impact && typeof improvements[0].impact === 'object' && 'scoreImprovement' in improvements[0].impact) {
-        expect(improvements[0].impact.scoreImprovement).toBeGreaterThan(0);
-      } else if (improvements[0].estimatedImpact && typeof improvements[0].estimatedImpact === 'number') {
-        expect(improvements[0].estimatedImpact).toBeGreaterThan(0);
-      }
+      expect(improvements[0].estimatedImpact).toBeGreaterThan(0);
     });
 
     test('should suggest strengthening weak assertions', () => {
@@ -287,13 +282,10 @@ describe('AssertionExistencePlugin', () => {
       expect(improvements).toHaveLength(1);
       expect(improvements[0]).toMatchObject({
         priority: 'medium',
-        type: 'modify',
+        type: 'fix-assertion',
         category: 'assertion-improvement',
         title: expect.stringContaining('Strengthen weak assertions'),
-        estimatedImpact: expect.objectContaining({
-          scoreImprovement: expect.any(Number),
-          effortMinutes: expect.any(Number)
-        })
+        estimatedImpact: expect.any(Number)
       });
     });
 

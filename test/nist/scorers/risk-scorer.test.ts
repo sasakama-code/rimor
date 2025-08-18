@@ -6,7 +6,7 @@
  * YAGNI原則: 必要な機能のみテスト
  */
 
-import { RiskScorer } from '../../../src/nist/scorers/RiskScorer';
+import { RiskScorer, RiskAssessmentInfo } from '../../../src/nist/scorers/RiskScorer';
 import { RiskLevel } from '../../../src/nist/types/unified-analysis-result';
 import { 
   Threat, 
@@ -43,7 +43,7 @@ describe('RiskScorer', () => {
       };
 
       const riskLevel = scorer.applyNistMatrix(threat, vulnerability);
-      expect(riskLevel).toBe(RiskLevel.HIGH);
+      expect(riskLevel).toBe('HIGH');
     });
 
     it('複数の脅威・脆弱性ペアから最高リスクを特定する', () => {
@@ -63,7 +63,7 @@ describe('RiskScorer', () => {
       ];
 
       const highestRisk = scorer.findHighestRisk(pairs);
-      expect(highestRisk).toBe(RiskLevel.CRITICAL);
+      expect(highestRisk).toBe('CRITICAL');
     });
   });
 
@@ -78,7 +78,7 @@ describe('RiskScorer', () => {
 
       const overallScore = scorer.calculateOverallRisk(components);
       expect(overallScore.score).toBeGreaterThan(75);
-      expect(overallScore.riskLevel).toBe(RiskLevel.HIGH);
+      expect(overallScore.riskLevel).toBe('HIGH');
       expect(overallScore.confidence).toBeGreaterThan(0.7);
     });
 
@@ -104,7 +104,7 @@ describe('RiskScorer', () => {
 
   describe('リスク集約', () => {
     it('複数のリスクを集約して統計情報を生成する', () => {
-      const risks = [
+      const risks: { riskLevel: RiskLevel; score: number }[] = [
         { riskLevel: RiskLevel.CRITICAL, score: 95 },
         { riskLevel: RiskLevel.HIGH, score: 80 },
         { riskLevel: RiskLevel.HIGH, score: 75 },
@@ -121,7 +121,7 @@ describe('RiskScorer', () => {
     });
 
     it('カテゴリ別にリスクを集約する', () => {
-      const categorizedRisks = [
+      const categorizedRisks: { category: string, riskLevel: RiskLevel, score: number }[] = [
         { category: 'INJECTION', riskLevel: RiskLevel.HIGH, score: 80 },
         { category: 'INJECTION', riskLevel: RiskLevel.MEDIUM, score: 60 },
         { category: 'AUTH', riskLevel: RiskLevel.CRITICAL, score: 95 },
@@ -131,13 +131,13 @@ describe('RiskScorer', () => {
       const byCategory = scorer.aggregateByCategory(categorizedRisks);
       expect(byCategory['INJECTION'].count).toBe(2);
       expect(byCategory['INJECTION'].averageScore).toBe(70);
-      expect(byCategory['AUTH'].maxRiskLevel).toBe(RiskLevel.CRITICAL);
+      expect(byCategory['AUTH'].maxRiskLevel).toBe('CRITICAL');
     });
   });
 
   describe('リスクトレンド分析', () => {
     it('時系列でリスクの変化を分析する', () => {
-      const historicalData = [
+      const historicalData: { date: string, score: number, riskLevel: RiskLevel }[] = [
         { date: '2024-01-01', score: 60, riskLevel: RiskLevel.MEDIUM },
         { date: '2024-02-01', score: 70, riskLevel: RiskLevel.HIGH },
         { date: '2024-03-01', score: 75, riskLevel: RiskLevel.HIGH },
@@ -153,7 +153,7 @@ describe('RiskScorer', () => {
 
   describe('推奨アクション生成', () => {
     it('リスクレベルに応じた推奨アクションを生成する', () => {
-      const riskAssessment = {
+      const riskAssessment: RiskAssessmentInfo = {
         riskLevel: RiskLevel.CRITICAL,
         score: 92,
         category: 'INJECTION',

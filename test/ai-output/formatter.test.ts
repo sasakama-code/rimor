@@ -17,6 +17,7 @@ jest.mock('fs');
 
 // モックデータ生成ヘルパー
 const createMockIssue = (overrides: Partial<Issue> = {}): Issue => ({
+  id: overrides.id || 'mock-issue-1',
   type: 'MISSING_TEST',
   severity: 'medium',
   file: 'src/example.ts',
@@ -220,7 +221,7 @@ describe('AIOptimizedFormatter', () => {
   describe('formatAsMarkdown', () => {
     it('分析結果をMarkdown形式でフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', { format: 'markdown' });
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', {});
 
       expect(markdown).toContain('# Rimor Test Quality Analysis Report');
       expect(markdown).toContain('## Project Context');
@@ -231,10 +232,7 @@ describe('AIOptimizedFormatter', () => {
 
     it('メトリクスを含むMarkdownを生成できる', async () => {
       const result = createMockAnalysisResult();
-      const options: FormatterOptions = {
-        format: 'markdown',
-        includeContext: true
-      };
+      const options = { includeDetails: true };
 
       const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', options);
 
@@ -253,10 +251,7 @@ describe('AIOptimizedFormatter', () => {
         ]
       };
 
-      const options: FormatterOptions = {
-        format: 'markdown',
-        optimizeForAI: true
-      };
+      const options = {};
 
       const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', options);
 
@@ -271,13 +266,13 @@ describe('AIOptimizedFormatter', () => {
       const formatted = await formatter.formatAsJSON(toAnalysisResult(result), '/test/project', { format: 'json' });
 
       expect(formatted.version).toBeDefined();
-      expect(formatted.format).toBe('json');
+      expect(formatted.format).toBe('ai-optimized');
       expect(formatted.qualityOverview.totalIssues).toBe(1);
     });
 
     it('Markdown形式で正しくフォーマットできる', async () => {
       const result = createMockAnalysisResult();
-      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', { format: 'markdown' });
+      const markdown = await formatter.formatAsMarkdown(toAnalysisResult(result), '/test/project', {});
 
       expect(markdown).toContain('# Rimor Test Quality Analysis Report');
       expect(markdown).toContain('**Quality Score**: 75/100');

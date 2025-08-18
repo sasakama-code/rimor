@@ -284,7 +284,7 @@ describe('PriorityEngine', () => {
   describe('入力検証とエラーハンドリング', () => {
     it('無効な入力に対して適切なエラーを返す', () => {
       const invalidRequest: any = {
-        riskLevel: 'INVALID_LEVEL',
+        riskLevel: 'INVALID_LEVEL' as any,
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.LOW,
         affectedComponents: -1,

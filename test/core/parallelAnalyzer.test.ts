@@ -13,6 +13,7 @@ class MockPlugin implements IPlugin {
     
     if (filePath.includes('error')) {
       return [{
+        id: 'mock-error-id',
         type: 'mock-error',
         severity: 'high',
         message: `Mock error in ${filePath}`,
@@ -22,6 +23,7 @@ class MockPlugin implements IPlugin {
     }
     
     return [{
+      id: 'mock-info-id',
       type: 'mock-info',
       severity: 'medium',
       message: `Mock analysis of ${filePath}`,
@@ -39,6 +41,7 @@ class SlowMockPlugin implements IPlugin {
     await new Promise(resolve => setTimeout(resolve, 10));
     
     return [{
+      id: 'slow-analysis-id',
       type: 'slow-analysis',
       severity: 'medium',
       message: `Slow analysis of ${filePath}`,
@@ -90,8 +93,9 @@ describe('ParallelAnalyzer', () => {
       expect(result.totalFiles).toBe(testFiles.length);
       expect(result.issues).toHaveLength(testFiles.length); // 各ファイルから1つずつ
       expect(result.executionTime).toBeLessThan(endTime - startTime + 100); // 許容誤差
-      expect(result.parallelStats.batchCount).toBeGreaterThan(0);
-      expect(result.parallelStats.concurrencyLevel).toBe(2);
+      expect(result.parallelStats).toBeDefined();
+      expect(result.parallelStats!.batchCount).toBeGreaterThan(0);
+      expect(result.parallelStats!.concurrencyLevel).toBe(2);
     });
     
     test('should handle single file analysis', async () => {
@@ -104,7 +108,8 @@ describe('ParallelAnalyzer', () => {
       
       expect(result.totalFiles).toBe(1);
       expect(result.issues).toHaveLength(1);
-      expect(result.parallelStats.batchCount).toBe(1);
+      expect(result.parallelStats).toBeDefined();
+      expect(result.parallelStats!.batchCount).toBe(1);
     });
     
     test('should handle empty directory', async () => {
@@ -114,7 +119,8 @@ describe('ParallelAnalyzer', () => {
       
       expect(result.totalFiles).toBe(0);
       expect(result.issues).toHaveLength(0);
-      expect(result.parallelStats.batchCount).toBe(0);
+      expect(result.parallelStats).toBeDefined();
+      expect(result.parallelStats!.batchCount).toBe(0);
     });
   });
   
@@ -131,8 +137,9 @@ describe('ParallelAnalyzer', () => {
       const result = await analyzer.analyze(tempDir);
       
       expect(result.totalFiles).toBe(7);
-      expect(result.parallelStats.batchCount).toBe(3); // ceil(7/3) = 3
-      expect(result.parallelStats.avgBatchTime).toBeGreaterThan(0);
+      expect(result.parallelStats).toBeDefined();
+      expect(result.parallelStats!.batchCount).toBe(3); // ceil(7/3) = 3
+      expect(result.parallelStats!.avgBatchTime).toBeGreaterThan(0);
     });
   });
   
@@ -242,16 +249,19 @@ describe('ParallelAnalyzer', () => {
       
       const result = await analyzer.analyze(tempDir);
       
-      expect(result.parallelStats).toMatchObject({
+      expect(result.parallelStats).toBeDefined();
+      expect(result.parallelStats!).toMatchObject({
         batchCount: expect.any(Number),
         avgBatchTime: expect.any(Number),
         maxBatchTime: expect.any(Number),
         concurrencyLevel: 2
       });
       
-      expect(result.parallelStats.batchCount).toBeGreaterThan(0);
-      expect(result.parallelStats.avgBatchTime).toBeGreaterThan(0);
-      expect(result.parallelStats.maxBatchTime).toBeGreaterThanOrEqual(result.parallelStats.avgBatchTime);
+      expect(result.parallelStats!.batchCount).toBeGreaterThan(0);
+      expect(result.parallelStats!.avgBatchTime).toBeGreaterThan(0);
+      expect(result.parallelStats!.maxBatchTime).toBeDefined();
+      expect(result.parallelStats!.avgBatchTime).toBeDefined();
+      expect(result.parallelStats!.maxBatchTime).toBeGreaterThanOrEqual(result.parallelStats!.avgBatchTime!);
     });
   });
   

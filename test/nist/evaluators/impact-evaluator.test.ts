@@ -36,7 +36,7 @@ describe('ImpactEvaluator', () => {
       };
 
       const impact = evaluator.assessCriticalPathImpact(criticalPath);
-      expect(impact.riskLevel).toBe(RiskLevel.CRITICAL);
+      expect(impact.riskLevel).toBe('CRITICAL');
       expect(impact.businessImpactScore).toBeGreaterThan(90);
       expect(impact.urgency).toBe('IMMEDIATE');
     });
@@ -79,7 +79,7 @@ describe('ImpactEvaluator', () => {
       };
 
       const impact = evaluator.assessComplianceImpact(compliance);
-      expect(impact.riskLevel).toBe(RiskLevel.CRITICAL);
+      expect(impact.riskLevel).toBe('CRITICAL');
       expect(impact.potentialPenalty).toBeGreaterThan(0);
       expect(impact.reputationalDamage).toBe('SEVERE');
     });
@@ -125,7 +125,7 @@ describe('ImpactEvaluator', () => {
       const overallImpact = evaluator.calculateOverallImpact(impacts);
       expect(overallImpact.combinedScore).toBeGreaterThan(75);
       expect(overallImpact.primaryRisk).toBe('business');
-      expect(overallImpact.riskLevel).toBe(RiskLevel.CRITICAL);
+      expect(overallImpact.riskLevel).toBe('CRITICAL');
     });
 
     it('時間的要因を考慮した影響度を算出する', () => {

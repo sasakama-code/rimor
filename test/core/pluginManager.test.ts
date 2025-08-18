@@ -13,7 +13,7 @@ describe('PluginManager (後方互換性テスト)', () => {
   it('should register and run single plugin', async () => {
     const manager = new UnifiedPluginManager();
     const issues: Issue[] = [
-      { type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
+      { id: 'test-missing-id-1', type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
     const plugin = new TestPlugin('test-plugin', issues);
     
@@ -26,10 +26,10 @@ describe('PluginManager (後方互換性テスト)', () => {
   it('should run multiple plugins and combine results', async () => {
     const manager = new UnifiedPluginManager();
     const issues1: Issue[] = [
-      { type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
+      { id: 'test-missing-id-2', type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
     const issues2: Issue[] = [
-      { type: 'assertion-missing', severity: 'medium', message: 'No assertions in test', filePath: 'src/example.ts', category: 'assertion' }
+      { id: 'assertion-missing-id', type: 'assertion-missing', severity: 'medium', message: 'No assertions in test', filePath: 'src/example.ts', category: 'assertion' }
     ];
     
     manager.register(new TestPlugin('plugin1', issues1));
