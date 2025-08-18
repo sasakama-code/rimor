@@ -15,7 +15,7 @@ import {
   RiskAssessment
 } from './unified-ai-formatter-base';
 
-import { UnifiedAnalysisResult, AIJsonOutput } from './types';
+import { UnifiedAnalysisResult, AIJsonOutput, UnifiedAIFormatterOptions as TypesFormatterOptions } from './types';
 import { AIActionableRisk } from '../nist/types/unified-analysis-result';
 
 // Type guard for UnifiedAnalysisResult
@@ -251,7 +251,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Format UnifiedAnalysisResult as AI-optimized JSON
    */
-  formatAsAIJson(unifiedResult: UnifiedAnalysisResult, options: Partial<UnifiedAIFormatterOptions> = {}): AIJsonOutput {
+  formatAsAIJson(unifiedResult: UnifiedAnalysisResult, options: Partial<TypesFormatterOptions> = {}): AIJsonOutput {
     // Validate input
     if (!unifiedResult) {
       throw new Error('Invalid UnifiedAnalysisResult');
@@ -263,7 +263,10 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
 
     // Filter and limit key risks
     const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: any) => {
-      // Convert risk to appropriate format if needed
+      // Filter by includeRiskLevels if specified
+      if (options.includeRiskLevels && options.includeRiskLevels.length > 0) {
+        return options.includeRiskLevels.includes(risk.riskLevel);
+      }
       return true;
     });
 
@@ -293,7 +296,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     return {
       overallAssessment,
       keyRisks,
-      fullReportUrl: options.reportPath || this.DEFAULT_REPORT_PATH
+      fullReportUrl: options.htmlReportPath || options.reportPath || this.DEFAULT_REPORT_PATH
     };
   }
 

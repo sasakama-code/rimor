@@ -12,8 +12,9 @@ import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definiti
  * v0.9.0の intent-analyze 機能で導入された大文字の定義を
  * プロジェクトの正式な標準とする
  */
-// Migrated to CoreTypes
-export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+// CoreTypesのRiskLevel enumを再エクスポート
+export const RiskLevel = CoreTypes.RiskLevel;
+export type RiskLevel = CoreTypes.RiskLevel;
 
 /**
  * AIエージェントへのアクション提案の種別

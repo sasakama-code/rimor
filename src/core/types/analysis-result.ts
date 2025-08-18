@@ -217,7 +217,7 @@ export interface AnalysisSession {
 
 // Type guard for AnalysisResult
 export function isAnalysisResult(value: unknown): value is AnalysisResult {
-  if (!value || typeof value !== 'object') return false;
+  if (value === null || value === undefined || typeof value !== 'object') return false;
   const result = value as any;
   
   // Check required fields

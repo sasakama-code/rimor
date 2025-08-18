@@ -304,8 +304,9 @@ export interface AIJsonOutput {
 }
 
 // リスクレベルの定義 (Issue #58)
-// Migrated to CoreTypes
-export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+// CoreTypesのRiskLevel enumを再エクスポート
+export const RiskLevel = CoreTypes.RiskLevel;
+export type RiskLevel = CoreTypes.RiskLevel;
 
 // AIエージェントへのアクション提案の種別 (Issue #58)
 export type AIActionType = 'ADD_ASSERTION' | 'SANITIZE_VARIABLE' | 'REFACTOR_COMPLEX_CODE' | 'ADD_MISSING_TEST';
