@@ -5,6 +5,8 @@ import { AIOutputCommand } from './commands/ai-output';
 import { createTaintAnalysisCommand } from './commands/taint-analysis';
 import { IntentAnalyzeCommand } from './commands/intent-analyze';
 import { DomainAnalyzeCommand } from './commands/domain-analyze';
+import { UnifiedAnalyzeCommand } from './commands/unified-analyze';
+import { container, TYPES } from '../container';
 import * as os from 'os';
 
 export class CLI {
@@ -375,6 +377,99 @@ export class CLI {
         }
       )
       .command(
+        'unified-analyze [path]',
+        '統合セキュリティ分析（TaintTyper + Intent + Gap + NIST評価）',
+        (yargs) => {
+          return yargs
+            .positional('path', {
+              describe: '分析対象のディレクトリパス',
+              type: 'string',
+              default: '.'
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力フォーマット',
+              type: 'string',
+              choices: ['text', 'json', 'markdown', 'html'],
+              default: 'text'
+            })
+            .option('output', {
+              alias: 'o',
+              describe: '出力ファイルパス',
+              type: 'string'
+            })
+            .option('verbose', {
+              alias: 'v',
+              describe: '詳細な出力を表示',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-recommendations', {
+              describe: '改善提案を含める',
+              type: 'boolean',
+              default: true
+            })
+            // 統合分析設定
+            .option('enable-taint-analysis', {
+              describe: 'Taint分析を有効化',
+              type: 'boolean',
+              default: true
+            })
+            .option('enable-intent-extraction', {
+              describe: 'Intent抽出を有効化',
+              type: 'boolean',
+              default: true
+            })
+            .option('enable-gap-detection', {
+              describe: 'Gap検出を有効化',
+              type: 'boolean',
+              default: true
+            })
+            .option('enable-nist-evaluation', {
+              describe: 'NIST評価を有効化',
+              type: 'boolean',
+              default: true
+            })
+            // 実行設定
+            .option('timeout', {
+              describe: 'タイムアウト（ミリ秒）',
+              type: 'number',
+              default: 30000
+            })
+            .option('parallel', {
+              alias: 'p',
+              describe: '並列実行を有効化',
+              type: 'boolean',
+              default: false
+            });
+        },
+        async (argv) => {
+          try {
+            // DIコンテナからUnifiedAnalyzeCommandを取得
+            const unifiedAnalyzeCommand = container.get<UnifiedAnalyzeCommand>(TYPES.UnifiedAnalyzeCommand);
+            
+            await unifiedAnalyzeCommand.execute({
+              path: argv.path || '.',
+              format: argv.format as 'text' | 'json' | 'markdown' | 'html',
+              output: argv.output,
+              verbose: argv.verbose,
+              includeRecommendations: argv['include-recommendations'],
+              // 統合分析設定
+              enableTaintAnalysis: argv['enable-taint-analysis'],
+              enableIntentExtraction: argv['enable-intent-extraction'],
+              enableGapDetection: argv['enable-gap-detection'],
+              enableNistEvaluation: argv['enable-nist-evaluation'],
+              // 実行設定
+              timeout: argv.timeout,
+              parallel: argv.parallel
+            });
+          } catch (error) {
+            console.error('統合分析中にエラーが発生しました:', error instanceof Error ? error.message : String(error));
+            process.exit(1);
+          }
+        }
+      )
+      .command(
         'bootstrap [subcommand]',
         'プロジェクトのセットアップとブートストラップ',
         (yargs) => {
@@ -740,6 +835,11 @@ export class CLI {
       .example('$0 benchmark verify', 'TaintTyper性能目標の検証')
       .example('$0 benchmark trend -d 7', '過去7日間の性能トレンド分析')
       .example('$0 benchmark measure -f 50 --cache', '50ファイルでキャッシュ有効測定')
+      // 統合分析の例
+      .example('$0 unified-analyze', '統合セキュリティ分析（全機能実行）')
+      .example('$0 unified-analyze --format=json --output=report.json', 'JSON形式で統合レポート出力')
+      .example('$0 unified-analyze --verbose --format=markdown', 'Markdown形式で詳細レポート生成')
+      .example('$0 unified-analyze ./src --parallel', '並列実行で高速統合分析')
       .demandCommand(0, 'オプション: コマンドなしでもカレントディレクトリを分析します')
       .strict()
       .parse();
