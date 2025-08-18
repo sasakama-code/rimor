@@ -6,11 +6,14 @@
  */
 
 import type { Issue } from '../../core/types/core-definitions';
+import { CoreTypes } from '../../core/types/core-definitions';
 
 /**
  * リスクレベルの定義
+ * CoreTypesのRiskLevel enumを再エクスポート
  */
-export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'MINIMAL';
+export const RiskLevel = CoreTypes.RiskLevel;
+export type RiskLevel = CoreTypes.RiskLevel;
 
 /**
  * AIアクションタイプ
@@ -429,9 +432,9 @@ export function riskLevelToNumber(level: RiskLevel): number {
  * ヘルパー関数: 数値をリスクレベルに変換
  */
 export function numberToRiskLevel(num: number): RiskLevel {
-  if (num >= 5) return 'CRITICAL';
-  if (num >= 4) return 'HIGH';
-  if (num >= 3) return 'MEDIUM';
-  if (num >= 2) return 'LOW';
-  return 'MINIMAL';
+  if (num >= 5) return RiskLevel.CRITICAL;
+  if (num >= 4) return RiskLevel.HIGH;
+  if (num >= 3) return RiskLevel.MEDIUM;
+  if (num >= 2) return RiskLevel.LOW;
+  return RiskLevel.MINIMAL;
 }

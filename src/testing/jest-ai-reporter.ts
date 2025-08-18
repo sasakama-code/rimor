@@ -41,9 +41,17 @@ export class JestAIReporter implements Reporter {
     // デフォルトの出力先を.rimor/reports/に設定
     const defaultOutputDir = path.join(process.cwd(), '.rimor', 'reports');
     
-    // ディレクトリが存在しない場合は作成
-    if (!fs.existsSync(defaultOutputDir)) {
-      fs.mkdirSync(defaultOutputDir, { recursive: true });
+    // ディレクトリが存在しない場合は作成（エラーハンドリング強化）
+    try {
+      if (!fs.existsSync(defaultOutputDir)) {
+        fs.mkdirSync(defaultOutputDir, { recursive: true });
+      }
+    } catch (error) {
+      // ディレクトリ作成に失敗した場合は、現在のディレクトリを使用
+      console.warn('AI Reporter: .rimor/reports/ ディレクトリの作成に失敗しました。現在のディレクトリを使用します。');
+      this.outputPath = options.outputPath || path.join(process.cwd(), 'test-errors-ai.md');
+      this.enableConsoleOutput = options.enableConsoleOutput !== false;
+      return;
     }
     
     this.outputPath = options.outputPath || path.join(defaultOutputDir, 'test-errors-ai.md');
@@ -60,6 +68,12 @@ export class JestAIReporter implements Reporter {
     this.totalFailedTests = 0;
     this.totalFailedSuites = 0;
     this.processedTestFiles.clear();
+    
+    // デバッグモード有効時の追加ログ
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Reporter Debug] Test run started at: ${this.testRunStartTime.toISOString()}`);
+      console.log(`[AI Reporter Debug] Number of test suites: ${results.numTotalTestSuites || 'unknown'}`);
+    }
     
     // CI環境情報を収集
     this.ciTraceability = CITraceabilityCollector.collect();
@@ -87,11 +101,21 @@ export class JestAIReporter implements Reporter {
     testResult: TestResult,
     results: AggregatedResult
   ): Promise<void> {
-    // 重複処理を防ぐ
-    if (this.processedTestFiles.has(test.path)) {
+    // デバッグログ: 処理開始
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Reporter Debug] Processing test file: ${test.path}`);
+      console.log(`[AI Reporter Debug] Failed tests: ${testResult.numFailingTests}, Suite error: ${!!testResult.testExecError}`);
+    }
+    
+    // 重複処理を防ぐ（ただし、ファイルパスとエラー状態でより精密にチェック）
+    const fileKey = `${test.path}-${testResult.numFailingTests}-${!!testResult.testExecError}`;
+    if (this.processedTestFiles.has(fileKey)) {
+      if (process.env.DEBUG_AI_REPORTER === 'true') {
+        console.log(`[AI Reporter Debug] Skipping duplicate processing for: ${fileKey}`);
+      }
       return;
     }
-    this.processedTestFiles.add(test.path);
+    this.processedTestFiles.add(fileKey);
     
     // スイートレベルのエラーをチェック（モジュール未検出、コンパイルエラーなど）
     if (testResult.testExecError) {
@@ -101,6 +125,9 @@ export class JestAIReporter implements Reporter {
     
     // 失敗したテストのみ処理
     if (testResult.numFailingTests === 0) {
+      if (process.env.DEBUG_AI_REPORTER === 'true') {
+        console.log(`[AI Reporter Debug] No failing tests in: ${test.path}`);
+      }
       return;
     }
     
