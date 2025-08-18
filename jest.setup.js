@@ -195,3 +195,12 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
   }
 });
+
+// process.exit のモック
+const originalExit = process.exit;
+process.exit = jest.fn().mockImplementation((code) => {
+  // テスト環境ではプロセスを実際に終了させない
+  console.log(`process.exit called with code: ${code}`);
+  // 元の process.exit を呼び出さずに、例外をスローしてテストを終了
+  throw new Error(`Process exit with code ${code}`);
+});

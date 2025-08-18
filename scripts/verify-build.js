@@ -126,6 +126,14 @@ function verifyBuild() {
   if (checkFileExists('dist/plugins/testExistence.js', 'テスト存在確認プラグイン')) checks.plugins.passed++; else checks.plugins.failed++;
   if (checkFileExists('dist/plugins/assertionExists.js', 'アサーション存在確認プラグイン')) checks.plugins.passed++; else checks.plugins.failed++;
 
+  // テスティングコンポーネントの確認（AIエラーレポーター）
+  log('\n【テスティングコンポーネント】');
+  if (checkDirectoryExists('dist/testing', 'testingディレクトリ')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/jest-ai-reporter.js', 'AIエラーレポーター')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/error-context.js', 'エラーコンテキスト収集器')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/ai-error-formatter.js', 'AIエラーフォーマッター')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/ci-traceability.js', 'CIトレーサビリティ')) checks.plugins.passed++; else checks.plugins.failed++;
+
   // TypeScript設定の確認
   log('\n【TypeScript設定】');
   checkFileExists('tsconfig.json', 'TypeScript設定ファイル');
