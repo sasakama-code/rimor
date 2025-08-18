@@ -44,6 +44,7 @@ src/plugins/generated/*.ts
 
 # Cache files
 .rimor-cache/
+.jest-cache
 
 # Generated test and evaluation data
 benchmark-results/
