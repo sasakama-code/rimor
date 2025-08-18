@@ -124,6 +124,10 @@ export class AssertionExistencePlugin extends BasePlugin {
         correctness,
         maintainability: 80
       },
+      breakdown: {
+        correctness,
+        completeness
+      },
       confidence: patterns.length > 0 ? 
         patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
     };

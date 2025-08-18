@@ -105,6 +105,10 @@ export class TestExistencePlugin extends BasePlugin {
         correctness: overall,
         maintainability: 80
       },
+      breakdown: {
+        completeness,
+        correctness: overall
+      },
       confidence: patterns.length > 0 ? 
         patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
     };
