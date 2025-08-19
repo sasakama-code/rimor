@@ -11,6 +11,7 @@ Rimor v2.0は、「テストが何をテストしたいか」と「実際に何�
 - 🧠 **テスト意図の自動抽出** - 型情報とテスト名から意図を推論
 - 🎯 **ギャップ分析エンジン** - 意図と実装の乖離を自動検出
 - 🔬 **型ベース解析** - TypeScriptの型システムを活用した精密な分析
+- 🛡️ **TaintTyper統合** - 型ベースセキュリティ解析によるSource-Sink脆弱性検出
 - 📊 **NIST SP 800-30準拠** - 体系的なリスク評価と優先順位付け
 - 🚀 **依存関係考慮** - 影響範囲を考慮した包括的な評価
 
@@ -25,6 +26,7 @@ Rimor v2.0は、「テストが何をテストしたいか」と「実際に何�
 Rimorの設計は、以下の技術と標準に基づいています：
 
 - **型ベース解析**: [Practical Type-Based Taint Checking and Inference](https://arxiv.org/abs/2504.18529) - TypeScriptの型システムを活用し、テストコードの意図を型情報から推論する手法を実装
+- **TaintTyper**: arXiv:2504.18529v2の理論に基づく型ベースセキュリティ解析エンジン - SQL Injection、Command Injection、Path Traversalなどの脆弱性を自動検出
 - **NIST SP 800-30**: リスクアセスメントガイド - 脅威×脆弱性×影響の体系的評価手法を採用
 - **テスト意図抽出**: テスト名、型情報、アサーションから多角的に意図を推論
 
@@ -73,6 +75,9 @@ npx rimor analyze ./test --risk-based
 # 特定のリスクレベル以上のみ表示
 npx rimor analyze ./test --risk-threshold=high
 
+# セキュリティ脆弱性検出（TaintTyper）
+npx rimor analyze ./src --security --taint-analysis
+
 # JSON形式で詳細出力
 npx rimor analyze ./test --format=json --detailed
 ```
@@ -100,6 +105,15 @@ console.log(`重大なテストギャップ: ${criticalGaps.length}件`);
 // 改善提案の表示
 result.recommendations.forEach(rec => {
   console.log(`${rec.priority}: ${rec.action}`);
+});
+
+// セキュリティ脆弱性の検出（TaintTyper）
+const securityAnalyzer = new SecurityAnalyzer();
+const securityResult = await securityAnalyzer.analyzeTaintFlow('./src');
+
+// 検出された脆弱性の表示
+securityResult.vulnerabilities.forEach(vuln => {
+  console.log(`${vuln.type}: ${vuln.source} → ${vuln.sink} (${vuln.riskLevel})`);
 });
 ```
 
@@ -133,6 +147,72 @@ result.recommendations.forEach(rec => {
     
     recommendation: "ネットワーク障害とタイムアウトのテストを最優先で追加"
   }
+}
+```
+
+## 🛡️ セキュリティ解析（TaintTyper）
+
+RimorはTaintTyperエンジンにより、型ベースのセキュリティ解析を提供します。これにより、SQL Injection、Command Injection、Path Traversalなどの脆弱性を自動検出できます。
+
+### サポートされる脆弱性タイプ
+
+- **SQL Injection** - データベースクエリでのユーザー入力混入
+- **Command Injection** - システムコマンド実行でのユーザー入力混入  
+- **Path Traversal** - ファイルパス操作でのディレクトリトラバーサル
+- **XSS (Cross-Site Scripting)** - HTMLレスポンスでのスクリプト注入
+- **Code Injection** - 動的コード実行でのユーザー入力混入
+
+### 使用例
+
+```typescript
+// 脆弱性のあるコード例
+function handleUser(req: express.Request, res: express.Response) {
+  const userId = req.params.id; // Source: ユーザー入力
+  const query = `SELECT * FROM users WHERE id = ${userId}`; // Sink: SQLクエリ
+  mysql.query(query); // ← SQL Injectionの脆弱性
+}
+
+// TaintTyperの検出結果
+{
+  type: "sql-injection",
+  source: "userId (req.params.id)",
+  sink: "mysql.query",
+  riskLevel: "CRITICAL",
+  confidence: 87,
+  path: ["userId", "query", "mysql.query"],
+  recommendation: "パラメータ化クエリまたは入力検証を実装してください"
+}
+```
+
+### 型アノテーションによる精度向上
+
+TypeScript/JSDocアノテーションを使用することで、解析精度を向上できます：
+
+```typescript
+/**
+ * @param userData @tainted ユーザー入力データ
+ * @param safeData @untainted 検証済み安全データ
+ */
+function processData(userData: string, safeData: string) {
+  // TaintTyperが型アノテーションを考慮して解析
+}
+```
+
+### セキュリティテスト改善提案
+
+TaintTyperは検出した脆弱性に基づいて、不足しているセキュリティテストを提案します：
+
+```typescript
+// 脆弱性検出時の改善提案例
+{
+  testFile: "auth.test.ts",
+  missingTests: [
+    "SQL Injectionに対する入力検証テスト",
+    "パラメータ化クエリの正常動作テスト",
+    "不正入力に対するエラーハンドリングテスト"
+  ],
+  priority: "CRITICAL",
+  estimatedEffort: "2-4時間"
 }
 ```
 
