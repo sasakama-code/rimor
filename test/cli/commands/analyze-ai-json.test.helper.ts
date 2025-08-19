@@ -3,8 +3,7 @@
  * 共通のDIコンテナセットアップとモック化を提供
  */
 
-import { Container } from 'inversify';
-import { TYPES } from '../../../src/container';
+import { Container, TYPES } from '../../../src/container';
 import { CLISecurity } from '../../../src/security/CLISecurity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,48 +15,56 @@ export function createTestContainer(): Container {
   const testContainer = new Container();
   
   // AnalysisEngine のモック
-  testContainer.bind(TYPES.AnalysisEngine).toConstantValue({
-    analyze: jest.fn().mockResolvedValue({
-      projectPath: '',
-      issues: [
-        {
-          file: 'test.ts',
-          line: 1,
-          message: 'テスト用のissue',
-          severity: 'medium'
-        }
-      ],
-      totalFiles: 1,
-      analysisTime: 100,
-      cacheHitRate: 0
-    })
-  });
+  testContainer.bind(TYPES.AnalysisEngine)
+    .to(() => ({
+      analyze: jest.fn().mockResolvedValue({
+        projectPath: '',
+        issues: [
+          {
+            file: 'test.ts',
+            line: 1,
+            message: 'テスト用のissue',
+            severity: 'medium'
+          }
+        ],
+        totalFiles: 1,
+        analysisTime: 100,
+        cacheHitRate: 0
+      })
+    }))
+    .asSingleton();
   
   // Reporter のモック
-  testContainer.bind(TYPES.Reporter).toConstantValue({
-    generateAnalysisReport: jest.fn().mockResolvedValue({
-      success: true,
-      outputPath: 'test-report.html',
-      content: 'Test report content'
-    }),
-    generateCombinedReport: jest.fn().mockResolvedValue({
-      success: true,
-      outputPath: 'test-report.html', 
-      content: 'Test report content'
-    }),
-    printToConsole: jest.fn()
-  });
+  testContainer.bind(TYPES.Reporter)
+    .to(() => ({
+      generateAnalysisReport: jest.fn().mockResolvedValue({
+        success: true,
+        outputPath: 'test-report.html',
+        content: 'Test report content'
+      }),
+      generateCombinedReport: jest.fn().mockResolvedValue({
+        success: true,
+        outputPath: 'test-report.html', 
+        content: 'Test report content'
+      }),
+      printToConsole: jest.fn()
+    }))
+    .asSingleton();
   
   // SecurityAuditor のモック
-  testContainer.bind(TYPES.SecurityAuditor).toConstantValue({
-    audit: jest.fn().mockResolvedValue(null)
-  });
+  testContainer.bind(TYPES.SecurityAuditor)
+    .to(() => ({
+      audit: jest.fn().mockResolvedValue(null)
+    }))
+    .asSingleton();
   
   // PluginManager のモック
-  testContainer.bind(TYPES.PluginManager).toConstantValue({
-    register: jest.fn(),
-    getAll: jest.fn().mockReturnValue([])
-  });
+  testContainer.bind(TYPES.PluginManager)
+    .to(() => ({
+      register: jest.fn(),
+      getAll: jest.fn().mockReturnValue([])
+    }))
+    .asSingleton();
   
   return testContainer;
 }

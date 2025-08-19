@@ -209,17 +209,33 @@ describe('TaintAnalysisSystem', () => {
   
   describe('analyzeProject', () => {
     it('プロジェクト解析が結果を返すこと', async () => {
-      const projectPath = '/path/to/project';
+      // テスト用の一時プロジェクトディレクトリを作成
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
       
-      const result = await system.analyzeProject(projectPath);
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-test-project-'));
       
-      expect(result).toBeDefined();
-      expect(result.totalFiles).toBeDefined();
-      expect(result.analyzedFiles).toBeDefined();
-      expect(result.totalIssues).toBeDefined();
-      expect(result.issuesByType).toBeInstanceOf(Map);
-      expect(result.criticalFiles).toBeInstanceOf(Array);
-      expect(result.coverage).toBeDefined();
+      try {
+        // テスト用のファイルを作成
+        fs.writeFileSync(path.join(tempDir, 'test.ts'), `
+          const userInput = process.env.USER_INPUT;
+          console.log(userInput);
+        `);
+        
+        const result = await system.analyzeProject(tempDir);
+        
+        expect(result).toBeDefined();
+        expect(result.totalFiles).toBeDefined();
+        expect(result.analyzedFiles).toBeDefined();
+        expect(result.totalIssues).toBeDefined();
+        expect(result.issuesByType).toBeInstanceOf(Map);
+        expect(result.criticalFiles).toBeInstanceOf(Array);
+        expect(result.coverage).toBeDefined();
+      } finally {
+        // 一時ディレクトリを削除
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
   

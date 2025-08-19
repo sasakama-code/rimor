@@ -8,7 +8,7 @@
 
 import { AnalyzeCommandV8 } from '../../../src/cli/commands/analyze-v0.8';
 import { UnifiedAIFormatter } from '../../../src/ai-output/unified-ai-formatter';
-import { container, TYPES } from '../../../src/container';
+import { Container, TYPES } from '../../../src/container';
 import { CLISecurity } from '../../../src/security/CLISecurity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,7 +24,7 @@ import {
 describe('Analyze AI JSON Command', () => {
   let tempDir: string;
   let command: AnalyzeCommandV8;
-  let testContainer: typeof container;
+  let testContainer: Container;
   let mockCliSecurity: CLISecurity;
 
   beforeEach(() => {
