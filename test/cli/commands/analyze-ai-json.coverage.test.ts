@@ -6,7 +6,7 @@
  */
 
 import { AnalyzeCommandV8 } from '../../../src/cli/commands/analyze-v0.8';
-import { TYPES } from '../../../src/container';
+import { Container, TYPES } from '../../../src/container';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -58,20 +58,21 @@ describe('AI JSON Command Coverage Tests', () => {
       
       // high severity issues のモック
       const testContainer = createTestContainer();
-      testContainer.unbind(TYPES.AnalysisEngine);
-      testContainer.bind(TYPES.AnalysisEngine).toConstantValue({
-        analyze: jest.fn().mockResolvedValue({
-          projectPath: '',
-          issues: [
-            { file: 'test1.ts', line: 1, message: 'High severity issue', severity: 'high' },
-            { file: 'test2.ts', line: 2, message: 'Critical severity issue', severity: 'critical' },
-            { file: 'test3.ts', line: 3, message: 'Low severity issue', severity: 'low' }
-          ],
-          totalFiles: 3,
-          analysisTime: 100,
-          cacheHitRate: 0
-        })
-      });
+      testContainer.bind(TYPES.AnalysisEngine)
+        .to(() => ({
+          analyze: jest.fn().mockResolvedValue({
+            projectPath: '',
+            issues: [
+              { file: 'test1.ts', line: 1, message: 'High severity issue', severity: 'high' },
+              { file: 'test2.ts', line: 2, message: 'Critical severity issue', severity: 'critical' },
+              { file: 'test3.ts', line: 3, message: 'Low severity issue', severity: 'low' }
+            ],
+            totalFiles: 3,
+            analysisTime: 100,
+            cacheHitRate: 0
+          })
+        }))
+        .asSingleton();
       
       const commandWithCustomContainer = new AnalyzeCommandV8(testContainer, createMockCliSecurity());
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
@@ -162,16 +163,17 @@ describe('AI JSON Command Coverage Tests', () => {
       
       // issues空配列のモック
       const testContainer = createTestContainer();
-      testContainer.unbind(TYPES.AnalysisEngine);
-      testContainer.bind(TYPES.AnalysisEngine).toConstantValue({
-        analyze: jest.fn().mockResolvedValue({
-          projectPath: '',
-          issues: [], // 空の配列
-          totalFiles: 1,
-          analysisTime: 50,
-          cacheHitRate: 0
-        })
-      });
+      testContainer.bind(TYPES.AnalysisEngine)
+        .to(() => ({
+          analyze: jest.fn().mockResolvedValue({
+            projectPath: '',
+            issues: [], // 空の配列
+            totalFiles: 1,
+            analysisTime: 50,
+            cacheHitRate: 0
+          })
+        }))
+        .asSingleton();
       
       const commandWithEmptyIssues = new AnalyzeCommandV8(testContainer, createMockCliSecurity());
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
