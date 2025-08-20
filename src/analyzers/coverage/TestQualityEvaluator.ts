@@ -1,5 +1,5 @@
 import { CoverageSummary, CoverageThresholds } from './CoverageAnalyzer';
-import { QualityScore, Improvement, ImprovementType, ImprovementPriority } from '../core/types';
+import { QualityScore, Improvement, ImprovementType, ImprovementPriority } from '../../core/types';
 
 export type QualityGrade = 'A' | 'B' | 'C' | 'D' | 'F';
 
