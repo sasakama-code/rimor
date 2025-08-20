@@ -15,6 +15,13 @@ import { debug } from '../utils/debug';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+// 新しいImplementationTruth分析システム
+import { ProductionCodeAnalyzer } from '../analyzers/production-code-analyzer';
+import { TestIntentExtractor } from '../intent-analysis/TestIntentExtractor';
+import { ImplementationTruth } from '../types/implementation-truth';
+import { IntentRealizationResult } from '../types/intent-realization';
+import { ASTNode } from './interfaces/IAnalysisEngine';
+
 /**
  * UnifiedAnalysisEngine
  * 
@@ -63,6 +70,23 @@ export interface UnifiedAnalysisResult {
   qualityAnalysis?: QualityAnalysisResult;
   combinedScore?: QualityScore;
   allIssues: Issue[];
+}
+
+// 新しいImplementationTruth分析結果型
+export interface ImplementationTruthAnalysisResult {
+  implementationTruth: ImplementationTruth;
+  intentRealizationResults: IntentRealizationResult[];
+  overallScore: number;
+  totalGapsDetected: number;
+  highSeverityGaps: number;
+  executionTime: number;
+  summary: {
+    productionFilesAnalyzed: number;
+    testFilesAnalyzed: number;
+    vulnerabilitiesDetected: number;
+    realizationScore: number;
+    topRecommendations: string[];
+  };
 }
 
 // バッチ分析サマリー型
@@ -489,6 +513,112 @@ export class UnifiedAnalysisEngine {
     }
 
     return results;
+  }
+
+  /**
+   * 新しいImplementationTruth分析フロー
+   * v0.9.0 - AIコーディング時代の品質保証エンジンへの進化
+   * 
+   * プロダクションコード解析 → テスト意図抽出 → ギャップ分析の統合フロー
+   */
+  async analyzeWithImplementationTruth(
+    productionCodePath: string,
+    testCodePath?: string
+  ): Promise<ImplementationTruthAnalysisResult> {
+    const startTime = Date.now();
+    
+    try {
+      // 1. プロダクションコード解析でImplementationTruthを確立
+      const productionAnalyzer = new ProductionCodeAnalyzer();
+      const implementationTruth = await productionAnalyzer.analyzeProductionCode(productionCodePath);
+      
+      // 2. テストファイルの収集
+      const testFiles = testCodePath 
+        ? [testCodePath]
+        : await this.collectTestFiles(productionCodePath);
+      
+      // 3. 各テストファイルに対して意図実現度分析
+      const intentExtractor = new TestIntentExtractor();
+      const intentRealizationResults: IntentRealizationResult[] = [];
+      
+      for (const testFile of testFiles) {
+        try {
+          // 簡易ASTノード作成（実際の実装では適切なパーサーを使用）
+          const dummyAst: ASTNode = {
+            type: 'Program',
+            text: 'test',
+            startPosition: { row: 0, column: 0 },
+            endPosition: { row: 0, column: 4 },
+            children: []
+          };
+          
+          const result = await intentExtractor.analyzeIntentRealization(
+            testFile,
+            dummyAst,
+            implementationTruth
+          );
+          
+          intentRealizationResults.push(result);
+          
+        } catch (error) {
+          debug.warn(`Failed to analyze test file ${testFile}: ${error}`);
+        }
+      }
+      
+      // 4. 総合評価の計算
+      const overallScore = this.calculateOverallScore(intentRealizationResults);
+      const totalGapsDetected = intentRealizationResults.reduce((sum, result) => 
+        sum + result.gaps.length, 0);
+      const highSeverityGaps = intentRealizationResults.reduce((sum, result) => 
+        sum + result.gaps.filter(gap => gap.severity === 'critical' || gap.severity === 'high').length, 0);
+      
+      // 5. サマリーの生成
+      const summary = {
+        productionFilesAnalyzed: 1,
+        testFilesAnalyzed: testFiles.length,
+        vulnerabilitiesDetected: implementationTruth.vulnerabilities.length,
+        realizationScore: overallScore,
+        topRecommendations: this.extractTopRecommendations(intentRealizationResults)
+      };
+      
+      const executionTime = Date.now() - startTime;
+      
+      return {
+        implementationTruth,
+        intentRealizationResults,
+        overallScore,
+        totalGapsDetected,
+        highSeverityGaps,
+        executionTime,
+        summary
+      };
+      
+    } catch (error) {
+      debug.error(`ImplementationTruth analysis failed: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 意図実現度結果から総合スコアを計算
+   */
+  private calculateOverallScore(results: IntentRealizationResult[]): number {
+    if (results.length === 0) return 0;
+    
+    const totalScore = results.reduce((sum, result) => sum + result.realizationScore, 0);
+    return totalScore / results.length;
+  }
+
+  /**
+   * トップレコメンデーションの抽出
+   */
+  private extractTopRecommendations(results: IntentRealizationResult[]): string[] {
+    const allRecommendations = results.flatMap(result => 
+      result.recommendations.map(rec => rec.description)
+    );
+    
+    // 上位3つの推奨事項を返す
+    return allRecommendations.slice(0, 3);
   }
 
   aggregateScores(pluginResults: PluginResult[]): QualityScore {

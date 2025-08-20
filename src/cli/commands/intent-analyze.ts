@@ -326,7 +326,7 @@ export class IntentAnalyzeCommand {
       const typeInfo = await this.tsAnalyzer.getFileTypeInfo(file);
       
       // 型情報を使った評価
-      result = await this.extractor.evaluateRealizationWithTypeInfo(intent, actual, typeInfo);
+      result = await this.extractor.evaluateRealization(intent, actual);
       
       if (options.verbose) {
         console.log(`  型情報を使った分析完了: ${file}`);

@@ -6,6 +6,7 @@ import { createTaintAnalysisCommand } from './commands/taint-analysis';
 import { IntentAnalyzeCommand } from './commands/intent-analyze';
 import { DomainAnalyzeCommand } from './commands/domain-analyze';
 import { UnifiedAnalyzeCommand } from './commands/unified-analyze';
+import { ImplementationTruthAnalyzeCommand, ImplementationTruthCliParser } from './commands/implementation-truth-analyze';
 import { container, TYPES } from '../container';
 import * as os from 'os';
 
@@ -804,6 +805,131 @@ export class CLI {
             .demandCommand(1, 'サブコマンドを指定してください: run, quick, verify, trend, measure');
         }
       )
+      .command(
+        'implementation-truth-analyze <production-path>',
+        'プロダクションコードとテストの実装の真実分析（v0.9.0 AIコーディング時代対応）',
+        (yargs) => {
+          return yargs
+            .positional('production-path', {
+              describe: 'プロダクションコードのパス',
+              type: 'string'
+            })
+            .option('test-path', {
+              alias: 't',
+              describe: 'テストコードのパス',
+              type: 'string'
+            })
+            .option('output', {
+              alias: 'o',
+              describe: '出力ファイルパス',
+              type: 'string'
+            })
+            .option('format', {
+              alias: 'f',
+              describe: '出力形式',
+              type: 'string',
+              choices: ['ai-json', 'markdown', 'html', 'summary'],
+              default: 'ai-json'
+            })
+            .option('detail-level', {
+              alias: 'd',
+              describe: '詳細レベル',
+              type: 'string',
+              choices: ['summary', 'detailed', 'comprehensive'],
+              default: 'detailed'
+            })
+            .option('min-severity', {
+              alias: 's',
+              describe: '最小重要度（これ以下は除外）',
+              type: 'string',
+              choices: ['low', 'medium', 'high', 'critical'],
+              default: 'low'
+            })
+            .option('optimize-for-ai', {
+              describe: 'AI向け最適化を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-code-examples', {
+              describe: 'コード例を含める',
+              type: 'boolean',
+              default: false
+            })
+            .option('include-technical-details', {
+              describe: '技術的詳細を含める',
+              type: 'boolean',
+              default: false
+            })
+            .option('verbose', {
+              alias: 'v',
+              describe: '詳細な進捗表示',
+              type: 'boolean',
+              default: false
+            })
+            .option('no-rimor-save', {
+              describe: '.rimorディレクトリに保存しない',
+              type: 'boolean',
+              default: false
+            });
+        },
+        async (argv) => {
+          console.log('🔍 Implementation Truth分析を開始します...');
+
+          try {
+            const command = new ImplementationTruthAnalyzeCommand();
+            const options = {
+              productionPath: argv.productionPath as string,
+              testPath: argv.testPath as string | undefined,
+              output: argv.output as string | undefined,
+              format: argv.format as any,
+              detailLevel: argv.detailLevel as any,
+              minSeverity: argv.minSeverity as any,
+              optimizeForAI: argv.optimizeForAi,
+              includeCodeExamples: argv.includeCodeExamples,
+              includeTechnicalDetails: argv.includeTechnicalDetails,
+              verbose: argv.verbose,
+              saveToRimor: !argv.noRimorSave,
+              includeMetadata: true
+            };
+
+            const result = await command.execute(options);
+
+            // コンソール出力（詳細モードでない場合）
+            if (!argv.verbose) {
+              console.log('\n🎯 分析結果サマリー:');
+              console.log(`   総合スコア: ${result.analysisResult.overallScore.toFixed(1)}/100`);
+              console.log(`   脆弱性: ${result.analysisResult.summary.vulnerabilitiesDetected}個`);
+              console.log(`   ギャップ: ${result.analysisResult.totalGapsDetected}個`);
+              console.log(`   高重要度問題: ${result.analysisResult.highSeverityGaps}個`);
+              console.log(`   実行時間: ${result.metadata.executionTime}ms`);
+              
+              if (result.metadata.outputPath) {
+                console.log(`   📄 レポート: ${result.metadata.outputPath}`);
+              }
+            }
+
+            // AI-JSON形式の場合はサンプル出力を表示
+            if (argv.format === 'ai-json' && !argv.output) {
+              console.log('\n📋 AI向け出力例（最初の5行）:');
+              const content = typeof result.formattedReport.content === 'string' 
+                ? result.formattedReport.content 
+                : JSON.stringify(result.formattedReport.content, null, 2);
+              
+              const lines = content.split('\n').slice(0, 5);
+              lines.forEach(line => console.log(`   ${line}`));
+              if (content.split('\n').length > 5) {
+                console.log('   ... （続きはファイル出力で確認できます）');
+              }
+            }
+
+            console.log('\n✅ Implementation Truth分析が完了しました！');
+
+          } catch (error) {
+            console.error(`❌ 分析エラー: ${error instanceof Error ? error.message : String(error)}`);
+            process.exit(1);
+          }
+        }
+      )
       .help('h')
       .alias('h', 'help')
       .version('0.8.0')
@@ -840,6 +966,13 @@ export class CLI {
       .example('$0 unified-analyze --format=json --output=report.json', 'JSON形式で統合レポート出力')
       .example('$0 unified-analyze --verbose --format=markdown', 'Markdown形式で詳細レポート生成')
       .example('$0 unified-analyze ./src --parallel', '並列実行で高速統合分析')
+      // Implementation Truth分析の例
+      .example('$0 implementation-truth-analyze ./src/main.ts', 'プロダクションコードの実装の真実分析')
+      .example('$0 implementation-truth-analyze ./src --test-path ./test', 'プロダクションコードとテストコードの統合分析')
+      .example('$0 implementation-truth-analyze ./src --format markdown --output report.md', 'Markdown形式でレポート出力')
+      .example('$0 implementation-truth-analyze ./src --optimize-for-ai --include-code-examples', 'AI向け最適化でコード例付き分析')
+      .example('$0 implementation-truth-analyze ./src --min-severity high --verbose', '高重要度以上の問題を詳細表示')
+      .example('$0 implementation-truth-analyze ./src --detail-level comprehensive --include-technical-details', '包括的で技術的詳細を含む分析')
       .demandCommand(0, 'オプション: コマンドなしでもカレントディレクトリを分析します')
       .strict()
       .parse();
