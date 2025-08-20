@@ -1,6 +1,6 @@
 import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 /**
- * analyze-v0.8.ts用の型定義
+ * analyze.ts用の型定義
  * TDDアプローチ - GREENフェーズ
  */
 

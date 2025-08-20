@@ -86,7 +86,7 @@ function verifyBuild() {
   log('\n【CLIシステム】');
   if (checkFileExists('dist/cli/cli.js', 'メインCLI')) checks.cli.passed++; else checks.cli.failed++;
   if (checkFileExists('dist/cli/commands/analyze.js', '分析コマンド')) checks.cli.passed++; else checks.cli.failed++;
-  if (checkFileExists('dist/cli/commands/analyze-v0.8.js', 'v0.8分析コマンド')) checks.cli.passed++; else checks.cli.failed++;
+  // analyze-v0.8.js は Phase 10 で analyze.js に統合済み
 
   // テンプレートファイルの確認（重要）
   log('\n【テンプレートファイル】');
