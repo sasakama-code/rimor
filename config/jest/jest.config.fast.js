@@ -5,6 +5,7 @@
 
 /** @type {import("jest").Config} **/
 module.exports = {
+  rootDir: '../..',
   testEnvironment: "node",
   
   transform: {
@@ -48,7 +49,7 @@ module.exports = {
   resetMocks: true,
   
   // セットアップファイル
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/config/jest/jest.setup.js'],
   
   // モジュール解決
   moduleNameMapper: {

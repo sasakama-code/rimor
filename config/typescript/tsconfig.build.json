@@ -1,14 +1,14 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "rootDir": "../../src",
+    "outDir": "../../dist",
     "composite": false,
     "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "../../dist/.tsbuildinfo"
   },
   "include": [
-    "src/**/*"
+    "../../src/**/*"
   ],
   "exclude": [
     "node_modules",

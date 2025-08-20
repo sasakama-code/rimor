@@ -4,6 +4,7 @@ const tsJestTransformCfg = createDefaultEsmPreset().transform;
 
 /** @type {import("jest").Config} **/
 export default {
+  rootDir: '../..',
   testEnvironment: "node",
   extensionsToTreatAsEsm: [...TS_EXT_TO_TREAT_AS_ESM],
   transform: {
@@ -42,7 +43,7 @@ export default {
   },
   
   // テスト環境変数の確実な設定
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/config/jest/jest.setup.js'],
   
   // CI環境でのモジュール解決強化
   moduleNameMapper: {

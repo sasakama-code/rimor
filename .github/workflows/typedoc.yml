@@ -7,7 +7,7 @@ on:
       - develop
     paths:
       - 'src/types/**'
-      - 'typedoc.json'
+      - 'config/typedoc.json'
       - 'package.json'
   pull_request:
     branches:
@@ -15,7 +15,7 @@ on:
       - develop
     paths:
       - 'src/types/**'
-      - 'typedoc.json'
+      - 'config/typedoc.json'
   workflow_dispatch:
 
 jobs:

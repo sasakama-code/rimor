@@ -167,6 +167,15 @@ export class Container {
   }
 
   /**
+   * サービスバインディング解除
+   * テストで使用される
+   */
+  unbind(type: symbol | string): void {
+    this.validateContainerState();
+    this.bindings.delete(type);
+  }
+
+  /**
    * サービス解決
    * 単一責任の原則：サービス取得の責務のみ担う
    * Defensive Programming: 堅牢なエラーハンドリング
@@ -367,6 +376,18 @@ class BindingBuilder {
 
   to(factory: () => any): LifetimeBuilder {
     return new LifetimeBuilder(this.type, factory, this.bindings);
+  }
+
+  /**
+   * 定数値にバインド（inversify互換性のため）
+   * テストでよく使用されるパターン
+   */
+  toConstantValue(value: any): void {
+    this.bindings.set(this.type, {
+      factory: () => value,
+      lifetime: ServiceLifetime.Singleton,
+      instance: value
+    });
   }
 }
 
