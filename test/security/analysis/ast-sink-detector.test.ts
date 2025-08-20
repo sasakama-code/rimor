@@ -392,13 +392,19 @@ describe('ASTSinkDetector', () => {
       const sinks = await detector.detectSinks(sourceCode, 'test.ts');
 
       // Assert
-      expect(sinks).toHaveLength(2); // eval, exec
+      expect(sinks).toHaveLength(3); // JSON.parse, eval, exec
       
+      const dataIntegritySink = sinks.find(s => s.type === 'data-integrity-failure');
       const codeInjectionSink = sinks.find(s => s.type === 'code-injection');
       const commandInjectionSink = sinks.find(s => s.type === 'command-injection');
       
+      expect(dataIntegritySink).toBeDefined();
       expect(codeInjectionSink).toBeDefined();
       expect(commandInjectionSink).toBeDefined();
+      
+      // JSON.parseのSinkを検証
+      expect(dataIntegritySink?.dangerousFunction.functionName).toBe('parse');
+      expect(dataIntegritySink?.dangerousFunction.objectName).toBe('JSON');
     });
   });
 
