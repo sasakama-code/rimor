@@ -1,4 +1,4 @@
-import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
+// import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions'; // TODO: 修正後有効化
 /**
  * Reporting Type Definitions
  * v0.8.0 - Phase 4: Context Engineering
@@ -81,8 +81,21 @@ export interface DataFlow {
  * CoreTypes.Issueを使用してください
  */
 // Migrated to CoreTypes - Import from core-definitions
-import type { Issue as CoreIssue } from '../core/types/core-definitions';
-export type Issue = CoreIssue & {
+// import type { Issue as CoreIssue } from '../core/types/core-definitions'; // TODO: 修正後有効化
+// 暫定的な基本Issue型定義
+interface BaseIssue {
+  id?: string;
+  type: string;
+  severity: Severity;
+  message: string;
+  filePath?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  category: string;
+}
+
+export type Issue = BaseIssue & {
   location?: CodeLocation;
   dataFlow?: DataFlow;
   recommendation?: string;

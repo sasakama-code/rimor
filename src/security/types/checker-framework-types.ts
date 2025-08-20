@@ -5,7 +5,7 @@
  * このファイルは論文で提案されている型システムをTypeScriptで実装します。
  */
 
-import { TaintLevel } from './taint';
+import { TaintLevel } from './taint-analysis-types';
 
 /**
  * 汚染修飾子の型
