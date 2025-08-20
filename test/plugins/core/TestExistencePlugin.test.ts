@@ -7,14 +7,32 @@
 
 import { TestExistencePlugin } from '../../../src/plugins/core/TestExistencePlugin';
 import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../src/core/types';
+import { TestQualityIntegrator } from '../../../src/analyzers/coverage/TestQualityIntegrator';
+import { CoverageAnalyzer } from '../../../src/analyzers/coverage/CoverageAnalyzer';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// モック設定
+jest.mock('../../../src/analyzers/coverage/TestQualityIntegrator');
+jest.mock('../../../src/analyzers/coverage/CoverageAnalyzer');
+
+const MockTestQualityIntegrator = TestQualityIntegrator as jest.MockedClass<typeof TestQualityIntegrator>;
+const MockCoverageAnalyzer = CoverageAnalyzer as jest.MockedClass<typeof CoverageAnalyzer>;
+
 describe('TestExistencePlugin', () => {
   let plugin: TestExistencePlugin;
+  let mockQualityIntegrator: jest.Mocked<TestQualityIntegrator>;
+  let mockCoverageAnalyzer: jest.Mocked<CoverageAnalyzer>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    
+    mockQualityIntegrator = new MockTestQualityIntegrator() as jest.Mocked<TestQualityIntegrator>;
+    mockCoverageAnalyzer = new MockCoverageAnalyzer() as jest.Mocked<CoverageAnalyzer>;
+    
     plugin = new TestExistencePlugin();
+    (plugin as any).qualityIntegrator = mockQualityIntegrator;
+    (plugin as any).coverageAnalyzer = mockCoverageAnalyzer;
   });
 
   describe('Plugin Interface Compliance', () => {
@@ -109,6 +127,22 @@ describe('TestExistencePlugin', () => {
         }
       }];
 
+      // TestQualityIntegratorのモックを設定
+      const expectedScore: QualityScore = {
+        overall: 0,
+        dimensions: {
+          completeness: 0,
+          correctness: 0,
+          maintainability: 0
+        },
+        breakdown: {
+          completeness: 0,
+          correctness: 0
+        },
+        confidence: 0.9
+      };
+      mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
+
       const score = plugin.evaluateQuality(patterns);
 
       // missing-test-file: completeness = 0, coverage = 0, overall = (0 + 0) / 2 = 0
@@ -118,6 +152,22 @@ describe('TestExistencePlugin', () => {
 
     test('should return high score when no issues detected', () => {
       const patterns: DetectionResult[] = [];
+
+      // TestQualityIntegratorのモックを設定
+      const expectedScore: QualityScore = {
+        overall: 100,
+        dimensions: {
+          completeness: 100,
+          correctness: 100,
+          maintainability: 100
+        },
+        breakdown: {
+          completeness: 100,
+          correctness: 100
+        },
+        confidence: 0.8
+      };
+      mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
 
       const score = plugin.evaluateQuality(patterns);
 
@@ -138,6 +188,22 @@ describe('TestExistencePlugin', () => {
           column: 1
         }
       }];
+
+      // TestQualityIntegratorのモックを設定
+      const expectedScore: QualityScore = {
+        overall: 50,
+        dimensions: {
+          completeness: 50,
+          correctness: 50,
+          maintainability: 50
+        },
+        breakdown: {
+          completeness: 50,
+          correctness: 50
+        },
+        confidence: 0.8
+      };
+      mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
 
       const score = plugin.evaluateQuality(patterns);
 
