@@ -1,6 +1,6 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { AnalyzeCommandV8 } from './commands/analyze-v0.8';
+import { AnalyzeCommand } from './commands/analyze';
 import { AIOutputCommand } from './commands/ai-output';
 import { createTaintAnalysisCommand } from './commands/taint-analysis';
 import { IntentAnalyzeCommand } from './commands/intent-analyze';
@@ -127,7 +127,7 @@ export class CLI {
             });
         },
         async (argv) => {
-          const analyzeCommand = new AnalyzeCommandV8();
+          const analyzeCommand = new AnalyzeCommand();
           // --json フラグが指定された場合は format を json に上書き
           const format = argv.json ? 'json' : argv.format;
           await analyzeCommand.execute({

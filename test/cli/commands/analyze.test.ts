@@ -1,5 +1,5 @@
 /**
- * analyze-v0.8.tsの型安全性テスト
+ * analyze.tsの型安全性テスト
  * TDDアプローチ - REDフェーズ
  */
 
@@ -24,7 +24,7 @@ import {
   convertToReportOutput
 } from '../../../src/cli/commands/analyze-types';
 
-describe('AnalyzeCommand v0.8 - Type Safety', () => {
+describe('AnalyzeCommand - Type Safety', () => {
   describe('AIJsonOutput型', () => {
     it('有効なAIJsonOutputを検証できる', () => {
       const validOutput: AIJsonOutput = {
