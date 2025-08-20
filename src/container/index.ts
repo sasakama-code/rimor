@@ -44,29 +44,29 @@ function initializeContainer(): Container {
 function bindCoreServices(): void {
   // Lazy load to avoid circular dependencies
   const { 
-    AnalysisEngineImpl,
-    SecurityAuditorImpl,
-    StructuredReporterImpl,
-    PluginManagerImpl
+    AnalysisEngine,
+    SecurityAuditor,
+    StructuredReporter,
+    PluginManager
   } = require('../core/implementations');
   
   // Interfaces are types, not values - use import type syntax
   
   // Core service bindings
   container.bind<IAnalysisEngine>(TYPES.AnalysisEngine)
-    .to(AnalysisEngineImpl)
+    .to(AnalysisEngine)
     .inSingletonScope();
     
   container.bind<ISecurityAuditor>(TYPES.SecurityAuditor)
-    .to(SecurityAuditorImpl)
+    .to(SecurityAuditor)
     .inSingletonScope();
     
   container.bind<IReporter>(TYPES.Reporter)
-    .to(StructuredReporterImpl)
+    .to(StructuredReporter)
     .inSingletonScope();
     
   container.bind<IPluginManager>(TYPES.PluginManager)
-    .to(PluginManagerImpl)
+    .to(PluginManager)
     .inSingletonScope()
     .onActivation((context, pluginManager) => {
       // デフォルトプラグインを登録（Issue #81対応: 新しいカバレッジ統合プラグインを使用）

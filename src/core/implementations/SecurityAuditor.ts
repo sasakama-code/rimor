@@ -21,7 +21,7 @@ import { TestCase } from '../../security/types';
 import { TestMethod } from '../types';
 
 @injectable()
-export class SecurityAuditorImpl implements ISecurityAuditor {
+export class SecurityAuditor implements ISecurityAuditor {
   private typeBasedEngine: TypeBasedSecurityEngine;
   private modularAnalyzer: ModularTestAnalyzer;
   private flowAnalyzer: FlowSensitiveAnalyzer;

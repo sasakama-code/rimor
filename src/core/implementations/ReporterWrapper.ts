@@ -15,7 +15,7 @@ import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
 
 /**
  * Reporter Wrapper
- * 既存のReporterImplをinversifyなしで動作させる
+ * 既存のReporterをinversifyなしで動作させる
  */
 export class ReporterWrapper implements IReporter {
 

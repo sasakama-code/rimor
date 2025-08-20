@@ -11,7 +11,7 @@ import {
 } from '../interfaces/IPluginManager';
 
 @injectable()
-export class PluginManagerImpl implements IPluginManager {
+export class PluginManager implements IPluginManager {
   private plugins: Map<string, IPlugin> = new Map();
   
   register(plugin: IPlugin): void {

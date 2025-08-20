@@ -12,7 +12,7 @@ import {
 
 /**
  * Plugin Manager Wrapper
- * 既存のPluginManagerImplをinversifyなしで動作させる
+ * 既存のPluginManagerをinversifyなしで動作させる
  */
 export class PluginManagerWrapper implements IPluginManager {
   private plugins: Map<string, IPlugin> = new Map();

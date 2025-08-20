@@ -14,7 +14,7 @@ import {
 } from '../interfaces/IReporter';
 import { AnalysisResult } from '../interfaces/IAnalysisEngine';
 import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
-import { StructuredReporter } from '../../reporting/StructuredReporter';
+import { StructuredReporter as StructuredReporterClass } from '../../reporting/StructuredReporter';
 import { TemplatedReporter } from '../../reporting/TemplatedReporter';
 import { AnnotationGenerator } from '../../reporting/AnnotationGenerator';
 import { CodeAnnotator } from '../../reporting/CodeAnnotator';
@@ -23,8 +23,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 @injectable()
-export class StructuredReporterImpl implements IReporter {
-  private structuredReporter: StructuredReporter;
+export class StructuredReporter implements IReporter {
+  private structuredReporter: StructuredReporterClass;
   private templatedReporter: TemplatedReporter;
   private annotationGenerator: AnnotationGenerator;
   private codeAnnotator: CodeAnnotator;
@@ -32,7 +32,7 @@ export class StructuredReporterImpl implements IReporter {
 
   constructor() {
     // 手動でインスタンスを作成（DIコンテナから注入する場合は@injectを使用）
-    this.structuredReporter = new StructuredReporter();
+    this.structuredReporter = new StructuredReporterClass();
     this.templatedReporter = new TemplatedReporter();
     this.annotationGenerator = new AnnotationGenerator();
     this.codeAnnotator = new CodeAnnotator(this.annotationGenerator);

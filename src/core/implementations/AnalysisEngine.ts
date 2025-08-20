@@ -14,7 +14,7 @@ import { IPluginManager } from '../interfaces/IPluginManager';
  * v0.8.0 - UnifiedAnalysisEngineへのブリッジ実装
  */
 @injectable()
-export class AnalysisEngineImpl implements IAnalysisEngine {
+export class AnalysisEngine implements IAnalysisEngine {
   private engine: UnifiedAnalysisEngine;
   
   constructor(

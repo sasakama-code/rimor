@@ -16,7 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @injectable()
-export class ReporterImpl implements IReporter {
+export class Reporter implements IReporter {
   
   async generateAnalysisReport(
     result: AnalysisResult,

@@ -10,7 +10,7 @@ import { UnifiedAnalysisEngine } from '../engine';
 
 /**
  * Analysis Engine Wrapper
- * 既存のAnalysisEngineImplをinversifyなしで動作させる
+ * 既存のAnalysisEngineをinversifyなしで動作させる
  */
 export class AnalysisEngineWrapper implements IAnalysisEngine {
   private engine: UnifiedAnalysisEngine;
