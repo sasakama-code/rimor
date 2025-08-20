@@ -15,7 +15,7 @@ import * as ts from 'typescript';
  */
 export interface TaintSink {
   /** シンクのタイプ */
-  type: 'sql-injection' | 'path-traversal' | 'command-injection' | 'xss' | 'code-injection' | 'file-write';
+  type: 'sql-injection' | 'path-traversal' | 'command-injection' | 'xss' | 'code-injection' | 'file-write' | 'ssrf-vulnerability' | 'data-integrity-failure';
   /** シンクの詳細カテゴリ */
   category: string;
   /** シンクの場所 */
@@ -336,6 +336,28 @@ export class ASTSinkDetector {
       };
     }
 
+    // SSRF脆弱性 (A10)
+    if (functionName === 'fetch') {
+      return {
+        type: 'ssrf-vulnerability',
+        category: 'network-request',
+        riskLevel: 'HIGH',
+        confidence: 0.90,
+        dangerousParameterIndex: 0
+      };
+    }
+
+    // データ整合性失敗 (A08)
+    if (functionName === 'parse' && objectName === 'JSON') {
+      return {
+        type: 'data-integrity-failure',
+        category: 'deserialization',
+        riskLevel: 'HIGH',
+        confidence: 0.85,
+        dangerousParameterIndex: 0
+      };
+    }
+
     return null;
   }
 
@@ -413,6 +435,17 @@ export class ASTSinkDetector {
           dangerousParameterIndex: 0
         };
       }
+    }
+
+    // JSON パーシング (A08)
+    if (objectName === 'JSON' && methodName === 'parse') {
+      return {
+        type: 'data-integrity-failure',
+        category: 'deserialization',
+        riskLevel: 'HIGH',
+        confidence: 0.85,
+        dangerousParameterIndex: 0
+      };
     }
 
     return null;
