@@ -17,6 +17,8 @@ import {
   GapType,
   Severity
 } from './ITestIntentAnalyzer';
+import { DomainInference } from './IDomainInferenceEngine';
+import { BusinessLogicMapping } from './IBusinessLogicMapper';
 
 // Type definitions for analysis results
 interface TestScenario {
@@ -58,7 +60,6 @@ import { IntentPatternMatcher } from './IntentPatternMatcher';
 import { DomainInferenceEngine } from './DomainInferenceEngine';
 import { BusinessLogicMapper } from './BusinessLogicMapper';
 import { TypeInfo, CallGraphNode } from './ITypeScriptAnalyzer';
-import { DomainInference } from './IDomainInferenceEngine';
 
 /**
  * テスト意図抽出エンジン
@@ -704,7 +705,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     intent: TestIntent,
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<TestRealizationResult & { domainRelevance?: any; domainSpecificGaps?: any[] }> {
+  ): Promise<TestRealizationResult & { domainRelevance?: DomainInference; domainSpecificGaps?: DomainGap[] }> {
     if (!this.domainEngine) {
       this.domainEngine = new DomainInferenceEngine();
     }
@@ -737,7 +738,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       domainRelevance: {
         domain: primaryDomain.domain,
         confidence: primaryDomain.confidence,
-        businessImportance: primaryDomain.domain === 'payment' ? 'high' : 'medium'
+        concepts: primaryDomain.concepts,
+        businessImportance: primaryDomain.businessImportance
       },
       domainSpecificGaps: domainSpecificGaps
     };
@@ -800,7 +802,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testFilePath: string,
     ast: ASTNode,
     callGraph: CallGraphNode[]
-  ): Promise<any> {
+  ): Promise<BusinessLogicMapping> {
     if (!this.businessMapper) {
       this.businessMapper = new BusinessLogicMapper();
     }
@@ -908,15 +910,25 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     }
 
     return {
-      domain: 'business',
-      functions: [...coveredFunctions, ...uncoveredFunctions],
-      coveredFunctions,
-      uncoveredFunctions,
-      coverage: criticalPathCoverage,
-      businessLogicCoverage: {
-        coveredFunctions,
-        uncoveredFunctions,
-        coverage: criticalPathCoverage
+      testFilePath,
+      businessLogicFiles: [],
+      coverageDepth: criticalPathCoverage,
+      businessCriticality: {
+        level: 'medium',
+        reasons: ['複数のビジネスロジックが関連'],
+        score: criticalPathCoverage * 100
+      },
+      impactScope: {
+        directImpact: coveredFunctions.length + uncoveredFunctions.length,
+        indirectImpact: 0,
+        affectedDomains: ['business'],
+        onCriticalPath: criticalPathCoverage > 0.5
+      },
+      riskAssessment: {
+        coverageRisk: criticalPathCoverage > 0.7 ? 'low' : 'medium',
+        complexityRisk: 'medium',
+        changeRisk: 'medium',
+        overallRiskScore: Math.round((1 - criticalPathCoverage) * 100)
       }
     };
   }
