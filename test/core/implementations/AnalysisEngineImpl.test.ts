@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { AnalysisEngineImpl } from '../../../src/core/implementations/AnalysisEngineImpl';
+import { AnalysisEngine } from '../../../src/core/implementations/AnalysisEngine';
 import { UnifiedAnalysisEngine } from '../../../src/core/engine';
 import { IPluginManager } from '../../../src/core/interfaces/IPluginManager';
 import { AnalysisResult, AnalysisOptions } from '../../../src/core/interfaces/IAnalysisEngine';
@@ -7,9 +7,9 @@ import { AnalysisResult, AnalysisOptions } from '../../../src/core/interfaces/IA
 // UnifiedAnalysisEngineのモック
 jest.mock('../../../src/core/engine');
 
-describe('AnalysisEngineImpl', () => {
+describe('AnalysisEngine', () => {
   let mockPluginManager: IPluginManager;
-  let engineImpl: AnalysisEngineImpl;
+  let engineImpl: AnalysisEngine;
   let mockUnifiedEngine: jest.Mocked<UnifiedAnalysisEngine>;
   
   beforeEach(() => {
@@ -37,8 +37,8 @@ describe('AnalysisEngineImpl', () => {
     // UnifiedAnalysisEngineのコンストラクタをモック
     (UnifiedAnalysisEngine as jest.MockedClass<typeof UnifiedAnalysisEngine>).mockImplementation(() => mockUnifiedEngine);
     
-    // AnalysisEngineImplインスタンス作成
-    engineImpl = new AnalysisEngineImpl(mockPluginManager);
+    // AnalysisEngineインスタンス作成
+    engineImpl = new AnalysisEngine(mockPluginManager);
   });
   
   describe('constructor', () => {
@@ -148,13 +148,13 @@ describe('AnalysisEngineImpl', () => {
     it('should be marked as injectable', () => {
       // @injectable()デコレータが適用されているかを確認
       // 実際のクラスが@injectable()でマークされていることを間接的に確認
-      const instance = new AnalysisEngineImpl(mockPluginManager);
-      expect(instance).toBeInstanceOf(AnalysisEngineImpl);
+      const instance = new AnalysisEngine(mockPluginManager);
+      expect(instance).toBeInstanceOf(AnalysisEngine);
     });
     
     it('should accept IPluginManager in constructor', () => {
       // コンストラクタが正しくIPluginManagerを受け取ることを確認
-      const instance = new AnalysisEngineImpl(mockPluginManager);
+      const instance = new AnalysisEngine(mockPluginManager);
       
       // analyze関数を呼び出してプラグインマネージャーが正しく使用されていることを確認
       instance.analyze('/test');

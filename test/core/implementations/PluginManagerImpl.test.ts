@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { PluginManagerImpl } from '../../../src/core/implementations/PluginManagerImpl';
+import { PluginManager } from '../../../src/core/implementations/PluginManager';
 import { IPlugin, PluginMetadata, PluginExecutionResult } from '../../../src/core/interfaces/IPluginManager';
 import { Issue } from '../../../src/core/types';
 
@@ -18,11 +18,11 @@ class MockPlugin implements IPlugin {
   }
 }
 
-describe('PluginManagerImpl', () => {
-  let pluginManager: PluginManagerImpl;
+describe('PluginManager', () => {
+  let pluginManager: PluginManager;
   
   beforeEach(() => {
-    pluginManager = new PluginManagerImpl();
+    pluginManager = new PluginManager();
   });
   
   describe('register', () => {
