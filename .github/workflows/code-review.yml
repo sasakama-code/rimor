@@ -1,0 +1,348 @@
+name: 🔍 AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**/*.ts'
+      - 'test/**/*.ts'
+      - 'scripts/**/*.js'
+      - 'package.json'
+      - 'tsconfig.json'
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # コード変更分析
+  analyze-changes:
+    name: Analyze Code Changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_significant_changes: ${{ steps.analysis.outputs.has_significant_changes }}
+      change_summary: ${{ steps.analysis.outputs.change_summary }}
+      risk_level: ${{ steps.analysis.outputs.risk_level }}
+      
+    steps:
+    - name: Checkout PR
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Analyze code changes
+      id: analysis
+      run: |
+        echo "🔍 Analyzing code changes..."
+        
+        # Get changed files
+        git diff --name-only origin/main..HEAD > changed_files.txt
+        TOTAL_CHANGES=$(wc -l < changed_files.txt)
+        
+        # Categorize changes
+        CORE_CHANGES=$(grep -E "^src/(core|security|plugins)/" changed_files.txt | wc -l)
+        TEST_CHANGES=$(grep -E "^test/" changed_files.txt | wc -l)
+        CONFIG_CHANGES=$(grep -E "\.(json|yml|yaml|js)$" changed_files.txt | wc -l)
+        
+        # Calculate change metrics
+        LINES_ADDED=$(git diff --numstat origin/main..HEAD | awk '{sum += $1} END {print sum}')
+        LINES_REMOVED=$(git diff --numstat origin/main..HEAD | awk '{sum += $2} END {print sum}')
+        
+        # Determine significance and risk
+        if [ "$TOTAL_CHANGES" -gt 20 ] || [ "$CORE_CHANGES" -gt 5 ] || [ "$LINES_ADDED" -gt 500 ]; then
+          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
+          echo "risk_level=high" >> $GITHUB_OUTPUT
+        elif [ "$TOTAL_CHANGES" -gt 10 ] || [ "$CORE_CHANGES" -gt 2 ] || [ "$LINES_ADDED" -gt 200 ]; then
+          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
+          echo "risk_level=medium" >> $GITHUB_OUTPUT
+        elif [ "$TOTAL_CHANGES" -gt 3 ] || [ "$LINES_ADDED" -gt 50 ]; then
+          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
+          echo "risk_level=low" >> $GITHUB_OUTPUT
+        else
+          echo "has_significant_changes=false" >> $GITHUB_OUTPUT
+          echo "risk_level=minimal" >> $GITHUB_OUTPUT
+        fi
+        
+        # Generate summary
+        SUMMARY="📊 **Change Analysis**
+        - Total files: $TOTAL_CHANGES
+        - Core changes: $CORE_CHANGES
+        - Test changes: $TEST_CHANGES
+        - Config changes: $CONFIG_CHANGES
+        - Lines added: $LINES_ADDED
+        - Lines removed: $LINES_REMOVED"
+        
+        echo "change_summary<<EOF" >> $GITHUB_OUTPUT
+        echo "$SUMMARY" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "📊 Analysis complete - Risk level: $(echo ${{ steps.analysis.outputs.risk_level }})"
+
+  # 品質チェック
+  quality-review:
+    name: Quality Review
+    runs-on: ubuntu-latest
+    needs: analyze-changes
+    
+    steps:
+    - name: Checkout PR
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build verification
+      run: |
+        echo "🔨 Verifying build..."
+        npm run build:full
+        echo "✅ Build successful"
+        
+    - name: TypeScript strict check
+      run: |
+        echo "📝 Running TypeScript strict checks..."
+        npx tsc --noEmit --strict
+        echo "✅ TypeScript checks passed"
+        
+    - name: Naming conventions check
+      run: |
+        echo "📋 Checking naming conventions..."
+        npm run check:naming
+        echo "✅ Naming conventions verified"
+        
+    - name: Code complexity analysis
+      run: |
+        echo "🧮 Analyzing code complexity..."
+        
+        # Simple complexity metrics using grep and wc
+        find src -name "*.ts" -exec wc -l {} + | sort -nr | head -10 > complexity_report.txt
+        
+        # Check for potential issues
+        LONG_FILES=$(find src -name "*.ts" -exec wc -l {} + | awk '$1 > 500 {print $2 ": " $1 " lines"}')
+        LONG_FUNCTIONS=$(grep -r "function\|=>" src --include="*.ts" | wc -l)
+        
+        echo "📊 Complexity metrics:"
+        echo "- Long files (>500 lines): $(echo "$LONG_FILES" | wc -l)"
+        echo "- Total functions: $LONG_FUNCTIONS"
+        
+        if [ -n "$LONG_FILES" ]; then
+          echo "⚠️ Files that may need refactoring:"
+          echo "$LONG_FILES"
+        fi
+        
+    - name: Generate quality report
+      run: |
+        echo "📋 Generating quality report..."
+        
+        cat > quality_report.md << EOF
+        ## 🔍 Code Quality Review
+        
+        ${{ needs.analyze-changes.outputs.change_summary }}
+        
+        ### 🎯 Risk Assessment
+        **Risk Level**: ${{ needs.analyze-changes.outputs.risk_level }}
+        
+        ### ✅ Automated Checks
+        - [x] Build verification
+        - [x] TypeScript strict mode
+        - [x] Naming conventions
+        - [x] Code complexity analysis
+        
+        ### 📊 Recommendations
+        EOF
+        
+        # Add specific recommendations based on risk level
+        case "${{ needs.analyze-changes.outputs.risk_level }}" in
+          "high")
+            echo "- 🔴 **High risk changes detected** - Recommend thorough manual review" >> quality_report.md
+            echo "- 🧪 Consider adding integration tests" >> quality_report.md
+            echo "- 📚 Update documentation if needed" >> quality_report.md
+            ;;
+          "medium")
+            echo "- 🟡 **Medium risk changes** - Standard review recommended" >> quality_report.md
+            echo "- 🧪 Ensure test coverage for new features" >> quality_report.md
+            ;;
+          "low")
+            echo "- 🟢 **Low risk changes** - Light review sufficient" >> quality_report.md
+            ;;
+          "minimal")
+            echo "- ✅ **Minimal changes** - Auto-mergeable candidate" >> quality_report.md
+            ;;
+        esac
+        
+        echo "" >> quality_report.md
+        echo "🤖 *Generated by [Claude Code](https://claude.ai/code)*" >> quality_report.md
+        
+        cat quality_report.md
+        
+    - name: Upload quality report
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-report
+        path: quality_report.md
+
+  # セキュリティレビュー
+  security-review:
+    name: Security Review
+    runs-on: ubuntu-latest
+    needs: analyze-changes
+    if: needs.analyze-changes.outputs.has_significant_changes == 'true'
+    
+    steps:
+    - name: Checkout PR
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Security audit
+      run: |
+        echo "🔒 Running security audit..."
+        npm audit --audit-level=moderate
+        echo "✅ Security audit passed"
+        
+    - name: Rimor self-analysis
+      run: |
+        echo "🔍 Running Rimor security self-analysis..."
+        npm run build
+        node dist/cli/cli.js analyze ./src --format=json > security_analysis.json
+        
+        # Check for critical security issues
+        CRITICAL_ISSUES=$(jq '[.issues[] | select(.severity == "critical")] | length' security_analysis.json)
+        HIGH_ISSUES=$(jq '[.issues[] | select(.severity == "high")] | length' security_analysis.json)
+        
+        echo "🔍 Security analysis results:"
+        echo "- Critical issues: $CRITICAL_ISSUES"
+        echo "- High issues: $HIGH_ISSUES"
+        
+        if [ "$CRITICAL_ISSUES" -gt 0 ]; then
+          echo "❌ Critical security issues found - blocking merge"
+          exit 1
+        elif [ "$HIGH_ISSUES" -gt 3 ]; then
+          echo "⚠️ Multiple high-severity issues found"
+          exit 1
+        fi
+        
+        echo "✅ Security analysis passed"
+        
+    - name: Upload security analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-analysis
+        path: security_analysis.json
+
+  # PR コメント生成
+  comment-review:
+    name: Post Review Comment
+    runs-on: ubuntu-latest
+    needs: [analyze-changes, quality-review, security-review]
+    if: always()
+    
+    permissions:
+      pull-requests: write
+      
+    steps:
+    - name: Download quality report
+      uses: actions/download-artifact@v4
+      with:
+        name: quality-report
+        path: ./reports
+        
+    - name: Create comprehensive review comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read quality report
+          let qualityReport = '';
+          try {
+            qualityReport = fs.readFileSync('./reports/quality_report.md', 'utf8');
+          } catch (e) {
+            qualityReport = '⚠️ Quality report not generated';
+          }
+          
+          // Build comprehensive comment
+          let comment = `## 🤖 AI Code Review\n\n`;
+          comment += qualityReport;
+          
+          // Add security status
+          comment += `\n\n### 🔒 Security Status\n`;
+          if ('${{ needs.security-review.result }}' === 'success') {
+            comment += '✅ Security review passed\n';
+          } else if ('${{ needs.security-review.result }}' === 'failure') {
+            comment += '❌ Security review failed - please address issues\n';
+          } else if ('${{ needs.security-review.result }}' === 'skipped') {
+            comment += '⏭️ Security review skipped (minimal changes)\n';
+          } else {
+            comment += '⚠️ Security review not completed\n';
+          }
+          
+          // Add quality status
+          comment += `\n### 🎯 Quality Status\n`;
+          if ('${{ needs.quality-review.result }}' === 'success') {
+            comment += '✅ Quality checks passed\n';
+          } else {
+            comment += '❌ Quality checks failed\n';
+          }
+          
+          // Add merge recommendation
+          comment += `\n### 📋 Merge Recommendation\n`;
+          const riskLevel = '${{ needs.analyze-changes.outputs.risk_level }}';
+          const hasSignificantChanges = '${{ needs.analyze-changes.outputs.has_significant_changes }}';
+          
+          if (riskLevel === 'minimal') {
+            comment += '🟢 **Approved for auto-merge** - Minimal risk changes\n';
+          } else if (riskLevel === 'low' && '${{ needs.quality-review.result }}' === 'success') {
+            comment += '🟡 **Recommended for merge** - Low risk with quality checks passed\n';
+          } else if (riskLevel === 'medium') {
+            comment += '🟠 **Manual review recommended** - Medium risk changes\n';
+          } else {
+            comment += '🔴 **Careful review required** - High risk or quality issues\n';
+          }
+          
+          comment += `\n---\n*🤖 Automated review by [Claude Code](https://claude.ai/code) | Risk: ${riskLevel} | Significant: ${hasSignificantChanges}*`;
+          
+          // Post comment
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body: comment
+          });
+          
+          // Add labels based on risk level
+          const labels = ['automated-review'];
+          if (riskLevel === 'high') {
+            labels.push('high-risk', 'needs-review');
+          } else if (riskLevel === 'medium') {
+            labels.push('medium-risk');
+          } else if (riskLevel === 'minimal' && '${{ needs.quality-review.result }}' === 'success') {
+            labels.push('auto-merge-candidate');
+          }
+          
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            labels: labels
+          });

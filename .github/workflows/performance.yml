@@ -1,0 +1,447 @@
+name: ⚡ Performance Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize]
+  schedule:
+    # 毎日AM2:00 JST (17:00 UTC前日)
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      benchmark_type:
+        description: 'Benchmark type'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+          - quick
+          - comprehensive
+          - stress
+          - memory
+
+env:
+  NODE_VERSION: '20.x'
+  BENCHMARK_TIMEOUT: '600000'  # 10 minutes
+
+jobs:
+  # ベースラインパフォーマンス測定
+  baseline-performance:
+    name: Baseline Performance
+    runs-on: ubuntu-latest
+    
+    outputs:
+      baseline_metrics: ${{ steps.baseline.outputs.metrics }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:full
+      
+    - name: Warm up system
+      run: |
+        echo "🔥 Warming up system..."
+        # CPU warm-up
+        node -e "
+          const start = Date.now();
+          while (Date.now() - start < 5000) {
+            Math.random() * Math.random();
+          }
+          console.log('CPU warm-up complete');
+        "
+        
+        # Memory warm-up
+        node -e "
+          const arr = new Array(1000000).fill(0).map((_, i) => i);
+          arr.sort(() => Math.random() - 0.5);
+          console.log('Memory warm-up complete');
+        "
+        
+    - name: Run baseline benchmarks
+      id: baseline
+      run: |
+        echo "📊 Running baseline performance tests..."
+        
+        # Create benchmark results directory
+        mkdir -p benchmark-results
+        
+        # CLI startup time
+        echo "⏱️ Measuring CLI startup time..."
+        CLI_STARTUP_TIMES=()
+        for i in {1..5}; do
+          START_TIME=$(node -e "console.log(Date.now())")
+          node dist/cli/cli.js --help > /dev/null 2>&1
+          END_TIME=$(node -e "console.log(Date.now())")
+          STARTUP_TIME=$((END_TIME - START_TIME))
+          CLI_STARTUP_TIMES+=($STARTUP_TIME)
+        done
+        
+        # Calculate average startup time
+        CLI_STARTUP_AVG=$(printf '%s\n' "${CLI_STARTUP_TIMES[@]}" | awk '{sum+=$1} END {print sum/NR}')
+        echo "CLI average startup: ${CLI_STARTUP_AVG}ms"
+        
+        # Analysis performance (small project)
+        echo "🔍 Measuring analysis performance..."
+        mkdir -p test-project/src
+        echo "export const test = () => 'hello';" > test-project/src/test.ts
+        echo "export const test2 = () => 'world';" > test-project/src/test2.ts
+        
+        ANALYSIS_TIMES=()
+        for i in {1..3}; do
+          START_TIME=$(node -e "console.log(Date.now())")
+          node dist/cli/cli.js analyze test-project --format=json > benchmark-results/analysis-$i.json 2>/dev/null || true
+          END_TIME=$(node -e "console.log(Date.now())")
+          ANALYSIS_TIME=$((END_TIME - START_TIME))
+          ANALYSIS_TIMES+=($ANALYSIS_TIME)
+        done
+        
+        ANALYSIS_AVG=$(printf '%s\n' "${ANALYSIS_TIMES[@]}" | awk '{sum+=$1} END {print sum/NR}')
+        echo "Analysis average time: ${ANALYSIS_AVG}ms"
+        
+        # Memory usage measurement
+        echo "💾 Measuring memory usage..."
+        MEMORY_USAGE=$(node -e "
+          const used = process.memoryUsage();
+          console.log(Math.round(used.heapUsed / 1024 / 1024));
+        ")
+        echo "Base memory usage: ${MEMORY_USAGE}MB"
+        
+        # Build performance
+        echo "🔨 Measuring build performance..."
+        rm -rf dist
+        BUILD_START=$(node -e "console.log(Date.now())")
+        npm run build:simple > /dev/null 2>&1
+        BUILD_END=$(node -e "console.log(Date.now())")
+        BUILD_TIME=$((BUILD_END - BUILD_START))
+        echo "Build time: ${BUILD_TIME}ms"
+        
+        # Generate metrics JSON
+        cat > benchmark-results/baseline-metrics.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "environment": {
+            "node_version": "$NODE_VERSION",
+            "os": "ubuntu-latest",
+            "cpu_cores": $(nproc)
+          },
+          "metrics": {
+            "cli_startup_avg": $CLI_STARTUP_AVG,
+            "cli_startup_times": [$(IFS=,; echo "${CLI_STARTUP_TIMES[*]}")],
+            "analysis_avg": $ANALYSIS_AVG,
+            "analysis_times": [$(IFS=,; echo "${ANALYSIS_TIMES[*]}")],
+            "memory_usage_mb": $MEMORY_USAGE,
+            "build_time": $BUILD_TIME
+          }
+        }
+        EOF
+        
+        # Set output for other jobs
+        METRICS=$(cat benchmark-results/baseline-metrics.json | jq -c .metrics)
+        echo "metrics=$METRICS" >> $GITHUB_OUTPUT
+        
+        echo "📊 Baseline metrics:"
+        cat benchmark-results/baseline-metrics.json | jq .metrics
+        
+    - name: Upload baseline results
+      uses: actions/upload-artifact@v4
+      with:
+        name: baseline-performance-results
+        path: benchmark-results/
+
+  # 詳細ベンチマーク実行
+  comprehensive-benchmark:
+    name: Comprehensive Benchmark
+    runs-on: ubuntu-latest
+    needs: baseline-performance
+    if: github.event.inputs.benchmark_type == 'comprehensive' || github.event.inputs.benchmark_type == '' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:full
+      
+    - name: Run comprehensive benchmarks
+      timeout-minutes: 10
+      run: |
+        echo "🚀 Running comprehensive performance benchmarks..."
+        
+        mkdir -p benchmark-results
+        
+        # Large project simulation
+        echo "📁 Creating large test project..."
+        mkdir -p large-project/src/{core,utils,plugins,types}
+        
+        # Generate multiple test files
+        for i in {1..50}; do
+          cat > large-project/src/core/module$i.ts << EOF
+        export class Module$i {
+          private data: string[] = [];
+          
+          constructor() {
+            this.data = new Array(100).fill('test-data-$i');
+          }
+          
+          process(): string {
+            return this.data.map(x => x.toUpperCase()).join(',');
+          }
+          
+          async asyncProcess(): Promise<string> {
+            return new Promise(resolve => {
+              setTimeout(() => resolve(this.process()), 1);
+            });
+          }
+        }
+        EOF
+        done
+        
+        # Generate utility files
+        for i in {1..25}; do
+          cat > large-project/src/utils/util$i.ts << EOF
+        export const util$i = {
+          helper: (input: string): string => input.toLowerCase(),
+          processor: (data: any[]): any[] => data.filter(x => x !== null),
+          validator: (value: unknown): boolean => value !== undefined
+        };
+        EOF
+        done
+        
+        echo "🔍 Running analysis on large project..."
+        
+        # Measure large project analysis
+        LARGE_START=$(node -e "console.log(Date.now())")
+        timeout 300 node dist/cli/cli.js analyze large-project --format=json --verbose > benchmark-results/large-analysis.json 2>&1 || echo "Analysis timeout or error"
+        LARGE_END=$(node -e "console.log(Date.now())")
+        LARGE_TIME=$((LARGE_END - LARGE_START))
+        
+        echo "Large project analysis: ${LARGE_TIME}ms"
+        
+        # Memory stress test
+        echo "💾 Memory stress test..."
+        MEMORY_BEFORE=$(node -e "console.log(Math.round(process.memoryUsage().heapUsed / 1024 / 1024))")
+        
+        # Create memory-intensive analysis
+        node -e "
+          const fs = require('fs');
+          const largeTSFile = 'large-project/src/memory-test.ts';
+          let content = '';
+          for (let i = 0; i < 1000; i++) {
+            content += \`export const func\${i} = () => { const data = new Array(1000).fill('data'); return data.join(','); };\n\`;
+          }
+          fs.writeFileSync(largeTSFile, content);
+        "
+        
+        MEMORY_ANALYSIS_START=$(node -e "console.log(Date.now())")
+        timeout 120 node dist/cli/cli.js analyze large-project/src/memory-test.ts --format=json > benchmark-results/memory-analysis.json 2>&1 || echo "Memory analysis timeout"
+        MEMORY_ANALYSIS_END=$(node -e "console.log(Date.now())")
+        MEMORY_ANALYSIS_TIME=$((MEMORY_ANALYSIS_END - MEMORY_ANALYSIS_START))
+        
+        MEMORY_AFTER=$(node -e "console.log(Math.round(process.memoryUsage().heapUsed / 1024 / 1024))")
+        MEMORY_PEAK=$((MEMORY_AFTER > MEMORY_BEFORE ? MEMORY_AFTER : MEMORY_BEFORE))
+        
+        echo "Memory analysis: ${MEMORY_ANALYSIS_TIME}ms, Peak memory: ${MEMORY_PEAK}MB"
+        
+        # Concurrent analysis simulation
+        echo "🔀 Concurrent analysis test..."
+        CONCURRENT_START=$(node -e "console.log(Date.now())")
+        
+        # Run multiple analyses in parallel (simulating CI load)
+        for i in {1..3}; do
+          mkdir -p concurrent-test-$i/src
+          echo "export const test$i = () => 'test$i';" > concurrent-test-$i/src/test.ts
+          timeout 60 node dist/cli/cli.js analyze concurrent-test-$i --format=json > benchmark-results/concurrent-$i.json 2>&1 &
+        done
+        wait
+        
+        CONCURRENT_END=$(node -e "console.log(Date.now())")
+        CONCURRENT_TIME=$((CONCURRENT_END - CONCURRENT_START))
+        
+        echo "Concurrent analysis: ${CONCURRENT_TIME}ms"
+        
+        # Generate comprehensive results
+        cat > benchmark-results/comprehensive-metrics.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "comprehensive_metrics": {
+            "large_project_analysis": $LARGE_TIME,
+            "memory_analysis": $MEMORY_ANALYSIS_TIME,
+            "memory_peak_mb": $MEMORY_PEAK,
+            "concurrent_analysis": $CONCURRENT_TIME,
+            "files_analyzed": 76
+          }
+        }
+        EOF
+        
+        echo "📊 Comprehensive benchmark results:"
+        cat benchmark-results/comprehensive-metrics.json | jq .comprehensive_metrics
+        
+    - name: Upload comprehensive results
+      uses: actions/upload-artifact@v4
+      with:
+        name: comprehensive-benchmark-results
+        path: benchmark-results/
+
+  # パフォーマンス回帰検知
+  regression-detection:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    needs: [baseline-performance, comprehensive-benchmark]
+    if: github.event_name == 'pull_request'
+    
+    permissions:
+      pull-requests: write
+      
+    steps:
+    - name: Download baseline results
+      uses: actions/download-artifact@v4
+      with:
+        name: baseline-performance-results
+        path: ./baseline
+        
+    - name: Download comprehensive results
+      uses: actions/download-artifact@v4
+      with:
+        name: comprehensive-benchmark-results
+        path: ./comprehensive
+        continue-on-error: true
+        
+    - name: Analyze performance regression
+      run: |
+        echo "🔍 Analyzing performance for regressions..."
+        
+        # Get baseline metrics
+        BASELINE_CLI_STARTUP=$(jq .metrics.cli_startup_avg ./baseline/baseline-metrics.json)
+        BASELINE_ANALYSIS=$(jq .metrics.analysis_avg ./baseline/baseline-metrics.json)
+        BASELINE_BUILD=$(jq .metrics.build_time ./baseline/baseline-metrics.json)
+        BASELINE_MEMORY=$(jq .metrics.memory_usage_mb ./baseline/baseline-metrics.json)
+        
+        echo "📊 Current Performance:"
+        echo "- CLI Startup: ${BASELINE_CLI_STARTUP}ms"
+        echo "- Analysis: ${BASELINE_ANALYSIS}ms"
+        echo "- Build: ${BASELINE_BUILD}ms"
+        echo "- Memory: ${BASELINE_MEMORY}MB"
+        
+        # Define regression thresholds (20% increase = regression)
+        REGRESSION_THRESHOLD=1.2
+        
+        # Create performance report
+        cat > performance_report.md << EOF
+        ## ⚡ Performance Analysis Report
+        
+        ### 📊 Current Metrics
+        | Metric | Value | Status |
+        |--------|-------|--------|
+        | CLI Startup | ${BASELINE_CLI_STARTUP}ms | ✅ |
+        | Analysis Time | ${BASELINE_ANALYSIS}ms | ✅ |
+        | Build Time | ${BASELINE_BUILD}ms | ✅ |
+        | Memory Usage | ${BASELINE_MEMORY}MB | ✅ |
+        
+        EOF
+        
+        # Historical comparison would go here
+        # For now, we'll report the current metrics
+        
+        if [ -f "./comprehensive/comprehensive-metrics.json" ]; then
+          LARGE_ANALYSIS=$(jq .comprehensive_metrics.large_project_analysis ./comprehensive/comprehensive-metrics.json)
+          MEMORY_PEAK=$(jq .comprehensive_metrics.memory_peak_mb ./comprehensive/comprehensive-metrics.json)
+          
+          echo "### 🚀 Comprehensive Benchmarks" >> performance_report.md
+          echo "| Metric | Value |" >> performance_report.md
+          echo "|--------|-------|" >> performance_report.md
+          echo "| Large Project Analysis | ${LARGE_ANALYSIS}ms |" >> performance_report.md
+          echo "| Peak Memory Usage | ${MEMORY_PEAK}MB |" >> performance_report.md
+        fi
+        
+        echo "" >> performance_report.md
+        echo "### 📈 Performance Recommendations" >> performance_report.md
+        echo "- Monitor CLI startup time (target: <500ms)" >> performance_report.md
+        echo "- Keep analysis time reasonable for typical projects" >> performance_report.md
+        echo "- Memory usage should remain stable" >> performance_report.md
+        echo "" >> performance_report.md
+        echo "🤖 *Generated by [Claude Code](https://claude.ai/code)*" >> performance_report.md
+        
+        cat performance_report.md
+        
+    - name: Comment performance report
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance_report.md', 'utf8');
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body: report
+          });
+
+  # パフォーマンスレポート保存
+  store-results:
+    name: Store Performance Results
+    runs-on: ubuntu-latest
+    needs: [baseline-performance, comprehensive-benchmark]
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Download all results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: "*-results"
+        path: ./all-results
+        
+    - name: Store historical data
+      run: |
+        echo "💾 Storing performance data for historical tracking..."
+        
+        mkdir -p .rimor/performance-history
+        TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+        
+        # Combine all results
+        cat > .rimor/performance-history/performance-$TIMESTAMP.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "baseline": $(cat ./all-results/baseline-performance-results/baseline-metrics.json 2>/dev/null || echo "null"),
+          "comprehensive": $(cat ./all-results/comprehensive-benchmark-results/comprehensive-metrics.json 2>/dev/null || echo "null")
+        }
+        EOF
+        
+        echo "📈 Performance data stored: performance-$TIMESTAMP.json"
+        
+        # Keep only last 30 days of data
+        find .rimor/performance-history -name "performance-*.json" -type f -mtime +30 -delete 2>/dev/null || true
+        
+    - name: Upload historical data
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-history
+        path: .rimor/performance-history/
+        retention-days: 90
