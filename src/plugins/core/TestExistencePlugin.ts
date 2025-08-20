@@ -18,6 +18,8 @@ import {
 } from '../../core/types';
 import { PluginConfig } from '../../core/config';
 import { PathSecurity } from '../../utils/pathSecurity';
+import { TestQualityIntegrator } from '../../analyzers/coverage/TestQualityIntegrator';
+import { CoverageAnalyzer } from '../../analyzers/coverage/CoverageAnalyzer';
 
 export class TestExistencePlugin extends BasePlugin {
   id = 'test-existence';
@@ -26,13 +28,20 @@ export class TestExistencePlugin extends BasePlugin {
   type = 'core' as const;
   
   private config?: PluginConfig;
+  private qualityIntegrator: TestQualityIntegrator;
+  private coverageAnalyzer: CoverageAnalyzer;
+  private currentProjectContext?: ProjectContext;
 
   constructor(config?: PluginConfig) {
     super();
     this.config = config;
+    this.qualityIntegrator = new TestQualityIntegrator();
+    this.coverageAnalyzer = new CoverageAnalyzer();
   }
 
   isApplicable(context: ProjectContext): boolean {
+    // プロジェクトコンテキストを保存
+    this.currentProjectContext = context;
     // コアプラグインなので常に適用可能
     return true;
   }
@@ -83,35 +92,24 @@ export class TestExistencePlugin extends BasePlugin {
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    let completeness = 100;
-    let coverage = 100;
-
-    patterns.forEach(pattern => {
-      if (pattern.patternId === 'missing-test-file') {
-        completeness = 0;
-        coverage = 0;
-      } else if (pattern.patternId === 'empty-test-file') {
-        completeness = 50;
-        coverage = 50;
-      }
-    });
-
-    const overall = (completeness + coverage) / 2;
-
-    return {
-      overall,
-      dimensions: {
-        completeness,
-        correctness: overall,
-        maintainability: 80
-      },
-      breakdown: {
-        completeness,
-        correctness: overall
-      },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
-    };
+    // Issue #81対応: カバレッジ統合による正確な品質評価
+    try {
+      // テストファイルの情報を構築
+      const testFile: TestFile = this.buildTestFileFromPatterns(patterns);
+      
+      // カバレッジデータを同期的に取得（簡易版）
+      const coverage = this.getCoverageDataSync(testFile);
+      
+      // TestQualityIntegratorによる統合評価
+      return this.qualityIntegrator.evaluateIntegratedQuality(
+        testFile, 
+        coverage, 
+        this.currentProjectContext || null
+      );
+    } catch (error) {
+      // フォールバック: 従来の簡易評価
+      return this.fallbackEvaluation(patterns);
+    }
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
@@ -180,6 +178,127 @@ export class TestExistencePlugin extends BasePlugin {
     }
 
     return [];
+  }
+
+  /**
+   * パターンからTestFileオブジェクトを構築
+   */
+  private buildTestFileFromPatterns(patterns: DetectionResult[]): TestFile {
+    // パターンから最初のファイルパスを取得
+    const firstPattern = patterns.find(p => p.location?.file);
+    const filePath = firstPattern?.location?.file || 'unknown';
+    
+    // ファイルの内容を取得（存在する場合）
+    let content = '';
+    try {
+      if (fs.existsSync(filePath)) {
+        content = fs.readFileSync(filePath, 'utf-8');
+      }
+    } catch (error) {
+      // ファイル読み取りエラーは無視して空文字列を使用
+    }
+    
+    return {
+      path: filePath,
+      content: content
+    };
+  }
+
+  /**
+   * カバレッジデータを同期的に取得（簡易版）
+   */
+  private getCoverageDataSync(testFile: TestFile) {
+    if (!this.currentProjectContext?.rootPath) {
+      return null;
+    }
+    
+    try {
+      // 全体カバレッジを取得（個別ファイルより確実）
+      const coveragePath = path.resolve(this.currentProjectContext.rootPath, 'coverage');
+      
+      // coverage-summary.jsonの存在チェック
+      const summaryPath = path.join(coveragePath, 'coverage-summary.json');
+      if (!fs.existsSync(summaryPath)) {
+        return null;
+      }
+      
+      // 全体カバレッジデータを同期的に読み込み
+      const summaryData = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+      if (!summaryData.total) {
+        return null;
+      }
+      
+      return {
+        lines: {
+          total: summaryData.total.lines.total,
+          covered: summaryData.total.lines.covered,
+          pct: summaryData.total.lines.pct
+        },
+        statements: {
+          total: summaryData.total.statements.total,
+          covered: summaryData.total.statements.covered,
+          pct: summaryData.total.statements.pct
+        },
+        functions: {
+          total: summaryData.total.functions.total,
+          covered: summaryData.total.functions.covered,
+          pct: summaryData.total.functions.pct
+        },
+        branches: {
+          total: summaryData.total.branches.total,
+          covered: summaryData.total.branches.covered,
+          pct: summaryData.total.branches.pct
+        }
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * テストファイルパスからソースファイルパスを推測
+   */
+  private inferSourceFileFromTestFile(testFilePath: string): string | null {
+    return testFilePath
+      .replace(/\.test\.(ts|js|tsx|jsx)$/, '.$1')
+      .replace(/\.spec\.(ts|js|tsx|jsx)$/, '.$1')
+      .replace(/test\//, 'src/')
+      .replace(/__tests__\//, 'src/');
+  }
+
+  /**
+   * フォールバック評価（従来のロジック）
+   */
+  private fallbackEvaluation(patterns: DetectionResult[]): QualityScore {
+    let completeness = 100;
+    let coverage = 100;
+
+    patterns.forEach(pattern => {
+      if (pattern.patternId === 'missing-test-file') {
+        completeness = 0;
+        coverage = 0;
+      } else if (pattern.patternId === 'empty-test-file') {
+        completeness = 50;
+        coverage = 50;
+      }
+    });
+
+    const overall = (completeness + coverage) / 2;
+
+    return {
+      overall,
+      dimensions: {
+        completeness,
+        correctness: overall,
+        maintainability: 80
+      },
+      breakdown: {
+        completeness,
+        correctness: overall
+      },
+      confidence: patterns.length > 0 ? 
+        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+    };
   }
 
   /**

@@ -69,12 +69,12 @@ function bindCoreServices(): void {
     .to(PluginManagerImpl)
     .inSingletonScope()
     .onActivation((context, pluginManager) => {
-      // デフォルトプラグインを登録
-      const TestExistencePlugin = require('../plugins/testExistence').TestExistencePlugin;
+      // デフォルトプラグインを登録（Issue #81対応: 新しいカバレッジ統合プラグインを使用）
+      const TestExistencePlugin = require('../plugins/core/TestExistencePlugin').TestExistencePlugin;
       const AssertionExistsPlugin = require('../plugins/assertionExists').AssertionExistsPlugin;
       const LegacyPluginAdapter = require('../core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
       
-      // レガシープラグインをアダプター経由で登録
+      // 新しいTestExistencePluginとレガシーAssertionExistsPluginを登録
       pluginManager.register(new LegacyPluginAdapter(new TestExistencePlugin()));
       pluginManager.register(new LegacyPluginAdapter(new AssertionExistsPlugin()));
       
