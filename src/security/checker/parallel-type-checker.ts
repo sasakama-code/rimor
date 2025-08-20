@@ -149,15 +149,26 @@ export class ParallelTypeChecker extends EventEmitter {
    */
   private async analyzeDependencies(methods: TestMethod[]): Promise<Map<string, Map<string, QualifiedType<unknown>>>> {
     const dependencies = new Map<string, Map<string, QualifiedType<unknown>>>();
+    const processedMethods = new Set<string>(); // 循環参照防止
     
     // 簡易実装：メソッド間の依存関係を検出
     for (const method of methods) {
+      if (processedMethods.has(method.name)) {
+        continue; // 循環参照を防ぐ
+      }
+      
       const deps = new Map<string, QualifiedType<unknown>>();
+      processedMethods.add(method.name);
       
       // インポートや共有変数の検出
       const imports = this.extractImports(method.content || '');
       for (const imp of imports) {
-        // 既知の型情報から依存関係を解決
+        // 循環参照チェック：自分自身への参照は除外
+        if (imp === method.name || processedMethods.has(imp)) {
+          continue;
+        }
+        
+        // 既知の型情報から依存関係を解決（resultsが空の場合はスキップ）
         if (this.results.has(imp)) {
           const result = this.results.get(imp)!;
           result.inferredTypes.forEach((type, name) => {
@@ -211,7 +222,16 @@ export class ParallelTypeChecker extends EventEmitter {
       this.currentTasks.set(task.id, task);
       this.taskCallbacks.set(task.id, { resolve, reject });
       
+      let retryCount = 0;
+      const maxRetries = Math.ceil(this.config.methodTimeout / 100); // タイムアウト時間に基づく最大試行回数
+      
       const tryAssignWorker = () => {
+        // 最大試行回数に達した場合はローカル実行にフォールバック
+        if (retryCount >= maxRetries) {
+          this.executeTaskLocally(task).then(resolve).catch(reject);
+          return;
+        }
+        
         // 利用可能なワーカーを探す
         let availableWorker: Worker | null = null;
         for (const worker of this.workers) {
@@ -246,7 +266,8 @@ export class ParallelTypeChecker extends EventEmitter {
           
           availableWorker.postMessage(task);
         } else {
-          // すべてのワーカーが使用中の場合、少し待ってから再試行
+          retryCount++;
+          // すべてのワーカーが使用中の場合、少し待ってから再試行（制限付き）
           setTimeout(tryAssignWorker, 100);
         }
       };
