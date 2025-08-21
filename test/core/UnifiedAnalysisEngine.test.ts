@@ -314,6 +314,7 @@ describe('UnifiedAnalysisEngine', () => {
         method.includes('should') ||  // shouldRunPlugin
         method.includes('is') ||       // isLowQualityPattern
         method.includes('create') ||   // createQualityIssue
+        method.includes('calculate') || // calculateOverallScore
         method === 'constructor'
       );
       

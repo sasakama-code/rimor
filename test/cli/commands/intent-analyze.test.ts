@@ -283,8 +283,8 @@ describe('IntentAnalyzeCommand', () => {
         mockExtractor.extractIntent.mockResolvedValue({} as any);
         mockExtractor.analyzeActualTest.mockResolvedValue({} as any);
         
-        // evaluateRealizationWithTypeInfoのモック
-        mockExtractor.evaluateRealizationWithTypeInfo = jest.fn().mockResolvedValue({
+        // evaluateRealizationのモック
+        mockExtractor.evaluateRealization = jest.fn().mockResolvedValue({
           gaps: [],
           realizationScore: 95,
           riskLevel: 'minimal',
@@ -310,7 +310,7 @@ describe('IntentAnalyzeCommand', () => {
         await command.execute(options);
         
         // Assert
-        expect(mockExtractor.evaluateRealizationWithTypeInfo).toHaveBeenCalled();
+        expect(mockExtractor.evaluateRealization).toHaveBeenCalled();
         
         consoleLogSpy.mockRestore();
       });
