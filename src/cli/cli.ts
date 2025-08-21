@@ -125,6 +125,32 @@ export class CLI {
               describe: 'キャッシュ統計を表示',
               type: 'boolean',
               default: false
+            })
+            // v0.9.0 Implementation Truth オプション
+            .option('implementation-truth', {
+              describe: 'Implementation Truth分析を有効化（v0.9.0新機能）',
+              type: 'boolean',
+              default: false
+            })
+            .option('test-path', {
+              alias: 't',
+              describe: 'テストコードのパス（Implementation Truth用）',
+              type: 'string'
+            })
+            .option('production-code', {
+              describe: 'プロダクションコード分析モードを有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('ai-output', {
+              describe: 'AI向け最適化出力を有効化',
+              type: 'boolean',
+              default: false
+            })
+            .option('debug', {
+              describe: 'デバッグモードを有効化（詳細なエラー情報を表示）',
+              type: 'boolean',
+              default: false
             });
         },
         async (argv) => {
@@ -153,7 +179,12 @@ export class CLI {
             parallel: argv.parallel,
             cache: argv.cache,
             clearCache: argv['clear-cache'],
-            showCacheStats: argv['show-cache-stats']
+            showCacheStats: argv['show-cache-stats'],
+            // v0.9.0 Implementation Truth オプション
+            implementationTruth: argv.implementationTruth,
+            testPath: argv.testPath,
+            productionCode: argv.productionCode,
+            aiOutput: argv.aiOutput
           });
         }
       )
