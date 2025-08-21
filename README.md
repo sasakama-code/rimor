@@ -75,17 +75,36 @@ npm run build
 ### 基本コマンド
 
 ```bash
+# 基本的な分析（従来のv0.8.0モード）
+npx rimor analyze ./src
+
+# Implementation Truth分析（v0.9.0新機能）
+npx rimor analyze ./src --implementation-truth
+
 # プロダクションコードとテストコードの統合分析
+npx rimor analyze ./src --implementation-truth --test-path ./test
+
+# AI向け最適化出力
+npx rimor analyze ./src --ai-output --format=ai-json
+
+# プロダクションコード中心の分析
 npx rimor analyze ./src --production-code
 
-# AI向け出力（自動修正指示を含む）
-npx rimor analyze ./src --ai-output
+# 詳細なJSON出力
+npx rimor analyze ./src --implementation-truth --format=json --verbose
+```
 
-# セキュリティ重点分析
-npx rimor analyze ./src --security-focus
+### Implementation Truth分析の特徴（v0.9.0）
 
-# リスクレベル指定
-npx rimor analyze ./src --risk-threshold=high
+```bash
+# テスト意図とプロダクションコードの実装のギャップを検出
+npx rimor analyze ./src --implementation-truth --test-path ./test --verbose
+
+# AI向けに最適化された構造化出力
+npx rimor analyze ./src --implementation-truth --ai-output --format=ai-json
+
+# 高重要度の問題のみをフィルタ
+npx rimor analyze ./src --implementation-truth --severity critical high
 ```
 
 ### プログラマティックAPI
@@ -111,6 +130,51 @@ result.recommendations.forEach(rec => {
   console.log(`${rec.priority}: ${rec.description}`);
 });
 ```
+
+### 専用コマンド
+
+Rimor v0.9.0では、従来の`analyze`コマンドに加えて、特定用途向けの専用コマンドも提供しています：
+
+```bash
+# Implementation Truth専用分析（高精度）
+npx rimor implementation-truth-analyze ./src
+
+# テストコードも含めた包括的分析
+npx rimor implementation-truth-analyze ./src --test-path ./test
+
+# AI向け最適化でMarkdown出力
+npx rimor implementation-truth-analyze ./src --format markdown --optimize-for-ai
+
+# 高重要度以上の問題のみ抽出
+npx rimor implementation-truth-analyze ./src --min-severity high --verbose
+```
+
+**専用コマンドの利点:**
+- Implementation Truth機能に特化した高精度分析
+- より詳細な進捗表示とエラーハンドリング
+- AI向け出力の高度なカスタマイズ
+- 既存ワークフローに影響しない独立実行
+
+### 実用例とベストプラクティス
+
+```bash
+# 1. 開発時の継続的チェック
+npx rimor analyze ./src --implementation-truth --verbose
+
+# 2. CI/CDパイプラインでの品質ゲート
+npx rimor analyze ./src --implementation-truth --format=json --min-severity=high
+
+# 3. AIペアプログラミング時の品質確認
+npx rimor analyze ./src --ai-output --format=ai-json --include-code-examples
+
+# 4. レガシーコードのモダナイゼーション支援
+npx rimor implementation-truth-analyze ./legacy-src --test-path ./test --detail-level=comprehensive
+```
+
+**推奨設定:**
+- プロダクション環境では`--min-severity=high`以上を推奨
+- AI支援開発では`--ai-output`フラグを活用
+- 大規模プロジェクトでは`--parallel`オプションを使用
 
 ## 技術仕様
 
