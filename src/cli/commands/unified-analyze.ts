@@ -9,13 +9,28 @@ import * as path from 'path';
 import { UnifiedSecurityAnalysisOrchestrator } from '../../orchestrator/UnifiedSecurityAnalysisOrchestrator';
 import { OrchestratorConfig } from '../../orchestrator/types';
 import { UnifiedAnalyzeOptions, UnifiedAnalyzeResult, IUnifiedAnalyzeCommand } from './unified-analyze-types';
+import { 
+  TextReportFormatter, 
+  JsonReportFormatter, 
+  MarkdownReportFormatter, 
+  HtmlReportFormatter, 
+  IReportFormatter 
+} from './formatters/ReportFormatter';
 
 export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
   private readonly orchestrator: UnifiedSecurityAnalysisOrchestrator;
+  private readonly formatters: Map<string, IReportFormatter>;
 
   constructor(orchestrator?: UnifiedSecurityAnalysisOrchestrator) {
     // 依存関係注入（DIP: Dependency Inversion Principle）
     this.orchestrator = orchestrator || new UnifiedSecurityAnalysisOrchestrator();
+    
+    // Strategy Pattern: フォーマッター戦略の初期化
+    this.formatters = new Map<string, IReportFormatter>();
+    this.formatters.set('text', new TextReportFormatter());
+    this.formatters.set('json', new JsonReportFormatter());
+    this.formatters.set('markdown', new MarkdownReportFormatter());
+    this.formatters.set('html', new HtmlReportFormatter());
   }
 
   /**
@@ -93,129 +108,66 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
 
   /**
    * 結果フォーマット
-   * Strategy Patternの適用を想定（現在は最小実装）
+   * Strategy Pattern: フォーマッター戦略による処理の委譲
    */
   private formatResult(analysisResult: any, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
     const format = options.format || 'text';
 
-    switch (format) {
-      case 'json':
-        return {
-          format: 'json',
-          content: JSON.stringify(analysisResult, null, 2)
-        };
-
-      case 'markdown':
-        return {
-          format: 'markdown',
-          content: this.generateMarkdownReport(analysisResult, options)
-        };
-
-      case 'html':
-        return {
-          format: 'html',
-          content: this.generateHtmlReport(analysisResult, options)
-        };
-
-      case 'text':
-      default:
-        return {
-          format: 'text',
-          content: this.generateTextReport(analysisResult, options),
-          verbose: options.verbose
-        };
+    // Strategy Pattern: フォーマッター戦略の選択
+    if (format === 'ai-json') {
+      // AI-JSON形式は独自実装（将来的にはStrategy化可能）
+      return {
+        format: 'ai-json',
+        content: this.generateAIJsonReport(analysisResult, options),
+        metadata: {
+          executionTime: 0, // 後でexecuteメソッドで上書きされる
+          analyzedPath: options.path,
+          timestamp: new Date().toISOString()
+        }
+      };
     }
+
+    const formatter = this.formatters.get(format);
+    if (!formatter) {
+      throw new Error(`サポートされていないフォーマット: ${format}`);
+    }
+
+    // Strategy Pattern: 戦略への処理委譲
+    return formatter.format(analysisResult, options);
   }
 
-  /**
-   * テキストレポート生成
-   * YAGNI原則：現時点では最小限の実装
-   */
-  private generateTextReport(analysisResult: any, options: UnifiedAnalyzeOptions): string {
-    let content = '統合セキュリティ分析レポート\n';
-    content += '='.repeat(50) + '\n\n';
-
-    // 基本統計
-    const report = analysisResult.unifiedReport;
-    content += `総合グレード: ${report.summary.overallGrade}\n`;
-    content += `総合スコア: ${report.overallRiskScore}/100\n`;
-    content += `検出された問題: ${report.summary.totalIssues}件\n\n`;
-
-    // 詳細情報（verboseオプション）
-    if (options.verbose) {
-      content += '詳細情報:\n';
-      content += `- 重大な問題: ${report.summary.criticalIssues}件\n`;
-      content += `- 高リスク問題: ${report.summary.highIssues}件\n`;
-      content += `- 中リスク問題: ${report.summary.mediumIssues}件\n`;
-      content += `- 低リスク問題: ${report.summary.lowIssues}件\n\n`;
-    }
-
-    // 推奨事項（オプション）
-    if (options.includeRecommendations) {
-      content += '推奨事項:\n';
-      content += '- セキュリティ設定の見直し\n';
-      content += '- テストカバレッジの向上\n';
-      content += '- 定期的な監査の実施\n';
-    }
-
-    return content;
-  }
 
   /**
-   * Markdownレポート生成
-   * YAGNI原則：現時点では最小限の実装
+   * AI JSON レポート生成
+   * AI向け最適化された構造化データ
    */
-  private generateMarkdownReport(analysisResult: any, options: UnifiedAnalyzeOptions): string {
-    let content = '# 統合セキュリティ分析レポート\n\n';
-    
-    const report = analysisResult.unifiedReport;
-    content += `**総合グレード**: ${report.summary.overallGrade}\n`;
-    content += `**総合スコア**: ${report.overallRiskScore}/100\n`;
-    content += `**検出された問題**: ${report.summary.totalIssues}件\n\n`;
+  private generateAIJsonReport(analysisResult: any, options: UnifiedAnalyzeOptions): string {
+    // AI向け最適化されたデータ構造
+    const aiOptimizedData = {
+      summary: {
+        overallGrade: analysisResult.unifiedReport.summary.overallGrade,
+        overallScore: analysisResult.unifiedReport.overallRiskScore,
+        totalIssues: analysisResult.unifiedReport.summary.totalIssues,
+        timestamp: new Date().toISOString()
+      },
+      security: {
+        vulnerabilities: analysisResult.taintAnalysis.summary.totalVulnerabilities,
+        riskLevel: analysisResult.nistEvaluation.summary.riskLevel
+      },
+      quality: {
+        testIntents: analysisResult.intentAnalysis.summary.totalTests,
+        gaps: analysisResult.gapAnalysis.summary.totalGaps,
+        // Issue #83: カバレッジ統合データを含める
+        coverageData: analysisResult.unifiedReport.qualityData || null
+      },
+      metadata: {
+        analyzedPath: options.path,
+        format: 'ai-json',
+        rimorVersion: '0.9.0'
+      }
+    };
 
-    if (options.includeRecommendations) {
-      content += '## 推奨事項\n\n';
-      content += '- セキュリティ設定の見直し\n';
-      content += '- テストカバレッジの向上\n';
-      content += '- 定期的な監査の実施\n';
-    }
-
-    return content;
-  }
-
-  /**
-   * HTMLレポート生成
-   * YAGNI原則：現時点では最小限の実装
-   */
-  private generateHtmlReport(analysisResult: any, options: UnifiedAnalyzeOptions): string {
-    const report = analysisResult.unifiedReport;
-    
-    let content = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>統合セキュリティ分析レポート</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .header { color: #333; border-bottom: 2px solid #ddd; }
-        .score { font-size: 1.5em; color: #007cba; }
-        .grade { font-size: 2em; font-weight: bold; color: #d32f2f; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>統合セキュリティ分析レポート</h1>
-    </div>
-    <div class="summary">
-        <p class="grade">総合グレード: ${report.summary.overallGrade}</p>
-        <p class="score">総合スコア: ${report.overallRiskScore}/100</p>
-        <p>検出された問題: ${report.summary.totalIssues}件</p>
-    </div>
-</body>
-</html>`;
-    
-    return content;
+    return JSON.stringify(aiOptimizedData, null, 2);
   }
 
   /**
@@ -248,6 +200,7 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
     if (!path.extname(fileName) && format) {
       const extensions: Record<string, string> = {
         'json': '.json',
+        'ai-json': '.json',
         'markdown': '.md',
         'html': '.html',
         'text': '.txt'

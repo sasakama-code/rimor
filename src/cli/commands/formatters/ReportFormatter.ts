@@ -23,7 +23,12 @@ export class TextReportFormatter implements IReportFormatter {
     return {
       format: 'text',
       content: this.generateTextContent(analysisResult, options),
-      verbose: options.verbose
+      verbose: options.verbose,
+      metadata: {
+        executionTime: 0,
+        analyzedPath: options.path,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -70,7 +75,12 @@ export class JsonReportFormatter implements IReportFormatter {
   format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
     return {
       format: 'json',
-      content: JSON.stringify(analysisResult, null, 2)
+      content: JSON.stringify(analysisResult, null, 2),
+      metadata: {
+        executionTime: 0,
+        analyzedPath: options.path,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -86,7 +96,12 @@ export class MarkdownReportFormatter implements IReportFormatter {
   format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
     return {
       format: 'markdown',
-      content: this.generateMarkdownContent(analysisResult, options)
+      content: this.generateMarkdownContent(analysisResult, options),
+      metadata: {
+        executionTime: 0,
+        analyzedPath: options.path,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -120,7 +135,12 @@ export class HtmlReportFormatter implements IReportFormatter {
   format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
     return {
       format: 'html',
-      content: this.generateHtmlContent(analysisResult, options)
+      content: this.generateHtmlContent(analysisResult, options),
+      metadata: {
+        executionTime: 0,
+        analyzedPath: options.path,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 

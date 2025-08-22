@@ -5,10 +5,14 @@
 
 export interface UnifiedAnalyzeOptions {
   path: string;
-  format?: 'text' | 'json' | 'markdown' | 'html';
+  format?: 'text' | 'json' | 'markdown' | 'html' | 'ai-json';
   verbose?: boolean;
   output?: string;
   includeRecommendations?: boolean;
+  
+  // 従来の互換性オプション
+  includeDetails?: boolean;
+  cache?: boolean;
   
   // 統合分析設定
   enableTaintAnalysis?: boolean;
@@ -25,7 +29,7 @@ export interface UnifiedAnalyzeResult {
   format: string;
   content: string;
   verbose?: boolean;
-  metadata?: {
+  metadata: {
     executionTime: number;
     analyzedPath: string;
     timestamp: string;
