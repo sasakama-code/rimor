@@ -649,16 +649,22 @@ export class TaintAnalysisSystem {
    * 汚染パターンの検出（偽陽性削減最適化版）
    * @param source ソースコード
    * @param fileName ファイル名
+   * @param options 分析オプション
    * @returns 検出された問題のリスト
    */
-  private detectTaintPatterns(source: string, fileName: string): TaintIssue[] {
+  private detectTaintPatterns(source: string, fileName: string, options?: { benchmarkMode?: boolean }): TaintIssue[] {
     const issues: TaintIssue[] = [];
     const lines = source.split('\n');
     
     // テストファイルやサンプルコードの判定（メインフィルタリング）
-    if (this.shouldSkipEntireFile(fileName, source)) {
+    if (this.shouldSkipEntireFile(fileName, source, options)) {
+      console.log(`📋 [detectTaintPatterns] スキップ: ${fileName}`);
       return issues; // テストファイルは全部スキップ
     }
+    
+    console.log(`🔍 [detectTaintPatterns] 分析開始: ${fileName} (${lines.length}行)`);
+    
+    let detectedCount = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -1375,7 +1381,32 @@ export class TaintAnalysisSystem {
   /**
    * ファイル全体をスキップすべきかの判定
    */
-  private shouldSkipEntireFile(fileName: string, source: string): boolean {
+  private shouldSkipEntireFile(fileName: string, source: string, options?: { benchmarkMode?: boolean }): boolean {
+    // ベンチマークモードの場合は制限を緩和
+    const benchmarkMode = options?.benchmarkMode || false;
+    
+    if (benchmarkMode) {
+      console.log(`🔍 [ベンチマークモード] ファイル判定: ${fileName}`);
+      
+      // ベンチマークモードでも確実にスキップすべきファイル
+      const isDefinitelySkippable = /\.(md|txt|json|xml|yml|yaml|config|example|lock|log)$/i.test(fileName) ||
+                                  /(README|CHANGELOG|LICENSE|CONTRIBUTING|package-lock|yarn\.lock)/i.test(fileName) ||
+                                  fileName.includes('node_modules') ||
+                                  fileName.includes('.git/') ||
+                                  fileName.includes('dist/') ||
+                                  fileName.includes('build/');
+      
+      if (isDefinitelySkippable) {
+        console.log(`⚠️ [ベンチマークモード] スキップ: ${fileName} (確実にスキップ対象)`);
+        return true;
+      }
+      
+      // ベンチマークモードでは、テストファイルやサンプルコードも分析対象にする
+      console.log(`✅ [ベンチマークモード] 分析対象: ${fileName}`);
+      return false;
+    }
+    
+    // 通常モード（従来の動作）
     // テストファイルの判定
     const isTestFile = /(test|spec|__tests__|testing|\.spec\.|_test\.|test-|spec-)/i.test(fileName) ||
                       /(jest|mocha|jasmine|vitest|cypress|karma|ava|qunit|tape)/i.test(source) ||
@@ -1395,7 +1426,15 @@ export class TaintAnalysisSystem {
     const isDocFile = /\.(md|txt|json|xml|yml|yaml|config|example|lock|log)$/i.test(fileName) ||
                      /(README|CHANGELOG|LICENSE|CONTRIBUTING)/i.test(fileName);
     
-    return isTestFile || isSampleCode || isDocFile;
+    const shouldSkip = isTestFile || isSampleCode || isDocFile;
+    
+    if (shouldSkip) {
+      console.log(`⚠️ [通常モード] スキップ: ${fileName} (テストファイル: ${isTestFile}, サンプル: ${isSampleCode}, ドキュメント: ${isDocFile})`);
+    } else {
+      console.log(`✅ [通常モード] 分析対象: ${fileName}`);
+    }
+    
+    return shouldSkip;
   }
   
   /**
