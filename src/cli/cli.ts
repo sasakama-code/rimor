@@ -311,7 +311,7 @@ export class CLI {
       )
       .command(
         'ai-output [path]',
-        'AI向け出力形式で分析結果を生成',
+        'AI向け出力形式で分析結果を生成（非推奨: analyze --format=ai-jsonを使用）',
         (yargs) => {
           return yargs
             .positional('path', {
@@ -372,6 +372,10 @@ export class CLI {
             });
         },
         async (argv) => {
+          console.log('⚠️  ai-outputコマンドは非推奨です。以下のコマンドを使用してください:');
+          console.log(`   rimor analyze ${argv.path || '.'} --format=ai-json`);
+          console.log('');
+          
           const aiOutputCommand = new AIOutputCommand();
           await aiOutputCommand.execute({
             path: argv.path || '.',
@@ -391,7 +395,7 @@ export class CLI {
       .command(createTaintAnalysisCommand())
       .command(
         'intent-analyze [path]',
-        'テスト意図実現度を監査します（v0.9.0新機能）',
+        'テスト意図実現度を監査（推奨: analyze --enable-intent-extractionを使用）',
         (yargs) => {
           return yargs
             .positional('path', {
@@ -445,6 +449,10 @@ export class CLI {
             });
         },
         async (argv) => {
+          console.log('💡 推奨: 統合分析でIntent抽出を実行してください:');
+          console.log(`   rimor analyze ${argv.path || '.'} --enable-intent-extraction`);
+          console.log('');
+          
           const intentAnalyzeCommand = new IntentAnalyzeCommand();
           await intentAnalyzeCommand.execute({
             path: argv.path || '.',
@@ -462,7 +470,7 @@ export class CLI {
       )
       .command(
         'domain-analyze [path]',
-        '統計的ドメイン解析を実行（v0.9.0新機能）',
+        'ドメイン解析（推奨: analyze --enable-gap-detectionに統合済み）',
         (yargs) => {
           return yargs
             .positional('path', {
@@ -515,6 +523,10 @@ export class CLI {
             });
         },
         async (argv) => {
+          console.log('💡 推奨: 統合分析でドメイン解析を実行してください:');
+          console.log(`   rimor analyze ${argv.path || '.'} --enable-gap-detection`);
+          console.log('');
+          
           const domainAnalyzeCommand = new DomainAnalyzeCommand();
           await domainAnalyzeCommand.execute({
             path: argv.path || '.',
@@ -537,9 +549,13 @@ export class CLI {
       )
       .command(
         'unified-analyze [path]',
-        '統合セキュリティ分析（TaintTyper + Intent + Gap + NIST評価・後方互換性）',
+        '統合セキュリティ分析（非推奨: analyzeコマンドを使用してください）',
         (yargs) => this.createUnifiedAnalyzeOptions(yargs),
-        (argv) => this.handleUnifiedAnalyze(argv)
+        (argv) => {
+          console.log('⚠️  unified-analyzeコマンドは非推奨です。analyzeコマンドを使用してください。');
+          console.log('例: rimor analyze ' + (argv.path || '.'));
+          return this.handleUnifiedAnalyze(argv);
+        }
       )
       .command(
         'bootstrap [subcommand]',
@@ -591,34 +607,7 @@ export class CLI {
                 await BootstrapCommand.executeStatus();
               }
             )
-            .command(
-              'validate',
-              'セットアップの検証',
-              (yargs) => yargs,
-              async () => {
-                const { BootstrapCommand } = await import('./commands/bootstrap');
-                await BootstrapCommand.executeValidate();
-              }
-            )
-            .command(
-              'clean',
-              'セットアップのクリーンアップ',
-              (yargs) => {
-                return yargs
-                  .option('confirm', {
-                    describe: '削除を確認する',
-                    type: 'boolean',
-                    default: false
-                  });
-              },
-              async (argv) => {
-                const { BootstrapCommand } = await import('./commands/bootstrap');
-                await BootstrapCommand.executeClean({
-                  confirm: argv.confirm
-                });
-              }
-            )
-            .demandCommand(1, 'サブコマンドを指定してください: init, status, validate, clean');
+            .demandCommand(1, 'サブコマンドを指定してください: init, status');
         }
       )
       .command(
@@ -763,118 +752,8 @@ export class CLI {
                 }
               }
             )
-            .command(
-              'trend',
-              '性能トレンドの分析',
-              (yargs) => {
-                return yargs
-                  .option('days', {
-                    alias: 'd',
-                    describe: '分析期間（日数）',
-                    type: 'number',
-                    default: 30
-                  });
-              },
-              async (argv) => {
-                const { BenchmarkRunner } = await import('../security/benchmarks');
-                console.log(`📈 過去${argv.days}日間の性能トレンド分析`);
-
-                try {
-                  const runner = new BenchmarkRunner();
-                  const result = await runner.analyzePerformanceTrends(argv.days);
-                  
-                  console.log(`\n📈 トレンド分析結果:`);
-                  console.log(`   トレンド: ${getTrendEmoji(result.trend)} ${result.trend}`);
-                  console.log(`   平均スコア: ${result.averageScore.toFixed(1)}`);
-                  console.log(`   スコア変動: ${result.scoreVariation.toFixed(1)}`);
-                  
-                  if (result.improvements.length > 0) {
-                    console.log(`\n✅ 改善項目:`);
-                    result.improvements.forEach(item => console.log(`   • ${item}`));
-                  }
-                  
-                  if (result.degradations.length > 0) {
-                    console.log(`\n⚠️  劣化項目:`);
-                    result.degradations.forEach(item => console.log(`   • ${item}`));
-                  }
-                  
-                  if (result.recommendations.length > 0) {
-                    console.log(`\n💡 推奨事項:`);
-                    result.recommendations.forEach(rec => console.log(`   • ${rec}`));
-                  }
-
-                } catch (error) {
-                  console.error('❌ トレンド分析エラー:', error);
-                  process.exit(1);
-                }
-              }
-            )
-            .command(
-              'measure',
-              '単体性能測定',
-              (yargs) => {
-                return yargs
-                  .option('files', {
-                    alias: 'f',
-                    describe: 'テストファイル数',
-                    type: 'number',
-                    default: 100
-                  })
-                  .option('parallel', {
-                    alias: 'p',
-                    describe: '並列数',
-                    type: 'number',
-                    default: 0
-                  })
-                  .option('cache', {
-                    alias: 'c',
-                    describe: 'キャッシュ有効',
-                    type: 'boolean',
-                    default: false
-                  });
-              },
-              async (argv) => {
-                const { PerformanceBenchmark } = await import('../security/benchmarks');
-                console.log('📊 単体性能測定実行');
-
-                try {
-                  const benchmark = new PerformanceBenchmark();
-                  const fileCount = argv.files;
-                  const parallelism = argv.parallel || os.cpus().length;
-                  
-                  console.log(`設定: ${fileCount}ファイル, 並列度${parallelism}, キャッシュ${argv.cache ? '有効' : '無効'}`);
-
-                  // テストケース生成
-                  const testCases = Array.from({ length: fileCount }, (_, i) => ({
-                    name: `measure-test-${i}`,
-                    file: `measure-test-${i}.test.ts`,
-                    content: generateMeasureTestContent(),
-                    metadata: {
-                      framework: 'jest',
-                      language: 'typescript',
-                      lastModified: new Date()
-                    }
-                  }));
-
-                  // 5ms/file目標検証
-                  const target5msAchieved = await benchmark.verify5msPerFileTarget(testCases);
-                  
-                  // 速度向上検証
-                  const speedupRatio = await benchmark.verifySpeedupTarget(testCases);
-                  
-                  console.log('\n📊 測定結果:');
-                  console.log(`   5ms/file目標: ${target5msAchieved ? '✅ 達成' : '❌ 未達成'}`);
-                  console.log(`   速度向上率: ${speedupRatio.toFixed(1)}x`);
-                  console.log(`   3-20x目標: ${speedupRatio >= 3 && speedupRatio <= 20 ? '✅ 達成' : '❌ 未達成'}`);
-
-                } catch (error) {
-                  console.error('❌ 単体性能測定エラー:', error);
-                  process.exit(1);
-                }
-              }
-            )
             .command(createBenchmarkExternalCommand())
-            .demandCommand(1, 'サブコマンドを指定してください: run, quick, verify, trend, measure, external');
+            .demandCommand(1, 'サブコマンドを指定してください: run, quick, external');
         }
       )
       .command(
