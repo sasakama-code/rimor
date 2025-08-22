@@ -1117,15 +1117,15 @@ export class ExternalProjectBenchmarkRunner {
       
       if (testPath) {
         if (this.config.verbose) {
-          console.log(`🎯 Analyzing test directory: ${testPath}`);
+          console.log(`🎯 Analyzing test directory: ${testPath} (ベンチマークモード)`);
         }
-        unifiedAnalysisResult = await this.unifiedAnalysisOrchestrator.analyzeTestDirectory(testPath);
+        unifiedAnalysisResult = await this.unifiedAnalysisOrchestrator.analyzeTestDirectory(testPath, { benchmarkMode: true });
       } else {
         if (this.config.verbose) {
-          console.log(`⚠️ No test directory found, analyzing entire project: ${projectInfo.path}`);
+          console.log(`⚠️ No test directory found, analyzing entire project: ${projectInfo.path} (ベンチマークモード)`);
         }
         // フォールバック: テストディレクトリが見つからない場合は全体を分析
-        unifiedAnalysisResult = await this.unifiedAnalysisOrchestrator.analyzeTestDirectory(projectInfo.path);
+        unifiedAnalysisResult = await this.unifiedAnalysisOrchestrator.analyzeTestDirectory(projectInfo.path, { benchmarkMode: true });
       }
       
       // 従来の基本分析も実行（パフォーマンス測定のため）

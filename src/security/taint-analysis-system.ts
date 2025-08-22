@@ -458,10 +458,16 @@ export class TaintAnalysisSystem {
     let totalFiles = 0;
 
     try {
+      console.log(`🚀 [analyzeProject] プロジェクト分析開始: ${projectPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
+      
       // ファイルスキャン
       const scanResult = await fileScanner.scanProject(projectPath);
       const allFiles = [...scanResult.sourceFiles, ...scanResult.testFiles];
       totalFiles = allFiles.length;
+
+      console.log(`📁 [analyzeProject] 検出されたファイル: 総計${totalFiles}件`);
+      console.log(`   - ソースファイル: ${scanResult.sourceFiles.length}件`);
+      console.log(`   - テストファイル: ${scanResult.testFiles.length}件`);
 
       // 各ファイルを分析
       for (const filePath of allFiles) {
@@ -469,7 +475,7 @@ export class TaintAnalysisSystem {
           const fileContent = require('fs').readFileSync(filePath, 'utf-8');
           
           // ファイルごとの汚染分析実行
-          const analysisResult = await this.analyze(fileContent, { fileName: filePath });
+          const analysisResult = await this.analyze(fileContent, { fileName: filePath, benchmarkMode: options?.benchmarkMode });
           
           // 結果の集約
           if (analysisResult.issues.length > 0) {
@@ -498,6 +504,23 @@ export class TaintAnalysisSystem {
         }
       }
 
+      const analysisTime = performance.now() - startTime;
+      
+      console.log(`✅ [analyzeProject] プロジェクト分析完了: ${projectPath}`);
+      console.log(`📊 [analyzeProject] 分析結果統計:`);
+      console.log(`   - 分析したファイル: ${analyzedFiles}/${totalFiles}件`);
+      console.log(`   - 検出した問題: ${totalIssues}件`);
+      console.log(`   - 重要ファイル: ${criticalFiles.length}件`);
+      console.log(`   - 実行時間: ${(analysisTime / 1000).toFixed(2)}秒`);
+      
+      if (totalIssues > 0) {
+        const issueTypesArray = Array.from(issuesByType.entries());
+        console.log(`🔍 [analyzeProject] 問題タイプ別集計:`);
+        issueTypesArray.forEach(([type, count]) => {
+          console.log(`   - ${type}: ${count}件`);
+        });
+      }
+
       return {
         totalFiles,
         analyzedFiles,
@@ -509,7 +532,7 @@ export class TaintAnalysisSystem {
           inferred: Math.floor(analyzedFiles * 0.3),  // 推定値: 30%が推論
           total: analyzedFiles
         },
-        analysisTime: performance.now() - startTime,
+        analysisTime,
         detectedTaints: this.generateTaintSummary(issuesByType, totalIssues)
       };
 

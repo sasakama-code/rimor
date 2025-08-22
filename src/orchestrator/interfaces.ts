@@ -15,7 +15,7 @@ import {
  * Strategy Patternによる分析手法の抽象化
  */
 export interface ITaintAnalysisStrategy {
-  analyze(targetPath: string): Promise<TaintAnalysisResult>;
+  analyze(targetPath: string, options?: { benchmarkMode?: boolean }): Promise<TaintAnalysisResult>;
 }
 
 /**

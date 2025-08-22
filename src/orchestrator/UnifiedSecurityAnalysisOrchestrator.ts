@@ -72,18 +72,20 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * テストディレクトリの統合分析を実行
    * 単一責任の原則に従い、各ステップを個別メソッドに分離
    */
-  async analyzeTestDirectory(targetPath: string): Promise<UnifiedAnalysisResult> {
+  async analyzeTestDirectory(targetPath: string, options?: { benchmarkMode?: boolean }): Promise<UnifiedAnalysisResult> {
     // 入力値検証（責務を分離）
     this.validator.validatePath(targetPath);
 
     const startTime = Date.now();
 
     try {
+      console.log(`🚀 [UnifiedSecurityAnalysisOrchestrator] 統合分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
+      
       // 分析戦略の取得（Factory Pattern）
       const strategies = this.createAnalysisStrategies();
       
       // 各分析ステップの実行（Strategy Pattern）
-      const analysisResults = await this.executeAnalysisSequence(strategies, targetPath);
+      const analysisResults = await this.executeAnalysisSequence(strategies, targetPath, options);
 
       // Issue #83: カバレッジ統合による品質評価
       const qualityResults = await this.executeQualityAnalysis(targetPath);
@@ -138,10 +140,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
    */
   private async executeAnalysisSequence(
     strategies: ReturnType<typeof this.createAnalysisStrategies>,
-    targetPath: string
+    targetPath: string,
+    options?: { benchmarkMode?: boolean }
   ) {
     // 1. TaintTyper実行
-    const taintResult = await this.executeTaintAnalysis(strategies.taintStrategy, targetPath);
+    const taintResult = await this.executeTaintAnalysis(strategies.taintStrategy, targetPath, options);
 
     // 2. 意図抽出実行（TaintTyperの結果を活用）
     const intentResult = await this.executeIntentExtraction(strategies.intentStrategy, targetPath, taintResult);
@@ -279,9 +282,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
    */
   private async executeTaintAnalysis(
     strategy: ITaintAnalysisStrategy,
-    targetPath: string
+    targetPath: string,
+    options?: { benchmarkMode?: boolean }
   ) {
     if (!this.config.enableTaintAnalysis) {
+      console.log(`⚠️ [executeTaintAnalysis] TaintAnalysisは無効になっています`);
       // 分析が無効な場合のデフォルト結果
       return {
         vulnerabilities: [],
@@ -294,7 +299,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
       };
     }
     
-    return await strategy.analyze(targetPath);
+    console.log(`🔍 [executeTaintAnalysis] TaintTyper実行中: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
+    const result = await strategy.analyze(targetPath, options);
+    console.log(`✅ [executeTaintAnalysis] TaintTyper完了: 検出数=${result.vulnerabilities?.length || 0}`);
+    
+    return result;
   }
 
   /**

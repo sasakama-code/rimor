@@ -34,6 +34,8 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
   private taintSystem: TaintAnalysisSystem;
 
   constructor(config?: any) {
+    console.log('🔧 [RealTaintAnalysisStrategy] 初期化中...');
+    
     // TaintAnalysisSystemの設定に基づいて初期化
     const taintConfig = {
       inference: {
@@ -52,16 +54,33 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
         exportJAIF: false,
         generateStubs: false,
         gradualMigration: true
+      },
+      // AST解析を明示的に有効化
+      ast: {
+        enableASTAnalysis: true,
+        enableDataFlowTracking: true,
+        enableScopeAnalysis: true,
+        maxFlowDepth: 50,
+        typescriptOnly: false  // JSファイルも対象にする
       }
     };
 
+    console.log('🔧 [RealTaintAnalysisStrategy] TaintAnalysisSystem設定:', {
+      enableASTAnalysis: taintConfig.ast.enableASTAnalysis,
+      enableDataFlowTracking: taintConfig.ast.enableDataFlowTracking,
+      typescriptOnly: taintConfig.ast.typescriptOnly
+    });
+
     this.taintSystem = new TaintAnalysisSystem(taintConfig);
+    console.log('✅ [RealTaintAnalysisStrategy] 初期化完了');
   }
 
-  async analyze(targetPath: string): Promise<TaintAnalysisResult> {
+  async analyze(targetPath: string, options?: { benchmarkMode?: boolean }): Promise<TaintAnalysisResult> {
     try {
-      // TaintAnalysisSystemを使用した実際の汚染分析
-      const analysisResult = await this.taintSystem.analyzeProject(targetPath);
+      console.log(`🔍 [RealTaintAnalysisStrategy] 分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
+      
+      // TaintAnalysisSystemを使用した実際の汚染分析（ベンチマークモード対応）
+      const analysisResult = await this.taintSystem.analyzeProject(targetPath, { benchmarkMode: options?.benchmarkMode });
       
       // TaintAnalysisSystemの結果をTaintAnalysisResult形式に変換
       return this.convertToTaintAnalysisResult(analysisResult);
