@@ -4,6 +4,10 @@
  * 外部TypeScriptプロジェクトベンチマーク実行スクリプト
  * issue #84: TypeScript有名プロジェクトを用いた性能ベンチマーク実装
  * 
+ * ⚠️  [非推奨警告] このスクリプトは非推奨です。
+ * 代わりに以下のCLIコマンドを使用してください:
+ *   rimor benchmark external
+ * 
  * 使用方法:
  * npm run benchmark:external
  * npm run benchmark:external -- --tier=1
@@ -18,6 +22,12 @@ import * as path from 'path';
 import chalk from 'chalk';
 import { ExternalProjectBenchmarkRunner } from '../src/benchmark/ExternalProjectBenchmarkRunner';
 import { BenchmarkTargets } from '../src/benchmark/config/benchmark-targets';
+
+// 非推奨警告を表示
+console.warn(chalk.yellow('⚠️  [非推奨警告] このスクリプトは非推奨です。'));
+console.warn(chalk.yellow('代わりに以下のCLIコマンドを使用してください:'));
+console.warn(chalk.green('  rimor benchmark external'));
+console.warn(chalk.gray('詳細: rimor benchmark external --help\n'));
 
 /**
  * CLI引数の定義
