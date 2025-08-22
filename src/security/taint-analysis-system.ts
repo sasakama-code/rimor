@@ -298,6 +298,7 @@ export class TaintAnalysisSystem {
   async analyzeCode(code: string, options?: {
     fileName?: string;
     incremental?: boolean;
+    benchmarkMode?: boolean;
   }): Promise<TaintAnalysisResult> {
     const startTime = performance.now();
     const result: TaintAnalysisResult = {
@@ -329,7 +330,7 @@ export class TaintAnalysisSystem {
       result.issues.push(...uniqueIssues);
 
       // Phase 2.1: OWASP静的パターン検出（新規統合）
-      const owaspPatternIssues = this.detectTaintPatterns(code, fileName);
+      const owaspPatternIssues = this.detectTaintPatterns(code, fileName, { benchmarkMode: options?.benchmarkMode });
       result.issues.push(...owaspPatternIssues);
 
       // Phase 2.5: マルチステップ攻撃検出（一時無効化）
@@ -399,7 +400,7 @@ export class TaintAnalysisSystem {
    * @param options 分析オプション
    * @returns 分析結果
    */
-  async analyze(source: string, options?: { fileName?: string }): Promise<TaintAnalysisResult> {
+  async analyze(source: string, options?: { fileName?: string; benchmarkMode?: boolean }): Promise<TaintAnalysisResult> {
     const startTime = performance.now();
     const result: TaintAnalysisResult = {
       issues: [],
@@ -414,7 +415,7 @@ export class TaintAnalysisSystem {
 
     try {
       // 基本的な汚染パターンを検出
-      const issues = this.detectTaintPatterns(source, options?.fileName || 'unknown');
+      const issues = this.detectTaintPatterns(source, options?.fileName || 'unknown', { benchmarkMode: options?.benchmarkMode });
       result.issues = issues;
 
       // 統計情報の更新
@@ -442,7 +443,7 @@ export class TaintAnalysisSystem {
    * プロジェクト全体の解析
    * 実際のファイル探索と分析を実行
    */
-  async analyzeProject(projectPath: string): Promise<ProjectAnalysisResult> {
+  async analyzeProject(projectPath: string, options?: { benchmarkMode?: boolean }): Promise<ProjectAnalysisResult> {
     const { FileScanner } = await import('../utils/file-scanner');
     const fileScanner = new FileScanner({
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -821,6 +822,17 @@ export class TaintAnalysisSystem {
     // 重複除去: 既存のissuesと同じ位置・タイプの問題を排除
     const deduplicatedMultilineIssues = this.deduplicateWithExistingIssues(multilineIssues, issues);
     issues.push(...deduplicatedMultilineIssues);
+
+    console.log(`✅ [detectTaintPatterns] 完了: ${fileName} - ${issues.length}件の問題を検出`);
+    
+    // 脆弱性タイプ別の集計をログ出力
+    if (issues.length > 0) {
+      const typeCounts = issues.reduce((counts, issue) => {
+        counts[issue.type] = (counts[issue.type] || 0) + 1;
+        return counts;
+      }, {} as Record<string, number>);
+      console.log(`📊 [detectTaintPatterns] タイプ別集計: ${JSON.stringify(typeCounts)}`);
+    }
 
     return issues;
   }
