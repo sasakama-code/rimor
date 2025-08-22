@@ -19,25 +19,34 @@ import {
   INistEvaluationStrategy,
   IInputValidator
 } from './interfaces';
-import { MockAnalysisStrategyFactory } from './strategies/MockAnalysisStrategies';
+import { RealAnalysisStrategyFactory } from './strategies/RealAnalysisStrategies';
 import { InputValidator } from './validators/InputValidator';
+import { UnifiedPluginManager } from '../core/UnifiedPluginManager';
+import { TestQualityIntegrator } from '../analyzers/coverage/TestQualityIntegrator';
+import { ProjectContext, TestFile } from '../core/types';
 
 export class UnifiedSecurityAnalysisOrchestrator {
   private readonly config: OrchestratorConfig;
   private readonly strategyFactory: IAnalysisStrategyFactory;
   private readonly validator: IInputValidator;
+  private readonly unifiedPluginManager: UnifiedPluginManager;
+  private readonly testQualityIntegrator: TestQualityIntegrator;
 
   constructor(
     config?: Partial<OrchestratorConfig>,
     strategyFactory?: IAnalysisStrategyFactory,
-    validator?: IInputValidator
+    validator?: IInputValidator,
+    unifiedPluginManager?: UnifiedPluginManager,
+    testQualityIntegrator?: TestQualityIntegrator
   ) {
-    // 依存関係注入による設計（DIP: Dependency Inversion Principle）
-    this.strategyFactory = strategyFactory || new MockAnalysisStrategyFactory();
-    this.validator = validator || new InputValidator();
-    
-    // デフォルト設定の適用
+    // デフォルト設定を先に作成
     this.config = this.createDefaultConfig(config);
+    
+    // 依存関係注入による設計（DIP: Dependency Inversion Principle）
+    this.strategyFactory = strategyFactory || new RealAnalysisStrategyFactory(this.config);
+    this.validator = validator || new InputValidator();
+    this.unifiedPluginManager = unifiedPluginManager || new UnifiedPluginManager();
+    this.testQualityIntegrator = testQualityIntegrator || new TestQualityIntegrator();
     
     // 設定の検証
     this.validator.validateConfig(this.config);
@@ -76,7 +85,10 @@ export class UnifiedSecurityAnalysisOrchestrator {
       // 各分析ステップの実行（Strategy Pattern）
       const analysisResults = await this.executeAnalysisSequence(strategies, targetPath);
 
-      // 統合レポート生成
+      // Issue #83: カバレッジ統合による品質評価
+      const qualityResults = await this.executeQualityAnalysis(targetPath);
+
+      // 統合レポート生成（カバレッジデータを含む）
       const executionTime = Date.now() - startTime;
       const unifiedReport = this.generateUnifiedReport(
         analysisResults.taintResult,
@@ -84,7 +96,8 @@ export class UnifiedSecurityAnalysisOrchestrator {
         analysisResults.gapResult,
         analysisResults.nistResult,
         targetPath,
-        executionTime
+        executionTime,
+        qualityResults
       );
 
       return {
@@ -140,6 +153,109 @@ export class UnifiedSecurityAnalysisOrchestrator {
     const nistResult = await this.executeNistEvaluation(strategies.nistStrategy, gapResult);
 
     return { taintResult, intentResult, gapResult, nistResult };
+  }
+
+  /**
+   * カバレッジ統合による品質分析実行
+   * Issue #83: unified-analyzeへの機能統合
+   */
+  private async executeQualityAnalysis(targetPath: string): Promise<any> {
+    try {
+      // UnifiedPluginManagerから品質プラグインを取得
+      const qualityPlugins = this.unifiedPluginManager.getQualityPlugins();
+      
+      if (qualityPlugins.length === 0) {
+        // 品質プラグインが登録されていない場合はデフォルト結果を返す
+        return {
+          qualityScore: 0,
+          coverageData: null,
+          recommendations: ['品質プラグインが登録されていません']
+        };
+      }
+
+      // 各品質プラグインを実行してカバレッジ統合評価を行う
+      const qualityResults = [];
+      for (const plugin of qualityPlugins) {
+        try {
+          // ITestQualityPluginの正しいインターフェースを使用
+          // まず適用可能性を確認
+          const mockContext = { path: targetPath, language: 'typescript' as const };
+          if (plugin.isApplicable(mockContext)) {
+            // テストファイルの検出パターンを実行
+            const mockTestFile = { 
+              path: targetPath, 
+              content: '', 
+              language: 'typescript' as const 
+            };
+            const patterns = await plugin.detectPatterns(mockTestFile);
+            
+            // 品質評価を実行
+            const qualityScore = plugin.evaluateQuality(patterns);
+            
+            qualityResults.push({
+              pluginId: plugin.id,
+              score: qualityScore.overall,
+              patterns: patterns,
+              qualityScore: qualityScore,
+              recommendations: plugin.suggestImprovements(qualityScore).map(imp => imp.description)
+            });
+          }
+        } catch (error) {
+          // 個別プラグインのエラーは警告として扱い、処理を継続
+          console.warn(`品質プラグイン実行エラー: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // 統合品質スコアの計算
+      const aggregatedScore = this.calculateAggregatedQualityScore(qualityResults);
+      
+      return {
+        qualityScore: aggregatedScore,
+        coverageData: qualityResults,
+        recommendations: this.generateQualityRecommendations(qualityResults)
+      };
+
+    } catch (error) {
+      // Defensive Programming: エラー時もデフォルト結果を返す
+      console.warn(`品質分析エラー: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        qualityScore: 0,
+        coverageData: null,
+        recommendations: ['品質分析でエラーが発生しました']
+      };
+    }
+  }
+
+  /**
+   * 統合品質スコアの計算
+   */
+  private calculateAggregatedQualityScore(qualityResults: any[]): number {
+    if (qualityResults.length === 0) {
+      return 0;
+    }
+
+    // 単純な平均値計算（将来的にはより高度な重み付けを適用可能）
+    const totalScore = qualityResults.reduce((sum, result) => {
+      return sum + (result.score || 0);
+    }, 0);
+
+    return Math.round(totalScore / qualityResults.length);
+  }
+
+  /**
+   * 品質改善推奨事項の生成
+   */
+  private generateQualityRecommendations(qualityResults: any[]): string[] {
+    const recommendations: string[] = [];
+    
+    qualityResults.forEach(result => {
+      if (result.recommendations && Array.isArray(result.recommendations)) {
+        recommendations.push(...result.recommendations);
+      }
+    });
+
+    // 重複を除去
+    return Array.from(new Set(recommendations));
   }
 
   /**
@@ -266,7 +382,8 @@ export class UnifiedSecurityAnalysisOrchestrator {
     gapResult: any,
     nistResult: any,
     targetPath: string,
-    executionTime: number
+    executionTime: number,
+    qualityResults?: any
   ): UnifiedReport {
     // 問題数の集計（DRY原則：集計ロジックの統一化）
     const issueCounts = this.calculateIssueCounts(taintResult, gapResult, nistResult);
@@ -284,6 +401,8 @@ export class UnifiedSecurityAnalysisOrchestrator {
       gapSummary: gapResult.summary,
       nistSummary: nistResult.summary,
       overallRiskScore: nistResult.summary.overallScore,
+      // Issue #83: カバレッジ統合による品質データを追加
+      qualityData: qualityResults || null,
       metadata: this.createReportMetadata(targetPath, executionTime)
     };
   }

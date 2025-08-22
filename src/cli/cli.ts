@@ -7,17 +7,138 @@ import { IntentAnalyzeCommand } from './commands/intent-analyze';
 import { DomainAnalyzeCommand } from './commands/domain-analyze';
 import { UnifiedAnalyzeCommand } from './commands/unified-analyze';
 import { ImplementationTruthAnalyzeCommand, ImplementationTruthCliParser } from './commands/implementation-truth-analyze';
+import { createBenchmarkExternalCommand } from './commands/benchmark-external';
 import { container, TYPES } from '../container';
 import * as os from 'os';
 
 export class CLI {
+  /**
+   * 統合分析コマンドの共通オプション設定
+   * DRY原則に従った重複排除
+   */
+  private createUnifiedAnalyzeOptions(yargs: any) {
+    return yargs
+      .positional('path', {
+        describe: '分析対象のディレクトリパス',
+        type: 'string',
+        default: '.'
+      })
+      .option('format', {
+        alias: 'f',
+        describe: '出力フォーマット',
+        type: 'string',
+        choices: ['text', 'json', 'markdown', 'html', 'ai-json'],
+        default: 'text'
+      })
+      .option('output', {
+        alias: 'o',
+        describe: '出力ファイルパス',
+        type: 'string'
+      })
+      .option('verbose', {
+        alias: 'v',
+        describe: '詳細な出力を表示',
+        type: 'boolean',
+        default: false
+      })
+      .option('include-recommendations', {
+        describe: '改善提案を含める',
+        type: 'boolean',
+        default: true
+      })
+      // 従来の互換性オプション
+      .option('json', {
+        describe: 'JSON形式で出力（--format=json の短縮形）',
+        type: 'boolean',
+        default: false
+      })
+      .option('parallel', {
+        describe: '並列処理を有効化',
+        type: 'boolean',
+        default: false
+      })
+      .option('cache', {
+        describe: 'キャッシュ機能を有効化',
+        type: 'boolean',
+        default: true
+      })
+      .option('include-details', {
+        describe: '詳細情報を含める（データフロー分析など）',
+        type: 'boolean',
+        default: false
+      })
+      // 統合分析設定
+      .option('enable-taint-analysis', {
+        describe: 'Taint分析を有効化',
+        type: 'boolean',
+        default: true
+      })
+      .option('enable-intent-extraction', {
+        describe: 'Intent抽出を有効化',
+        type: 'boolean',
+        default: true
+      })
+      .option('enable-gap-detection', {
+        describe: 'Gap検出を有効化',
+        type: 'boolean',
+        default: true
+      })
+      .option('enable-nist-evaluation', {
+        describe: 'NIST評価を有効化',
+        type: 'boolean',
+        default: true
+      })
+      // 実行設定
+      .option('timeout', {
+        describe: 'タイムアウト（ミリ秒）',
+        type: 'number',
+        default: 30000
+      });
+  }
+
+  /**
+   * 統合分析コマンドの共通ハンドラー
+   * 単一責任の原則に従った処理の分離
+   */
+  private async handleUnifiedAnalyze(argv: any): Promise<void> {
+    try {
+      // DIコンテナからUnifiedAnalyzeCommandを取得
+      const unifiedAnalyzeCommand = container.get<UnifiedAnalyzeCommand>(TYPES.UnifiedAnalyzeCommand);
+      
+      // --json フラグが指定された場合は format を json に上書き
+      const format = argv.json ? 'json' : argv.format;
+      
+      await unifiedAnalyzeCommand.execute({
+        path: argv.path || '.',
+        format: format as 'text' | 'json' | 'markdown' | 'html' | 'ai-json',
+        output: argv.output,
+        verbose: argv.verbose,
+        includeRecommendations: argv['include-recommendations'],
+        // 従来の互換性オプション
+        parallel: argv.parallel,
+        cache: argv.cache,
+        includeDetails: argv['include-details'],
+        // 統合分析設定
+        enableTaintAnalysis: argv['enable-taint-analysis'],
+        enableIntentExtraction: argv['enable-intent-extraction'],
+        enableGapDetection: argv['enable-gap-detection'],
+        enableNistEvaluation: argv['enable-nist-evaluation'],
+        // 実行設定
+        timeout: argv.timeout
+      });
+    } catch (error) {
+      console.error('統合分析中にエラーが発生しました:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  }
+
   async run(): Promise<void> {
     await yargs(hideBin(process.argv))
       .scriptName('rimor')
       .usage('$0 <command> [options]')
       .command(
-        ['analyze [path]', '$0 [path]'],
-        'テスト品質を分析します（v0.8.0 Context Engineering対応）',
+        'analyze-legacy [path]',
+        'テスト品質を分析します（v0.8.0 Context Engineering対応・従来版）',
         (yargs) => {
           return yargs
             .positional('path', {
@@ -409,97 +530,16 @@ export class CLI {
         }
       )
       .command(
+        ['analyze [path]', '$0 [path]'],
+        '統合セキュリティ分析（v0.9.0 unified-analyze統合版・デフォルト）',
+        (yargs) => this.createUnifiedAnalyzeOptions(yargs),
+        (argv) => this.handleUnifiedAnalyze(argv)
+      )
+      .command(
         'unified-analyze [path]',
-        '統合セキュリティ分析（TaintTyper + Intent + Gap + NIST評価）',
-        (yargs) => {
-          return yargs
-            .positional('path', {
-              describe: '分析対象のディレクトリパス',
-              type: 'string',
-              default: '.'
-            })
-            .option('format', {
-              alias: 'f',
-              describe: '出力フォーマット',
-              type: 'string',
-              choices: ['text', 'json', 'markdown', 'html'],
-              default: 'text'
-            })
-            .option('output', {
-              alias: 'o',
-              describe: '出力ファイルパス',
-              type: 'string'
-            })
-            .option('verbose', {
-              alias: 'v',
-              describe: '詳細な出力を表示',
-              type: 'boolean',
-              default: false
-            })
-            .option('include-recommendations', {
-              describe: '改善提案を含める',
-              type: 'boolean',
-              default: true
-            })
-            // 統合分析設定
-            .option('enable-taint-analysis', {
-              describe: 'Taint分析を有効化',
-              type: 'boolean',
-              default: true
-            })
-            .option('enable-intent-extraction', {
-              describe: 'Intent抽出を有効化',
-              type: 'boolean',
-              default: true
-            })
-            .option('enable-gap-detection', {
-              describe: 'Gap検出を有効化',
-              type: 'boolean',
-              default: true
-            })
-            .option('enable-nist-evaluation', {
-              describe: 'NIST評価を有効化',
-              type: 'boolean',
-              default: true
-            })
-            // 実行設定
-            .option('timeout', {
-              describe: 'タイムアウト（ミリ秒）',
-              type: 'number',
-              default: 30000
-            })
-            .option('parallel', {
-              alias: 'p',
-              describe: '並列実行を有効化',
-              type: 'boolean',
-              default: false
-            });
-        },
-        async (argv) => {
-          try {
-            // DIコンテナからUnifiedAnalyzeCommandを取得
-            const unifiedAnalyzeCommand = container.get<UnifiedAnalyzeCommand>(TYPES.UnifiedAnalyzeCommand);
-            
-            await unifiedAnalyzeCommand.execute({
-              path: argv.path || '.',
-              format: argv.format as 'text' | 'json' | 'markdown' | 'html',
-              output: argv.output,
-              verbose: argv.verbose,
-              includeRecommendations: argv['include-recommendations'],
-              // 統合分析設定
-              enableTaintAnalysis: argv['enable-taint-analysis'],
-              enableIntentExtraction: argv['enable-intent-extraction'],
-              enableGapDetection: argv['enable-gap-detection'],
-              enableNistEvaluation: argv['enable-nist-evaluation'],
-              // 実行設定
-              timeout: argv.timeout,
-              parallel: argv.parallel
-            });
-          } catch (error) {
-            console.error('統合分析中にエラーが発生しました:', error instanceof Error ? error.message : String(error));
-            process.exit(1);
-          }
-        }
+        '統合セキュリティ分析（TaintTyper + Intent + Gap + NIST評価・後方互換性）',
+        (yargs) => this.createUnifiedAnalyzeOptions(yargs),
+        (argv) => this.handleUnifiedAnalyze(argv)
       )
       .command(
         'bootstrap [subcommand]',
@@ -833,7 +873,8 @@ export class CLI {
                 }
               }
             )
-            .demandCommand(1, 'サブコマンドを指定してください: run, quick, verify, trend, measure');
+            .command(createBenchmarkExternalCommand())
+            .demandCommand(1, 'サブコマンドを指定してください: run, quick, verify, trend, measure, external');
         }
       )
       .command(
@@ -963,21 +1004,22 @@ export class CLI {
       )
       .help('h')
       .alias('h', 'help')
-      .version('0.8.0')
-      .example('$0', 'カレントディレクトリを分析')
-      .example('$0 ./src', 'srcディレクトリを分析')
-      .example('$0 --verbose', '詳細モードで分析')
-      .example('$0 --json', 'JSON形式で出力')
-      .example('$0 ./src --format=json', 'JSON形式で出力')
-      // v0.8.0 新しい例
-      .example('$0 analyze . --output-json report.json', '分析結果をJSON形式でファイルに保存')
-      .example('$0 analyze . --output-markdown report.md', '分析結果をMarkdown形式でファイルに保存')
-      .example('$0 analyze . --output-html report.html', '分析結果をHTML形式でファイルに保存')
-      .example('$0 analyze . --annotate', 'ソースコードに分析結果をアノテーション')
-      .example('$0 analyze . --annotate --preview', 'アノテーションをプレビュー（ファイル変更なし）')
-      .example('$0 analyze . --annotate --annotate-format=block', 'ブロック形式でアノテーション')
-      .example('$0 analyze . --include-details --output-markdown detailed.md', '詳細情報を含むレポート生成')
-      .example('$0 analyze . --severity=critical,high', 'criticalとhighの問題のみ表示')
+      .version('0.9.0')
+      .example('$0', 'カレントディレクトリを統合分析（デフォルト）')
+      .example('$0 ./src', 'srcディレクトリを統合分析')
+      .example('$0 --verbose', '詳細モードで統合分析')
+      .example('$0 --json', 'JSON形式で統合分析結果を出力')
+      .example('$0 ./src --format=json', 'JSON形式で統合分析結果を出力')
+      // v0.9.0 統合分析の例
+      .example('$0 analyze ./src --format=markdown --output=report.md', 'Markdown形式で統合分析レポートを保存')
+      .example('$0 analyze ./src --verbose --enable-taint-analysis --enable-nist-evaluation', '詳細モードでTaint分析とNIST評価を実行')
+      .example('$0 analyze ./src --parallel --timeout=60000', '並列処理で高速統合分析（60秒タイムアウト）')
+      .example('$0 analyze ./src --format=ai-json --output=ai-report.json', 'AI向けJSON形式で統合分析結果を出力')
+      .example('$0 analyze ./src --include-details --include-recommendations', '詳細情報と改善提案を含む統合分析')
+      // v0.8.0 従来版（analyze-legacy）の例
+      .example('$0 analyze-legacy . --output-json report.json', '従来版で分析結果をJSON形式でファイルに保存')
+      .example('$0 analyze-legacy . --annotate --preview', '従来版でアノテーションをプレビュー')
+      .example('$0 analyze-legacy . --include-details --severity=critical,high', '従来版で重要度フィルタ付き詳細分析')
       // 既存の例
       .example('$0 ai-output', 'AI向けJSON形式で出力')
       .example('$0 ai-output --format=markdown -o ai-report.md', 'AI向けMarkdown形式でファイル出力')

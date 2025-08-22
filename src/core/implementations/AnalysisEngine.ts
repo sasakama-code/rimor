@@ -8,6 +8,7 @@ import { IAnalysisEngine, AnalysisResult, AnalysisOptions } from '../interfaces/
 import { UnifiedAnalysisEngine } from '../engine';
 import { TYPES } from '../../container/types';
 import { IPluginManager } from '../interfaces/IPluginManager';
+import { UnifiedPluginManager } from '../UnifiedPluginManager';
 
 /**
  * Analysis Engine Implementation
@@ -15,12 +16,10 @@ import { IPluginManager } from '../interfaces/IPluginManager';
  */
 @injectable()
 export class AnalysisEngine implements IAnalysisEngine {
-  private engine: UnifiedAnalysisEngine;
-  
   constructor(
-    @inject(TYPES.PluginManager) pluginManager: IPluginManager
+    @inject(TYPES.UnifiedAnalysisEngine) private engine: UnifiedAnalysisEngine
   ) {
-    this.engine = new UnifiedAnalysisEngine(pluginManager);
+    // UnifiedAnalysisEngineはDIコンテナから注入される
   }
   
   async analyze(targetPath: string, options?: AnalysisOptions): Promise<AnalysisResult> {

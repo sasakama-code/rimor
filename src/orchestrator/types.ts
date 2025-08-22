@@ -109,6 +109,8 @@ export interface UnifiedReport {
   gapSummary: GapSummary;
   nistSummary: NistSummary;
   overallRiskScore: number; // 0-100
+  // Issue #83: カバレッジ統合による品質データ
+  qualityData?: any | null;
   metadata: ReportMetadata;
 }
 

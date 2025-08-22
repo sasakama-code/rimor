@@ -24,6 +24,8 @@ import { IAnalysisEngine } from './core/interfaces/IAnalysisEngine';
 import { IPluginManager } from './core/interfaces/IPluginManager';
 import { IReporter } from './core/interfaces/IReporter';
 import { ISecurityAuditor } from './core/interfaces/ISecurityAuditor';
+import { UnifiedPluginManager } from './core/UnifiedPluginManager';
+import { TestQualityIntegrator } from './analyzers/coverage/TestQualityIntegrator';
 
 // 型定義のシンボル
 export const TYPES = {
@@ -45,6 +47,8 @@ export const TYPES = {
   SecurityAuditor: Symbol('SecurityAuditor'),
   Reporter: Symbol('Reporter'),
   PluginManager: Symbol('PluginManager'),
+  UnifiedPluginManager: Symbol('UnifiedPluginManager'),
+  TestQualityIntegrator: Symbol('TestQualityIntegrator'),
   ConfigService: Symbol('ConfigService'),
   FileSystem: Symbol('FileSystem'),
   Logger: Symbol('Logger'),
@@ -92,11 +96,34 @@ export class Container {
       .to(() => new RealAnalysisStrategyFactory(this.config || this.getDefaultConfig()))
       .asSingleton();
 
+    // Issue #83: UnifiedPluginManagerとTestQualityIntegratorをバインド
+    this.bind(TYPES.UnifiedPluginManager)
+      .to(() => {
+        const unifiedPluginManager = new UnifiedPluginManager();
+        // TestExistencePluginを品質プラグインとして登録
+        const TestExistencePlugin = require('./plugins/core/TestExistencePlugin').TestExistencePlugin;
+        unifiedPluginManager.registerQuality(new TestExistencePlugin());
+        return unifiedPluginManager;
+      })
+      .asSingleton();
+
+    this.bind(TYPES.TestQualityIntegrator)
+      .to(() => new TestQualityIntegrator())
+      .asSingleton();
+
     // 統合オーケストレータ（シングルトン）
     this.bind(TYPES.UnifiedSecurityAnalysisOrchestrator)
       .to(() => {
         const factory = this.get<IAnalysisStrategyFactory>(TYPES.AnalysisStrategyFactory);
-        return new UnifiedSecurityAnalysisOrchestrator(this.config, factory);
+        const unifiedPluginManager = this.get<UnifiedPluginManager>(TYPES.UnifiedPluginManager);
+        const testQualityIntegrator = this.get<TestQualityIntegrator>(TYPES.TestQualityIntegrator);
+        return new UnifiedSecurityAnalysisOrchestrator(
+          this.config, 
+          factory, 
+          undefined, // validator (デフォルトを使用)
+          unifiedPluginManager,
+          testQualityIntegrator
+        );
       })
       .asSingleton();
 

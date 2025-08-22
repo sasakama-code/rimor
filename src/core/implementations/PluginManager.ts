@@ -37,6 +37,14 @@ export class PluginManager implements IPluginManager {
   async runAll(filePath: string): Promise<PluginExecutionResult[]> {
     const results: PluginExecutionResult[] = [];
     
+    const enabledPlugins = Array.from(this.plugins.values()).filter(p => p.metadata.enabled);
+    
+    if (enabledPlugins.length === 0) {
+      console.log('⚠️  No enabled plugins found in PluginManager.runAll');
+    } else if (results.length === 0) {
+      console.log(`🔌 Running ${enabledPlugins.length} enabled plugins for file: ${filePath.substring(filePath.length - 50)}`);
+    }
+    
     for (const plugin of this.plugins.values()) {
       if (plugin.metadata.enabled) {
         const result = await this.run(plugin.metadata.id, filePath);

@@ -11,13 +11,14 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../container/types';
 import { IAnalysisEngine, AnalysisResult, AnalysisOptions, ASTNode } from './interfaces/IAnalysisEngine';
 import { IPluginManager } from './interfaces/IPluginManager';
-import { Issue } from './types';
+import { Issue, ProjectContext, TestFile } from './types';
 import { findTestFiles } from './fileDiscovery';
 import { debug } from '../utils/debug';
 import { CacheManager } from './cacheManager';
 import { PerformanceMonitor } from './performanceMonitor';
 import { WorkerPool } from './workerPool';
 import { isNodeError, getErrorCode } from '../utils/errorGuards';
+import { UnifiedPluginManager } from './UnifiedPluginManager';
 
 /**
  * AST情報
@@ -40,10 +41,28 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   private astCache: Map<string, ASTInfo> = new Map();
   
   constructor(
-    private pluginManager: IPluginManager
+    @inject(TYPES.PluginManager) private pluginManager: IPluginManager,
+    @inject(TYPES.UnifiedPluginManager) private unifiedPluginManager?: UnifiedPluginManager
   ) {
     this.cacheManager = CacheManager.getInstance();
     this.performanceMonitor = PerformanceMonitor.getInstance();
+    
+    console.log(`🔧 UnifiedAnalysisEngine constructor: received parameters:`);
+    console.log(`   - pluginManager: ${this.pluginManager ? 'available' : 'not available'}`);
+    console.log(`   - unifiedPluginManager: ${this.unifiedPluginManager ? 'available' : 'not available'}`);
+    
+    if (this.pluginManager) {
+      console.log(`📋 PluginManager plugins: ${this.pluginManager.getPlugins().length}`);
+    }
+    
+    if (this.unifiedPluginManager) {
+      const qualityPluginCount = this.unifiedPluginManager.getQualityPlugins().length;
+      console.log(`📋 Quality plugins available: ${qualityPluginCount}`);
+    } else {
+      console.log(`❌ UnifiedPluginManager is undefined, undefined, or null`);
+      console.log(`🔍 Type check: ${typeof this.unifiedPluginManager}`);
+      console.log(`🔍 Strict equality: ${this.unifiedPluginManager === undefined}`);
+    }
   }
   
   /**
@@ -157,16 +176,28 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   
   /**
    * 順次分析
+   * Issue #81対応: レガシープラグインと品質プラグインの両方を実行
    */
   private async analyzeSequential(files: string[]): Promise<Issue[]> {
     const allIssues: Issue[] = [];
     
     for (const file of files) {
       debug.verbose(`Analyzing file: ${file}`);
-      const results = await this.pluginManager.runAll(file);
       
-      for (const result of results) {
+      // レガシープラグインの実行
+      const legacyResults = await this.pluginManager.runAll(file);
+      for (const result of legacyResults) {
         allIssues.push(...result.issues);
+      }
+      
+      // 品質プラグインの実行（カバレッジ統合機能を含む）
+      if (this.unifiedPluginManager) {
+        console.log(`🚀 Executing quality plugins for file: ${file}`);
+        const qualityIssues = await this.analyzeWithQualityPlugins(file);
+        console.log(`✅ Quality plugins returned ${qualityIssues.length} issues`);
+        allIssues.push(...qualityIssues);
+      } else {
+        console.log('⚠️  UnifiedPluginManager not available for quality analysis');
       }
     }
     
@@ -174,17 +205,119 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   }
   
   /**
+   * 品質プラグインによる分析
+   * TestExistencePluginのevaluateQualityメソッドが呼ばれる
+   */
+  private async analyzeWithQualityPlugins(filePath: string): Promise<Issue[]> {
+    if (!this.unifiedPluginManager) {
+      return [];
+    }
+    
+    try {
+      // プロジェクトコンテキストの作成
+      const projectContext: ProjectContext = {
+        rootPath: path.dirname(filePath),
+        testFramework: 'jest', // デフォルト値
+        dependencies: {}
+      };
+      
+      // テストファイル情報の作成
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const testFile: TestFile = {
+        path: filePath,
+        content: fileContent
+      };
+      
+      // 品質分析の実行（ここでTestQualityIntegratorが使用される）
+      debug.verbose(`Running quality analysis for file: ${filePath}`);
+      const qualityResult = await this.unifiedPluginManager.runQualityAnalysis(
+        testFile, 
+        projectContext
+      );
+      
+      debug.verbose(`Quality analysis completed. Plugin results: ${qualityResult.pluginResults.length}`);
+      
+      // 品質結果からIssueを生成
+      const issues: Issue[] = [];
+      for (const pluginResult of qualityResult.pluginResults) {
+        debug.verbose(`Plugin ${pluginResult.pluginId}: score=${pluginResult.qualityScore.overall}, error=${pluginResult.error}`);
+        
+        if (pluginResult.error) {
+          // エラーがある場合はIssueとして記録
+          debug.warn(`Plugin error for ${pluginResult.pluginId}: ${pluginResult.error}`);
+          issues.push({
+            id: `quality-${pluginResult.pluginId}-${Date.now()}`,
+            type: 'quality-issue',
+            severity: 'medium',
+            message: `品質プラグイン ${pluginResult.pluginName}: ${pluginResult.error}`,
+            filePath: filePath,
+            category: 'test-quality'
+          });
+        } else if (pluginResult.qualityScore.overall < 50) {
+          // 低品質の場合はIssueとして記録
+          debug.info(`Low quality detected: ${pluginResult.qualityScore.overall} < 50`);
+          issues.push({
+            id: `quality-${pluginResult.pluginId}-${Date.now()}`,
+            type: 'low-quality',
+            severity: 'high',
+            message: `テスト品質が低い (スコア: ${pluginResult.qualityScore.overall})`,
+            filePath: filePath,
+            category: 'test-quality'
+          });
+        } else {
+          debug.verbose(`Quality score ${pluginResult.qualityScore.overall} is acceptable (>=50)`);
+        }
+      }
+      
+      return issues;
+      
+    } catch (error) {
+      debug.error(`Failed to analyze with quality plugins: ${error}`);
+      return [];
+    }
+  }
+  
+  /**
    * キャッシュ付き分析
+   * Issue #81対応: レガシープラグインと品質プラグインの両方を実行
    */
   private async analyzeWithCache(files: string[]): Promise<Issue[]> {
     const allIssues: Issue[] = [];
     
-    for (const file of files) {
-      // 分析実行
+    console.log(`🔍 Starting cache-based analysis of ${files.length} files`);
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      if (i < 5 || i % 1000 === 0) {
+        console.log(`📁 Analyzing file ${i + 1}/${files.length}: ${file}`);
+      }
+      
+      // レガシープラグインの実行
       const results = await this.pluginManager.runAll(file);
       const issues = results.flatMap(r => r.issues);
+      
+      if (issues.length > 0 && i < 10) {
+        console.log(`🐛 Found ${issues.length} issues from legacy plugins in file: ${file}`);
+      }
+      
       allIssues.push(...issues);
+      
+      // 品質プラグインの実行
+      if (this.unifiedPluginManager) {
+        const qualityIssues = await this.analyzeWithQualityPlugins(file);
+        
+        if (qualityIssues.length > 0 && i < 10) {
+          console.log(`🎯 Found ${qualityIssues.length} quality issues in file: ${file}`);
+        }
+        
+        allIssues.push(...qualityIssues);
+      } else if (i < 5) {
+        console.log(`⚠️  UnifiedPluginManager not available for file: ${file}`);
+      }
     }
+    
+    console.log(`📊 Cache-based analysis completed: ${allIssues.length} total issues found from ${files.length} files`);
     
     return allIssues;
   }
@@ -219,13 +352,21 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
   
   /**
    * バッチ分析
+   * Issue #81対応: レガシープラグインと品質プラグインの両方を実行
    */
   private async analyzeBatch(files: string[]): Promise<Issue[]> {
     const issues: Issue[] = [];
     
     for (const file of files) {
+      // レガシープラグインの実行
       const results = await this.pluginManager.runAll(file);
       issues.push(...results.flatMap(r => r.issues));
+      
+      // 品質プラグインの実行
+      if (this.unifiedPluginManager) {
+        const qualityIssues = await this.analyzeWithQualityPlugins(file);
+        issues.push(...qualityIssues);
+      }
     }
     
     return issues;
