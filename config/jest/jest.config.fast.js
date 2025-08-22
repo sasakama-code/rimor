@@ -37,7 +37,8 @@ module.exports = {
     '/coverage/',
     '/test/performance/',
     '/test/integration/',
-    '/test/e2e/'
+    '/test/e2e/',
+    '/.rimor/'
   ],
   
   // メモリ使用量を制限
