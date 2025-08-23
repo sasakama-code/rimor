@@ -1,8 +1,9 @@
+---
 name: 🤖 Auto Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -38,101 +39,105 @@ jobs:
       should_release: ${{ steps.check.outputs.should_release }}
       release_type: ${{ steps.check.outputs.release_type }}
       has_breaking: ${{ steps.check.outputs.has_breaking }}
-      
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Analyze commits for release triggers
-      id: check
-      run: |
-        # Manual trigger
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "release_type=${{ github.event.inputs.release_type }}" >> $GITHUB_OUTPUT
-          echo "Manual release: ${{ github.event.inputs.release_type }}"
-          exit 0
-        fi
-        
-        # Get commits since last tag
-        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        if [ -z "$LAST_TAG" ]; then
-          COMMIT_RANGE="HEAD~10..HEAD"
-        else
-          COMMIT_RANGE="$LAST_TAG..HEAD"
-        fi
-        
-        COMMITS=$(git log --format="%s" $COMMIT_RANGE)
-        echo "Analyzing commits: $COMMITS"
-        
-        # Check for breaking changes
-        if echo "$COMMITS" | grep -E "^[a-zA-Z]+(\(.+\))?!:|BREAKING CHANGE" -q; then
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "release_type=major" >> $GITHUB_OUTPUT
-          echo "has_breaking=true" >> $GITHUB_OUTPUT
-          echo "Breaking changes detected → major release"
-        # Check for new features
-        elif echo "$COMMITS" | grep -E "^feat(\(.+\))?:" -q; then
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "release_type=minor" >> $GITHUB_OUTPUT
-          echo "has_breaking=false" >> $GITHUB_OUTPUT
-          echo "New features detected → minor release"
-        # Check for bug fixes or improvements
-        elif echo "$COMMITS" | grep -E "^(fix|perf|refactor)(\(.+\))?:" -q; then
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "release_type=patch" >> $GITHUB_OUTPUT
-          echo "has_breaking=false" >> $GITHUB_OUTPUT
-          echo "Fixes/improvements detected → patch release"
-        else
-          echo "should_release=false" >> $GITHUB_OUTPUT
-          echo "No release-worthy changes detected"
-        fi
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze commits for release triggers
+        id: check
+        run: |
+          # Manual trigger
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+            echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+            echo "Manual release: $RELEASE_TYPE"
+            exit 0
+          fi
+
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMIT_RANGE="HEAD~10..HEAD"
+          else
+            COMMIT_RANGE="$LAST_TAG..HEAD"
+          fi
+
+          COMMITS=$(git log --format="%s" $COMMIT_RANGE)
+          echo "Analyzing commits: $COMMITS"
+
+          # Check for breaking changes
+          BREAKING_PATTERN="^[a-zA-Z]+(\(.+\))?!:|BREAKING CHANGE"
+          if echo "$COMMITS" | grep -E "$BREAKING_PATTERN" -q; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "release_type=major" >> $GITHUB_OUTPUT
+            echo "has_breaking=true" >> $GITHUB_OUTPUT
+            echo "Breaking changes detected → major release"
+          # Check for new features
+          elif echo "$COMMITS" | grep -E "^feat(\(.+\))?:" -q; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "release_type=minor" >> $GITHUB_OUTPUT
+            echo "has_breaking=false" >> $GITHUB_OUTPUT
+            echo "New features detected → minor release"
+          # Check for bug fixes or improvements
+          FIX_PATTERN="^(fix|perf|refactor)(\(.+\))?:"
+          elif echo "$COMMITS" | grep -E "$FIX_PATTERN" -q; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "release_type=patch" >> $GITHUB_OUTPUT
+            echo "has_breaking=false" >> $GITHUB_OUTPUT
+            echo "Fixes/improvements detected → patch release"
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "No release-worthy changes detected"
+          fi
 
   # 品質ゲート
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     needs: analyze-changes
-    if: needs.analyze-changes.outputs.should_release == 'true' && github.event.inputs.skip_tests != 'true'
-    
+    if: >
+      needs.analyze-changes.outputs.should_release == 'true' &&
+      github.event.inputs.skip_tests != 'true'
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Comprehensive quality check
-      run: |
-        echo "🔍 Running quality gate..."
-        
-        # Build verification
-        npm run build:full
-        
-        # Security check
-        npm run security-check
-        
-        # Quality audit
-        npm run quality-audit --if-present || npm run full-check
-        
-        # Release readiness
-        npm run release-ready
-        
-        echo "✅ Quality gate passed"
-        
-    - name: Critical test suite
-      run: |
-        echo "🧪 Running critical tests..."
-        npm test
-        echo "✅ Tests passed"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Comprehensive quality check
+        run: |
+          echo "🔍 Running quality gate..."
+
+          # Build verification
+          npm run build:full
+
+          # Security check
+          npm run security-check
+
+          # Quality audit
+          npm run quality-audit --if-present || npm run full-check
+
+          # Release readiness
+          npm run release-ready
+
+          echo "✅ Quality gate passed"
+
+      - name: Critical test suite
+        run: |
+          echo "🧪 Running critical tests..."
+          npm test
+          echo "✅ Tests passed"
 
   # 自動リリース作成
   create-release:
@@ -140,126 +145,135 @@ jobs:
     runs-on: ubuntu-latest
     needs: [analyze-changes, quality-gate]
     if: |
-      always() && 
-      needs.analyze-changes.outputs.should_release == 'true' && 
-      (needs.quality-gate.result == 'success' || github.event.inputs.skip_tests == 'true')
-    
+      always() &&
+      needs.analyze-changes.outputs.should_release == 'true' &&
+      (needs.quality-gate.result == 'success' ||
+       github.event.inputs.skip_tests == 'true')
+
     permissions:
       contents: write
       pull-requests: write
-      
+
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
       release_created: ${{ steps.create.outputs.release_created }}
-      
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build
-      run: npm run build:full
-      
-    - name: Configure Git
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-        
-    - name: Version bump
-      id: version
-      run: |
-        CURRENT=$(node -p "require('./package.json').version")
-        RELEASE_TYPE="${{ needs.analyze-changes.outputs.release_type }}"
-        
-        echo "Current version: $CURRENT"
-        echo "Release type: $RELEASE_TYPE"
-        
-        # Calculate new version
-        NEW_VERSION=$(npm version $RELEASE_TYPE --no-git-tag-version)
-        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "New version: $NEW_VERSION"
-        
-    - name: Generate changelog
-      run: |
-        echo "📝 Generating changelog..."
-        
-        NEW_VERSION="${{ steps.version.outputs.new_version }}"
-        RELEASE_DATE=$(date +"%Y-%m-%d")
-        
-        # Get commits since last tag
-        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        if [ -z "$LAST_TAG" ]; then
-          COMMIT_RANGE="HEAD~10..HEAD"
-        else
-          COMMIT_RANGE="$LAST_TAG..HEAD"
-        fi
-        
-        cat > RELEASE_NOTES.md << EOF
-        ## Release $NEW_VERSION ($RELEASE_DATE)
-        
-        ### 🚀 What's Changed
-        
-        EOF
-        
-        # Categorize commits
-        git log --format="- %s" $COMMIT_RANGE | \
-        sed -E 's/^- feat(\([^)]+\))?: /- ✨ /' | \
-        sed -E 's/^- fix(\([^)]+\))?: /- 🐛 /' | \
-        sed -E 's/^- perf(\([^)]+\))?: /- ⚡ /' | \
-        sed -E 's/^- refactor(\([^)]+\))?: /- ♻️ /' | \
-        sed -E 's/^- docs(\([^)]+\))?: /- 📚 /' | \
-        sed -E 's/^- test(\([^)]+\))?: /- 🧪 /' | \
-        sed -E 's/^- chore(\([^)]+\))?: /- 🔧 /' >> RELEASE_NOTES.md
-        
-        if [ "${{ needs.analyze-changes.outputs.has_breaking }}" = "true" ]; then
-          echo -e "\n### ⚠️ Breaking Changes\n" >> RELEASE_NOTES.md
-          git log --format="- %s" $COMMIT_RANGE | grep -E "!:|BREAKING" >> RELEASE_NOTES.md || true
-        fi
-        
-        echo -e "\n---\n\n🤖 *Auto-generated with [Claude Code](https://claude.ai/code)*" >> RELEASE_NOTES.md
-        
-        echo "Generated changelog:"
-        cat RELEASE_NOTES.md
-        
-    - name: Update package.json and commit
-      run: |
-        git add package.json package-lock.json
-        git commit -m "chore: release ${{ steps.version.outputs.new_version }} 🚀
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-Auto-release triggered by conventional commits
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
+      - name: Install dependencies
+        run: npm ci
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
-        
-    - name: Create tag and push
-      run: |
-        git tag "${{ steps.version.outputs.new_version }}"
-        git push origin main
-        git push origin "${{ steps.version.outputs.new_version }}"
-        
-    - name: Create GitHub Release
-      id: create
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.version.outputs.new_version }}
-        name: "🚀 Rimor ${{ steps.version.outputs.new_version }}"
-        body_path: RELEASE_NOTES.md
-        draft: false
-        prerelease: ${{ contains(steps.version.outputs.new_version, 'beta') || contains(steps.version.outputs.new_version, 'alpha') }}
-        generate_release_notes: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: npm run build:full
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Version bump
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          RELEASE_TYPE="${{ needs.analyze-changes.outputs.release_type }}"
+
+          echo "Current version: $CURRENT"
+          echo "Release type: $RELEASE_TYPE"
+
+          # Calculate new version
+          NEW_VERSION=$(npm version $RELEASE_TYPE --no-git-tag-version)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Generate changelog
+        run: |
+          echo "📝 Generating changelog..."
+
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          RELEASE_DATE=$(date +"%Y-%m-%d")
+
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMIT_RANGE="HEAD~10..HEAD"
+          else
+            COMMIT_RANGE="$LAST_TAG..HEAD"
+          fi
+
+          cat > RELEASE_NOTES.md << EOF
+          ## Release $NEW_VERSION ($RELEASE_DATE)
+
+          ### 🚀 What's Changed
+
+          EOF
+
+          # Categorize commits
+          git log --format="- %s" $COMMIT_RANGE | \
+          sed -E 's/^- feat(\([^)]+\))?: /- ✨ /' | \
+          sed -E 's/^- fix(\([^)]+\))?: /- 🐛 /' | \
+          sed -E 's/^- perf(\([^)]+\))?: /- ⚡ /' | \
+          sed -E 's/^- refactor(\([^)]+\))?: /- ♻️ /' | \
+          sed -E 's/^- docs(\([^)]+\))?: /- 📚 /' | \
+          sed -E 's/^- test(\([^)]+\))?: /- 🧪 /' | \
+          sed -E 's/^- chore(\([^)]+\))?: /- 🔧 /' \
+            >> RELEASE_NOTES.md
+
+          HAS_BREAKING="${{ needs.analyze-changes.outputs.has_breaking }}"
+          if [ "$HAS_BREAKING" = "true" ]; then
+            echo -e "\n### ⚠️ Breaking Changes\n" >> RELEASE_NOTES.md
+            git log --format="- %s" $COMMIT_RANGE | \
+              grep -E "!:|BREAKING" >> RELEASE_NOTES.md || true
+          fi
+
+          CREDIT="🤖 *Auto-generated with [Claude Code](https://claude.ai/code)*"
+          FOOTER="\n---\n\n$CREDIT"
+          echo -e "$FOOTER" >> RELEASE_NOTES.md
+
+          echo "Generated changelog:"
+          cat RELEASE_NOTES.md
+
+      - name: Update package.json and commit
+        run: |
+          git add package.json package-lock.json
+          VERSION="${{ steps.version.outputs.new_version }}"
+          git commit -m "chore: release $VERSION 🚀" \
+            -m "" \
+            -m "Auto-release triggered by conventional commits" \
+            -m "" \
+            -m "🤖 Generated with [Claude Code](https://claude.ai/code)" \
+            -m "" \
+            -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+
+      - name: Create tag and push
+        run: |
+          git tag "${{ steps.version.outputs.new_version }}"
+          git push origin main
+          git push origin "${{ steps.version.outputs.new_version }}"
+
+      - name: Create GitHub Release
+        id: create
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          name: "🚀 Rimor ${{ steps.version.outputs.new_version }}"
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: >
+            ${{ contains(steps.version.outputs.new_version, 'beta') ||
+                contains(steps.version.outputs.new_version, 'alpha') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # 成功通知
   notify-success:
@@ -267,11 +281,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     runs-on: ubuntu-latest
     needs: [analyze-changes, create-release]
     if: success() && needs.create-release.outputs.release_created
-    
+
     steps:
-    - name: Success summary
-      run: |
-        echo "🎉 Auto-release completed successfully!"
-        echo "📦 Version: ${{ needs.create-release.outputs.new_version }}"
-        echo "🔄 Type: ${{ needs.analyze-changes.outputs.release_type }}"
-        echo "🔗 Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.new_version }}"
+      - name: Success summary
+        run: |
+          echo "🎉 Auto-release completed successfully!"
+          echo "📦 Version: ${{ needs.create-release.outputs.new_version }}"
+          echo "🔄 Type: ${{ needs.analyze-changes.outputs.release_type }}"
+          VERSION="${{ needs.create-release.outputs.new_version }}"
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          echo "🔗 Release: $REPO_URL/releases/tag/$VERSION"
