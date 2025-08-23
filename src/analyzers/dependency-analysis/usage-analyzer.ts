@@ -29,14 +29,14 @@ export interface UsageCategory {
 }
 
 export interface UsageReport {
-  totalPackages: number;
-  usageStatistics: Array<{
-    package: string;
-    frequency: number;
-    percentage: number;
-    locations?: ImportLocation[];
-  }>;
-  categories?: UsageCategory;
+  summary: {
+    totalPackages: number;
+    usedPackages: number;
+    unusedPackages: number;
+  };
+  frequency: Map<string, number>;
+  categories: UsageCategory;
+  recommendations: string[];
 }
 
 export class UsageAnalyzer {
@@ -93,7 +93,7 @@ export class UsageAnalyzer {
       const filePath = path.join(projectPath, file);
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
-        const imports = this.extractImports(content);
+        const imports = this.extractImportsWithDuplicates(content);
         
         imports.forEach(imp => {
           const packageName = this.getExternalPackageName(imp);
@@ -221,26 +221,53 @@ export class UsageAnalyzer {
 
   /**
    * 使用状況でパッケージを分類
+   * Issue #102: package.jsonから宣言された依存関係を読み込み、未使用の依存関係を正しく検出
    */
   async categorizeUsage(projectPath: string): Promise<UsageCategory> {
     const frequency = await this.analyzeUsageFrequency(projectPath);
-    const totalImports = Array.from(frequency.values()).reduce((a, b) => a + b, 0);
+    const packageJsonPath = path.join(projectPath, 'package.json');
+    
+    // package.jsonから宣言された依存関係を取得
+    let allDependencies: string[] = [];
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        allDependencies = [
+          ...Object.keys(packageJson.dependencies || {}),
+          ...Object.keys(packageJson.devDependencies || {})
+        ];
+      } catch (error) {
+        // package.json読み込みエラーは無視（Defensive Programming）
+      }
+    }
     
     const core: string[] = [];
     const peripheral: string[] = [];
     const unused: string[] = [];
+    const totalImports = Array.from(frequency.values()).reduce((a, b) => a + b, 0);
 
-    frequency.forEach((count, pkg) => {
-      const percentage = (count / totalImports) * 100;
-      
-      if (count === 0) {
+    // 宣言された依存関係を使用頻度で分類
+    for (const pkg of allDependencies) {
+      const usage = frequency.get(pkg) || 0;
+      if (usage === 0) {
         unused.push(pkg);
-      } else if (percentage > 5 || count > 5) {
+      } else if (usage >= 5) {
         core.push(pkg);
       } else {
         peripheral.push(pkg);
       }
-    });
+    }
+
+    // 実際に使用されているがpackage.jsonにない依存関係も追加
+    for (const [pkg, usage] of frequency) {
+      if (!allDependencies.includes(pkg)) {
+        if (usage >= 5) {
+          core.push(pkg);
+        } else {
+          peripheral.push(pkg);
+        }
+      }
+    }
 
     return { core, peripheral, unused };
   }
@@ -249,24 +276,33 @@ export class UsageAnalyzer {
    * 使用状況レポートを生成
    */
   async generateUsageReport(projectPath: string): Promise<UsageReport> {
-    const packages = await this.findUsedPackages(projectPath);
     const frequency = await this.analyzeUsageFrequency(projectPath);
     const categories = await this.categorizeUsage(projectPath);
     
-    const totalImports = Array.from(frequency.values()).reduce((a, b) => a + b, 0);
-    const usageStatistics = Array.from(frequency.entries()).map(([pkg, count]) => ({
-      package: pkg,
-      frequency: count,
-      percentage: totalImports > 0 ? (count / totalImports) * 100 : 0
-    }));
+    const totalPackages = categories.core.length + 
+                         categories.peripheral.length + 
+                         categories.unused.length;
+    const usedPackages = categories.core.length + categories.peripheral.length;
 
-    // 頻度順にソート
-    usageStatistics.sort((a, b) => b.frequency - a.frequency);
+    const recommendations: string[] = [];
+    
+    if (categories.unused.length > 0) {
+      recommendations.push(`Remove ${categories.unused.length} unused dependencies to reduce bundle size`);
+    }
+    
+    if (categories.peripheral.length > categories.core.length) {
+      recommendations.push('Consider consolidating peripheral dependencies');
+    }
 
     return {
-      totalPackages: packages.length,
-      usageStatistics,
-      categories
+      summary: {
+        totalPackages,
+        usedPackages,
+        unusedPackages: categories.unused.length
+      },
+      frequency,
+      categories,
+      recommendations
     };
   }
 
@@ -310,7 +346,7 @@ export class UsageAnalyzer {
   }
 
   /**
-   * コードからimport/requireを抽出
+   * コードからimport/requireを抽出（重複を許可しない）
    * @private
    */
   private extractImports(content: string): Set<string> {
@@ -333,6 +369,35 @@ export class UsageAnalyzer {
     const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = dynamicImportRegex.exec(content)) !== null) {
       imports.add(match[1]);
+    }
+
+    return imports;
+  }
+
+  /**
+   * コードからimport/requireを抽出（重複を許可、頻度分析用）
+   * @private
+   */
+  private extractImportsWithDuplicates(content: string): string[] {
+    const imports: string[] = [];
+    
+    // ES6 imports
+    const importRegex = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"]/g;
+    let match;
+    while ((match = importRegex.exec(content)) !== null) {
+      imports.push(match[1]);
+    }
+    
+    // CommonJS requires
+    const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+    while ((match = requireRegex.exec(content)) !== null) {
+      imports.push(match[1]);
+    }
+    
+    // Dynamic imports
+    const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+    while ((match = dynamicImportRegex.exec(content)) !== null) {
+      imports.push(match[1]);
     }
 
     return imports;
