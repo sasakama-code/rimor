@@ -1,107 +1,161 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🔍 Pre-commit checks starting..."
+# 厳格なエラーハンドリング（Defensive Programming）
+set -euo pipefail
 
-# TypeScript型チェック
-echo "📝 Running TypeScript type check..."
-npx tsc --noEmit
-if [ $? -ne 0 ]; then
-  echo "❌ TypeScript type check failed. Please fix type errors before committing."
-  exit 1
-fi
+# エラーメッセージ定数（DRY原則）
+readonly ERROR_TYPE_CHECK="❌ TypeScript type check failed. Please fix type errors before committing."
+readonly ERROR_LINT_CHECK="❌ ESLint check failed. Please fix linting errors before committing."
+readonly ERROR_BUILD_CHECK="❌ Build failed. Please ensure the code builds successfully."
+readonly ERROR_TEST_CHECK="❌ One or more tests failed. Please fix failing tests before committing."
+readonly ERROR_NAMING_CHECK="❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
+readonly ERROR_ANY_TYPE_CHECK="❌ any型の使用が増加しています。'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
 
-# ESLintチェック（ステージングされたファイルのみ）
-echo "🔧 Running ESLint..."
-npx lint-staged
-if [ $? -ne 0 ]; then
-  echo "❌ ESLint check failed. Please fix linting errors before committing."
-  exit 1
-fi
-
-# ビルドチェック
-echo "🏗️ Running build..."
-npm run build > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-  echo "❌ Build failed. Please ensure the code builds successfully."
-  exit 1
-fi
-
-# 変更されたテストファイルの実行
-echo "🧪 Running tests for changed files..."
-git diff --cached --name-only | grep -E "\.test\.ts$" | while read file; do
-  if [ -f "$file" ]; then
-    npm test -- "$file" --no-coverage 2>&1 | grep -E "(PASS|FAIL)"
-    if [ $? -ne 0 ]; then
-      echo "❌ Test failed for $file"
-      exit 1
-    fi
-  fi
-done
-
-# 命名規則検証
-echo "📝 Checking naming conventions..."
-STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$')
-
-if [ ! -z "$STAGED_TS_FILES" ]; then
-  NAMING_ERRORS=0
-  
-  # バージョン番号付きファイル名チェック
-  VERSION_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'v[0-9]+\.[0-9]+')
-  if [ ! -z "$VERSION_FILES" ]; then
-    echo "❌ バージョン番号付きファイル名が検出されました:"
-    echo "$VERSION_FILES" | sed 's/^/  - /'
-    NAMING_ERRORS=$((NAMING_ERRORS + 1))
-  fi
-  
-  # Implサフィックスチェック
-  IMPL_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'Impl\.ts$')
-  if [ ! -z "$IMPL_FILES" ]; then
-    echo "❌ *Impl.tsサフィックスが検出されました:"
-    echo "$IMPL_FILES" | sed 's/^/  - /'
-    NAMING_ERRORS=$((NAMING_ERRORS + 1))
-  fi
-  
-  # プラグインファイル命名チェック
-  PLUGIN_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'src/plugins/.*\.ts$')
-  if [ ! -z "$PLUGIN_FILES" ]; then
-    for file in $PLUGIN_FILES; do
-      basename=$(basename "$file" .ts)
-      if [[ "$file" == *"/plugins/"* ]] && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
-        echo "❌ 不適切なプラグインファイル命名: $file"
-        echo "💡 プラグインファイルは*Plugin.ts形式にしてください"
-        NAMING_ERRORS=$((NAMING_ERRORS + 1))
-      fi
-    done
-  fi
-  
-  if [ $NAMING_ERRORS -ne 0 ]; then
-    echo "❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
+# エラーハンドリング関数（単一責任原則）
+handle_check_failure() {
+    local error_message="$1"
+    local step_name="$2"
+    
+    echo "$error_message"
+    echo "💡 Pre-commit check '$step_name' failed. Run the check manually to see detailed errors."
     exit 1
-  else
-    echo "  ✅ 命名規則チェック通過"
-  fi
-fi
+}
 
-# any型の使用チェック
-echo "🔍 Checking any type usage..."
-NEW_ANY_COUNT=$(grep -r ": any" src --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | tr -d ' ')
-echo "  Current any type usage: $NEW_ANY_COUNT"
+# チェック実行関数（関数抽出リファクタリング）
+run_type_check() {
+    echo "📝 Running TypeScript type check..."
+    if ! npx tsc --noEmit; then
+        handle_check_failure "$ERROR_TYPE_CHECK" "TypeScript type check"
+    fi
+}
 
-if [ "$NEW_ANY_COUNT" -gt "560" ]; then
-  echo "❌ any型の使用が増加しています（現在: $NEW_ANY_COUNT、上限: 560）"
-  echo "💡 ヒント: 'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
-  exit 1
-fi
+run_lint_check() {
+    echo "🔧 Running ESLint..."
+    if ! npx lint-staged; then
+        handle_check_failure "$ERROR_LINT_CHECK" "ESLint check"
+    fi
+}
 
-# 循環参照チェック（警告のみ）
-if [ -f "scripts/check-circular-deps.js" ]; then
-  echo "🔍 Checking circular dependencies..."
-  node scripts/check-circular-deps.js > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    echo "⚠️  循環参照が検出されました。詳細は 'node scripts/check-circular-deps.js' で確認してください。"
-    # 警告のみで、コミットはブロックしない
-  fi
-fi
+run_build_check() {
+    echo "🏗️ Running build..."
+    if ! npm run build > /dev/null 2>&1; then
+        handle_check_failure "$ERROR_BUILD_CHECK" "Build check"
+    fi
+}
 
-echo "✅ All pre-commit checks passed!"
+run_test_check() {
+    echo "🧪 Running tests for changed files..."
+    local test_failed=0
+    
+    # プロセス置換を使用して終了コード伝播問題を解決（Issue #98 修正）
+    while IFS= read -r file; do
+        if [ -f "$file" ]; then
+            echo "  Testing: $file"
+            if ! npm test -- "$file" --no-coverage 2>&1 | grep -E "(PASS|FAIL)" > /dev/null; then
+                echo "❌ Test failed for $file"
+                test_failed=1
+                break
+            else
+                echo "✅ Test passed for $file"
+            fi
+        fi
+    done < <(git diff --cached --name-only | grep -E "\.test\.ts$")
+    
+    if [ $test_failed -ne 0 ]; then
+        handle_check_failure "$ERROR_TEST_CHECK" "Test execution"
+    fi
+}
+
+run_naming_conventions_check() {
+    echo "📝 Checking naming conventions..."
+    local staged_ts_files
+    staged_ts_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+    
+    if [ -n "$staged_ts_files" ]; then
+        local naming_errors=0
+        
+        # バージョン番号付きファイル名チェック
+        local version_files
+        version_files=$(echo "$staged_ts_files" | grep -E 'v[0-9]+\.[0-9]+' || true)
+        if [ -n "$version_files" ]; then
+            echo "❌ バージョン番号付きファイル名が検出されました:"
+            echo "$version_files" | sed 's/^/  - /'
+            naming_errors=$((naming_errors + 1))
+        fi
+        
+        # Implサフィックスチェック
+        local impl_files
+        impl_files=$(echo "$staged_ts_files" | grep -E 'Impl\.ts$' || true)
+        if [ -n "$impl_files" ]; then
+            echo "❌ *Impl.tsサフィックスが検出されました:"
+            echo "$impl_files" | sed 's/^/  - /'
+            naming_errors=$((naming_errors + 1))
+        fi
+        
+        # プラグインファイル命名チェック
+        local plugin_files
+        plugin_files=$(echo "$staged_ts_files" | grep -E 'src/plugins/.*\.ts$' || true)
+        if [ -n "$plugin_files" ]; then
+            for file in $plugin_files; do
+                local basename
+                basename=$(basename "$file" .ts)
+                if [[ "$file" == *"/plugins/"* ]] && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
+                    echo "❌ 不適切なプラグインファイル命名: $file"
+                    echo "💡 プラグインファイルは*Plugin.ts形式にしてください"
+                    naming_errors=$((naming_errors + 1))
+                fi
+            done
+        fi
+        
+        if [ $naming_errors -ne 0 ]; then
+            handle_check_failure "$ERROR_NAMING_CHECK" "Naming conventions"
+        else
+            echo "  ✅ 命名規則チェック通過"
+        fi
+    fi
+}
+
+run_any_type_check() {
+    echo "🔍 Checking any type usage..."
+    local new_any_count
+    new_any_count=$(grep -r ": any" src --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | tr -d ' ')
+    echo "  Current any type usage: $new_any_count"
+    
+    if [ "$new_any_count" -gt "560" ]; then
+        echo "現在: $new_any_count、上限: 560"
+        echo "💡 ヒント: 'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+        handle_check_failure "$ERROR_ANY_TYPE_CHECK" "Any type usage"
+    fi
+}
+
+run_circular_dependency_check() {
+    if [ -f "scripts/check-circular-deps.js" ]; then
+        echo "🔍 Checking circular dependencies..."
+        if ! node scripts/check-circular-deps.js > /dev/null 2>&1; then
+            echo "⚠️  循環参照が検出されました。詳細は 'node scripts/check-circular-deps.js' で確認してください。"
+            # 警告のみで、コミットはブロックしない
+        fi
+    fi
+}
+
+# メイン実行部分（すべてのチェックを順次実行）
+main() {
+    echo "🔍 Pre-commit checks starting..."
+    
+    # 必須チェック（失敗時は即座にexit）
+    run_type_check
+    run_lint_check
+    run_build_check
+    run_test_check
+    run_naming_conventions_check
+    run_any_type_check
+    
+    # 警告のみのチェック
+    run_circular_dependency_check
+    
+    echo "✅ All pre-commit checks passed!"
+}
+
+# スクリプト実行（Issue #98修正により、終了コード伝播が確実に動作）
+main "$@"
