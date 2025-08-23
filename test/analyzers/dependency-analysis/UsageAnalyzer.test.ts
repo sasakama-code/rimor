@@ -92,6 +92,31 @@ export class AppComponent {
       expect(result).toContain('@babel/parser');
     });
 
+    it('should correctly handle Node.js built-in modules with subpaths and node: prefix (Issue #101)', async () => {
+      createTestFile(projectDir, 'src/builtins.ts', `
+import { promises as fs } from 'fs';
+import { readFile } from 'fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { randomBytes } from 'crypto/random';
+import express from 'express';
+
+export function processFiles() {
+  return { fs, readFile, path, crypto, randomBytes, express };
+}
+      `);
+
+      const result = await analyzer.findUsedPackages(projectDir);
+      
+      // Issue #101: これらは組み込みモジュールなので結果に含まれるべきではない
+      expect(result).not.toContain('fs'); // fs subpath
+      expect(result).not.toContain('path'); // node: prefix
+      expect(result).not.toContain('crypto'); // node: prefix & subpath
+      
+      // 外部パッケージは含まれるべき
+      expect(result).toContain('express');
+    });
+
     it('should handle dynamic imports', async () => {
       createTestFile(projectDir, 'src/lazy.ts', `
 async function loadModule() {
@@ -126,6 +151,32 @@ import express from 'express';
   });
 
   describe('analyzeUsageFrequency', () => {
+    it('should correctly handle built-in modules in frequency analysis (Issue #101)', async () => {
+      createTestFile(projectDir, 'src/freq-test.ts', `
+import fs from 'fs';
+import { readFile, writeFile } from 'fs/promises';
+import path from 'node:path';  
+import crypto from 'node:crypto';
+import express from 'express';
+import express2 from 'express';
+
+// 複数回使用
+const data1 = readFile('file1.txt');
+const data2 = writeFile('file2.txt', 'content');
+const hasher = crypto.createHash('sha256');
+      `);
+
+      const result = await analyzer.analyzeUsageFrequency(projectDir);
+      
+      // Issue #101: 組み込みモジュールは頻度にカウントされるべきではない
+      expect(result.get('fs')).toBeUndefined();
+      expect(result.get('path')).toBeUndefined(); 
+      expect(result.get('crypto')).toBeUndefined();
+      
+      // 外部パッケージは正しくカウントされるべき
+      expect(result.get('express')).toBe(2);
+    });
+
     it('should count usage frequency of each package', async () => {
       createTestFile(projectDir, 'src/file1.ts', `
 import express from 'express';

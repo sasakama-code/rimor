@@ -66,8 +66,8 @@ export class UsageAnalyzer {
         const imports = this.extractImports(content);
         
         imports.forEach(imp => {
-          if (!this.isRelativeImport(imp) && !this.BUILT_IN_MODULES.has(imp)) {
-            const packageName = this.getPackageName(imp);
+          const packageName = this.getExternalPackageName(imp);
+          if (packageName) {
             usedPackages.add(packageName);
           }
         });
@@ -96,8 +96,8 @@ export class UsageAnalyzer {
         const imports = this.extractImports(content);
         
         imports.forEach(imp => {
-          if (!this.isRelativeImport(imp) && !this.BUILT_IN_MODULES.has(imp)) {
-            const packageName = this.getPackageName(imp);
+          const packageName = this.getExternalPackageName(imp);
+          if (packageName) {
             frequency.set(packageName, (frequency.get(packageName) || 0) + 1);
           }
         });
@@ -292,8 +292,9 @@ export class UsageAnalyzer {
         const filePackages = new Set<string>();
         
         imports.forEach(imp => {
-          if (!this.isRelativeImport(imp) && !this.BUILT_IN_MODULES.has(imp)) {
-            filePackages.add(this.getPackageName(imp));
+          const packageName = this.getExternalPackageName(imp);
+          if (packageName) {
+            filePackages.add(packageName);
           }
         });
         
@@ -370,16 +371,48 @@ export class UsageAnalyzer {
   }
 
   /**
+   * 外部パッケージかどうかを判定（DRY原則適用）
+   * Issue #101: 組み込みモジュール判定の統一
+   * @private
+   */
+  private isExternalPackage(importPath: string): boolean {
+    if (this.isRelativeImport(importPath)) {
+      return false;
+    }
+    
+    const packageName = this.getPackageName(importPath);
+    return !this.BUILT_IN_MODULES.has(packageName);
+  }
+
+  /**
+   * 外部パッケージのパッケージ名を取得（DRY原則適用）
+   * @private
+   */
+  private getExternalPackageName(importPath: string): string | null {
+    if (!this.isExternalPackage(importPath)) {
+      return null;
+    }
+    return this.getPackageName(importPath);
+  }
+
+  /**
    * インポートパスからパッケージ名を取得
    * @private
    */
   private getPackageName(importPath: string): string {
+    // Issue #101: node:プレフィックス除去
+    const normalizedPath = importPath.startsWith('node:') 
+      ? importPath.slice(5) 
+      : importPath;
+
     // スコープ付きパッケージの場合
-    if (importPath.startsWith('@')) {
-      const parts = importPath.split('/');
+    if (normalizedPath.startsWith('@')) {
+      const parts = normalizedPath.split('/');
       return parts.slice(0, 2).join('/');
     }
-    // 通常のパッケージ
-    return importPath.split('/')[0];
+    
+    // Issue #101: 組み込みモジュールのサブパス対応（fs/promises など）
+    const baseName = normalizedPath.split('/')[0];
+    return baseName;
   }
 }
