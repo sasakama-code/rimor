@@ -284,12 +284,18 @@ export class PackageAnalyzer {
    * @private
    */
   private getPackageName(importPath: string): string {
+    // Issue #104: node:プレフィックス（Node.js組み込みの表記）を除去
+    if (importPath.startsWith('node:')) {
+      importPath = importPath.slice(5);
+    }
+    
     // スコープ付きパッケージの場合
     if (importPath.startsWith('@')) {
       const parts = importPath.split('/');
       return parts.slice(0, 2).join('/');
     }
-    // 通常のパッケージ
+    
+    // 通常のパッケージ（サブパスはルートに正規化）
     return importPath.split('/')[0];
   }
 

@@ -203,6 +203,40 @@ describe('PackageAnalyzer Integration Tests', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
     });
+
+    it('should correctly handle Node.js built-in modules with node: prefix (Issue #104)', async () => {
+      const packageJsonContent = {
+        name: 'test-project',
+        version: '1.0.0',
+        dependencies: {
+          'express': '^4.18.0'
+        }
+      };
+
+      createTestFile(projectDir, 'package.json', JSON.stringify(packageJsonContent, null, 2));
+      
+      // Create file that uses node: prefixed built-in modules
+      createTestFile(projectDir, 'src/node-modules.js', `
+        import fs from 'node:fs';
+        import path from 'node:path';
+        import crypto from 'node:crypto';
+        import { readFile } from 'fs/promises';
+        const express = require('express');
+      `);
+
+      const result = await analyzer.findMissingDependencies(projectDir);
+      
+      // Issue #104: node: prefixed modules should not be reported as missing
+      expect(result).not.toContain('fs');
+      expect(result).not.toContain('path');
+      expect(result).not.toContain('crypto');
+      expect(result).not.toContain('node:fs');
+      expect(result).not.toContain('node:path');
+      expect(result).not.toContain('node:crypto');
+      
+      // Regular dependencies should still work normally
+      expect(result).not.toContain('express');
+    });
   });
 
   describe('analyzeVersionConstraints', () => {
