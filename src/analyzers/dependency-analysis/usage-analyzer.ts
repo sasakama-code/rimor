@@ -144,45 +144,6 @@ export class UsageAnalyzer {
     return locations;
   }
 
-  /**
-   * 循環インポートを検出
-   */
-  async detectCircularImports(projectPath: string): Promise<string[][]> {
-    const graph = await this.buildDependencyGraph(projectPath);
-    const cycles: string[][] = [];
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-
-    const detectCycle = (node: string, path: string[]): void => {
-      visited.add(node);
-      recursionStack.add(node);
-      path.push(node);
-
-      const dependencies = graph.get(node) || new Set<string>();
-      for (const dep of dependencies) {
-        if (!visited.has(dep)) {
-          detectCycle(dep, [...path]);
-        } else if (recursionStack.has(dep)) {
-          // 循環を検出
-          const cycleStart = path.indexOf(dep);
-          if (cycleStart !== -1) {
-            const cycle = [...path.slice(cycleStart), dep];
-            cycles.push(cycle);
-          }
-        }
-      }
-
-      recursionStack.delete(node);
-    };
-
-    for (const node of graph.keys()) {
-      if (!visited.has(node)) {
-        detectCycle(node, []);
-      }
-    }
-
-    return cycles;
-  }
 
   /**
    * インポートの深さを分析
@@ -306,44 +267,6 @@ export class UsageAnalyzer {
     };
   }
 
-  /**
-   * 依存関係グラフを構築（内部使用）
-   * @private
-   */
-  private async buildDependencyGraph(projectPath: string): Promise<Map<string, Set<string>>> {
-    const graph = new Map<string, Set<string>>();
-    
-    // この実装では簡略化のため、パッケージレベルの依存関係のみを扱う
-    // 実際のプロジェクトでは、ファイルレベルの依存関係も考慮する必要がある
-    const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
-      cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**']
-    });
-
-    for (const file of sourceFiles) {
-      const filePath = path.join(projectPath, file);
-      try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const imports = this.extractImports(content);
-        const filePackages = new Set<string>();
-        
-        imports.forEach(imp => {
-          const packageName = this.getExternalPackageName(imp);
-          if (packageName) {
-            filePackages.add(packageName);
-          }
-        });
-        
-        // 簡略化: ファイル名をノードとして使用
-        const fileName = path.basename(file, path.extname(file));
-        graph.set(fileName, filePackages);
-      } catch (error) {
-        // エラーは無視
-      }
-    }
-    
-    return graph;
-  }
 
   /**
    * コードからimport/requireを抽出（重複を許可しない）
