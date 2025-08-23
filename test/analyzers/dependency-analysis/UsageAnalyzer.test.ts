@@ -3,7 +3,7 @@
  * モックを使用せず、実際のファイルシステムで動作を検証
  */
 
-import { UsageAnalyzer } from '../../../src/analyzers/dependency-analysis/UsageAnalyzer';
+import { UsageAnalyzer } from '../../../src/analyzers/dependency-analysis/usage-analyzer';
 import * as path from 'path';
 import {
   createTempProject,
@@ -273,6 +273,39 @@ function test() {
   });
 
   describe('categorizeUsage', () => {
+    it('should correctly identify unused dependencies from package.json (Issue #102)', async () => {
+      // package.jsonを作成（複数の依存関係を宣言）
+      createPackageJson(projectDir, {
+        'express': '^4.18.0',
+        'lodash': '^4.17.21',
+        'unused-dependency': '^1.0.0',
+        'another-unused': '^2.0.0'
+      }, {
+        'typescript': '^4.8.0',
+        'jest': '^29.0.0',
+        'unused-dev-dependency': '^1.5.0'
+      });
+
+      // 一部の依存関係のみ使用
+      createTestFile(projectDir, 'src/app.ts', `
+import express from 'express';
+import lodash from 'lodash';
+      `);
+
+      const result = await analyzer.categorizeUsage(projectDir);
+      
+      // Issue #102: 宣言されているが未使用の依存関係が正しく検出されるべき
+      expect(result.unused).toContain('unused-dependency');
+      expect(result.unused).toContain('another-unused');
+      expect(result.unused).toContain('typescript');
+      expect(result.unused).toContain('jest');
+      expect(result.unused).toContain('unused-dev-dependency');
+      
+      // 使用されている依存関係はunusedに含まれるべきではない
+      expect(result.unused).not.toContain('express');
+      expect(result.unused).not.toContain('lodash');
+    });
+
     it('should categorize packages by their usage patterns', async () => {
       // package.jsonを作成
       createPackageJson(projectDir, {
@@ -304,6 +337,18 @@ function test() {
       expect(result.core).toContain('lodash');
       expect(result.peripheral).toContain('test-lib');
       expect(result.unused).toContain('unused-lib');
+    });
+
+    it('should handle missing package.json gracefully', async () => {
+      // package.jsonを作成せずにファイルのみ作成
+      createTestFile(projectDir, 'src/index.ts', `import express from 'express';`);
+
+      const result = await analyzer.categorizeUsage(projectDir);
+      
+      // package.jsonがない場合、unusedは空になる
+      expect(result.unused).toEqual([]);
+      // usage=1なのでperipheralに分類される
+      expect(result.peripheral).toContain('express');
     });
   });
 
