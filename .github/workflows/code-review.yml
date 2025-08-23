@@ -56,20 +56,29 @@ jobs:
         LINES_ADDED=$(git diff --numstat origin/main..HEAD | awk '{sum += $1} END {print sum}')
         LINES_REMOVED=$(git diff --numstat origin/main..HEAD | awk '{sum += $2} END {print sum}')
         
+        # DRY原則適用: ヘルパー関数でGitHub Output設定を共通化
+        set_output() {
+          echo "$1=$2" >> $GITHUB_OUTPUT
+        }
+        
         # Determine significance and risk
         if [ "$TOTAL_CHANGES" -gt 20 ] || [ "$CORE_CHANGES" -gt 5 ] || [ "$LINES_ADDED" -gt 500 ]; then
-          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
-          echo "risk_level=high" >> $GITHUB_OUTPUT
+          RISK_LEVEL=high
+          HAS_SIGNIFICANT_CHANGES=true
         elif [ "$TOTAL_CHANGES" -gt 10 ] || [ "$CORE_CHANGES" -gt 2 ] || [ "$LINES_ADDED" -gt 200 ]; then
-          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
-          echo "risk_level=medium" >> $GITHUB_OUTPUT
+          RISK_LEVEL=medium
+          HAS_SIGNIFICANT_CHANGES=true
         elif [ "$TOTAL_CHANGES" -gt 3 ] || [ "$LINES_ADDED" -gt 50 ]; then
-          echo "has_significant_changes=true" >> $GITHUB_OUTPUT
-          echo "risk_level=low" >> $GITHUB_OUTPUT
+          RISK_LEVEL=low
+          HAS_SIGNIFICANT_CHANGES=true
         else
-          echo "has_significant_changes=false" >> $GITHUB_OUTPUT
-          echo "risk_level=minimal" >> $GITHUB_OUTPUT
+          RISK_LEVEL=minimal
+          HAS_SIGNIFICANT_CHANGES=false
         fi
+        
+        # 共通化されたGitHub Output設定
+        set_output "has_significant_changes" "$HAS_SIGNIFICANT_CHANGES"
+        set_output "risk_level" "$RISK_LEVEL"
         
         # Generate summary
         SUMMARY="📊 **Change Analysis**
@@ -84,7 +93,7 @@ jobs:
         echo "$SUMMARY" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
         
-        echo "📊 Analysis complete - Risk level: $(echo ${{ steps.analysis.outputs.risk_level }})"
+        echo "📊 Analysis complete - Risk level: ${RISK_LEVEL}"
 
   # 品質チェック
   quality-review:
