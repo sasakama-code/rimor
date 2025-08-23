@@ -69,14 +69,17 @@ npm version major
 ```bash
 # 機能ブランチから作業している場合
 git add -A
-git commit -m "release: prepare v1.2.3
+git commit -m "$(cat <<'EOF'
+release: prepare v1.2.3
 
 🎯 Version bump to v1.2.3
 📝 Update CHANGELOG with new features
 📚 Update documentation
 
 ✅ All quality checks passed
-🔍 Ready for release review"
+🔍 Ready for release review
+EOF
+)"
 
 git push origin feature/release-v1.2.3
 ```
