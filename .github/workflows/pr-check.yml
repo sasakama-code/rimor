@@ -66,25 +66,8 @@ jobs:
     - name: Generate coverage report
       if: always()
       run: |
-        if [ -f coverage/coverage-summary.json ]; then
-          COVERAGE=$(node -e "
-            const coverage = require('./coverage/coverage-summary.json');
-            const pct = coverage.total.statements.pct;
-            console.log(pct);
-          ")
-          echo "COVERAGE_PCT=$COVERAGE" >> $GITHUB_ENV
-          
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "::warning::Coverage is below 80% threshold: $COVERAGE%"
-            echo "COVERAGE_STATUS=failure" >> $GITHUB_ENV
-          else
-            echo "Coverage: $COVERAGE%"
-            echo "COVERAGE_STATUS=success" >> $GITHUB_ENV
-          fi
-        else
-          echo "COVERAGE_PCT=0" >> $GITHUB_ENV
-          echo "COVERAGE_STATUS=failure" >> $GITHUB_ENV
-        fi
+        # bc依存除去: Node.js専用スクリプトを使用
+        node scripts/coverage-threshold-check.js coverage/coverage-summary.json 80
     
     - name: Set coverage status for PR check
       if: always()

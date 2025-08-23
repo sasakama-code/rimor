@@ -43,15 +43,9 @@ jobs:
       run: |
         npm run type:coverage || true
         
+        # bc依存除去: Node.js専用スクリプトを使用
         if [ -f ".rimor/reports/type-coverage/type-coverage.json" ]; then
-          COVERAGE=$(jq '.metrics.coverage' .rimor/reports/type-coverage/type-coverage.json)
-          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-          
-          if (( $(echo "$COVERAGE < 95" | bc -l) )); then
-            echo "⚠️ 型カバレッジが目標を下回っています: $COVERAGE% (目標: 95%)"
-          else
-            echo "✅ 型カバレッジ: $COVERAGE% (目標: 95%)"
-          fi
+          node scripts/type-coverage-check.js .rimor/reports/type-coverage/type-coverage.json 95
         fi
     
     - name: Performance metrics
