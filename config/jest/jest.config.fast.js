@@ -10,13 +10,17 @@ module.exports = {
   
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      useESM: false
+      useESM: false,
+      tsconfig: {
+        sourceMap: false,
+        inlineSourceMap: false
+      }
     }]
   },
   
   // 高速化設定
   cache: true,
-  cacheDirectory: '<rootDir>/.jest-cache',
+  cacheDirectory: '<rootDir>/.cache/jest',
   collectCoverage: false,
   
   // タイムアウトを短縮
@@ -65,7 +69,7 @@ module.exports = {
   watchPathIgnorePatterns: [
     '<rootDir>/dist/',
     '<rootDir>/coverage/',
-    '<rootDir>/.jest-cache/',
+    '<rootDir>/.cache/',
     '<rootDir>/.rimor/'
   ]
 };

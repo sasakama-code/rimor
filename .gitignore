@@ -47,6 +47,7 @@ src/plugins/generated/*.ts
 !src/plugins/generated/.gitkeep
 
 # Cache files
+.cache/
 .rimor-cache/
 .jest-cache/
 

@@ -29,6 +29,7 @@ describe('GitIgnoreValidation', () => {
       
       // キャッシュ関連の除外設定を確認
       const cacheExclusions = [
+        '.cache/',
         '.rimor-cache/',
         '.jest-cache/',
         'node_modules/'
@@ -36,6 +37,43 @@ describe('GitIgnoreValidation', () => {
       
       cacheExclusions.forEach(exclusion => {
         expect(gitignoreContent).toContain(exclusion);
+      });
+    });
+  });
+
+  describe('Jestキャッシュ設定の検証', () => {
+    test('jest.config.mjsでcacheDirectoryが.cache/jestに設定されている', () => {
+      const jestConfigPath = path.join(projectRoot, 'config/jest/jest.config.mjs');
+      
+      if (fs.existsSync(jestConfigPath)) {
+        const jestConfigContent = fs.readFileSync(jestConfigPath, 'utf8');
+        expect(jestConfigContent).toContain("cacheDirectory: '<rootDir>/.cache/jest'");
+      }
+    });
+
+    test('jest.config.fast.jsでcacheDirectoryが.cache/jestに設定されている', () => {
+      const jestConfigPath = path.join(projectRoot, 'config/jest/jest.config.fast.js');
+      
+      if (fs.existsSync(jestConfigPath)) {
+        const jestConfigContent = fs.readFileSync(jestConfigPath, 'utf8');
+        expect(jestConfigContent).toContain("cacheDirectory: '<rootDir>/.cache/jest'");
+      }
+    });
+
+    test('ts-jest設定でインラインソースマップが無効化されている', () => {
+      const jestConfigPaths = [
+        path.join(projectRoot, 'config/jest/jest.config.mjs'),
+        path.join(projectRoot, 'config/jest/jest.config.fast.js')
+      ];
+
+      jestConfigPaths.forEach(configPath => {
+        if (fs.existsSync(configPath)) {
+          const configContent = fs.readFileSync(configPath, 'utf8');
+          if (configContent.includes('ts-jest')) {
+            expect(configContent).toContain('inlineSourceMap: false');
+            expect(configContent).toContain('sourceMap: false');
+          }
+        }
       });
     });
   });
