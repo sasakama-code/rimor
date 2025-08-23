@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG_SECURITY_LIMITS: ConfigSecurityLimits = {
  */
 export interface ConfigValidationResult {
   isValid: boolean;
-  sanitizedConfig?: any;
+  sanitizedConfig?: unknown;
   errors: string[];
   warnings: string[];
   securityIssues: string[];
@@ -245,7 +245,7 @@ export class ConfigSecurity {
   /**
    * セキュアなJSON解析
    */
-  private secureJsonParse(content: string): { success: boolean; data?: any; error?: string; securityIssues?: string[] } {
+  private secureJsonParse(content: string): { success: boolean; data?: unknown; error?: string; securityIssues?: string[] } {
     try {
       // JSON.parseの前にコンテンツをさらに検証
       const securityIssues: string[] = [];
@@ -291,7 +291,7 @@ export class ConfigSecurity {
   /**
    * 解析済みオブジェクトの検証
    */
-  private validateParsedObject(obj: any, depth: number): ConfigValidationResult {
+  private validateParsedObject(obj: unknown, depth: number): ConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     const securityIssues: string[] = [];
@@ -327,7 +327,8 @@ export class ConfigSecurity {
 
     } else if (typeof obj === 'object') {
       // オブジェクトの検証
-      const keys = Object.keys(obj);
+      const objRecord = obj as Record<string, unknown>;
+      const keys = Object.keys(objRecord);
       
       if (keys.length > this.limits.maxProperties) {
         errors.push(`プロパティ数が制限を超過: ${keys.length} > ${this.limits.maxProperties}`);
@@ -353,7 +354,7 @@ export class ConfigSecurity {
 
       // プロパティ値の再帰検証
       for (const key of keys) {
-        const propValidation = this.validateParsedObject(obj[key], depth + 1);
+        const propValidation = this.validateParsedObject(objRecord[key], depth + 1);
         if (!propValidation.isValid) {
           errors.push(...propValidation.errors.map(e => `${key}: ${e}`));
           warnings.push(...propValidation.warnings);
@@ -398,14 +399,14 @@ export class ConfigSecurity {
   /**
    * 設定オブジェクトの検証とサニタイゼーション
    */
-  private validateAndSanitizeConfig(config: any): ConfigValidationResult {
+  private validateAndSanitizeConfig(config: unknown): ConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     const securityIssues: string[] = [];
 
     try {
       // ディープクローンで元オブジェクトを保護
-      const sanitizedConfig = JSON.parse(JSON.stringify(config));
+      const sanitizedConfig = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
 
       // 基本構造の検証
       if (!sanitizedConfig || typeof sanitizedConfig !== 'object') {
@@ -426,7 +427,7 @@ export class ConfigSecurity {
 
       // プラグイン設定の検証
       if (sanitizedConfig.plugins && typeof sanitizedConfig.plugins === 'object') {
-        for (const [pluginName, pluginConfig] of Object.entries(sanitizedConfig.plugins)) {
+        for (const [pluginName, pluginConfig] of Object.entries(sanitizedConfig.plugins as Record<string, unknown>)) {
           // プラグイン名の検証
           if (!/^[a-zA-Z0-9_-]+$/.test(pluginName)) {
             errors.push(`不正なプラグイン名: ${pluginName}`);
@@ -440,7 +441,7 @@ export class ConfigSecurity {
             continue;
           }
 
-          const config = pluginConfig as any;
+          const config = pluginConfig as Record<string, unknown>;
           
           // 必須フィールドの検証
           if (typeof config.enabled !== 'boolean') {
@@ -523,7 +524,8 @@ export class ConfigSecurity {
           const originalLength = sanitizedConfig.excludePatterns.length;
           let dangerousPatternCount = 0;
           
-          sanitizedConfig.excludePatterns = sanitizedConfig.excludePatterns.filter((pattern: any) => {
+          const patterns = sanitizedConfig.excludePatterns as unknown[];
+          sanitizedConfig.excludePatterns = patterns.filter((pattern: unknown) => {
             if (typeof pattern !== 'string') {
               warnings.push('excludePatternsに文字列以外の値を検出。除外しました。');
               return false;

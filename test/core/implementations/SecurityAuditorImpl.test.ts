@@ -1,4 +1,4 @@
-import { SecurityAuditorImpl } from '../../../src/core/implementations/SecurityAuditorImpl';
+import { SecurityAuditor } from '../../../src/core/implementations/SecurityAuditor';
 import {
   SecurityAuditOptions,
   SecurityAuditResult,
@@ -23,12 +23,12 @@ const cleanupTestFiles = (dir: string) => {
   }
 };
 
-describe('SecurityAuditorImpl', () => {
-  let auditor: SecurityAuditorImpl;
+describe('SecurityAuditor', () => {
+  let auditor: SecurityAuditor;
   const testDir = path.join(__dirname, 'test-security-audit');
 
   beforeEach(() => {
-    auditor = new SecurityAuditorImpl();
+    auditor = new SecurityAuditor();
   });
 
   afterEach(() => {
@@ -37,7 +37,7 @@ describe('SecurityAuditorImpl', () => {
 
   describe('基本的な監査機能', () => {
     it('セキュリティ監査インスタンスを作成できる', () => {
-      expect(auditor).toBeInstanceOf(SecurityAuditorImpl);
+      expect(auditor).toBeInstanceOf(SecurityAuditor);
     });
 
     it('空のディレクトリを監査できる', async () => {

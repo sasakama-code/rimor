@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { TaintAnalysisSystem } from '../../security/taint-analysis-system';
+import { Argv } from 'yargs';
+import { TaintAnalysisOptions, TaintIssue } from './taint-analysis-types';
 
 /**
  * 汚染解析コマンドの作成
@@ -16,7 +18,7 @@ export function createTaintAnalysisCommand() {
     command: 'taint-analysis <path>',
     aliases: ['taint'],
     describe: '型ベース汚染解析を実行（arXiv:2504.18529v2）',
-    builder: (yargs: any) => {
+    builder: (yargs: Argv) => {
       return yargs
         .positional('path', {
           describe: '解析対象のファイルまたはディレクトリ',
@@ -59,9 +61,10 @@ export function createTaintAnalysisCommand() {
           default: 'conservative'
         });
     },
-    handler: async (argv: any) => {
+    handler: async (argv: unknown) => {
+      const options = argv as TaintAnalysisOptions;
       try {
-        await runTaintAnalysis(argv.path, argv);
+        await runTaintAnalysis(options.path, options);
       } catch (error) {
         console.error(chalk.red('Error:'), error);
         process.exit(1);
@@ -73,7 +76,7 @@ export function createTaintAnalysisCommand() {
 /**
  * 汚染解析の実行
  */
-async function runTaintAnalysis(targetPath: string, options: any): Promise<void> {
+async function runTaintAnalysis(targetPath: string, options: TaintAnalysisOptions): Promise<void> {
   const startTime = Date.now();
   
   // 解析システムの初期化
@@ -117,7 +120,7 @@ async function runTaintAnalysis(targetPath: string, options: any): Promise<void>
   // 解析結果の集約
   let totalIssues = 0;
   let totalAnnotations = 0;
-  const allIssues: any[] = [];
+  const allIssues: TaintIssue[] = [];
   const allAnnotations = new Map<string, string>();
   
   // 各ファイルを解析

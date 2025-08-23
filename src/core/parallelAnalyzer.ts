@@ -4,22 +4,15 @@
  */
 
 import { IPlugin, Issue } from './types';
-import { PluginManager } from './pluginManager';
+import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { errorHandler } from '../utils/errorHandler';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+// 統一型定義をインポート
+import { AnalysisResultWithParallelStats } from '../types/analysis';
 
-export interface AnalysisResult {
-  totalFiles: number;
-  issues: Issue[];
-  executionTime: number;
-  parallelStats: {
-    batchCount: number;
-    avgBatchTime: number;
-    maxBatchTime: number;
-    concurrencyLevel: number;
-  };
-}
+// 後方互換性のための型エイリアス
+export type AnalysisResult = AnalysisResultWithParallelStats;
 
 export interface ParallelOptions {
   batchSize?: number;        // バッチあたりのファイル数（デフォルト: 10）
@@ -28,11 +21,11 @@ export interface ParallelOptions {
 }
 
 export class ParallelAnalyzer {
-  private pluginManager: PluginManager;
+  private pluginManager: UnifiedPluginManager;
   private options: Required<ParallelOptions>;
   
   constructor(options: ParallelOptions = {}) {
-    this.pluginManager = new PluginManager();
+    this.pluginManager = new UnifiedPluginManager();
     this.options = {
       batchSize: options.batchSize ?? 10,
       maxConcurrency: options.maxConcurrency ?? 4,

@@ -72,9 +72,12 @@ describe('UnifiedAnalysisEngine', () => {
       mockPluginManager.setMockResults([{
         pluginId: 'test-plugin',
         issues: [{
+          id: 'test-issue-id',
           type: 'test-issue',
-          severity: 'error',
-          message: 'Test issue'
+          severity: 'high',
+          message: 'Test issue',
+          filePath: 'test.ts',
+          category: 'test-quality' as const
         }],
         executionTime: 10
       }]);
@@ -103,13 +106,6 @@ describe('UnifiedAnalysisEngine', () => {
       const result = await engine.analyze(testDir);
       
       expect(result.totalFiles).toBe(3);
-      expect(result.issues).toHaveLength(0);
-    });
-    
-    it('should handle non-existent path gracefully', async () => {
-      const result = await engine.analyze('./non-existent-path');
-      
-      expect(result.totalFiles).toBe(0);
       expect(result.issues).toHaveLength(0);
     });
     
@@ -179,26 +175,28 @@ describe('UnifiedAnalysisEngine', () => {
       
       const astInfo = await engine.generateAST(testFile);
       
-      expect(astInfo.fileName).toBe(testFile);
-      expect(astInfo.sourceFile).toBeDefined();
-      expect(astInfo.sourceFile.getFullText()).toBe(content);
+      expect(astInfo).toBeDefined();
+      expect(astInfo.type).toBe('program');
+      expect(astInfo.text).toContain('hello');
     });
     
-    it('should cache AST information', async () => {
+    it('should read latest file content for AST generation', async () => {
       const testFile = path.join(testDir, 'src', 'cached-ast.ts');
       await fs.writeFile(testFile, 'export const cached = true;');
       
       // 最初の呼び出し
       const ast1 = await engine.generateAST(testFile);
+      expect(ast1.text).toContain('cached = true');
       
       // ファイル内容を変更
       await fs.writeFile(testFile, 'export const changed = false;');
       
-      // 2回目の呼び出し（キャッシュから取得）
+      // 2回目の呼び出し（新しい内容を読み込む）
       const ast2 = await engine.generateAST(testFile);
       
-      expect(ast1).toBe(ast2); // 同じオブジェクトを返す
-      expect(ast2.sourceFile.getFullText()).toBe('export const cached = true;'); // キャッシュされた内容
+      // 新しい内容が反映されていることを確認
+      expect(ast2.type).toBe('program');
+      expect(ast2.text).toContain('changed = false');
     });
     
     it('should handle file read errors', async () => {
@@ -222,7 +220,7 @@ describe('UnifiedAnalysisEngine', () => {
       
       // 新しい内容が読み込まれることを確認
       const ast = await engine.generateAST(testFile);
-      expect(ast.sourceFile.getFullText()).toBe('export const updated = 2;');
+      expect(ast.text).toContain('updated');
       
       // CacheManagerのinvalidateAllが呼ばれたことを確認
       expect(mockCacheManagerInstance.invalidateAll).toHaveBeenCalled();

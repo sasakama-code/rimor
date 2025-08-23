@@ -46,6 +46,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('汚染されたデータフローを検出できる', async () => {
       const testMethod: TestMethod = {
         name: 'testUserInput',
+        type: 'test' as const,
         filePath: 'test.ts',
         content: `
           const userInput = request.body.name; // @Tainted
@@ -66,7 +67,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: ['@Tainted'],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 5, column: 10 },
+          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
+        }
       };
 
       const result = await engine.analyzeMethod(testMethod);
@@ -83,6 +88,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('安全なデータフローを正しく検証できる', async () => {
       const testMethod: TestMethod = {
         name: 'testSafeInput',
+        type: 'test' as const,
         filePath: 'test.ts',
         content: `
           const safeInput = sanitize(request.body.name); // @Untainted
@@ -103,7 +109,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: ['@Untainted'],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 5, column: 10 },
+          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
+        }
       };
 
       const result = await engine.analyzeMethod(testMethod);
@@ -120,6 +130,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('テストケース全体を解析できる', async () => {
       const testMethod: TestMethod = {
         name: 'testVulnerableEndpoint',
+        type: 'test' as const,
         filePath: 'test.ts',
         content: `
           const input = req.params.id;
@@ -138,7 +149,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: ['@Tainted'],
           isAsync: false
         },
-        location: { startLine: 10, endLine: 13, startColumn: 1, endColumn: 10 }
+        location: { 
+          start: { line: 10, column: 1 },
+          end: { line: 13, column: 10 },
+          startLine: 10, endLine: 13, startColumn: 1, endColumn: 10 
+        }
       };
 
       const result = await engine.analyzeMethod(testMethod);
@@ -157,6 +172,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('インクリメンタル解析が正しく動作する', async () => {
       const updatedMethod: TestMethod = {
         name: 'updatedMethod',
+        type: 'test',
         filePath: 'test.ts',
         content: 'const x = getUserInput(); processUnsafe(x);',
         body: 'const x = getUserInput(); processUnsafe(x);',
@@ -167,7 +183,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 1, endColumn: 50 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 1, column: 50 },
+          startLine: 1, endLine: 1, startColumn: 1, endColumn: 50 
+        }
       };
 
       // インクリメンタル解析機能が実装されている場合のみテスト
@@ -191,6 +211,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('型推論が正しく動作する', async () => {
       const testMethod: TestMethod = {
         name: 'testTypeInference',
+        type: 'test' as const,
         filePath: 'test.ts',
         content: `
           const data = getData();
@@ -209,7 +230,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 5, column: 10 },
+          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
+        }
       };
 
       // inferTypesメソッドが実装されている場合のみテスト
@@ -235,6 +260,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('複数のメソッドを並列で解析できる', async () => {
       const methods: TestMethod[] = Array.from({ length: 10 }, (_, i) => ({
         name: `testMethod${i}`,
+        type: 'test' as const,
         filePath: 'test.ts',
         content: `const x = input${i}; return process(x);`,
         body: `const x = input${i}; return process(x);`,
@@ -247,7 +273,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: ['@Tainted'],
           isAsync: false
         },
-        location: { startLine: i * 10, endLine: i * 10 + 1, startColumn: 1, endColumn: 50 }
+        location: { 
+          start: { line: i * 10, column: 1 },
+          end: { line: i * 10 + 1, column: 50 },
+          startLine: i * 10, endLine: i * 10 + 1, startColumn: 1, endColumn: 50 
+        }
       }));
 
       const startTime = Date.now();
@@ -263,6 +293,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('キャッシュが正しく機能する', async () => {
       const testMethod: TestMethod = {
         name: 'cachedMethod',
+        type: 'test' as const,
         filePath: 'test.ts',
         content: 'return "safe";',
         body: 'return "safe";',
@@ -273,7 +304,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 1, endColumn: 20 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 1, column: 20 },
+          startLine: 1, endLine: 1, startColumn: 1, endColumn: 20 
+        }
       };
 
       // 初回実行
@@ -293,6 +328,7 @@ describe('TypeBasedSecurityEngine', () => {
     it('不正な入力に対して適切にエラーを処理する', async () => {
       const invalidMethod: TestMethod = {
         name: '',
+        type: 'test',
         filePath: 'test.ts',
         content: null as any,
         body: null as any,
@@ -303,7 +339,11 @@ describe('TypeBasedSecurityEngine', () => {
           annotations: [],
           isAsync: false
         },
-        location: { startLine: 1, endLine: 1, startColumn: 1, endColumn: 1 }
+        location: { 
+          start: { line: 1, column: 1 },
+          end: { line: 1, column: 1 },
+          startLine: 1, endLine: 1, startColumn: 1, endColumn: 1 
+        }
       };
 
       await expect(engine.analyzeMethod(invalidMethod)).rejects.toThrow();

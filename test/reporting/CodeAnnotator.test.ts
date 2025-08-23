@@ -134,6 +134,7 @@ describe('CodeAnnotator', () => {
           id: '1',
           type: IssueType.SQL_INJECTION,
           severity: Severity.CRITICAL,
+          category: 'security' as const,
           location: {
             file: path.join(tempDir, 'db.ts'),
             startLine: 10,
@@ -145,6 +146,7 @@ describe('CodeAnnotator', () => {
           id: '2',
           type: IssueType.XSS,
           severity: Severity.HIGH,
+          category: 'security' as const,
           location: {
             file: path.join(tempDir, 'api.ts'),
             startLine: 20,
@@ -156,6 +158,7 @@ describe('CodeAnnotator', () => {
           id: '3',
           type: IssueType.TEST_QUALITY,
           severity: Severity.MEDIUM,
+          category: 'test-quality' as const,
           location: {
             file: path.join(tempDir, 'api.ts'),
             startLine: 30,
@@ -399,6 +402,7 @@ describe('CodeAnnotator', () => {
           id: '1',
           type: IssueType.SQL_INJECTION,
           severity: Severity.CRITICAL,
+          category: 'security' as const,
           location: {
             file: '/project/db.ts',
             startLine: 10,
@@ -410,6 +414,7 @@ describe('CodeAnnotator', () => {
           id: '2',
           type: IssueType.XSS,
           severity: Severity.HIGH,
+          category: 'security' as const,
           location: {
             file: '/project/db.ts',
             startLine: 20,

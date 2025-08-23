@@ -1,0 +1,117 @@
+"use strict";
+/**
+ * MarkdownFormatter
+ * v0.9.0 - Issue #64: レポートシステムの統合
+ * REFACTOR段階: BaseFormatterを継承
+ *
+ * SOLID原則: 単一責任（Markdown形式の生成のみ）
+ * DRY原則: 共通ロジックをBaseFormatterに委譲
+ * KISS原則: シンプルなMarkdown生成
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MarkdownFormatter = void 0;
+const BaseFormatter_1 = require("./BaseFormatter");
+/**
+ * Markdown形式のフォーマッター
+ * StructuredReporterの機能を統合
+ */
+class MarkdownFormatter extends BaseFormatter_1.BaseFormatter {
+    name = 'markdown';
+    /**
+     * Markdown形式でレポートを生成
+     * Template Methodパターンの具体実装
+     */
+    doFormat(result, options) {
+        const markdown = [];
+        // ヘッダー
+        markdown.push('# 分析レポート');
+        markdown.push('');
+        markdown.push(`生成日時: ${this.generateLocalizedDateTime('ja-JP')}`);
+        // プロジェクトパスは省略（UnifiedAnalysisResultに含まれない）
+        markdown.push('');
+        // サマリー
+        markdown.push('## サマリー');
+        markdown.push('');
+        if (result.summary) {
+            markdown.push(`- **総合スコア**: ${result.summary.overallScore}/100`);
+            markdown.push(`- **グレード**: ${result.summary.overallGrade}`);
+            markdown.push(`- **ファイル数**: ${result.summary.statistics.totalFiles}`);
+            markdown.push(`- **テスト数**: ${result.summary.statistics.totalTests || 0}`);
+            markdown.push('');
+            // リスク統計
+            markdown.push('### リスク統計');
+            markdown.push('');
+            const riskCounts = result.summary.statistics.riskCounts;
+            markdown.push(`- CRITICAL: ${riskCounts.CRITICAL}件`);
+            markdown.push(`- HIGH: ${riskCounts.HIGH}件`);
+            markdown.push(`- MEDIUM: ${riskCounts.MEDIUM}件`);
+            markdown.push(`- LOW: ${riskCounts.LOW}件`);
+            markdown.push(`- MINIMAL: ${riskCounts.MINIMAL}件`);
+            markdown.push('');
+        }
+        // 主要なリスク
+        if (result.aiKeyRisks && result.aiKeyRisks.length > 0) {
+            markdown.push('## 主要なリスク');
+            markdown.push('');
+            const maxRisks = options?.maxRisks ?? 10;
+            const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
+            risksToShow.forEach((risk, index) => {
+                markdown.push(`### ${index + 1}. ${risk.title || risk.problem}`);
+                markdown.push('');
+                markdown.push(`**リスクレベル**: ${risk.riskLevel}`);
+                markdown.push('');
+                markdown.push(`**ファイル**: ${risk.filePath}`);
+                markdown.push('');
+                if (risk.problem) {
+                    markdown.push(`**問題**: ${risk.problem}`);
+                    markdown.push('');
+                }
+                if (risk.context && risk.context.codeSnippet) {
+                    markdown.push('**コード**:');
+                    markdown.push('```typescript');
+                    markdown.push(risk.context.codeSnippet);
+                    markdown.push('```');
+                    markdown.push('');
+                }
+                if (risk.suggestedAction) {
+                    // suggestedActionが文字列の場合とオブジェクトの場合の両方に対応
+                    const action = typeof risk.suggestedAction === 'string'
+                        ? risk.suggestedAction
+                        : risk.suggestedAction.description;
+                    markdown.push(`**推奨アクション**: ${action}`);
+                    markdown.push('');
+                }
+                markdown.push('---');
+                markdown.push('');
+            });
+        }
+        // ディメンション評価
+        if (result.summary && result.summary.dimensions) {
+            markdown.push('## 品質ディメンション');
+            markdown.push('');
+            // dimensionsが配列の場合とオブジェクトの場合の両方に対応
+            const dimensions = Array.isArray(result.summary.dimensions)
+                ? result.summary.dimensions
+                : Object.entries(result.summary.dimensions).map(([name, data]) => ({
+                    name,
+                    ...data
+                }));
+            dimensions.forEach((dimension) => {
+                const name = dimension.name || Object.keys(dimension)[0];
+                const score = dimension.score;
+                const grade = dimension.grade;
+                if (name && score !== undefined) {
+                    markdown.push(`- **${name}**: スコア ${score}/100, グレード ${grade || 'N/A'}`);
+                }
+            });
+            markdown.push('');
+        }
+        // フッター
+        markdown.push('---');
+        markdown.push('');
+        markdown.push('*このレポートはRimor UnifiedReportEngineによって生成されました*');
+        return markdown.join('\n');
+    }
+}
+exports.MarkdownFormatter = MarkdownFormatter;
+//# sourceMappingURL=MarkdownFormatter.js.map

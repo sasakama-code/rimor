@@ -8,6 +8,7 @@
 import { injectable } from 'inversify';
 import * as crypto from 'crypto';
 import { StructuredAnalysisResult } from '../types';
+import { ReportGenerationOptions } from '../core/types';
 
 interface CacheEntry {
   key: string;
@@ -28,7 +29,7 @@ export class ReportCache {
   generateKey(
     data: StructuredAnalysisResult,
     format: string,
-    options?: any
+    options?: ReportGenerationOptions
   ): string {
     const content = JSON.stringify({
       data: this.extractKeyData(data),
@@ -115,7 +116,7 @@ export class ReportCache {
   /**
    * キー生成用のデータを抽出（メタデータを除外）
    */
-  private extractKeyData(data: StructuredAnalysisResult): any {
+  private extractKeyData(data: StructuredAnalysisResult): string | object {
     const { metadata, ...rest } = data;
     return {
       ...rest,

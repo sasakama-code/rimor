@@ -1,0 +1,35 @@
+2b48de5b52b9623253fd21c37375c22e
+"use strict";
+/**
+ * Base type definitions for Rimor
+ * These are fundamental types that other modules depend on
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SecurityType = void 0;
+// SecurityType列挙型（値として使用可能）
+var SecurityType;
+(function (SecurityType) {
+    /** ユーザー入力型 */
+    SecurityType["USER_INPUT"] = "user-input";
+    /** 認証トークン型 */
+    SecurityType["AUTH_TOKEN"] = "auth-token";
+    /** 検証済み認証型 */
+    SecurityType["VALIDATED_AUTH"] = "validated-auth";
+    /** 検証済み入力型 */
+    SecurityType["VALIDATED_INPUT"] = "validated-input";
+    /** サニタイズ済み型 */
+    SecurityType["SANITIZED_DATA"] = "sanitized-data";
+    /** セキュアSQL型 */
+    SecurityType["SECURE_SQL"] = "secure-sql";
+    /** セキュアHTML型 */
+    SecurityType["SECURE_HTML"] = "secure-html";
+    /** 認証型 */
+    SecurityType["AUTHENTICATION"] = "authentication";
+    /** 認可型 */
+    SecurityType["AUTHORIZATION"] = "authorization";
+    /** 入力検証型 */
+    SecurityType["INPUT_VALIDATION"] = "input-validation";
+    /** APIセキュリティ型 */
+    SecurityType["API_SECURITY"] = "api-security";
+})(SecurityType || (exports.SecurityType = SecurityType = {}));
+//# sourceMappingURL=base-types.js.map

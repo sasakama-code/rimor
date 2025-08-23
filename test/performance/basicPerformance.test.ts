@@ -1,17 +1,17 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { Analyzer } from '../../src/core/analyzer';
-import { PluginManager } from '../../src/core/pluginManager';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
 
 const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures', filename);
 
 describe('Basic Performance Tests', () => {
-  let analyzer: Analyzer;
-  let pluginManager: PluginManager;
+  let analyzer: UnifiedAnalysisEngine;
+  let pluginManager: UnifiedPluginManager;
 
   beforeEach(() => {
-    analyzer = new Analyzer();
-    pluginManager = new PluginManager();
+    analyzer = new UnifiedAnalysisEngine();
+    pluginManager = new UnifiedPluginManager();
   });
 
   describe('Analysis Performance', () => {

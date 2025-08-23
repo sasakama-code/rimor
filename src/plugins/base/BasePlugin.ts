@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   ITestQualityPlugin,
   ProjectContext,
@@ -9,9 +10,11 @@ import {
   Evidence,
   CodeLocation,
   FixResult,
-  Feedback
+  Feedback,
+  Issue
 } from '../../core/types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
+import { LogMetadata, ErrorLogMetadata } from '../types/log-types';
 
 export abstract class BasePlugin implements ITestQualityPlugin {
   abstract id: string;
@@ -28,9 +31,8 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   async autoFix?(_testFile: TestFile, _improvements: Improvement[]): Promise<FixResult> {
     return {
       success: false,
-      applied: [],
-      failed: [],
-      summary: 'Auto-fix not implemented for this plugin'
+      modifiedFiles: [],
+      errors: ['Auto-fix not implemented for this plugin']
     };
   }
 
@@ -79,7 +81,8 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     location: CodeLocation,
     confidence: number,
     evidence: Evidence[],
-    metadata?: Record<string, any>
+    severity: 'info' | 'high' | 'medium' | 'low' | 'critical' = 'info',
+    metadata?: Record<string, unknown>
   ): DetectionResult {
     return {
       patternId,
@@ -87,6 +90,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       location,
       confidence: Math.max(0, Math.min(1, confidence)), // 0-1の範囲に制限
       evidence,
+      severity,
       metadata
     };
   }
@@ -95,12 +99,12 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected createImprovement(
     id: string,
     priority: 'critical' | 'high' | 'medium' | 'low',
-    type: 'add' | 'modify' | 'remove' | 'refactor',
+    type: 'add-test' | 'fix-assertion' | 'improve-coverage' | 'refactor' | 'documentation' | 'performance' | 'security',
     title: string,
     description: string,
     location: CodeLocation,
-    estimatedImpact: { scoreImprovement: number; effortMinutes: number },
-    automatable: boolean = false
+    estimatedImpact: number,
+    autoFixable: boolean = false
   ): Improvement {
     return {
       id,
@@ -110,7 +114,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       description,
       location,
       estimatedImpact,
-      automatable
+      autoFixable
     };
   }
 
@@ -130,7 +134,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
 
     return {
       overall,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: overall,
         maintainability: 75
@@ -162,6 +166,69 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     };
   }
 
+  /**
+   * レガシーanalyzeメソッドのブリッジ実装
+   * 後方互換性のために提供
+   */
+  async analyze(filePath: string): Promise<Issue[]> {
+    // テストファイルのモックコンテキストを作成
+    const context: ProjectContext = {
+      rootPath: process.cwd(),
+      language: 'typescript',
+      framework: 'unknown',
+      testFramework: 'jest'
+    };
+
+    // isApplicableチェック
+    if (!this.isApplicable(context)) {
+      return [];
+    }
+
+    // テストファイルオブジェクトを作成
+    const testFile: TestFile = {
+      path: filePath,
+      content: this.isTestFile(filePath) ? 
+        (fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '') : ''
+    };
+
+    // パターン検出を実行
+    const patterns = await this.detectPatterns(testFile);
+    
+    // DetectionResultをIssueに変換
+    return patterns.map(pattern => {
+      const file = pattern.location?.file || filePath;
+      // SeverityLevelをIssueSeverityに変換
+      const severity = this.mapSeverityLevel(pattern.severity || 'medium');
+      return {
+        type: pattern.patternId || 'unknown',
+        severity,
+        message: (pattern.metadata?.description || `Pattern detected: ${pattern.patternName}`) as string,
+        filePath: file,
+        file: file,
+        line: pattern.location?.line || 1,
+        column: pattern.location?.column,
+        category: 'pattern' as const
+      } as Issue;
+    });
+  }
+
+  // ヘルパーメソッド: SeverityLevelをIssueSeverityに変換
+  private mapSeverityLevel(level: string): 'low' | 'medium' | 'high' | 'critical' {
+    switch (level) {
+      case 'info':
+      case 'low':
+        return 'low';
+      case 'medium':
+        return 'medium';
+      case 'high':
+        return 'high';
+      case 'critical':
+        return 'critical';
+      default:
+        return 'medium';
+    }
+  }
+
   // ヘルパーメソッド: プロジェクト種別判定
   protected isTypeScriptProject(context: ProjectContext): boolean {
     return context.language === 'typescript';
@@ -180,24 +247,24 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   }
 
   // ヘルパーメソッド: ログ出力（将来的なログシステム連携用）
-  protected logDebug(message: string, metadata?: any): void {
+  protected logDebug(message: string, metadata?: LogMetadata): void {
     // MVP: コンソール出力、将来的には適切なログシステムに置き換え
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${this.name}] DEBUG:`, message, metadata || '');
     }
   }
 
-  protected logInfo(message: string, metadata?: any): void {
+  protected logInfo(message: string, metadata?: LogMetadata): void {
     if (process.env.NODE_ENV === 'development') {
       console.info(`[${this.name}] INFO:`, message, metadata || '');
     }
   }
 
-  protected logWarning(message: string, metadata?: any): void {
+  protected logWarning(message: string, metadata?: LogMetadata): void {
     console.warn(`[${this.name}] WARNING:`, message, metadata || '');
   }
 
-  protected logError(message: string, error?: any): void {
+  protected logError(message: string, error?: unknown): void {
     // 共通エラーハンドラーを使用
     errorHandler.handlePluginError(
       error instanceof Error ? error : new Error(message),

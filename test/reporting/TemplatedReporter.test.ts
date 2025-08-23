@@ -44,6 +44,7 @@ const mockStructuredResult: StructuredAnalysisResult = {
     {
       id: '1234567890abcdef',
       type: IssueType.SQL_INJECTION,
+      category: 'security',
       severity: Severity.CRITICAL,
       location: {
         file: 'src/database.ts',
@@ -78,6 +79,7 @@ const mockStructuredResult: StructuredAnalysisResult = {
     {
       id: '234567890abcdef1',
       type: IssueType.MISSING_TEST,
+      category: 'test-coverage',
       severity: Severity.HIGH,
       location: {
         file: 'src/auth.ts',

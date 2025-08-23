@@ -35,8 +35,8 @@ import {
 
 describe('エクスポートのテスト', () => {
   it('taint.tsからの型が正しくエクスポートされていること', () => {
-    // Enumの値を確認
-    expect(TaintLevel.CLEAN).toBe(0);
+    // Enumの値を確認（TaintLevelは文字列値）
+    expect(TaintLevel.CLEAN).toBe('untainted');
     expect(TaintSource.USER_INPUT).toBe('user-input');
     expect(SecuritySink.DATABASE_QUERY).toBe('database-query');
     expect(SanitizerType.HTML_ESCAPE).toBe('html-escape');
@@ -74,20 +74,23 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
     it('テストメソッドを正しく定義できること', () => {
       const testMethod: TestMethod = {
         name: 'testAuthentication',
+        type: 'test',
         filePath: 'auth.test.ts',
         content: 'it("should authenticate user", () => { /* test */ })',
         body: '/* test body */',
         securityRelevance: 0.95,
-        assertions: ['expect(user).toBeDefined()'],
-        dependencies: ['authService', 'userRepository'],
+        assertions: 1,
         testType: 'security',
         signature: {
           name: 'testAuthentication',
           parameters: [],
+          returnType: 'void',
           annotations: ['@SecurityTest'],
           isAsync: true
         },
         location: {
+          start: { line: 10, column: 0 },
+          end: { line: 20, column: 50 },
           startLine: 10,
           endLine: 20,
           startColumn: 0,
@@ -98,7 +101,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       expect(testMethod.name).toBe('testAuthentication');
       expect(testMethod.securityRelevance).toBe(0.95);
       expect(testMethod.testType).toBe('security');
-      expect(testMethod.signature.isAsync).toBe(true);
+      expect((testMethod.signature as MethodSignature)?.isAsync).toBe(true);
     });
   });
 
@@ -186,15 +189,19 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         type: 'modified',
         method: {
           name: 'testAuth',
+          type: 'test',
           filePath: 'auth.test.ts',
           content: 'updated content',
           signature: {
             name: 'testAuth',
             parameters: [],
+            returnType: 'void',
             annotations: [],
             isAsync: false
           },
           location: {
+            start: { line: 10, column: 0 },
+            end: { line: 20, column: 50 },
             startLine: 10,
             endLine: 20,
             startColumn: 0,
@@ -258,7 +265,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         newIssues: [
           {
             id: 'NEW-001',
-            severity: 'warning',
+            severity: 'medium',
             type: 'missing-auth-test',
             message: '認証テストが不足しています',
             location: {
@@ -292,6 +299,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
           column: 10
         },
         suggestedCode: 'const safe = escapeHtml(userInput);',
+        impact: 'high',
         estimatedImpact: {
           securityImprovement: 0.3,
           implementationMinutes: 5
@@ -302,15 +310,15 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       expect(improvement.priority).toBe('high');
       expect(improvement.type).toBe('add-sanitizer');
       expect(improvement.automatable).toBe(true);
-      expect(improvement.estimatedImpact.implementationMinutes).toBe(5);
+      expect(improvement.estimatedImpact?.implementationMinutes).toBe(5);
     });
 
     it('すべての改善タイプが使用できること', () => {
       const improvementTypes: SecurityImprovement['type'][] = [
         'add-sanitizer',
         'add-validation',
-        'fix-assertion',
-        'enhance-coverage'
+        'add-assertion',
+        'fix-flow'
       ];
       improvementTypes.forEach(type => {
         expect(typeof type).toBe('string');

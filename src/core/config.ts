@@ -3,67 +3,23 @@ import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { errorHandler } from '../utils/errorHandler';
-import { metadataDrivenConfigManager, ConfigGenerationOptions } from './metadataDrivenConfig';
+import { metadataDrivenConfigManager } from './metadataDrivenConfig';
 import { pluginMetadataRegistry } from './pluginMetadata';
 import { ConfigSecurity, DEFAULT_CONFIG_SECURITY_LIMITS } from '../security/ConfigSecurity';
+import type { 
+  PluginConfig, 
+  PluginMetadata, 
+  RimorConfig, 
+  ConfigGenerationOptions 
+} from './types/config-types';
 
-export interface PluginConfig {
-  enabled: boolean;
-  excludeFiles?: string[];
-  priority?: number;  // プラグイン実行優先度（高いほど先に実行）
-  [key: string]: any; // 動的プロパティサポート
-}
-
-export interface PluginMetadata {
-  name: string;
-  displayName?: string;
-  description?: string;
-  defaultConfig: PluginConfig;
-}
-
-export interface RimorConfig {
-  excludePatterns?: string[];
-  plugins: Record<string, PluginConfig>;
-  output: {
-    format: 'text' | 'json';
-    verbose: boolean;
-    reportDir?: string;  // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
-  };
-  metadata?: {
-    generatedAt?: string;
-    preset?: string;
-    targetEnvironment?: string;
-    pluginCount?: number;
-    estimatedExecutionTime?: number;
-  };
-  scoring?: {
-    enabled?: boolean;
-    weights?: {
-      plugins?: Record<string, number>;
-      dimensions?: {
-        completeness?: number;
-        correctness?: number;
-        maintainability?: number;
-        performance?: number;
-        security?: number;
-      };
-      fileTypes?: Record<string, number>;
-    };
-    gradeThresholds?: {
-      A?: number;
-      B?: number;
-      C?: number;
-      D?: number;
-      F?: number;
-    };
-    options?: {
-      enableTrends?: boolean;
-      enablePredictions?: boolean;
-      cacheResults?: boolean;
-      reportFormat?: 'detailed' | 'summary' | 'minimal';
-    };
-  };
-}
+// 型定義を再エクスポート（後方互換性のため）
+export type { 
+  PluginConfig, 
+  PluginMetadata, 
+  RimorConfig, 
+  ConfigGenerationOptions 
+};
 
 export class ConfigLoader {
   private static readonly CONFIG_FILENAMES = [
@@ -386,3 +342,135 @@ export class ConfigLoader {
     this.configSecurity.updateLimits(newLimits);
   }
 }
+
+// シングルトンインスタンス
+const configLoader = new ConfigLoader();
+
+// エクスポート関数（後方互換性のため）
+export const loadConfig = (configPath?: string): RimorConfig => {
+  // 同期的なAPIを維持するため、事前に初期化されたデフォルト設定を返す
+  // 実際の設定ファイルの読み込みが必要な場合は、ConfigLoaderを直接使用
+  if (configPath && fs.existsSync(configPath)) {
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf-8');
+      const config = JSON.parse(configContent);
+      return mergeConfigs(DEFAULT_CONFIG, config);
+    } catch (error) {
+      console.error('Failed to load config:', error);
+    }
+  }
+  return DEFAULT_CONFIG;
+};
+
+export const validateConfig = (config: unknown, options?: { checkSecurity?: boolean }): boolean => {
+  // 基本的な検証
+  if (!config || typeof config !== 'object') {
+    return false;
+  }
+  
+  const typedConfig = config as any;
+  
+  if (!typedConfig.plugins || typeof typedConfig.plugins !== 'object') {
+    return false;
+  }
+  
+  if (!typedConfig.output || typeof typedConfig.output !== 'object') {
+    return false;
+  }
+  
+  if (!['text', 'json'].includes(typedConfig.output.format)) {
+    return false;
+  }
+  
+  // セキュリティチェック
+  if (options?.checkSecurity) {
+    if (typedConfig.output.reportDir) {
+      // パストラバーサル攻撃の検出
+      if (typedConfig.output.reportDir.includes('../')) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+};
+
+// Extract Method: 深いマージロジックを個別関数に抽出（Martin Fowlerのリファクタリング手法）
+const deepMergePlugins = (
+  basePlugins: Record<string, PluginConfig>,
+  overridePlugins?: Record<string, PluginConfig>
+): Record<string, PluginConfig> => {
+  if (!overridePlugins) return { ...basePlugins };
+  
+  const merged = { ...basePlugins };
+  for (const [key, value] of Object.entries(overridePlugins)) {
+    merged[key] = merged[key] 
+      ? { ...merged[key], ...value }
+      : value;
+  }
+  return merged;
+};
+
+// Extract Method: オプショナルプロパティのマージを共通化
+const mergeOptionalProperty = <T>(
+  base?: T,
+  override?: T
+): T | undefined => {
+  if (!base && !override) return undefined;
+  return { ...base, ...override } as T;
+};
+
+export const mergeConfigs = (base: RimorConfig, override: Partial<RimorConfig>): RimorConfig => {
+  // KISS原則: シンプルで理解しやすい構造
+  return {
+    ...base,
+    ...override,
+    plugins: deepMergePlugins(base.plugins, override.plugins),
+    output: { ...base.output, ...override.output },
+    metadata: mergeOptionalProperty(base.metadata, override.metadata),
+    scoring: mergeOptionalProperty(base.scoring, override.scoring)
+  };
+};
+
+export const saveConfig = (config: RimorConfig, filePath: string): void => {
+  fs.writeFileSync(filePath, JSON.stringify(config, null, 2));
+};
+
+export const DEFAULT_CONFIG: RimorConfig = {
+  plugins: {
+    'test-existence': { enabled: true },
+    'assertion-exists': { enabled: true }
+  },
+  output: {
+    format: 'text',
+    verbose: false
+  }
+};
+
+export const registerPlugin = (metadata: PluginMetadata): void => {
+  configLoader.getAvailablePlugins().push(metadata);
+};
+
+export const getAvailablePlugins = (): string[] => {
+  return configLoader.getAvailablePlugins().map(p => p.name);
+};
+
+export const createDefaultConfig = (preset: string): RimorConfig => {
+  const config = { ...DEFAULT_CONFIG };
+  
+  if (preset === 'minimal') {
+    // 最小限のプラグインのみ
+    config.plugins = {
+      'test-existence': { enabled: true }
+    };
+  } else if (preset === 'all') {
+    // すべてのプラグインを有効化
+    const allPlugins: Record<string, PluginConfig> = {};
+    for (const plugin of configLoader.getAvailablePlugins()) {
+      allPlugins[plugin.name] = { enabled: true };
+    }
+    config.plugins = allPlugins;
+  }
+  
+  return config;
+};

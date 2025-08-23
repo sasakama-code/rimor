@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../../src",
+    "outDir": "../../dist",
+    "module": "commonjs",
+    "target": "ES2022",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "sourceMap": true
+  },
+  "include": [
+    "../../src/testing/**/*.ts",
+    "../../src/utils/**/*.ts",
+    "../../src/core/types.ts",
+    "../../src/analyzers/code-context.ts",
+    "../../src/reporting/core/UnifiedReportEngine.ts",
+    "../../src/reporting/formatters/AIJsonFormatter.ts",
+    "../../src/reporting/formatters/BaseFormatter.ts",
+    "../../src/reporting/core/types.ts",
+    "../../src/nist/types/unified-analysis-result.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "node_modules"
+  ]
+}

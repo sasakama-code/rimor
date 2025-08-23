@@ -9,6 +9,7 @@ import { StructuredReporter } from '../../src/reporting/StructuredReporter';
 import { AnalysisResult } from '../../src/core/interfaces/IAnalysisEngine';
 import { SecurityAuditResult, ThreatType } from '../../src/core/interfaces/ISecurityAuditor';
 import { Severity, IssueType } from '../../src/reporting/types';
+import type { IssueCategory } from '../../src/core/types';
 
 describe('StructuredReporter', () => {
   let reporter: StructuredReporter;
@@ -23,18 +24,24 @@ describe('StructuredReporter', () => {
         totalFiles: 10,
         issues: [
           {
+            id: 'missing-test-id',
             type: 'missing-test',
             file: 'src/auth.ts',
             line: 25,
             severity: 'high',
-            message: 'No test file found for auth.ts'
+            message: 'No test file found for auth.ts',
+            filePath: 'src/auth.ts',
+            category: 'test-quality' as IssueCategory
           },
           {
+            id: 'insufficient-assertion-id',
             type: 'insufficient-assertion',
             file: 'src/user.test.ts',
             line: 15,
             severity: 'medium',
-            message: 'Test has no assertions'
+            message: 'Test has no assertions',
+            filePath: 'src/user.test.ts',
+            category: 'assertion' as IssueCategory
           }
         ],
         executionTime: 1500
@@ -110,6 +117,7 @@ describe('StructuredReporter', () => {
         issues: [{
           id: 'test-1',
           type: IssueType.MISSING_TEST,
+          category: 'test-coverage' as IssueCategory,
           severity: Severity.HIGH,
           location: {
             file: 'src/auth.ts',
@@ -196,6 +204,7 @@ describe('StructuredReporter', () => {
           {
             id: '1234567890abcdef',
             type: IssueType.TEST_QUALITY,
+            category: 'test-quality' as IssueCategory,
             severity: Severity.HIGH,
             location: {
               file: 'test.ts',

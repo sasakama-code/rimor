@@ -52,10 +52,22 @@ export interface SecurityAuditResult {
 /**
  * セキュリティ監査オプション
  */
+/**
+ * カスタムセキュリティルール
+ */
+export interface SecurityRule {
+  id: string;
+  name: string;
+  pattern: string | RegExp;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  recommendation: string;
+}
+
 export interface SecurityAuditOptions {
   includeTests?: boolean;
   deepScan?: boolean;
-  customRules?: any[]; // 将来の拡張用
+  customRules?: SecurityRule[]; // 型安全性を向上
 }
 
 /**
@@ -76,5 +88,5 @@ export interface ISecurityAuditor {
   /**
    * カスタムルールの登録（将来の拡張用）
    */
-  registerRule?(rule: any): void;
+  registerRule?(rule: SecurityRule): void;
 }

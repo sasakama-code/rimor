@@ -178,9 +178,12 @@ describe('AnalyzerExtended', () => {
       name: 'legacy-test-plugin',
       async analyze(_filePath: string) {
         return [{
+          id: 'legacy-issue-id',
           type: 'legacy-issue',
-          severity: 'warning' as const,
-          message: 'Legacy plugin issue detected'
+          severity: 'medium' as const,
+          message: 'Legacy plugin issue detected',
+          filePath: _filePath,
+          category: 'test-quality' as const
         }];
       }
     };
@@ -189,7 +192,7 @@ describe('AnalyzerExtended', () => {
 
     const result = await analyzer.analyze(getFixturePath('legacy.test.ts'));
     
-    expect(result.issues.some(issue => issue.type === 'legacy-issue')).toBe(true);
+    expect(result.issues.some((issue: any) => issue.type === 'legacy-issue')).toBe(true);
   });
 
   describe('batch analysis', () => {

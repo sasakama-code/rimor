@@ -19,6 +19,38 @@ interface TestCase {
   };
 }
 
+// 使用統計の型定義
+interface UsageStats {
+  totalAnalyses: number;
+  averageTime: number;
+  filesAnalyzed: number;
+  issuesFound: number;
+  frequency?: number;
+}
+
+// 分析結果の型定義
+interface AccuracyAnalysis {
+  falsePositiveRate: number;
+  commonFalsePositives: string[];
+  missedIssueRate?: number;
+  topProblematicPatterns?: string[];
+}
+
+interface PerformanceAnalysis {
+  averageAnalysisTime: number;
+  slowFiles: string[];
+  slowestOperations?: string[];
+  memoryUsageComplaints?: number;
+}
+
+interface FeatureUsageAnalysis {
+  mostUsed: Array<{ feature: string; count: number }>;
+  requested: Array<{ feature: string; count: number }>;
+  mostUsedFeatures?: string[];
+  leastUsedFeatures?: string[];
+  requestedFeatures?: string[];
+}
+
 interface AnalysisResult {
   filePath: string;
   issues: Issue[];
@@ -107,15 +139,237 @@ export interface ImprovementItem {
   estimatedImplementationTime: string;
 }
 
+// 個別フィードバックの型定義（TDD GREEN段階：最小実装）
+interface IndividualFeedback {
+  issueId: string;
+  falsePositive?: boolean;
+  actualSeverity?: string;
+  userComment?: string;
+  timestamp?: Date;
+  rule?: string;
+  impact?: string;
+}
+
+interface PerformanceData {
+  file: string;
+  analysisTime: number;
+}
+
+interface TimeImpactData {
+  issueId: string;
+  timeSpentInvestigating: number;
+  wasRealIssue: boolean;
+}
+
 /**
  * フィードバック収集・管理システム
  */
 export class FeedbackCollectionSystem {
   private feedbackStorage: string;
   private collectedFeedback: ProjectFeedback[] = [];
+  
+  // 新しいプロパティ（KISS原則：シンプルな実装）
+  private individualFeedbacks = new Map<string, IndividualFeedback>();
+  private performanceData: PerformanceData[] = [];
+  private timeImpactData: TimeImpactData[] = [];
+  private memoryLimit = Number.MAX_SAFE_INTEGER;
+  private pendingWrites = false;
+  private corruptedData = false;
+  private degradedMode = false;
 
   constructor(storageDir: string = './feedback-data') {
     this.feedbackStorage = storageDir;
+  }
+
+  // === 個別フィードバック管理（YAGNI原則：必要最小限の実装）===
+  async recordFeedback(feedback: IndividualFeedback): Promise<void> {
+    // Defensive Programming: 厳格な入力検証
+    if (!feedback || 
+        !feedback.issueId || 
+        typeof feedback.issueId !== 'string' ||
+        feedback.issueId === '') {
+      throw new Error('Invalid feedback data');
+    }
+    this.individualFeedbacks.set(feedback.issueId, feedback);
+    
+    // 永続化を試みる（Defensive Programming）
+    try {
+      await this.persistFeedback();
+      this.pendingWrites = false;
+    } catch (error) {
+      this.pendingWrites = true;
+      this.degradedMode = true;
+    }
+    
+    // メモリ制限チェック（KISS原則）
+    if (this.individualFeedbacks.size > this.memoryLimit) {
+      const oldestKey = this.individualFeedbacks.keys().next().value;
+      if (oldestKey) {
+        this.individualFeedbacks.delete(oldestKey);
+      }
+    }
+  }
+
+  async getFeedback(issueId: string): Promise<IndividualFeedback | undefined> {
+    return this.individualFeedbacks.get(issueId);
+  }
+
+  async getAllFeedback(): Promise<IndividualFeedback[]> {
+    return Array.from(this.individualFeedbacks.values());
+  }
+
+  async loadPersistedFeedback(): Promise<void> {
+    try {
+      const data = await fs.readFile(path.join(this.feedbackStorage, 'feedback.json'), 'utf-8');
+      const feedbacks = JSON.parse(data);
+      feedbacks.forEach((f: IndividualFeedback) => this.individualFeedbacks.set(f.issueId, f));
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        this.corruptedData = true;
+      }
+      this.degradedMode = true;
+    }
+  }
+
+  hasPendingWrites(): boolean {
+    return this.pendingWrites;
+  }
+
+  hasCorruptedData(): boolean {
+    return this.corruptedData;
+  }
+
+  isOperatingInDegradedMode(): boolean {
+    return this.degradedMode;
+  }
+
+  setMemoryLimit(limit: number): void {
+    this.memoryLimit = limit;
+  }
+
+  // === 分析機能（SOLID原則：単一責任）===
+  async analyzeFalsePositiveRate(): Promise<{ rate: number; total: number; falsePositives: number }> {
+    const feedbacks = Array.from(this.individualFeedbacks.values());
+    const total = feedbacks.length;
+    const falsePositives = feedbacks.filter(f => f.falsePositive).length;
+    const rate = total > 0 ? falsePositives / total : 0;
+    return { rate, total, falsePositives };
+  }
+
+  async analyzeByRule(): Promise<Record<string, { falsePositiveRate: number }>> {
+    const feedbacks = Array.from(this.individualFeedbacks.values());
+    const byRule: Record<string, { total: number; falsePositives: number }> = {};
+    
+    feedbacks.forEach(f => {
+      if (f.rule) {
+        if (!byRule[f.rule]) {
+          byRule[f.rule] = { total: 0, falsePositives: 0 };
+        }
+        byRule[f.rule].total++;
+        if (f.falsePositive) {
+          byRule[f.rule].falsePositives++;
+        }
+      }
+    });
+    
+    const result: Record<string, { falsePositiveRate: number }> = {};
+    Object.entries(byRule).forEach(([rule, stats]) => {
+      result[rule] = { falsePositiveRate: stats.total > 0 ? stats.falsePositives / stats.total : 0 };
+    });
+    return result;
+  }
+
+  // === パフォーマンス分析（DRY原則：ロジックの共通化）===
+  async recordPerformance(data: PerformanceData): Promise<void> {
+    this.performanceData.push(data);
+  }
+
+  async getPerformanceStats(): Promise<{ averageTime: number; minTime: number; maxTime: number; totalFiles: number }> {
+    if (this.performanceData.length === 0) {
+      return { averageTime: 0, minTime: 0, maxTime: 0, totalFiles: 0 };
+    }
+    
+    const times = this.performanceData.map(p => p.analysisTime);
+    const averageTime = times.reduce((a, b) => a + b, 0) / times.length;
+    const minTime = Math.min(...times);
+    const maxTime = Math.max(...times);
+    
+    return { averageTime, minTime, maxTime, totalFiles: this.performanceData.length };
+  }
+
+  async identifySlowFiles(threshold: number): Promise<string[]> {
+    return this.performanceData
+      .filter(p => p.analysisTime > threshold)
+      .map(p => p.file);
+  }
+
+  // === ビジネス価値分析（YAGNI原則：必要最小限）===
+  async recordTimeImpact(data: TimeImpactData): Promise<void> {
+    this.timeImpactData.push(data);
+  }
+
+  async getImprovementRecommendations(): Promise<Array<{ rule: string; priority: string; suggestedAction: string }>> {
+    const ruleAnalysis = await this.analyzeByRule();
+    
+    // フィードバックのimpactも考慮
+    const feedbacks = Array.from(this.individualFeedbacks.values());
+    const ruleImpacts: Record<string, string[]> = {};
+    
+    feedbacks.forEach(f => {
+      if (f.rule && f.impact) {
+        if (!ruleImpacts[f.rule]) {
+          ruleImpacts[f.rule] = [];
+        }
+        ruleImpacts[f.rule].push(f.impact);
+      }
+    });
+    
+    const recommendations = Object.entries(ruleAnalysis)
+      .filter(([rule, stats]) => stats.falsePositiveRate > 0 || ruleImpacts[rule]?.includes('high'))
+      .map(([rule, stats]) => {
+        const hasHighImpact = ruleImpacts[rule]?.includes('high');
+        const priority = hasHighImpact || stats.falsePositiveRate >= 1.0 ? 'high' : 
+                        stats.falsePositiveRate > 0.5 ? 'medium' : 'low';
+        return {
+          rule,
+          priority,
+          suggestedAction: `Consider to disable or adjust ${rule} rule due to high false positive rate`
+        };
+      })
+      .sort((a, b) => {
+        // 優先度でソート: high > medium > low
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        return priorityOrder[a.priority as keyof typeof priorityOrder] - 
+               priorityOrder[b.priority as keyof typeof priorityOrder];
+      });
+    
+    return recommendations;
+  }
+
+  async getProductivityInsights(): Promise<{ 
+    totalTimeWastedOnFalsePositives: number; 
+    averageTimePerFalsePositive: number;
+    potentialTimeSavings: number;
+  }> {
+    const falsePositives = this.timeImpactData.filter(d => !d.wasRealIssue);
+    const totalTimeWasted = falsePositives.reduce((sum, d) => sum + d.timeSpentInvestigating, 0);
+    const averageTime = falsePositives.length > 0 ? totalTimeWasted / falsePositives.length : 0;
+    const potentialTimeSavings = totalTimeWasted * 0.8; // 80%削減可能と仮定
+    
+    return {
+      totalTimeWastedOnFalsePositives: totalTimeWasted,
+      averageTimePerFalsePositive: averageTime,
+      potentialTimeSavings
+    };
+  }
+
+  private async persistFeedback(): Promise<void> {
+    const data = Array.from(this.individualFeedbacks.values());
+    await fs.mkdir(this.feedbackStorage, { recursive: true });
+    await fs.writeFile(
+      path.join(this.feedbackStorage, 'feedback.json'),
+      JSON.stringify(data, null, 2)
+    );
   }
 
   /**
@@ -155,7 +409,7 @@ export class FeedbackCollectionSystem {
     projectId: string,
     projectName: string,
     analysisResults: AnalysisResult[],
-    usageStats: any
+    usageStats: UsageStats
   ): Promise<ProjectFeedback> {
     console.log(`🤖 自動フィードバック生成: ${projectName}`);
     
@@ -472,7 +726,11 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
     return [];
   }
 
-  private analyzeAccuracyIssues(): any {
+  private analyzeAccuracyIssues(): {
+    falsePositiveRate: number;
+    missedIssueRate: number;
+    topProblematicPatterns: string[];
+  } {
     const totalFalsePositives = this.collectedFeedback.reduce((sum, f) => {
       return sum + (f.specificFeedback && f.specificFeedback.falsePositives ? f.specificFeedback.falsePositives.length : 0);
     }, 0);
@@ -487,7 +745,11 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
     };
   }
 
-  private analyzePerformanceIssues(): any {
+  private analyzePerformanceIssues(): {
+    averageAnalysisTime: number;
+    slowestOperations: string[];
+    memoryUsageComplaints: number;
+  } {
     const validFeedback = this.collectedFeedback.filter(f => f.usageMetrics && f.usageMetrics.averageAnalysisTime !== undefined);
     const avgTime = validFeedback.length > 0 ? 
       validFeedback.reduce((sum, f) => sum + f.usageMetrics.averageAnalysisTime, 0) / validFeedback.length : 0;
@@ -499,7 +761,11 @@ TaintTyper v0.7.0は要件文書の全指標を達成し、実プロジェクト
     };
   }
 
-  private analyzeFeatureUsage(): any {
+  private analyzeFeatureUsage(): {
+    mostUsedFeatures: string[];
+    leastUsedFeatures: string[];
+    requestedFeatures: string[];
+  } {
     const mostUsed = new Map<string, number>();
     const requested = new Map<string, number>();
     

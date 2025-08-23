@@ -1,0 +1,320 @@
+cfa3b2f8459a2594ec0695b2235c212f
+"use strict";
+/**
+ * 型ベースセキュリティ解析 - 汚染レベル定義
+ * Dorothy Denningの格子理論を基盤とした汚染追跡システム
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaintTypeChecker = exports.TaintTypeInference = exports.TaintAnalyzer = exports.TaintPropagation = exports.Sanitizer = exports.TaintedValue = exports.TaintLattice = exports.SanitizerType = exports.SecuritySink = exports.TaintSource = exports.TaintLevel = void 0;
+exports.compareTaintLevels = compareTaintLevels;
+exports.getTaintSourceRisk = getTaintSourceRisk;
+// 共通型定義からインポート
+const common_types_1 = require("../../types/common-types");
+Object.defineProperty(exports, "TaintLevel", { enumerable: true, get: function () { return common_types_1.TaintLevel; } });
+Object.defineProperty(exports, "TaintSource", { enumerable: true, get: function () { return common_types_1.TaintSource; } });
+Object.defineProperty(exports, "SecuritySink", { enumerable: true, get: function () { return common_types_1.SecuritySink; } });
+Object.defineProperty(exports, "SanitizerType", { enumerable: true, get: function () { return common_types_1.SanitizerType; } });
+/**
+ * 汚染レベルの格子演算
+ */
+class TaintLattice {
+    // 汚染レベルの順序マッピング
+    static LEVEL_ORDER = {
+        'untainted': 0,
+        'unknown': 1,
+        'possibly_tainted': 2,
+        'tainted': 3,
+        'highly_tainted': 4,
+        'sanitized': 0 // sanitizedはuntaintedと同等
+    };
+    /**
+     * 格子の結合演算（join）- より高い汚染レベルを選択
+     * Dorothy Denningの格子理論に基づく
+     */
+    static join(a, b) {
+        const aOrder = this.LEVEL_ORDER[a] ?? 1;
+        const bOrder = this.LEVEL_ORDER[b] ?? 1;
+        const maxOrder = Math.max(aOrder, bOrder);
+        // 順序から対応するTaintLevelを取得
+        for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+            if (order === maxOrder && level !== 'sanitized') {
+                return level;
+            }
+        }
+        return 'unknown';
+    }
+    /**
+     * 格子の交わり演算（meet）- より低い汚染レベルを選択
+     */
+    static meet(a, b) {
+        const aOrder = this.LEVEL_ORDER[a] ?? 1;
+        const bOrder = this.LEVEL_ORDER[b] ?? 1;
+        const minOrder = Math.min(aOrder, bOrder);
+        // 順序から対応するTaintLevelを取得
+        for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+            if (order === minOrder && level !== 'sanitized') {
+                return level;
+            }
+        }
+        return 'untainted';
+    }
+    /**
+     * 汚染レベルの比較（偏順序関係）
+     * @param a 比較する汚染レベル
+     * @param b 比較する汚染レベル
+     * @returns a ≤ b の場合 true
+     */
+    static lessThanOrEqual(a, b) {
+        const aOrder = this.LEVEL_ORDER[a] ?? 1;
+        const bOrder = this.LEVEL_ORDER[b] ?? 1;
+        return aOrder <= bOrder;
+    }
+    /**
+     * 格子の高さを取得
+     */
+    static height(level) {
+        return this.LEVEL_ORDER[level] ?? 1;
+    }
+    /**
+     * サニタイザー適用による汚染レベルの変化
+     */
+    static applySanitizer(currentLevel, sanitizer) {
+        // サニタイザーの効果をモデル化
+        switch (sanitizer) {
+            case common_types_1.SanitizerType.HTML_ESCAPE:
+            case common_types_1.SanitizerType.SQL_ESCAPE:
+                // 強力なサニタイザー - 汚染を完全除去
+                return common_types_1.TaintLevel.UNTAINTED;
+            case common_types_1.SanitizerType.INPUT_VALIDATION:
+                // 検証により1レベル下げる
+                const currentOrder = this.LEVEL_ORDER[currentLevel] ?? 1;
+                const newOrder = Math.max(0, currentOrder - 1);
+                for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+                    if (order === newOrder && level !== 'sanitized') {
+                        return level;
+                    }
+                }
+                return common_types_1.TaintLevel.UNTAINTED;
+            case common_types_1.SanitizerType.TYPE_CONVERSION:
+                // 型変換は部分的な効果
+                const currentOrder2 = this.LEVEL_ORDER[currentLevel] ?? 1;
+                return currentOrder2 >= 3 // 'tainted' or higher
+                    ? common_types_1.TaintLevel.POSSIBLY_TAINTED
+                    : common_types_1.TaintLevel.UNTAINTED;
+            default:
+                // 不明なサニタイザーは保守的に扱う
+                return currentLevel;
+        }
+    }
+    /**
+     * 汚染レベルの可視化
+     */
+    static toString(level) {
+        switch (level) {
+            case 'untainted':
+                return '⊥ (安全)';
+            case 'possibly_tainted':
+                return '? (要検証)';
+            case 'tainted':
+                return '! (注意)';
+            case 'highly_tainted':
+                return '⊤⊤ (最高危険度)';
+            case 'sanitized':
+                return '✓ (サニタイズ済み)';
+            default:
+                return '不明';
+        }
+    }
+    /**
+     * 格子の底（最小要素）かどうかを判定
+     */
+    static isBottom(level) {
+        return level === 'untainted' || level === 'sanitized';
+    }
+    /**
+     * 格子の頂（最大要素）かどうかを判定
+     */
+    static isTop(level) {
+        return level === 'highly_tainted';
+    }
+}
+exports.TaintLattice = TaintLattice;
+/**
+ * 汚染レベルの比較関数
+ */
+function compareTaintLevels(a, b) {
+    const aOrder = TaintLattice['LEVEL_ORDER'][a] ?? 1;
+    const bOrder = TaintLattice['LEVEL_ORDER'][b] ?? 1;
+    return aOrder - bOrder;
+}
+/**
+ * 汚染源の危険度を取得
+ */
+function getTaintSourceRisk(source) {
+    switch (source) {
+        case common_types_1.TaintSource.USER_INPUT:
+        case common_types_1.TaintSource.EXTERNAL_API:
+        case common_types_1.TaintSource.NETWORK:
+            return 'high';
+        case common_types_1.TaintSource.DATABASE:
+        case common_types_1.TaintSource.FILE_SYSTEM:
+            return 'medium';
+        case common_types_1.TaintSource.ENVIRONMENT:
+            return 'low';
+        default:
+            return 'medium';
+    }
+}
+/**
+ * 汚染値を表すクラス
+ */
+class TaintedValue {
+    value;
+    taintLevel;
+    source;
+    constructor(value, taintLevel, source) {
+        this.value = value;
+        this.taintLevel = taintLevel;
+        this.source = source;
+    }
+    /**
+     * 複数の汚染値を結合
+     */
+    static combine(value1, value2) {
+        const combinedLevel = TaintLattice.join(value1.taintLevel, value2.taintLevel);
+        const combinedSource = compareTaintLevels(value1.taintLevel, value2.taintLevel) >= 0 ? value1.source : value2.source;
+        return new TaintedValue(value1.value + value2.value, combinedLevel, combinedSource);
+    }
+}
+exports.TaintedValue = TaintedValue;
+/**
+ * サニタイザークラス
+ */
+class Sanitizer {
+    type;
+    effectiveness;
+    constructor(type, effectiveness = 1.0) {
+        this.type = type;
+        this.effectiveness = effectiveness;
+    }
+    /**
+     * 汚染値をサニタイズ
+     */
+    sanitize(taintedValue) {
+        let newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type);
+        // 効果率が100%未満の場合、部分的な効果を適用
+        if (this.effectiveness < 1.0 && newLevel === 'untainted') {
+            newLevel = 'possibly_tainted';
+        }
+        // 実際のサニタイズ処理（簡略化）
+        let sanitizedValue = taintedValue.value;
+        if (this.type === common_types_1.SanitizerType.HTML_ESCAPE && typeof sanitizedValue === 'string') {
+            sanitizedValue = sanitizedValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        return new TaintedValue(sanitizedValue, newLevel, taintedValue.source);
+    }
+}
+exports.Sanitizer = Sanitizer;
+/**
+ * 汚染伝播管理
+ */
+class TaintPropagation {
+    /**
+     * 操作による汚染の伝播
+     */
+    static propagate(operation, values) {
+        if (values.length === 0) {
+            return new TaintedValue('', 'untainted', null);
+        }
+        let maxLevel = 'untainted';
+        let source = null;
+        for (const value of values) {
+            if (compareTaintLevels(value.taintLevel, maxLevel) > 0) {
+                maxLevel = value.taintLevel;
+                source = value.source;
+            }
+        }
+        const resultValue = values.map(v => v.value).join('');
+        return new TaintedValue(resultValue, maxLevel, source);
+    }
+}
+exports.TaintPropagation = TaintPropagation;
+/**
+ * 汚染分析器
+ */
+class TaintAnalyzer {
+    /**
+     * 関数の汚染分析を実行
+     */
+    analyzeFunction(functionCode) {
+        const taintSources = [];
+        const sanitizers = [];
+        const taintFlow = [];
+        // 汚染源の検出（簡略化）
+        if (functionCode.includes('userInput')) {
+            taintSources.push({ name: 'userInput', location: functionCode.indexOf('userInput') });
+        }
+        // サニタイザーの検出
+        if (functionCode.includes('escapeHtml')) {
+            sanitizers.push({ name: 'escapeHtml', location: functionCode.indexOf('escapeHtml') });
+        }
+        // 汚染フローの簡単な分析
+        if (taintSources.length > 0 && sanitizers.length > 0) {
+            taintFlow.push({
+                from: taintSources[0].name,
+                to: 'escapeHtml',
+                level: common_types_1.TaintLevel.POSSIBLY_TAINTED
+            });
+        }
+        return { taintSources, sanitizers, taintFlow };
+    }
+    /**
+     * 汚染違反の検出
+     */
+    detectViolations(code) {
+        const violations = [];
+        // evalの使用を検出
+        if (code.includes('eval(')) {
+            const location = code.indexOf('eval(');
+            violations.push({
+                type: 'taint-violation',
+                severity: 'critical',
+                message: '汚染データの直接実行は危険です',
+                location
+            });
+        }
+        return violations;
+    }
+}
+exports.TaintAnalyzer = TaintAnalyzer;
+/**
+ * 汚染型推論
+ */
+class TaintTypeInference {
+    /**
+     * 型注釈から汚染情報を推論
+     */
+    inferFromAnnotation(annotation) {
+        const levelMatch = annotation.match(/level=(\w+)/);
+        const sourceMatch = annotation.match(/source=(\w+)/);
+        return {
+            level: levelMatch ? levelMatch[1] : 'UNKNOWN',
+            source: sourceMatch ? sourceMatch[1] : 'UNKNOWN'
+        };
+    }
+}
+exports.TaintTypeInference = TaintTypeInference;
+/**
+ * 汚染型チェッカー
+ */
+class TaintTypeChecker {
+    /**
+     * 代入の安全性をチェック
+     */
+    isAssignmentSafe(from, to) {
+        // 汚染値を清浄な変数に代入することは禁止
+        return from <= to;
+    }
+}
+exports.TaintTypeChecker = TaintTypeChecker;
+//# sourceMappingURL=taint.js.map

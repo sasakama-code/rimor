@@ -83,7 +83,7 @@ export class DebugLogger {
   /**
    * エラーレベルのログ
    */
-  static error(message: string, ...args: any[]): void {
+  static error(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.ERROR) {
       console.error(`🔴 [ERROR] ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -92,7 +92,7 @@ export class DebugLogger {
   /**
    * 警告レベルのログ
    */
-  static warn(message: string, ...args: any[]): void {
+  static warn(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.WARN) {
       console.warn(`🟡 [WARN]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -101,7 +101,7 @@ export class DebugLogger {
   /**
    * 情報レベルのログ
    */
-  static info(message: string, ...args: any[]): void {
+  static info(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.INFO) {
       console.log(`🔵 [INFO]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -110,7 +110,7 @@ export class DebugLogger {
   /**
    * 詳細レベルのログ
    */
-  static verbose(message: string, ...args: any[]): void {
+  static verbose(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       console.log(`🟢 [VERB]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -119,7 +119,7 @@ export class DebugLogger {
   /**
    * トレースレベルのログ
    */
-  static trace(message: string, ...args: any[]): void {
+  static trace(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.TRACE) {
       console.log(`⚪ [TRACE] ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -146,7 +146,7 @@ export class DebugLogger {
   /**
    * オブジェクトの詳細表示
    */
-  static inspect(label: string, obj: any): void {
+  static inspect(label: string, obj: unknown): void {
     if (this.getLevel() >= DebugLevel.TRACE) {
       console.log(`🔍 [INSPECT] ${label}:`);
       console.dir(obj, { depth: 3, colors: true });
@@ -202,7 +202,7 @@ export class DebugLogger {
   /**
    * 条件付きログ
    */
-  static logIf(condition: boolean, level: DebugLevel, message: string, ...args: any[]): void {
+  static logIf(condition: boolean, level: DebugLevel, message: string, ...args: unknown[]): void {
     if (!condition) return;
 
     switch (level) {

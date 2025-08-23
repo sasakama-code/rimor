@@ -64,7 +64,7 @@ describe('CodeAnalysisHelper', () => {
       const assertions = helper.findAssertions(fileContent);
       
       expect(assertions.length).toBeGreaterThan(0);
-      assertions.forEach(assertion => {
+      assertions.forEach((assertion: any) => {
         expect(['expect', 'assert', 'should']).toContain(assertion.type);
         expect(assertion.location.line).toBeGreaterThan(0);
       });
@@ -103,12 +103,12 @@ describe('Test Suite', () => {
       expect(structures.describes.length).toBeGreaterThan(0);
       expect(structures.tests.length).toBeGreaterThan(0);
       
-      structures.describes.forEach(desc => {
+      structures.describes.forEach((desc: any) => {
         expect(desc.location.line).toBeGreaterThan(0);
         expect(desc.name).toBeDefined();
       });
 
-      structures.tests.forEach(test => {
+      structures.tests.forEach((test: any) => {
         expect(test.location.line).toBeGreaterThan(0);
         expect(test.name).toBeDefined();
       });
@@ -194,7 +194,7 @@ it('simple test', () => {
         
         expect(complexity.cyclomatic).toBe(1);
         expect(complexity.cognitive).toBe(0);
-        expect(complexity.nesting).toBe(0);
+        expect(complexity.nesting).toBe(1); // 関数ブロックのネスティング
       } finally {
         fs.unlinkSync(tempPath);
       }
@@ -262,7 +262,7 @@ describe('Test', () => {
       const strongEvidence = helper.createEvidence('assertion', 'Exact strong assertion found', location, 'expect(value).toBe(42)');
       const weakEvidence = helper.createEvidence('import', 'Possible weak match', location, 'maybe');
 
-      expect(strongEvidence.confidence).toBeGreaterThan(weakEvidence.confidence);
+      expect(strongEvidence.confidence || 0).toBeGreaterThan(weakEvidence.confidence || 0);
     });
   });
 

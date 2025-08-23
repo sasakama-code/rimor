@@ -1,12 +1,14 @@
 import * as path from 'path';
 import 'reflect-metadata';
-import { container, initializeContainer } from '../../src/container';
-import { TYPES } from '../../src/container/types';
+import { Container } from 'inversify';
+import { 
+  createTestContainer, 
+  cleanupTestContainer,
+  getTestAnalysisEngine,
+  getMockPluginManager
+} from '../helpers/test-container';
 import { IAnalysisEngine, IPluginManager, IPlugin, PluginMetadata } from '../../src/core/interfaces';
 import { Issue } from '../../src/core/types';
-
-// テストの前にコンテナを初期化
-initializeContainer();
 
 const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures', filename);
 
@@ -43,13 +45,21 @@ class ErrorPlugin implements IPlugin {
 }
 
 describe('Basic Integration Tests', () => {
+  let container: Container;
   let analysisEngine: IAnalysisEngine;
   let pluginManager: IPluginManager;
 
   beforeEach(() => {
-    // 各テストごとに新しいインスタンスを取得
-    analysisEngine = container.get<IAnalysisEngine>(TYPES.AnalysisEngine);
-    pluginManager = container.get<IPluginManager>(TYPES.PluginManager);
+    // 各テストごとに新しいコンテナを作成
+    // デフォルトプラグインを登録して既存テストとの互換性を保つ
+    container = createTestContainer({ registerDefaultPlugins: true });
+    analysisEngine = getTestAnalysisEngine(container);
+    pluginManager = getMockPluginManager(container);
+  });
+
+  afterEach(() => {
+    // テスト後にコンテナをクリーンアップ
+    cleanupTestContainer(container);
   });
 
   describe('Plugin Registration', () => {
@@ -82,7 +92,7 @@ describe('Basic Integration Tests', () => {
     it('should execute analysis with single plugin', async () => {
       const testIssues: Issue[] = [{
         type: 'test-missing',
-        severity: 'error',
+        severity: 'high',
         message: 'Test file is missing'
       }];
       
@@ -167,7 +177,7 @@ describe('Basic Integration Tests', () => {
         async analyze(_filePath: string) {
           return [{
             type: 'legacy-issue',
-            severity: 'warning' as const,
+            severity: 'medium' as const,
             message: 'Legacy plugin issue detected'
           }];
         }
@@ -197,7 +207,7 @@ describe('Basic Integration Tests', () => {
       const errorPlugin = new ErrorPlugin();
       const goodPlugin = new MockTestPlugin('good-plugin', 'Good Plugin', [{
         type: 'test-issue',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Test warning'
       }]);
 

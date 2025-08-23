@@ -4,6 +4,15 @@ import {
   GRADE_THRESHOLDS,
   GradeType
 } from './types';
+import {
+  LegacyConfig,
+  JsonValue,
+  JsonObject,
+  PartialScoringConfig,
+  isJsonObject,
+  isJsonValue,
+  isPartialScoringConfig
+} from './config-types';
 // WeightsManager removed - using default weights
 import fs from 'fs';
 import path from 'path';
@@ -101,9 +110,12 @@ export class ScoringConfigManager {
 
       const config = this.secureJsonParse(configContent);
       
-      const scoringSection = config.scoring;
+      if (!isJsonObject(config) || !config.scoring) {
+        return this.getDefaultScoringConfig();
+      }
       
-      if (!scoringSection) {
+      const scoringSection = config.scoring;
+      if (!isPartialScoringConfig(scoringSection)) {
         return this.getDefaultScoringConfig();
       }
 
@@ -151,7 +163,8 @@ export class ScoringConfigManager {
           console.warn('既存設定ファイルが大きすぎるため、新規作成します');
           existingConfig = {};
         } else {
-          existingConfig = this.secureJsonParse(existingContent);
+          const parsed = this.secureJsonParse(existingContent);
+          existingConfig = isJsonObject(parsed) ? parsed : {};
         }
       } catch (error) {
         console.warn(`既存設定ファイルの読み込みでエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
@@ -255,7 +268,7 @@ export class ScoringConfigManager {
    * @param legacyConfig レガシー設定
    * @returns 新しいスコアリング設定
    */
-  migrateFromLegacyConfig(legacyConfig: any): ScoringConfig {
+  migrateFromLegacyConfig(legacyConfig: LegacyConfig): ScoringConfig {
     const weights: WeightConfig = {
       plugins: {},
       dimensions: { ...DEFAULT_WEIGHTS.dimensions }
@@ -264,8 +277,8 @@ export class ScoringConfigManager {
     // レガシープラグイン設定の変換
     if (legacyConfig.plugins) {
       for (const [pluginId, pluginConfig] of Object.entries(legacyConfig.plugins)) {
-        if (typeof pluginConfig === 'object' && (pluginConfig as any).weight) {
-          weights.plugins[pluginId] = (pluginConfig as any).weight;
+        if (typeof pluginConfig === 'object' && pluginConfig.weight) {
+          weights.plugins[pluginId] = pluginConfig.weight;
         }
       }
     }
@@ -291,8 +304,8 @@ export class ScoringConfigManager {
       weights.dimensions.security *= 1.3;
       
       // 閾値も厳しく
-      gradeThresholds.A = Math.max(gradeThresholds.A, 95) as any;
-      gradeThresholds.B = Math.max(gradeThresholds.B, 85) as any;
+      gradeThresholds.A = Math.max(gradeThresholds.A, 95);
+      gradeThresholds.B = Math.max(gradeThresholds.B, 85);
     }
 
     return {
@@ -381,7 +394,7 @@ export class ScoringConfigManager {
    * JSON設定の安全な解析
    * セキュリティリスクのある値を検出・無害化
    */
-  private secureJsonParse(content: string): any {
+  private secureJsonParse(content: string): JsonValue {
     try {
       // 基本的なJSON解析
       const parsed = JSON.parse(content);
@@ -401,7 +414,7 @@ export class ScoringConfigManager {
   /**
    * 設定オブジェクトの無害化
    */
-  private sanitizeConfigObject(obj: any, depth = 0): any {
+  private sanitizeConfigObject(obj: JsonValue, depth = 0): JsonValue {
     // 循環参照・深すぎるネストの防止
     if (depth > 10) {
       throw new Error('設定ファイルの構造が複雑すぎます');
@@ -416,7 +429,7 @@ export class ScoringConfigManager {
       return obj.map(item => this.sanitizeConfigObject(item, depth + 1));
     }
     
-    const sanitized: any = {};
+    const sanitized: JsonObject = {};
     const allowedKeys = new Set([
       'scoring', 'enabled', 'weights', 'gradeThresholds', 'options',
       'plugins', 'dimensions', 'enableTrends', 'enablePredictions',
@@ -447,7 +460,7 @@ export class ScoringConfigManager {
   /**
    * 値の無害化
    */
-  private sanitizeValue(value: any): any {
+  private sanitizeValue(value: JsonValue): JsonValue {
     if (typeof value === 'string') {
       // 文字列長の制限
       if (value.length > 1000) {
@@ -537,7 +550,7 @@ export class ScoringConfigManager {
   /**
    * 設定ファイルからスコアリング設定を構築
    */
-  private buildScoringConfig(scoringSection: any): ScoringConfig {
+  private buildScoringConfig(scoringSection: PartialScoringConfig): ScoringConfig {
     const config: ScoringConfig = {
       enabled: scoringSection.enabled !== false, // デフォルトtrue
       weights: DEFAULT_WEIGHTS,
@@ -546,7 +559,17 @@ export class ScoringConfigManager {
 
     // 重み設定の処理
     if (scoringSection.weights) {
-      config.weights = { ...this.getDefaultWeights(), ...scoringSection.weights };
+      const defaultWeights = this.getDefaultWeights();
+      config.weights = {
+        plugins: {
+          ...defaultWeights.plugins,
+          ...(scoringSection.weights.plugins || {})
+        },
+        dimensions: {
+          ...defaultWeights.dimensions,
+          ...(scoringSection.weights.dimensions || {})
+        } as WeightConfig['dimensions']
+      };
     }
 
     // グレード閾値の処理
@@ -697,13 +720,18 @@ export class ScoringConfigManager {
   /**
    * グレード閾値を正常化
    */
-  private sanitizeGradeThresholds(thresholds: any): Record<GradeType, number> {
+  private sanitizeGradeThresholds(thresholds: Partial<Record<GradeType, number>> | JsonValue): Record<GradeType, number> {
     const sanitized: Record<GradeType, number> = { ...GRADE_THRESHOLDS };
+
+    if (!isJsonObject(thresholds)) {
+      return sanitized;
+    }
 
     const grades: GradeType[] = ['A', 'B', 'C', 'D', 'F'];
     for (const grade of grades) {
-      if (typeof thresholds[grade] === 'number') {
-        sanitized[grade] = Math.max(0, Math.min(100, thresholds[grade]));
+      const value = thresholds[grade];
+      if (typeof value === 'number') {
+        sanitized[grade] = Math.max(0, Math.min(100, value));
       }
     }
 

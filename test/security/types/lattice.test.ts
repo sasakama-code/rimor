@@ -13,6 +13,7 @@ import {
   TaintMetadata,
   TaintTraceStep
 } from '../../../src/security/types/taint';
+import { SecuritySink, SanitizerType } from '../../../src/types/common-types';
 import { TestStatement } from '../../../src/security/types/security';
 
 describe('SecurityLattice', () => {
@@ -34,11 +35,11 @@ describe('SecurityLattice', () => {
 
     it('メタデータを設定・取得できること', () => {
       const metadata: TaintMetadata = {
-        source: TaintSource.USER_INPUT,
-        confidence: 0.95,
-        location: { file: 'test.ts', line: 10, column: 5 },
-        tracePath: [],
-        securityRules: ['no-eval']
+        level: TaintLevel.DEFINITELY_TAINTED,
+        sources: [TaintSource.USER_INPUT],
+        sinks: [SecuritySink.DATABASE],
+        sanitizers: [SanitizerType.INPUT_VALIDATION],
+        propagationPath: ['input', 'process', 'output']
       };
 
       lattice.setTaintLevel('userInput', TaintLevel.DEFINITELY_TAINTED, metadata);
@@ -222,19 +223,11 @@ describe('SecurityLattice', () => {
   describe('verifySecurityInvariants', () => {
     it('サニタイズされていない汚染フローを検出できること', () => {
       const metadata: TaintMetadata = {
-        source: TaintSource.USER_INPUT,
-        confidence: 0.95,
-        location: { file: 'test.ts', line: 10, column: 5 },
-        tracePath: [
-          {
-            type: 'branch',
-            description: 'expect(userInput)',
-            inputTaint: TaintLevel.DEFINITELY_TAINTED,
-            outputTaint: TaintLevel.DEFINITELY_TAINTED,
-            location: { file: 'test.ts', line: 20, column: 5 }
-          }
-        ],
-        securityRules: []
+        level: TaintLevel.DEFINITELY_TAINTED,
+        sources: [TaintSource.USER_INPUT],
+        sinks: [SecuritySink.DATABASE],
+        sanitizers: [],
+        propagationPath: ['input', 'process', 'output']
       };
 
       lattice.setTaintLevel('userInput', TaintLevel.DEFINITELY_TAINTED, metadata);
@@ -250,19 +243,11 @@ describe('SecurityLattice', () => {
 
     it('低レベルの汚染では違反を報告しないこと', () => {
       const metadata: TaintMetadata = {
-        source: TaintSource.ENVIRONMENT,
-        confidence: 0.5,
-        location: { file: 'test.ts', line: 10, column: 5 },
-        tracePath: [
-          {
-            type: 'branch',
-            description: 'expect(envVar)',
-            inputTaint: TaintLevel.POSSIBLY_TAINTED,
-            outputTaint: TaintLevel.POSSIBLY_TAINTED,
-            location: { file: 'test.ts', line: 20, column: 5 }
-          }
-        ],
-        securityRules: []
+        level: TaintLevel.POSSIBLY_TAINTED,
+        sources: [TaintSource.ENVIRONMENT],
+        sinks: [SecuritySink.FILE_SYSTEM],
+        sanitizers: [],
+        propagationPath: ['env', 'process']
       };
 
       lattice.setTaintLevel('envVar', TaintLevel.POSSIBLY_TAINTED, metadata);
@@ -275,32 +260,20 @@ describe('SecurityLattice', () => {
     it('複数の違反を検出できること', () => {
       // 違反1: ユーザー入力
       const userInputMetadata: TaintMetadata = {
-        source: TaintSource.USER_INPUT,
-        confidence: 0.95,
-        location: { file: 'test.ts', line: 10, column: 5 },
-        tracePath: [{
-          type: 'branch',
-          description: 'innerHTML = userInput',
-          inputTaint: TaintLevel.DEFINITELY_TAINTED,
-          outputTaint: TaintLevel.DEFINITELY_TAINTED,
-          location: { file: 'test.ts', line: 20, column: 5 }
-        }],
-        securityRules: []
+        level: TaintLevel.DEFINITELY_TAINTED,
+        sources: [TaintSource.USER_INPUT],
+        sinks: [SecuritySink.DATABASE],
+        sanitizers: [],
+        propagationPath: ['input', 'process']
       };
 
       // 違反2: 外部API
       const apiMetadata: TaintMetadata = {
-        source: TaintSource.EXTERNAL_API,
-        confidence: 0.9,
-        location: { file: 'test.ts', line: 30, column: 5 },
-        tracePath: [{
-          type: 'branch',
-          description: 'eval(apiResponse)',
-          inputTaint: TaintLevel.LIKELY_TAINTED,
-          outputTaint: TaintLevel.LIKELY_TAINTED,
-          location: { file: 'test.ts', line: 40, column: 5 }
-        }],
-        securityRules: []
+        level: TaintLevel.LIKELY_TAINTED,
+        sources: [TaintSource.EXTERNAL_API],
+        sinks: [SecuritySink.EVAL],
+        sanitizers: [],
+        propagationPath: ['api', 'eval']
       };
 
       lattice.setTaintLevel('userInput', TaintLevel.DEFINITELY_TAINTED, userInputMetadata);
@@ -328,11 +301,11 @@ describe('SecurityLattice', () => {
 
     it('格子の状態をクローンできること', () => {
       const metadata: TaintMetadata = {
-        source: TaintSource.USER_INPUT,
-        confidence: 0.95,
-        location: { file: 'test.ts', line: 10, column: 5 },
-        tracePath: [],
-        securityRules: []
+        level: TaintLevel.DEFINITELY_TAINTED,
+        sources: [TaintSource.USER_INPUT],
+        sinks: [SecuritySink.DATABASE],
+        sanitizers: [],
+        propagationPath: ['input', 'process']
       };
 
       lattice.setTaintLevel('original', TaintLevel.DEFINITELY_TAINTED, metadata);
@@ -355,14 +328,15 @@ describe('インターフェース定義のテスト', () => {
     it('セキュリティ違反を正しく定義できること', () => {
       const violation: SecurityViolation = {
         type: 'unsanitized-taint-flow',
+        message: 'Unsanitized user input flows to database',
         variable: 'userInput',
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
         metadata: {
-          source: TaintSource.USER_INPUT,
-          confidence: 0.95,
-          location: { file: 'test.ts', line: 10, column: 5 },
-          tracePath: [],
-          securityRules: []
+          level: TaintLevel.DEFINITELY_TAINTED,
+          sources: [TaintSource.USER_INPUT],
+          sinks: [SecuritySink.DATABASE],
+          sanitizers: [],
+          propagationPath: ['input', 'process']
         },
         severity: 'critical',
         suggestedFix: '入力値をescape()でサニタイズしてください'

@@ -3,24 +3,21 @@
  * プラグインメタデータに基づく動的設定生成と管理
  */
 
-import { PluginMetadata, pluginMetadataRegistry, defaultPluginMetadata } from './pluginMetadata';
-import { RimorConfig, PluginConfig } from './config';
+import { pluginMetadataRegistry, defaultPluginMetadata } from './pluginMetadata';
 import { errorHandler } from '../utils/errorHandler';
+import type {
+  PluginMetadata,
+  RimorConfig,
+  PluginConfig,
+  ConfigGenerationOptions,
+  PluginRecommendation
+} from './types/config-types';
 
-export interface ConfigGenerationOptions {
-  preset?: 'minimal' | 'recommended' | 'comprehensive' | 'performance';
-  targetEnvironment?: 'development' | 'ci' | 'production';
-  maxExecutionTime?: number;  // ミリ秒
-  memoryLimit?: 'low' | 'medium' | 'high';
-  includeExperimental?: boolean;
-}
-
-export interface PluginRecommendation {
-  pluginName: string;
-  reason: string;
-  priority: 'high' | 'medium' | 'low';
-  estimatedImpact: string;
-}
+// 型定義を再エクスポート（後方互換性のため）
+export type {
+  ConfigGenerationOptions,
+  PluginRecommendation
+};
 
 export class MetadataDrivenConfigManager {
   private static instance: MetadataDrivenConfigManager;
@@ -106,20 +103,20 @@ export class MetadataDrivenConfigManager {
     switch (preset) {
       case 'minimal':
         return allPlugins
-          .filter(p => p.category === 'legacy' && p.performance.memoryUsage === 'low')
+          .filter(p => p.category === 'legacy' && p.performance?.memoryUsage === 'low')
           .map(p => p.name);
         
       case 'recommended':
         return allPlugins
           .filter(p => {
             if (p.category === 'core' && context.memoryLimit === 'low') return false;
-            if (!context.includeExperimental && p.tags.includes('experimental')) return false;
+            if (!context.includeExperimental && p.tags?.includes('experimental')) return false;
             return true;
           })
           .sort((a, b) => {
             // 優先度: legacy > core > framework > domain
-            const categoryPriority = { legacy: 4, core: 3, framework: 2, domain: 1 };
-            return (categoryPriority[b.category] || 0) - (categoryPriority[a.category] || 0);
+            const categoryPriority: Record<string, number> = { legacy: 4, core: 3, framework: 2, domain: 1 };
+            return (categoryPriority[b.category as string] || 0) - (categoryPriority[a.category as string] || 0);
           })
           .slice(0, context.targetEnvironment === 'ci' ? 8 : 12)
           .map(p => p.name);
@@ -127,15 +124,15 @@ export class MetadataDrivenConfigManager {
       case 'comprehensive':
         return allPlugins
           .filter(p => {
-            if (!context.includeExperimental && p.tags.includes('experimental')) return false;
+            if (!context.includeExperimental && p.tags?.includes('experimental')) return false;
             return true;
           })
           .map(p => p.name);
         
       case 'performance':
         return allPlugins
-          .filter(p => p.performance.estimatedTimePerFile <= 15)
-          .sort((a, b) => a.performance.estimatedTimePerFile - b.performance.estimatedTimePerFile)
+          .filter(p => p.performance?.estimatedTimePerFile && p.performance.estimatedTimePerFile <= 15)
+          .sort((a, b) => (a.performance?.estimatedTimePerFile || 0) - (b.performance?.estimatedTimePerFile || 0))
           .map(p => p.name);
         
       default:
@@ -147,27 +144,27 @@ export class MetadataDrivenConfigManager {
    * プラグイン固有設定の生成
    */
   private generatePluginConfig(metadata: PluginMetadata, options: ConfigGenerationOptions): PluginConfig {
-    const config: PluginConfig = {
+    const config: PluginConfig & Record<string, unknown> = {
       enabled: true,
       priority: this.calculatePluginPriority(metadata, options),
     };
     
     // パラメータのデフォルト値を設定
-    for (const param of metadata.parameters) {
+    for (const param of (metadata.parameters || [])) {
       if (param.defaultValue !== undefined) {
-        (config as any)[param.name] = param.defaultValue;
+        config[param.name] = param.defaultValue;
       }
     }
     
     // 環境固有の調整
     if (options.targetEnvironment === 'ci') {
       // CI環境では高速化を優先
-      if (metadata.performance.recommendedBatchSize) {
-        (config as any).batchSize = Math.min(metadata.performance.recommendedBatchSize * 2, 100);
+      if (metadata.performance?.recommendedBatchSize) {
+        config.batchSize = Math.min(metadata.performance.recommendedBatchSize * 2, 100);
       }
     } else if (options.targetEnvironment === 'development') {
       // 開発環境では詳細なフィードバックを優先
-      (config as any).verbose = true;
+      config.verbose = true;
     }
     
     return config;
@@ -188,11 +185,11 @@ export class MetadataDrivenConfigManager {
     }
     
     // パフォーマンスベースの調整
-    if (metadata.performance.memoryUsage === 'low') priority += 20;
-    if (metadata.performance.estimatedTimePerFile <= 10) priority += 15;
+    if (metadata.performance?.memoryUsage === 'low') priority += 20;
+    if (metadata.performance?.estimatedTimePerFile && metadata.performance.estimatedTimePerFile <= 10) priority += 15;
     
     // 環境別調整
-    if (options.targetEnvironment === 'ci' && metadata.tags.includes('ci-friendly')) {
+    if (options.targetEnvironment === 'ci' && metadata.tags?.includes('ci-friendly')) {
       priority += 25;
     }
     
@@ -207,7 +204,7 @@ export class MetadataDrivenConfigManager {
     
     return pluginNames.reduce((total, pluginName) => {
       const metadata = pluginMetadataRegistry.get(pluginName);
-      return total + (metadata ? metadata.performance.estimatedTimePerFile * assumedFileCount : 0);
+      return total + (metadata?.performance?.estimatedTimePerFile ? metadata.performance.estimatedTimePerFile * assumedFileCount : 0);
     }, 0);
   }
   
@@ -223,7 +220,7 @@ export class MetadataDrivenConfigManager {
       if (currentPlugins.has(metadata.name)) continue;
       
       // 依存関係に基づく推奨
-      const satisfiedDependencies = metadata.dependencies.filter(dep => 
+      const satisfiedDependencies = (metadata.dependencies || []).filter(dep => 
         currentPlugins.has(dep.pluginName)
       );
       
@@ -253,7 +250,7 @@ export class MetadataDrivenConfigManager {
       }
       
       // パフォーマンス最適化の推奨
-      if (metadata.performance.estimatedTimePerFile <= 5 && metadata.performance.memoryUsage === 'low') {
+      if (metadata.performance?.estimatedTimePerFile && metadata.performance.estimatedTimePerFile <= 5 && metadata.performance?.memoryUsage === 'low') {
         recommendations.push({
           pluginName: metadata.name,
           reason: '高速で軽量な分析を提供',
@@ -297,13 +294,13 @@ export class MetadataDrivenConfigManager {
             metadata: pluginMetadataRegistry.get(name)
           }))
           .filter(item => item.metadata)
-          .sort((a, b) => a.metadata!.performance.estimatedTimePerFile - b.metadata!.performance.estimatedTimePerFile);
+          .sort((a, b) => (a.metadata?.performance?.estimatedTimePerFile || 0) - (b.metadata?.performance?.estimatedTimePerFile || 0));
         
         optimizedConfig.plugins = {};
         let runningTotal = 0;
         
         for (const item of sortedBySpeed) {
-          const estimatedAdd = item.metadata!.performance.estimatedTimePerFile * 50; // 仮定ファイル数
+          const estimatedAdd = (item.metadata?.performance?.estimatedTimePerFile || 0) * 50; // 仮定ファイル数
           if (runningTotal + estimatedAdd <= targetMetrics.maxExecutionTime) {
             optimizedConfig.plugins[item.name] = item.config;
             runningTotal += estimatedAdd;
@@ -319,7 +316,7 @@ export class MetadataDrivenConfigManager {
       
       Object.keys(optimizedConfig.plugins).forEach(pluginName => {
         const metadata = pluginMetadataRegistry.get(pluginName);
-        if (metadata && memoryPriority[metadata.performance.memoryUsage] < maxAllowed) {
+        if (metadata?.performance?.memoryUsage && memoryPriority[metadata.performance.memoryUsage] < maxAllowed) {
           delete optimizedConfig.plugins[pluginName];
         }
       });
@@ -376,14 +373,14 @@ export class MetadataDrivenConfigManager {
       
       // 必須パラメータチェック
       const pluginConfig = config.plugins[pluginName];
-      for (const param of metadata.parameters) {
+      for (const param of (metadata.parameters || [])) {
         if (param.required && !(param.name in pluginConfig)) {
           errors.push(`プラグイン「${pluginName}」に必須パラメータ「${param.name}」がありません`);
         }
       }
       
       // 依存関係チェック
-      for (const dep of metadata.dependencies) {
+      for (const dep of (metadata.dependencies || [])) {
         if (!dep.optional && !config.plugins[dep.pluginName]) {
           errors.push(`プラグイン「${pluginName}」は「${dep.pluginName}」に依存していますが、有効になっていません`);
         }

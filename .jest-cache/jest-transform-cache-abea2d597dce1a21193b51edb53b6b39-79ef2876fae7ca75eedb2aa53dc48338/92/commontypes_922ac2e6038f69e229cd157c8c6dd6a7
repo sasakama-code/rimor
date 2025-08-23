@@ -1,0 +1,94 @@
+2929e54836d56e88913984529a5faeab
+"use strict";
+/**
+ * 共通型定義ファイル
+ * プロジェクト全体で使用される型を一元管理
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SanitizerType = exports.SecuritySink = exports.TaintSource = exports.TaintLevel = exports.SecurityType = void 0;
+/**
+ * セキュリティ型の統一定義
+ * この定義が唯一の信頼できる情報源（SSOT）として機能
+ */
+var SecurityType;
+(function (SecurityType) {
+    /** ユーザー入力型 */
+    SecurityType["USER_INPUT"] = "user-input";
+    /** 認証トークン型 */
+    SecurityType["AUTH_TOKEN"] = "auth-token";
+    /** 検証済み認証型 */
+    SecurityType["VALIDATED_AUTH"] = "validated-auth";
+    /** 検証済み入力型 */
+    SecurityType["VALIDATED_INPUT"] = "validated-input";
+    /** サニタイズ済み型 */
+    SecurityType["SANITIZED_DATA"] = "sanitized-data";
+    /** セキュアSQL型 */
+    SecurityType["SECURE_SQL"] = "secure-sql";
+    /** セキュアHTML型 */
+    SecurityType["SECURE_HTML"] = "secure-html";
+    /** 認証型 */
+    SecurityType["AUTHENTICATION"] = "authentication";
+    /** 認可型 */
+    SecurityType["AUTHORIZATION"] = "authorization";
+    /** 入力検証型 */
+    SecurityType["INPUT_VALIDATION"] = "input-validation";
+    /** APIセキュリティ型 */
+    SecurityType["API_SECURITY"] = "api-security";
+})(SecurityType || (exports.SecurityType = SecurityType = {}));
+// Enum values for runtime usage
+exports.TaintLevel = {
+    UNTAINTED: 'untainted',
+    TAINTED: 'tainted',
+    SANITIZED: 'sanitized',
+    UNKNOWN: 'unknown',
+    // レガシー互換性と追加の汚染レベル
+    CLEAN: 'untainted', // CLEANをUNTAINTEDにマップ
+    DEFINITELY_TAINTED: 'tainted',
+    LIKELY_TAINTED: 'tainted',
+    POSSIBLY_TAINTED: 'possibly_tainted',
+    HIGHLY_TAINTED: 'highly_tainted'
+};
+// Enum values for runtime usage  
+exports.TaintSource = {
+    USER_INPUT: 'user-input',
+    DATABASE: 'database',
+    FILE_SYSTEM: 'file-system',
+    NETWORK: 'network',
+    ENVIRONMENT: 'environment',
+    UNKNOWN: 'unknown',
+    // レガシー互換性のため
+    EXTERNAL_API: 'network'
+};
+// Enum values for runtime usage
+exports.SecuritySink = {
+    DATABASE: 'database',
+    FILE_SYSTEM: 'file-system',
+    NETWORK: 'network',
+    COMMAND: 'command',
+    EVAL: 'eval',
+    DOM: 'dom',
+    UNKNOWN: 'unknown',
+    // レガシー互換性のため
+    DATABASE_QUERY: 'database-query',
+    HTML_OUTPUT: 'html-output',
+    JAVASCRIPT_EXEC: 'javascript-exec',
+    SYSTEM_COMMAND: 'system-command',
+    FILE_WRITE: 'file-write',
+    TEST_ASSERTION: 'test-assertion'
+};
+// Enum values for runtime usage
+exports.SanitizerType = {
+    ESCAPE: 'escape',
+    VALIDATE: 'validate',
+    ENCODE: 'encode',
+    FILTER: 'filter',
+    NONE: 'none',
+    // レガシー互換性のため
+    HTML_ESCAPE: 'html-escape',
+    SQL_ESCAPE: 'sql-escape',
+    INPUT_VALIDATION: 'input-validation',
+    TYPE_CONVERSION: 'type-conversion',
+    STRING_SANITIZE: 'string-sanitize',
+    JSON_PARSE: 'json-parse'
+};
+//# sourceMappingURL=common-types.js.map

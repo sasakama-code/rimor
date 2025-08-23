@@ -1,14 +1,14 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { Analyzer } from '../../src/core/analyzer';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
 
 const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures', filename);
 
 describe('Simple Performance Tests', () => {
-  let analyzer: Analyzer;
+  let analyzer: UnifiedAnalysisEngine;
 
   beforeEach(() => {
-    analyzer = new Analyzer();
+    analyzer = new UnifiedAnalysisEngine();
   });
 
   describe('Basic Analysis Performance', () => {
@@ -143,7 +143,7 @@ ${Array.from({ length: 20 }, (_, i) => `
       const memBefore = process.memoryUsage();
       
       // アナライザーのインスタンス化
-      const testAnalyzer = new Analyzer();
+      const testAnalyzer = new UnifiedAnalysisEngine();
       
       const memAfter = process.memoryUsage();
       const memoryUsed = memAfter.heapUsed - memBefore.heapUsed;

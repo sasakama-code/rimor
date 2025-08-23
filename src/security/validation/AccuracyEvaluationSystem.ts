@@ -17,6 +17,24 @@ import * as path from 'path';
 import * as os from 'os';
 
 /**
+ * テストケース分析結果
+ */
+export interface TestCaseAnalysisResult {
+  testCase?: {
+    file?: string;
+    [key: string]: unknown;
+  };
+  groundTruth?: GroundTruthData;
+  detectedIssues?: SecurityIssue[];
+  analysis?: {
+    missedIssues?: Array<SecurityIssue | GroundTruthIssue>;
+    falseAlarms?: Array<SecurityIssue | GroundTruthIssue>;
+    correctDetections?: Array<SecurityIssue | GroundTruthIssue>;
+    [key: string]: unknown;
+  };
+}
+
+/**
  * 正解データ（Ground Truth）
  */
 export interface GroundTruthData {
@@ -166,6 +184,7 @@ export interface TestCaseAccuracyResult {
 /**
  * 問題種別精度
  */
+// Migrated to CoreTypes
 export interface IssueTypeAccuracy {
   /** 問題の種別 */
   issueType: string;
@@ -363,10 +382,19 @@ export class AccuracyEvaluationSystem {
       const issues = result.issues.filter(issue => issue.location.file === testCase.file);
       
       return {
+        method: {
+          name: testCase.name,
+          params: [],
+          returnType: 'void',
+          body: testCase.content
+        },
         methodName: testCase.name,
+        flowGraph: { nodes: [], edges: [] },
+        violations: [],
+        improvements: [],
         issues,
         metrics: this.calculateSecurityMetrics(issues),
-        suggestions: this.generateSuggestions(issues),
+        suggestions: [],
         analysisTime: (endTime - startTime) / testCases.length
       };
     });
@@ -868,16 +896,11 @@ export class AccuracyEvaluationSystem {
     };
   }
 
-  private generateSuggestions(issues: SecurityIssue[]): any[] {
+  private generateSuggestions(issues: SecurityIssue[]): Array<{id: string; issue: SecurityIssue; suggestion: string}> {
     return issues.map(issue => ({
       id: `fix-${issue.id}`,
-      priority: issue.severity === 'error' ? 'critical' : 'high',
-      type: 'security-fix',
-      title: `修正: ${issue.type}`,
-      description: issue.message,
-      location: issue.location,
-      estimatedImpact: { securityImprovement: 20, implementationMinutes: 15 },
-      automatable: false
+      issue: issue,
+      suggestion: `${issue.type}の問題を修正してください: ${issue.message}`
     }));
   }
 
@@ -965,19 +988,19 @@ export class AccuracyEvaluationSystem {
   /**
    * nullとundefinedを保持する深いクローン
    */
-  private deepClone(obj: any): any {
+  private deepClone<T>(obj: T): T {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj !== 'object') return obj;
-    if (obj instanceof Date) return new Date(obj.getTime());
-    if (Array.isArray(obj)) return obj.map(item => this.deepClone(item));
+    if (obj instanceof Date) return new Date(obj.getTime()) as T;
+    if (Array.isArray(obj)) return obj.map(item => this.deepClone(item)) as T;
     
-    const cloned: any = {};
+    const cloned: Record<string, unknown> = {};
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         cloned[key] = this.deepClone(obj[key]);
       }
     }
-    return cloned;
+    return cloned as T;
   }
 
   /**
@@ -989,7 +1012,7 @@ export class AccuracyEvaluationSystem {
     
     // テストケース別結果のパスをマスキング
     if (sanitizedResult.perTestCaseResults) {
-      sanitizedResult.perTestCaseResults.forEach((testCaseResult: any) => {
+      sanitizedResult.perTestCaseResults.forEach((testCaseResult: TestCaseAccuracyResult) => {
         // ファイルパスのマスキング
         if (testCaseResult.testCase?.file) {
           testCaseResult.testCase.file = this.maskFilePath(testCaseResult.testCase.file);
@@ -1000,7 +1023,7 @@ export class AccuracyEvaluationSystem {
         
         // 検出されたissuesのlocation.fileマスキング
         if (testCaseResult.detectedIssues) {
-          testCaseResult.detectedIssues.forEach((issue: any) => {
+          testCaseResult.detectedIssues.forEach((issue: SecurityIssue) => {
             if (issue.location?.file) {
               issue.location.file = this.maskFilePath(issue.location.file);
             }
@@ -1009,7 +1032,7 @@ export class AccuracyEvaluationSystem {
         
         // 正解データの問題のlocation.fileマスキング
         if (testCaseResult.groundTruth?.actualSecurityIssues) {
-          testCaseResult.groundTruth.actualSecurityIssues.forEach((issue: any) => {
+          testCaseResult.groundTruth.actualSecurityIssues.forEach((issue: GroundTruthIssue) => {
             if (issue.location?.file) {
               issue.location.file = this.maskFilePath(issue.location.file);
             }
@@ -1018,9 +1041,11 @@ export class AccuracyEvaluationSystem {
         
         // 分析結果のissuesマスキング
         if (testCaseResult.analysis) {
-          ['missedIssues', 'falseAlarms', 'correctDetections'].forEach(key => {
-            if (testCaseResult.analysis[key]) {
-              testCaseResult.analysis[key].forEach((issue: any) => {
+          const analysisKeys: (keyof typeof testCaseResult.analysis)[] = ['missedIssues', 'falseAlarms', 'correctDetections'];
+          analysisKeys.forEach(key => {
+            const items = testCaseResult.analysis[key];
+            if (items && Array.isArray(items)) {
+              items.forEach((issue: SecurityIssue | GroundTruthIssue) => {
                 if (issue.location?.file) {
                   issue.location.file = this.maskFilePath(issue.location.file);
                 }

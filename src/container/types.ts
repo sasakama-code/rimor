@@ -6,9 +6,11 @@
 const TYPES = {
   // Core Services
   AnalysisEngine: Symbol.for('AnalysisEngine'),
+  UnifiedAnalysisEngine: Symbol.for('UnifiedAnalysisEngine'),
   SecurityAuditor: Symbol.for('SecurityAuditor'),
   Reporter: Symbol.for('Reporter'),
   PluginManager: Symbol.for('PluginManager'),
+  UnifiedPluginManager: Symbol.for('UnifiedPluginManager'),
   
   // Infrastructure
   ConfigService: Symbol.for('ConfigService'),

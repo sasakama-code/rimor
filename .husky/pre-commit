@@ -1,0 +1,107 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Pre-commit checks starting..."
+
+# TypeScript型チェック
+echo "📝 Running TypeScript type check..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed. Please fix type errors before committing."
+  exit 1
+fi
+
+# ESLintチェック（ステージングされたファイルのみ）
+echo "🔧 Running ESLint..."
+npx lint-staged
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint check failed. Please fix linting errors before committing."
+  exit 1
+fi
+
+# ビルドチェック
+echo "🏗️ Running build..."
+npm run build > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed. Please ensure the code builds successfully."
+  exit 1
+fi
+
+# 変更されたテストファイルの実行
+echo "🧪 Running tests for changed files..."
+git diff --cached --name-only | grep -E "\.test\.ts$" | while read file; do
+  if [ -f "$file" ]; then
+    npm test -- "$file" --no-coverage 2>&1 | grep -E "(PASS|FAIL)"
+    if [ $? -ne 0 ]; then
+      echo "❌ Test failed for $file"
+      exit 1
+    fi
+  fi
+done
+
+# 命名規則検証
+echo "📝 Checking naming conventions..."
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$')
+
+if [ ! -z "$STAGED_TS_FILES" ]; then
+  NAMING_ERRORS=0
+  
+  # バージョン番号付きファイル名チェック
+  VERSION_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'v[0-9]+\.[0-9]+')
+  if [ ! -z "$VERSION_FILES" ]; then
+    echo "❌ バージョン番号付きファイル名が検出されました:"
+    echo "$VERSION_FILES" | sed 's/^/  - /'
+    NAMING_ERRORS=$((NAMING_ERRORS + 1))
+  fi
+  
+  # Implサフィックスチェック
+  IMPL_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'Impl\.ts$')
+  if [ ! -z "$IMPL_FILES" ]; then
+    echo "❌ *Impl.tsサフィックスが検出されました:"
+    echo "$IMPL_FILES" | sed 's/^/  - /'
+    NAMING_ERRORS=$((NAMING_ERRORS + 1))
+  fi
+  
+  # プラグインファイル命名チェック
+  PLUGIN_FILES=$(echo "$STAGED_TS_FILES" | grep -E 'src/plugins/.*\.ts$')
+  if [ ! -z "$PLUGIN_FILES" ]; then
+    for file in $PLUGIN_FILES; do
+      basename=$(basename "$file" .ts)
+      if [[ "$file" == *"/plugins/"* ]] && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
+        echo "❌ 不適切なプラグインファイル命名: $file"
+        echo "💡 プラグインファイルは*Plugin.ts形式にしてください"
+        NAMING_ERRORS=$((NAMING_ERRORS + 1))
+      fi
+    done
+  fi
+  
+  if [ $NAMING_ERRORS -ne 0 ]; then
+    echo "❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
+    exit 1
+  else
+    echo "  ✅ 命名規則チェック通過"
+  fi
+fi
+
+# any型の使用チェック
+echo "🔍 Checking any type usage..."
+NEW_ANY_COUNT=$(grep -r ": any" src --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | tr -d ' ')
+echo "  Current any type usage: $NEW_ANY_COUNT"
+
+if [ "$NEW_ANY_COUNT" -gt "560" ]; then
+  echo "❌ any型の使用が増加しています（現在: $NEW_ANY_COUNT、上限: 560）"
+  echo "💡 ヒント: 'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+  exit 1
+fi
+
+# 循環参照チェック（警告のみ）
+if [ -f "scripts/check-circular-deps.js" ]; then
+  echo "🔍 Checking circular dependencies..."
+  node scripts/check-circular-deps.js > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "⚠️  循環参照が検出されました。詳細は 'node scripts/check-circular-deps.js' で確認してください。"
+    # 警告のみで、コミットはブロックしない
+  fi
+fi
+
+echo "✅ All pre-commit checks passed!"

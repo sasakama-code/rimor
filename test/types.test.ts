@@ -36,6 +36,7 @@ describe('ITestQualityPlugin interface', () => {
     evaluateQuality(patterns: DetectionResult[]): QualityScore {
       return {
         overall: 80,
+        dimensions: {},
         breakdown: {
           completeness: 80,
           correctness: 80,
@@ -59,10 +60,7 @@ describe('ITestQualityPlugin interface', () => {
           column: 1,
           endLine: 1
         },
-        estimatedImpact: {
-          scoreImprovement: 10,
-          effortMinutes: 15
-        },
+        estimatedImpact: 0.1,
         automatable: false
       }];
     }
@@ -148,6 +146,7 @@ describe('ITestQualityPlugin interface', () => {
   it('should implement suggestImprovements method', () => {
     const mockQuality: QualityScore = {
       overall: 80,
+      dimensions: {},
       breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
       confidence: 0.8,
       metadata: { explanation: 'Test quality' }
@@ -204,6 +203,7 @@ describe('QualityScore type', () => {
   it('should have correct structure', () => {
     const score: QualityScore = {
       overall: 85,
+      dimensions: {},
       breakdown: {
         completeness: 90,
         correctness: 85,

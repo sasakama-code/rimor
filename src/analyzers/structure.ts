@@ -25,9 +25,17 @@ import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
 import { ResourceLimitMonitor } from '../utils/resourceLimits';
 
+// 新しい分析クラスのインポート
+import { ArchitectureDetector } from './structure-analysis/architecture-detector';
+import { NamingAnalyzer } from './structure-analysis/naming-analyzer';
+import { MetricsCalculator } from './structure-analysis/metrics-calculator';
+import { PatternDetector } from './structure-analysis/pattern-detector';
+
 /**
- * プロジェクト構造分析器
+ * プロジェクト構造分析器（ファサードパターン）
+ * 後方互換性を維持しながら新しい分析クラスに処理を委譲
  * プロジェクトの構造、アーキテクチャパターン、命名規則、メトリクスを分析
+ * @deprecated 将来的には個別の分析クラスを直接使用することを推奨
  */
 export class ProjectStructureAnalyzer {
   private readonly IGNORE_PATTERNS = [
@@ -40,9 +48,21 @@ export class ProjectStructureAnalyzer {
   ];
   
   private resourceMonitor: ResourceLimitMonitor;
+  
+  // 新しい分析クラスのインスタンス
+  private architectureDetector: ArchitectureDetector;
+  private namingAnalyzer: NamingAnalyzer;
+  private metricsCalculator: MetricsCalculator;
+  private patternDetector: PatternDetector;
 
   constructor(resourceMonitor?: ResourceLimitMonitor) {
     this.resourceMonitor = resourceMonitor || new ResourceLimitMonitor();
+    
+    // 新しい分析クラスのインスタンスを作成
+    this.architectureDetector = new ArchitectureDetector();
+    this.namingAnalyzer = new NamingAnalyzer();
+    this.metricsCalculator = new MetricsCalculator();
+    this.patternDetector = new PatternDetector();
   }
 
   private readonly SUPPORTED_EXTENSIONS = [
@@ -445,7 +465,7 @@ export class ProjectStructureAnalyzer {
     return detected.sort((a, b) => b.confidence - a.confidence);
   }
 
-  private analyzeArchitecturePatterns(directories: string[], files: string[]): any {
+  private analyzeArchitecturePatterns(directories: string[], files: string[]): Record<string, unknown> {
     // アーキテクチャパターンの分析ロジック
     return {};
   }
@@ -699,7 +719,12 @@ export class ProjectStructureAnalyzer {
     return this.analyzeNamingPattern(classes, 'classes');
   }
 
-  private analyzeNamingPattern(names: string[], type: string): any {
+  private analyzeNamingPattern(names: string[], type: string): {
+    pattern: NamingPattern;
+    confidence: number;
+    examples: string[];
+    violations: string[];
+  } {
     if (names.length === 0) {
       return {
         pattern: 'unknown' as NamingPattern,

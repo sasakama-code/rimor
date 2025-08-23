@@ -26,6 +26,7 @@ describe('AnnotationGenerator', () => {
       id: '1234567890abcdef',
       type: IssueType.SQL_INJECTION,
       severity: Severity.CRITICAL,
+      category: 'security' as const,
       location: {
         file: 'src/db.ts',
         startLine: 50,
@@ -187,6 +188,7 @@ describe('AnnotationGenerator', () => {
           id: '123',
           type: IssueType.CODE_QUALITY,
           severity,
+          category: 'code-quality' as const,
           location: { file: 'test.ts', startLine: 1, endLine: 1 },
           message: 'Test'
         };
@@ -243,6 +245,7 @@ describe('AnnotationGenerator', () => {
       id: '123',
       type: IssueType.XSS,
       severity: Severity.HIGH,
+      category: 'security' as const,
       location: { file: 'test.py', startLine: 10, endLine: 10 },
       message: 'XSS脆弱性'
     };
@@ -291,6 +294,7 @@ describe('AnnotationGenerator', () => {
           id: '1',
           type: IssueType.TEST_QUALITY,
           severity: Severity.MEDIUM,
+          category: 'test-quality' as const,
           location: { file: 'test1.ts', startLine: 50, endLine: 50 },
           message: 'Issue 1'
         },
@@ -298,6 +302,7 @@ describe('AnnotationGenerator', () => {
           id: '2',
           type: IssueType.TEST_QUALITY,
           severity: Severity.HIGH,
+          category: 'test-quality' as const,
           location: { file: 'test1.ts', startLine: 20, endLine: 20 },
           message: 'Issue 2'
         },
@@ -305,6 +310,7 @@ describe('AnnotationGenerator', () => {
           id: '3',
           type: IssueType.TEST_QUALITY,
           severity: Severity.LOW,
+          category: 'test-quality' as const,
           location: { file: 'test2.ts', startLine: 10, endLine: 10 },
           message: 'Issue 3'
         }
@@ -332,6 +338,7 @@ describe('AnnotationGenerator', () => {
           id: '1',
           type: IssueType.SQL_INJECTION,
           severity: Severity.CRITICAL,
+          category: 'security' as const,
           location: { file: 'db.ts', startLine: 100, endLine: 100 },
           message: 'SQL Injection',
           recommendation: 'Use parameterized queries'
@@ -340,6 +347,7 @@ describe('AnnotationGenerator', () => {
           id: '2',
           type: IssueType.XSS,
           severity: Severity.HIGH,
+          category: 'security' as const,
           location: { file: 'api.ts', startLine: 50, endLine: 50 },
           message: 'XSS vulnerability'
         }
@@ -363,6 +371,7 @@ describe('AnnotationGenerator', () => {
         id: '123',
         type: IssueType.CODE_QUALITY,
         severity: Severity.MEDIUM,
+        category: 'code-quality' as const,
         location: { file: 'test.ts', startLine: 1, endLine: 5 },
         message: 'Line 1\nLine 2\nLine 3'
       };
@@ -383,6 +392,7 @@ describe('AnnotationGenerator', () => {
         id: '123',
         type: IssueType.CODE_QUALITY,
         severity: Severity.LOW,
+        category: 'code-quality' as const,
         location: { file: 'test.ts', startLine: 1, endLine: 1 },
         message: 'A'.repeat(500)
       };

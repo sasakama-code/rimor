@@ -7,6 +7,7 @@ import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import * as zlib from 'zlib';
 import { Issue } from './types';
 import { errorHandler } from '../utils/errorHandler';
 
@@ -30,6 +31,7 @@ export interface CacheStatistics {
   avgFileSize: number;
   oldestEntry: number;
   newestEntry: number;
+  evictions?: number;
 }
 
 export interface CacheOptions {
@@ -295,6 +297,17 @@ export class CacheManager {
   getStatistics(): CacheStatistics {
     return { ...this.stats };
   }
+
+  /**
+   * キャッシュ統計の取得（エイリアス）
+   */
+  getStats(): { hits: number; misses: number; hitRate: number } {
+    return {
+      hits: this.stats.cacheHits,
+      misses: this.stats.cacheMisses,
+      hitRate: this.stats.hitRatio
+    };
+  }
   
   /**
    * キャッシュの詳細情報
@@ -520,8 +533,10 @@ export class CacheManager {
         return;
       }
       
-      this.cache = new Map(cacheData.entries || []);
-      this.stats = { ...this.stats, ...cacheData.stats };
+      // 検証済みなので型アサーションが安全
+      const validatedData = cacheData as { entries: Array<[string, CacheEntry]>, stats?: Partial<CacheStatistics> };
+      this.cache = new Map(validatedData.entries || []);
+      this.stats = { ...this.stats, ...(validatedData.stats || {}) };
       
       console.log(`ディスクから${this.cache.size}件のキャッシュエントリを読み込みました`);
       
@@ -539,7 +554,7 @@ export class CacheManager {
   /**
    * 安全なJSON解析
    */
-  private safeJsonParse(data: string): any | null {
+  private safeJsonParse(data: string): unknown | null {
     try {
       // 基本的な検証
       if (!data || data.trim().length === 0) {
@@ -593,23 +608,25 @@ export class CacheManager {
   /**
    * キャッシュデータの構造検証
    */
-  private validateCacheData(data: any): boolean {
-    if (!data || typeof data !== 'object') {
+  private validateCacheData(data: unknown): boolean {
+    if (!data || typeof data !== 'object' || data === null) {
       return false;
     }
 
+    const dataObj = data as Record<string, unknown>;
+    
     // 必須フィールドの存在確認
-    if (!Array.isArray(data.entries)) {
+    if (!Array.isArray(dataObj.entries)) {
       return false;
     }
 
     // エントリ数制限
-    if (data.entries.length > this.options.maxEntries * 2) {
+    if (dataObj.entries.length > this.options.maxEntries * 2) {
       return false;
     }
 
     // 各エントリの検証
-    for (const [key, entry] of data.entries) {
+    for (const [key, entry] of dataObj.entries) {
       if (!this.validateCacheEntry(key, entry)) {
         return false;
       }
@@ -621,30 +638,32 @@ export class CacheManager {
   /**
    * 個別キャッシュエントリの検証
    */
-  private validateCacheEntry(key: string, entry: any): boolean {
+  private validateCacheEntry(key: string, entry: unknown): boolean {
     if (!key || typeof key !== 'string' || key.length > 100) {
       return false;
     }
 
-    if (!entry || typeof entry !== 'object') {
+    if (!entry || typeof entry !== 'object' || entry === null) {
       return false;
     }
 
+    const entryObj = entry as Record<string, unknown>;
+    
     // 必須フィールドの検証
     const requiredFields = ['filePath', 'fileHash', 'fileSize', 'lastModified', 'pluginResults', 'cachedAt'];
     for (const field of requiredFields) {
-      if (!(field in entry)) {
+      if (!(field in entryObj)) {
         return false;
       }
     }
 
     // ファイルパスの検証
-    if (typeof entry.filePath !== 'string' || entry.filePath.includes('..') || entry.filePath.length > 500) {
+    if (typeof entryObj.filePath !== 'string' || entryObj.filePath.includes('..') || entryObj.filePath.length > 500) {
       return false;
     }
 
     // 数値フィールドの検証
-    if (typeof entry.fileSize !== 'number' || entry.fileSize < 0 || entry.fileSize > 100 * 1024 * 1024) {
+    if (typeof entryObj.fileSize !== 'number' || entryObj.fileSize < 0 || entryObj.fileSize > 100 * 1024 * 1024) {
       return false;
     }
 
@@ -654,11 +673,12 @@ export class CacheManager {
   /**
    * オブジェクトの深度を取得
    */
-  private getObjectDepth(obj: any, depth = 0): number {
-    if (depth > 10) return depth; // 最大深度制限
+  private getObjectDepth(obj: unknown, depth = 0): number {
+    if (depth >= 10) return 10; // 最大深度制限
 
-    if (obj && typeof obj === 'object') {
-      const depths = Object.values(obj).map(value => this.getObjectDepth(value, depth + 1));
+    if (obj && typeof obj === 'object' && obj !== null) {
+      const objRecord = obj as Record<string, unknown>;
+      const depths = Object.values(objRecord).map(value => this.getObjectDepth(value, depth + 1));
       return Math.max(depth, ...depths);
     }
     
@@ -699,6 +719,73 @@ export class CacheManager {
         undefined,
         "",
         { cacheFilePath: this.cacheFilePath },
+        true
+      );
+    }
+  }
+
+  /**
+   * キャッシュの最大サイズを設定（後方互換性のため）
+   */
+  setMaxCacheSize(size: number): void {
+    this.options.maxEntries = size;
+  }
+
+  /**
+   * キャッシュをファイルに保存（後方互換性のため）
+   */
+  async saveToDisk(filePath?: string): Promise<void> {
+    const targetPath = filePath || this.cacheFilePath;
+    
+    try {
+      const cacheData = {
+        version: 1,
+        timestamp: Date.now(),
+        entries: Array.from(this.cache.entries()),
+        stats: this.stats
+      };
+      
+      const compressed = zlib.gzipSync(JSON.stringify(cacheData));
+      await fs.writeFile(targetPath, compressed);
+    } catch (error) {
+      errorHandler.handleError(
+        error,
+        undefined,
+        "",
+        { cacheFilePath: targetPath },
+        true
+      );
+    }
+  }
+
+  /**
+   * キャッシュをファイルから読み込み（後方互換性のため）
+   */
+  async loadFromDisk(filePath?: string): Promise<void> {
+    const targetPath = filePath || this.cacheFilePath;
+    
+    try {
+      if (!fsSync.existsSync(targetPath)) {
+        return;
+      }
+      
+      const compressed = await fs.readFile(targetPath);
+      const decompressed = zlib.gunzipSync(compressed);
+      const data = JSON.parse(decompressed.toString());
+      
+      if (this.validateCacheData(data)) {
+        this.cache.clear();
+        for (const [key, value] of data.entries) {
+          this.cache.set(key, value);
+        }
+        this.stats = data.stats || this.stats;
+      }
+    } catch (error) {
+      errorHandler.handleError(
+        error,
+        undefined,
+        "",
+        { cacheFilePath: targetPath },
         true
       );
     }
