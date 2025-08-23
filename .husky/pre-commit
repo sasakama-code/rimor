@@ -100,7 +100,7 @@ run_naming_conventions_check() {
             for file in $plugin_files; do
                 local basename
                 basename=$(basename "$file" .ts)
-                if [[ "$file" == *"/plugins/"* ]] && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
+                if echo "$file" | grep -q "/plugins/" && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
                     echo "❌ 不適切なプラグインファイル命名: $file"
                     echo "💡 プラグインファイルは*Plugin.ts形式にしてください"
                     naming_errors=$((naming_errors + 1))
