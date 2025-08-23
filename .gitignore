@@ -78,3 +78,6 @@ rimor-dogfooding-*.txt
 # Accuracy evaluation files
 accuracy-evaluation-*.json
 test-errors-ai-summary.md
+
+# Jest cache
+.jest-cache
