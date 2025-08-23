@@ -274,47 +274,5 @@ jobs:
       continue-on-error: true
       with:
         script: |
-          const fs = require('fs');
-          const coveragePath = 'coverage/lcov-report/index.html';
-          
-          let coverageComment = '## 📊 Coverage Report\n\n';
-          
-          try {
-            // カバレッジサマリーを読み込み
-            const summaryPath = 'coverage/coverage-summary.json';
-            if (fs.existsSync(summaryPath)) {
-              const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
-              const total = summary.total;
-              
-              coverageComment += `| Metric | Coverage | Threshold |\n`;
-              coverageComment += `|--------|----------|----------|\n`;
-              coverageComment += `| Lines | ${total.lines.pct}% | 95% |\n`;
-              coverageComment += `| Statements | ${total.statements.pct}% | 95% |\n`;
-              coverageComment += `| Functions | ${total.functions.pct}% | 98% |\n`;
-              coverageComment += `| Branches | ${total.branches.pct}% | 85% |\n`;
-              
-              // 閾値チェック
-              const meetsThreshold = 
-                total.lines.pct >= 95 &&
-                total.statements.pct >= 95 &&
-                total.functions.pct >= 98 &&
-                total.branches.pct >= 85;
-              
-              if (meetsThreshold) {
-                coverageComment += '\n✅ **カバレッジ目標を達成しています！**';
-              } else {
-                coverageComment += '\n⚠️ **カバレッジ目標を下回っています。**';
-              }
-            } else {
-              coverageComment += '⚠️ カバレッジレポートが見つかりませんでした。';
-            }
-          } catch (error) {
-            coverageComment += '❌ カバレッジレポートの読み込みに失敗しました。';
-          }
-          
-          await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.payload.pull_request.number,
-            body: coverageComment
-          });
+          const coverageScript = require('./scripts/coverage-comment');
+          await coverageScript.postCoverageComment({ github, core, context });

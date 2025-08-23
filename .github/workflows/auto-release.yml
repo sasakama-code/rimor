@@ -156,7 +156,7 @@ jobs:
 
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
-      release_created: ${{ steps.create.outputs.release_created }}
+      release_created: ${{ steps.set-output.outputs.release_created }}
 
     steps:
       - name: Checkout
@@ -274,6 +274,13 @@ jobs:
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set release created output
+        id: set-output
+        if: success()
+        run: |
+          echo "release_created=true" >> $GITHUB_OUTPUT
+          echo "✅ Release created successfully"
 
   # 成功通知
   notify-success:
