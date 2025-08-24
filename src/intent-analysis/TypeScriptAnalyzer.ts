@@ -54,25 +54,18 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
   
   /**
    * ファイルの型情報を取得
-   * KISS原則: 基本的な型情報の取得から開始
+   * Issue #106: Program非参加ファイルに対する正確な型解決を実装
    */
   async getTypeInfo(filePath: string, position: number): Promise<TypeInfo | undefined> {
     if (!this.program || !this.checker) {
       throw new Error('TypeScriptAnalyzerが初期化されていません');
     }
     
-    const sourceFile = this.program.getSourceFile(filePath);
+    const sourceFile = await this.ensureFileInProgram(filePath);
     if (!sourceFile) {
-      // ファイルをプログラムに追加
+      // フォールバック処理
       const content = fs.readFileSync(filePath, 'utf-8');
-      const newSourceFile = ts.createSourceFile(
-        filePath,
-        content,
-        ts.ScriptTarget.Latest,
-        true
-      );
-      
-      // 簡易的な型推論（実際の実装では再度プログラムを作成する必要があるが、ここでは簡略化）
+      const newSourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
       return this.inferTypeFromSource(newSourceFile, position);
     }
     
@@ -455,6 +448,7 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
 
   /**
    * ファイルの型情報を取得
+   * Issue #106: Program非参加ファイルでも正確な型情報を取得
    * KISS原則: 基本的な型情報のマップを返す
    */
   async getFileTypeInfo(filePath: string): Promise<Map<string, TypeInfo>> {
@@ -463,10 +457,10 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
     }
     
     const typeInfoMap = new Map<string, TypeInfo>();
-    const sourceFile = this.program.getSourceFile(filePath);
+    const sourceFile = await this.ensureFileInProgram(filePath);
     
     if (!sourceFile) {
-      return typeInfoMap;
+      return typeInfoMap; // 空のマップを返す
     }
     
     // 変数と関数の型情報を収集
@@ -501,6 +495,48 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
    */
   async analyzeCallGraph(filePath: string): Promise<CallGraphNode[]> {
     return this.buildCallGraph(filePath);
+  }
+
+  /**
+   * Program非参加ファイルをProgramに追加して正確な型解決を可能にする
+   * Issue #106: DRY原則に従ったProgram再構築ロジック
+   * SOLID原則: 単一責任の原則（ファイル管理の責任を分離）
+   */
+  private async ensureFileInProgram(filePath: string): Promise<ts.SourceFile | undefined> {
+    if (!this.program || !this.checker) {
+      throw new Error('TypeScriptAnalyzerが初期化されていません');
+    }
+    
+    let sourceFile = this.program.getSourceFile(filePath);
+    if (sourceFile) {
+      return sourceFile; // 既にProgramに参加している
+    }
+    
+    // Program非参加ファイルを検出 - Programを再構築して正確な型情報を取得
+    try {
+      const options = this.program.getCompilerOptions();
+      const roots = this.program.getRootFileNames();
+      
+      if (!roots.includes(filePath)) {
+        // インクリメンタルビルドを活用したProgram再構築
+        // KISS原則: 必要最小限の変更でProgramを拡張
+        this.program = ts.createProgram(
+          [...roots, filePath],
+          options,
+          undefined,
+          this.program // 既存のProgramを再利用（パフォーマンス向上）
+        );
+        this.checker = this.program.getTypeChecker();
+      }
+      
+      sourceFile = this.program.getSourceFile(filePath);
+      return sourceFile;
+      
+    } catch (error) {
+      // Defensive Programming: Program再構築に失敗した場合のログ出力
+      console.warn(`Program再構築に失敗しました (${filePath}):`, error);
+      return undefined;
+    }
   }
 
   /**
