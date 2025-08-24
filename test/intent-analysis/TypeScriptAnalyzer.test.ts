@@ -202,4 +202,145 @@ describe('TypeScriptAnalyzer', () => {
       expect(analyzer.checkTypeCompatibility(anyType, numberType)).toBe(true);
     });
   });
+
+  describe('Program非参加ファイルの型解決 (Issue #106)', () => {
+    it('Program外ファイルからのimport型を正確に解決できること', async () => {
+      // Arrange
+      // 基本型定義ファイルを作成（Program内）
+      const typesFile = path.join(tempDir, 'types.ts');
+      const typesContent = `
+        export interface User {
+          id: number;
+          name: string;
+          email?: string;
+        }
+        
+        export type UserId = number;
+        
+        export interface ApiResponse<T> {
+          data: T;
+          status: number;
+        }
+      `;
+      await fs.writeFile(typesFile, typesContent);
+      
+      // Program外のテストファイルを作成
+      const externalFile = path.join(tempDir, 'external.ts');
+      const externalContent = `
+        import { User, UserId, ApiResponse } from './types';
+        
+        const user: User = {
+          id: 1,
+          name: "Test User",
+          email: "test@example.com"
+        };
+        
+        const userId: UserId = 123;
+        
+        const response: ApiResponse<User> = {
+          data: user,
+          status: 200
+        };
+      `;
+      await fs.writeFile(externalFile, externalContent);
+      
+      await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
+      
+      // Act
+      const userType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('user: User'));
+      const userIdType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('userId: UserId'));
+      const responseType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('response: ApiResponse'));
+      
+      // Assert - TypeScriptコンパイラの型解決によりimport型が正確に処理される
+      // issue #106の改善により、TypeCheckerを通した正確な型情報が取得できる
+      expect(userType?.typeName).toBe('User');
+      
+      // 型エイリアス: TypeScriptは型エイリアスを実際の型に展開することがある
+      expect(userIdType?.typeName).toBe('number'); // UserId = numberの展開結果
+      
+      // ジェネリクス型: 完全な型情報が取得できるようになった
+      expect(responseType?.typeName).toBe('ApiResponse<User>');
+    });
+    
+    it('Program外ファイルでの複雑な型エイリアスを正確に解決できること', async () => {
+      // Arrange
+      const utilsFile = path.join(tempDir, 'utils.ts');
+      const utilsContent = `
+        export type StringOrNumber = string | number;
+        export type Optional<T> = T | undefined;
+        export type EventHandler<T = Event> = (event: T) => void;
+      `;
+      await fs.writeFile(utilsFile, utilsContent);
+      
+      const externalFile = path.join(tempDir, 'external-complex.ts');
+      const externalContent = `
+        import { StringOrNumber, Optional, EventHandler } from './utils';
+        
+        const value: StringOrNumber = "test";
+        const optionalValue: Optional<string> = undefined;
+        const handler: EventHandler<MouseEvent> = (e) => console.log(e);
+      `;
+      await fs.writeFile(externalFile, externalContent);
+      
+      await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
+      
+      // Act
+      const valueType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('value: StringOrNumber'));
+      const optionalType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('optionalValue: Optional'));
+      const handlerType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('handler: EventHandler'));
+      
+      // Assert - TypeCheckerによる正確な型解決が実現
+      // Program参加により、型エイリアスが正確に認識される
+      expect(valueType?.typeName).toBe('StringOrNumber'); // 型エイリアス名が保持される
+      expect(optionalType?.typeName).toBe('Optional<string>'); // ジェネリクス型エイリアスが正確に表示
+      expect(handlerType?.typeName).toBe('EventHandler<MouseEvent>'); // 完全な型情報が取得
+    });
+    
+    it('Program外ファイルでの型ガードを正確に解析できること', async () => {
+      // Arrange
+      const guardsFile = path.join(tempDir, 'guards.ts');
+      const guardsContent = `
+        export interface Dog {
+          breed: string;
+          bark(): void;
+        }
+        
+        export interface Cat {
+          meow(): void;
+        }
+        
+        export function isDog(animal: Dog | Cat): animal is Dog {
+          return 'breed' in animal;
+        }
+      `;
+      await fs.writeFile(guardsFile, guardsContent);
+      
+      const externalFile = path.join(tempDir, 'external-guards.ts');
+      const externalContent = `
+        import { Dog, Cat, isDog } from './guards';
+        
+        function handleAnimal(animal: Dog | Cat) {
+          if (isDog(animal)) {
+            // この時点でanimalはDog型として扱われるべき
+            console.log(animal.breed);
+          }
+        }
+      `;
+      await fs.writeFile(externalFile, externalContent);
+      
+      await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
+      
+      // Act
+      const isDogType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('isDog(animal)'));
+      const animalInGuardType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('animal.breed'));
+      
+      // Assert - TypeCheckerによる型ガード関数の正確な解析
+      // 型ガード関数の完全な関数シグネチャが取得される
+      expect(isDogType?.typeName).toBe('(animal: Dog | Cat) => animal is Dog');
+      
+      // 型ガード内での型の絞り込みが有効になる
+      // animal変数自体がDog型として正確に認識されている
+      expect(animalInGuardType?.typeName).toBe('Dog'); // 型ガード内でDog型に絞り込まれている
+    });
+  });
 });
