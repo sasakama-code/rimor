@@ -150,24 +150,265 @@ export class LanguageAnalyzer {
   }
 
   /**
-   * エクスポート文の抽出
+   * エクスポート文の抽出 - Issue #109 Enhanced version
    */
   extractExports(fileContent: string, language: string): string[] {
     const exports: string[] = [];
-    const lines = fileContent.split('\n');
     
-    const exportRegexes = this.getExportRegexes(language);
+    // Defensive programming: Check if language is supported
+    if (!this.isJavaScriptLikeLanguage(language)) {
+      return exports;
+    }
     
-    for (const line of lines) {
+    try {
+      // Remove comments to avoid false positives
+      const cleanContent = this.removeCommentsFromCode(fileContent);
+      const exportRegexes = this.getJavaScriptExportRegexes(language);
+      
       for (const regex of exportRegexes) {
-        const match = line.match(regex);
-        if (match && match[1]) {
-          exports.push(match[1]);
+        const matches = Array.from(cleanContent.matchAll(regex));
+        
+        for (const match of matches) {
+          // Handle different regex patterns
+          if (this.isDefaultExportRegex(regex)) {
+            this.processDefaultExport(match, exports);
+          } else if (this.isBracedExportRegex(regex)) {
+            this.processBracedExport(match, exports);
+          } else if (this.isCommonJSObjectExportRegex(regex)) {
+            this.processCommonJSObjectExport(match, exports);
+          } else if (match[1]) {
+            // Simple named export
+            exports.push(match[1]);
+          }
+        }
+      }
+      
+      // Handle destructuring exports
+      this.processDestructuringExports(cleanContent, exports);
+      
+    } catch (error) {
+      // Defensive programming: Log error but continue
+      console.warn(`Error extracting exports from ${language} file:`, error);
+    }
+    
+    // Remove duplicates while preserving order
+    return [...new Set(exports)];
+  }
+
+  private removeCommentsFromCode(content: string): string {
+    // Remove single-line comments
+    content = content.replace(/\/\/.*$/gm, '');
+    // Remove multi-line comments
+    content = content.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Remove strings to avoid false positives in string content
+    content = content.replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""');
+    content = content.replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g, "''");
+    content = content.replace(/`[^`\\]*(?:\\.[^`\\]*)*`/g, '``');
+    return content;
+  }
+
+  private isDefaultExportRegex(regex: RegExp): boolean {
+    return regex.source.includes('default');
+  }
+
+  private isBracedExportRegex(regex: RegExp): boolean {
+    return regex.source.includes('\\{') && regex.source.includes('\\}');
+  }
+
+  private isCommonJSObjectExportRegex(regex: RegExp): boolean {
+    return regex.source.includes('exports') && regex.source.includes('=') && regex.source.includes('\\{');
+  }
+
+  private processDefaultExport(match: RegExpMatchArray, exports: string[]): void {
+    if (match[1] && match[1].trim()) {
+      // Named default export
+      exports.push(match[1].trim());
+    } else {
+      // Anonymous default export - add placeholder
+      exports.push('default');
+    }
+  }
+
+  private processBracedExport(match: RegExpMatchArray, exports: string[]): void {
+    if (!match[1]) return;
+
+    const bracedContent = match[1];
+    const exportNames = this.parseBracedExportNames(bracedContent);
+    exports.push(...exportNames);
+  }
+
+  private parseBracedExportNames(bracedContent: string): string[] {
+    const names: string[] = [];
+    
+    // Split by comma, but be careful with nested structures
+    const parts = this.splitExportNames(bracedContent);
+    
+    for (let part of parts) {
+      part = part.trim();
+      
+      if (part.includes(' as ')) {
+        // Handle alias: "original as alias"
+        const [, alias] = part.split(' as ');
+        names.push(alias.trim());
+      } else {
+        // Simple name
+        if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(part)) {
+          names.push(part);
         }
       }
     }
     
-    return exports;
+    return names;
+  }
+
+  private splitExportNames(content: string): string[] {
+    const names: string[] = [];
+    let current = '';
+    let braceDepth = 0;
+    let parenDepth = 0;
+    
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      
+      switch (char) {
+        case '{':
+          braceDepth++;
+          current += char;
+          break;
+        case '}':
+          braceDepth--;
+          current += char;
+          break;
+        case '(':
+          parenDepth++;
+          current += char;
+          break;
+        case ')':
+          parenDepth--;
+          current += char;
+          break;
+        case ',':
+          if (braceDepth === 0 && parenDepth === 0) {
+            names.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+          break;
+        default:
+          current += char;
+          break;
+      }
+    }
+    
+    if (current.trim()) {
+      names.push(current.trim());
+    }
+    
+    return names;
+  }
+
+  private processCommonJSObjectExport(match: RegExpMatchArray, exports: string[]): void {
+    if (!match[1]) return;
+
+    const objectContent = match[1];
+    const propertyNames = this.parseObjectProperties(objectContent);
+    exports.push(...propertyNames);
+  }
+
+  private parseObjectProperties(objectContent: string): string[] {
+    const properties: string[] = [];
+    
+    // Clean up the content - remove extra whitespace and newlines
+    const cleanContent = objectContent.replace(/\s+/g, ' ').trim();
+    
+    // Split by comma but handle nested structures
+    const parts = this.splitExportNames(cleanContent);
+    
+    for (const part of parts) {
+      const trimmedPart = part.trim();
+      
+      if (trimmedPart.includes(':')) {
+        // Key-value property: key: value
+        const colonIndex = trimmedPart.indexOf(':');
+        const key = trimmedPart.substring(0, colonIndex).trim();
+        
+        if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) {
+          properties.push(key);
+        }
+      } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(trimmedPart)) {
+        // Shorthand property: { foo, bar }
+        properties.push(trimmedPart);
+      }
+    }
+    
+    return [...new Set(properties)]; // Remove duplicates
+  }
+
+  private processDestructuringExports(content: string, exports: string[]): void {
+    // Handle object destructuring exports: export const { foo, bar: { nested } } = obj;
+    const objectDestructuringMatches = content.matchAll(/export\s+(?:const|let|var)\s*\{([^}]+)\}\s*=/g);
+    for (const match of objectDestructuringMatches) {
+      if (match[1]) {
+        const names = this.parseDestructuringPattern(match[1]);
+        exports.push(...names);
+      }
+    }
+
+    // Handle array destructuring exports: export const [first, second] = array;
+    const arrayDestructuringMatches = content.matchAll(/export\s+(?:const|let|var)\s*\[([^\]]+)\]\s*=/g);
+    for (const match of arrayDestructuringMatches) {
+      if (match[1]) {
+        const names = this.parseArrayDestructuring(match[1]);
+        exports.push(...names);
+      }
+    }
+  }
+
+  private parseDestructuringPattern(pattern: string): string[] {
+    const names: string[] = [];
+    const parts = this.splitExportNames(pattern);
+    
+    for (let part of parts) {
+      part = part.trim();
+      
+      if (part.includes(':')) {
+        // Handle nested destructuring: bar: { nested }
+        const colonIndex = part.indexOf(':');
+        const afterColon = part.substring(colonIndex + 1).trim();
+        
+        if (afterColon.startsWith('{') && afterColon.endsWith('}')) {
+          // Nested object destructuring
+          const nestedContent = afterColon.slice(1, -1);
+          const nestedNames = this.parseDestructuringPattern(nestedContent);
+          names.push(...nestedNames);
+        } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(afterColon)) {
+          // Simple renaming: foo: bar
+          names.push(afterColon);
+        }
+      } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(part)) {
+        // Simple property name
+        names.push(part);
+      }
+    }
+    
+    return names;
+  }
+
+  private parseArrayDestructuring(pattern: string): string[] {
+    const names: string[] = [];
+    const parts = pattern.split(',');
+    
+    for (let part of parts) {
+      part = part.trim();
+      
+      if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(part)) {
+        names.push(part);
+      }
+      // Note: Skip array holes and complex patterns for now
+    }
+    
+    return names;
   }
 
   /**
@@ -550,13 +791,62 @@ export class LanguageAnalyzer {
       case 'javascript':
       case 'typescriptreact':
       case 'javascriptreact':
-        return [
-          /export\s+.*?([a-zA-Z_$][a-zA-Z0-9_$]*)/,
-          /module\.exports\s*=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)/
-        ];
+        return this.getJavaScriptExportRegexes(language);
       default:
         return [];
     }
+  }
+
+  private getJavaScriptExportRegexes(language: string): RegExp[] {
+    const regexes: RegExp[] = [];
+
+    // Named exports: export const/let/var/function/class/type/interface/enum
+    const namedKeywords = language === 'typescript' || language === 'typescriptreact'
+      ? ['const', 'let', 'var', 'function', 'class', 'type', 'interface', 'enum']
+      : ['const', 'let', 'var', 'function', 'class'];
+
+    for (const keyword of namedKeywords) {
+      // Handle async functions and abstract classes
+      regexes.push(new RegExp(`export\\s+(?:async\\s+)?(?:abstract\\s+)?${keyword}\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)`, 'g'));
+    }
+
+    // Default exports with names
+    regexes.push(
+      /export\s+default\s+(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
+      /export\s+default\s+(?:abstract\s+)?class\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g
+    );
+
+    // Anonymous default exports (placeholder) - improved patterns
+    regexes.push(
+      /export\s+default\s+function\s*\(/g,      // export default function()
+      /export\s+default\s+class\s*\{/g,        // export default class {}
+      /export\s+default\s+(?:(?!function|class)[^;\n]*)[;\n]/g  // export default value;
+    );
+
+    // Braced exports: export { name1, name2 as alias }
+    regexes.push(/export\s*\{([^}]+)\}/g);
+
+    // Re-exports: export { name1, name2 as alias } from 'module'
+    regexes.push(/export\s*\{([^}]+)\}\s*from\s*['"][^'"]+['"]/g);
+
+    // Star exports: export * as name from 'module'
+    regexes.push(/export\s*\*\s*as\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s+from\s*['"][^'"]+['"]/g);
+
+    // CommonJS exports - fixed patterns
+    regexes.push(
+      // Property exports: exports.name = ... or module.exports.name = ...
+      /(?:module\.)?exports\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g,
+      // Function/class assignment: module.exports = function Name() {}
+      /(?:module\.)?exports\s*=\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
+      /(?:module\.)?exports\s*=\s*class\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
+      // Variable assignment: module.exports = variableName
+      /(?:module\.)?exports\s*=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*;/g
+    );
+
+    // CommonJS object assignment: module.exports = { ... } - handled separately (multiline support)
+    regexes.push(/(?:module\.)?exports\s*=\s*\{([\s\S]*?)\}/g);
+
+    return regexes;
   }
 
   private getAPIPatterns(language: string): RegExp[] {

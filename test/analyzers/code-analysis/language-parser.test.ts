@@ -511,18 +511,290 @@ describe('LanguageAnalyzer', () => {
     });
   });
 
-  describe('extractExports', () => {
-    it('should extract export statements', () => {
-      const code = `
-        export const value = 42;
-        export { MyClass } from './class';
-        export default function() {}
-      `;
-      
-      const exports = analyzer.extractExports(code, 'typescript');
-      
-      expect(exports).toBeInstanceOf(Array);
-      expect(exports.length).toBeGreaterThan(0);
+  // Issue #109 - Enhanced export detection tests  
+  describe('extractExports (Issue #109)', () => {
+    describe('Named exports', () => {
+      it('should extract const/let/var exports', () => {
+        const code = `
+          export const CONSTANT_VALUE = 42;
+          export let variableValue = "test";
+          export var oldStyleVar = true;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['CONSTANT_VALUE', 'variableValue', 'oldStyleVar']);
+      });
+
+      it('should extract function exports', () => {
+        const code = `
+          export function normalFunction() {}
+          export async function asyncFunction() {}
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['normalFunction', 'asyncFunction']);
+      });
+
+      it('should extract class exports', () => {
+        const code = `
+          export class MyClass {}
+          export abstract class AbstractClass {}
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['MyClass', 'AbstractClass']);
+      });
+
+      it('should extract type/interface exports (TypeScript)', () => {
+        const code = `
+          export type MyType = string;
+          export interface MyInterface {}
+          export enum MyEnum {}
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['MyType', 'MyInterface', 'MyEnum']);
+      });
+    });
+
+    describe('Default exports', () => {
+      it('should extract named default exports', () => {
+        const code = `
+          export default function namedFunction() {}
+          export default class NamedClass {}
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('namedFunction');
+        expect(exports).toContain('NamedClass');
+      });
+
+      it('should handle anonymous default exports', () => {
+        const code = `
+          export default function() {}
+          export default class {}
+          export default 42;
+          export default "anonymous";
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('default');
+        expect(exports.filter(e => e === 'default')).toHaveLength(4);
+      });
+    });
+
+    describe('Braced exports', () => {
+      it('should extract braced exports without aliases', () => {
+        const code = `
+          export { foo, bar, baz };
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['foo', 'bar', 'baz']);
+      });
+
+      it('should extract braced exports with aliases', () => {
+        const code = `
+          export { foo as bar, baz as qux };
+          export { original as renamed, another };
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('bar');
+        expect(exports).toContain('qux');
+        expect(exports).toContain('renamed');
+        expect(exports).toContain('another');
+        expect(exports).not.toContain('foo');
+        expect(exports).not.toContain('baz');
+        expect(exports).not.toContain('original');
+      });
+
+      it('should handle mixed braced exports', () => {
+        const code = `
+          export { normal, renamed as alias, another };
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['normal', 'alias', 'another']);
+      });
+    });
+
+    describe('Re-exports', () => {
+      it('should extract re-exports with aliases', () => {
+        const code = `
+          export { foo, bar as baz } from './module';
+          export { Component as MyComponent } from 'react';
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('foo');
+        expect(exports).toContain('baz');
+        expect(exports).toContain('MyComponent');
+        expect(exports).not.toContain('bar');
+        expect(exports).not.toContain('Component');
+      });
+
+      it('should handle star re-exports', () => {
+        const code = `
+          export * from './module';
+          export * as Utils from './utils';
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('Utils');
+      });
+    });
+
+    describe('CommonJS exports', () => {
+      it('should extract CommonJS property exports', () => {
+        const code = `
+          exports.foo = "value";
+          exports.bar = function() {};
+          module.exports.baz = 42;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'javascript');
+        
+        expect(exports).toEqual(['foo', 'bar', 'baz']);
+      });
+
+      it('should extract CommonJS object assignment', () => {
+        const code = `
+          module.exports = { foo, bar, baz };
+          exports = { qux, quux };
+        `;
+        
+        const exports = analyzer.extractExports(code, 'javascript');
+        
+        expect(exports).toEqual(['foo', 'bar', 'baz', 'qux', 'quux']);
+      });
+
+      it('should handle complex CommonJS patterns', () => {
+        const code = `
+          module.exports = {
+            method1: function() {},
+            method2: () => {},
+            constant: 42,
+            nested: { value: true }
+          };
+        `;
+        
+        const exports = analyzer.extractExports(code, 'javascript');
+        
+        expect(exports).toContain('method1');
+        expect(exports).toContain('method2');
+        expect(exports).toContain('constant');
+        expect(exports).toContain('nested');
+      });
+
+      it('should handle CommonJS function/class assignment', () => {
+        const code = `
+          module.exports = function MyFunction() {};
+          module.exports = class MyClass {};
+          exports = MyExportedVariable;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'javascript');
+        
+        expect(exports).toContain('MyFunction');
+        expect(exports).toContain('MyClass');
+        expect(exports).toContain('MyExportedVariable');
+      });
+    });
+
+    describe('Edge cases', () => {
+      it('should handle multiline exports', () => {
+        const code = `
+          export {
+            foo,
+            bar as baz,
+            qux
+          } from './module';
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['foo', 'baz', 'qux']);
+      });
+
+      it('should ignore comments and strings', () => {
+        const code = `
+          // export const commentedOut = "fake";
+          /* export function blockCommented() {} */
+          const normalString = "export const notAnExport = true;";
+          export const realExport = 42;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['realExport']);
+      });
+
+      it('should handle exports with TypeScript type annotations', () => {
+        const code = `
+          export const typedConstant: string = "value";
+          export function typedFunction(param: number): string { return ""; }
+          export class TypedClass implements MyInterface {}
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toEqual(['typedConstant', 'typedFunction', 'TypedClass']);
+      });
+
+      it('should handle nested destructuring in exports', () => {
+        const code = `
+          export const { foo, bar: { nested } } = complexObject;
+          export const [first, second] = arrayValue;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescript');
+        
+        expect(exports).toContain('foo');
+        expect(exports).toContain('nested');
+        expect(exports).toContain('first');
+        expect(exports).toContain('second');
+      });
+    });
+
+    describe('Language-specific behavior', () => {
+      it('should handle JSX component exports', () => {
+        const code = `
+          export function MyComponent(props: Props) {
+            return <div>{props.children}</div>;
+          }
+          export const ArrowComponent = (props) => <span>{props.value}</span>;
+        `;
+        
+        const exports = analyzer.extractExports(code, 'typescriptreact');
+        
+        expect(exports).toEqual(['MyComponent', 'ArrowComponent']);
+      });
+
+      it('should not extract TypeScript-specific syntax in JavaScript', () => {
+        const code = `
+          export const value = 42;
+          // Note: type and interface should not be recognized in JavaScript
+          // export type MyType = string;  // This would be syntax error in JS
+        `;
+        
+        const jsExports = analyzer.extractExports(code, 'javascript');
+        const tsExports = analyzer.extractExports(code, 'typescript');
+        
+        expect(jsExports).toEqual(['value']);
+        expect(tsExports).toEqual(['value']);
+      });
     });
   });
 
