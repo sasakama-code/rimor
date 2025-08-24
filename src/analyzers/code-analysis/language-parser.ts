@@ -117,10 +117,10 @@ export class LanguageAnalyzer {
       const line = lines[i].trim();
       
       if (this.isJavaScriptLikeLanguage(language)) {
-        const jsVars = this.extractJavaScriptVariables(line, i + 1);
+        const jsVars = this.extractJavaScriptVariables(line, i + 1, lines);
         variables.push(...jsVars);
       } else if (language === 'python') {
-        const pyVars = this.extractPythonVariables(line, i + 1);
+        const pyVars = this.extractPythonVariables(line, i + 1, lines);
         variables.push(...pyVars);
       }
     }
@@ -375,14 +375,20 @@ export class LanguageAnalyzer {
     return interfaces;
   }
 
-  private extractJavaScriptVariables(line: string, lineNumber: number): VariableInfo[] {
+  private extractJavaScriptVariables(line: string, lineNumber: number, lines: string[]): VariableInfo[] {
     const variables: VariableInfo[] = [];
     
     // 通常の変数宣言
     const normalPattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
     
-    // デストラクチャリング構文
+    // オブジェクトデストラクチャリング構文
     const destructuringPattern = /(const|let|var)\s*\{([^}]+)\}\s*=/g;
+    
+    // 配列デストラクチャリング構文
+    const arrayDestructuringPattern = /(const|let|var)\s*\[([^\]]+)\]\s*=/g;
+    
+    // クラスプロパティ宣言 (private, public, protected, static等)
+    const classPropertyPattern = /^\s*(?:(private|public|protected|static)\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?::\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]|]*))?\s*=/;
     
     // 通常の変数を抽出
     const normalMatches = line.matchAll(normalPattern);
@@ -392,7 +398,7 @@ export class LanguageAnalyzer {
           name: match[2],
           line: lineNumber,
           type: match[3] || this.extractVariableType(line, match[2]),
-          scope: this.determineScope([line], 0),
+          scope: this.determineScope(lines, lineNumber - 1),
           isConst: match[1] === 'const',
           isExported: this.isExported(line),
           usage: [],
@@ -401,7 +407,22 @@ export class LanguageAnalyzer {
       }
     }
     
-    // デストラクチャリング変数を抽出
+    // クラスプロパティを抽出
+    const classPropertyMatch = line.match(classPropertyPattern);
+    if (classPropertyMatch && classPropertyMatch[2]) {
+      variables.push({
+        name: classPropertyMatch[2],
+        line: lineNumber,
+        type: classPropertyMatch[3] || 'unknown',
+        scope: this.determineScope(lines, lineNumber - 1),
+        isConst: false, // クラスプロパティは技術的にはconst/let/varではない
+        isExported: this.isExported(line),
+        usage: [],
+        kind: 'var' // クラスプロパティは var 相当として扱う
+      });
+    }
+    
+    // オブジェクトデストラクチャリング変数を抽出
     const destructMatches = line.matchAll(destructuringPattern);
     for (const match of destructMatches) {
       if (match[2]) {
@@ -415,7 +436,30 @@ export class LanguageAnalyzer {
               name: cleanName,
               line: lineNumber,
               type: 'unknown', // デストラクチャリングの型推論は複雑なので unknown とする
-              scope: this.determineScope([line], 0),
+              scope: this.determineScope(lines, lineNumber - 1),
+              isConst: match[1] === 'const',
+              isExported: this.isExported(line),
+              usage: [],
+              kind: match[1] as 'const' | 'let' | 'var'
+            });
+          }
+        }
+      }
+    }
+    
+    // 配列デストラクチャリング変数を抽出
+    const arrayDestructMatches = line.matchAll(arrayDestructuringPattern);
+    for (const match of arrayDestructMatches) {
+      if (match[2]) {
+        // [a, b, c] から a, b, c を抽出
+        const vars = match[2].split(',').map(v => v.trim());
+        for (const varName of vars) {
+          if (varName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(varName)) {
+            variables.push({
+              name: varName,
+              line: lineNumber,
+              type: 'unknown', // 配列デストラクチャリングの型推論は複雑なので unknown とする
+              scope: this.determineScope(lines, lineNumber - 1),
               isConst: match[1] === 'const',
               isExported: this.isExported(line),
               usage: [],
@@ -440,9 +484,28 @@ export class LanguageAnalyzer {
     return [];
   }
 
-  private extractPythonVariables(line: string, lineNumber: number): VariableInfo[] {
-    // TODO: Implement Python variable extraction
-    return [];
+  private extractPythonVariables(line: string, lineNumber: number, lines: string[]): VariableInfo[] {
+    // TODO: Implement Python variable extraction with proper scope determination
+    const variables: VariableInfo[] = [];
+    
+    // Basic Python variable detection (simplified)
+    const pythonVarPattern = /^(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*=/;
+    const match = line.match(pythonVarPattern);
+    
+    if (match && match[2]) {
+      variables.push({
+        name: match[2],
+        line: lineNumber,
+        type: 'unknown', // Python の型推論は複雑なので unknown とする
+        scope: this.determineScope(lines, lineNumber - 1),
+        isConst: false, // Python にはconstがないのでfalse
+        isExported: false, // 簡単のためfalse
+        usage: [],
+        kind: 'var' // Python では var 相当として扱う
+      });
+    }
+    
+    return variables;
   }
 
   private extractJavaFunctions(lines: string[]): FunctionInfo[] {
@@ -679,14 +742,109 @@ export class LanguageAnalyzer {
   }
 
   private determineScope(lines: string[], lineIndex: number): string {
-    // Simple scope determination - could be enhanced
+    let braceDepth = 0;
+    let currentScope = 'global';
+    
+    // 現在の行から上に向かってスコープを判定
     for (let i = lineIndex; i >= 0; i--) {
-      const line = lines[i];
-      if (line.includes('function') || line.includes('class')) {
-        return 'local';
+      const line = lines[i].trim();
+      
+      // 空行やコメント行はスキップ
+      if (!line || line.startsWith('//') || line.startsWith('/*') || line.startsWith('*')) {
+        continue;
+      }
+      
+      // 現在行から上に向かって中括弧をカウント
+      for (let j = line.length - 1; j >= 0; j--) {
+        if (line[j] === '}') {
+          braceDepth++;
+        } else if (line[j] === '{') {
+          braceDepth--;
+          
+          // スコープの開始を見つけた
+          if (braceDepth < 0) {
+            const beforeBrace = line.substring(0, j).trim();
+            
+            // 各種スコープパターンをチェック
+            // 1. クラス定義
+            if (/(?:^|\s)(?:export\s+)?class\s+[a-zA-Z_$][a-zA-Z0-9_$]*/.test(beforeBrace)) {
+              return 'local'; // クラススコープ
+            }
+            
+            // 2. 通常の関数定義
+            if (/(?:^|\s)(?:async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(beforeBrace)) {
+              return 'local'; // 関数スコープ
+            }
+            
+            // 3. メソッド定義（クラス内）
+            if (/(?:^|\s)(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(beforeBrace)) {
+              return 'local'; // メソッドスコープ
+            }
+            
+            // 4. constructor
+            if (/(?:^|\s)constructor\s*\([^)]*\)/.test(beforeBrace)) {
+              return 'local'; // コンストラクタスコープ
+            }
+            
+            // 5. アロー関数（変数宣言形式）
+            if (/(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(beforeBrace)) {
+              return 'local'; // アロー関数スコープ
+            }
+            
+            // 6. アロー関数（単純形式）
+            if (/=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(beforeBrace) || 
+                /=>\s*$/.test(beforeBrace) ||
+                /\)\s*=>\s*$/.test(beforeBrace)) {
+              return 'local'; // アロー関数スコープ
+            }
+            
+            // 7. パラメータ付きアロー関数
+            if (/\([^)]*\)\s*=>\s*$/.test(beforeBrace)) {
+              return 'local'; // アロー関数スコープ
+            }
+            
+            // 7. 制御文ブロック（if, for, while など）
+            const controlStatements = ['if', 'for', 'while', 'try', 'catch', 'switch', 'else'];
+            const hasControlStatement = controlStatements.some(stmt => 
+              new RegExp(`\\b${stmt}\\b\\s*\\(`).test(beforeBrace) ||
+              new RegExp(`\\}\\s*${stmt}\\b`).test(beforeBrace)
+            );
+            
+            if (hasControlStatement) {
+              // ブロックスコープの場合、const/letはブロックスコープ、varは関数スコープ
+              // しかし、現在の簡単な実装では継続して親スコープを探す
+              braceDepth = 0;
+              continue;
+            }
+            
+            // 不明なブロックの場合、継続して親を探す
+            braceDepth = 0;
+          }
+        }
+      }
+      
+      // 行全体のパターンマッチング（ネストの深い場合）
+      if (braceDepth === 0) {
+        // クラス定義行
+        if (/^\s*(?:export\s+)?class\s+[a-zA-Z_$][a-zA-Z0-9_$]*/.test(line)) {
+          return 'local'; // この変数はクラス内
+        }
+        
+        // 関数定義行
+        if (/^\s*(?:async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(line)) {
+          return 'local'; // この変数は関数内
+        }
+        
+        // アロー関数定義行
+        if (/(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/.test(line) ||
+            /=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{/.test(line) ||
+            /\([^)]*\)\s*=>\s*\{/.test(line)) {
+          return 'local'; // この変数はアロー関数内
+        }
       }
     }
-    return 'global';
+    
+    return currentScope; // デフォルトはglobal
   }
 
   private extractExtendsClass(line: string): string | undefined {
