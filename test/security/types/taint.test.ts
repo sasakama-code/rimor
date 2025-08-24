@@ -189,7 +189,8 @@ describe('TaintLattice', () => {
   });
 
   describe('applySanitizer', () => {
-    it('HTMLエスケープとSQLエスケープは汚染を完全除去すること', () => {
+    it('HTMLエスケープとSQLエスケープは汚染を完全除去すること（Issue #111対応）', () => {
+      // 効果率100%（デフォルト）
       expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.HTML_ESCAPE))
         .toBe(TaintLevel.UNTAINTED);
       
@@ -197,25 +198,65 @@ describe('TaintLattice', () => {
         .toBe(TaintLevel.UNTAINTED);
     });
 
-    it('入力検証は汚染レベルを1下げること', () => {
-      expect(TaintLattice.applySanitizer(TaintLevel.LIKELY_TAINTED, SanitizerType.INPUT_VALIDATION))
+    it('入力検証は効果率に応じた段階的効果を持つこと（Issue #111対応）', () => {
+      // 効果率100%の場合：2レベル下げる
+      expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.INPUT_VALIDATION, 1.0))
         .toBe(TaintLevel.POSSIBLY_TAINTED);
       
-      expect(TaintLattice.applySanitizer(TaintLevel.POSSIBLY_TAINTED, SanitizerType.INPUT_VALIDATION))
-        .toBe('unknown'); // 実装に合わせて修正
+      // 効果率50%の場合：1レベル下げる
+      expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.INPUT_VALIDATION, 0.5))
+        .toBe(TaintLevel.TAINTED);
     });
 
-    it('型変換は部分的な効果を持つこと', () => {
-      expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.TYPE_CONVERSION))
+    it('型変換は効果率を考慮した部分的効果を持つこと（Issue #111対応）', () => {
+      // 効果率100%の場合
+      expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.TYPE_CONVERSION, 1.0))
         .toBe(TaintLevel.POSSIBLY_TAINTED);
       
-      expect(TaintLattice.applySanitizer(TaintLevel.POSSIBLY_TAINTED, SanitizerType.TYPE_CONVERSION))
-        .toBe(TaintLevel.UNTAINTED);
+      // 効果率50%の場合
+      expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.TYPE_CONVERSION, 0.5))
+        .toBe(TaintLevel.TAINTED);
     });
 
     it('不明なサニタイザーは元のレベルを保持すること', () => {
       expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, 'unknown' as SanitizerType))
         .toBe(TaintLevel.HIGHLY_TAINTED);
+    });
+
+    describe('効果率による段階的効果（Issue #111新機能）', () => {
+      it('HTMLエスケープの効果率による段階的な汚染除去', () => {
+        // 効果率90%：完全除去
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.HTML_ESCAPE, 0.9))
+          .toBe(TaintLevel.UNTAINTED);
+        
+        // 効果率70%：部分的除去
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.HTML_ESCAPE, 0.7))
+          .toBe(TaintLevel.POSSIBLY_TAINTED);
+        
+        // 効果率30%：1段階下げる
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.HTML_ESCAPE, 0.3))
+          .toBe(TaintLevel.TAINTED);
+      });
+
+      it('INPUT_VALIDATIONの効果率による段階的効果', () => {
+        // 効果率100%：2レベル下げる
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.INPUT_VALIDATION, 1.0))
+          .toBe(TaintLevel.POSSIBLY_TAINTED);
+        
+        // 効果率25%：1レベル下げる  
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.INPUT_VALIDATION, 0.25))
+          .toBe(TaintLevel.TAINTED);
+      });
+
+      it('効果率の範囲外の値を適切に処理すること（防御的プログラミング）', () => {
+        // 効果率が1.0を超える場合は1.0にクランプ
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.HTML_ESCAPE, 1.5))
+          .toBe(TaintLevel.UNTAINTED);
+        
+        // 効果率が0未満の場合は0にクランプ（効果なし）
+        expect(TaintLattice.applySanitizer(TaintLevel.HIGHLY_TAINTED, SanitizerType.INPUT_VALIDATION, -0.5))
+          .toBe(TaintLevel.HIGHLY_TAINTED);
+      });
     });
   });
 

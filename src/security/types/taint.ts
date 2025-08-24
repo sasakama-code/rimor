@@ -149,39 +149,75 @@ export class TaintLattice {
   }
 
   /**
-   * サニタイザー適用による汚染レベルの変化
+   * 高さから対応するTaintLevelを取得するヘルパーメソッド（DRY原則適用）
+   * @param height 高さ値（0-4の範囲）
+   * @returns 対応するTaintLevel
+   */
+  private static getLevelByHeight(height: number): TaintLevel {
+    // 高さから対応するレベルを検索
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === height && level !== TaintLevel.SANITIZED) {
+        return level as TaintLevel;
+      }
+    }
+    // デフォルトとして、高さ0ならUNTAINTED、それ以外はUNKNOWNを返す
+    return height === 0 ? TaintLevel.UNTAINTED : TaintLevel.UNKNOWN;
+  }
+
+  /**
+   * サニタイザー適用による汚染レベルの変化（Issue #111対応）
+   * 効果率を考慮した段階的効果を実装
+   * @param currentLevel 現在の汚染レベル
+   * @param sanitizer サニタイザーの種類
+   * @param effectiveness 効果率（0.0-1.0、デフォルト1.0）
+   * @returns サニタイザー適用後の汚染レベル
    */
   static applySanitizer(
     currentLevel: TaintLevel,
-    sanitizer: SanitizerType
+    sanitizer: SanitizerType,
+    effectiveness: number = 1.0
   ): TaintLevel {
+    // 効果率の範囲チェック（防御的プログラミング）
+    const clampedEffectiveness = Math.max(0.0, Math.min(1.0, effectiveness));
+    
     // サニタイザーの効果をモデル化
     switch (sanitizer) {
       case SanitizerType.HTML_ESCAPE:
       case SanitizerType.SQL_ESCAPE:
-        // 強力なサニタイザー - 汚染を完全除去
-        return TaintLevel.UNTAINTED;
+        // 強力なサニタイザー - 効果率に応じて汚染除去
+        if (clampedEffectiveness >= 0.9) {
+          return TaintLevel.UNTAINTED;
+        } else if (clampedEffectiveness >= 0.7) {
+          return TaintLevel.POSSIBLY_TAINTED;
+        } else {
+          // 効果が低い場合は元のレベルから1段階下げる
+          const currentHeight = this.height(currentLevel);
+          const newHeight = Math.max(0, currentHeight - 1);
+          return this.getLevelByHeight(newHeight);
+        }
         
       case SanitizerType.INPUT_VALIDATION:
-        // 検証により1レベル下げる
-        const currentOrder = this.getOrderSafely(currentLevel);
-        const newOrder = Math.max(0, currentOrder - 1);
-        for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
-          if (order === newOrder && level !== 'sanitized') {
-            return level as TaintLevel;
-          }
-        }
-        return TaintLevel.UNTAINTED;
+        // 検証により効果率に応じた段階的効果
+        const currentHeight = this.height(currentLevel);
+        const reduction = Math.ceil(clampedEffectiveness * 2); // 効果率に応じて1-2レベル下げる
+        const newHeight = Math.max(0, currentHeight - reduction);
+        return this.getLevelByHeight(newHeight);
         
       case SanitizerType.TYPE_CONVERSION:
-        // 型変換は部分的な効果
-        const currentOrder2 = this.getOrderSafely(currentLevel);
-        return currentOrder2 >= 3 // 'tainted' or higher
-          ? TaintLevel.POSSIBLY_TAINTED
-          : TaintLevel.UNTAINTED;
+        // 型変換は部分的な効果（効果率考慮）
+        const currentOrder = this.height(currentLevel);
+        const effectiveReduction = clampedEffectiveness * 2; // 最大2レベル下げる
+        const targetHeight = Math.max(0, currentOrder - effectiveReduction);
+        
+        // 結果レベルを効果率に基づいて決定
+        if (targetHeight <= 0) {
+          return TaintLevel.UNTAINTED;
+        } else {
+          return this.getLevelByHeight(Math.floor(targetHeight));
+        }
           
       default:
-        // 不明なサニタイザーは保守的に扱う
+        // 不明なサニタイザーは保守的に扱う（効果率無視）
         return currentLevel;
     }
   }
@@ -286,15 +322,11 @@ export class Sanitizer {
   ) {}
 
   /**
-   * 汚染値をサニタイズ
+   * 汚染値をサニタイズ（Issue #111対応 - 効果率考慮）
    */
   sanitize(taintedValue: TaintedValue): TaintedValue {
-    let newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type);
-    
-    // 効果率が100%未満の場合、部分的な効果を適用
-    if (this.effectiveness < 1.0 && newLevel === 'untainted') {
-      newLevel = 'possibly_tainted';
-    }
+    // 効果率を考慮した新しいapplySanitizerメソッドを使用
+    const newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type, this.effectiveness);
 
     // 実際のサニタイズ処理（簡略化）
     let sanitizedValue = taintedValue.value;
