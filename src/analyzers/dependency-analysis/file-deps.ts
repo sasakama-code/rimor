@@ -135,7 +135,8 @@ export class FileDependencyAnalyzer {
   }
 
   /**
-   * ファイル間の依存関係グラフを構築
+   * ファイル間の依存関係グラフを構築（修正版）
+   * Issue #116: 相対キーと絶対解決の不一致を解決
    */
   async buildDependencyGraph(projectPath: string, files: string[]): Promise<Map<string, FileDependency>> {
     const graph = new Map<string, FileDependency>();
@@ -150,18 +151,26 @@ export class FileDependencyAnalyzer {
           imports: deps.imports.filter(imp => this.getImportType(imp) === 'relative'),
           exports: deps.exports,
           dependsOn: deps.imports.filter(imp => this.getImportType(imp) === 'relative'),
-          dependedBy: []
+          dependedBy: [],
+          absPath: filePath // Issue #116: 絶対パスを保持
         });
       }
     }
 
-    // dependedByを計算
+    // dependedByを計算（修正版）
     for (const [file, deps] of graph.entries()) {
+      const currentFilePath = path.join(projectPath, file);
+      
       for (const importPath of deps.imports) {
-        const resolvedPath = this.resolveImportPath(file, importPath);
-        const importedFile = graph.get(resolvedPath);
-        if (importedFile) {
-          importedFile.dependedBy.push(file);
+        // Issue #116: projectPath基準で解決し、相対キーに正規化
+        const resolvedAbsPath = this.resolveImportPath(currentFilePath, importPath, projectPath);
+        
+        if (resolvedAbsPath) {
+          const relativeKey = this.normalizeToRelativeKey(resolvedAbsPath, projectPath);
+          const importedFile = graph.get(relativeKey);
+          if (importedFile) {
+            importedFile.dependedBy.push(file);
+          }
         }
       }
     }
@@ -170,23 +179,58 @@ export class FileDependencyAnalyzer {
   }
 
   /**
-   * 相対インポートパスを解決
+   * Extract Method: 絶対パス→相対キー正規化
+   * Issue #116: パス解決の不整合を解決
    */
-  private resolveImportPath(currentFile: string, importPath: string): string {
-    const dir = path.dirname(currentFile);
-    let resolved = path.join(dir, importPath);
+  private normalizeToRelativeKey(absolutePath: string, projectPath: string): string {
+    const relativePath = path.relative(projectPath, absolutePath);
+    return path.normalize(relativePath);
+  }
+
+  /**
+   * Extract Method: projectPath基準でファイル探索
+   * Issue #116: CWD/projectPath不整合を解決  
+   */
+  private resolveWithProjectBase(importPath: string, fromFile: string, projectPath: string): string | null {
+    if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+      return null; // 相対パスのみ処理
+    }
+
+    const fromDir = path.dirname(fromFile);
+    const resolvedBase = path.resolve(fromDir, importPath);
     
-    // 拡張子を追加
-    if (!path.extname(resolved)) {
-      const extensions = ['.ts', '.tsx', '.js', '.jsx'];
-      for (const ext of extensions) {
-        if (fs.existsSync(resolved + ext)) {
-          resolved += ext;
-          break;
-        }
+    return this.findFileWithExtensions(resolvedBase, projectPath);
+  }
+
+  /**
+   * Extract Method: 拡張子探索の抽象化
+   * Issue #116: 拡張子判定の改善
+   */
+  private findFileWithExtensions(basePath: string, projectPath: string): string | null {
+    const extensions = ['.ts', '.tsx', '.js', '.jsx'];
+    
+    // 拡張子付きで優先探索（Issue #116: キー一致のため）
+    for (const ext of extensions) {
+      const withExt = basePath + ext;
+      if (fs.existsSync(withExt)) {
+        return withExt;
       }
     }
     
-    return path.normalize(resolved);
+    // 拡張子なしで存在チェック（フォールバック）
+    if (fs.existsSync(basePath)) {
+      return basePath;
+    }
+    
+    return null;
+  }
+
+  /**
+   * 相対インポートパスを解決（修正版）
+   * Issue #116: projectPath基準の一貫した解決
+   */
+  private resolveImportPath(currentFile: string, importPath: string, projectPath: string): string | null {
+    const resolved = this.resolveWithProjectBase(importPath, currentFile, projectPath);
+    return resolved;
   }
 }
