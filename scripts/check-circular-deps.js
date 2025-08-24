@@ -119,24 +119,36 @@ function extractDependencies(filePath) {
 
 /**
  * importパスを解決
+ * Issue #117: path.resolve()による絶対パス化でCWD依存問題を解決
+ * Issue #117: src/analyzers/dependency-analysis/file-deps.tsとの実装統一
  */
 function resolveImportPath(fromDir, importPath) {
-  const possiblePaths = [
-    path.join(fromDir, importPath),
-    path.join(fromDir, importPath + '.ts'),
-    path.join(fromDir, importPath + '.tsx'),
-    path.join(fromDir, importPath + '.js'),
-    path.join(fromDir, importPath + '.jsx'),
-    path.join(fromDir, importPath, 'index.ts'),
-    path.join(fromDir, importPath, 'index.tsx'),
-    path.join(fromDir, importPath, 'index.js'),
-    path.join(fromDir, importPath, 'index.jsx')
-  ];
+  // Issue #117: 常に絶対パス化（CWD非依存）
+  let resolved = path.resolve(fromDir, importPath);
   
-  for (const possiblePath of possiblePaths) {
-    if (fs.existsSync(possiblePath)) {
-      return possiblePath;
+  if (!path.extname(resolved)) {
+    const extensions = ['.ts', '.tsx', '.js', '.jsx'];
+    
+    // 拡張子付きで優先探索
+    for (const ext of extensions) {
+      const withExt = resolved + ext;
+      if (fs.existsSync(withExt)) {
+        return withExt;
+      }
     }
+    
+    // Issue #117: index.*ファイルの自動解決対応
+    for (const ext of extensions) {
+      const indexFile = path.join(resolved, 'index' + ext);
+      if (fs.existsSync(indexFile)) {
+        return indexFile;
+      }
+    }
+  }
+  
+  // 拡張子付きファイルが既に指定されている場合
+  if (fs.existsSync(resolved)) {
+    return resolved;
   }
   
   return null;

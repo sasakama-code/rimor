@@ -227,4 +227,155 @@ describe('FileDependencyAnalyzer', () => {
       expect(utilsDeps?.dependedBy).toContain('src/main.ts'); // 修正後は成功するはず
     });
   });
+
+  describe('Issue #117: 相対インポート解決のCWD依存問題修正', () => {
+    it('[TDD RED] index.*ファイルの自動解決が動作する', async () => {
+      // Arrange: ./components → ./components/index.ts の解決をテスト
+      const projectPath = '/test/project';
+      const files = ['src/app.ts', 'src/components/index.ts'];
+      
+      const appContent = `import { Button } from './components';`;
+      const indexContent = `export const Button = {};`;
+      
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        const validPaths = [
+          '/test/project/src/app.ts',
+          '/test/project/src/components/index.ts'
+        ];
+        return validPaths.includes(path);
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/test/project/src/app.ts') return appContent;
+        if (path === '/test/project/src/components/index.ts') return indexContent;
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: index.ts ファイルへの依存関係が正しく構築される
+      const appDeps = graph.get('src/app.ts');
+      const componentsDeps = graph.get('src/components/index.ts');
+      
+      expect(appDeps).toBeDefined();
+      expect(componentsDeps).toBeDefined();
+      expect(componentsDeps?.dependedBy).toContain('src/app.ts');
+    });
+
+    it('[TDD RED] CWD非依存の絶対パス解決が動作する', async () => {
+      // Arrange: 異なるCWDでも一貫した解決をテスト
+      const projectPath = '/different/workspace/project';
+      const files = ['lib/main.ts', 'lib/utils/helper.ts'];
+      
+      const mainContent = `import { helper } from './utils/helper';`;
+      const helperContent = `export const helper = {};`;
+      
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        const validPaths = [
+          '/different/workspace/project/lib/main.ts',
+          '/different/workspace/project/lib/utils/helper.ts'
+        ];
+        return validPaths.includes(path);
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/different/workspace/project/lib/main.ts') return mainContent;
+        if (path === '/different/workspace/project/lib/utils/helper.ts') return helperContent;
+        throw new Error('File not found');
+      });
+
+      // Act: 絶対パス解決がCWDに依存しないことを確認
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert
+      const mainDeps = graph.get('lib/main.ts');
+      const helperDeps = graph.get('lib/utils/helper.ts');
+      
+      expect(mainDeps).toBeDefined();
+      expect(helperDeps).toBeDefined();
+      expect(helperDeps?.dependedBy).toContain('lib/main.ts');
+    });
+
+    it('[TDD RED] 拡張子とindex.*ファイルの優先順位が正しく動作する', async () => {
+      // Arrange: 拡張子付きファイルが存在する場合の優先度をテスト
+      const projectPath = '/test/project';
+      const files = ['src/main.ts', 'src/module.ts', 'src/module/index.ts'];
+      
+      const mainContent = `
+        import { directModule } from './module';
+        import { indexModule } from './module';
+      `;
+      
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        const validPaths = [
+          '/test/project/src/main.ts',
+          '/test/project/src/module.ts',
+          '/test/project/src/module/index.ts'
+        ];
+        return validPaths.includes(path);
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/test/project/src/main.ts') return mainContent;
+        if (path === '/test/project/src/module.ts') return 'export const directModule = {};';
+        if (path === '/test/project/src/module/index.ts') return 'export const indexModule = {};';
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: 拡張子付きファイルが優先され、適切に解決される
+      const mainDeps = graph.get('src/main.ts');
+      const moduleDeps = graph.get('src/module.ts');
+      
+      expect(mainDeps).toBeDefined();
+      expect(moduleDeps).toBeDefined();
+      expect(moduleDeps?.dependedBy).toContain('src/main.ts');
+    });
+
+    it('[TDD RED] モノレポ環境での深いパス構造でも正確に解決する', async () => {
+      // Arrange: モノレポの深い階層構造をテスト
+      const projectPath = '/monorepo/packages/app';
+      const files = ['src/components/Button.tsx', 'src/utils/index.ts', 'src/hooks/useButton.ts'];
+      
+      const buttonContent = `
+        import { logger } from '../utils';
+        import { useButton } from '../hooks/useButton';
+      `;
+      const utilsIndexContent = `export const logger = {};`;
+      const hookContent = `export const useButton = {};`;
+      
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        const validPaths = [
+          '/monorepo/packages/app/src/components/Button.tsx',
+          '/monorepo/packages/app/src/utils/index.ts',
+          '/monorepo/packages/app/src/hooks/useButton.ts'
+        ];
+        return validPaths.includes(path);
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/monorepo/packages/app/src/components/Button.tsx') return buttonContent;
+        if (path === '/monorepo/packages/app/src/utils/index.ts') return utilsIndexContent;
+        if (path === '/monorepo/packages/app/src/hooks/useButton.ts') return hookContent;
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: 深い階層でも正確に依存関係が構築される
+      const buttonDeps = graph.get('src/components/Button.tsx');
+      const utilsDeps = graph.get('src/utils/index.ts');
+      const hookDeps = graph.get('src/hooks/useButton.ts');
+      
+      expect(buttonDeps).toBeDefined();
+      expect(utilsDeps).toBeDefined();
+      expect(hookDeps).toBeDefined();
+      expect(utilsDeps?.dependedBy).toContain('src/components/Button.tsx');
+      expect(hookDeps?.dependedBy).toContain('src/components/Button.tsx');
+    });
+  });
 });

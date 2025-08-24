@@ -190,21 +190,24 @@ export class FileDependencyAnalyzer {
   /**
    * Extract Method: projectPath基準でファイル探索
    * Issue #116: CWD/projectPath不整合を解決  
+   * Issue #117: path.resolve()による絶対パス化でCWD依存問題を解決
    */
   private resolveWithProjectBase(importPath: string, fromFile: string, projectPath: string): string | null {
     if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
       return null; // 相対パスのみ処理
     }
 
+    // Issue #117: 常に絶対パス化（CWD非依存）
     const fromDir = path.dirname(fromFile);
-    const resolvedBase = path.resolve(fromDir, importPath);
+    let resolved = path.resolve(fromDir, importPath);
     
-    return this.findFileWithExtensions(resolvedBase, projectPath);
+    return this.findFileWithExtensions(resolved, projectPath);
   }
 
   /**
    * Extract Method: 拡張子探索の抽象化
    * Issue #116: 拡張子判定の改善
+   * Issue #117: index.*ファイル対応を追加
    */
   private findFileWithExtensions(basePath: string, projectPath: string): string | null {
     const extensions = ['.ts', '.tsx', '.js', '.jsx'];
@@ -214,6 +217,14 @@ export class FileDependencyAnalyzer {
       const withExt = basePath + ext;
       if (fs.existsSync(withExt)) {
         return withExt;
+      }
+    }
+    
+    // Issue #117: index.*ファイルの自動解決対応
+    for (const ext of extensions) {
+      const indexFile = path.join(basePath, 'index' + ext);
+      if (fs.existsSync(indexFile)) {
+        return indexFile;
       }
     }
     
