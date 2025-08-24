@@ -51,7 +51,7 @@ export class LanguageAnalyzer {
     const functions: FunctionInfo[] = [];
     const lines = fileContent.split('\n');
     
-    if (language === 'typescript' || language === 'javascript') {
+    if (this.isJavaScriptLikeLanguage(language)) {
       return this.extractJavaScriptFunctions(lines);
     }
     
@@ -73,7 +73,7 @@ export class LanguageAnalyzer {
     const classes: ClassInfo[] = [];
     const lines = fileContent.split('\n');
     
-    if (language === 'typescript' || language === 'javascript') {
+    if (this.isJavaScriptLikeLanguage(language)) {
       return this.extractJavaScriptClasses(lines, language);
     }
     
@@ -95,7 +95,7 @@ export class LanguageAnalyzer {
     const interfaces: InterfaceInfo[] = [];
     const lines = fileContent.split('\n');
     
-    if (language === 'typescript') {
+    if (this.isTypeScriptLikeLanguage(language)) {
       return this.extractTypeScriptInterfaces(lines);
     }
     
@@ -116,7 +116,7 @@ export class LanguageAnalyzer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      if (language === 'typescript' || language === 'javascript') {
+      if (this.isJavaScriptLikeLanguage(language)) {
         const jsVars = this.extractJavaScriptVariables(line, i + 1);
         variables.push(...jsVars);
       } else if (language === 'python') {
@@ -465,6 +465,8 @@ export class LanguageAnalyzer {
     switch (language) {
       case 'typescript':
       case 'javascript':
+      case 'typescriptreact':
+      case 'javascriptreact':
         return [
           /import\s+.*from\s+['"]([^'"]+)['"]/,
           /require\s*\(\s*['"]([^'"]+)['"]\s*\)/
@@ -483,6 +485,8 @@ export class LanguageAnalyzer {
     switch (language) {
       case 'typescript':
       case 'javascript':
+      case 'typescriptreact':
+      case 'javascriptreact':
         return [
           /export\s+.*?([a-zA-Z_$][a-zA-Z0-9_$]*)/,
           /module\.exports\s*=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)/
@@ -496,6 +500,8 @@ export class LanguageAnalyzer {
     switch (language) {
       case 'typescript':
       case 'javascript':
+      case 'typescriptreact':
+      case 'javascriptreact':
         return [
           /([a-zA-Z_$][a-zA-Z0-9_$]*)\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g
         ];
@@ -706,6 +712,23 @@ export class LanguageAnalyzer {
   }
 
   /**
+   * JavaScript系言語かどうかを判定
+   */
+  private isJavaScriptLikeLanguage(language: string): boolean {
+    return language === 'typescript' || 
+           language === 'javascript' || 
+           language === 'typescriptreact' || 
+           language === 'javascriptreact';
+  }
+
+  /**
+   * TypeScript系言語かどうかを判定
+   */
+  private isTypeScriptLikeLanguage(language: string): boolean {
+    return language === 'typescript' || language === 'typescriptreact';
+  }
+
+  /**
    * 言語固有の機能を解析
    */
   parseLanguageSpecificFeatures(fileContent: string, language: string): Record<string, unknown> {
@@ -719,7 +742,7 @@ export class LanguageAnalyzer {
       hasJSX: false
     };
 
-    if (language === 'typescript' || language === 'javascript') {
+    if (this.isJavaScriptLikeLanguage(language)) {
       features.hasAsync = /async\s+function|\basync\s+=>/m.test(fileContent);
       features.hasGenerics = /<[A-Z]\w*>/m.test(fileContent);
       features.hasDecorators = /@\w+\s*\(/m.test(fileContent);
