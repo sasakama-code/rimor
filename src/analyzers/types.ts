@@ -194,6 +194,7 @@ export interface FileDependency {
   exports: string[];
   dependsOn: string[];
   dependedBy: string[];
+  absPath?: string; // Issue #116: 絶対パスを保持してリンク構築時の不整合を解決
 }
 
 export interface CyclicDependency {
