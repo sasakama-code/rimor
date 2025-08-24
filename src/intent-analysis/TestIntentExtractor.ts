@@ -955,5 +955,132 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     });
     return Math.max(0, score);
   }
+
+  /**
+   * 型情報を活用した実現度評価
+   * Issue #106対応後の高精度評価
+   */
+  async evaluateRealizationWithTypeInfo(
+    intent: TestIntent, 
+    actual: ActualTestAnalysis,
+    typeInfo: Map<string, TypeInfo>
+  ): Promise<TestRealizationResult> {
+    // 基本的な評価に型情報を追加
+    const basicResult = await this.evaluateRealization(intent, actual);
+    
+    // 型情報を活用した詳細評価
+    const enhancedScore = this.enhanceScoreWithTypeInfo(basicResult.realizationScore, typeInfo);
+    
+    return {
+      ...basicResult,
+      realizationScore: enhancedScore
+    };
+  }
+
+  /**
+   * ビジネスロジックとの関連分析
+   */
+  async analyzeWithBusinessContext(
+    intent: TestIntent,
+    callGraph: CallGraphNode[]
+  ): Promise<BusinessMapping> {
+    // Defensive Programming: callGraphが配列でない場合の対処
+    if (!Array.isArray(callGraph)) {
+      callGraph = [];
+    }
+    
+    const functions = callGraph.map(node => node.name);
+    const coveredFunctions = intent.targetMethod ? [intent.targetMethod] : [];
+    const uncoveredFunctions = functions.filter(f => !coveredFunctions.includes(f));
+    
+    return {
+      domain: this.extractDomain(intent.description),
+      functions,
+      coveredFunctions,
+      uncoveredFunctions,
+      coverage: functions.length > 0 ? (coveredFunctions.length / functions.length) * 100 : 0
+    };
+  }
+
+  /**
+   * AI駆動の改善提案生成
+   */
+  async generateSmartSuggestions(
+    intent: TestIntent,
+    actual: ActualTestAnalysis,
+    callGraph: CallGraphNode[]
+  ): Promise<Suggestion[]> {
+    const suggestions: Suggestion[] = [];
+    
+    // Defensive Programming: パラメータの検証
+    if (!intent || !actual || !Array.isArray(callGraph)) {
+      return suggestions;
+    }
+    
+    // Defensive Programming: actualTargetMethodsが存在するかチェック
+    const actualTargetMethods = actual.actualTargetMethods || [];
+    const actualCoverage = actual.actualCoverage || {
+      happyPath: false,
+      errorCases: false,
+      edgeCases: false,
+      boundaryValues: false
+    };
+    
+    // 基本的な改善提案
+    if (actualTargetMethods.length === 0) {
+      suggestions.push({
+        type: 'test_coverage',
+        description: 'テスト対象メソッドを明確にしてテストカバレッジを向上させる',
+        priority: 'high',
+        impact: 'high',
+        example: 'expect(targetMethod()).toBe(expectedValue);'
+      });
+    }
+    
+    if (!actualCoverage.errorCases) {
+      suggestions.push({
+        type: 'error_handling',
+        description: 'エラーケースのテストを追加して例外処理を検証する',
+        priority: 'medium',
+        impact: 'medium',
+        example: 'expect(() => methodWithError()).toThrow();'
+      });
+    }
+    
+    return suggestions;
+  }
+
+  // ヘルパーメソッド
+  
+  private enhanceScoreWithTypeInfo(baseScore: number, typeInfo: Map<string, TypeInfo>): number {
+    // 型情報が豊富な場合にスコアを向上
+    const typeCount = typeInfo.size;
+    const enhancement = Math.min(10, typeCount * 2); // 最大10点の向上
+    return Math.min(100, baseScore + enhancement);
+  }
+  
+  private extractDomain(description: string): string {
+    // Defensive Programming: descriptionがundefinedまたはnullの場合の対処
+    if (!description || typeof description !== 'string') {
+      return 'General';
+    }
+    
+    const domainKeywords = {
+      'payment': 'Payment',
+      'user': 'User Management',
+      'order': 'Order Processing',
+      'auth': 'Authentication',
+      'security': 'Security'
+    };
+    
+    const lowerDescription = description.toLowerCase();
+    for (const [keyword, domain] of Object.entries(domainKeywords)) {
+      if (lowerDescription.includes(keyword)) {
+        return domain;
+      }
+    }
+    
+    return 'General';
+  }
 }
 
