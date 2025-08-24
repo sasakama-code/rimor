@@ -333,6 +333,166 @@ describe('LanguageAnalyzer', () => {
       expect(variables.some(v => v.name === 'initialState')).toBe(true);
       expect(variables.some(v => v.name === 'componentRef')).toBe(true);
     });
+
+    // Issue #108: Variable scope determination tests
+    describe('Variable Scope Detection (Issue #108)', () => {
+      it('should correctly identify global scope variables', () => {
+        const code = `
+          const globalConst = "value";
+          let globalLet = 42;
+          var globalVar = true;
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        expect(variables).toHaveLength(3);
+        expect(variables.every(v => v.scope === 'global')).toBe(true);
+        expect(variables.find(v => v.name === 'globalConst')?.scope).toBe('global');
+        expect(variables.find(v => v.name === 'globalLet')?.scope).toBe('global');
+        expect(variables.find(v => v.name === 'globalVar')?.scope).toBe('global');
+      });
+
+      it('should correctly identify function scope variables', () => {
+        const code = `
+          function testFunction() {
+            const funcConst = "value";
+            let funcLet = 42;
+            var funcVar = true;
+          }
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        expect(variables).toHaveLength(3);
+        expect(variables.every(v => v.scope === 'local')).toBe(true);
+        expect(variables.find(v => v.name === 'funcConst')?.scope).toBe('local');
+        expect(variables.find(v => v.name === 'funcLet')?.scope).toBe('local');
+        expect(variables.find(v => v.name === 'funcVar')?.scope).toBe('local');
+      });
+
+      it('should correctly identify class scope variables', () => {
+        const code = `
+          class TestClass {
+            private classPrivate = "private";
+            public classPublic = "public";
+            
+            constructor() {
+              const constructorConst = "value";
+              let constructorLet = 42;
+            }
+          }
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        const privateVar = variables.find(v => v.name === 'classPrivate');
+        const publicVar = variables.find(v => v.name === 'classPublic');
+        const constructorConstVar = variables.find(v => v.name === 'constructorConst');
+        const constructorLetVar = variables.find(v => v.name === 'constructorLet');
+
+        expect(privateVar?.scope).toBe('local'); // Class scope
+        expect(publicVar?.scope).toBe('local'); // Class scope
+        expect(constructorConstVar?.scope).toBe('local'); // Function scope
+        expect(constructorLetVar?.scope).toBe('local'); // Function scope
+      });
+
+      it('should correctly identify nested scope variables', () => {
+        const code = `
+          const globalVar = "global";
+          
+          function outerFunction() {
+            const outerVar = "outer";
+            
+            function innerFunction() {
+              const innerVar = "inner";
+            }
+            
+            if (true) {
+              const blockVar = "block";
+            }
+          }
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        const globalVar = variables.find(v => v.name === 'globalVar');
+        const outerVar = variables.find(v => v.name === 'outerVar');
+        const innerVar = variables.find(v => v.name === 'innerVar');
+        const blockVar = variables.find(v => v.name === 'blockVar');
+
+        expect(globalVar?.scope).toBe('global');
+        expect(outerVar?.scope).toBe('local');
+        expect(innerVar?.scope).toBe('local');
+        expect(blockVar?.scope).toBe('local'); // Block scope variables are treated as local in our implementation
+      });
+
+      it('should correctly identify arrow function scope variables', () => {
+        const code = `
+          const arrowFunc = (param: string) => {
+            const arrowVar = "arrow";
+            let arrowLet = 42;
+          };
+          
+          const simpleArrow = (x: number) => x * 2;
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        const arrowFuncVar = variables.find(v => v.name === 'arrowFunc');
+        const simpleArrowVar = variables.find(v => v.name === 'simpleArrow');
+        const arrowVar = variables.find(v => v.name === 'arrowVar');
+        const arrowLet = variables.find(v => v.name === 'arrowLet');
+
+        expect(arrowFuncVar?.scope).toBe('global'); // Declaration at global scope
+        expect(simpleArrowVar?.scope).toBe('global'); // Declaration at global scope
+        expect(arrowVar?.scope).toBe('local'); // Inside arrow function
+        expect(arrowLet?.scope).toBe('local'); // Inside arrow function
+      });
+
+      it('should handle array destructuring with proper scope', () => {
+        const code = `
+          const [globalA, globalB] = [1, 2];
+          
+          function testFunc() {
+            const [localA, localB] = [3, 4];
+          }
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        const globalA = variables.find(v => v.name === 'globalA');
+        const globalB = variables.find(v => v.name === 'globalB');
+        const localA = variables.find(v => v.name === 'localA');
+        const localB = variables.find(v => v.name === 'localB');
+
+        expect(globalA?.scope).toBe('global');
+        expect(globalB?.scope).toBe('global');
+        expect(localA?.scope).toBe('local');
+        expect(localB?.scope).toBe('local');
+      });
+
+      it('should handle object destructuring with proper scope', () => {
+        const code = `
+          const { globalName, globalEmail } = user;
+          
+          function testFunc() {
+            const { localName, localEmail } = localUser;
+          }
+        `;
+        
+        const variables = analyzer.extractVariableInfo(code, 'typescript');
+        
+        const globalName = variables.find(v => v.name === 'globalName');
+        const globalEmail = variables.find(v => v.name === 'globalEmail');
+        const localName = variables.find(v => v.name === 'localName');
+        const localEmail = variables.find(v => v.name === 'localEmail');
+
+        expect(globalName?.scope).toBe('global');
+        expect(globalEmail?.scope).toBe('global');
+        expect(localName?.scope).toBe('local');
+        expect(localEmail?.scope).toBe('local');
+      });
+    });
   });
 
   describe('extractImports', () => {
