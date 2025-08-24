@@ -433,20 +433,36 @@ describe('TaintTypeInference', () => {
 describe('TaintTypeChecker', () => {
   const checker = new TaintTypeChecker();
 
-  it('安全な代入を許可すること', () => {
-    // クリーンな値をクリーンな変数に代入
+  it('安全な代入を許可すること (Issue #112修正後)', () => {
+    // クリーンな値をクリーンな変数に代入（同じレベル）
     expect(checker.isAssignmentSafe(TaintLevel.CLEAN, TaintLevel.CLEAN)).toBe(true);
     
-    // クリーンな値を汚染された変数に代入（文字列ベースの実装では異なる可能性）
-    expect(checker.isAssignmentSafe(TaintLevel.CLEAN, TaintLevel.POSSIBLY_TAINTED)).toBe(false);
+    // クリーンな値を汚染された変数に代入（格子理論に基づき安全）
+    expect(checker.isAssignmentSafe(TaintLevel.CLEAN, TaintLevel.POSSIBLY_TAINTED)).toBe(true);
+    
+    // 同じ汚染レベル同士の代入
+    expect(checker.isAssignmentSafe(TaintLevel.POSSIBLY_TAINTED, TaintLevel.POSSIBLY_TAINTED)).toBe(true);
   });
 
-  it('危険な代入を禁止すること', () => {
-    // 汚染された値をクリーンな変数に代入（文字列ベースの実装では異なる可能性）
-    expect(checker.isAssignmentSafe(TaintLevel.POSSIBLY_TAINTED, TaintLevel.CLEAN)).toBe(true);
+  it('危険な代入を禁止すること (Issue #112修正後)', () => {
+    // 汚染された値をクリーンな変数に代入（格子理論に基づき危険）
+    expect(checker.isAssignmentSafe(TaintLevel.POSSIBLY_TAINTED, TaintLevel.CLEAN)).toBe(false);
     
-    // 高度に汚染された値を低レベル汚染変数に代入（実装に合わせて修正）
-    expect(checker.isAssignmentSafe(TaintLevel.HIGHLY_TAINTED, TaintLevel.POSSIBLY_TAINTED)).toBe(true);
+    // 高度に汚染された値を低レベル汚染変数に代入（格子理論に基づき危険）
+    expect(checker.isAssignmentSafe(TaintLevel.HIGHLY_TAINTED, TaintLevel.POSSIBLY_TAINTED)).toBe(false);
+    
+    // 汚染値をサニタイズ済み変数に代入（危険）
+    expect(checker.isAssignmentSafe(TaintLevel.TAINTED, TaintLevel.SANITIZED)).toBe(false);
+  });
+
+  it('格子理論に基づく複合的な代入安全性（Issue #112追加テスト）', () => {
+    // サニタイズ済みはクリーンと同等レベル（格子の底）
+    expect(checker.isAssignmentSafe(TaintLevel.SANITIZED, TaintLevel.CLEAN)).toBe(true);
+    expect(checker.isAssignmentSafe(TaintLevel.CLEAN, TaintLevel.SANITIZED)).toBe(true);
+    
+    // 未知レベルから確定レベルへの代入
+    expect(checker.isAssignmentSafe(TaintLevel.UNKNOWN, TaintLevel.POSSIBLY_TAINTED)).toBe(true);
+    expect(checker.isAssignmentSafe(TaintLevel.POSSIBLY_TAINTED, TaintLevel.UNKNOWN)).toBe(false);
   });
 });
 

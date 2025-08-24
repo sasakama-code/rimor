@@ -461,9 +461,10 @@ export class TaintTypeInference {
 export class TaintTypeChecker {
   /**
    * 代入の安全性をチェック
+   * Dorothy Denningの格子理論に基づく偏順序関係で評価
    */
   isAssignmentSafe(from: TaintLevel, to: TaintLevel): boolean {
-    // 汚染値を清浄な変数に代入することは禁止
-    return from <= to;
+    // 格子理論に基づく偏順序関係で評価
+    return TaintLattice.lessThanOrEqual(from, to);
   }
 }
