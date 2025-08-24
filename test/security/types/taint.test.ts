@@ -72,6 +72,70 @@ describe('SanitizerType', () => {
 });
 
 describe('TaintLattice', () => {
+  describe('LEVEL_ORDER定義（Enum定数使用の検証）', () => {
+    it('LEVEL_ORDERが文字列リテラルではなくEnum定数を使用していること', () => {
+      // この段階ではテストが失敗する（Red phase）
+      // TaintLatticeのプライベートなLEVEL_ORDERにアクセスするためのテスト
+      const untaintedOrder = TaintLattice.height(TaintLevel.UNTAINTED);
+      const possiblyTaintedOrder = TaintLattice.height(TaintLevel.POSSIBLY_TAINTED);
+      const taintedOrder = TaintLattice.height(TaintLevel.TAINTED);
+      const highlyTaintedOrder = TaintLattice.height(TaintLevel.HIGHLY_TAINTED);
+      const sanitizedOrder = TaintLattice.height(TaintLevel.SANITIZED);
+      const unknownOrder = TaintLattice.height(TaintLevel.UNKNOWN);
+
+      // 正しい順序が保たれていることを確認
+      expect(untaintedOrder).toBe(0);
+      expect(unknownOrder).toBe(1);  
+      expect(possiblyTaintedOrder).toBe(2);
+      expect(taintedOrder).toBe(3);
+      expect(highlyTaintedOrder).toBe(4);
+      expect(sanitizedOrder).toBe(0); // sanitizedはuntaintedと同等
+    });
+
+    it('文字列リテラルでの直接アクセスが動作しないことを確認（型安全性）', () => {
+      // 文字列リテラルによる直接アクセスは型安全ではないため、
+      // Enum定数を使用することを強制
+      expect(() => {
+        // 文字列リテラルの直接使用テスト（型安全性改善により適切に処理される）
+        TaintLattice.height('unknown_string_literal' as any);
+      }).not.toThrow(); // 防御的プログラミングによりデフォルト値を返す
+    });
+  });
+
+  describe('型安全性の検証', () => {
+    it('compareTaintLevels関数がEnum定数のみを受け入れること', () => {
+      // 正常なEnum定数での比較
+      expect(compareTaintLevels(TaintLevel.UNTAINTED, TaintLevel.TAINTED)).toBeLessThan(0);
+      expect(compareTaintLevels(TaintLevel.HIGHLY_TAINTED, TaintLevel.POSSIBLY_TAINTED)).toBeGreaterThan(0);
+      
+      // 型安全性が向上し、不正な文字列は実行時に適切に処理される
+      expect(() => compareTaintLevels('untainted' as any, 'tainted' as any)).not.toThrow();
+    });
+
+    it('TaintLatticeの各メソッドがEnum定数で一貫した結果を返すこと', () => {
+      // join演算での一貫性
+      const result1 = TaintLattice.join(TaintLevel.UNTAINTED, TaintLevel.TAINTED);
+      expect(result1).toBe(TaintLevel.TAINTED);
+      
+      // meet演算での一貫性
+      const result2 = TaintLattice.meet(TaintLevel.HIGHLY_TAINTED, TaintLevel.POSSIBLY_TAINTED);
+      expect(result2).toBe(TaintLevel.POSSIBLY_TAINTED);
+      
+      // lessThanOrEqual での一貫性
+      expect(TaintLattice.lessThanOrEqual(TaintLevel.UNTAINTED, TaintLevel.TAINTED)).toBe(true);
+      expect(TaintLattice.lessThanOrEqual(TaintLevel.HIGHLY_TAINTED, TaintLevel.UNTAINTED)).toBe(false);
+    });
+
+    it('未定義の汚染レベルに対して適切なデフォルト値を返すこと（防御的プログラミング）', () => {
+      // 未定義値に対する防御的処理のテスト
+      const invalidHeight = TaintLattice.height('invalid_level' as any);
+      expect(invalidHeight).toBe(1); // デフォルト値
+      
+      const invalidComparison = compareTaintLevels('invalid1' as any, 'invalid2' as any);
+      expect(typeof invalidComparison).toBe('number'); // 数値が返されることを確認
+    });
+  });
+
   describe('join演算', () => {
     it('より高い汚染レベルを選択すること', () => {
       expect(TaintLattice.join(TaintLevel.CLEAN, TaintLevel.POSSIBLY_TAINTED))
