@@ -190,8 +190,9 @@ if (process.env.CI === 'true') {
 // 未処理の Promise rejection のハンドリング
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // CI環境ではプロセスを終了させない（テストの続行を允许する）
-  if (process.env.CI !== 'true') {
+  // CI環境でテストを失敗させる（重大な欠陥の早期発見のため）
+  // Issue #114対応: CI環境でも未処理Promise拒否を重大なエラーとして扱う
+  if (process.env.CI === 'true') {
     process.exit(1);
   }
 });
