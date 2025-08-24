@@ -119,4 +119,112 @@ describe('FileDependencyAnalyzer', () => {
       expect(analyzer.getImportType('crypto')).toBe('builtin');
     });
   });
+
+  describe('buildDependencyGraph - Issue #116 問題再現テスト', () => {
+    it('[TDD RED] 相対キーと絶対解決の不一致により依存関係リンクが失敗する', async () => {
+      // Arrange: 実際のプロジェクト構造を模擬
+      const projectPath = '/test/project';
+      const files = ['src/index.ts', 'src/utils/helper.ts'];
+      
+      // src/index.ts の内容（src/utils/helperを相対インポート）
+      const indexContent = `import { helper } from './utils/helper';`;
+      
+      // src/utils/helper.ts の内容
+      const helperContent = `export const helper = () => {};`;
+      
+      // ファイルシステムをモック
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        return path === '/test/project/src/index.ts' || path === '/test/project/src/utils/helper.ts';
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/test/project/src/index.ts') return indexContent;
+        if (path === '/test/project/src/utils/helper.ts') return helperContent;
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: 現在の実装では以下が失敗する（Issue #116の問題）
+      const indexDeps = graph.get('src/index.ts');
+      expect(indexDeps).toBeDefined();
+      expect(indexDeps?.dependsOn).toContain('./utils/helper');
+
+      // この部分で問題が発生：resolveImportPathが絶対パスを返すが、
+      // graphのキーは相対パスなので一致しない
+      const helperDeps = graph.get('src/utils/helper.ts');
+      expect(helperDeps).toBeDefined();
+      expect(helperDeps?.dependedBy).toContain('src/index.ts'); // これが失敗する
+    });
+
+    it('[TDD RED] 拡張子なしインポートの解決失敗により依存関係が構築されない', async () => {
+      // Arrange
+      const projectPath = '/test/project';
+      const files = ['src/app.ts', 'src/service.ts'];
+      
+      // 拡張子なしでインポート
+      const appContent = `import { Service } from './service';`;
+      const serviceContent = `export class Service {}`;
+      
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        // service.ts は存在するが、./service（拡張子なし）では見つからない問題を再現
+        return path === '/test/project/src/app.ts' || path === '/test/project/src/service.ts';
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/test/project/src/app.ts') return appContent;
+        if (path === '/test/project/src/service.ts') return serviceContent;
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: 拡張子判定の問題で依存関係が正しく構築されない
+      const appDeps = graph.get('src/app.ts');
+      const serviceDeps = graph.get('src/service.ts');
+      
+      expect(appDeps).toBeDefined();
+      expect(serviceDeps).toBeDefined();
+      expect(serviceDeps?.dependedBy).toContain('src/app.ts'); // これが失敗する可能性がある
+    });
+
+    it('[TDD RED] projectPath基準とCWD基準の不整合によりファイル探索が失敗する', async () => {
+      // Arrange: CWDとprojectPathが異なるケース
+      const projectPath = '/different/project/path';
+      const files = ['src/main.ts', 'src/lib/utils.ts'];
+      
+      const mainContent = `import { utils } from './lib/utils';`;
+      const utilsContent = `export const utils = {};`;
+      
+      // より詳細なモック設定でパス解決をサポート
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        // すべての必要なパスで true を返す
+        const validPaths = [
+          '/different/project/path/src/main.ts',
+          '/different/project/path/src/lib/utils.ts',
+          '/different/project/path/src/lib/utils' // 拡張子なし
+        ];
+        return validPaths.includes(path) || path.startsWith('/different/project/path/');
+      });
+      
+      (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
+        if (path === '/different/project/path/src/main.ts') return mainContent;
+        if (path === '/different/project/path/src/lib/utils.ts') return utilsContent;
+        throw new Error('File not found');
+      });
+
+      // Act
+      const graph = await analyzer.buildDependencyGraph(projectPath, files);
+
+      // Assert: 修正後は依存関係が正しく構築される
+      const mainDeps = graph.get('src/main.ts');
+      const utilsDeps = graph.get('src/lib/utils.ts');
+      
+      expect(mainDeps).toBeDefined();
+      expect(utilsDeps).toBeDefined();
+      expect(utilsDeps?.dependedBy).toContain('src/main.ts'); // 修正後は成功するはず
+    });
+  });
 });
