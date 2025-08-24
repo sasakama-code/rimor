@@ -70,23 +70,37 @@ export type SafeValue<T> = T & {
  * 汚染レベルの格子演算
  */
 export class TaintLattice {
-  // 汚染レベルの順序マッピング
+  // 汚染レベルの順序マッピング（Enum定数使用で型安全性を向上）
   private static readonly LEVEL_ORDER: Record<string, number> = {
-    'untainted': 0,
-    'unknown': 1,
-    'possibly_tainted': 2,
-    'tainted': 3,
-    'highly_tainted': 4,
-    'sanitized': 0 // sanitizedはuntaintedと同等
+    [TaintLevel.UNTAINTED]: 0,
+    [TaintLevel.UNKNOWN]: 1,
+    [TaintLevel.POSSIBLY_TAINTED]: 2,
+    [TaintLevel.TAINTED]: 3,
+    [TaintLevel.HIGHLY_TAINTED]: 4,
+    [TaintLevel.SANITIZED]: 0 // sanitizedはuntaintedと同等
   };
+
+  /**
+   * 未知の汚染レベルに対するデフォルト値（防御的プログラミング）
+   */
+  private static readonly DEFAULT_LEVEL_ORDER = 1;
+
+  /**
+   * 汚染レベルの順序を安全に取得（DRY原則適用）
+   * @param level 汚染レベル
+   * @returns 順序値（0-4の範囲、未知の場合はデフォルト値）
+   */
+  private static getOrderSafely(level: TaintLevel): number {
+    return this.LEVEL_ORDER[level] ?? this.DEFAULT_LEVEL_ORDER;
+  }
 
   /**
    * 格子の結合演算（join）- より高い汚染レベルを選択
    * Dorothy Denningの格子理論に基づく
    */
   static join(a: TaintLevel, b: TaintLevel): TaintLevel {
-    const aOrder = this.LEVEL_ORDER[a] ?? 1;
-    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
     const maxOrder = Math.max(aOrder, bOrder);
     
     // 順序から対応するTaintLevelを取得
@@ -102,8 +116,8 @@ export class TaintLattice {
    * 格子の交わり演算（meet）- より低い汚染レベルを選択
    */
   static meet(a: TaintLevel, b: TaintLevel): TaintLevel {
-    const aOrder = this.LEVEL_ORDER[a] ?? 1;
-    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
     const minOrder = Math.min(aOrder, bOrder);
     
     // 順序から対応するTaintLevelを取得
@@ -122,8 +136,8 @@ export class TaintLattice {
    * @returns a ≤ b の場合 true
    */
   static lessThanOrEqual(a: TaintLevel, b: TaintLevel): boolean {
-    const aOrder = this.LEVEL_ORDER[a] ?? 1;
-    const bOrder = this.LEVEL_ORDER[b] ?? 1;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
     return aOrder <= bOrder;
   }
 
@@ -131,7 +145,7 @@ export class TaintLattice {
    * 格子の高さを取得
    */
   static height(level: TaintLevel): number {
-    return this.LEVEL_ORDER[level] ?? 1;
+    return this.getOrderSafely(level);
   }
 
   /**
@@ -150,7 +164,7 @@ export class TaintLattice {
         
       case SanitizerType.INPUT_VALIDATION:
         // 検証により1レベル下げる
-        const currentOrder = this.LEVEL_ORDER[currentLevel] ?? 1;
+        const currentOrder = this.getOrderSafely(currentLevel);
         const newOrder = Math.max(0, currentOrder - 1);
         for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
           if (order === newOrder && level !== 'sanitized') {
@@ -161,7 +175,7 @@ export class TaintLattice {
         
       case SanitizerType.TYPE_CONVERSION:
         // 型変換は部分的な効果
-        const currentOrder2 = this.LEVEL_ORDER[currentLevel] ?? 1;
+        const currentOrder2 = this.getOrderSafely(currentLevel);
         return currentOrder2 >= 3 // 'tainted' or higher
           ? TaintLevel.POSSIBLY_TAINTED
           : TaintLevel.UNTAINTED;
@@ -209,10 +223,12 @@ export class TaintLattice {
 
 /**
  * 汚染レベルの比較関数
+ * Enum定数を使用して型安全な比較を実行
  */
 export function compareTaintLevels(a: TaintLevel, b: TaintLevel): number {
-  const aOrder = TaintLattice['LEVEL_ORDER'][a] ?? 1;
-  const bOrder = TaintLattice['LEVEL_ORDER'][b] ?? 1;
+  // TaintLatticeのprivateメソッドにアクセスするため、型チェックヘルパーを使用
+  const aOrder = TaintLattice.height(a);
+  const bOrder = TaintLattice.height(b);
   return aOrder - bOrder;
 }
 
