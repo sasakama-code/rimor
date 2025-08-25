@@ -258,14 +258,146 @@ test_pipeline_behavior() {
     assert_equals 0 $pipeline_exit_code "Pipeline with subshell exit 1 returns 0 (demonstrating the issue)"
 }
 
+# Issue #118対応テストケース群
+# テストケース7: キャッシュファイル検出（ソースマップ）
+test_cache_file_detection_source_maps() {
+    log_info "Running test: Cache file detection - Source maps (Issue #118)"
+    
+    # ソースマップファイルのフィクスチャ作成
+    echo "//# sourceMappingURL=test.js.map" > "$FIXTURE_DIR/test.js.map"
+    echo "test content" > "$FIXTURE_DIR/test.d.ts.map"
+    
+    setup_mock_git "$FIXTURE_DIR/test.js.map
+$FIXTURE_DIR/test.d.ts.map"
+    
+    # キャッシュファイルチェックロジックのエミュレート
+    run_cache_file_check_emulation "$FIXTURE_DIR/test.js.map
+$FIXTURE_DIR/test.d.ts.map"
+    local exit_code=$?
+    
+    # ソースマップファイルが検出されたら1を返すべき
+    assert_equals 1 $exit_code "Source map files should be detected and blocked"
+}
+
+# テストケース8: キャッシュファイル検出（Jestキャッシュ）
+test_cache_file_detection_jest() {
+    log_info "Running test: Cache file detection - Jest cache (Issue #118)"
+    
+    setup_mock_git ".jest-cache/transform-cache-abc123/file.js
+.ts-jest/cache/file.js"
+    
+    run_cache_file_check_emulation ".jest-cache/transform-cache-abc123/file.js
+.ts-jest/cache/file.js"
+    local exit_code=$?
+    
+    # Jestキャッシュファイルが検出されたら1を返すべき
+    assert_equals 1 $exit_code "Jest cache files should be detected and blocked"
+}
+
+# テストケース9: キャッシュファイル検出（TypeScript Build Info）
+test_cache_file_detection_tsbuildinfo() {
+    log_info "Running test: Cache file detection - TSBuildInfo (Issue #118)"
+    
+    echo "{}" > "$FIXTURE_DIR/tsconfig.tsbuildinfo"
+    
+    setup_mock_git "$FIXTURE_DIR/tsconfig.tsbuildinfo"
+    
+    run_cache_file_check_emulation "$FIXTURE_DIR/tsconfig.tsbuildinfo"
+    local exit_code=$?
+    
+    # .tsbuildinfo ファイルが検出されたら1を返すべき
+    assert_equals 1 $exit_code "TSBuildInfo files should be detected and blocked"
+}
+
+# テストケース10: PII露出リスクファイル検出
+test_pii_risk_file_detection() {
+    log_info "Running test: PII exposure risk file detection (Issue #118)"
+    
+    echo "console.log('potential sensitive data')" > "$FIXTURE_DIR/debug.log"
+    echo "//# sourceMappingURL=sensitive.js.map" > "$FIXTURE_DIR/sensitive.js.map"
+    
+    setup_mock_git "$FIXTURE_DIR/debug.log
+$FIXTURE_DIR/sensitive.js.map"
+    
+    run_cache_file_check_emulation "$FIXTURE_DIR/debug.log
+$FIXTURE_DIR/sensitive.js.map"
+    local exit_code=$?
+    
+    # PII露出リスクファイルが検出されたら1を返すべき
+    assert_equals 1 $exit_code "PII risk files should be detected and blocked"
+}
+
+# テストケース11: 正常ファイル（キャッシュファイルなし）
+test_normal_files_allowed() {
+    log_info "Running test: Normal files should be allowed (Issue #118)"
+    
+    setup_mock_git "src/components/Button.tsx
+src/utils/helper.ts
+README.md"
+    
+    run_cache_file_check_emulation "src/components/Button.tsx
+src/utils/helper.ts  
+README.md"
+    local exit_code=$?
+    
+    # 通常のファイルは許可されるべき（exit code 0）
+    assert_equals 0 $exit_code "Normal files should be allowed through"
+}
+
+# キャッシュファイルチェックロジックのエミュレーション
+run_cache_file_check_emulation() {
+    local staged_files="$1"
+    local cache_file_errors=0
+    
+    # Issue #118で特定されたキャッシュファイルパターン
+    local cache_patterns=(
+        "\.map$"                    # ソースマップファイル
+        "\.d\.ts\.map$"            # TypeScript declaration map
+        "\.js\.map$"               # JavaScript map
+        "\.css\.map$"              # CSS map
+        "\.jest-cache/"            # Jest cache
+        "\.ts-jest/"               # ts-jest cache
+        "\.tsbuildinfo$"           # TypeScript build info
+        "\.cache/"                 # 一般キャッシュ
+        "\.turbo/"                 # Turbo cache
+        "\.nx/cache/"              # Nx cache
+        "\.vite/cache/"            # Vite cache
+        "\.parcel-cache/"          # Parcel cache
+        "node_modules\.cache"      # npm cache
+        "jest-transform-cache-"    # Jest transform cache (Issue #118特定パターン)
+    )
+    
+    for pattern in "${cache_patterns[@]}"; do
+        local matching_files
+        matching_files=$(echo "$staged_files" | grep -E "$pattern" || true)
+        
+        if [ -n "$matching_files" ]; then
+            cache_file_errors=$((cache_file_errors + 1))
+        fi
+    done
+    
+    # PII露出リスクファイルの特別チェック
+    local pii_risk_files
+    pii_risk_files=$(echo "$staged_files" | grep -E "\.(map|log)$" || true)
+    if [ -n "$pii_risk_files" ]; then
+        cache_file_errors=$((cache_file_errors + 1))
+    fi
+    
+    if [ $cache_file_errors -ne 0 ]; then
+        return 1  # キャッシュファイルが検出された
+    else
+        return 0  # 問題なし
+    fi
+}
+
 # テスト実行とレポート
 run_all_tests() {
-    log_info "Starting Pre-commit Hook Test Suite for Issue #98"
-    log_info "==============================================="
+    log_info "Starting Pre-commit Hook Test Suite for Issue #98 & #118"
+    log_info "========================================================="
     
     setup_fixtures
     
-    # テスト実行（失敗することが期待される - REDフェーズ）
+    # Issue #98 テスト実行（失敗することが期待される - REDフェーズ）
     test_single_passing_file
     test_single_failing_file  
     test_multiple_mixed_files
@@ -273,7 +405,14 @@ run_all_tests() {
     test_nonexistent_file
     test_pipeline_behavior
     
-    log_info "==============================================="
+    # Issue #118 テスト実行（キャッシュファイル検出）
+    test_cache_file_detection_source_maps
+    test_cache_file_detection_jest
+    test_cache_file_detection_tsbuildinfo
+    test_pii_risk_file_detection
+    test_normal_files_allowed
+    
+    log_info "========================================================="
     log_info "Test Summary:"
     log_info "  Total: $TOTAL"
     log_success "  Passed: $PASSED"

@@ -11,6 +11,7 @@ readonly ERROR_BUILD_CHECK="❌ Build failed. Please ensure the code builds succ
 readonly ERROR_TEST_CHECK="❌ One or more tests failed. Please fix failing tests before committing."
 readonly ERROR_NAMING_CHECK="❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
 readonly ERROR_ANY_TYPE_CHECK="❌ any型の使用が増加しています。'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+readonly ERROR_CACHE_FILE_CHECK="❌ キャッシュファイルの誤コミットが検出されました（Issue #118対応）。.gitignoreを確認してください。"
 
 # エラーハンドリング関数（単一責任原則）
 handle_check_failure() {
@@ -139,11 +140,73 @@ run_circular_dependency_check() {
     fi
 }
 
+run_cache_file_check() {
+    echo "🗄️ Checking for cache files (Issue #118)..."
+    local cache_file_errors=0
+    local staged_files
+    staged_files=$(git diff --cached --name-only --diff-filter=ACM || true)
+    
+    if [ -n "$staged_files" ]; then
+        # Issue #118で特定されたキャッシュファイルパターン
+        local cache_patterns=(
+            "\.map$"                    # ソースマップファイル
+            "\.d\.ts\.map$"            # TypeScript declaration map
+            "\.js\.map$"               # JavaScript map
+            "\.css\.map$"              # CSS map
+            "\.jest-cache/"            # Jest cache
+            "\.ts-jest/"               # ts-jest cache
+            "\.tsbuildinfo$"           # TypeScript build info
+            "\.cache/"                 # 一般キャッシュ
+            "\.turbo/"                 # Turbo cache
+            "\.nx/cache/"              # Nx cache
+            "\.vite/cache/"            # Vite cache
+            "\.parcel-cache/"          # Parcel cache
+            "node_modules\.cache"      # npm cache
+            "jest-transform-cache-"    # Jest transform cache (Issue #118特定パターン)
+        )
+        
+        for pattern in "${cache_patterns[@]}"; do
+            local matching_files
+            matching_files=$(echo "$staged_files" | grep -E "$pattern" || true)
+            
+            if [ -n "$matching_files" ]; then
+                echo "❌ キャッシュファイルパターン '$pattern' に一致するファイル:"
+                echo "$matching_files" | sed 's/^/    /'
+                cache_file_errors=$((cache_file_errors + 1))
+            fi
+        done
+        
+        # PII露出リスクファイルの特別チェック
+        local pii_risk_files
+        pii_risk_files=$(echo "$staged_files" | grep -E "\.(map|log)$" || true)
+        if [ -n "$pii_risk_files" ]; then
+            echo "⚠️  PII露出リスク: 以下のファイルは機密情報を含む可能性があります:"
+            echo "$pii_risk_files" | sed 's/^/    /'
+            cache_file_errors=$((cache_file_errors + 1))
+        fi
+        
+        if [ $cache_file_errors -ne 0 ]; then
+            echo ""
+            echo "💡 修復方法:"
+            echo "   1. 以下のコマンドでファイルをGitキャッシュから削除:"
+            echo "      git rm --cached <filename>"
+            echo "   2. .gitignoreに適切な除外パターンが設定されているか確認"
+            echo "   3. TypeScript設定でsourceMapを無効化 (tsconfig.json)"
+            echo "   4. 詳細は Issue #118 を参照"
+            echo ""
+            handle_check_failure "$ERROR_CACHE_FILE_CHECK" "Cache file check"
+        else
+            echo "  ✅ キャッシュファイルチェック通過"
+        fi
+    fi
+}
+
 # メイン実行部分（すべてのチェックを順次実行）
 main() {
     echo "🔍 Pre-commit checks starting..."
     
     # 必須チェック（失敗時は即座にexit）
+    run_cache_file_check           # Issue #118対応: キャッシュファイル誤コミット防止（最優先）
     run_type_check
     run_lint_check
     run_build_check
