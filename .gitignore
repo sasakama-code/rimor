@@ -5,7 +5,12 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+
+# Source maps - Issue #118セキュリティ対応: PII露出リスク防止
 *.map
+*.js.map
+*.css.map
+*.d.ts.map
 
 # IDE
 .vscode/
@@ -46,10 +51,30 @@ CLAUDE.md
 src/plugins/generated/*.ts
 !src/plugins/generated/.gitkeep
 
-# Cache files
+# Cache files - Issue #118対応: 包括的キャッシュファイル除外
 .cache/
 .rimor-cache/
 .jest-cache/
+
+# Jest / TypeScript build caches
+/.ts-jest/
+*.tsbuildinfo
+/.turbo/
+/.nx/cache/
+
+# Modern bundler caches
+/.vite/cache/
+/.parcel-cache/
+*.webpack-cache/
+/.rpt2_cache/
+/.rollup-cache/
+
+# Package manager caches
+/.npm/
+/.yarn/cache/
+/.pnpm-store/
+/.rush/
+/.lerna/
 
 # Generated test and evaluation data
 benchmark-results/
