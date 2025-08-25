@@ -16,7 +16,11 @@ export default {
         tsconfig: {
           sourceMap: false,
           inlineSourceMap: false
-        }
+        },
+        // Issue #120対応: 絶対パス除去設定
+        isolatedModules: true,
+        // キャッシュキーに絶対パス情報を含めない
+        transformIgnorePatterns: ['node_modules/(?!(chalk|#ansi-styles|inquirer|.*\\.mjs$))']
       }
     ]
   },
@@ -30,6 +34,7 @@ export default {
   // CI環境でのメモリ最適化
   cache: false, // キャッシュを無効化してメモリ使用量削減
   cacheDirectory: '<rootDir>/.cache/jest', // キャッシュディレクトリを統一
+  
   clearMocks: true, // テスト後にモックをクリア
   restoreMocks: true, // テスト実行ごとにモック状態をクリア
   resetMocks: true, // 各テスト実行前にモックをリセット

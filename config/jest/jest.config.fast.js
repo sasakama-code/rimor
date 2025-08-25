@@ -14,7 +14,9 @@ module.exports = {
       tsconfig: {
         sourceMap: false,
         inlineSourceMap: false
-      }
+      },
+      // Issue #120対応: 絶対パス除去設定
+      isolatedModules: true
     }]
   },
   
@@ -22,6 +24,7 @@ module.exports = {
   cache: true,
   cacheDirectory: '<rootDir>/.cache/jest',
   collectCoverage: false,
+  
   
   // タイムアウトを短縮
   testTimeout: 10000,
