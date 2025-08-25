@@ -36,7 +36,7 @@ export class TestExistencePlugin {
   async analyze(filePath: string) {
     return [{
       type: 'missing-test',
-      severity: 'error',
+      severity: 'high',
       message: 'Test file does not exist'
     }];
   }
@@ -107,7 +107,7 @@ export class TestExistencePlugin {
     if (!fs.existsSync(filePath)) {
       issues.push({
         type: 'missing-test',
-        severity: 'error',
+        severity: 'high',
         message: 'Test file does not exist',
         file: filePath
       });
@@ -128,12 +128,14 @@ export class TestExistencePlugin {
     });
 
     it('should create migration template', () => {
-      const legacyPlugin = {
+      const legacyPlugin: any = { // Use 'any' type to bypass IPlugin requirements for test
         name: 'assertion-checker',
         analyze: async (filePath: string) => [{
           type: 'weak-assertion',
-          severity: 'warning' as const,
-          message: 'Weak assertion detected'
+          severity: 'medium' as const,
+          message: 'Weak assertion detected',
+          filePath: filePath,
+          category: 'test-quality' as const
         }]
       };
 
@@ -178,7 +180,7 @@ export class SimplePlugin {
   async analyze(filePath: string) {
     return [{
       type: 'test-issue',
-      severity: 'warning',
+      severity: 'medium',
       message: 'Issue found'
     }];
   }
@@ -239,7 +241,7 @@ export class ComplexPlugin {
     if (lineCount > this.config.threshold) {
       issues.push({
         type: 'file-too-long',
-        severity: 'warning',
+        severity: 'medium',
         message: \`File has \${lineCount} lines\`,
         file: filePath,
         line: lineCount

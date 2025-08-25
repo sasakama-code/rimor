@@ -20,23 +20,14 @@ export {
 };
 
 /**
- * 汚染情報のメタデータ
+ * 汚染情報のメタデータ（flow-types.tsとの統一）
  */
 export interface TaintMetadata {
-  /** 汚染源 */
-  source: TaintSource;
-  /** 汚染の信頼度 (0.0-1.0) */
-  confidence: number;
-  /** 汚染が検出された位置 */
-  location: {
-    file: string;
-    line: number;
-    column: number;
-  };
-  /** 汚染パスの追跡情報 */
-  tracePath: TaintTraceStep[];
-  /** 関連するセキュリティルール */
-  securityRules: string[];
+  level: TaintLevel;
+  sources: TaintSource[];
+  sinks: SecuritySink[];
+  sanitizers: SanitizerType[];
+  propagationPath?: string[];
 }
 
 /**
@@ -79,19 +70,63 @@ export type SafeValue<T> = T & {
  * 汚染レベルの格子演算
  */
 export class TaintLattice {
+  // 汚染レベルの順序マッピング（Enum定数使用で型安全性を向上）
+  private static readonly LEVEL_ORDER: Record<string, number> = {
+    [TaintLevel.UNTAINTED]: 0,
+    [TaintLevel.UNKNOWN]: 1,
+    [TaintLevel.POSSIBLY_TAINTED]: 2,
+    [TaintLevel.TAINTED]: 3,
+    [TaintLevel.HIGHLY_TAINTED]: 4,
+    [TaintLevel.SANITIZED]: 0 // sanitizedはuntaintedと同等
+  };
+
+  /**
+   * 未知の汚染レベルに対するデフォルト値（防御的プログラミング）
+   */
+  private static readonly DEFAULT_LEVEL_ORDER = 1;
+
+  /**
+   * 汚染レベルの順序を安全に取得（DRY原則適用）
+   * @param level 汚染レベル
+   * @returns 順序値（0-4の範囲、未知の場合はデフォルト値）
+   */
+  private static getOrderSafely(level: TaintLevel): number {
+    return this.LEVEL_ORDER[level] ?? this.DEFAULT_LEVEL_ORDER;
+  }
+
   /**
    * 格子の結合演算（join）- より高い汚染レベルを選択
    * Dorothy Denningの格子理論に基づく
    */
   static join(a: TaintLevel, b: TaintLevel): TaintLevel {
-    return Math.max(a, b) as TaintLevel;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
+    const maxOrder = Math.max(aOrder, bOrder);
+    
+    // 順序から対応するTaintLevelを取得
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === maxOrder && level !== 'sanitized') {
+        return level as TaintLevel;
+      }
+    }
+    return 'unknown';
   }
 
   /**
    * 格子の交わり演算（meet）- より低い汚染レベルを選択
    */
   static meet(a: TaintLevel, b: TaintLevel): TaintLevel {
-    return Math.min(a, b) as TaintLevel;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
+    const minOrder = Math.min(aOrder, bOrder);
+    
+    // 順序から対応するTaintLevelを取得
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === minOrder && level !== 'sanitized') {
+        return level as TaintLevel;
+      }
+    }
+    return 'untainted';
   }
 
   /**
@@ -101,42 +136,88 @@ export class TaintLattice {
    * @returns a ≤ b の場合 true
    */
   static lessThanOrEqual(a: TaintLevel, b: TaintLevel): boolean {
-    return a <= b;
+    const aOrder = this.getOrderSafely(a);
+    const bOrder = this.getOrderSafely(b);
+    return aOrder <= bOrder;
   }
 
   /**
    * 格子の高さを取得
    */
   static height(level: TaintLevel): number {
-    return level;
+    return this.getOrderSafely(level);
   }
 
   /**
-   * サニタイザー適用による汚染レベルの変化
+   * 高さから対応するTaintLevelを取得するヘルパーメソッド（DRY原則適用）
+   * @param height 高さ値（0-4の範囲）
+   * @returns 対応するTaintLevel
+   */
+  private static getLevelByHeight(height: number): TaintLevel {
+    // 高さから対応するレベルを検索
+    for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
+      if (order === height && level !== TaintLevel.SANITIZED) {
+        return level as TaintLevel;
+      }
+    }
+    // デフォルトとして、高さ0ならUNTAINTED、それ以外はUNKNOWNを返す
+    return height === 0 ? TaintLevel.UNTAINTED : TaintLevel.UNKNOWN;
+  }
+
+  /**
+   * サニタイザー適用による汚染レベルの変化（Issue #111対応）
+   * 効果率を考慮した段階的効果を実装
+   * @param currentLevel 現在の汚染レベル
+   * @param sanitizer サニタイザーの種類
+   * @param effectiveness 効果率（0.0-1.0、デフォルト1.0）
+   * @returns サニタイザー適用後の汚染レベル
    */
   static applySanitizer(
     currentLevel: TaintLevel,
-    sanitizer: SanitizerType
+    sanitizer: SanitizerType,
+    effectiveness: number = 1.0
   ): TaintLevel {
+    // 効果率の範囲チェック（防御的プログラミング）
+    const clampedEffectiveness = Math.max(0.0, Math.min(1.0, effectiveness));
+    
     // サニタイザーの効果をモデル化
     switch (sanitizer) {
       case SanitizerType.HTML_ESCAPE:
       case SanitizerType.SQL_ESCAPE:
-        // 強力なサニタイザー - 汚染を完全除去
-        return TaintLevel.UNTAINTED;
+        // 強力なサニタイザー - 効果率に応じて汚染除去
+        if (clampedEffectiveness >= 0.9) {
+          return TaintLevel.UNTAINTED;
+        } else if (clampedEffectiveness >= 0.7) {
+          return TaintLevel.POSSIBLY_TAINTED;
+        } else {
+          // 効果が低い場合は元のレベルから1段階下げる
+          const currentHeight = this.height(currentLevel);
+          const newHeight = Math.max(0, currentHeight - 1);
+          return this.getLevelByHeight(newHeight);
+        }
         
       case SanitizerType.INPUT_VALIDATION:
-        // 検証により1レベル下げる
-        return Math.max(TaintLevel.UNTAINTED, currentLevel - 1) as TaintLevel;
+        // 検証により効果率に応じた段階的効果
+        const currentHeight = this.height(currentLevel);
+        const reduction = Math.ceil(clampedEffectiveness * 2); // 効果率に応じて1-2レベル下げる
+        const newHeight = Math.max(0, currentHeight - reduction);
+        return this.getLevelByHeight(newHeight);
         
       case SanitizerType.TYPE_CONVERSION:
-        // 型変換は部分的な効果
-        return currentLevel >= TaintLevel.LIKELY_TAINTED
-          ? TaintLevel.POSSIBLY_TAINTED
-          : TaintLevel.UNTAINTED;
+        // 型変換は部分的な効果（効果率考慮）
+        const currentOrder = this.height(currentLevel);
+        const effectiveReduction = clampedEffectiveness * 2; // 最大2レベル下げる
+        const targetHeight = Math.max(0, currentOrder - effectiveReduction);
+        
+        // 結果レベルを効果率に基づいて決定
+        if (targetHeight <= 0) {
+          return TaintLevel.UNTAINTED;
+        } else {
+          return this.getLevelByHeight(Math.floor(targetHeight));
+        }
           
       default:
-        // 不明なサニタイザーは保守的に扱う
+        // 不明なサニタイザーは保守的に扱う（効果率無視）
         return currentLevel;
     }
   }
@@ -146,16 +227,16 @@ export class TaintLattice {
    */
   static toString(level: TaintLevel): string {
     switch (level) {
-      case TaintLevel.UNTAINTED:
+      case 'untainted':
         return '⊥ (安全)';
-      case TaintLevel.POSSIBLY_TAINTED:
+      case 'possibly_tainted':
         return '? (要検証)';
-      case TaintLevel.LIKELY_TAINTED:
+      case 'tainted':
         return '! (注意)';
-      case TaintLevel.DEFINITELY_TAINTED:
-        return '⊤ (危険)';
-      case TaintLevel.HIGHLY_TAINTED:
+      case 'highly_tainted':
         return '⊤⊤ (最高危険度)';
+      case 'sanitized':
+        return '✓ (サニタイズ済み)';
       default:
         return '不明';
     }
@@ -164,23 +245,27 @@ export class TaintLattice {
   /**
    * 格子の底（最小要素）かどうかを判定
    */
-  isBottom(level: TaintLevel): boolean {
-    return level === TaintLevel.CLEAN;
+  static isBottom(level: TaintLevel): boolean {
+    return level === 'untainted' || level === 'sanitized';
   }
 
   /**
    * 格子の頂（最大要素）かどうかを判定
    */
-  isTop(level: TaintLevel): boolean {
-    return level === TaintLevel.HIGHLY_TAINTED;
+  static isTop(level: TaintLevel): boolean {
+    return level === 'highly_tainted';
   }
 }
 
 /**
  * 汚染レベルの比較関数
+ * Enum定数を使用して型安全な比較を実行
  */
 export function compareTaintLevels(a: TaintLevel, b: TaintLevel): number {
-  return a - b;
+  // TaintLatticeのprivateメソッドにアクセスするため、型チェックヘルパーを使用
+  const aOrder = TaintLattice.height(a);
+  const bOrder = TaintLattice.height(b);
+  return aOrder - bOrder;
 }
 
 /**
@@ -217,7 +302,7 @@ export class TaintedValue {
    */
   static combine(value1: TaintedValue, value2: TaintedValue): TaintedValue {
     const combinedLevel = TaintLattice.join(value1.taintLevel, value2.taintLevel);
-    const combinedSource = value1.taintLevel >= value2.taintLevel ? value1.source : value2.source;
+    const combinedSource = compareTaintLevels(value1.taintLevel, value2.taintLevel) >= 0 ? value1.source : value2.source;
     
     return new TaintedValue(
       value1.value + value2.value,
@@ -237,15 +322,11 @@ export class Sanitizer {
   ) {}
 
   /**
-   * 汚染値をサニタイズ
+   * 汚染値をサニタイズ（Issue #111対応 - 効果率考慮）
    */
   sanitize(taintedValue: TaintedValue): TaintedValue {
-    let newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type);
-    
-    // 効果率が100%未満の場合、部分的な効果を適用
-    if (this.effectiveness < 1.0 && newLevel === TaintLevel.CLEAN) {
-      newLevel = TaintLevel.POSSIBLY_TAINTED;
-    }
+    // 効果率を考慮した新しいapplySanitizerメソッドを使用
+    const newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type, this.effectiveness);
 
     // 実際のサニタイズ処理（簡略化）
     let sanitizedValue = taintedValue.value;
@@ -266,14 +347,14 @@ export class TaintPropagation {
    */
   static propagate(operation: string, values: TaintedValue[]): TaintedValue {
     if (values.length === 0) {
-      return new TaintedValue('', TaintLevel.CLEAN, null);
+      return new TaintedValue('', 'untainted', null);
     }
 
-    let maxLevel = TaintLevel.CLEAN;
+    let maxLevel = 'untainted' as TaintLevel;
     let source: TaintSource | null = null;
 
     for (const value of values) {
-      if (value.taintLevel > maxLevel) {
+      if (compareTaintLevels(value.taintLevel, maxLevel) > 0) {
         maxLevel = value.taintLevel;
         source = value.source;
       }
@@ -380,9 +461,10 @@ export class TaintTypeInference {
 export class TaintTypeChecker {
   /**
    * 代入の安全性をチェック
+   * Dorothy Denningの格子理論に基づく偏順序関係で評価
    */
   isAssignmentSafe(from: TaintLevel, to: TaintLevel): boolean {
-    // 汚染値を清浄な変数に代入することは禁止
-    return from <= to;
+    // 格子理論に基づく偏順序関係で評価
+    return TaintLattice.lessThanOrEqual(from, to);
   }
 }

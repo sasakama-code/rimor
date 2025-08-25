@@ -3,62 +3,19 @@
  * v0.3.0: 設定複雑性の削減とメタデータ統一
  */
 
-export interface PluginParameter {
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
-  required: boolean;
-  defaultValue?: any;
-  description: string;
-  validation?: {
-    min?: number;
-    max?: number;
-    pattern?: RegExp;
-    enum?: string[];
-  };
-}
+import type { 
+  PluginParameter, 
+  PluginDependency, 
+  PluginMetadata 
+} from './types/config-types';
 
-export interface PluginDependency {
-  pluginName: string;
-  version?: string;
-  optional: boolean;
-  reason: string;
-}
+// 型定義を再エクスポート（後方互換性のため）
+export type { 
+  PluginParameter, 
+  PluginDependency, 
+  PluginMetadata 
+};
 
-export interface PluginMetadata {
-  name: string;
-  displayName: string;
-  description: string;
-  version: string;
-  category: 'core' | 'framework' | 'domain' | 'legacy';
-  tags: string[];
-  author?: string;
-  
-  // 設定パラメータ
-  parameters: PluginParameter[];
-  
-  // 依存関係
-  dependencies: PluginDependency[];
-  
-  // パフォーマンス情報
-  performance: {
-    estimatedTimePerFile: number; // ミリ秒
-    memoryUsage: 'low' | 'medium' | 'high';
-    recommendedBatchSize?: number;
-  };
-  
-  // 対象ファイル
-  targetFiles: {
-    include: string[];  // glob patterns
-    exclude: string[];  // glob patterns
-  };
-  
-  // 出力情報
-  issueTypes: {
-    type: string;
-    severity: 'error' | 'warning' | 'info';
-    description: string;
-  }[];
-}
 
 export interface MetadataProvider {
   getMetadata(): PluginMetadata;
@@ -112,7 +69,7 @@ export class PluginMetadataRegistry {
    * タグ別プラグインメタデータを取得
    */
   getByTag(tag: string): PluginMetadata[] {
-    return this.getAll().filter(metadata => metadata.tags.includes(tag));
+    return this.getAll().filter(metadata => metadata.tags?.includes(tag));
   }
   
   /**
@@ -130,7 +87,7 @@ export class PluginMetadataRegistry {
       if (!metadata) return;
       
       // 依存プラグインを先に解決
-      for (const dep of metadata.dependencies) {
+      for (const dep of (metadata.dependencies || [])) {
         if (!dep.optional) {
           resolve(dep.pluginName);
         }
@@ -164,16 +121,12 @@ export class PluginMetadataRegistry {
         const plugin1 = allPlugins[i];
         const plugin2 = allPlugins[j];
         
-        // 同じissueTypeを出力する場合は競合の可能性
-        const commonIssueTypes = plugin1.issueTypes
-          .map(it => it.type)
-          .filter(type => plugin2.issueTypes.some(it2 => it2.type === type));
-        
-        if (commonIssueTypes.length > 0) {
+        // カテゴリが同じ場合は競合の可能性を示唆
+        if (plugin1.category === plugin2.category && plugin1.category === 'core') {
           conflicts.push({
             plugin1: plugin1.name,
             plugin2: plugin2.name,
-            reason: `共通のissueTypeを出力: ${commonIssueTypes.join(', ')}`
+            reason: `同じカテゴリ（${plugin1.category}）のコアプラグイン`
           });
         }
       }
@@ -205,7 +158,7 @@ export class PluginMetadataRegistry {
     }
     
     // パラメータ検証
-    for (const param of metadata.parameters) {
+    for (const param of (metadata.parameters || [])) {
       if (!param.name || param.name.trim() === '') {
         errors.push(`パラメータ名が必要です`);
       }
@@ -222,7 +175,7 @@ export class PluginMetadataRegistry {
       const pluginMetadata = this.get(pluginName);
       if (!pluginMetadata) return false;
       
-      for (const dep of pluginMetadata.dependencies) {
+      for (const dep of (pluginMetadata.dependencies || [])) {
         if (!dep.optional && checkCircular(dep.pluginName, new Set(visited))) {
           return true;
         }
@@ -250,12 +203,13 @@ export class PluginMetadataRegistry {
     const allPlugins = this.getAll();
     
     const categoryBreakdown = allPlugins.reduce((acc, plugin) => {
-      acc[plugin.category] = (acc[plugin.category] || 0) + 1;
+      const category = plugin.category || 'unknown';
+      acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     
-    const totalParameters = allPlugins.reduce((sum, plugin) => sum + plugin.parameters.length, 0);
-    const totalDependencies = allPlugins.reduce((sum, plugin) => sum + plugin.dependencies.length, 0);
+    const totalParameters = allPlugins.reduce((sum, plugin) => sum + (plugin.parameters?.length || 0), 0);
+    const totalDependencies = allPlugins.reduce((sum, plugin) => sum + (plugin.dependencies?.length || 0), 0);
     
     return {
       totalPlugins: allPlugins.length,
@@ -293,16 +247,9 @@ export const defaultPluginMetadata: Record<string, PluginMetadata> = {
       recommendedBatchSize: 50
     },
     targetFiles: {
-      include: ['**/*.ts', '**/*.js'],
-      exclude: ['**/*.test.*', '**/*.spec.*', '**/node_modules/**']
-    },
-    issueTypes: [
-      {
-        type: 'missing-test',
-        severity: 'error',
-        description: 'テストファイルが存在しません'
-      }
-    ]
+      patterns: ['**/*.ts', '**/*.js'],
+      excludePatterns: ['**/*.test.*', '**/*.spec.*', '**/node_modules/**']
+    }
   },
   
   'assertion-exists': {
@@ -320,16 +267,9 @@ export const defaultPluginMetadata: Record<string, PluginMetadata> = {
       recommendedBatchSize: 30
     },
     targetFiles: {
-      include: ['**/*.test.*', '**/*.spec.*'],
-      exclude: ['**/node_modules/**']
-    },
-    issueTypes: [
-      {
-        type: 'missing-assertion',
-        severity: 'warning',
-        description: 'アサーション文が見つかりません'
-      }
-    ]
+      patterns: ['**/*.test.*', '**/*.spec.*'],
+      excludePatterns: ['**/node_modules/**']
+    }
   },
   
   'assertion-quality': {
@@ -362,21 +302,9 @@ export const defaultPluginMetadata: Record<string, PluginMetadata> = {
       recommendedBatchSize: 20
     },
     targetFiles: {
-      include: ['**/*.test.*', '**/*.spec.*'],
-      exclude: ['**/node_modules/**']
-    },
-    issueTypes: [
-      {
-        type: 'weak-assertion',
-        severity: 'warning',
-        description: '弱いアサーションが検出されました'
-      },
-      {
-        type: 'assertion-quality-low',
-        severity: 'warning',
-        description: 'アサーション品質が低下しています'
-      }
-    ]
+      patterns: ['**/*.test.*', '**/*.spec.*'],
+      excludePatterns: ['**/node_modules/**']
+    }
   }
 };
 

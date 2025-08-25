@@ -1,5 +1,7 @@
 
-let chalkInstance: any = null;
+type ChalkInstance = typeof import('chalk').default;
+
+let chalkInstance: ChalkInstance | null = null;
 let chalkPromise: Promise<any> | null = null;
 
 function getChalk() {
@@ -16,29 +18,33 @@ async function loadChalk() {
 
   try {
     if (process.env.NODE_ENV === 'test') {
-      chalkInstance = {
-        bold: (s: string) => s,
+      const mockChalk: any = {
+        bold: Object.assign((s: string) => s, {
+          blue: (s: string) => s
+        }),
         green: (s: string) => s,
         red: (s: string) => s,
         yellow: (s: string) => s,
         blue: (s: string) => s,
         gray: (s: string) => s
       };
-      chalkInstance.bold.blue = (s: string) => s;
+      chalkInstance = mockChalk as ChalkInstance;
     } else {
       const chalk = await import('chalk');
       chalkInstance = chalk.default;
     }
   } catch (error) {
-    chalkInstance = {
-      bold: (s: string) => s,
+    const mockChalk: any = {
+      bold: Object.assign((s: string) => s, {
+        blue: (s: string) => s
+      }),
       green: (s: string) => s,
       red: (s: string) => s,
       yellow: (s: string) => s,
       blue: (s: string) => s,
       gray: (s: string) => s
     };
-    chalkInstance.bold.blue = (s: string) => s;
+    chalkInstance = mockChalk as ChalkInstance;
   }
   
   return chalkInstance;
@@ -92,7 +98,7 @@ export class OutputFormatter {
     
     const lines = [c.bold('\n見つかった問題:')];
     issues.forEach((issue, index) => {
-      const severity = issue.severity === 'error' ? '❌' : '⚠️';
+      const severity = (issue.severity === 'error' || issue.severity === 'high') ? '❌' : '⚠️';
       const location = issue.line ? ` (行: ${issue.line})` : '';
       lines.push(`${index + 1}. ${severity} ${issue.message}${location}`);
     });

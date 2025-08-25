@@ -194,6 +194,7 @@ export interface FileDependency {
   exports: string[];
   dependsOn: string[];
   dependedBy: string[];
+  absPath?: string; // Issue #116: 絶対パスを保持してリンク構築時の不整合を解決
 }
 
 export interface CyclicDependency {
@@ -374,8 +375,18 @@ export interface ContextOptimizationOptions {
 // 分析結果のキャッシュ
 export interface AnalysisCache {
   fileHash: Map<string, string>;
-  contexts: Map<string, any>; // IntegratedContext（循環参照を避けるためany）
+  contexts: Map<string, unknown>; // IntegratedContext（循環参照を避けるためunknown）
   dependencies: Map<string, DependencyAnalysis>;
   structures: Map<string, ProjectStructure>;
   expiry: Date;
+}
+
+// バージョン制約の型定義（any型除去用）
+export interface VersionConstraint {
+  package: string;
+  declaredVersion: string;
+  installedVersion?: string;
+  constraint: 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard';
+  hasVulnerability?: boolean;
+  suggestion?: string;
 }

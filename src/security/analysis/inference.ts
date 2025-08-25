@@ -61,18 +61,21 @@ export class SignatureBasedInference {
     const annotations: SecurityTypeAnnotation[] = [];
 
     // メソッドシグネチャからの推論
-    const signatureAnnotations = this.inferFromSignature(method.signature);
+    const sig: MethodSignature = (typeof method.signature === 'string') 
+      ? { name: method.signature, parameters: [], returnType: 'void', annotations: [], isAsync: false }
+      : (method.signature || { name: method.name, parameters: [], returnType: 'void', annotations: [], isAsync: false });
+    const signatureAnnotations = this.inferFromSignature(sig);
     annotations.push(...signatureAnnotations);
 
     // メソッド内容からの推論
-    const contentAnnotations = this.inferFromContent(method.content);
+    const contentAnnotations = this.inferFromContent(method.content || '');
     annotations.push(...contentAnnotations);
 
     // 汚染レベルの推論
     const taintAnnotations = this.inferTaintTypes(method);
     annotations.push(...taintAnnotations);
 
-    const totalVariables = this.countVariables(method.content);
+    const totalVariables = this.countVariables(method.content || '');
     const inferredCount = annotations.length;
     const failedCount = Math.max(0, totalVariables - inferredCount);
 
@@ -351,7 +354,7 @@ export class SignatureBasedInference {
    */
   private inferTaintTypes(method: TestMethod): SecurityTypeAnnotation[] {
     const annotations: SecurityTypeAnnotation[] = [];
-    const content = method.content;
+    const content = method.content || '';
 
     // ユーザー入力の検出
     const userInputs = this.detectUserInputs(content);

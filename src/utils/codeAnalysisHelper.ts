@@ -1,4 +1,5 @@
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Evidence, CodeLocation } from '../core/types';
 
 export interface ParsedFile {
@@ -7,35 +8,20 @@ export interface ParsedFile {
   lines: string[];
 }
 
-export interface PatternMatch {
-  match: string;
+export interface Pattern {
   line: number;
   column: number;
-  context: string;
+  match: string;
 }
 
-export interface AssertionInfo {
-  type: 'expect' | 'assert' | 'should';
+export interface Assertion {
+  type: string;
   location: CodeLocation;
-  content: string;
-  strength: 'weak' | 'medium' | 'strong';
 }
 
 export interface TestStructure {
-  describes: Array<{
-    name: string;
-    location: CodeLocation;
-    nested: boolean;
-  }>;
-  tests: Array<{
-    name: string;
-    location: CodeLocation;
-    type: 'it' | 'test' | 'fit' | 'xit';
-  }>;
-  hooks: Array<{
-    type: 'beforeEach' | 'afterEach' | 'beforeAll' | 'afterAll';
-    location: CodeLocation;
-  }>;
+  describes: Array<{ location: CodeLocation; name: string }>;
+  tests: Array<{ location: CodeLocation; name: string }>;
 }
 
 export interface ComplexityMetrics {
@@ -44,17 +30,15 @@ export interface ComplexityMetrics {
   nesting: number;
 }
 
-export interface ImportInfo {
+export interface Import {
   module: string;
-  imports: string[];
-  type: 'named' | 'default' | 'namespace' | 'side-effect';
-  location: CodeLocation;
+  type?: string;
+  imports?: string[];
 }
 
 export interface FileComplexityMetrics {
   totalLines: number;
   codeLines: number;
-  commentLines: number;
   testCount: number;
   assertionCount: number;
   avgComplexityPerTest: number;
@@ -62,11 +46,12 @@ export interface FileComplexityMetrics {
 }
 
 export class CodeAnalysisHelper {
-  /**
-   * ファイルを解析して構造化データに変換
-   */
   async parseFile(filePath: string): Promise<ParsedFile> {
-    const content = await fs.readFile(filePath, 'utf-8');
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split('\n');
 
     return {
@@ -76,270 +61,185 @@ export class CodeAnalysisHelper {
     };
   }
 
-  /**
-   * 正規表現パターンを使用してコード内のパターンを検索
-   */
-  findPatterns(parsedFile: ParsedFile, pattern: RegExp): PatternMatch[] {
-    const matches: PatternMatch[] = [];
-    const lines = parsedFile.lines;
+  findPatterns(fileContent: ParsedFile, pattern: RegExp): Pattern[] {
+    const patterns: Pattern[] = [];
+    const lines = fileContent.lines;
 
-    lines.forEach((line, lineIndex) => {
+    lines.forEach((line, index) => {
       let match;
-      const regex = new RegExp(pattern.source, pattern.flags);
+      const regex = new RegExp(pattern.source, pattern.flags || 'g');
       
       while ((match = regex.exec(line)) !== null) {
-        matches.push({
-          match: match[0],
-          line: lineIndex + 1,
+        patterns.push({
+          line: index + 1,
           column: match.index,
-          context: line.trim()
+          match: match[0]
         });
-        
-        if (!pattern.global) break;
       }
     });
 
-    return matches;
+    return patterns;
   }
 
-  /**
-   * アサーション文を検出・分析
-   */
-  findAssertions(parsedFile: ParsedFile): AssertionInfo[] {
-    const assertions: AssertionInfo[] = [];
-    const lines = parsedFile.lines;
-
+  findAssertions(fileContent: ParsedFile): Assertion[] {
+    const assertions: Assertion[] = [];
     const assertionPatterns = [
-      { type: 'expect' as const, pattern: /expect\s*\([^)]+\)\s*\.\s*(\w+)/g },
-      { type: 'assert' as const, pattern: /assert\s*\.\s*(\w+)\s*\(/g },
-      { type: 'should' as const, pattern: /should\s*\.\s*(\w+)/g }
+      /expect\(/g,
+      /assert\./g,
+      /should\(/g
     ];
 
-    lines.forEach((line, lineIndex) => {
-      assertionPatterns.forEach(({ type, pattern }) => {
-        let match;
-        const regex = new RegExp(pattern.source, pattern.flags);
+    assertionPatterns.forEach(pattern => {
+      const matches = this.findPatterns(fileContent, pattern);
+      matches.forEach(match => {
+        const type = pattern.source.includes('expect') ? 'expect' :
+                     pattern.source.includes('assert') ? 'assert' : 'should';
         
-        while ((match = regex.exec(line)) !== null) {
-          const assertionMethod = match[1];
-          const strength = this.evaluateAssertionStrength(assertionMethod, line);
-          
-          assertions.push({
-            type,
-            location: {
-              file: parsedFile.filePath,
-              line: lineIndex + 1,
-              column: match.index
-            },
-            content: match[0],
-            strength
-          });
-        }
+        assertions.push({
+          type,
+          location: {
+            file: fileContent.filePath,
+            line: match.line,
+            column: match.column
+          }
+        });
       });
     });
 
     return assertions;
   }
 
-  /**
-   * テスト構造（describe, it, フックなど）を解析
-   */
-  findTestStructures(parsedFile: ParsedFile): TestStructure {
-    const structure: TestStructure = {
-      describes: [],
-      tests: [],
-      hooks: []
-    };
+  findTestStructures(fileContent: ParsedFile): TestStructure {
+    const describes: Array<{ location: CodeLocation; name: string }> = [];
+    const tests: Array<{ location: CodeLocation; name: string }> = [];
 
-    const lines = parsedFile.lines;
-    let nestingLevel = 0;
-
-    lines.forEach((line, lineIndex) => {
-      const trimmedLine = line.trim();
-      
-      // describe ブロック
-      const describeMatch = trimmedLine.match(/describe\s*\(\s*['"`]([^'"`]+)['"`]/);
-      if (describeMatch) {
-        structure.describes.push({
-          name: describeMatch[1],
-          location: {
-            file: parsedFile.filePath,
-            line: lineIndex + 1,
-            column: line.indexOf('describe')
-          },
-          nested: nestingLevel > 0
-        });
-      }
-
-      // テストケース
-      const testMatch = trimmedLine.match(/(it|test|fit|xit)\s*\(\s*['"`]([^'"`]+)['"`]/);
-      if (testMatch) {
-        structure.tests.push({
-          name: testMatch[2],
-          location: {
-            file: parsedFile.filePath,
-            line: lineIndex + 1,
-            column: line.indexOf(testMatch[1])
-          },
-          type: testMatch[1] as 'it' | 'test' | 'fit' | 'xit'
-        });
-      }
-
-      // フック
-      const hookMatch = trimmedLine.match(/(beforeEach|afterEach|beforeAll|afterAll)\s*\(/);
-      if (hookMatch) {
-        structure.hooks.push({
-          type: hookMatch[1] as 'beforeEach' | 'afterEach' | 'beforeAll' | 'afterAll',
-          location: {
-            file: parsedFile.filePath,
-            line: lineIndex + 1,
-            column: line.indexOf(hookMatch[1])
-          }
-        });
-      }
-
-      // ネストレベル追跡
-      const openBraces = (line.match(/{/g) || []).length;
-      const closeBraces = (line.match(/}/g) || []).length;
-      nestingLevel += openBraces - closeBraces;
+    // Find describe blocks
+    const describePattern = /describe\s*\(\s*['"`]([^'"`]+)['"`]/g;
+    const describeMatches = this.findPatterns(fileContent, describePattern);
+    
+    describeMatches.forEach(match => {
+      const nameMatch = match.match.match(/['"`]([^'"`]+)['"`]/);
+      describes.push({
+        location: {
+          file: fileContent.filePath,
+          line: match.line,
+          column: match.column
+        },
+        name: nameMatch ? nameMatch[1] : 'Unknown'
+      });
     });
 
-    return structure;
+    // Find it/test blocks
+    const testPattern = /(it|test)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+    const testMatches = this.findPatterns(fileContent, testPattern);
+    
+    testMatches.forEach(match => {
+      const nameMatch = match.match.match(/['"`]([^'"`]+)['"`]/);
+      tests.push({
+        location: {
+          file: fileContent.filePath,
+          line: match.line,
+          column: match.column
+        },
+        name: nameMatch ? nameMatch[1] : 'Unknown'
+      });
+    });
+
+    return { describes, tests };
   }
 
-  /**
-   * コードの複雑度を分析
-   */
-  analyzeComplexity(parsedFile: ParsedFile): ComplexityMetrics {
-    const content = parsedFile.content;
+  analyzeComplexity(fileContent: ParsedFile): ComplexityMetrics {
+    const content = fileContent.content;
     
-    // サイクロマティック複雑度（条件分岐・ループの数 + 1）
-    const cyclomaticPatterns = [
-      /\bif\s*\(/g,
-      /\belse\s+if\s*\(/g,
-      /\bwhile\s*\(/g,
-      /\bfor\s*\(/g,
-      /\bswitch\s*\(/g,
-      /\bcase\s+/g,
-      /\bcatch\s*\(/g,
-      /\?\s*.*\s*:/g // 三項演算子
-    ];
+    // Count control flow statements for cyclomatic complexity
+    const ifStatements = (content.match(/\bif\s*\(/g) || []).length;
+    const elseStatements = (content.match(/\belse\s*[{]/g) || []).length;
+    const forLoops = (content.match(/\bfor\s*\(/g) || []).length;
+    const whileLoops = (content.match(/\bwhile\s*\(/g) || []).length;
+    const switchCases = (content.match(/\bcase\s+/g) || []).length;
+    const ternaryOps = (content.match(/\?[^:]*:/g) || []).length;
+    
+    const cyclomatic = 1 + ifStatements + elseStatements + forLoops + 
+                       whileLoops + switchCases + ternaryOps;
 
-    let cyclomaticComplexity = 1; // 基本パス
-    cyclomaticPatterns.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        cyclomaticComplexity += matches.length;
-      }
-    });
+    // Calculate cognitive complexity (simplified)
+    const cognitive = ifStatements * 2 + elseStatements + forLoops * 3 + 
+                     whileLoops * 3 + switchCases;
 
-    // 認知的複雑度（ネストの深さを考慮）
-    let cognitiveComplexity = 0;
+    // Calculate nesting depth
     let maxNesting = 0;
     let currentNesting = 0;
-
-    const lines = parsedFile.lines;
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
-      
-      // ネストレベルの増加
-      if (trimmedLine.match(/\b(if|for|while|switch|try|catch)\s*\(/)) {
+    
+    for (const char of content) {
+      if (char === '{') {
         currentNesting++;
-        cognitiveComplexity += currentNesting;
         maxNesting = Math.max(maxNesting, currentNesting);
+      } else if (char === '}') {
+        currentNesting = Math.max(0, currentNesting - 1);
       }
-
-      // ネストレベルの減少
-      const openBraces = (line.match(/{/g) || []).length;
-      const closeBraces = (line.match(/}/g) || []).length;
-      if (closeBraces > openBraces) {
-        currentNesting = Math.max(0, currentNesting - (closeBraces - openBraces));
-      }
-    });
+    }
 
     return {
-      cyclomatic: cyclomaticComplexity,
-      cognitive: cognitiveComplexity,
+      cyclomatic,
+      cognitive,
       nesting: maxNesting
     };
   }
 
-  /**
-   * インポート文を抽出・解析
-   */
-  extractImports(parsedFile: ParsedFile): ImportInfo[] {
-    const imports: ImportInfo[] = [];
-    const lines = parsedFile.lines;
+  extractImports(fileContent: ParsedFile): Import[] {
+    const imports: Import[] = [];
+    const lines = fileContent.lines;
 
-    lines.forEach((line, lineIndex) => {
-      const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('import')) {
-        const location: CodeLocation = {
-          file: parsedFile.filePath,
-          line: lineIndex + 1,
-          column: 0
+    const importPattern = /^import\s+(.+)\s+from\s+['"`]([^'"`]+)['"`]/;
+    
+    lines.forEach(line => {
+      const match = line.match(importPattern);
+      if (match) {
+        const importClause = match[1];
+        const modulePath = match[2];
+        
+        const importObj: Import = {
+          module: modulePath
         };
 
-        // 名前付きインポート: import { a, b } from 'module'
-        const namedMatch = trimmedLine.match(/import\s*{\s*([^}]+)\s*}\s*from\s*['"`]([^'"`]+)['"`]/);
-        if (namedMatch) {
-          const importNames = namedMatch[1].split(',').map(name => name.trim());
-          imports.push({
-            module: namedMatch[2],
-            imports: importNames,
-            type: 'named',
-            location
-          });
-          return;
+        if (importClause.startsWith('{')) {
+          // Named imports
+          const namedImports = importClause.match(/{([^}]+)}/);
+          if (namedImports) {
+            importObj.imports = namedImports[1].split(',').map(s => s.trim());
+          }
+        } else if (importClause.includes('* as')) {
+          // Namespace import
+          importObj.type = 'namespace';
+        } else {
+          // Default import
+          importObj.type = 'default';
         }
 
-        // 名前空間インポート: import * as name from 'module'
-        const namespaceMatch = trimmedLine.match(/import\s*\*\s*as\s+(\w+)\s*from\s*['"`]([^'"`]+)['"`]/);
-        if (namespaceMatch) {
-          imports.push({
-            module: namespaceMatch[2],
-            imports: [namespaceMatch[1]],
-            type: 'namespace',
-            location
-          });
-          return;
-        }
-
-        // デフォルトインポート: import name from 'module'
-        const defaultMatch = trimmedLine.match(/import\s+(\w+)\s*from\s*['"`]([^'"`]+)['"`]/);
-        if (defaultMatch) {
-          imports.push({
-            module: defaultMatch[2],
-            imports: [defaultMatch[1]],
-            type: 'default',
-            location
-          });
-          return;
-        }
-
-        // サイドエフェクトインポート: import 'module'
-        const sideEffectMatch = trimmedLine.match(/import\s*['"`]([^'"`]+)['"`]/);
-        if (sideEffectMatch) {
-          imports.push({
-            module: sideEffectMatch[1],
-            imports: [],
-            type: 'side-effect',
-            location
-          });
-        }
+        imports.push(importObj);
       }
     });
 
     return imports;
   }
 
-  /**
-   * エビデンスオブジェクトを作成
-   */
-  createEvidence(type: string, description: string, location: CodeLocation, code: string): Evidence {
-    const confidence = this.calculateEvidenceConfidence(type, description, code);
+  createEvidence(
+    type: string,
+    description: string,
+    location: CodeLocation,
+    code: string
+  ): Evidence {
+    // Calculate confidence based on type and description
+    let confidence = 0.5;
     
+    if (type === 'assertion' && description.includes('strong')) {
+      confidence = 0.9;
+    } else if (type === 'assertion' && description.includes('Exact')) {
+      confidence = 0.95;
+    } else if (type === 'import' && description.includes('weak')) {
+      confidence = 0.3;
+    }
+
     return {
       type,
       description,
@@ -349,95 +249,27 @@ export class CodeAnalysisHelper {
     };
   }
 
-  /**
-   * ファイル全体の複雑度メトリクスを計算
-   */
   async calculateFileComplexity(filePath: string): Promise<FileComplexityMetrics> {
-    const parsedFile = await this.parseFile(filePath);
-    const structure = this.findTestStructures(parsedFile);
-    const assertions = this.findAssertions(parsedFile);
-    const complexity = this.analyzeComplexity(parsedFile);
+    const fileContent = await this.parseFile(filePath);
+    const structures = this.findTestStructures(fileContent);
+    const assertions = this.findAssertions(fileContent);
+    const complexity = this.analyzeComplexity(fileContent);
+    
+    const codeLines = fileContent.lines.filter(line => 
+      line.trim() && !line.trim().startsWith('//')
+    ).length;
 
-    const totalLines = parsedFile.lines.length;
-    const commentLines = parsedFile.lines.filter(line => {
-      const trimmed = line.trim();
-      return trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*');
-    }).length;
-    const codeLines = parsedFile.lines.filter(line => {
-      const trimmed = line.trim();
-      return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
-    }).length;
-
-    const testCount = structure.tests.length;
-    const assertionCount = assertions.length;
-    const avgComplexityPerTest = testCount > 0 ? complexity.cyclomatic / testCount : 0;
+    const avgComplexityPerTest = structures.tests.length > 0 
+      ? complexity.cyclomatic / structures.tests.length 
+      : 0;
 
     return {
-      totalLines,
+      totalLines: fileContent.lines.length,
       codeLines,
-      commentLines,
-      testCount,
-      assertionCount,
+      testCount: structures.tests.length,
+      assertionCount: assertions.length,
       avgComplexityPerTest,
       maxNestingDepth: complexity.nesting
     };
-  }
-
-  /**
-   * アサーションの強度を評価
-   */
-  private evaluateAssertionStrength(method: string, context: string): 'weak' | 'medium' | 'strong' {
-    const strongMethods = ['toBe', 'toEqual', 'toStrictEqual', 'toMatchObject', 'toHaveLength'];
-    const mediumMethods = ['toBeTruthy', 'toBeFalsy', 'toMatch', 'toContain', 'toBeCloseTo'];
-    const weakMethods = ['toBeDefined', 'toBeUndefined', 'toBeNull'];
-
-    if (strongMethods.includes(method)) {
-      return 'strong';
-    } else if (mediumMethods.includes(method)) {
-      return 'medium';
-    } else if (weakMethods.includes(method)) {
-      return 'weak';
-    }
-
-    // コンテキストベースの評価
-    if (context.includes('toThrow') || context.includes('rejects') || context.includes('resolves')) {
-      return 'strong';
-    }
-
-    return 'medium';
-  }
-
-  /**
-   * エビデンスの信頼度を計算
-   */
-  private calculateEvidenceConfidence(type: string, description: string, code: string): number {
-    let baseConfidence = 0.7;
-
-    // タイプベースの調整
-    const typeMultipliers: Record<string, number> = {
-      'assertion': 0.9,
-      'pattern': 0.8,
-      'structure': 0.7,
-      'import': 0.6
-    };
-
-    if (typeMultipliers[type]) {
-      baseConfidence *= typeMultipliers[type];
-    }
-
-    // 説明の詳細度による調整
-    if (description.includes('exact') || description.includes('strong')) {
-      baseConfidence *= 1.2;
-    } else if (description.includes('possible') || description.includes('weak')) {
-      baseConfidence *= 0.8;
-    }
-
-    // コードの複雑さによる調整
-    const codeComplexity = code.split(/[.(){}[\]]/).length;
-    if (codeComplexity > 5) {
-      baseConfidence *= 1.05;
-    }
-
-    return Math.min(1.0, Math.max(0.1, baseConfidence));
   }
 }

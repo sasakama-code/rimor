@@ -95,6 +95,87 @@ describe('SimpleDomainRules', () => {
     });
   });
 
+  describe('ルールの検証', () => {
+    it('不正なルールを拒否すること', () => {
+      // IDなし
+      const ruleWithoutId = {
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: []
+      };
+      expect(() => rules.addRule(ruleWithoutId as any)).toThrow('Rule must have a valid id');
+
+      // 名前なし
+      const ruleWithoutName = {
+        id: 'test-id',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: []
+      };
+      expect(() => rules.addRule(ruleWithoutName as any)).toThrow('Rule must have a valid name');
+
+      // パターンなし
+      const ruleWithoutPatterns = {
+        id: 'test-id',
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'high'
+      };
+      expect(() => rules.addRule(ruleWithoutPatterns as any)).toThrow('Rule must have patterns array');
+
+      // 不正なパターンタイプ
+      const ruleWithInvalidPattern = {
+        id: 'test-id',
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: [{
+          type: 'invalid',
+          pattern: 'test',
+          message: 'test'
+        }]
+      };
+      expect(() => rules.addRule(ruleWithInvalidPattern as any)).toThrow('Pattern must have a valid type');
+    });
+
+    it('正しい型のルールを受け入れること', () => {
+      const validRule: DomainRule = {
+        id: 'valid-rule',
+        name: '有効なルール',
+        description: '有効なルールの説明',
+        category: 'quality',
+        severity: 'warning',
+        patterns: [
+          {
+            type: 'regex',
+            pattern: '^test.*$',
+            message: 'テストパターン'
+          },
+          {
+            type: 'keyword',
+            pattern: 'keyword',
+            message: 'キーワードパターン'
+          },
+          {
+            type: 'ast',
+            pattern: 'CallExpression',
+            message: 'ASTパターン'
+          }
+        ],
+        tags: ['test', 'validation']
+      };
+
+      expect(() => rules.addRule(validRule)).not.toThrow();
+      const addedRule = rules.getAllRules().find(r => r.id === 'valid-rule');
+      expect(addedRule).toBeDefined();
+    });
+  });
+
   describe('ルールの適用', () => {
     beforeEach(() => {
       const testRule: DomainRule = {

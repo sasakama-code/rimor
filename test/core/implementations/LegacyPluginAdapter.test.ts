@@ -83,9 +83,12 @@ describe('LegacyPluginAdapter', () => {
     it('should delegate analyze to legacy plugin', async () => {
       const mockIssues: Issue[] = [
         {
+          id: 'test-issue-id',
           type: 'test-issue',
-          severity: 'error',
-          message: 'Test issue from legacy plugin'
+          severity: 'high',
+          message: 'Test issue from legacy plugin',
+          filePath: '/test/file.ts',
+          category: 'test-quality'
         }
       ];
       
@@ -141,9 +144,12 @@ describe('LegacyPluginAdapter', () => {
         analyze: async (filePath: string) => {
           if (!filePath.includes('.test.')) {
             return [{
+              id: 'missing-test-id',
               type: 'missing-test',
-              severity: 'error' as const,
-              message: `テストファイルが存在しません: ${filePath}`
+              severity: 'high' as const,
+              message: `テストファイルが存在しません: ${filePath}`,
+              filePath: filePath,
+              category: 'test-coverage'
             }];
           }
           return [];
@@ -194,9 +200,12 @@ describe('LegacyPluginAdapter', () => {
         callCount++;
         await new Promise(resolve => setTimeout(resolve, 10));
         return [{
+          id: `call-${callCount}-id`,
           type: `call-${callCount}`,
-          severity: 'info',
-          message: `Call ${callCount} for ${filePath}`
+          severity: 'info' as any,
+          message: `Call ${callCount} for ${filePath}`,
+          filePath: filePath,
+          category: 'test-quality'
         }];
       });
       

@@ -1,13 +1,17 @@
-import { Analyzer } from '../../core/analyzer';
+import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
+import { UnifiedAnalysisEngine, BasicAnalysisResult } from '../../core/UnifiedAnalysisEngine';
 import { ParallelAnalyzer } from '../../core/parallelAnalyzer';
 import { CachedAnalyzer } from '../../core/cachedAnalyzer';
 import { TestExistencePlugin } from '../../plugins/testExistence';
 import { AssertionExistsPlugin } from '../../plugins/assertionExists';
-import { AIOptimizedFormatter } from '../../ai-output/formatter';
+import { UnifiedReportEngine } from '../../reporting/core/UnifiedReportEngine';
+import { AIJsonFormatter } from '../../reporting/formatters/AIJsonFormatter';
+import { MarkdownFormatter } from '../../reporting/formatters/MarkdownFormatter';
 import { FormatterOptions, EnhancedAnalysisResult } from '../../ai-output/types';
 import { ConfigLoader, RimorConfig } from '../../core/config';
 import { errorHandler } from '../../utils/errorHandler';
 import { OutputFormatter } from '../output';
+import { Issue, PluginResult } from './ai-output-types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -33,12 +37,12 @@ export interface AIOutputOptions {
  * 分析結果をAIツールが理解しやすい形式で出力
  */
 export class AIOutputCommand {
-  private formatter: AIOptimizedFormatter;
-  private analyzer!: Analyzer | ParallelAnalyzer | CachedAnalyzer;
+  private reportEngine: UnifiedReportEngine;
+  private analyzer!: UnifiedAnalysisEngine | ParallelAnalyzer | CachedAnalyzer;
   private config: RimorConfig | null = null;
 
   constructor() {
-    this.formatter = new AIOptimizedFormatter();
+    this.reportEngine = new UnifiedReportEngine();
   }
 
   /**
@@ -65,9 +69,18 @@ export class AIOutputCommand {
       // Analyzerの初期化と分析実行
       await this.initializeAnalyzer(targetPath, options);
       const analysisResult = await this.analyzer.analyze(targetPath);
+      
+      // analyze()メソッドがIssue[]を返すため、結果を整形
+      const normalizedResult = Array.isArray(analysisResult) 
+        ? {
+            totalFiles: 1,
+            issues: analysisResult,
+            executionTime: 0
+          }
+        : analysisResult;
 
       // スコアリング情報の追加
-      const enhancedResult = await this.enhanceWithScoring(analysisResult, targetPath, options);
+      const enhancedResult = await this.enhanceWithScoring(normalizedResult, targetPath, options);
 
       // AI向けフォーマット設定
       const formatterOptions: FormatterOptions = {
@@ -201,7 +214,7 @@ export class AIOutputCommand {
         enableStats: options.verbose
       });
     } else {
-      this.analyzer = new Analyzer();
+      this.analyzer = new UnifiedAnalysisEngine();
     }
     
     // プラグインの動的登録
@@ -232,10 +245,10 @@ export class AIOutputCommand {
   }
 
   /**
-   * スコアリング情報でAnalysisResultを拡張
+   * スコアリング情報でBasicAnalysisResultを拡張
    */
   private async enhanceWithScoring(
-    result: any, 
+    result: BasicAnalysisResult, 
     targetPath: string, 
     options: AIOutputOptions
   ): Promise<EnhancedAnalysisResult> {
@@ -245,9 +258,34 @@ export class AIOutputCommand {
       
       // スコア計算（簡易版）
       const projectScore = {
+        projectPath: targetPath,
+        totalFiles: 0,
+        totalDirectories: 0,
         overallScore: 70,
-        grade: 'C',
-        fileScores: []
+        grade: 'C' as const,
+        fileScores: [],
+        directoryScores: [],
+        issuesByType: {},
+        weights: {
+          coverage: 0.3,
+          complexity: 0.2,
+          maintainability: 0.25,
+          security: 0.25,
+          plugins: {},
+          dimensions: {
+            completeness: 0.2,
+            correctness: 0.2,
+            maintainability: 0.2,
+            security: 0.2,
+            performance: 0.2
+          }
+        },
+        metadata: {
+          generatedAt: new Date(),
+          executionTime: 0,
+          pluginCount: 0,
+          issueCount: 0
+        }
       };
 
       return {
@@ -256,13 +294,8 @@ export class AIOutputCommand {
         fileScores: projectScore.fileScores,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath),
-          testFramework: this.detectTestFramework(targetPath),
-          filePatterns: {
-            test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
-            source: ['**/*.{js,ts}'],
-            ignore: ['node_modules/**', 'dist/**']
-          }
+          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
+          testFramework: this.detectTestFramework(targetPath)
         }
       };
     } catch (error) {
@@ -275,13 +308,8 @@ export class AIOutputCommand {
         ...result,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath),
-          testFramework: this.detectTestFramework(targetPath),
-          filePatterns: {
-            test: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
-            source: ['**/*.{js,ts}'],
-            ignore: ['node_modules/**', 'dist/**']
-          }
+          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
+          testFramework: this.detectTestFramework(targetPath)
         }
       };
     }
@@ -300,10 +328,13 @@ export class AIOutputCommand {
 
     // フォーマット別出力生成
     if (formatterOptions.format === 'markdown') {
-      output = await this.formatter.formatAsMarkdown(result, targetPath, formatterOptions);
+      this.reportEngine.setStrategy(new MarkdownFormatter());
+      const report = await this.reportEngine.generate(result as any);
+      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
     } else {
-      const jsonOutput = await this.formatter.formatAsJSON(result, targetPath, formatterOptions);
-      output = JSON.stringify(jsonOutput, null, 2);
+      this.reportEngine.setStrategy(new AIJsonFormatter());
+      const report = await this.reportEngine.generate(result as any);
+      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
     }
 
     // 出力先の決定と保存
@@ -358,9 +389,9 @@ export class AIOutputCommand {
   /**
    * 従来の分析結果をプラグイン結果形式に変換
    */
-  private convertToPluginResults(result: any, targetPath: string): Map<string, any[]> {
+  private convertToPluginResults(result: BasicAnalysisResult, targetPath: string): Map<string, PluginResult[]> {
     // 簡易版: 空のMapを返す
-    return new Map<string, any[]>();
+    return new Map<string, PluginResult[]>();
   }
 
   /**
@@ -413,7 +444,7 @@ export class AIOutputCommand {
     }
   }
 
-  private issueToScore(issue: any): number {
+  private issueToScore(issue: Issue): number {
     switch (issue.severity || 'medium') {
       case 'error':
       case 'high':

@@ -142,11 +142,14 @@ describe('UserController', () => {
   describe('analyzeCodeContext', () => {
     test('should analyze TypeScript file and extract comprehensive context', async () => {
       const issue: Issue = {
+        id: 'test-issue-1',
         type: 'missing-assertion',
-        severity: 'error',
+        severity: 'high',
         message: 'Missing proper assertions',
         line: 21,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-quality' as const
       };
 
       const options: AnalysisOptions = {
@@ -175,11 +178,14 @@ describe('UserController', () => {
 
     test('should handle complex TypeScript with classes and interfaces', async () => {
       const issue: Issue = {
+        id: 'test-issue-2',
         type: 'missing-error-handling',
-        severity: 'warning', 
+        severity: 'medium', 
         message: 'Missing error handling',
         line: 20,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'error-handling' as const
       };
 
       const options: AnalysisOptions = {
@@ -205,11 +211,14 @@ describe('UserController', () => {
 
     test('should extract function-level context accurately', async () => {
       const issue: Issue = {
+        id: 'test-issue-3',
         type: 'missing-validation',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing input validation',
         line: 35,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'validation' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -228,11 +237,14 @@ describe('UserController', () => {
 
     test('should analyze scope context with variable tracking', async () => {
       const issue: Issue = {
+        id: 'test-issue-4',
         type: 'unused-variable',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Variable may be unused',
         line: 53,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'code-quality' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -262,11 +274,14 @@ describe('UserController', () => {
       fs.writeFileSync(path.join(testProjectPath, 'src/services/UserService.ts'), serviceCode);
 
       const issue: Issue = {
+        id: 'test-issue-5',
         type: 'missing-test-coverage',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing test coverage for UserService interaction',
         line: 18,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-coverage' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -404,11 +419,14 @@ const processOrder = async (order) => {
   describe('Error Handling', () => {
     test('should handle non-existent files gracefully', async () => {
       const issue: Issue = {
+        id: 'test-issue-6',
         type: 'missing-file',
-        severity: 'error',
+        severity: 'high',
         message: 'File not found',
         line: 1,
-        file: '/non/existent/file.ts'
+        file: '/non/existent/file.ts',
+        filePath: '/non/existent/file.ts',
+        category: 'file-system' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {});
@@ -427,11 +445,14 @@ const processOrder = async (order) => {
       fs.writeFileSync(path.join(testProjectPath, 'src/broken.ts'), malformedCode);
       
       const issue: Issue = {
+        id: 'test-issue-7',
         type: 'syntax-error',
-        severity: 'error',
+        severity: 'high',
         message: 'Syntax error',
         line: 1,
-        file: path.join(testProjectPath, 'src/broken.ts')
+        file: path.join(testProjectPath, 'src/broken.ts'),
+        filePath: path.join(testProjectPath, 'src/broken.ts'),
+        category: 'syntax' as const
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
@@ -446,11 +467,14 @@ const processOrder = async (order) => {
   describe('Performance', () => {
     test('should complete analysis within reasonable time', async () => {
       const issue: Issue = {
+        id: 'test-issue-8',
         type: 'performance-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Performance test',
         line: 1,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'performance' as const
       };
 
       const startTime = Date.now();
@@ -475,11 +499,14 @@ const processOrder = async (order) => {
       fs.writeFileSync(path.join(testProjectPath, 'src/large.ts'), largeCode);
 
       const issue: Issue = {
+        id: 'test-issue-9',
         type: 'large-file-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Large file test',
         line: 500,
-        file: path.join(testProjectPath, 'src/large.ts')
+        file: path.join(testProjectPath, 'src/large.ts'),
+        filePath: path.join(testProjectPath, 'src/large.ts'),
+        category: 'performance' as const
       };
 
       const startTime = Date.now();

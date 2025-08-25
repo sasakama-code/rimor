@@ -1,7 +1,7 @@
 import { ScoreAggregator } from '../../src/scoring/aggregator';
 import { ScoreCalculatorV2 } from '../../src/scoring/calculator';
-import { PluginManager } from '../../src/core/pluginManager';
-import { Analyzer } from '../../src/core/analyzer';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
 import { 
   PluginResult,
   WeightConfig,
@@ -13,14 +13,14 @@ import path from 'path';
 describe('Scoring System Integration', () => {
   let calculator: ScoreCalculatorV2;
   let aggregator: ScoreAggregator;
-  let pluginManager: PluginManager;
-  let analyzer: Analyzer;
+  let pluginManager: UnifiedPluginManager;
+  let analyzer: UnifiedAnalysisEngine;
 
   beforeEach(() => {
     calculator = new ScoreCalculatorV2();
     aggregator = new ScoreAggregator(calculator);
-    pluginManager = new PluginManager();
-    analyzer = new Analyzer();
+    pluginManager = new UnifiedPluginManager();
+    analyzer = new UnifiedAnalysisEngine();
   });
 
   describe('End-to-End Workflow', () => {
@@ -292,11 +292,14 @@ describe('Scoring System Integration', () => {
         
         for (let i = 0; i < issueCount; i++) {
           issues.push({
+            id: `issue-${i}`,
             type: `issue-${i}`,
-            severity: score < 50 ? 'error' : 'warning',
+            severity: 'medium',
             message: `品質問題 ${i + 1}: ${filePath}`,
             line: i + 1,
-            file: filePath
+            file: filePath,
+            filePath: filePath,
+            category: 'test-quality' as const
           });
         }
         
@@ -316,11 +319,14 @@ describe('Scoring System Integration', () => {
         
         return [
           {
+            id: 'missing-assertion-1',
             type: 'missing-assertion',
-            severity: 'warning',
+            severity: 'medium',
             message: 'アサーションが不足している可能性があります',
             line: 10,
-            file: filePath
+            file: filePath,
+            filePath: filePath,
+            category: 'assertion'
           }
         ];
       }
@@ -339,8 +345,8 @@ describe('Scoring System Integration', () => {
 
   function convertIssuesToPluginResults(issues: Issue[], pluginId: string): PluginResult[] {
     // Issue数に基づいてスコアを計算（簡単な変換）
-    const errorCount = issues.filter(i => i.severity === 'error').length;
-    const warningCount = issues.filter(i => i.severity === 'warning').length;
+    const errorCount = issues.filter(i => i.severity === 'high').length;
+    const warningCount = issues.filter(i => i.severity === 'medium').length;
     
     // スコア計算: エラーは-10点、警告は-5点
     const baseScore = 100;

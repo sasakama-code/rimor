@@ -10,7 +10,7 @@ import {
   AggregatedScore
 } from './types';
 import { GradeCalculator } from './grades';
-import { QualityScore } from '../core/types';
+import { QualityScore, Issue } from '../core/types';
 import { errorHandler, ErrorType } from '../utils/errorHandler';
 
 /**
@@ -115,14 +115,14 @@ export class ScoreCalculatorV2 {
       const dimensions = this.calculateDimensionScores(validPluginResults, weights);
 
       // 3. プラグインスコア情報を整理
-      const pluginScores: { [pluginId: string]: { score: number; weight: number; issues: any[] } } = {};
+      const pluginScores: { [pluginId: string]: { score: number; weight: number; issues: Issue[] } } = {};
       
       for (const result of validPluginResults) {
         try {
           pluginScores[result.pluginId] = {
             score: typeof result.score === 'number' ? result.score : 0,
             weight: typeof result.weight === 'number' ? result.weight : 1.0,
-            issues: Array.isArray(result.issues) ? result.issues : []
+            issues: Array.isArray(result.issues) ? result.issues as Issue[] : []
           };
         } catch (error) {
           errorHandler.handleWarning(

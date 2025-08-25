@@ -68,7 +68,7 @@ export class CodeAnnotator {
 
       // 行番号でソート（逆順）して、後ろから挿入
       const sortedIssues = [...issues].sort(
-        (a, b) => b.location.startLine - a.location.startLine
+        (a, b) => (b.location?.startLine || 0) - (a.location?.startLine || 0)
       );
 
       let annotationCount = 0;
@@ -82,7 +82,7 @@ export class CodeAnnotator {
         );
 
         // アノテーションを該当行の前に挿入
-        const lineIndex = issue.location.startLine - 1;
+        const lineIndex = (issue.location?.startLine || 1) - 1;
         if (lineIndex >= 0 && lineIndex < lines.length) {
           // 既存のインデントを保持
           const indent = this.extractIndent(lines[lineIndex]);
@@ -214,6 +214,7 @@ export class CodeAnnotator {
     const grouped = new Map<string, Issue[]>();
 
     issues.forEach(issue => {
+      if (!issue.location) return;
       const file = issue.location.file;
       if (!grouped.has(file)) {
         grouped.set(file, []);
@@ -290,7 +291,7 @@ export class CodeAnnotator {
 
       // 行番号でソート
       const sortedIssues = [...issues].sort(
-        (a, b) => a.location.startLine - b.location.startLine
+        (a, b) => (a.location?.startLine || 0) - (b.location?.startLine || 0)
       );
 
       sortedIssues.forEach(issue => {
@@ -300,7 +301,7 @@ export class CodeAnnotator {
           options
         );
 
-        lines.push(`Line ${issue.location.startLine}:`);
+        lines.push(`Line ${issue.location?.startLine || 0}:`);
         lines.push('```');
         lines.push(annotation);
         lines.push('```');

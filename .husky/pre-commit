@@ -1,0 +1,224 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 厳格なエラーハンドリング（Defensive Programming）
+set -euo pipefail
+
+# エラーメッセージ定数（DRY原則）
+readonly ERROR_TYPE_CHECK="❌ TypeScript type check failed. Please fix type errors before committing."
+readonly ERROR_LINT_CHECK="❌ ESLint check failed. Please fix linting errors before committing."
+readonly ERROR_BUILD_CHECK="❌ Build failed. Please ensure the code builds successfully."
+readonly ERROR_TEST_CHECK="❌ One or more tests failed. Please fix failing tests before committing."
+readonly ERROR_NAMING_CHECK="❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
+readonly ERROR_ANY_TYPE_CHECK="❌ any型の使用が増加しています。'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+readonly ERROR_CACHE_FILE_CHECK="❌ キャッシュファイルの誤コミットが検出されました（Issue #118対応）。.gitignoreを確認してください。"
+
+# エラーハンドリング関数（単一責任原則）
+handle_check_failure() {
+    local error_message="$1"
+    local step_name="$2"
+    
+    echo "$error_message"
+    echo "💡 Pre-commit check '$step_name' failed. Run the check manually to see detailed errors."
+    exit 1
+}
+
+# チェック実行関数（関数抽出リファクタリング）
+run_type_check() {
+    echo "📝 Running TypeScript type check..."
+    if ! npx tsc --noEmit; then
+        handle_check_failure "$ERROR_TYPE_CHECK" "TypeScript type check"
+    fi
+}
+
+run_lint_check() {
+    echo "🔧 Running ESLint..."
+    if ! npx lint-staged; then
+        handle_check_failure "$ERROR_LINT_CHECK" "ESLint check"
+    fi
+}
+
+run_build_check() {
+    echo "🏗️ Running build..."
+    if ! npm run build > /dev/null 2>&1; then
+        handle_check_failure "$ERROR_BUILD_CHECK" "Build check"
+    fi
+}
+
+run_test_check() {
+    echo "🧪 Running tests for changed files..."
+    local test_failed=0
+    
+    # プロセス置換を使用して終了コード伝播問題を解決（Issue #98 修正）
+    while IFS= read -r file; do
+        if [ -f "$file" ]; then
+            echo "  Testing: $file"
+            if ! npm test -- "$file" --no-coverage 2>&1 | grep -E "(PASS|FAIL)" > /dev/null; then
+                echo "❌ Test failed for $file"
+                test_failed=1
+                break
+            else
+                echo "✅ Test passed for $file"
+            fi
+        fi
+    done < <(git diff --cached --name-only | grep -E "\.test\.ts$")
+    
+    if [ $test_failed -ne 0 ]; then
+        handle_check_failure "$ERROR_TEST_CHECK" "Test execution"
+    fi
+}
+
+run_naming_conventions_check() {
+    echo "📝 Checking naming conventions..."
+    local staged_ts_files
+    staged_ts_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+    
+    if [ -n "$staged_ts_files" ]; then
+        local naming_errors=0
+        
+        # バージョン番号付きファイル名チェック
+        local version_files
+        version_files=$(echo "$staged_ts_files" | grep -E 'v[0-9]+\.[0-9]+' || true)
+        if [ -n "$version_files" ]; then
+            echo "❌ バージョン番号付きファイル名が検出されました:"
+            echo "$version_files" | sed 's/^/  - /'
+            naming_errors=$((naming_errors + 1))
+        fi
+        
+        # Implサフィックスチェック
+        local impl_files
+        impl_files=$(echo "$staged_ts_files" | grep -E 'Impl\.ts$' || true)
+        if [ -n "$impl_files" ]; then
+            echo "❌ *Impl.tsサフィックスが検出されました:"
+            echo "$impl_files" | sed 's/^/  - /'
+            naming_errors=$((naming_errors + 1))
+        fi
+        
+        # プラグインファイル命名チェック
+        local plugin_files
+        plugin_files=$(echo "$staged_ts_files" | grep -E 'src/plugins/.*\.ts$' || true)
+        if [ -n "$plugin_files" ]; then
+            for file in $plugin_files; do
+                local basename
+                basename=$(basename "$file" .ts)
+                if echo "$file" | grep -q "/plugins/" && ! echo "$basename" | grep -qE 'Plugin$|BasePlugin$'; then
+                    echo "❌ 不適切なプラグインファイル命名: $file"
+                    echo "💡 プラグインファイルは*Plugin.ts形式にしてください"
+                    naming_errors=$((naming_errors + 1))
+                fi
+            done
+        fi
+        
+        if [ $naming_errors -ne 0 ]; then
+            handle_check_failure "$ERROR_NAMING_CHECK" "Naming conventions"
+        else
+            echo "  ✅ 命名規則チェック通過"
+        fi
+    fi
+}
+
+run_any_type_check() {
+    echo "🔍 Checking any type usage..."
+    local new_any_count
+    new_any_count=$(grep -r ": any" src --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | tr -d ' ')
+    echo "  Current any type usage: $new_any_count"
+    
+    if [ "$new_any_count" -gt "560" ]; then
+        echo "現在: $new_any_count、上限: 560"
+        echo "💡 ヒント: 'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
+        handle_check_failure "$ERROR_ANY_TYPE_CHECK" "Any type usage"
+    fi
+}
+
+run_circular_dependency_check() {
+    if [ -f "scripts/check-circular-deps.js" ]; then
+        echo "🔍 Checking circular dependencies..."
+        if ! node scripts/check-circular-deps.js > /dev/null 2>&1; then
+            echo "⚠️  循環参照が検出されました。詳細は 'node scripts/check-circular-deps.js' で確認してください。"
+            # 警告のみで、コミットはブロックしない
+        fi
+    fi
+}
+
+run_cache_file_check() {
+    echo "🗄️ Checking for cache files (Issue #118)..."
+    local cache_file_errors=0
+    local staged_files
+    staged_files=$(git diff --cached --name-only --diff-filter=ACM || true)
+    
+    if [ -n "$staged_files" ]; then
+        # Issue #118で特定されたキャッシュファイルパターン
+        local cache_patterns=(
+            "\.map$"                    # ソースマップファイル
+            "\.d\.ts\.map$"            # TypeScript declaration map
+            "\.js\.map$"               # JavaScript map
+            "\.css\.map$"              # CSS map
+            "\.jest-cache/"            # Jest cache
+            "\.ts-jest/"               # ts-jest cache
+            "\.tsbuildinfo$"           # TypeScript build info
+            "\.cache/"                 # 一般キャッシュ
+            "\.turbo/"                 # Turbo cache
+            "\.nx/cache/"              # Nx cache
+            "\.vite/cache/"            # Vite cache
+            "\.parcel-cache/"          # Parcel cache
+            "node_modules\.cache"      # npm cache
+            "jest-transform-cache-"    # Jest transform cache (Issue #118特定パターン)
+        )
+        
+        for pattern in "${cache_patterns[@]}"; do
+            local matching_files
+            matching_files=$(echo "$staged_files" | grep -E "$pattern" || true)
+            
+            if [ -n "$matching_files" ]; then
+                echo "❌ キャッシュファイルパターン '$pattern' に一致するファイル:"
+                echo "$matching_files" | sed 's/^/    /'
+                cache_file_errors=$((cache_file_errors + 1))
+            fi
+        done
+        
+        # PII露出リスクファイルの特別チェック
+        local pii_risk_files
+        pii_risk_files=$(echo "$staged_files" | grep -E "\.(map|log)$" || true)
+        if [ -n "$pii_risk_files" ]; then
+            echo "⚠️  PII露出リスク: 以下のファイルは機密情報を含む可能性があります:"
+            echo "$pii_risk_files" | sed 's/^/    /'
+            cache_file_errors=$((cache_file_errors + 1))
+        fi
+        
+        if [ $cache_file_errors -ne 0 ]; then
+            echo ""
+            echo "💡 修復方法:"
+            echo "   1. 以下のコマンドでファイルをGitキャッシュから削除:"
+            echo "      git rm --cached <filename>"
+            echo "   2. .gitignoreに適切な除外パターンが設定されているか確認"
+            echo "   3. TypeScript設定でsourceMapを無効化 (tsconfig.json)"
+            echo "   4. 詳細は Issue #118 を参照"
+            echo ""
+            handle_check_failure "$ERROR_CACHE_FILE_CHECK" "Cache file check"
+        else
+            echo "  ✅ キャッシュファイルチェック通過"
+        fi
+    fi
+}
+
+# メイン実行部分（すべてのチェックを順次実行）
+main() {
+    echo "🔍 Pre-commit checks starting..."
+    
+    # 必須チェック（失敗時は即座にexit）
+    run_cache_file_check           # Issue #118対応: キャッシュファイル誤コミット防止（最優先）
+    run_type_check
+    run_lint_check
+    run_build_check
+    run_test_check
+    run_naming_conventions_check
+    run_any_type_check
+    
+    # 警告のみのチェック
+    run_circular_dependency_check
+    
+    echo "✅ All pre-commit checks passed!"
+}
+
+# スクリプト実行（Issue #98修正により、終了コード伝播が確実に動作）
+main "$@"

@@ -380,7 +380,7 @@ export class CLISecurity {
       }
 
       // 許可されたフォーマット
-      const allowedFormats = ['text', 'json', 'csv', 'html'];
+      const allowedFormats = ['text', 'json', 'csv', 'html', 'markdown', 'ai-json'];
       
       if (!allowedFormats.includes(format.toLowerCase())) {
         errors.push(`未対応のフォーマット: ${format}`);
@@ -421,7 +421,7 @@ export class CLISecurity {
     isValid: boolean;
     sanitizedArgs: {
       path?: string;
-      format?: 'text' | 'json' | 'csv' | 'html';
+      format?: 'text' | 'json' | 'csv' | 'html' | 'markdown' | 'ai-json';
       outputFile?: string;
     };
     allErrors: string[];
@@ -433,7 +433,7 @@ export class CLISecurity {
     const allSecurityIssues: string[] = [];
     const sanitizedArgs: {
       path?: string;
-      format?: 'text' | 'json' | 'csv' | 'html';
+      format?: 'text' | 'json' | 'csv' | 'html' | 'markdown' | 'ai-json';
       outputFile?: string;
     } = {};
 

@@ -1,4 +1,4 @@
-import { PluginManager } from '../../src/core/pluginManager';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
 import { IPlugin, Issue } from '../../src/core/types';
 
 class TestPlugin implements IPlugin {
@@ -9,11 +9,11 @@ class TestPlugin implements IPlugin {
   }
 }
 
-describe('PluginManager', () => {
+describe('PluginManager (後方互換性テスト)', () => {
   it('should register and run single plugin', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const issues: Issue[] = [
-      { type: 'test-missing', severity: 'error', message: 'No test file found' }
+      { id: 'test-missing-id-1', type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
     const plugin = new TestPlugin('test-plugin', issues);
     
@@ -24,12 +24,12 @@ describe('PluginManager', () => {
   });
   
   it('should run multiple plugins and combine results', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const issues1: Issue[] = [
-      { type: 'test-missing', severity: 'error', message: 'No test file found' }
+      { id: 'test-missing-id-2', type: 'test-missing', severity: 'high', message: 'No test file found', filePath: 'src/example.ts', category: 'test-coverage' }
     ];
     const issues2: Issue[] = [
-      { type: 'assertion-missing', severity: 'warning', message: 'No assertions in test' }
+      { id: 'assertion-missing-id', type: 'assertion-missing', severity: 'medium', message: 'No assertions in test', filePath: 'src/example.ts', category: 'assertion' }
     ];
     
     manager.register(new TestPlugin('plugin1', issues1));
@@ -42,7 +42,7 @@ describe('PluginManager', () => {
   });
   
   it('should handle plugin errors gracefully', async () => {
-    const manager = new PluginManager();
+    const manager = new UnifiedPluginManager();
     const errorPlugin: IPlugin = {
       name: 'error-plugin',
       analyze: async () => {

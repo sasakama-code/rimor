@@ -1,6 +1,8 @@
 import { TestErrorContext } from './error-context';
-import { AIOptimizedFormatter } from '../ai-output/formatter';
+import { UnifiedReportEngine } from '../reporting/core/UnifiedReportEngine';
+import { AIJsonFormatter } from '../reporting/formatters/AIJsonFormatter';
 import * as path from 'path';
+import { sanitizeObject } from '../utils/stringSanitizer';
 
 /**
  * AI向けテストエラーフォーマット
@@ -8,22 +10,36 @@ import * as path from 'path';
 export interface AITestErrorReport {
   version: string;
   format: 'ai-test-error';
+  executionDate: string;
   summary: ErrorSummary;
   errorGroups: ErrorGroup[];
   contextualInstructions: ContextualInstructions;
   quickActions: QuickAction[];
   ciTraceability?: CITraceabilityInfo;
+  executionInfo?: ExecutionInfo;
+}
+
+interface ExecutionInfo {
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  environment: string;
+  totalFilesProcessed?: number;
+  totalErrorsCollected?: number;
+  jestReportedFailures?: number;
 }
 
 interface CITraceabilityInfo {
   runId: string;
   runNumber: string;
   workflow: string;
+  job?: string;
+  actor?: string;
   repository: string;
   branch: string;
   sha: string;
   prNumber?: string;
-  deepLink: string;
+  deepLink?: string;
   prLink?: string;
   nodeVersion: string;
   os: string;
@@ -85,10 +101,11 @@ interface QuickAction {
  */
 export class AITestErrorFormatter {
   private readonly VERSION = '0.8.0';
-  private aiOptimizedFormatter: AIOptimizedFormatter;
+  private reportEngine: UnifiedReportEngine;
   
   constructor() {
-    this.aiOptimizedFormatter = new AIOptimizedFormatter();
+    this.reportEngine = new UnifiedReportEngine();
+    this.reportEngine.setStrategy(new AIJsonFormatter());
   }
   
   /**
@@ -116,9 +133,13 @@ export class AITestErrorFormatter {
     // クイックアクションの生成
     const quickActions = this.generateQuickActions(errorGroups);
     
+    // 実行日時を取得
+    const executionDate = new Date().toISOString();
+    
     return {
       version: this.VERSION,
       format: 'ai-test-error',
+      executionDate,
       summary,
       errorGroups,
       contextualInstructions,
@@ -131,42 +152,78 @@ export class AITestErrorFormatter {
    * マークダウン形式で出力
    */
   formatAsMarkdown(report: AITestErrorReport): string {
+    // レポート全体をサニタイズ
+    const sanitizedReport = sanitizeObject(report) as AITestErrorReport;
+    
     let markdown = '# テストエラー分析レポート\n\n';
     
-    // CIトレーサビリティ情報
-    if (report.ciTraceability) {
-      markdown += '## 🔍 CI実行情報\n';
-      markdown += `- **ワークフロー**: ${report.ciTraceability.workflow} #${report.ciTraceability.runNumber}\n`;
-      markdown += `- **リポジトリ**: ${report.ciTraceability.repository}\n`;
-      markdown += `- **ブランチ**: ${report.ciTraceability.branch}\n`;
-      markdown += `- **コミット**: ${report.ciTraceability.sha.substring(0, 7)}\n`;
-      if (report.ciTraceability.prNumber) {
-        markdown += `- **PR**: [#${report.ciTraceability.prNumber}](${report.ciTraceability.prLink})\n`;
+    // 実行日時情報
+    markdown += '## 📅 実行情報\n';
+    if (sanitizedReport.executionInfo) {
+      markdown += `- **実行開始**: ${new Date(sanitizedReport.executionInfo.startTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+      if (sanitizedReport.executionInfo.endTime) {
+        markdown += `- **実行終了**: ${new Date(sanitizedReport.executionInfo.endTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+        markdown += `- **実行時間**: ${sanitizedReport.executionInfo.duration}秒\n`;
       }
-      markdown += `- **CI実行**: [${report.ciTraceability.runId}](${report.ciTraceability.deepLink})\n`;
-      markdown += `- **実行環境**: Node.js ${report.ciTraceability.nodeVersion} on ${report.ciTraceability.os}\n`;
+      markdown += `- **実行環境**: ${sanitizedReport.executionInfo.environment}\n`;
+      if (sanitizedReport.executionInfo.totalFilesProcessed) {
+        markdown += `- **処理ファイル数**: ${sanitizedReport.executionInfo.totalFilesProcessed}\n`;
+      }
+      if (sanitizedReport.executionInfo.totalErrorsCollected !== undefined && sanitizedReport.executionInfo.jestReportedFailures !== undefined) {
+        markdown += `- **収集エラー数**: ${sanitizedReport.executionInfo.totalErrorsCollected} / Jest報告数: ${sanitizedReport.executionInfo.jestReportedFailures}\n`;
+        if (sanitizedReport.executionInfo.totalErrorsCollected < sanitizedReport.executionInfo.jestReportedFailures) {
+          markdown += `- **⚠️ 警告**: 一部のエラーが収集されていない可能性があります\n`;
+        }
+      }
+    } else {
+      markdown += `- **レポート生成日時**: ${new Date(sanitizedReport.executionDate).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}\n`;
+    }
+    markdown += '\n';
+    
+    // CIトレーサビリティ情報またはローカル実行情報
+    if (sanitizedReport.ciTraceability) {
+      if (sanitizedReport.ciTraceability.runId === 'local') {
+        markdown += '## 💻 ローカル実行情報\n';
+        markdown += `- **実行ユーザー**: ${sanitizedReport.ciTraceability.actor}\n`;
+        markdown += `- **実行環境**: Node.js ${sanitizedReport.ciTraceability.nodeVersion} on ${sanitizedReport.ciTraceability.os}\n`;
+        markdown += `- **実行時刻**: ${sanitizedReport.ciTraceability.timestamp}\n`;
+      } else {
+        markdown += '## 🔍 CI実行情報\n';
+        markdown += `- **ワークフロー**: ${sanitizedReport.ciTraceability.workflow} #${sanitizedReport.ciTraceability.runNumber}\n`;
+        markdown += `- **リポジトリ**: ${sanitizedReport.ciTraceability.repository}\n`;
+        markdown += `- **ブランチ**: ${sanitizedReport.ciTraceability.branch}\n`;
+        markdown += `- **コミット**: ${sanitizedReport.ciTraceability.sha.substring(0, 7)}\n`;
+        if (sanitizedReport.ciTraceability.prNumber) {
+          markdown += `- **PR**: [#${sanitizedReport.ciTraceability.prNumber}](${sanitizedReport.ciTraceability.prLink})\n`;
+        }
+        if (sanitizedReport.ciTraceability.deepLink) {
+          markdown += `- **CI実行**: [${sanitizedReport.ciTraceability.runId}](${sanitizedReport.ciTraceability.deepLink})\n`;
+        }
+        markdown += `- **実行環境**: Node.js ${sanitizedReport.ciTraceability.nodeVersion} on ${sanitizedReport.ciTraceability.os}\n`;
+        markdown += `- **実行時刻**: ${sanitizedReport.ciTraceability.timestamp}\n`;
+      }
       markdown += '\n';
     }
     
     // サマリー
     markdown += '## サマリー\n';
-    markdown += `- **総エラー数**: ${report.summary.totalErrors}\n`;
-    markdown += `- **重大エラー**: ${report.summary.criticalErrors}\n`;
-    markdown += `- **影響テストファイル**: ${report.summary.testFileCount}\n`;
-    markdown += `- **推定修正時間**: ${report.summary.estimatedFixTime}分\n\n`;
+    markdown += `- **総エラー数**: ${sanitizedReport.summary.totalErrors}\n`;
+    markdown += `- **重大エラー**: ${sanitizedReport.summary.criticalErrors}\n`;
+    markdown += `- **影響テストファイル**: ${sanitizedReport.summary.testFileCount}\n`;
+    markdown += `- **推定修正時間**: ${sanitizedReport.summary.estimatedFixTime}分\n\n`;
     
-    if (report.summary.commonPatterns.length > 0) {
+    if (sanitizedReport.summary.commonPatterns.length > 0) {
       markdown += '### 共通パターン\n';
-      report.summary.commonPatterns.forEach(pattern => {
+      sanitizedReport.summary.commonPatterns.forEach(pattern => {
         markdown += `- ${pattern}\n`;
       });
       markdown += '\n';
     }
     
     // クイックアクション
-    if (report.quickActions.length > 0) {
+    if (sanitizedReport.quickActions.length > 0) {
       markdown += '## 推奨アクション\n';
-      report.quickActions.forEach((action, index) => {
+      sanitizedReport.quickActions.forEach((action, index) => {
         markdown += `### ${index + 1}. ${action.description}\n`;
         markdown += `\`\`\`bash\n${action.command}\n\`\`\`\n`;
         markdown += `期待される結果: ${action.expectedOutcome}\n\n`;
@@ -175,7 +232,7 @@ export class AITestErrorFormatter {
     
     // エラーグループ
     markdown += '## エラー詳細\n\n';
-    report.errorGroups.forEach((group, groupIndex) => {
+    sanitizedReport.errorGroups.forEach((group, groupIndex) => {
       markdown += `### グループ ${groupIndex + 1}: ${group.pattern} (優先度: ${group.priority})\n\n`;
       
       if (group.commonSolution) {
@@ -192,26 +249,34 @@ export class AITestErrorFormatter {
         markdown += error.context.failedAssertion;
         markdown += '\n```\n\n';
         
-        // 自動修正案を生成できない場合は修正案セクションを削除
-        if (error.suggestedFix.code !== '// 自動修正案を生成できません') {
+        // 有効な修正案がある場合のみ修正案セクションを表示
+        const hasValidFix = error.suggestedFix.code && 
+                           !error.suggestedFix.code.startsWith('// 自動修正案を生成できません') &&
+                           !error.suggestedFix.code.startsWith('// ') &&
+                           error.suggestedFix.confidence > 0.3;
+        
+        if (hasValidFix) {
           markdown += '**修正案**:\n';
           markdown += '```typescript\n';
           markdown += error.suggestedFix.code;
           markdown += '\n```\n';
+          markdown += `${error.suggestedFix.explanation} (信頼度: ${Math.round(error.suggestedFix.confidence * 100)}%)\n\n`;
+        } else {
+          // 修正案がない場合は説明のみ表示
+          markdown += `**対処方法**: ${error.suggestedFix.explanation}\n\n`;
         }
-        markdown += `${error.suggestedFix.explanation} (信頼度: ${Math.round(error.suggestedFix.confidence * 100)}%)\n\n`;
       });
     });
     
     // AI向け指示
     markdown += '## デバッグ手順\n\n';
-    report.contextualInstructions.debuggingSteps.forEach((step, index) => {
+    sanitizedReport.contextualInstructions.debuggingSteps.forEach((step, index) => {
       markdown += `${index + 1}. ${step}\n`;
     });
     
     markdown += '\n---\n\n';
     markdown += '## AI向け指示\n\n';
-    markdown += report.contextualInstructions.forAI;
+    markdown += sanitizedReport.contextualInstructions.forAI;
     
     return markdown;
   }
@@ -220,23 +285,34 @@ export class AITestErrorFormatter {
    * JSON形式で出力
    */
   formatAsJSON(report: AITestErrorReport): string {
-    return JSON.stringify(report, null, 2);
+    // 実行情報を含めてJSON出力
+    const reportWithExecutionInfo = {
+      ...report,
+      executionDate: report.executionDate || new Date().toISOString()
+    };
+    
+    // レポート全体をサニタイズしてからJSON化
+    const sanitizedReport = sanitizeObject(reportWithExecutionInfo);
+    return JSON.stringify(sanitizedReport, null, 2);
   }
   
   /**
    * PRコメント用の簡潔なサマリーマークダウンを生成
    */
   formatAsSummaryMarkdown(report: AITestErrorReport): string {
+    // レポート全体をサニタイズ
+    const sanitizedReport = sanitizeObject(report) as AITestErrorReport;
+    
     let summary = '## 🤖 AI Error Report Summary\n\n';
     
     // エラー統計
     summary += '### 📊 エラー統計\n';
-    summary += `- **総エラー数**: ${report.summary.totalErrors}\n`;
+    summary += `- **総エラー数**: ${sanitizedReport.summary.totalErrors}\n`;
     summary += `- **重大度別**:\n`;
     
     // 優先度別のエラー数を集計
     const priorityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
-    report.errorGroups.forEach(group => {
+    sanitizedReport.errorGroups.forEach(group => {
       priorityCounts[group.priority] += group.errors.length;
     });
     
@@ -253,31 +329,31 @@ export class AITestErrorFormatter {
       summary += `  - 🟢 Low: ${priorityCounts.low}\n`;
     }
     
-    summary += `- **影響ファイル数**: ${report.summary.testFileCount}\n`;
-    summary += `- **推定修正時間**: ${report.summary.estimatedFixTime}分\n\n`;
+    summary += `- **影響ファイル数**: ${sanitizedReport.summary.testFileCount}\n`;
+    summary += `- **推定修正時間**: ${sanitizedReport.summary.estimatedFixTime}分\n\n`;
     
     // CI情報（存在する場合）
-    if (report.ciTraceability) {
+    if (sanitizedReport.ciTraceability) {
       summary += '### 🔍 実行環境\n';
-      summary += `- **Node.js**: ${report.ciTraceability.nodeVersion}\n`;
-      summary += `- **OS**: ${report.ciTraceability.os}\n\n`;
+      summary += `- **Node.js**: ${sanitizedReport.ciTraceability.nodeVersion}\n`;
+      summary += `- **OS**: ${sanitizedReport.ciTraceability.os}\n\n`;
     }
     
     // 検出されたパターン
-    if (report.summary.commonPatterns.length > 0) {
+    if (sanitizedReport.summary.commonPatterns.length > 0) {
       summary += '### 🔍 検出されたエラーパターン\n';
-      const topPatterns = report.summary.commonPatterns.slice(0, 5);
+      const topPatterns = sanitizedReport.summary.commonPatterns.slice(0, 5);
       topPatterns.forEach(pattern => {
         summary += `- ${pattern}\n`;
       });
-      if (report.summary.commonPatterns.length > 5) {
-        summary += `- _他 ${report.summary.commonPatterns.length - 5} パターン_\n`;
+      if (sanitizedReport.summary.commonPatterns.length > 5) {
+        summary += `- _他 ${sanitizedReport.summary.commonPatterns.length - 5} パターン_\n`;
       }
       summary += '\n';
     }
     
     // 最も重要なエラー（Critical/Highの最初の3つ）
-    const importantErrors = report.errorGroups
+    const importantErrors = sanitizedReport.errorGroups
       .filter(g => g.priority === 'critical' || g.priority === 'high')
       .flatMap(g => g.errors)
       .slice(0, 3);
@@ -293,9 +369,9 @@ export class AITestErrorFormatter {
     }
     
     // クイックアクション（最初の2つ）
-    if (report.quickActions.length > 0) {
+    if (sanitizedReport.quickActions.length > 0) {
       summary += '### 💡 推奨アクション\n';
-      const topActions = report.quickActions.slice(0, 2);
+      const topActions = sanitizedReport.quickActions.slice(0, 2);
       topActions.forEach(action => {
         summary += `- **${action.description}**: \`${action.command}\`\n`;
       });
@@ -483,9 +559,9 @@ export class AITestErrorFormatter {
     
     // デフォルトの提案（修正案なし）
     return {
-      explanation: 'このエラーの自動修正案を生成できません。エラーメッセージと関連コードを確認して手動で修正してください。',
-      code: '// 自動修正案を生成できません',
-      confidence: 0.1
+      explanation: 'エラーメッセージとスタックトレースを確認して、問題の原因を特定してください。関連するソースファイルとテストコードの両方を確認することをお勧めします。',
+      code: '',
+      confidence: 0
     };
   }
   
@@ -596,6 +672,13 @@ export class AITestErrorFormatter {
       };
       return total + (group.errors.length * timePerError[group.priority]);
     }, 0);
+    
+    // デバッグ情報：エラー数の不一致を警告
+    if (process.env.DEBUG_AI_REPORTER === 'true') {
+      console.log(`[AI Formatter Debug] Total errors to format: ${contexts.length}`);
+      console.log(`[AI Formatter Debug] Test files with errors: ${testFiles.size}`);
+      console.log(`[AI Formatter Debug] Error groups: ${groups.length}`);
+    }
     
     return {
       totalErrors: contexts.length,

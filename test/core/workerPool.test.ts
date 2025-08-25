@@ -20,7 +20,7 @@ jest.mock('worker_threads', () => {
         this.emit('message', {
           id: data.id,
           type: 'result',
-          data: { processed: true, data: data.data }
+          data: { ...data.data, issues: [] }
         });
       }, 50);
     }
@@ -93,8 +93,8 @@ describe('WorkerPool', () => {
       const result = await pool.execute('analyze', { file: 'test.js' });
       
       expect(result).toEqual({
-        processed: true,
-        data: { file: 'test.js' }
+        file: 'test.js',
+        issues: []
       });
     });
 
@@ -107,7 +107,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(5);
       results.forEach((result, i) => {
-        expect(result.data.file).toBe(`test${i}.js`);
+        expect((result as any).file).toBe(`test${i}.js`);
       });
     });
 
@@ -121,7 +121,7 @@ describe('WorkerPool', () => {
       
       expect(results).toHaveLength(10);
       results.forEach((result, i) => {
-        expect(result.data.index).toBe(i);
+        expect((result as any).index).toBe(i);
       });
     });
   });
@@ -274,7 +274,7 @@ describe('WorkerPool', () => {
       );
       
       // すぐに終了
-      setTimeout(() => pool.terminate(), 100);
+      setTimeout(() => pool.terminate(), 20);
       
       // すべてのタスクが完了またはリジェクトされることを確認
       const results = await Promise.allSettled(tasks);
