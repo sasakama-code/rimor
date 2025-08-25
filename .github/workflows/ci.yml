@@ -45,10 +45,101 @@ jobs:
         path: dist/
         retention-days: 1
 
-  # ジョブ2: セキュリティ監査（TaintTyper含む）
-  security-audit:
+  # ジョブ2: キャッシュファイル衛生検査（Issue #118対応）
+  cache-file-hygiene:
     runs-on: ubuntu-latest
     needs: build-and-verify
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 全履歴を取得してキャッシュファイル検出を確実に
+    
+    - name: Cache File Detection (Issue #118)
+      run: |
+        echo "🗄️ Checking for cache files and PII exposure risks..."
+        
+        # Issue #118で特定されたキャッシュファイルパターン
+        CACHE_PATTERNS=(
+          "\.map$"
+          "\.d\.ts\.map$" 
+          "\.js\.map$"
+          "\.css\.map$"
+          "\.jest-cache/"
+          "\.ts-jest/"
+          "\.tsbuildinfo$"
+          "\.cache/"
+          "\.turbo/"
+          "\.nx/cache/"
+          "\.vite/cache/"
+          "\.parcel-cache/"
+          "node_modules\.cache"
+          "jest-transform-cache-"
+        )
+        
+        CACHE_FILE_ERRORS=0
+        
+        # 全追跡ファイルを検査
+        TRACKED_FILES=$(git ls-files)
+        
+        for pattern in "${CACHE_PATTERNS[@]}"; do
+          MATCHING_FILES=$(echo "$TRACKED_FILES" | grep -E "$pattern" || true)
+          
+          if [ -n "$MATCHING_FILES" ]; then
+            echo "::error title=Cache File Detected::Pattern '$pattern' matches:"
+            echo "$MATCHING_FILES" | sed 's/^/  /' 
+            CACHE_FILE_ERRORS=$((CACHE_FILE_ERRORS + 1))
+          fi
+        done
+        
+        # PII露出リスクファイルの特別チェック
+        PII_RISK_FILES=$(echo "$TRACKED_FILES" | grep -E "\.(map|log)$" || true)
+        if [ -n "$PII_RISK_FILES" ]; then
+          echo "::error title=PII Exposure Risk::Following files may contain sensitive information:"
+          echo "$PII_RISK_FILES" | sed 's/^/  /'
+          CACHE_FILE_ERRORS=$((CACHE_FILE_ERRORS + 1))
+        fi
+        
+        if [ $CACHE_FILE_ERRORS -ne 0 ]; then
+          echo ""
+          echo "::error title=Issue #118 Cache File Prevention::Cache files detected in repository"
+          echo "💡 Resolution steps:"
+          echo "  1. Remove files: git rm --cached <filename>"
+          echo "  2. Verify .gitignore patterns are correct"
+          echo "  3. Check TypeScript sourceMap settings"
+          echo "  4. See Issue #118 for details"
+          exit 1
+        else
+          echo "✅ Cache file hygiene check passed"
+        fi
+    
+    - name: Generate Cache File Report
+      if: always()
+      run: |
+        mkdir -p .rimor/reports/security/
+        cat > .rimor/reports/security/cache-file-hygiene-report.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "issue": "118",
+          "status": "$([ $CACHE_FILE_ERRORS -eq 0 ] && echo 'PASS' || echo 'FAIL')",
+          "description": "Automated cache file detection and PII exposure risk assessment",
+          "filesChecked": $(git ls-files | wc -l),
+          "violationsFound": $CACHE_FILE_ERRORS,
+          "riskLevel": "$([ $CACHE_FILE_ERRORS -eq 0 ] && echo 'LOW' || echo 'HIGH')"
+        }
+        EOF
+    
+    - name: Upload Cache File Hygiene Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cache-file-hygiene-report
+        path: .rimor/reports/security/cache-file-hygiene-report.json
+        retention-days: 30
+
+  # ジョブ3: セキュリティ監査（TaintTyper含む）
+  security-audit:
+    runs-on: ubuntu-latest
+    needs: cache-file-hygiene
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js 20.x
@@ -79,7 +170,7 @@ jobs:
           .rimor/reports/security/security-analysis-report.json
         if-no-files-found: ignore
 
-  # ジョブ3: 品質監査（dogfooding）
+  # ジョブ4: 品質監査（dogfooding）
   quality-audit:
     runs-on: ubuntu-latest
     needs: build-and-verify
@@ -144,7 +235,7 @@ jobs:
           .rimor/reports/quality/dogfooding-report.json
         if-no-files-found: ignore
 
-  # ジョブ4: テスト実行
+  # ジョブ5: テスト実行
   test:
     runs-on: ubuntu-latest
     needs: [security-audit, quality-audit]
