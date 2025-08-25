@@ -40,6 +40,7 @@ import type { QualifiedType } from '../types/checker-framework-types';
 import { TypeConstructors } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import { KeywordSearchUtils } from '../../utils/KeywordSearchUtils';
 
 /**
  * 入力検証セキュリティプラグイン
@@ -552,7 +553,8 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       // 境界値テストパターン
       const boundaryKeywords = ['empty', 'null', 'undefined', 'max', 'min', 'length', 'size'];
       
-      if (boundaryKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+      // Issue #119 対応: 統一キーワード検索を使用
+      if (KeywordSearchUtils.containsAnyKeyword(line, boundaryKeywords)) {
         const boundaryTypes = [];
         if (line.toLowerCase().includes('empty')) boundaryTypes.push('empty-input');
         if (line.toLowerCase().includes('null')) boundaryTypes.push('null-input');
@@ -698,9 +700,9 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     const methodName = method.name.toLowerCase();
     const methodContent = (method.content || '').toLowerCase();
     
-    return validationKeywords.some(keyword => 
-      methodName.includes(keyword) || methodContent.includes(keyword)
-    );
+    // Issue #119 対応: 統一キーワード検索を使用
+    return KeywordSearchUtils.containsAnyKeyword(methodName, validationKeywords) ||
+           KeywordSearchUtils.containsAnyKeyword(methodContent, validationKeywords);
   }
 
   private isInputValidationNode(node: FlowNode): boolean {
@@ -1202,7 +1204,8 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     
     // 高度なセキュリティキーワードでボーナス
     const advancedSecurityKeywords = ['auth', 'token', 'permission', 'authorize', 'authenticate'];
-    if (advancedSecurityKeywords.some(keyword => content.includes(keyword))) {
+    // Issue #119 対応: 統一キーワード検索を使用
+    if (KeywordSearchUtils.containsAnyKeyword(content, advancedSecurityKeywords)) {
       score *= 1.05;
     }
     

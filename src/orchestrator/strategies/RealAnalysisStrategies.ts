@@ -8,6 +8,7 @@ import { TaintAnalysisSystem } from '../../security/taint-analysis-system';
 import { IntentPatternMatcher } from '../../intent-analysis/IntentPatternMatcher';
 import { GapDetector } from '../../gap-analysis/GapDetector';
 import { NistRiskEvaluator } from '../../nist/evaluators/NistRiskEvaluator';
+import { KeywordSearchUtils } from '../../utils/KeywordSearchUtils';
 
 import {
   IAnalysisStrategyFactory,
@@ -261,11 +262,12 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
     const highRiskKeywords = ['auth', 'login', 'password', 'token', 'admin', 'sql', 'injection'];
     const mediumRiskKeywords = ['validate', 'check', 'input', 'form', 'data'];
     
-    if (highRiskKeywords.some(keyword => intentText.includes(keyword))) {
+    // Issue #119 対応: 統一キーワード検索を使用
+    if (KeywordSearchUtils.containsAnyKeyword(intentText, highRiskKeywords)) {
       return 'HIGH';
     }
     
-    if (mediumRiskKeywords.some(keyword => intentText.includes(keyword))) {
+    if (KeywordSearchUtils.containsAnyKeyword(intentText, mediumRiskKeywords)) {
       return 'MEDIUM';
     }
     

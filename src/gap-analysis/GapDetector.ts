@@ -10,6 +10,7 @@ import {
   GapAnalysisResult,
   SecurityGap 
 } from '../orchestrator/types';
+import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
 
 /**
  * ギャップ検出戦略インターフェース
@@ -385,9 +386,8 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
     };
 
     const keywords = relationMap[vulnType] || [];
-    return keywords.some(keyword => 
-      requirement.toLowerCase().includes(keyword.toLowerCase())
-    );
+    // Issue #119 対応: 統一キーワード検索を使用
+    return KeywordSearchUtils.containsAnyKeyword(requirement, keywords);
   }
 
   /**

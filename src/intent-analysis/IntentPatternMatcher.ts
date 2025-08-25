@@ -7,6 +7,7 @@
 
 import { CoverageScope } from './ITestIntentAnalyzer';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
+import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -46,13 +47,34 @@ export interface ProjectIntentAnalysis {
 
 /**
  * パターン識別のためのキーワード定義
+ * Issue #119 対応: 多言語対応とより精密なキーワード分類
  * DRY原則: 重複を避けるため定数として定義
  */
 const PATTERN_KEYWORDS = {
-  ERROR_CASE: ['error', 'throw', 'invalid', 'fail'],
-  EDGE_CASE: ['edge case', 'empty'],
-  BOUNDARY_VALUE: ['boundary', 'maximum', 'minimum', 'limit'],
-  HAPPY_PATH: ['valid', 'correct', 'should return', 'normal', 'success']
+  ERROR_CASE: [
+    // 英語キーワード
+    'error', 'throw', 'invalid', 'fail', 'exception', 'reject',
+    // 日本語キーワード
+    'エラー', '例外', '失敗', '異常', '不正'
+  ],
+  EDGE_CASE: [
+    // 英語キーワード  
+    'edge case', 'empty', 'null', 'undefined',
+    // 日本語キーワード
+    'エッジケース', '境界ケース', '空', 'null値'
+  ],
+  BOUNDARY_VALUE: [
+    // 英語キーワード
+    'boundary', 'maximum', 'minimum', 'limit', 'max', 'min',
+    // 日本語キーワード
+    '境界値', '最大', '最小', '上限', '下限'
+  ],
+  HAPPY_PATH: [
+    // 英語キーワード（より精密に）
+    'valid', 'correct', 'should return', 'success', 'normal',
+    // 日本語キーワード
+    '正常', '成功', '有効', '正しい', '適切'
+  ]
 } as const;
 
 /**
@@ -93,12 +115,13 @@ export class IntentPatternMatcher {
 
   /**
    * 文字列が指定されたキーワードのいずれかを含むかチェック
+   * Issue #119 対応: 統一キーワード検索ユーティリティを使用
    * @param text チェック対象の文字列
    * @param keywords キーワードの配列
    * @returns いずれかのキーワードを含む場合true
    */
   private containsAnyKeyword(text: string, keywords: readonly string[]): boolean {
-    return keywords.some(keyword => text.includes(keyword));
+    return KeywordSearchUtils.containsAnyKeyword(text, keywords);
   }
 
   /**

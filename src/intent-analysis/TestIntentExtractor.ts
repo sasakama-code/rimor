@@ -57,6 +57,7 @@ interface Suggestion {
 }
 import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
+import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
 import { TreeSitterParser } from './TreeSitterParser';
 import { IntentPatternMatcher } from './IntentPatternMatcher';
 import { DomainInferenceEngine } from './DomainInferenceEngine';
@@ -594,12 +595,12 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   }
 
   private checkBehaviorImplementation(expectedBehavior: string, methods: MethodBehavior[]): boolean {
-    // 簡易実装: 期待される振る舞いがメソッド名やコメントに含まれているかチェック
+    // Issue #119 対応: 期待される振る舞いがメソッド名やコメントに含まれているかチェック
     const behaviorKeywords = expectedBehavior.toLowerCase().split(/\s+/);
     
     return methods.some(method => {
       const methodNameLower = method.name.toLowerCase();
-      return behaviorKeywords.some(keyword => methodNameLower.includes(keyword));
+      return KeywordSearchUtils.containsAnyKeyword(methodNameLower, behaviorKeywords);
     });
   }
 
@@ -1073,9 +1074,9 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       'security': 'Security'
     };
     
-    const lowerDescription = description.toLowerCase();
+    // Issue #119 対応: 統一キーワード検索を使用
     for (const [keyword, domain] of Object.entries(domainKeywords)) {
-      if (lowerDescription.includes(keyword)) {
+      if (KeywordSearchUtils.containsAnyKeyword(description, [keyword])) {
         return domain;
       }
     }

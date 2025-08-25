@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { injectable } from 'inversify';
 import { debug } from '../utils/debug';
+import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
 
 /**
  * ドメインルール定義
@@ -239,16 +240,14 @@ export class SimpleDomainRules {
         lines.forEach((lineContent, index) => {
           const lowerLine = lineContent.toLowerCase();
           
-          for (const keyword of keywords) {
-            if (lowerLine.includes(keyword.toLowerCase())) {
-              violations.push({
-                message: pattern.message,
-                line: index + 1,
-                column: lowerLine.indexOf(keyword.toLowerCase()) + 1,
-                fix: pattern.fix
-              });
-              break;
-            }
+          // Issue #119 対応: 統一キーワード検索を使用
+          if (KeywordSearchUtils.containsAnyKeyword(lineContent, keywords)) {
+            violations.push({
+              message: pattern.message,
+              line: index + 1,
+              column: 0, // キーワード検索なので位置特定は簡略化
+              fix: pattern.fix
+            });
           }
         });
         break;

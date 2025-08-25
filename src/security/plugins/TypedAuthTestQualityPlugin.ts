@@ -47,6 +47,7 @@ import {
   isAuthTypeInferenceResult
 } from './typed-auth-plugin-types';
 import { FlowNode } from '../types/flow-types';
+import { KeywordSearchUtils } from '../../utils/KeywordSearchUtils';
 
 /**
  * 型ベース認証テスト品質プラグイン
@@ -383,9 +384,9 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const methodName = method.name.toLowerCase();
     const methodContent = (method.content || '').toLowerCase();
     
-    return authKeywords.some(keyword => 
-      methodName.includes(keyword) || methodContent.includes(keyword)
-    );
+    // Issue #119 対応: 統一キーワード検索を使用
+    return KeywordSearchUtils.containsAnyKeyword(methodName, authKeywords) ||
+           KeywordSearchUtils.containsAnyKeyword(methodContent, authKeywords);
   }
 
   private isAuthRelatedNode(node: FlowNode): boolean {
