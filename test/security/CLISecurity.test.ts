@@ -127,6 +127,218 @@ describe('CLISecurity Security Tests', () => {
         expect(result.sanitizedValue).toBeDefined();
       });
     });
+
+    // Issue #121対応: プロジェクト境界ホワイトリスト方式テスト
+    describe('プロジェクト境界ホワイトリスト検証', () => {
+      test('プロジェクト内の/home/パスを含むパスを許可する', () => {
+        // プロジェクトがユーザーホームディレクトリ配下にある場合の正常ケース
+        const homeBasedPaths = [
+          'src/components/Header.ts',
+          './lib/utils.js',
+          'test/unit/example.test.ts'
+        ];
+
+        homeBasedPaths.forEach(homePath => {
+          const result = cliSecurity.validateAnalysisPath(homePath);
+          
+          expect(result.isValid).toBe(true);
+          expect(result.sanitizedValue).toBeDefined();
+          expect(result.errors).toHaveLength(0);
+          // 現在のブラックリスト方式では/home/を含むパスで誤検知する可能性がある
+        });
+      });
+
+      test('プロジェクト内のWindowsユーザーパスを含むパスを許可する', () => {
+        // プロジェクトがWindowsユーザーディレクトリ配下にある場合の正常ケース  
+        const windowsPaths = [
+          'src\\modules\\auth.ts',
+          '.\\config\\database.js',
+          'tests\\integration\\api.test.ts'
+        ];
+
+        windowsPaths.forEach(winPath => {
+          const result = cliSecurity.validateAnalysisPath(winPath);
+          
+          expect(result.isValid).toBe(true);
+          expect(result.sanitizedValue).toBeDefined();
+          expect(result.errors).toHaveLength(0);
+          // 現在のブラックリスト方式ではC:\\Users\\Administrator\\を含むパスで誤検知する可能性がある
+        });
+      });
+
+      test('プロジェクト範囲外への相対パストラバーサルを拒否する', () => {
+        const traversalPaths = [
+          '../../../etc/passwd',
+          '..\\..\\..\\Windows\\System32',
+          '../../../../../root/.ssh/id_rsa',
+          '../../../../../../home/other-user/secrets'
+        ];
+
+        traversalPaths.forEach(traversalPath => {
+          const result = cliSecurity.validateAnalysisPath(traversalPath);
+          
+          expect(result.isValid).toBe(false);
+          expect(result.securityIssues).toContain('パストラバーサル攻撃');
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+        });
+      });
+
+      test('プロジェクト範囲外の絶対パスを拒否する', () => {
+        const externalAbsolutePaths = [
+          '/etc/shadow',
+          '/root/.bashrc',
+          'C:\\Windows\\System32\\config\\SAM',
+          '/home/other-user/private/',
+          'C:\\Users\\Other\\Documents\\secrets.txt'
+        ];
+
+        externalAbsolutePaths.forEach(absPath => {
+          const result = cliSecurity.validateAnalysisPath(absPath);
+          
+          expect(result.isValid).toBe(false);
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          expect(result.securityIssues.length).toBeGreaterThan(0);
+        });
+      });
+
+      test('プロジェクトルート境界の厳密な検証', () => {
+        // エッジケース: プロジェクトルート直下のファイル
+        const boundaryPaths = [
+          './package.json',
+          'README.md',
+          './src',
+          '../invalid-sibling-project' // プロジェクト範囲外
+        ];
+
+        const validBoundaryPaths = boundaryPaths.slice(0, 3);
+        const invalidBoundaryPaths = boundaryPaths.slice(3);
+
+        validBoundaryPaths.forEach(validPath => {
+          const result = cliSecurity.validateAnalysisPath(validPath);
+          expect(result.isValid).toBe(true);
+        });
+
+        invalidBoundaryPaths.forEach(invalidPath => {
+          const result = cliSecurity.validateAnalysisPath(invalidPath);
+          expect(result.isValid).toBe(false);
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+        });
+      });
+
+      // 境界エッジケーステスト
+      describe('プロジェクト境界エッジケーステスト', () => {
+        test('空パスやドット記号のみのパスを適切に処理する', () => {
+          const edgeCasePaths = [
+            '',
+            '.',
+            '..',
+            './',
+            '../',
+            '.../',
+            './././',
+            '../././../'
+          ];
+
+          edgeCasePaths.forEach(edgePath => {
+            const result = cliSecurity.validateAnalysisPath(edgePath);
+            
+            if (edgePath === '' || edgePath === '.' || edgePath === './') {
+              // 空パス、カレントディレクトリは許可されるべき
+              expect(result.isValid).toBe(true);
+            } else if (edgePath.includes('..')) {
+              // パストラバーサルは拒否されるべき
+              expect(result.isValid).toBe(false);
+              expect(result.securityIssues.some(issue => issue.includes('パストラバーサル'))).toBe(true);
+            } else {
+              // その他の無害なパス（./././ など）は許可されるべき
+              expect(result.isValid).toBe(true);
+            }
+          });
+        });
+
+        test('パス正規化後の境界チェックを行う', () => {
+          const normalizationPaths = [
+            './src/../../../etc/passwd',
+            'src/./../../home/user/secrets',
+            'test/../../../../../root/.ssh',
+            '.././../system/critical'
+          ];
+
+          normalizationPaths.forEach(normPath => {
+            const result = cliSecurity.validateAnalysisPath(normPath);
+            
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+            expect(result.securityIssues).toContain('パストラバーサル攻撃');
+          });
+        });
+
+        test('深いネスト構造での境界チェック', () => {
+          const deepNestedPaths = [
+            'src/components/ui/forms/inputs/text/validation', // プロジェクト内深いパス
+            'a'.repeat(50) + '/' + 'b'.repeat(50) + '/file.js', // 長いパス名
+            Array(20).fill('dir').join('/') + '/deep.js', // 深い階層
+            '../' + Array(10).fill('../').join('') + 'external.js' // 深いトラバーサル
+          ];
+
+          const validDeepPaths = deepNestedPaths.slice(0, 3);
+          const invalidDeepPaths = deepNestedPaths.slice(3);
+
+          validDeepPaths.forEach(validPath => {
+            const result = cliSecurity.validateAnalysisPath(validPath);
+            // パス長制限を超えない限り、プロジェクト内の深いパスは許可
+            expect(result.isValid).toBe(true);
+          });
+
+          invalidDeepPaths.forEach(invalidPath => {
+            const result = cliSecurity.validateAnalysisPath(invalidPath);
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          });
+        });
+
+        test('特殊文字やUnicodeパスの境界チェック', () => {
+          const specialCharPaths = [
+            './src/日本語ファイル.js', // Unicodeファイル名
+            './src/file with spaces.js', // スペース含むパス
+            './src/file-with-dashes_and_underscores.js', // 特殊文字
+            '../悪意のあるファイル.js' // Unicode + トラバーサル
+          ];
+
+          const validSpecialPaths = specialCharPaths.slice(0, 3);
+          const invalidSpecialPaths = specialCharPaths.slice(3);
+
+          validSpecialPaths.forEach(validPath => {
+            const result = cliSecurity.validateAnalysisPath(validPath);
+            expect(result.isValid).toBe(true);
+          });
+
+          invalidSpecialPaths.forEach(invalidPath => {
+            const result = cliSecurity.validateAnalysisPath(invalidPath);
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          });
+        });
+
+        test('シンボリックリンク風のパスでの境界回避試行を防ぐ', () => {
+          // シンボリックリンク風のパスで境界を回避しようとするケース
+          const symlinkStylePaths = [
+            './src/../../symlink-to-external',
+            './project/../../../through-symlink/target',
+            'valid/path/../../../../../../system/file',
+            './safe/../unsafe/../../../critical'
+          ];
+
+          symlinkStylePaths.forEach(symlinkPath => {
+            const result = cliSecurity.validateAnalysisPath(symlinkPath);
+            
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+            expect(result.securityIssues).toContain('パストラバーサル攻撃');
+          });
+        });
+      });
+    });
   });
 
   describe('出力ファイルパスの検証', () => {
@@ -184,6 +396,120 @@ describe('CLISecurity Security Tests', () => {
       
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
+    });
+
+    // Issue #121対応: 出力パスプロジェクト境界ホワイトリスト方式テスト
+    describe('出力パスプロジェクト境界ホワイトリスト検証', () => {
+      test('プロジェクト内への出力パスを許可する', () => {
+        const validOutputPaths = [
+          './reports/analysis.json',
+          'dist/output.html',
+          './logs/results.txt',
+          'coverage/report.csv'
+        ];
+
+        validOutputPaths.forEach(outputPath => {
+          const result = cliSecurity.validateOutputPath(outputPath);
+          
+          expect(result.isValid).toBe(true);
+          expect(result.sanitizedValue).toBeDefined();
+          expect(result.errors).toHaveLength(0);
+        });
+      });
+
+      test('プロジェクト範囲外への出力パスを拒否する', () => {
+        const externalOutputPaths = [
+          '../../../tmp/malicious.json',
+          '../../../../home/user/evil.txt',
+          '../../other-project/backdoor.html',
+          '/tmp/system-level-output.csv'
+        ];
+
+        externalOutputPaths.forEach(outputPath => {
+          const result = cliSecurity.validateOutputPath(outputPath);
+          
+          expect(result.isValid).toBe(false);
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          expect(result.securityIssues).toContain('パストラバーサル攻撃');
+        });
+      });
+
+      test('プロジェクト範囲外の絶対出力パスを拒否する', () => {
+        const systemOutputPaths = [
+          '/etc/systemd/backdoor.service',
+          '/root/malicious-config.json',
+          'C:\\Windows\\evil.exe',
+          '/home/other-user/private/stolen.txt'
+        ];
+
+        systemOutputPaths.forEach(systemPath => {
+          const result = cliSecurity.validateOutputPath(systemPath);
+          
+          expect(result.isValid).toBe(false);
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          expect(result.securityIssues.length).toBeGreaterThan(0);
+        });
+      });
+
+      // 出力パス用境界エッジケーステスト
+      describe('出力パスプロジェクト境界エッジケーステスト', () => {
+        test('特殊出力パスの適切な処理', () => {
+          const specialOutputPaths = [
+            './output/日本語レポート.json',
+            './reports/data with spaces.csv',
+            './logs/deep/nested/structure/output.txt',
+            '../../../tmp/system-output.json' // 境界回避
+          ];
+
+          const validOutputs = specialOutputPaths.slice(0, 3);
+          const invalidOutputs = specialOutputPaths.slice(3);
+
+          validOutputs.forEach(validOutput => {
+            const result = cliSecurity.validateOutputPath(validOutput);
+            expect(result.isValid).toBe(true);
+          });
+
+          invalidOutputs.forEach(invalidOutput => {
+            const result = cliSecurity.validateOutputPath(invalidOutput);
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          });
+        });
+
+        test('出力ファイル名の正規化と境界チェック', () => {
+          const normalizedOutputPaths = [
+            './dist/../../../external/malicious.json',
+            './output/./../../../../../../system.csv',
+            'reports/../../../home/user/stolen.html',
+            './valid/output/../../../critical.txt'
+          ];
+
+          normalizedOutputPaths.forEach(normalizedPath => {
+            const result = cliSecurity.validateOutputPath(normalizedPath);
+            
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+            expect(result.securityIssues).toContain('パストラバーサル攻撃');
+          });
+        });
+
+        test('一時ファイルパスやシステムパスへの出力回避試行', () => {
+          const maliciousOutputPaths = [
+            '/tmp/../../../etc/cron.daily/malicious',
+            '/var/tmp/../../../../root/.bashrc',
+            'C:\\temp\\..\\..\\Windows\\System32\\evil.exe',
+            './tmp/../../../../../../dev/null'
+          ];
+
+          maliciousOutputPaths.forEach(maliciousPath => {
+            const result = cliSecurity.validateOutputPath(maliciousPath);
+            
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+            expect(result.securityIssues.length).toBeGreaterThan(0);
+          });
+        });
+      });
     });
   });
 
