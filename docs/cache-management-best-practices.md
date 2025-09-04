@@ -35,7 +35,7 @@ git check-ignore .jest-cache/ *.map *.tsbuildinfo
 
 # 対処法
 echo "*.map" >> .gitignore
-git rm --cached **/*.map
+git ls-files -z | grep -zE '\.map$' | xargs -0 git rm --cached
 ```
 
 #### TypeScriptビルド情報
