@@ -77,6 +77,8 @@ jobs:
         )
         
         CACHE_FILE_ERRORS=0
+        TMP_VIOLATIONS="$(mktemp)"
+        trap 'rm -f "$TMP_VIOLATIONS"' EXIT
         
         # 全追跡ファイルを検査
         TRACKED_FILES=$(git ls-files)
@@ -86,8 +88,9 @@ jobs:
           
           if [ -n "$MATCHING_FILES" ]; then
             echo "::error title=Cache File Detected::Pattern '$pattern' matches:"
-            echo "$MATCHING_FILES" | sed 's/^/  /' 
-            CACHE_FILE_ERRORS=$((CACHE_FILE_ERRORS + 1))
+            echo "$MATCHING_FILES" | sed 's/^/  /'
+            # 一時ファイルに集約（後でユニーク化）
+            echo "$MATCHING_FILES" >> "$TMP_VIOLATIONS"
           fi
         done
         
@@ -96,7 +99,12 @@ jobs:
         if [ -n "$PII_RISK_FILES" ]; then
           echo "::error title=PII Exposure Risk::Following files may contain sensitive information:"
           echo "$PII_RISK_FILES" | sed 's/^/  /'
-          CACHE_FILE_ERRORS=$((CACHE_FILE_ERRORS + 1))
+          echo "$PII_RISK_FILES" >> "$TMP_VIOLATIONS"
+        fi
+        
+        # ユニークファイル数で集計
+        if [ -s "$TMP_VIOLATIONS" ]; then
+          CACHE_FILE_ERRORS=$(sort -u "$TMP_VIOLATIONS" | wc -l | xargs)
         fi
         
         # 環境変数をステップ間で受け渡し
