@@ -14,7 +14,8 @@ describe('CLISecurity Security Tests', () => {
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-cli-test-'));
-    cliSecurity = new CLISecurity(tempDir, DEFAULT_CLI_SECURITY_LIMITS);
+    // Issue #123対応: プロジェクト境界ホワイトリスト検証テスト用にプロジェクトルートを使用
+    cliSecurity = new CLISecurity(process.cwd(), DEFAULT_CLI_SECURITY_LIMITS);
   });
 
   afterEach(() => {
@@ -178,7 +179,10 @@ describe('CLISecurity Security Tests', () => {
           const result = cliSecurity.validateAnalysisPath(traversalPath);
           
           expect(result.isValid).toBe(false);
-          expect(result.securityIssues).toContain('パストラバーサル攻撃');
+          // Issue #122対応: プラットフォーム別パストラバーサル分類
+          const isWindowsPath = traversalPath.includes('\\');
+          const expectedIssue = isWindowsPath ? 'パストラバーサル攻撃（Windows）' : 'パストラバーサル攻撃';
+          expect(result.securityIssues).toContain(expectedIssue);
           expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
         });
       });
@@ -242,13 +246,16 @@ describe('CLISecurity Security Tests', () => {
           edgeCasePaths.forEach(edgePath => {
             const result = cliSecurity.validateAnalysisPath(edgePath);
             
-            if (edgePath === '' || edgePath === '.' || edgePath === './') {
+            if (edgePath === '' || edgePath === '.' || edgePath === './' || edgePath === './././') {
               // 空パス、カレントディレクトリは許可されるべき
               expect(result.isValid).toBe(true);
             } else if (edgePath.includes('..')) {
               // パストラバーサルは拒否されるべき
               expect(result.isValid).toBe(false);
-              expect(result.securityIssues.some(issue => issue.includes('パストラバーサル'))).toBe(true);
+              // セキュリティ分類: パストラバーサル攻撃またはプロジェクト境界突破攻撃
+              expect(result.securityIssues.some(issue => 
+                issue.includes('パストラバーサル') || issue.includes('プロジェクト境界突破')
+              )).toBe(true);
             } else {
               // その他の無害なパス（./././ など）は許可されるべき
               expect(result.isValid).toBe(true);
@@ -336,6 +343,106 @@ describe('CLISecurity Security Tests', () => {
             expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
             expect(result.securityIssues).toContain('パストラバーサル攻撃');
           });
+        });
+      });
+    });
+  });
+
+  // Issue #122対応: 絶対パス境界突破脆弱性のテストケース（TDD Red Phase）
+  describe('Issue #122: 絶対パス境界突破脆弱性', () => {
+    test('絶対パス指定時のsafeResolveバイパス攻撃を防ぐ', () => {
+      // Issue #122で指摘された脆弱性：
+      // 絶対パス指定時にPathSecurity.safeResolveがスキップされ、
+      // validatePathBoundaryのみの検証では不十分な場合がある
+      
+      const absolutePathAttacks = [
+        // Unix形式絶対パスでプロジェクト外アクセス
+        '/tmp/../etc/shadow',
+        '/var/../root/.bashrc',
+        '/usr/../etc/passwd',
+        
+        // Windows形式絶対パス攻撃（クロスプラットフォーム環境）
+        'C:\\Windows\\..\\..\\..\\etc\\shadow',
+        'D:\\Projects\\..\\..\\..\\Windows\\System32',
+        
+        // 複雑な正規化が必要なパス（safeResolveでのみ適切に処理可能）
+        '/home/user/project/../../../etc/sensitive',
+        '/opt/app/../../../root/secrets'
+      ];
+
+      absolutePathAttacks.forEach(attackPath => {
+        const result = cliSecurity.validateAnalysisPath(attackPath);
+        
+        // 期待する動作：すべての絶対パス境界突破攻撃は拒否されるべき
+        expect(result.isValid).toBe(false);
+        expect(result.errors.some(error => 
+          error.includes('プロジェクト範囲外') || 
+          error.includes('危険なパターン')
+        )).toBe(true);
+        expect(result.securityIssues.length).toBeGreaterThan(0);
+        
+        // Issue #122修正後は、safeResolveによる包括的セキュリティ検証が適用されるべき
+        expect(result.securityIssues.some(issue => 
+          issue.includes('パストラバーサル') ||
+          issue.includes('システムディレクトリ') ||
+          issue.includes('境界突破')
+        )).toBe(true);
+      });
+    });
+
+    test('出力パスでも絶対パス境界突破攻撃を防ぐ', () => {
+      const absoluteOutputPathAttacks = [
+        '/tmp/../etc/malicious-output.json',
+        '/var/../root/backdoor.txt',
+        'C:\\Windows\\..\\..\\..\\malware.exe',
+        '/usr/../bin/trojan'
+      ];
+
+      absoluteOutputPathAttacks.forEach(attackPath => {
+        const result = cliSecurity.validateOutputPath(attackPath);
+        
+        expect(result.isValid).toBe(false);
+        expect(result.errors.some(error => 
+          error.includes('プロジェクト範囲外') || 
+          error.includes('危険なパターン')
+        )).toBe(true);
+        expect(result.securityIssues.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('safeResolve統一適用後の一貫性検証', () => {
+      // Issue #122対応: プラットフォーム判定による適切な分類の一貫性確保
+      const pathPairs = [
+        {
+          relative: '../../../etc/passwd',
+          absolute: '/tmp/../etc/passwd',
+          expectedSecurityIssue: 'パストラバーサル攻撃', // Unix系パス
+          description: 'Unix系パストラバーサル攻撃'
+        },
+        {
+          relative: '..\\..\\..\\Windows\\System32',
+          absolute: 'C:\\Windows\\..\\..\\..\\Windows\\System32',
+          expectedSecurityIssue: 'パストラバーサル攻撃（Windows）', // Windows系パス
+          description: 'Windows系パストラバーサル攻撃'
+        }
+      ];
+
+      pathPairs.forEach(({ relative, absolute, expectedSecurityIssue, description }) => {
+        const relativeResult = cliSecurity.validateAnalysisPath(relative);
+        const absoluteResult = cliSecurity.validateAnalysisPath(absolute);
+        
+        // 両方とも同様に拒否されるべき
+        expect(relativeResult.isValid).toBe(false);
+        expect(absoluteResult.isValid).toBe(false);
+        
+        // 両方ともパストラバーサル攻撃を検出すべき（プラットフォーム別の適切な分類）
+        expect(relativeResult.securityIssues).toContain(expectedSecurityIssue);
+        expect(absoluteResult.securityIssues).toContain(expectedSecurityIssue);
+        
+        // Issue #122修正により、プラットフォーム判定の一貫性が確保されることを検証
+        console.log(`${description}の一貫性確認:`, {
+          relative: relativeResult.securityIssues,
+          absolute: absoluteResult.securityIssues
         });
       });
     });
@@ -452,6 +559,44 @@ describe('CLISecurity Security Tests', () => {
       });
 
       // 出力パス用境界エッジケーステスト
+      // Issue #124対応: セキュリティ機能確認テストケース（修正済み確認）
+      test('Issue #124: 絶対パスプロジェクト外出力制限の正常動作確認', () => {
+        // 確認: 絶対パスでプロジェクト外への書き込みが適切に拒否される（修正済み）
+        const externalAbsolutePaths = [
+          '/tmp/project-external-output.json',       // Unix系プロジェクト外絶対パス
+          '/home/user/other-project/backdoor.html',  // 他ユーザー領域絶対パス
+          '/var/log/system-compromise.txt'           // システム領域絶対パス
+        ];
+
+        externalAbsolutePaths.forEach(absolutePath => {
+          const result = cliSecurity.validateOutputPath(absolutePath);
+          
+          // ✅ 修正済み確認: 絶対パスでもプロジェクト外出力は適切に拒否される
+          expect(result.isValid).toBe(false);  // セキュア: 適切に拒否
+          expect(result.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          expect(result.securityIssues).toContain('パストラバーサル攻撃');
+        });
+      });
+
+      test('Issue #124: 相対パスと絶対パス制限の一貫性確認', () => {
+        // 確認: 相対パスと絶対パスで一貫したセキュリティ制限が動作（修正済み）
+        const externalDirectory = '/tmp';
+        const relativePath = '../../../tmp/external-file.json';
+        const absolutePath = '/tmp/external-file.json';
+
+        const relativeResult = cliSecurity.validateOutputPath(relativePath);
+        const absoluteResult = cliSecurity.validateOutputPath(absolutePath);
+
+        // ✅ 相対パスは適切に制限される
+        expect(relativeResult.isValid).toBe(false);
+        expect(relativeResult.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+
+        // ✅ 絶対パスも同様に適切に制限される（修正済み確認）
+        expect(absoluteResult.isValid).toBe(false);  // セキュア: 一貫した制限
+        expect(absoluteResult.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+        expect(absoluteResult.securityIssues).toContain('パストラバーサル攻撃');
+      });
+
       describe('出力パスプロジェクト境界エッジケーステスト', () => {
         test('特殊出力パスの適切な処理', () => {
           const specialOutputPaths = [
@@ -622,13 +767,11 @@ describe('CLISecurity Security Tests', () => {
 
   describe('一括引数検証', () => {
     test('すべての引数が安全な場合は成功する', () => {
-      const testFile = path.join(tempDir, 'test.js');
-      fs.writeFileSync(testFile, 'console.log("test");');
-
+      // Issue #123対応: プロジェクト内の実際のファイルを使用
       const result = cliSecurity.validateAllArguments({
-        path: './test.js',
+        path: './src',
         format: 'json',
-        outputFile: './output.json'
+        outputFile: './temp-output.json'
       });
       
       expect(result.isValid).toBe(true);
@@ -662,11 +805,12 @@ describe('CLISecurity Security Tests', () => {
 
   describe('セキュリティ制限の設定', () => {
     test('カスタム制限が適用される', () => {
+      // Issue #123対応: Dead Code Elimination - forbiddenDirectoryPatterns削除
+      // プロジェクト境界ホワイトリスト方式への完全移行により不要
       const customLimits = {
         maxPathLength: 500,
         maxOutputFileSize: 50 * 1024 * 1024,
         allowedOutputExtensions: ['.json', '.txt'],
-        forbiddenDirectoryPatterns: ['/custom/forbidden/'],
         validateEnvironmentVariables: false
       };
 
