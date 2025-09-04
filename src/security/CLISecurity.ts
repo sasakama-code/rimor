@@ -21,6 +21,8 @@ export interface CLIValidationResult {
 
 /**
  * CLI引数セキュリティ制限
+ * Issue #123対応: Dead Code Elimination - forbiddenDirectoryPatterns削除
+ * プロジェクト境界ホワイトリスト方式への完全移行により不要となったブラックリスト設定を除去
  */
 export interface CLISecurityLimits {
   /** 最大パス長 */
@@ -29,33 +31,20 @@ export interface CLISecurityLimits {
   maxOutputFileSize: number;
   /** 許可されるファイル拡張子 */
   allowedOutputExtensions: string[];
-  /** 禁止されるディレクトリパターン */
-  forbiddenDirectoryPatterns: string[];
   /** 環境変数検証有効化 */
   validateEnvironmentVariables: boolean;
 }
 
 /**
  * デフォルトCLIセキュリティ制限
+ * Issue #123対応: Dead Code Elimination完了
+ * ブラックリスト方式(forbiddenDirectoryPatterns)を完全除去し、
+ * プロジェクト境界ホワイトリスト方式への移行を完成
  */
 export const DEFAULT_CLI_SECURITY_LIMITS: CLISecurityLimits = {
   maxPathLength: 1000,
   maxOutputFileSize: 100 * 1024 * 1024, // 100MB
   allowedOutputExtensions: ['.json', '.txt', '.csv', '.html', '.md'],
-  // Issue #121対応: ブラックリストを最小限のシステムレベルパスのみに最適化
-  // プロジェクト境界ホワイトリスト方式での依存を削減
-  forbiddenDirectoryPatterns: [
-    // Unix/Linuxシステムレベルパス（最小限）
-    '/etc/',
-    '/proc/',
-    '/sys/',
-    '/dev/',
-    '/var/log/',
-    // Windowsシステムレベルパス（最小限）
-    'C:\\Windows\\',
-    // パストラバーサル攻撃パターン
-    '/tmp/../'
-  ],
   validateEnvironmentVariables: true
 };
 
@@ -99,8 +88,8 @@ export class CLISecurity {
         return { isValid: false, errors, warnings, securityIssues };
       }
       
-      // 空文字列は現在のプロジェクトルートとして扱う
-      if (inputPath === '') {
+      // 空文字列、"."、"./"は現在のプロジェクトルートとして扱う
+      if (inputPath === '' || inputPath === '.' || inputPath === './') {
         return {
           isValid: true,
           sanitizedValue: this.projectRoot,
@@ -123,17 +112,15 @@ export class CLISecurity {
       warnings.push(...patternCheck.warnings);
       securityIssues.push(...patternCheck.securityIssues);
 
-      // Issue #121対応: ブラックリスト方式を廃止し、プロジェクト境界ホワイトリスト方式に移行
-      // forbiddenDirectoryPatternsチェックを削除
-
-      // Issue #121対応: プロジェクト境界ホワイトリスト検証を先行実施
+      // Issue #123対応: プロジェクト境界ホワイトリスト方式完全適用
+      // Dead Code Elimination完了によりブラックリスト判定を完全除去
       // クロスプラットフォーム対応: WindowsパスのmacOS/Linux環境での適切な処理
       let resolvedPath: string;
       const isWindowsAbsolutePath = /^[a-zA-Z]:\\/i.test(inputPath);
       const isReallyAbsolute = path.isAbsolute(inputPath) || isWindowsAbsolutePath;
       
       if (!isReallyAbsolute) {
-        // Issue #121対応: 無害な正規化可能パス（./././など）の事前許可
+        // Issue #123対応: 無害な正規化可能パス（./././など）の事前許可
         // ドット記号とスラッシュのみで構成され、..パターンを含まないパス
         const isHarmlessPath = /^[.\/]+$/.test(inputPath) && !inputPath.includes('..');
         
@@ -145,7 +132,10 @@ export class CLISecurity {
           const safePath = PathSecurity.safeResolve(inputPath, this.projectRoot, 'cli-analysis-path');
           if (!safePath) {
             errors.push('プロジェクト範囲外へのアクセスが検出されました');
-            securityIssues.push('パストラバーサル攻撃');
+            // パターンチェックで既にパストラバーサル攻撃が検出されている場合は重複を避ける
+            if (!securityIssues.some(issue => issue.includes('パストラバーサル攻撃'))) {
+              securityIssues.push('プロジェクト境界突破攻撃');
+            }
             return { isValid: false, errors, warnings, securityIssues };
           }
           resolvedPath = safePath;
@@ -226,8 +216,8 @@ export class CLISecurity {
       warnings.push(...patternCheck.warnings);
       securityIssues.push(...patternCheck.securityIssues);
 
-      // Issue #121対応: 出力パスでもブラックリスト方式を廃止、プロジェクト境界ホワイトリスト方式に移行
-      // forbiddenDirectoryPatternsチェックを削除
+      // Issue #123対応: 出力パスもプロジェクト境界ホワイトリスト方式完全適用
+      // Dead Code Elimination完了によりブラックリスト判定を完全除去
 
       // 拡張子の検証
       const extension = path.extname(outputPath).toLowerCase();
@@ -236,7 +226,7 @@ export class CLISecurity {
         securityIssues.push('実行可能ファイル生成攻撃の可能性');
       }
 
-      // Issue #121対応: 出力パスでもプロジェクト境界ホワイトリスト検証を先行実施
+      // Issue #123対応: 出力パスでもプロジェクト境界ホワイトリスト検証を先行実施
       // クロスプラットフォーム対応: WindowsパスのmacOS/Linux環境での適切な処理
       let resolvedPath: string;
       const isWindowsAbsolutePath = /^[a-zA-Z]:\\/i.test(outputPath);
@@ -247,7 +237,10 @@ export class CLISecurity {
         const safePath = PathSecurity.safeResolve(outputPath, this.projectRoot, 'cli-output-path');
         if (!safePath) {
           errors.push('プロジェクト範囲外への出力が検出されました');
-          securityIssues.push('パストラバーサル攻撃');
+          // パターンチェックで既にパストラバーサル攻撃が検出されている場合は重複を避ける
+          if (!securityIssues.some(issue => issue.includes('パストラバーサル攻撃'))) {
+            securityIssues.push('プロジェクト境界突破攻撃');
+          }
           return { isValid: false, errors, warnings, securityIssues };
         }
         resolvedPath = safePath;
@@ -301,7 +294,7 @@ export class CLISecurity {
         }
       }
 
-      // Issue #121対応: 重複した境界チェックコードを削除（上記で実施済）
+      // Issue #123対応: 境界チェック統一完了（プロジェクト境界ホワイトリスト方式）
 
       return {
         isValid: errors.length === 0,
@@ -320,6 +313,8 @@ export class CLISecurity {
 
   /**
    * DRY原則適用: 共通危険パターンチェック（Andy Hunt & Dave Thomas推奨）
+   * Issue #122対応: プラットフォーム別パストラバーサル分類の一貫性向上
+   * Martin Fowler Extract Method適用: プラットフォーム判定とパストラバーサル分類の独立化
    * @private
    * @param inputPath 検証対象のパス
    * @param pathType パス種別（'分析' または '出力'）
@@ -333,15 +328,21 @@ export class CLISecurity {
     const warnings: string[] = [];
     const securityIssues: string[] = [];
     
-    // 共通危険パターンを最初にチェック
-    for (const { pattern, issue } of CLISecurity.COMMON_DANGEROUS_PATTERNS) {
+    // Martin Fowler Extract Method: プラットフォーム別パストラバーサル分類
+    const traversalResult = this.checkPathTraversalAttack(inputPath);
+    if (traversalResult) {
+      securityIssues.push(traversalResult);
+      errors.push('危険なパターンを検出しました');
+    }
+    
+    // Martin Fowler Replace Magic Number: パストラバーサルパターン以外の開始インデックス
+    const NON_TRAVERSAL_PATTERN_START_INDEX = 2;
+    const otherDangerousPatterns = CLISecurity.COMMON_DANGEROUS_PATTERNS.slice(NON_TRAVERSAL_PATTERN_START_INDEX);
+    
+    for (const { pattern, issue } of otherDangerousPatterns) {
       if (pattern.test(inputPath)) {
         securityIssues.push(issue);
-        if (issue.includes('攻撃')) {
-          errors.push(`危険なパターンを検出しました`);
-        } else {
-          warnings.push(`疑わしいパターンを検出: ${issue}`);
-        }
+        this.addPatternMessage(issue, errors, warnings);
         // 正規表現のlastIndexをリセット（globalフラグ対策）
         pattern.lastIndex = 0;
       }
@@ -407,7 +408,7 @@ export class CLISecurity {
         ? 'プロジェクト範囲外へのアクセスが検出されました'
         : 'プロジェクト範囲外への出力が検出されました';
       
-      // Issue #121対応: エラー種別の決定（出力パスは常にパストラバーサル攻撃として扱う）
+      // Issue #123対応: エラー種別の決定（出力パスは常にパストラバーサル攻撃として扱う）
       const securityIssue = operationType === '出力' 
         ? 'パストラバーサル攻撃' 
         : (originalPath && (originalPath.includes('../') || originalPath.includes('..\\'))
@@ -626,5 +627,49 @@ export class CLISecurity {
    */
   updateLimits(newLimits: Partial<CLISecurityLimits>): void {
     this.limits = { ...this.limits, ...newLimits };
+  }
+
+  /**
+   * Martin Fowler Extract Method: パストラバーサル攻撃チェックの独立化
+   * Issue #122対応: プラットフォーム判定による一貫性のある分類
+   * @private
+   * @param inputPath 検証対象のパス
+   * @returns パストラバーサル攻撃の分類、または null（攻撃でない場合）
+   */
+  private checkPathTraversalAttack(inputPath: string): string | null {
+    const hasUnixTraversal = inputPath.includes('../');
+    const hasWindowsTraversal = inputPath.includes('..\\');
+    
+    if (!hasUnixTraversal && !hasWindowsTraversal) {
+      return null; // Martin Fowler Guard Clause適用
+    }
+
+    const isWindowsStylePath = this.isWindowsStylePath(inputPath);
+    return isWindowsStylePath ? 'パストラバーサル攻撃（Windows）' : 'パストラバーサル攻撃';
+  }
+
+  /**
+   * Martin Fowler Extract Method: プラットフォーム判定ロジックの独立化
+   * @private
+   * @param inputPath 検証対象のパス
+   * @returns Windows形式のパスの場合true
+   */
+  private isWindowsStylePath(inputPath: string): boolean {
+    return /^[a-zA-Z]:\\/i.test(inputPath) || inputPath.includes('\\');
+  }
+
+  /**
+   * Martin Fowler Extract Method: パターンメッセージ追加の統一処理
+   * @private
+   * @param issue セキュリティ問題の種別
+   * @param errors エラー配列
+   * @param warnings 警告配列
+   */
+  private addPatternMessage(issue: string, errors: string[], warnings: string[]): void {
+    if (issue.includes('攻撃')) {
+      errors.push('危険なパターンを検出しました');
+    } else {
+      warnings.push(`疑わしいパターンを検出: ${issue}`);
+    }
   }
 }
