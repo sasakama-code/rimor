@@ -46,7 +46,7 @@ tsconfig.tsbuildinfo
 
 # 対処法
 echo "*.tsbuildinfo" >> .gitignore
-git rm --cached *.tsbuildinfo
+git ls-files -z | grep -zE '\.tsbuildinfo$' | xargs -0 git rm --cached --ignore-unmatch
 ```
 
 ### 🟠 HIGH: テストキャッシュファイル
