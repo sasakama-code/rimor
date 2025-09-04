@@ -6,11 +6,24 @@ dist/
 build/
 *.tsbuildinfo
 
-# Source maps - Issue #118セキュリティ対応: PII露出リスク防止
+# Source maps - Issue #118,#126セキュリティ対応: 機密情報漏えい防止強化
 *.map
 *.js.map
 *.css.map
 *.d.ts.map
+
+# Issue #126対応: 包括的sourcemap除外設定
+dist/**/*.map
+dist/**/*.js.map
+dist/**/*.d.ts.map
+dist/**/*.css.map
+build/**/*.map
+out/**/*.map
+
+# Sourcemap関連の一時ファイル
+**/*.map.tmp
+**/*.sourcemap
+**/*.source-map
 
 # IDE
 .vscode/
