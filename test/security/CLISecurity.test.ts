@@ -656,6 +656,107 @@ describe('CLISecurity Security Tests', () => {
         });
       });
     });
+
+    // Issue #125対応: 絶対パス出力時のプロジェクト境界突破脆弱性再現テスト
+    describe('Issue #125: 絶対パス出力境界突破脆弱性検証', () => {
+      /**
+       * Martin Fowler Extract Method: 共通テスト検証ロジック独立化
+       * DRY原則適用: 検証パターン重複排除
+       */
+      const expectSecurityRejection = (result: any, attackType: string) => {
+        expect(result.isValid).toBe(false);
+        expect(result.errors.some((error: string) => 
+          error.includes('プロジェクト範囲外')
+        )).toBe(true);
+        expect(result.securityIssues.length).toBeGreaterThan(0);
+        
+        const hasExpectedSecurityIssue = result.securityIssues.some((issue: string) => 
+          issue.includes('パストラバーサル攻撃') || 
+          issue.includes('プロジェクト境界突破攻撃') ||
+          issue.includes('システムディレクトリ') ||
+          issue.includes('クロスプラットフォームWindowsパス攻撃')
+        );
+        expect(hasExpectedSecurityIssue).toBe(true);
+      };
+
+      /**
+       * Andy Hunt & Dave Thomas DRY原則適用: 攻撃パターンデータ統一化
+       */
+      const ISSUE_125_ABSOLUTE_PATH_ATTACKS = [
+        { path: '/tmp/malicious-output.json', type: 'Unix系絶対パス' },
+        { path: '/etc/backdoor.txt', type: 'システムディレクトリ' },
+        { path: '/home/user/evil.json', type: 'ユーザーホーム' },
+        { path: 'C:\\temp\\malicious.json', type: 'Windows絶対パス' },
+        { path: 'C:\\Windows\\backdoor.txt', type: 'Windowsシステムディレクトリ' },
+        { path: '/var/log/fake-log.txt', type: 'システムログディレクトリ' }
+      ];
+
+      test('Issue #125で指摘された絶対パス境界突破パターン検証', () => {
+        // Kelly Johnson KISS原則適用: 明確で理解しやすいテスト構造
+        ISSUE_125_ABSOLUTE_PATH_ATTACKS.forEach(({ path, type }) => {
+          const result = cliSecurity.validateOutputPath(path);
+          expectSecurityRejection(result, type);
+        });
+      });
+
+      test('Issue #125: 絶対パスと相対パスの境界検証一貫性確認', () => {
+        /**
+         * Martin Fowler Parameterize Method: 一貫性テストケースの効率化
+         */
+        const consistencyTestPairs = [
+          {
+            absolute: '/tmp/external-malicious.json',
+            relative: '../../../tmp/external-malicious.json',
+            description: 'tmpディレクトリ外部出力'
+          },
+          {
+            absolute: '/etc/malicious.conf',
+            relative: '../../../etc/malicious.conf',
+            description: 'システム設定ディレクトリ'
+          }
+        ];
+
+        consistencyTestPairs.forEach(({ absolute, relative, description }) => {
+          const absoluteResult = cliSecurity.validateOutputPath(absolute);
+          const relativeResult = cliSecurity.validateOutputPath(relative);
+          
+          // Uncle Bob SOLID原則: 一貫性のある動作を保証
+          expect(absoluteResult.isValid).toBe(relativeResult.isValid);
+          expect(absoluteResult.isValid).toBe(false);
+          expect(absoluteResult.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+          expect(relativeResult.errors.some(error => error.includes('プロジェクト範囲外'))).toBe(true);
+        });
+      });
+
+      test('Issue #125: PathSecurity.safeResolve相当の境界検証が絶対パスでも実行確認', () => {
+        /**
+         * Jean-Louis Boulanger Defensive Programming: 機密ファイル保護確認
+         */
+        const criticalSystemPaths = [
+          { path: '/etc/shadow', description: 'Unix系機密ファイル' },
+          { path: 'C:\\Windows\\System32\\config\\SAM', description: 'Windows機密ファイル' },
+          { path: '/root/.ssh/id_rsa', description: 'SSH秘密鍵' }
+        ];
+
+        criticalSystemPaths.forEach(({ path, description }) => {
+          const result = cliSecurity.validateOutputPath(path);
+          
+          // 修正済み確認: 全ての機密パスが適切に拒否される
+          expect(result.isValid).toBe(false);
+          expect(result.errors.length).toBeGreaterThan(0);
+          expect(result.securityIssues.length).toBeGreaterThan(0);
+          
+          // プロジェクト境界検証実行の確認
+          const hasBoundaryProtection = 
+            result.errors.some(error => error.includes('プロジェクト範囲外')) ||
+            result.securityIssues.some(issue => 
+              issue.includes('パストラバーサル攻撃') ||
+              issue.includes('システムディレクトリ')
+            );
+          expect(hasBoundaryProtection).toBe(true);
+        });
+      });
+    });
   });
 
   describe('環境変数の検証', () => {
