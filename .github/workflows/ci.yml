@@ -99,6 +99,9 @@ jobs:
           CACHE_FILE_ERRORS=$((CACHE_FILE_ERRORS + 1))
         fi
         
+        # 環境変数をステップ間で受け渡し
+        echo "CACHE_FILE_ERRORS=$CACHE_FILE_ERRORS" >> "$GITHUB_ENV"
+        
         if [ $CACHE_FILE_ERRORS -ne 0 ]; then
           echo ""
           echo "::error title=Issue #118 Cache File Prevention::Cache files detected in repository"
@@ -115,6 +118,9 @@ jobs:
     - name: Generate Cache File Report
       if: always()
       run: |
+        # 環境変数のデフォルト値設定
+        : "${CACHE_FILE_ERRORS:=0}"
+        
         mkdir -p .rimor/reports/security/
         cat > .rimor/reports/security/cache-file-hygiene-report.json << EOF
         {
