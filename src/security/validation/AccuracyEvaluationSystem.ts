@@ -1061,26 +1061,51 @@ export class AccuracyEvaluationSystem {
 
   /**
    * ファイルパスのマスキング処理
+   * Issue #126対応: セキュアなパスマスキング実装（パターンレス方式）
    */
   private maskFilePath(filePath: string): string {
     if (!filePath) return filePath;
     
-    // 絶対パスを相対パスに変換
+    // Andy Hunt & Dave Thomas DRY原則適用: 設定値による柔軟なマスキング
+    const MASK_PLACEHOLDER = '[MASKED_PATH]';
+    
+    // 絶対パスを相対パスに変換（最も安全な方法）
     const homeDir = os.homedir();
     if (filePath.startsWith(homeDir)) {
       return filePath.replace(homeDir, '~');
     }
     
-    // ユーザー名を含む絶対パスのマスキング
-    const userPathPattern = /\/Users\/[^\/]+\//g;
-    let maskedPath = filePath.replace(userPathPattern, '/Users/[USER]/');
-    
-    // より一般的な絶対パスパターンのマスキング
-    const absolutePathPattern = /^\/[^\/]+\/[^\/]+\//;
-    if (absolutePathPattern.test(maskedPath) && !maskedPath.startsWith('/Users/[USER]/')) {
-      maskedPath = maskedPath.replace(absolutePathPattern, '/[MASKED]/');
+    // Jean-Louis Boulanger Defensive Programming: 各セグメントを安全にチェック
+    const pathSegments = filePath.split(path.sep);
+    if (pathSegments.length < 3) {
+      return filePath; // 短いパスはそのまま（相対パスなど）
     }
     
-    return maskedPath;
+    // Kelly Johnson KISS原則適用: シンプルな文字列置換による安全なマスキング
+    let maskedPath = filePath;
+    
+    // 各オペレーティングシステム対応のセキュアマスキング
+    if (process.platform === 'win32') {
+      // Windows: システムディレクトリのユーザー名部分をマスキング
+      if (pathSegments.length >= 3 && pathSegments[1] === 'Users') {
+        pathSegments[2] = '[USER]';
+        maskedPath = pathSegments.join(path.sep);
+      }
+    } else {
+      // Unix系: システムディレクトリのユーザー名部分をマスキング
+      if (pathSegments.length >= 3 && (pathSegments[1] === 'Users' || pathSegments[1] === 'home')) {
+        pathSegments[2] = '[USER]';
+        maskedPath = pathSegments.join(path.sep);
+      }
+    }
+    
+    // Uncle Bob SOLID原則適用: 追加の絶対パス保護
+    if (path.isAbsolute(maskedPath) && maskedPath !== filePath) {
+      // パスが変更された場合は適切にマスキングされている
+      return maskedPath;
+    }
+    
+    // それ以外の絶対パスは完全マスキング
+    return path.isAbsolute(filePath) ? MASK_PLACEHOLDER : filePath;
   }
 }
