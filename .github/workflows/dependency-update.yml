@@ -150,6 +150,10 @@ jobs:
     needs: [security-audit, check-updates]
     if: needs.check-updates.outputs.has_updates == 'true' || needs.security-audit.outputs.has_vulnerabilities == 'true'
     
+    outputs:
+      has_changes: ${{ steps.commit.outputs.has_changes }}
+      branch_name: ${{ steps.branch.outputs.branch_name }}
+    
     permissions:
       contents: write
       pull-requests: write
@@ -172,9 +176,11 @@ jobs:
         git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
         
     - name: Create update branch
+      id: branch
       run: |
         BRANCH_NAME="auto-dependency-update-$(date +%Y%m%d-%H%M%S)"
         echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
         git checkout -b "$BRANCH_NAME"
         
     - name: Fix security vulnerabilities (if any)
@@ -242,11 +248,15 @@ jobs:
         echo "✅ Security check passed"
         
     - name: Commit changes
+      id: commit
       run: |
         if git diff --quiet && git diff --cached --quiet; then
           echo "No changes to commit"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
           exit 0
         fi
+        
+        echo "has_changes=true" >> $GITHUB_OUTPUT
         
         # Generate commit message
         COMMIT_MSG="chore(deps): update dependencies"
@@ -260,18 +270,20 @@ jobs:
           COMMIT_MSG="$COMMIT_MSG ($UPDATE_TYPE updates)"
         fi
         
-        COMMIT_MSG="$COMMIT_MSG
+        # Issue #167修正: heredoc方式でYAML構文エラー回避
+        git add -A
+        git commit -m "$(cat <<EOF
+$COMMIT_MSG
 
 🤖 Auto-generated dependency update
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
-        
-        git add -A
-        git commit -m "$COMMIT_MSG"
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
         git push origin "$BRANCH_NAME"
         
     - name: Create Pull Request
-      if: github.event.inputs.create_pr != 'false'
+      if: github.event.inputs.create_pr != 'false' && steps.commit.outputs.has_changes == 'true'
       uses: actions/github-script@v7
       with:
         script: |
@@ -353,7 +365,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         fi
         
         if [ "${{ needs.update-dependencies.result }}" = "success" ]; then
-          echo "✅ **Result**: Update completed successfully"
+          if [ "${{ needs.update-dependencies.outputs.has_changes }}" = "true" ]; then
+            echo "✅ **Result**: Update completed successfully"
+          else
+            echo "✅ **Result**: No changes were needed"
+          fi
         elif [ "${{ needs.update-dependencies.result }}" = "failure" ]; then
           echo "❌ **Result**: Update failed"
         else
