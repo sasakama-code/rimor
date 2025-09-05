@@ -1,6 +1,6 @@
 /**
  * Report Cache
- * v0.8.0 - Phase 4: Context Engineering
+ * v0.9.0 - Phase 4: Context Engineering
  * 
  * レポート生成結果のキャッシュ管理
  */

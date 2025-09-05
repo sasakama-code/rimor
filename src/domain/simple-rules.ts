@@ -1,6 +1,6 @@
 /**
  * Simple Domain Rules Engine
- * v0.8.0 - YAML-based rule definitions
+ * v0.9.0 - YAML-based rule definitions
  */
 
 import * as yaml from 'js-yaml';

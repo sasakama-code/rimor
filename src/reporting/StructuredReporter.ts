@@ -1,6 +1,6 @@
 /**
  * Structured Reporter
- * v0.8.0 - Phase 4: Context Engineering
+ * v0.9.0 - Phase 4: Context Engineering
  * 
  * 分析結果を決定論的な構造化JSONに変換する
  * これが全ての出力の「単一の真実の源」となる

@@ -1,6 +1,6 @@
 /**
  * Code Annotator
- * v0.8.0 - Phase 4: Context Engineering
+ * v0.9.0 - Phase 4: Context Engineering
  * 
  * ソースコードファイルにインライン・アノテーションを追加
  */

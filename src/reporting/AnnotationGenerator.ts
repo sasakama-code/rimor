@@ -1,6 +1,6 @@
 /**
  * Annotation Generator
- * v0.8.0 - Phase 4: Context Engineering
+ * v0.9.0 - Phase 4: Context Engineering
  * 
  * 検出された問題に対応するインライン・アノテーションを生成
  */

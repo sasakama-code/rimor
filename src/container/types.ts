@@ -1,6 +1,6 @@
 /**
  * Dependency Injection トークン定義
- * v0.8.0 - 簡素化されたDIコンテナ用の型定義
+ * v0.9.0 - 簡素化されたDIコンテナ用の型定義
  */
 
 const TYPES = {

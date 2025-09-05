@@ -1,6 +1,6 @@
 /**
  * Metrics Calculator
- * v0.8.0 - コードメトリクス計算機能
+ * v0.9.0 - コードメトリクス計算機能
  */
 
 export class MetricsCalculator {
