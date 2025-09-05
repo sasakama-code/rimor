@@ -33,7 +33,6 @@ export default {
   
   // CI環境でのメモリ最適化
   cache: false, // キャッシュを無効化してメモリ使用量削減
-  cacheDirectory: '<rootDir>/.cache/jest', // キャッシュディレクトリを統一
   
   clearMocks: true, // テスト後にモックをクリア
   restoreMocks: true, // テスト実行ごとにモック状態をクリア
