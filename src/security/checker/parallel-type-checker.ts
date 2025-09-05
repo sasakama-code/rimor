@@ -120,12 +120,14 @@ export class ParallelTypeChecker extends EventEmitter {
 
   /**
    * メソッドの並列型チェック
+   * Issue #151修正: 依存関係解析後に結果をクリアするよう変更
    */
   async checkMethodsInParallel(methods: TestMethod[]): Promise<Map<string, MethodTypeCheckResult>> {
-    this.results.clear();
-    
-    // メソッドの依存関係を解析
+    // メソッドの依存関係を解析（既存の結果を利用）
     const dependencies = await this.analyzeDependencies(methods);
+    
+    // 依存関係解析完了後に結果をクリア
+    this.results.clear();
     
     // タスクを作成
     const tasks = methods.map(method => ({
@@ -204,6 +206,7 @@ export class ParallelTypeChecker extends EventEmitter {
 
   /**
    * タスクの処理
+   * Issue #152修正: Circuit Breaker パターンによる無限リトライ防止強化
    */
   private async processTask(task: WorkerTask): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -223,11 +226,25 @@ export class ParallelTypeChecker extends EventEmitter {
       this.taskCallbacks.set(task.id, { resolve, reject });
       
       let retryCount = 0;
-      const maxRetries = Math.ceil(this.config.methodTimeout / 100); // タイムアウト時間に基づく最大試行回数
+      const maxRetries = Math.ceil(this.config.methodTimeout / 100);
+      const startTime = Date.now();
+      const maxProcessTime = this.config.methodTimeout * 2; // 全体プロセスのタイムアウト
       
       const tryAssignWorker = () => {
+        // Issue #152修正: 全体タイムアウトチェック（Circuit Breaker）
+        if (Date.now() - startTime > maxProcessTime) {
+          this.executeTaskLocally(task).then(resolve).catch(reject);
+          return;
+        }
+        
         // 最大試行回数に達した場合はローカル実行にフォールバック
         if (retryCount >= maxRetries) {
+          this.executeTaskLocally(task).then(resolve).catch(reject);
+          return;
+        }
+        
+        // ワーカープール状態の再検証（ワーカーが途中で削除された場合）
+        if (this.workers.size === 0) {
           this.executeTaskLocally(task).then(resolve).catch(reject);
           return;
         }
@@ -267,8 +284,9 @@ export class ParallelTypeChecker extends EventEmitter {
           availableWorker.postMessage(task);
         } else {
           retryCount++;
-          // すべてのワーカーが使用中の場合、少し待ってから再試行（制限付き）
-          setTimeout(tryAssignWorker, 100);
+          // Issue #152修正: 指数バックオフによる負荷軽減
+          const backoffDelay = Math.min(100 * Math.pow(1.5, retryCount), 1000);
+          setTimeout(tryAssignWorker, backoffDelay);
         }
       };
       
@@ -278,23 +296,12 @@ export class ParallelTypeChecker extends EventEmitter {
 
   /**
    * タスクをローカルで実行（ワーカーが利用できない場合）
+   * Issue #149修正: 実際のperformTypeCheck()を呼び出してタイプチェックを実行
    */
   private async executeTaskLocally(task: WorkerTask): Promise<void> {
-    const startTime = Date.now();
-    
     try {
-      // 簡単な型チェック結果を生成（実際の型チェックロジックは簡略化）
-      const result: MethodTypeCheckResult = {
-        method: task.method,
-        typeCheckResult: {
-          success: true,
-          errors: [],
-          warnings: []
-        },
-        inferredTypes: new Map(),
-        securityIssues: [],
-        executionTime: Date.now() - startTime
-      };
+      // 実際の型チェック処理を実行（performTypeCheckメソッドを使用）
+      const result = await this.performTypeCheck(task);
       
       // 結果を保存
       this.results.set(task.id, result);
@@ -302,10 +309,11 @@ export class ParallelTypeChecker extends EventEmitter {
       // 結果イベントを発行
       this.emit('methodCompleted', {
         methodName: task.method.name,
-        success: true,
+        success: result.typeCheckResult.success,
         executionTime: result.executionTime
       });
     } catch (error) {
+      const startTime = Date.now();
       const errorResult: MethodTypeCheckResult = {
         method: task.method,
         typeCheckResult: {
