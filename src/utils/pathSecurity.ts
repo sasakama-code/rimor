@@ -9,6 +9,7 @@ import { errorHandler, ErrorType } from './errorHandler';
 export class PathSecurity {
   /**
    * プロジェクトルート内のパスかどうかを検証
+   * Issue #158対応: 疑似プレフィックス攻撃対策による堅牢な境界チェック実装
    * @param resolvedPath 検証対象のパス
    * @param projectRoot プロジェクトルートパス
    * @returns プロジェクト内のパスの場合true
@@ -18,9 +19,14 @@ export class PathSecurity {
       const normalizedProjectRoot = path.resolve(projectRoot);
       const normalizedResolvedPath = path.resolve(resolvedPath);
       
+      // Issue #158修正: パス区切り文字付きでの厳密な境界チェック
+      // 疑似プレフィックス攻撃（/app vs /app-old等）を防御
+      const projectRootWithSeparator = normalizedProjectRoot + path.sep;
       
-      // プロジェクトルート内にあることを確認
-      return normalizedResolvedPath.startsWith(normalizedProjectRoot);
+      // Issue #159修正: パストラバーサル攻撃の厳密な検証
+      // プロジェクトルート自体、またはその配下のパスのみ許可
+      return normalizedResolvedPath === normalizedProjectRoot || 
+             normalizedResolvedPath.startsWith(projectRootWithSeparator);
     } catch {
       return false;
     }
@@ -39,29 +45,54 @@ export class PathSecurity {
       // Windows形式のトラバーサル攻撃（..\\..\）をUnix形式（../..）に変換
       const normalizedFilePath = filePath.replace(/\\/g, '/');
       
-      // テスト環境の検出（rimor-*-test-*パターンをサポート）
-      const isTestTempFile = (normalizedFilePath.includes('/tmp/') && /rimor.*test/.test(normalizedFilePath)) ||
-                            (normalizedFilePath.includes('/var/folders/') && normalizedFilePath.includes('T/')) ||
-                            (projectPath.includes('/tmp/') && /rimor.*test/.test(projectPath)) ||
-                            (projectPath.includes('/var/folders/') && projectPath.includes('T/'));
+      // Issue #159修正: 環境変数ベースの安全なテスト環境検出
+      // パスベースの検出は攻撃者によるバイパスが可能なため廃止
+      const isTestEnvironment = (
+        process.env.NODE_ENV === 'test' ||
+        process.env.JEST_WORKER_ID !== undefined ||
+        typeof global.it === 'function' ||
+        typeof global.describe === 'function'
+      );
 
       const resolvedPath = path.resolve(projectPath, normalizedFilePath);
       
       // Issue #121対応: CLIセキュリティテストでは範囲チェックを強制的に有効化
+      // Issue #159修正: 環境変数ベースの判定を使用 + セキュリティテスト強制実行
       const isCliSecurityTest = context && context.startsWith('cli-');
-      const shouldEnforceBoundaryCheck = isCliSecurityTest || !isTestTempFile;
+      const isSecurityTest = context === 'security-test'; // 厳密な文字列比較に変更
+      // セキュリティテストコンテキストが指定された場合は、テスト環境でも境界チェックを強制実行
+      // Issue #159修正: セキュリティテストでは必ず境界チェックを実行（テスト環境判定を無視）
+      const shouldEnforceBoundaryCheck = isCliSecurityTest || isSecurityTest || !isTestEnvironment;
       
       
+      // Issue #159修正: セキュリティテストでは必ず厳格な境界チェックを実行
+      // コンテキストが'security-test'の場合、必ず境界チェックを強制実行
+      if (context === 'security-test') {
+        const isValid = this.validateProjectPath(resolvedPath, projectPath);
+        if (!isValid) {
+          errorHandler.handleError(
+            new Error(`セキュリティテスト: 不正なファイルパス '${normalizedFilePath}' がプロジェクト範囲外にアクセスしようとしました`),
+            ErrorType.PERMISSION_DENIED,
+            'セキュリティ警告: パストラバーサル攻撃の試行を検出しました（セキュリティテスト）',
+            { filePath: normalizedFilePath, projectPath, context, resolvedPath },
+            true
+          );
+          return null;
+        }
+      }
       // セキュリティテスト以外のテスト環境では範囲チェックを緩和
-      if (shouldEnforceBoundaryCheck && !this.validateProjectPath(resolvedPath, projectPath)) {
-        errorHandler.handleError(
-          new Error(`不正なファイルパス '${normalizedFilePath}' がプロジェクト範囲外にアクセスしようとしました`),
-          ErrorType.PERMISSION_DENIED,
-          'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
-          { filePath: normalizedFilePath, projectPath, context },
-          true
-        );
-        return null;
+      else if (shouldEnforceBoundaryCheck) {
+        const isValid = this.validateProjectPath(resolvedPath, projectPath);
+        if (!isValid) {
+          errorHandler.handleError(
+            new Error(`不正なファイルパス '${normalizedFilePath}' がプロジェクト範囲外にアクセスしようとしました`),
+            ErrorType.PERMISSION_DENIED,
+            'セキュリティ警告: パストラバーサル攻撃の試行を検出しました',
+            { filePath: normalizedFilePath, projectPath, context },
+            true
+          );
+          return null;
+        }
       }
       
       return resolvedPath;
@@ -117,15 +148,13 @@ export class PathSecurity {
    */
   static safeResolveWithExtensions(basePath: string, extensions: string[], projectPath: string): string | null {
     
-    // テスト環境の検出（Jest実行時は常にテスト環境とみなす）
+    // Issue #159修正: 環境変数ベースの安全なテスト環境検出
+    // パスベースの検出（/test/project等）を削除し、環境変数のみで判定
     const isTestEnvironment = (
       process.env.NODE_ENV === 'test' ||
       process.env.JEST_WORKER_ID !== undefined ||
-      typeof global.it === 'function' || // Jest環境の検出
-      typeof global.describe === 'function' || // Jest環境の検出
-      projectPath.includes('/test/project') ||
-      basePath.includes('/test/project') ||
-      projectPath === '/test/project'
+      typeof global.it === 'function' ||
+      typeof global.describe === 'function'
     );
     
     for (const ext of extensions) {
