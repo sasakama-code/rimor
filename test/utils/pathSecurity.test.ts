@@ -4,8 +4,8 @@
  */
 
 import * as path from 'path';
-// Force direct import from TypeScript source
-import { PathSecurity } from '../../src/utils/pathSecurity';
+// Import from compiled JavaScript to ensure latest implementation
+import { PathSecurity } from '../../dist/utils/pathSecurity';
 
 // fsをモック
 jest.mock('fs');
@@ -212,6 +212,41 @@ describe('PathSecurity', () => {
       const result = PathSecurity.safeResolveImport('./test', '', testProjectRoot);
       expect(result).toBeNull();
     });
+
+    // Issue #160: 絶対パス/外部参照の扱い不備テスト（TDD Red フェーズ）
+    describe('Issue #160: 絶対パス検証不備対策', () => {
+      it('should reject absolute paths outside project root', () => {
+        const maliciousAbsolutePath = '/etc/passwd';
+        const result = PathSecurity.safeResolveImport(maliciousAbsolutePath, fromFile, testProjectRoot);
+        expect(result).toBeNull(); // 現在は無検証で返すため、このテストは失敗するはず
+      });
+
+      it('should reject absolute paths to sensitive system files', () => {
+        const sensitiveFilePath = '/root/.ssh/id_rsa';
+        const result = PathSecurity.safeResolveImport(sensitiveFilePath, fromFile, testProjectRoot);
+        expect(result).toBeNull(); // プロジェクト外の絶対パスは拒否すべき
+      });
+
+      it('should accept absolute paths within project root', () => {
+        const validAbsolutePath = '/test/project/src/utils/helper.ts';
+        const result = PathSecurity.safeResolveImport(validAbsolutePath, fromFile, testProjectRoot);
+        expect(result).toBe(validAbsolutePath); // プロジェクト内なら許可
+      });
+
+      it('should handle bare specifiers (npm packages) correctly', () => {
+        const npmPackages = ['lodash', '@types/node', '@scope/package'];
+        npmPackages.forEach(pkg => {
+          const result = PathSecurity.safeResolveImport(pkg, fromFile, testProjectRoot);
+          expect(result).toBe(pkg); // npmパッケージはそのまま返す
+        });
+      });
+
+      it('should handle Windows absolute paths correctly', () => {
+        const windowsPath = 'C:\\Windows\\System32\\config\\SAM';
+        const result = PathSecurity.safeResolveImport(windowsPath, fromFile, testProjectRoot);
+        expect(result).toBeNull(); // Windowsの絶対パスも拒否すべき
+      });
+    });
   });
 
   describe('safeResolveWithExtensions', () => {
@@ -268,6 +303,73 @@ describe('PathSecurity', () => {
       } else {
         expect(result).toBeNull();
       }
+    });
+
+    // Issue #161: 相対ベース拡張子解決の検証誤りテスト（TDD Red フェーズ）
+    describe('Issue #161: CWD基準パス解決誤り対策', () => {
+      beforeEach(() => {
+        // fsモックをリセット
+        jest.clearAllMocks();
+      });
+
+      it('should resolve relative basePath against projectPath, not CWD', () => {
+        const relativeBasePath = 'src/module';
+        const maliciousProjectPath = '/malicious/project';
+        
+        // CWD基準で解決されるとprocess.cwd() + 'src/module'になってしまう問題
+        const expectedCorrectPath = '/malicious/project/src/module.ts';
+        
+        fs.existsSync.mockImplementation((filePath: string) => {
+          return filePath === expectedCorrectPath;
+        });
+
+        const result = PathSecurity.safeResolveWithExtensions(relativeBasePath, extensions, maliciousProjectPath);
+        
+        // 現在の実装では相対パスがCWD基準で解決される脆弱性がある
+        expect(result).toBe(expectedCorrectPath);
+      });
+
+      it('should handle deeply nested relative paths correctly', () => {
+        const relativeBasePath = '../../../outside/secret';
+        const result = PathSecurity.safeResolveWithExtensions(relativeBasePath, extensions, testProjectRoot);
+        
+        // 相対パスが正しくprojectPathベースで解決され、境界チェックが適用されるべき
+        expect(result).toBeNull(); // プロジェクト外への脱出は拒否されるべき
+      });
+
+      it('should maintain absolute path behavior correctly', () => {
+        const absoluteBasePath = '/test/project/src/valid';
+        const expectedPath = absoluteBasePath + '.ts';
+        
+        fs.existsSync.mockImplementation((filePath: string) => {
+          return filePath === expectedPath;
+        });
+
+        const result = PathSecurity.safeResolveWithExtensions(absoluteBasePath, extensions, testProjectRoot);
+        expect(result).toBe(expectedPath); // 絶対パスは正常動作を維持
+      });
+
+      it('should prevent CWD-based path traversal attacks', () => {
+        // 攻撃シナリオ: process.cwd()が'/app'で、relativeBasePathが'../../../etc/passwd'
+        const relativeBasePath = '../../../etc/passwd';
+        
+        fs.existsSync.mockReturnValue(true);
+        
+        const result = PathSecurity.safeResolveWithExtensions(relativeBasePath, extensions, testProjectRoot);
+        
+        // CWD基準での解決を使用すると'/app' + '../../../etc/passwd' = '/etc/passwd'への
+        // 不正アクセスが可能になってしまうため、null を返すべき
+        expect(result).toBeNull();
+      });
+
+      it('should handle relative paths with mixed separators', () => {
+        const mixedSeparatorPath = 'src\\windows\\style..\\..\\..\\outside';
+        
+        const result = PathSecurity.safeResolveWithExtensions(mixedSeparatorPath, extensions, testProjectRoot);
+        
+        // Windows形式とUnix形式が混在したパストラバーサル攻撃も適切に防御
+        expect(result).toBeNull();
+      });
     });
   });
 

@@ -123,6 +123,7 @@ export class PathSecurity {
 
   /**
    * 相対パスを安全に解決（import文の解決など）
+   * Issue #160対応: 絶対パス/外部参照の扱いを明確化
    * @param importPath インポートパス
    * @param fromFile インポート元ファイル
    * @param projectPath プロジェクトルートパス
@@ -134,7 +135,18 @@ export class PathSecurity {
         const resolved = path.resolve(path.dirname(fromFile), importPath);
         return this.validateProjectPath(resolved, projectPath) ? resolved : null;
       }
-      return importPath; // 相対パスでない場合はそのまま返す
+      
+      // Issue #160修正: Unix/Windows両方の絶対パス形式を検出して境界チェック実行
+      const isAbsolutePath = path.isAbsolute(importPath) || /^[A-Za-z]:[\\\/]/.test(importPath);
+      if (isAbsolutePath) {
+        // プロジェクト外の絶対パス（/etc/passwd, /root/.ssh/id_rsa, C:\Windows\...等）は即座に拒否
+        const isWithinProject = this.validateProjectPath(importPath, projectPath);
+        if (!isWithinProject) {
+          return null; // セキュリティ: プロジェクト外の絶対パスは完全拒否
+        }
+        return importPath;
+      }
+      return importPath; // 裸の指定子（npm パッケージ等）はそのまま返す
     } catch {
       return null;
     }
@@ -142,6 +154,7 @@ export class PathSecurity {
 
   /**
    * ファイル拡張子を考慮した安全なパス解決
+   * Issue #161対応: 相対ベースから拡張子解決する際の検証誤り修正
    * @param basePath ベースパス
    * @param extensions 試行する拡張子の配列
    * @param projectPath プロジェクトルートパス
@@ -149,19 +162,21 @@ export class PathSecurity {
    */
   static safeResolveWithExtensions(basePath: string, extensions: string[], projectPath: string): string | null {
     
-    // Issue #159修正: 環境変数ベースの安全なテスト環境検出
-    // パスベースの検出（/test/project等）を削除し、環境変数のみで判定
-    const isTestEnvironment = (
-      process.env.NODE_ENV === 'test' ||
-      process.env.JEST_WORKER_ID !== undefined ||
-      typeof global.it === 'function' ||
-      typeof global.describe === 'function'
-    );
+    // Issue #161修正: basePath が相対なら projectPath を起点に絶対化（CWD基準の誤解決を防止）
+    const resolvedBase = path.isAbsolute(basePath) 
+      ? basePath 
+      : path.resolve(projectPath, basePath);
+    
+    // Issue #161修正: 境界チェックを必ず実行（テスト環境でも安全性確保）
+    // プロジェクト外へのパストラバーサル攻撃を確実に防御
+    if (!this.validateProjectPath(resolvedBase, projectPath)) {
+      return null; // セキュリティ: プロジェクト境界違反は即座に拒否
+    }
     
     for (const ext of extensions) {
-      const withExt = basePath + ext;
-      // テスト環境ではパス検証を緩和
-      if (!isTestEnvironment && !this.validateProjectPath(withExt, projectPath)) {
+      const withExt = resolvedBase + ext;
+      // 境界チェックを必ず実行（Issue #161修正）
+      if (!this.validateProjectPath(withExt, projectPath)) {
         continue; // セキュリティチェック失敗
       }
       if (fs.existsSync(withExt)) {
@@ -171,9 +186,9 @@ export class PathSecurity {
     
     // index.*を試す
     for (const ext of extensions) {
-      const indexFile = path.join(basePath, `index${ext}`);
-      // テスト環境ではパス検証を緩和
-      if (!isTestEnvironment && !this.validateProjectPath(indexFile, projectPath)) {
+      const indexFile = path.join(resolvedBase, `index${ext}`);
+      // 境界チェックを必ず実行（Issue #161修正）
+      if (!this.validateProjectPath(indexFile, projectPath)) {
         continue; // セキュリティチェック失敗
       }
       if (fs.existsSync(indexFile)) {
