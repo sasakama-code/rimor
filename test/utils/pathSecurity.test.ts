@@ -335,6 +335,78 @@ describe('PathSecurity', () => {
     });
   });
 
+  // Issue #162: PIIマスキング正規表現エスケープ不足/区切り文字不整合対策（TDD Red フェーズ）
+  describe('Issue #162: PIIマスキング正規表現修正', () => {
+    describe('maskPII method', () => {
+      it('should mask basic user paths correctly', () => {
+        const testPath = '/Users/[USER]/Documents/myproject/src/file.ts';
+        const result = PathSecurity.maskPII(testPath, 'myproject');
+        expect(result).toBe('[myproject]/src/file.ts');
+      });
+
+      // 正規表現エスケープ不足テスト（失敗期待）
+      it('should properly escape regex special characters in project names', () => {
+        const testPath = '/Users/[USER]/Code/my.project/src/component.ts';
+        const result = PathSecurity.maskPII(testPath, 'my.project');
+        // 現在の実装では . が正規表現として解釈され、誤マッチが発生する
+        expect(result).toBe('[my.project]/src/component.ts'); // 期待される結果
+      });
+
+      it('should handle plus character in project names without regex interpretation', () => {
+        const testPath = '/Users/[USER]/workspace/app+plus/lib/utils.ts';
+        const result = PathSecurity.maskPII(testPath, 'app+plus');
+        // 現在の実装では + が正規表現として解釈され、誤マッチが発生する  
+        expect(result).toBe('[app+plus]/lib/utils.ts'); // 期待される結果
+      });
+
+      // クロスプラットフォーム対応テスト（失敗期待）
+      it('should handle Windows path separators correctly', () => {
+        const testPathWindows = 'C:\\Users\\[USER]\\Projects\\myproject\\src\\main.ts';
+        const result = PathSecurity.maskPII(testPathWindows, 'myproject');
+        // 現在の実装は / 固定のため、Windows \ パスで動作しない
+        expect(result).toBe('[myproject]\\src\\main.ts'); // 期待される結果
+      });
+
+      it('should handle mixed path separators in complex paths', () => {
+        const testPathMixed = '/home/[USER]/dev/test.app/build\\output\\file.js';
+        const result = PathSecurity.maskPII(testPathMixed, 'test.app');
+        // 現在の実装は / のみサポート、\ は対応していない
+        expect(result).toBe('[test.app]/build\\output\\file.js'); // 期待される結果
+      });
+
+      // 境界条件での誤マッチ防止テスト
+      it('should avoid false matches with similar project names', () => {
+        const testPath = '/Users/[USER]/workspace/myproject-old/src/file.ts';
+        const result = PathSecurity.maskPII(testPath, 'myproject');
+        // myproject-old は myproject とは別プロジェクトなので置換されるべきではない
+        expect(result).toBe('/Users/[USER]/workspace/myproject-old/src/file.ts');
+      });
+
+      it('should handle empty and null inputs gracefully', () => {
+        expect(PathSecurity.maskPII('')).toBe('');
+        expect(PathSecurity.maskPII(null as any)).toBe(null);
+        expect(PathSecurity.maskPII(undefined as any)).toBe(undefined);
+      });
+
+      it('should handle special regex characters in complex project names', () => {
+        const testPath = '/Users/[USER]/code/my[test].project/src/index.ts';
+        const result = PathSecurity.maskPII(testPath, 'my[test].project');
+        // 現在の実装では [ ] も正規表現として解釈される
+        expect(result).toBe('[my[test].project]/src/index.ts'); // 期待される結果
+      });
+    });
+
+    describe('maskAllPaths method', () => {
+      it('should mask multiple paths in content with special character project names', () => {
+        const content = 'Error in /Users/[USER]/my.project/a.ts and /home/[USER]/my.project/b.ts';
+        const result = PathSecurity.maskAllPaths(content, 'my.project');
+        // 現在の実装では正規表現特殊文字により誤動作する可能性がある
+        expect(result).toContain('[my.project]/a.ts');
+        expect(result).toContain('[my.project]/b.ts');
+      });
+    });
+  });
+
   describe('Class existence and interface', () => {
     it('should exist in the codebase', () => {
       expect(PathSecurity).toBeDefined();
@@ -346,6 +418,9 @@ describe('PathSecurity', () => {
       expect(typeof PathSecurity.validateMultiplePaths).toBe('function');
       expect(typeof PathSecurity.safeResolveImport).toBe('function');
       expect(typeof PathSecurity.safeResolveWithExtensions).toBe('function');
+      expect(typeof PathSecurity.maskPII).toBe('function');
+      expect(typeof PathSecurity.toRelativeOrMasked).toBe('function');
+      expect(typeof PathSecurity.maskAllPaths).toBe('function');
     });
   });
 });
