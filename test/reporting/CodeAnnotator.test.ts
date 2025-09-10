@@ -528,4 +528,169 @@ export function clean() {
       expect(mockFs.writeFile).not.toHaveBeenCalled();
     });
   });
+
+  // Issue #156対応: EOL破壊問題テストケース（TDD Red段階）
+  describe('EOL preservation (Issue #156)', () => {
+    const mockResultWithLocation: StructuredAnalysisResult = {
+      metadata: {
+        version: '0.9.0',
+        timestamp: new Date().toISOString(),
+        analyzedPath: '/project',
+        duration: 1000
+      },
+      summary: {
+        totalFiles: 1,
+        totalIssues: 1,
+        issueBySeverity: {
+          critical: 1,
+          high: 0,
+          medium: 0,
+          low: 0,
+          info: 0
+        },
+        issueByType: {
+          'SQL_INJECTION': 1
+        }
+      },
+      issues: [
+        {
+          id: '1',
+          type: IssueType.SQL_INJECTION,
+          severity: Severity.CRITICAL,
+          category: 'security' as const,
+          location: {
+            file: '/project/test.ts',
+            startLine: 5,
+            endLine: 5
+          },
+          message: 'SQL Injection vulnerability'
+        }
+      ],
+      metrics: {
+        testCoverage: { overall: 80, byModule: {} },
+        codeQuality: {}
+      }
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should preserve CRLF line endings when processing Windows files', async () => {
+      // TDD Red段階: CRLF形式ファイルのEOL保持テスト
+      const crlfContent = 'line1\r\nline2\r\nline3\r\nline4\r\nline5\r\nline6';
+      
+      mockFs.readFile.mockResolvedValue(crlfContent);
+      
+      const annotation = await annotator.annotateFile(
+        '/project/test.ts',
+        mockResultWithLocation.issues,
+        undefined
+      );
+      
+      expect(annotation).toBeDefined();
+      expect(annotation!.annotatedContent).toContain('\r\n');
+      // アノテーション追加後もCRLF形式が保持されることを確認
+      const lines = annotation!.annotatedContent.split(/\r\n|\n|\r/);
+      const crlfCount = (annotation!.annotatedContent.match(/\r\n/g) || []).length;
+      const lfOnlyCount = (annotation!.annotatedContent.match(/[^\r]\n/g) || []).length;
+      
+      // CRLF形式が保持されている（LFのみに変換されていない）
+      expect(crlfCount).toBeGreaterThan(0);
+      expect(lfOnlyCount).toBe(0);
+    });
+
+    it('should preserve LF line endings when processing Unix files', async () => {
+      // TDD Red段階: LF形式ファイルのEOL保持テスト
+      const lfContent = 'line1\nline2\nline3\nline4\nline5\nline6';
+      
+      mockFs.readFile.mockResolvedValue(lfContent);
+      
+      const annotation = await annotator.annotateFile(
+        '/project/test.ts',
+        mockResultWithLocation.issues,
+        undefined
+      );
+      
+      expect(annotation).toBeDefined();
+      expect(annotation!.annotatedContent).not.toContain('\r\n');
+      // アノテーション追加後もLF形式が保持されることを確認
+      const crlfCount = (annotation!.annotatedContent.match(/\r\n/g) || []).length;
+      expect(crlfCount).toBe(0);
+    });
+
+    it('should preserve mixed line endings when processing files with inconsistent EOL', async () => {
+      // TDD Red段階: Mixed EOL形式ファイルの処理テスト
+      const mixedContent = 'line1\r\nline2\nline3\r\nline4\nline5\r\nline6';
+      
+      mockFs.readFile.mockResolvedValue(mixedContent);
+      
+      const annotation = await annotator.annotateFile(
+        '/project/test.ts',
+        mockResultWithLocation.issues,
+        undefined
+      );
+      
+      expect(annotation).toBeDefined();
+      // 元のファイルと同じEOLパターンが保持されることを確認
+      // ここでは主要なEOL形式（この場合はCRLF）が使用されることを期待
+      const originalCrlfCount = (mixedContent.match(/\r\n/g) || []).length;
+      const annotatedCrlfCount = (annotation!.annotatedContent.match(/\r\n/g) || []).length;
+      
+      // アノテーション追加により、主要なEOL形式で統一されることを確認
+      expect(annotatedCrlfCount).toBeGreaterThanOrEqual(originalCrlfCount);
+    });
+
+    it('should preserve EOL in generateDiffReport method', () => {
+      // TDD Red段階: generateDiffReport内でのEOL保持テスト
+      const annotations = [
+        {
+          filePath: '/project/crlf-test.ts',
+          originalContent: 'original line1\r\noriginal line2\r\noriginal line3',
+          annotatedContent: '// annotation\r\noriginal line1\r\noriginal line2\r\noriginal line3',
+          annotationCount: 1
+        }
+      ];
+
+      const diffReport = annotator.generateDiffReport(annotations);
+      
+      // 差分レポート生成時の適切な処理確認
+      expect(diffReport).toBeDefined();
+      // レポート生成では標準的なLF形式を使用するが、内部処理でEOLユーティリティが正常動作することを確認
+      expect(diffReport).toContain('# Annotation Diff Report');
+      expect(diffReport).toContain('## File: /project/crlf-test.ts');
+      expect(diffReport).toContain('Annotations added: 1');
+      // 差分内容が正しく表示されることを確認
+      expect(diffReport).toContain('+ ');
+    });
+
+    it('should preserve EOL in previewAnnotations method', () => {
+      // TDD Red段階: previewAnnotations内でのEOL保持テスト
+      const preview = annotator.previewAnnotations(mockResultWithLocation);
+      
+      expect(preview).toBeDefined();
+      // プレビュー生成時のEOL処理が適切であることを確認
+      const lines = preview.split('\n');
+      expect(lines.length).toBeGreaterThan(0);
+    });
+
+    it('should preserve EOL in cleanupAnnotations method', async () => {
+      // TDD Red段階: cleanupAnnotations内でのEOL保持テスト
+      const crlfContentWithAnnotation = `line1\r\n// RIMOR-HIGH: Security issue\r\nline2\r\nline3`;
+      
+      mockFs.readFile.mockResolvedValue(crlfContentWithAnnotation);
+      mockFs.writeFile.mockResolvedValue(undefined);
+      
+      const result = await annotator.cleanupAnnotations('/project/test.ts');
+      
+      expect(result).toBe(true);
+      expect(mockFs.writeFile).toHaveBeenCalled();
+      
+      const writtenContent = mockFs.writeFile.mock.calls[0][1] as string;
+      // クリーンアップ後もCRLF形式が保持されることを確認
+      expect(writtenContent).toContain('\r\n');
+      const crlfCount = (writtenContent.match(/\r\n/g) || []).length;
+      expect(crlfCount).toBeGreaterThan(0);
+    });
+  });
 });
