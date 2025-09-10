@@ -29,6 +29,75 @@ export class CodeAnnotator {
   ) {}
 
   /**
+   * Issue #156対応: EOL検出・保持ユーティリティ
+   * DRY原則適用: EOL処理ロジックの共通化
+   * Martin Fowler リファクタリング: Defensive Programming強化
+   */
+  private detectEOL(content: string): string {
+    // Defensive Programming: 引数検証
+    if (typeof content !== 'string') {
+      return '\n'; // デフォルト値で安全に処理
+    }
+    
+    // 空文字列の場合もデフォルト値を返す
+    if (content.length === 0) {
+      return '\n';
+    }
+
+    // Windows形式（CRLF）を最優先で検出
+    if (content.includes('\r\n')) {
+      return '\r\n';
+    }
+    // Unix形式（LF）
+    if (content.includes('\n')) {
+      return '\n';
+    }
+    // Mac Classic形式（CR）- 後方互換性のため
+    if (content.includes('\r')) {
+      return '\r';
+    }
+    // デフォルト: Unix標準形式
+    return '\n';
+  }
+
+  /**
+   * Issue #156対応: EOL保持対応のsplit/join操作
+   * Martin Fowler リファクタリング: 引数検証とエラーハンドリング強化
+   */
+  private splitPreservingEOL(content: string): { lines: string[], eol: string } {
+    // Defensive Programming: 引数検証
+    if (typeof content !== 'string') {
+      return { lines: [], eol: '\n' };
+    }
+
+    const eol = this.detectEOL(content);
+    const lines = content.split(eol);
+    
+    // 空の配列が返された場合の安全な処理
+    return { 
+      lines: lines.length > 0 ? lines : [''], 
+      eol 
+    };
+  }
+
+  /**
+   * Issue #156対応: 元のEOL形式でのjoin操作
+   * Martin Fowler リファクタリング: 引数検証強化
+   */
+  private joinPreservingEOL(lines: string[], eol: string): string {
+    // Defensive Programming: 引数検証
+    if (!Array.isArray(lines)) {
+      return '';
+    }
+    
+    if (typeof eol !== 'string') {
+      eol = '\n'; // デフォルトEOLで安全に処理
+    }
+
+    return lines.join(eol);
+  }
+
+  /**
    * 分析結果に基づいてソースコードにアノテーションを追加
    */
   async annotateFiles(
@@ -64,7 +133,8 @@ export class CodeAnnotator {
     try {
       // ファイルの内容を読み込み
       const originalContent = await fs.readFile(filePath, 'utf-8');
-      const lines = originalContent.split('\n');
+      // Issue #156対応: EOL保持対応のsplit操作
+      const { lines, eol } = this.splitPreservingEOL(originalContent);
 
       // 行番号でソート（逆順）して、後ろから挿入
       const sortedIssues = [...issues].sort(
@@ -94,7 +164,8 @@ export class CodeAnnotator {
         }
       }
 
-      const annotatedContent = lines.join('\n');
+      // Issue #156対応: 元のEOL形式でのjoin操作
+      const annotatedContent = this.joinPreservingEOL(lines, eol);
 
       return {
         filePath,
@@ -174,8 +245,9 @@ export class CodeAnnotator {
       lines.push('');
       
       // 簡易的な差分表示
-      const originalLines = ann.originalContent.split('\n');
-      const annotatedLines = ann.annotatedContent.split('\n');
+      // Issue #156対応: EOL保持対応のsplit操作
+      const { lines: originalLines } = this.splitPreservingEOL(ann.originalContent);
+      const { lines: annotatedLines } = this.splitPreservingEOL(ann.annotatedContent);
       
       let lineNumber = 1;
       let i = 0, j = 0;
@@ -204,6 +276,7 @@ export class CodeAnnotator {
       lines.push('');
     });
 
+    // Issue #156対応: レポート出力は標準的なLF形式を使用
     return lines.join('\n');
   }
 
@@ -235,10 +308,13 @@ export class CodeAnnotator {
 
   /**
    * アノテーションにインデントを適用
+   * Issue #156対応: EOL保持対応
    */
   private applyIndent(annotation: string, indent: string): string {
-    const lines = annotation.split('\n');
-    return lines.map(line => indent + line).join('\n');
+    // Issue #156対応: EOL保持対応のsplit/join操作
+    const { lines, eol } = this.splitPreservingEOL(annotation);
+    const indentedLines = lines.map(line => indent + line);
+    return this.joinPreservingEOL(indentedLines, eol);
   }
 
   /**
@@ -309,6 +385,7 @@ export class CodeAnnotator {
       });
     });
 
+    // Issue #156対応: プレビュー出力は標準的なLF形式を使用
     return lines.join('\n');
   }
 
@@ -321,7 +398,8 @@ export class CodeAnnotator {
   ): Promise<boolean> {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      const lines = content.split('\n');
+      // Issue #156対応: EOL保持対応のsplit操作
+      const { lines, eol } = this.splitPreservingEOL(content);
       
       const annotationPrefix = prefix || 'RIMOR';
       const cleanedLines = lines.filter(line => {
@@ -336,7 +414,8 @@ export class CodeAnnotator {
       });
 
       if (cleanedLines.length < lines.length) {
-        const cleanedContent = cleanedLines.join('\n');
+        // Issue #156対応: 元のEOL形式でのjoin操作
+        const cleanedContent = this.joinPreservingEOL(cleanedLines, eol);
         await fs.writeFile(filePath, cleanedContent, 'utf-8');
         return true;
       }
