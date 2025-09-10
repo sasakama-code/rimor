@@ -69,11 +69,26 @@ src/plugins/generated/*.ts
 .rimor-cache/
 .jest-cache/
 
-# Jest / TypeScript build caches
+# Jest / TypeScript build caches - Issue #155対応: Jest transform cache予防的強化
 /.ts-jest/
 *.tsbuildinfo
 /.turbo/
 /.nx/cache/
+
+# Issue #155対応: Jest transform cache具体的パターン除外
+jest-transform-cache-*/
+**/jest-transform-cache-*
+**/*jest-transform-cache*
+.jest/cache/
+**/ts-jest-cache/
+**/*ts-jest*
+.ts-jest*
+
+# Issue #155予防: その他のJest関連キャッシュファイル
+**/__tests__/cache/
+**/coverage/.nyc_output/
+**/*.tsbuildinfo
+**/.eslintcache
 
 # Modern bundler caches
 /.vite/cache/

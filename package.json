@@ -81,7 +81,7 @@
     "ci:local": "CI=true npm run build:full && CI=true npm test",
     "clean:all": "rm -rf dist node_modules coverage temp test-errors-ai.* .jest-cache",
     "clean:cache": "npm run clean:cache:jest && npm run clean:cache:typescript && npm run clean:cache:build",
-    "clean:cache:jest": "rm -rf .jest-cache .cache/jest && echo 'Jestキャッシュをクリアしました'",
+    "clean:cache:jest": "rm -rf .jest-cache .cache/jest jest-transform-cache-* **/*jest-transform-cache* .jest/cache && find . -name '*ts-jest*' -type f -delete && echo 'Issue #155対応: Jestキャッシュを包括的にクリアしました'",
     "clean:cache:typescript": "find . -name '*.tsbuildinfo' -type f -delete && echo 'TypeScriptビルドキャッシュをクリアしました'",
     "clean:cache:build": "rm -rf .cache .turbo .nx/cache .vite/cache .parcel-cache && echo 'ビルドキャッシュをクリアしました'",
     "clean:cache:pii": "npm run clean:cache && echo 'Issue #120対応: PII露出リスクキャッシュをクリアしました'",
