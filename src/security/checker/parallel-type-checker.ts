@@ -596,33 +596,69 @@ export function createParallelTypeChecker(config?: ParallelTypeCheckConfig): Par
 export class TypeCheckResultAggregator {
   /**
    * 複数の型チェック結果を集約
+   * Issue #154修正: typeStatistics を JSON 互換の Record 型で返却
+   * Defensive Programming: 不正データに対する堅牢性を強化
    */
   static aggregate(results: MethodTypeCheckResult[]): {
     overallSuccess: boolean;
     totalErrors: number;
     totalWarnings: number;
     criticalIssues: SecurityIssue[];
-    typeStatistics: Map<TaintQualifier, number>;
+    typeStatistics: Partial<Record<TaintQualifier, number>>;
   } {
+    // Defensive Programming: 入力値の検証
+    if (!results || !Array.isArray(results)) {
+      return {
+        overallSuccess: true,
+        totalErrors: 0,
+        totalWarnings: 0,
+        criticalIssues: [],
+        typeStatistics: {}
+      };
+    }
+
     let totalErrors = 0;
     let totalWarnings = 0;
     const criticalIssues: SecurityIssue[] = [];
     const typeStatistics = new Map<TaintQualifier, number>();
     
     for (const result of results) {
-      totalErrors += result.typeCheckResult.errors.length;
-      totalWarnings += result.typeCheckResult.warnings.length;
+      // Defensive Programming: 各結果オブジェクトの検証
+      if (!result || !result.typeCheckResult) {
+        continue;
+      }
+
+      // エラーカウントの安全な集計
+      totalErrors += result.typeCheckResult.errors?.length ?? 0;
+      totalWarnings += result.typeCheckResult.warnings?.length ?? 0;
       
-      // クリティカルな問題を収集
-      criticalIssues.push(...result.securityIssues.filter(
-        issue => issue.severity === 'critical' || issue.severity === 'error'
-      ));
+      // クリティカルな問題を収集（存在チェック付き）
+      if (result.securityIssues && Array.isArray(result.securityIssues)) {
+        criticalIssues.push(...result.securityIssues.filter(
+          issue => issue && (issue.severity === 'critical' || issue.severity === 'error')
+        ));
+      }
       
-      // 型統計の収集
-      result.inferredTypes.forEach(type => {
-        const qualifier = type.__brand;
-        typeStatistics.set(qualifier, (typeStatistics.get(qualifier) || 0) + 1);
-      });
+      // 型統計の収集（堅牢性強化）
+      if (result.inferredTypes && result.inferredTypes instanceof Map) {
+        result.inferredTypes.forEach(type => {
+          // Defensive Programming: type オブジェクトと __brand プロパティの存在確認
+          if (type && type.__brand && typeof type.__brand === 'string') {
+            const qualifier = type.__brand;
+            typeStatistics.set(qualifier, (typeStatistics.get(qualifier) || 0) + 1);
+          }
+        });
+      }
+    }
+    
+    // Issue #154修正: Map → プレーンオブジェクト変換でJSON互換性確保
+    // Defensive Programming: Object.fromEntries の安全な実行
+    let serializedTypeStatistics: Partial<Record<TaintQualifier, number>>;
+    try {
+      serializedTypeStatistics = Object.fromEntries(typeStatistics);
+    } catch (error) {
+      // フォールバック処理: 変換に失敗した場合は空オブジェクトを返す
+      serializedTypeStatistics = {};
     }
     
     return {
@@ -630,7 +666,7 @@ export class TypeCheckResultAggregator {
       totalErrors,
       totalWarnings,
       criticalIssues,
-      typeStatistics
+      typeStatistics: serializedTypeStatistics
     };
   }
 }
