@@ -1,6 +1,6 @@
-import { createDefaultEsmPreset, TS_EXT_TO_TREAT_AS_ESM, ESM_TS_TRANSFORM_PATTERN } from "ts-jest";
-
-const tsJestTransformCfg = createDefaultEsmPreset().transform;
+// ts-jest設定の簡素化 - Issue #147対応
+const TS_EXT_TO_TREAT_AS_ESM = ['.ts', '.tsx'];
+const ESM_TS_TRANSFORM_PATTERN = '^.+\\.(t|j)sx?$';
 
 /** @type {import("jest").Config} **/
 export default {
@@ -8,14 +8,14 @@ export default {
   testEnvironment: "node",
   extensionsToTreatAsEsm: [...TS_EXT_TO_TREAT_AS_ESM],
   transform: {
-    ...tsJestTransformCfg,
     [ESM_TS_TRANSFORM_PATTERN]: [
       'ts-jest',
       {
         useESM: true,
         tsconfig: {
           sourceMap: false,
-          inlineSourceMap: false
+          inlineSourceMap: false,
+          inlineSources: false
         },
         // Issue #120対応: 絶対パス除去設定
         isolatedModules: true,

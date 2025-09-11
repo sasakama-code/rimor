@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
+    "sourceRoot": ".",
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "stripInternal": false
+  }
+}

@@ -10,7 +10,12 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "declaration": true,
-    "sourceMap": true
+    
+    // Issue #147対応: PII露出リスク完全解消
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
+    "sourceRoot": "."
   },
   "include": [
     "../../src/testing/**/*.ts",

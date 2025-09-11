@@ -13,6 +13,9 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    // Issue #147対応: PII露出リスク完全解消
+    "inlineSourceMap": false,
+    "inlineSources": false,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
