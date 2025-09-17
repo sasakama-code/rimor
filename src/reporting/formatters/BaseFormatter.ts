@@ -224,6 +224,34 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   }
 
   /**
+   * Markdownエスケープ（Markdownインジェクション対策）
+   * Issue #131対応: セキュリティ脆弱性の修正
+   */
+  protected escapeMarkdown(text: string): string {
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
+    
+    const escapeMap: Record<string, string> = {
+      '\\': '\\\\',
+      '*': '\\*',
+      '_': '\\_',
+      '`': '\\`',
+      '#': '\\#',
+      '[': '\\[',
+      ']': '\\]',
+      '(': '\\(',
+      ')': '\\)',
+      '!': '\\!',
+      '<': '&lt;',
+      '>': '&gt;',
+      '|': '\\|'
+    };
+    
+    return text.replace(/[\\*_`#\[\]()!<>|]/g, char => escapeMap[char] || char);
+  }
+
+  /**
    * 最大リスク数の取得（共通）
    */
   protected getMaxRisks(options?: Record<string, unknown>): number {

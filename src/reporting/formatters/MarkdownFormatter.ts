@@ -64,22 +64,24 @@ export class MarkdownFormatter extends BaseFormatter {
       const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
 
       risksToShow.forEach((risk, index) => {
-        markdown.push(`### ${index + 1}. ${risk.title || risk.problem}`);
+        const title = this.escapeMarkdown(risk.title || risk.problem || '');
+        markdown.push(`### ${index + 1}. ${title}`);
         markdown.push('');
-        markdown.push(`**リスクレベル**: ${risk.riskLevel}`);
+        markdown.push(`**リスクレベル**: ${this.escapeMarkdown(risk.riskLevel)}`);
         markdown.push('');
-        markdown.push(`**ファイル**: ${risk.filePath}`);
+        markdown.push(`**ファイル**: ${this.escapeMarkdown(risk.filePath || '')}`);
         markdown.push('');
         
         if (risk.problem) {
-          markdown.push(`**問題**: ${risk.problem}`);
+          markdown.push(`**問題**: ${this.escapeMarkdown(risk.problem)}`);
           markdown.push('');
         }
 
         if (risk.context && risk.context.codeSnippet) {
           markdown.push('**コード**:');
           markdown.push('```typescript');
-          markdown.push(risk.context.codeSnippet);
+          // コードスニペットは表示用なので、基本的なサニタイズのみ
+          markdown.push(risk.context.codeSnippet.replace(/```/g, '\\`\\`\\`'));
           markdown.push('```');
           markdown.push('');
         }
@@ -90,7 +92,7 @@ export class MarkdownFormatter extends BaseFormatter {
             ? risk.suggestedAction 
             : risk.suggestedAction.description;
           
-          markdown.push(`**推奨アクション**: ${action}`);
+          markdown.push(`**推奨アクション**: ${this.escapeMarkdown(action || '')}`);
           markdown.push('');
         }
 
@@ -118,7 +120,9 @@ export class MarkdownFormatter extends BaseFormatter {
         const grade = dimension.grade;
         
         if (name && score !== undefined) {
-          markdown.push(`- **${name}**: スコア ${score}/100, グレード ${grade || 'N/A'}`);
+          const safeName = this.escapeMarkdown(name);
+          const safeGrade = this.escapeMarkdown(grade || 'N/A');
+          markdown.push(`- **${safeName}**: スコア ${score}/100, グレード ${safeGrade}`);
         }
       });
       markdown.push('');
