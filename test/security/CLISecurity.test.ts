@@ -8,6 +8,29 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+// Issue #146対応: クロスプラットフォーム対応ヘルパー関数
+function getCrossPlatformSystemPaths() {
+  const isWindows = process.platform === 'win32';
+  
+  if (isWindows) {
+    return {
+      systemConfig: 'C:\\Windows\\System32\\config\\SAM',
+      userHome: 'C:\\Users\\Administrator',
+      sshKey: 'C:\\Users\\Administrator\\.ssh\\id_rsa',
+      systemBin: 'C:\\Windows\\System32\\cmd.exe',
+      etcPath: 'C:\\Windows\\System32\\drivers\\etc\\hosts'
+    };
+  } else {
+    return {
+      systemConfig: '/etc/passwd',
+      userHome: '/root',
+      sshKey: '/root/.ssh/id_rsa',
+      systemBin: '/usr/bin/bash',
+      etcPath: '/etc/shadow'
+    };
+  }
+}
+
 describe('CLISecurity Security Tests', () => {
   let cliSecurity: CLISecurity;
   let tempDir: string;
@@ -88,12 +111,13 @@ describe('CLISecurity Security Tests', () => {
     });
 
     test('システムディレクトリアクセス攻撃を防ぐ', () => {
+      const systemPathsConfig = getCrossPlatformSystemPaths();
       const systemPaths = [
-        '/etc/passwd',
-        '/root/.ssh/id_rsa',
-        '/home/user/.bash_history',
-        'C:\\Windows\\explorer.exe',
-        'C:\\Program Files\\malicious'
+        systemPathsConfig.systemConfig,
+        systemPathsConfig.sshKey,
+        process.platform === 'win32' ? 'C:\\Users\\Public\\Documents\\sensitive.txt' : '/home/user/.bash_history',
+        process.platform === 'win32' ? 'C:\\Windows\\explorer.exe' : '/usr/bin/ls',
+        process.platform === 'win32' ? 'C:\\Program Files\\malicious' : '/usr/local/malicious'
       ];
 
       systemPaths.forEach(systemPath => {
@@ -171,7 +195,7 @@ describe('CLISecurity Security Tests', () => {
         const traversalPaths = [
           '../../../etc/passwd',
           '..\\..\\..\\Windows\\System32',
-          '../../../../../root/.ssh/id_rsa',
+          process.platform === 'win32' ? '..\\..\\..\\..\\..\\..\\Users\\Administrator\\.ssh\\id_rsa' : '../../../../../root/.ssh/id_rsa',
           '../../../../../../home/other-user/secrets'
         ];
 
@@ -188,11 +212,12 @@ describe('CLISecurity Security Tests', () => {
       });
 
       test('プロジェクト範囲外の絶対パスを拒否する', () => {
+        const systemPathsConfig = getCrossPlatformSystemPaths();
         const externalAbsolutePaths = [
-          '/etc/shadow',
-          '/root/.bashrc',
-          'C:\\Windows\\System32\\config\\SAM',
-          '/home/other-user/private/',
+          systemPathsConfig.etcPath,
+          process.platform === 'win32' ? 'C:\\Users\\Administrator\\.bashrc' : '/root/.bashrc',
+          process.platform === 'win32' ? 'C:\\Windows\\System32\\config\\SAM' : '/etc/shadow',
+          process.platform === 'win32' ? 'C:\\Users\\other-user\\private\\' : '/home/other-user/private/',
           'C:\\Users\\Other\\Documents\\secrets.txt'
         ];
 

@@ -10,6 +10,25 @@ import { PathSecurity } from '../../dist/utils/pathSecurity';
 // fsをモック
 jest.mock('fs');
 
+// Issue #146対応: クロスプラットフォーム対応ヘルパー関数
+function getCrossPlatformSensitivePaths() {
+  const isWindows = process.platform === 'win32';
+  
+  if (isWindows) {
+    return {
+      systemConfig: 'C:\\Windows\\System32\\config\\SAM',
+      userProfile: 'C:\\Users\\Administrator\\Desktop\\secrets.txt',
+      sshKey: 'C:\\Users\\Administrator\\.ssh\\id_rsa'
+    };
+  } else {
+    return {
+      systemConfig: '/etc/passwd',
+      userProfile: '/root/.bash_history',
+      sshKey: '/root/.ssh/id_rsa'
+    };
+  }
+}
+
 describe('PathSecurity', () => {
   const testProjectRoot = '/test/project';
   const validPath = '/test/project/src/file.ts';
@@ -222,8 +241,8 @@ describe('PathSecurity', () => {
       });
 
       it('should reject absolute paths to sensitive system files', () => {
-        const sensitiveFilePath = '/root/.ssh/id_rsa';
-        const result = PathSecurity.safeResolveImport(sensitiveFilePath, fromFile, testProjectRoot);
+        const sensitivePaths = getCrossPlatformSensitivePaths();
+        const result = PathSecurity.safeResolveImport(sensitivePaths.sshKey, fromFile, testProjectRoot);
         expect(result).toBeNull(); // プロジェクト外の絶対パスは拒否すべき
       });
 
@@ -404,7 +423,10 @@ describe('PathSecurity', () => {
       delete process.env.JEST_WORKER_ID;
       
       const maliciousProjectPath = '/var/folders/fake-test/T/data';
-      const maliciousFilePath = '../../../../root/.ssh/id_rsa';
+      const sensitivePaths = getCrossPlatformSensitivePaths();
+      const maliciousFilePath = process.platform === 'win32' 
+        ? '..\\..\\..\\..\\Users\\Administrator\\.ssh\\id_rsa'
+        : '../../../../root/.ssh/id_rsa';
       
       // セキュリティテストコンテキストを渡して強制境界チェック
       const result = PathSecurity.safeResolve(maliciousFilePath, maliciousProjectPath, 'security-test');
@@ -441,21 +463,21 @@ describe('PathSecurity', () => {
   describe('Issue #162: PIIマスキング正規表現修正', () => {
     describe('maskPII method', () => {
       it('should mask basic user paths correctly', () => {
-        const testPath = '/Users/[USER]/Documents/myproject/src/file.ts';
+        const testPath = '/test/user/Documents/myproject/src/file.ts';
         const result = PathSecurity.maskPII(testPath, 'myproject');
         expect(result).toBe('[myproject]/src/file.ts');
       });
 
       // 正規表現エスケープ不足テスト（失敗期待）
       it('should properly escape regex special characters in project names', () => {
-        const testPath = '/Users/[USER]/Code/my.project/src/component.ts';
+        const testPath = '/test/user/Code/my.project/src/component.ts';
         const result = PathSecurity.maskPII(testPath, 'my.project');
         // 現在の実装では . が正規表現として解釈され、誤マッチが発生する
         expect(result).toBe('[my.project]/src/component.ts'); // 期待される結果
       });
 
       it('should handle plus character in project names without regex interpretation', () => {
-        const testPath = '/Users/[USER]/workspace/app+plus/lib/utils.ts';
+        const testPath = '/test/user/workspace/app+plus/lib/utils.ts';
         const result = PathSecurity.maskPII(testPath, 'app+plus');
         // 現在の実装では + が正規表現として解釈され、誤マッチが発生する  
         expect(result).toBe('[app+plus]/lib/utils.ts'); // 期待される結果
@@ -470,7 +492,7 @@ describe('PathSecurity', () => {
       });
 
       it('should handle mixed path separators in complex paths', () => {
-        const testPathMixed = '/home/[USER]/dev/test.app/build\\output\\file.js';
+        const testPathMixed = '/test/user/dev/test.app/build\\output\\file.js';
         const result = PathSecurity.maskPII(testPathMixed, 'test.app');
         // 現在の実装は / のみサポート、\ は対応していない
         expect(result).toBe('[test.app]/build\\output\\file.js'); // 期待される結果
@@ -478,10 +500,10 @@ describe('PathSecurity', () => {
 
       // 境界条件での誤マッチ防止テスト
       it('should avoid false matches with similar project names', () => {
-        const testPath = '/Users/[USER]/workspace/myproject-old/src/file.ts';
+        const testPath = '/test/user/workspace/myproject-old/src/file.ts';
         const result = PathSecurity.maskPII(testPath, 'myproject');
         // myproject-old は myproject とは別プロジェクトなので置換されるべきではない
-        expect(result).toBe('/Users/[USER]/workspace/myproject-old/src/file.ts');
+        expect(result).toBe('/test/user/workspace/myproject-old/src/file.ts');
       });
 
       it('should handle empty and null inputs gracefully', () => {
@@ -491,7 +513,7 @@ describe('PathSecurity', () => {
       });
 
       it('should handle special regex characters in complex project names', () => {
-        const testPath = '/Users/[USER]/code/my[test].project/src/index.ts';
+        const testPath = '/test/user/code/my[test].project/src/index.ts';
         const result = PathSecurity.maskPII(testPath, 'my[test].project');
         // 現在の実装では [ ] も正規表現として解釈される
         expect(result).toBe('[my[test].project]/src/index.ts'); // 期待される結果
@@ -500,7 +522,7 @@ describe('PathSecurity', () => {
 
     describe('maskAllPaths method', () => {
       it('should mask multiple paths in content with special character project names', () => {
-        const content = 'Error in /Users/[USER]/my.project/a.ts and /home/[USER]/my.project/b.ts';
+        const content = 'Error in /test/user/my.project/a.ts and /test/other/my.project/b.ts';
         const result = PathSecurity.maskAllPaths(content, 'my.project');
         // 現在の実装では正規表現特殊文字により誤動作する可能性がある
         expect(result).toContain('[my.project]/a.ts');
