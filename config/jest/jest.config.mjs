@@ -7,22 +7,17 @@ export default {
   rootDir: '../..',
   testEnvironment: "node",
   extensionsToTreatAsEsm: [...TS_EXT_TO_TREAT_AS_ESM],
-  transform: {
-    [ESM_TS_TRANSFORM_PATTERN]: [
-      'ts-jest',
-      {
-        useESM: true,
-        tsconfig: {
-          sourceMap: false,
-          inlineSourceMap: false,
-          inlineSources: false
-        },
-        // Issue #120対応: 絶対パス除去設定
-        isolatedModules: true,
-        // キャッシュキーに絶対パス情報を含めない
-        transformIgnorePatterns: ['node_modules/(?!(chalk|#ansi-styles|inquirer|.*\\.mjs$))']
-      }
-    ]
+  preset: 'ts-jest/presets/default-esm',
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: {
+        sourceMap: false,
+        inlineSourceMap: false,
+        inlineSources: false
+      },
+      isolatedModules: true
+    }
   },
   // CI環境での非同期ハンドル問題解決
   forceExit: true, // メモリリークを防ぐため常に有効
