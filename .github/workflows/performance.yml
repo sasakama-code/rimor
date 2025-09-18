@@ -322,9 +322,9 @@ jobs:
         path: ./baseline
         
     - name: Download comprehensive results
+      id: download-comprehensive
       uses: actions/download-artifact@v4
-      # comprehensive benchmarkが実行されていない場合でも後続処理を継続
-      # Issue #170対応: continue-on-errorはステップレベルで指定
+      # Issue #169対応: アーティファクト欠落時のエラーハンドリング強化
       continue-on-error: true
       with:
         name: comprehensive-benchmark-results
@@ -334,11 +334,30 @@ jobs:
       run: |
         echo "🔍 Analyzing performance for regressions..."
         
-        # Get baseline metrics
-        BASELINE_CLI_STARTUP=$(jq .metrics.cli_startup_avg ./baseline/baseline-metrics.json)
-        BASELINE_ANALYSIS=$(jq .metrics.analysis_avg ./baseline/baseline-metrics.json)
-        BASELINE_BUILD=$(jq .metrics.build_time ./baseline/baseline-metrics.json)
-        BASELINE_MEMORY=$(jq .metrics.memory_usage_mb ./baseline/baseline-metrics.json)
+        # Issue #169対応: ベースライン結果の存在確認と検証
+        if [ ! -f "./baseline/baseline-metrics.json" ]; then
+          echo "❌ Baseline metrics not found. Cannot perform regression analysis."
+          echo "## ⚡ Performance Analysis Report" > performance_report.md
+          echo "" >> performance_report.md
+          echo "❌ **Error**: Baseline performance metrics are missing." >> performance_report.md
+          echo "Unable to perform regression analysis without baseline data." >> performance_report.md
+          exit 0
+        fi
+        
+        # Defensive Programming: JSON検証
+        if ! jq empty ./baseline/baseline-metrics.json 2>/dev/null; then
+          echo "❌ Invalid baseline metrics JSON format."
+          echo "## ⚡ Performance Analysis Report" > performance_report.md
+          echo "" >> performance_report.md
+          echo "❌ **Error**: Baseline metrics JSON is malformed." >> performance_report.md
+          exit 0
+        fi
+        
+        # Get baseline metrics with safe fallbacks
+        BASELINE_CLI_STARTUP=$(jq -r '.metrics.cli_startup_avg // "N/A"' ./baseline/baseline-metrics.json)
+        BASELINE_ANALYSIS=$(jq -r '.metrics.analysis_avg // "N/A"' ./baseline/baseline-metrics.json)
+        BASELINE_BUILD=$(jq -r '.metrics.build_time // "N/A"' ./baseline/baseline-metrics.json)
+        BASELINE_MEMORY=$(jq -r '.metrics.memory_usage_mb // "N/A"' ./baseline/baseline-metrics.json)
         
         echo "📊 Current Performance:"
         echo "- CLI Startup: ${BASELINE_CLI_STARTUP}ms"
@@ -363,18 +382,35 @@ jobs:
         
         EOF
         
-        # Historical comparison would go here
-        # For now, we'll report the current metrics
-        
+        # Issue #169対応: アーティファクト欠落時の堅牢なハンドリング
+        COMPREHENSIVE_AVAILABLE=false
         if [ -f "./comprehensive/comprehensive-metrics.json" ]; then
-          LARGE_ANALYSIS=$(jq .comprehensive_metrics.large_project_analysis ./comprehensive/comprehensive-metrics.json)
-          MEMORY_PEAK=$(jq .comprehensive_metrics.memory_peak_mb ./comprehensive/comprehensive-metrics.json)
+          # JSON検証
+          if jq empty ./comprehensive/comprehensive-metrics.json 2>/dev/null; then
+            COMPREHENSIVE_AVAILABLE=true
+            echo "✅ Comprehensive benchmark data found and validated."
+          else
+            echo "⚠️ Comprehensive metrics JSON is malformed. Skipping comprehensive analysis."
+          fi
+        else
+          echo "ℹ️ Comprehensive benchmark not available (may not have run for this PR type)."
+        fi
+        
+        if [ "$COMPREHENSIVE_AVAILABLE" = true ]; then
+          LARGE_ANALYSIS=$(jq -r '.comprehensive_metrics.large_project_analysis // "N/A"' ./comprehensive/comprehensive-metrics.json)
+          MEMORY_PEAK=$(jq -r '.comprehensive_metrics.memory_peak_mb // "N/A"' ./comprehensive/comprehensive-metrics.json)
+          CONCURRENT_TIME=$(jq -r '.comprehensive_metrics.concurrent_analysis // "N/A"' ./comprehensive/comprehensive-metrics.json)
           
           echo "### 🚀 Comprehensive Benchmarks" >> performance_report.md
           echo "| Metric | Value |" >> performance_report.md
           echo "|--------|-------|" >> performance_report.md
           echo "| Large Project Analysis | ${LARGE_ANALYSIS}ms |" >> performance_report.md
           echo "| Peak Memory Usage | ${MEMORY_PEAK}MB |" >> performance_report.md
+          echo "| Concurrent Analysis | ${CONCURRENT_TIME}ms |" >> performance_report.md
+        else
+          echo "### 🚀 Comprehensive Benchmarks" >> performance_report.md
+          echo "ℹ️ Comprehensive benchmark data not available for this run." >> performance_report.md
+          echo "This is normal for quick benchmarks or when comprehensive tests are skipped." >> performance_report.md
         fi
         
         echo "" >> performance_report.md
@@ -413,7 +449,10 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download all results
+      id: download-all
       uses: actions/download-artifact@v4
+      # Issue #169対応: 全結果ダウンロード時のエラー耐性強化
+      continue-on-error: true
       with:
         pattern: "*-results"
         path: ./all-results
@@ -425,20 +464,71 @@ jobs:
         mkdir -p .rimor/performance-history
         TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
         
-        # Combine all results
+        # Issue #169対応: アーティファクト存在確認と安全なJSON構築
+        BASELINE_DATA="null"
+        COMPREHENSIVE_DATA="null"
+        
+        # ベースライン結果の検証
+        if [ -f "./all-results/baseline-performance-results/baseline-metrics.json" ]; then
+          if jq empty ./all-results/baseline-performance-results/baseline-metrics.json 2>/dev/null; then
+            BASELINE_DATA=$(cat ./all-results/baseline-performance-results/baseline-metrics.json)
+            echo "✅ Baseline data found and validated for historical storage."
+          else
+            echo "⚠️ Baseline data found but JSON is malformed. Storing as null."
+          fi
+        else
+          echo "ℹ️ Baseline data not found. This may indicate a failed baseline job."
+        fi
+        
+        # 包括的ベンチマーク結果の検証
+        if [ -f "./all-results/comprehensive-benchmark-results/comprehensive-metrics.json" ]; then
+          if jq empty ./all-results/comprehensive-benchmark-results/comprehensive-metrics.json 2>/dev/null; then
+            COMPREHENSIVE_DATA=$(cat ./all-results/comprehensive-benchmark-results/comprehensive-metrics.json)
+            echo "✅ Comprehensive data found and validated for historical storage."
+          else
+            echo "⚠️ Comprehensive data found but JSON is malformed. Storing as null."
+          fi
+        else
+          echo "ℹ️ Comprehensive data not available. This is normal for quick benchmarks."
+        fi
+        
+        # JSON構築（Defensive Programming: 安全なJSON生成）
         cat > .rimor/performance-history/performance-$TIMESTAMP.json << EOF
         {
           "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
           "commit": "${{ github.sha }}",
           "branch": "${{ github.ref_name }}",
-          "baseline": $(cat ./all-results/baseline-performance-results/baseline-metrics.json 2>/dev/null || echo "null"),
-          "comprehensive": $(cat ./all-results/comprehensive-benchmark-results/comprehensive-metrics.json 2>/dev/null || echo "null")
+          "metadata": {
+            "baseline_available": $([ "$BASELINE_DATA" != "null" ] && echo "true" || echo "false"),
+            "comprehensive_available": $([ "$COMPREHENSIVE_DATA" != "null" ] && echo "true" || echo "false"),
+            "workflow_run_id": "${{ github.run_id }}",
+            "workflow_run_number": "${{ github.run_number }}"
+          },
+          "baseline": $BASELINE_DATA,
+          "comprehensive": $COMPREHENSIVE_DATA
         }
         EOF
         
-        echo "📈 Performance data stored: performance-$TIMESTAMP.json"
+        # 生成されたJSONの検証
+        if jq empty .rimor/performance-history/performance-$TIMESTAMP.json 2>/dev/null; then
+          echo "📈 Performance data successfully stored: performance-$TIMESTAMP.json"
+        else
+          echo "❌ Generated performance JSON is malformed. Check data integrity."
+          # フォールバック: 最小限のデータで再生成
+          cat > .rimor/performance-history/performance-$TIMESTAMP.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "error": "Data collection failed",
+          "baseline": null,
+          "comprehensive": null
+        }
+        EOF
+          echo "🔧 Fallback performance record created."
+        fi
         
-        # Keep only last 30 days of data
+        # Keep only last 30 days of data (エラー処理強化)
         find .rimor/performance-history -name "performance-*.json" -type f -mtime +30 -delete 2>/dev/null || true
         
     - name: Upload historical data
