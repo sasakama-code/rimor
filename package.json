@@ -98,7 +98,10 @@
     "type:report": "npm run type:coverage && npm run type:check-circular",
     "repository:validate": "node scripts/repository-config.js validate",
     "repository:update": "node scripts/repository-config.js update",
-    "repository:info": "node scripts/repository-config.js info"
+    "repository:info": "node scripts/repository-config.js info",
+    "repository:validate:strict": "node scripts/validate-repository-consistency.js --strict --verbose",
+    "repository:validate:quick": "node scripts/validate-repository-consistency.js",
+    "repository:validate:pre-commit": "node scripts/validate-repository-consistency.js --pre-commit --no-exit"
   },
   "keywords": [
     "testing",

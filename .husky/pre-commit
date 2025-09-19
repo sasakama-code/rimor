@@ -12,6 +12,7 @@ readonly ERROR_TEST_CHECK="❌ One or more tests failed. Please fix failing test
 readonly ERROR_NAMING_CHECK="❌ 命名規則違反が検出されました。詳細は docs/NAMING_CONVENTIONS.md を参照してください。"
 readonly ERROR_ANY_TYPE_CHECK="❌ any型の使用が増加しています。'node scripts/convert-any-to-unknown.js --dry-run' でany型をunknown型に変換できます"
 readonly ERROR_CACHE_FILE_CHECK="❌ キャッシュファイルの誤コミットが検出されました（Issue #118対応）。.gitignoreを確認してください。"
+readonly ERROR_REPO_CONSISTENCY_CHECK="❌ リポジトリ設定の整合性エラーが検出されました。'npm run repository:validate' で詳細を確認してください。"
 
 # エラーハンドリング関数（単一責任原則）
 handle_check_failure() {
@@ -140,6 +141,18 @@ run_circular_dependency_check() {
     fi
 }
 
+run_repository_consistency_check() {
+    echo "🔗 Checking repository configuration consistency..."
+    if ! npm run repository:validate:pre-commit > /dev/null 2>&1; then
+        echo "💡 リポジトリ設定に不整合があります。以下のコマンドで詳細を確認:"
+        echo "   npm run repository:validate"
+        echo "   npm run repository:update  # 自動修正"
+        handle_check_failure "$ERROR_REPO_CONSISTENCY_CHECK" "Repository consistency"
+    else
+        echo "  ✅ リポジトリ設定整合性チェック通過"
+    fi
+}
+
 run_cache_file_check() {
     echo "🗄️ Checking for cache files (Issue #118)..."
     local cache_file_errors=0
@@ -207,6 +220,7 @@ main() {
     
     # 必須チェック（失敗時は即座にexit）
     run_cache_file_check           # Issue #118対応: キャッシュファイル誤コミット防止（最優先）
+    run_repository_consistency_check  # リポジトリ設定整合性チェック（Defensive Programming）
     run_type_check
     run_lint_check
     run_build_check
