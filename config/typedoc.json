@@ -1,15 +1,15 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/types/index.ts"],
+  "entryPoints": ["../src/types/index.ts"],
   "entryPointStrategy": "expand",
-  "out": "docs/api",
+  "out": "../docs/api",
   "excludePrivate": true,
   "excludeProtected": false,
   "includeVersion": true,
   "hideGenerator": false,
   "theme": "default",
   "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-mermaid"],
-  "readme": "README.md",
+  "readme": "../README.md",
   "navigationLinks": {
     "GitHub": "https://github.com/sasakama-code/rimor",
     "Issues": "https://github.com/sasakama-code/rimor/issues"
@@ -17,7 +17,7 @@
   "categorizeByGroup": true,
   "sourceLinkTemplate": "https://github.com/sasakama-code/rimor/blob/{gitRevision}/{path}#L{line}",
   "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
-  "tsconfig": "./tsconfig.json",
+  "tsconfig": "../tsconfig.json",
   "name": "Rimor API Documentation",
   "validation": {
     "notExported": false,
