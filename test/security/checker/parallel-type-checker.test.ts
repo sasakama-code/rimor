@@ -196,9 +196,10 @@ describe('ParallelTypeChecker', () => {
       const results = await checker.checkMethodsInParallel(methods);
       
       expect(results.size).toBe(10);
-      // 結果が正しいキーで格納されていることを確認
+      // Issue #150対応: 統一IDキー（filePath:methodName）で結果を確認
       for (let i = 0; i < 10; i++) {
-        const result = results.get(`method${i}`);
+        const expectedId = `test.ts:method${i}`;
+        const result = results.get(expectedId);
         expect(result).toBeDefined();
         expect(result!.method.name).toBe(`method${i}`);
       }
@@ -254,12 +255,13 @@ describe('ParallelTypeChecker', () => {
       
       // 両方のメソッドが処理される（nullコンテンツは空文字列として扱われる）
       expect(results.size).toBe(2);
-      const validResult = results.get('validMethod');
+      // Issue #150対応: 統一IDキー（filePath:methodName）で結果を確認
+      const validResult = results.get('test.ts:validMethod');
       expect(validResult).toBeDefined();
       expect(validResult!.securityIssues).toHaveLength(0);
       
       // invalidMethodも処理されるが、内容は空
-      const invalidResult = results.get('invalidMethod');
+      const invalidResult = results.get('test.ts:invalidMethod');
       expect(invalidResult).toBeDefined();
       expect(invalidResult!.method.name).toBe('invalidMethod');
     });
@@ -522,6 +524,105 @@ describe('ParallelTypeChecker', () => {
       await expect(testChecker.cleanup()).resolves.not.toThrow();
       
       // cleanup後は新しいインスタンスが必要
+    });
+  });
+
+  // Issue #150対応: タスクIDの一意性テスト
+  describe('タスクIDの一意性 (Issue #150)', () => {
+    it('異なるファイルの同名メソッドが異なるIDを持つこと', async () => {
+      // 同名メソッドを異なるファイルで定義
+      const methods: TestMethod[] = [
+        {
+          name: 'calculateSum',
+          type: 'test',
+          filePath: 'fileA.ts',
+          content: 'function calculateSum(a: number, b: number): number { return a + b; }',
+          signature: {
+            name: 'calculateSum',
+            parameters: [
+              { name: 'a', type: 'number' },
+              { name: 'b', type: 'number' }
+            ],
+            returnType: 'number',
+            annotations: [],
+            isAsync: false
+          },
+          location: { 
+            start: { line: 1, column: 0 },
+            end: { line: 1, column: 0 },
+            startLine: 1, 
+            endLine: 1, 
+            startColumn: 0, 
+            endColumn: 0 
+          }
+        },
+        {
+          name: 'calculateSum',
+          type: 'test',
+          filePath: 'fileB.ts',
+          content: 'function calculateSum(x: number, y: number): number { return x + y; }',
+          signature: {
+            name: 'calculateSum',
+            parameters: [
+              { name: 'x', type: 'number' },
+              { name: 'y', type: 'number' }
+            ],
+            returnType: 'number',
+            annotations: [],
+            isAsync: false
+          },
+          location: { 
+            start: { line: 1, column: 0 },
+            end: { line: 1, column: 0 },
+            startLine: 1, 
+            endLine: 1, 
+            startColumn: 0, 
+            endColumn: 0 
+          }
+        }
+      ];
+
+      const results = await checker.checkMethodsInParallel(methods);
+
+      // Issue #150: 異なるファイルの同名メソッドが異なる結果キーを持つことを確認
+      expect(results.size).toBe(2);
+      
+      // 期待されるキー形式: "filePath:methodName"
+      expect(results.has('fileA.ts:calculateSum')).toBe(true);
+      expect(results.has('fileB.ts:calculateSum')).toBe(true);
+      
+      // 古い形式（メソッド名のみ）では重複するため、両方は存在しない
+      expect(results.has('calculateSum')).toBe(false);
+    });
+
+    it('filePathがない場合はメソッド名のみをIDとすること', async () => {
+      const method: TestMethod = {
+        name: 'legacyMethod',
+        type: 'test',
+        // filePath: undefined （意図的に省略）
+        content: 'function legacyMethod(): string { return "legacy"; }',
+        signature: {
+          name: 'legacyMethod',
+          parameters: [],
+          returnType: 'string',
+          annotations: [],
+          isAsync: false
+        },
+        location: { 
+          start: { line: 1, column: 0 },
+          end: { line: 1, column: 0 },
+          startLine: 1, 
+          endLine: 1, 
+          startColumn: 0, 
+          endColumn: 0 
+        }
+      };
+
+      const results = await checker.checkMethodsInParallel([method]);
+
+      // filePathがない場合はメソッド名のみがキーとなる
+      expect(results.has('legacyMethod')).toBe(true);
+      expect(results.size).toBe(1);
     });
   });
 });

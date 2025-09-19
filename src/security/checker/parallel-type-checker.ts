@@ -120,21 +120,25 @@ export class ParallelTypeChecker extends EventEmitter {
 
   /**
    * メソッドの並列型チェック
-   * Issue #151修正: 依存関係解析後に結果をクリアするよう変更
+   * Issue #150修正: 結果を事前にクリアして統一ID処理に対応
    */
   async checkMethodsInParallel(methods: TestMethod[]): Promise<Map<string, MethodTypeCheckResult>> {
-    // メソッドの依存関係を解析（既存の結果を利用）
-    const dependencies = await this.analyzeDependencies(methods);
-    
-    // 依存関係解析完了後に結果をクリア
+    // 新しいバッチ処理前に結果をクリア
     this.results.clear();
     
+    // メソッドの依存関係を解析
+    const dependencies = await this.analyzeDependencies(methods);
+    
     // タスクを作成
-    const tasks = methods.map(method => ({
-      id: method.name,
-      method,
-      dependencies: Array.from(dependencies.get(method.name) || new Map())
-    }));
+    // Issue #150対応: ファイルパス含む統一IDでタスクID一意性を確保
+    const tasks = methods.map(method => {
+      const methodId = method.filePath ? `${method.filePath}:${method.name}` : method.name;
+      return {
+        id: methodId,
+        method,
+        dependencies: Array.from(dependencies.get(methodId) || new Map())
+      };
+    });
     
     // バッチ処理
     const batches = this.createBatches(tasks, this.config.batchSize);
@@ -148,19 +152,26 @@ export class ParallelTypeChecker extends EventEmitter {
 
   /**
    * 依存関係の解析
+   * Issue #150対応: 統一IDを使用した依存関係解析
    */
   private async analyzeDependencies(methods: TestMethod[]): Promise<Map<string, Map<string, QualifiedType<unknown>>>> {
     const dependencies = new Map<string, Map<string, QualifiedType<unknown>>>();
     const processedMethods = new Set<string>(); // 循環参照防止
     
+    // Issue #150対応: 統一ID生成ヘルパー関数
+    const getMethodId = (method: TestMethod) => 
+      method.filePath ? `${method.filePath}:${method.name}` : method.name;
+    
     // 簡易実装：メソッド間の依存関係を検出
     for (const method of methods) {
-      if (processedMethods.has(method.name)) {
+      const methodId = getMethodId(method);
+      
+      if (processedMethods.has(methodId)) {
         continue; // 循環参照を防ぐ
       }
       
       const deps = new Map<string, QualifiedType<unknown>>();
-      processedMethods.add(method.name);
+      processedMethods.add(methodId);
       
       // インポートや共有変数の検出
       const imports = this.extractImports(method.content || '');
@@ -170,16 +181,18 @@ export class ParallelTypeChecker extends EventEmitter {
           continue;
         }
         
-        // 既知の型情報から依存関係を解決（resultsが空の場合はスキップ）
-        if (this.results.has(imp)) {
-          const result = this.results.get(imp)!;
-          result.inferredTypes.forEach((type, name) => {
-            deps.set(`${imp}.${name}`, type);
-          });
-        }
+        // Issue #150修正: 既存結果に依存せず、基本的な依存関係のみマッピング
+        // 基本的な型推論を実行（詳細な解析は各タスクで実施）
+        const defaultType: QualifiedType<unknown> = { 
+          __brand: '@PolyTaint', 
+          __value: imp, 
+          __parameterIndices: [], 
+          __propagationRule: 'any' 
+        } as QualifiedType<unknown>;
+        deps.set(imp, defaultType);
       }
       
-      dependencies.set(method.name, deps);
+      dependencies.set(methodId, deps);
     }
     
     return dependencies;
