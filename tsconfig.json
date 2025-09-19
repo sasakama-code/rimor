@@ -11,8 +11,8 @@
     "forceConsistentCasingInFileNames": true,
     "downlevelIteration": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "declarationMap": false,
+    "sourceMap": false,
     // Issue #147対応: PII露出リスク完全解消
     "inlineSourceMap": false,
     "inlineSources": false,
@@ -29,9 +29,7 @@
     "preserveConstEnums": true,
     "incremental": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
