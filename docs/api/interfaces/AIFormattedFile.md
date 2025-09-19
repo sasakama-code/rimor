@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIFormattedFile
 
-Defined in: ai/index.ts:83
+Defined in: [ai/index.ts:101](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L101)
 
 AIフォーマット済みのファイル
 
@@ -16,7 +16,7 @@ AIフォーマット済みのファイル
 
 > **issueCount**: `number`
 
-Defined in: ai/index.ts:87
+Defined in: [ai/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L105)
 
 問題数
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:87
 
 > **issues**: [`AIFormattedIssue`](AIFormattedIssue.md)[]
 
-Defined in: ai/index.ts:89
+Defined in: [ai/index.ts:107](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L107)
 
 問題リスト
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:89
 
 > **path**: `string`
 
-Defined in: ai/index.ts:85
+Defined in: [ai/index.ts:103](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L103)
 
 ファイルパス
 
@@ -46,6 +46,6 @@ Defined in: ai/index.ts:85
 
 > **score**: `number`
 
-Defined in: ai/index.ts:91
+Defined in: [ai/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L109)
 
 スコア

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IssueSection
 
-Defined in: ai/index.ts:230
+Defined in: [ai/index.ts:248](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L248)
 
 問題セクション
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:230
 
 > `optional` **codeExample**: `string`
 
-Defined in: ai/index.ts:238
+Defined in: [ai/index.ts:256](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L256)
 
 コード例
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:238
 
 > **content**: `string`
 
-Defined in: ai/index.ts:236
+Defined in: [ai/index.ts:254](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L254)
 
 内容
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:236
 
 > **severity**: `string`
 
-Defined in: ai/index.ts:234
+Defined in: [ai/index.ts:252](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L252)
 
 深刻度
 
@@ -46,6 +46,6 @@ Defined in: ai/index.ts:234
 
 > **title**: `string`
 
-Defined in: ai/index.ts:232
+Defined in: [ai/index.ts:250](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L250)
 
 タイトル

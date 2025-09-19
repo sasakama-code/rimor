@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: SecurityImprovement
 
-Defined in: security/index.ts:90
+Defined in: [security/index.ts:90](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L90)
 
 セキュリティ改善提案
 
@@ -16,7 +16,7 @@ Defined in: security/index.ts:90
 
 > **category**: [`ImprovementCategory`](../type-aliases/ImprovementCategory.md)
 
-Defined in: security/index.ts:92
+Defined in: [security/index.ts:92](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L92)
 
 改善カテゴリ
 
@@ -26,7 +26,7 @@ Defined in: security/index.ts:92
 
 > **description**: `string`
 
-Defined in: security/index.ts:96
+Defined in: [security/index.ts:96](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L96)
 
 改善内容の説明
 
@@ -36,7 +36,7 @@ Defined in: security/index.ts:96
 
 > **estimatedEffort**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: security/index.ts:98
+Defined in: [security/index.ts:98](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L98)
 
 実装工数の見積もり
 
@@ -46,7 +46,7 @@ Defined in: security/index.ts:98
 
 > `optional` **example**: `string`
 
-Defined in: security/index.ts:102
+Defined in: [security/index.ts:102](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L102)
 
 実装例（オプション）
 
@@ -56,7 +56,7 @@ Defined in: security/index.ts:102
 
 > **impact**: [`TaintSeverity`](../type-aliases/TaintSeverity.md)
 
-Defined in: security/index.ts:100
+Defined in: [security/index.ts:100](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L100)
 
 セキュリティへの影響度
 
@@ -66,6 +66,6 @@ Defined in: security/index.ts:100
 
 > **priority**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: security/index.ts:94
+Defined in: [security/index.ts:94](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L94)
 
 優先度

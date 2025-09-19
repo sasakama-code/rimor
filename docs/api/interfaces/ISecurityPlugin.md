@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ISecurityPlugin
 
-Defined in: plugins/index.ts:165
+Defined in: [plugins/index.ts:165](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L165)
 
 セキュリティプラグイン
 
@@ -20,7 +20,7 @@ Defined in: plugins/index.ts:165
 
 > `optional` **metadata**: [`PluginMetadata`](PluginMetadata.md)
 
-Defined in: plugins/index.ts:109
+Defined in: [plugins/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L109)
 
 メタデータ
 
@@ -34,7 +34,7 @@ Defined in: plugins/index.ts:109
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:105
+Defined in: [plugins/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L105)
 
 プラグイン名
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:105
 
 > **type**: `"SECURITY"`
 
-Defined in: plugins/index.ts:166
+Defined in: [plugins/index.ts:166](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L166)
 
 プラグインタイプ
 
@@ -62,7 +62,7 @@ Defined in: plugins/index.ts:166
 
 > `optional` **checkVulnerabilities**(`dependencies`): `Promise`\<[`Vulnerability`](Vulnerability.md)[]\>
 
-Defined in: plugins/index.ts:170
+Defined in: [plugins/index.ts:170](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L170)
 
 脆弱性チェック
 
@@ -82,7 +82,7 @@ Defined in: plugins/index.ts:170
 
 > `optional` **cleanup**(): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:115
+Defined in: [plugins/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L115)
 
 クリーンアップ
 
@@ -98,9 +98,9 @@ Defined in: plugins/index.ts:115
 
 ### execute()
 
-> **execute**(`input`, `context?`): `Promise`\<`any`\>
+> **execute**(`input`, `context?`): `Promise`\<`unknown`\>
 
-Defined in: plugins/index.ts:113
+Defined in: [plugins/index.ts:113](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L113)
 
 実行
 
@@ -108,7 +108,7 @@ Defined in: plugins/index.ts:113
 
 ##### input
 
-`any`
+`unknown`
 
 ##### context?
 
@@ -116,7 +116,7 @@ Defined in: plugins/index.ts:113
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`unknown`\>
 
 #### Inherited from
 
@@ -128,7 +128,7 @@ Defined in: plugins/index.ts:113
 
 > `optional` **initialize**(`context`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:111
+Defined in: [plugins/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L111)
 
 初期化
 
@@ -152,7 +152,7 @@ Defined in: plugins/index.ts:111
 
 > **scan**(`target`): `Promise`\<[`SecurityIssue`](SecurityIssue.md)[]\>
 
-Defined in: plugins/index.ts:168
+Defined in: [plugins/index.ts:168](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L168)
 
 セキュリティスキャン
 

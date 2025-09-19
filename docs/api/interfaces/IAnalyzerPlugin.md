@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IAnalyzerPlugin
 
-Defined in: plugins/index.ts:121
+Defined in: [plugins/index.ts:121](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L121)
 
 分析プラグイン
 
@@ -20,7 +20,7 @@ Defined in: plugins/index.ts:121
 
 > `optional` **metadata**: [`PluginMetadata`](PluginMetadata.md)
 
-Defined in: plugins/index.ts:109
+Defined in: [plugins/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L109)
 
 メタデータ
 
@@ -34,7 +34,7 @@ Defined in: plugins/index.ts:109
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:105
+Defined in: [plugins/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L105)
 
 プラグイン名
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:105
 
 > **type**: `"ANALYZER"`
 
-Defined in: plugins/index.ts:122
+Defined in: [plugins/index.ts:122](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L122)
 
 プラグインタイプ
 
@@ -62,7 +62,7 @@ Defined in: plugins/index.ts:122
 
 > **analyzeFile**(`filePath`, `content`): `Promise`\<`Issue`[]\>
 
-Defined in: plugins/index.ts:124
+Defined in: [plugins/index.ts:124](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L124)
 
 ファイル分析
 
@@ -86,7 +86,7 @@ Defined in: plugins/index.ts:124
 
 > `optional` **analyzeProject**(`projectPath`): `Promise`\<`Issue`[]\>
 
-Defined in: plugins/index.ts:126
+Defined in: [plugins/index.ts:126](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L126)
 
 プロジェクト分析
 
@@ -106,7 +106,7 @@ Defined in: plugins/index.ts:126
 
 > `optional` **cleanup**(): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:115
+Defined in: [plugins/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L115)
 
 クリーンアップ
 
@@ -122,9 +122,9 @@ Defined in: plugins/index.ts:115
 
 ### execute()
 
-> **execute**(`input`, `context?`): `Promise`\<`any`\>
+> **execute**(`input`, `context?`): `Promise`\<`unknown`\>
 
-Defined in: plugins/index.ts:113
+Defined in: [plugins/index.ts:113](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L113)
 
 実行
 
@@ -132,7 +132,7 @@ Defined in: plugins/index.ts:113
 
 ##### input
 
-`any`
+`unknown`
 
 ##### context?
 
@@ -140,7 +140,7 @@ Defined in: plugins/index.ts:113
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`unknown`\>
 
 #### Inherited from
 
@@ -152,7 +152,7 @@ Defined in: plugins/index.ts:113
 
 > `optional` **initialize**(`context`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:111
+Defined in: [plugins/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L111)
 
 初期化
 

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IWorkerPool
 
-Defined in: workers/index.ts:175
+Defined in: [workers/index.ts:175](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L175)
 
 ワーカープールインターフェース
 
@@ -16,7 +16,7 @@ Defined in: workers/index.ts:175
 
 > **cancelAllTasks**(): `Promise`\<`void`\>
 
-Defined in: workers/index.ts:191
+Defined in: [workers/index.ts:191](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L191)
 
 すべてのタスクのキャンセル
 
@@ -30,7 +30,7 @@ Defined in: workers/index.ts:191
 
 > **cancelTask**(`taskId`): `Promise`\<`boolean`\>
 
-Defined in: workers/index.ts:189
+Defined in: [workers/index.ts:189](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L189)
 
 タスクのキャンセル
 
@@ -50,7 +50,7 @@ Defined in: workers/index.ts:189
 
 > **execute**(`task`): `Promise`\<[`TaskResult`](TaskResult.md)\>
 
-Defined in: workers/index.ts:177
+Defined in: [workers/index.ts:177](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L177)
 
 タスクの実行
 
@@ -70,7 +70,7 @@ Defined in: workers/index.ts:177
 
 > **executeBatch**(`tasks`): `Promise`\<[`TaskResult`](TaskResult.md)[]\>
 
-Defined in: workers/index.ts:179
+Defined in: [workers/index.ts:179](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L179)
 
 バッチタスクの実行
 
@@ -90,7 +90,7 @@ Defined in: workers/index.ts:179
 
 > **getStats**(): [`WorkerPoolStats`](WorkerPoolStats.md)
 
-Defined in: workers/index.ts:185
+Defined in: [workers/index.ts:185](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L185)
 
 統計情報の取得
 
@@ -104,7 +104,7 @@ Defined in: workers/index.ts:185
 
 > **getWorkers**(): [`WorkerInfo`](WorkerInfo.md)[]
 
-Defined in: workers/index.ts:187
+Defined in: [workers/index.ts:187](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L187)
 
 ワーカー情報の取得
 
@@ -118,7 +118,7 @@ Defined in: workers/index.ts:187
 
 > **start**(): `Promise`\<`void`\>
 
-Defined in: workers/index.ts:181
+Defined in: [workers/index.ts:181](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L181)
 
 ワーカープールの開始
 
@@ -132,7 +132,7 @@ Defined in: workers/index.ts:181
 
 > **stop**(): `Promise`\<`void`\>
 
-Defined in: workers/index.ts:183
+Defined in: [workers/index.ts:183](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L183)
 
 ワーカープールの停止
 

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIMarkdownOutput
 
-Defined in: ai/index.ts:202
+Defined in: [ai/index.ts:220](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L220)
 
 AIマークダウン出力
 
@@ -16,7 +16,7 @@ AIマークダウン出力
 
 > **fileAnalysis**: [`FileAnalysisSection`](FileAnalysisSection.md)[]
 
-Defined in: ai/index.ts:206
+Defined in: [ai/index.ts:224](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L224)
 
 ファイル分析セクション
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:206
 
 > **issues**: [`IssueSection`](IssueSection.md)[]
 
-Defined in: ai/index.ts:208
+Defined in: [ai/index.ts:226](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L226)
 
 問題セクション
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:208
 
 > **recommendations**: `string`[]
 
-Defined in: ai/index.ts:212
+Defined in: [ai/index.ts:230](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L230)
 
 推奨事項
 
@@ -46,7 +46,7 @@ Defined in: ai/index.ts:212
 
 > **summary**: `string`
 
-Defined in: ai/index.ts:204
+Defined in: [ai/index.ts:222](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L222)
 
 サマリーセクション
 
@@ -56,6 +56,6 @@ Defined in: ai/index.ts:204
 
 > **tasks**: [`TaskSection`](TaskSection.md)[]
 
-Defined in: ai/index.ts:210
+Defined in: [ai/index.ts:228](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L228)
 
 タスクセクション

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIFormattedIssue
 
-Defined in: ai/index.ts:61
+Defined in: [ai/index.ts:79](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L79)
 
 AIフォーマット済みの問題
 
@@ -16,7 +16,7 @@ AIフォーマット済みの問題
 
 > **category**: `string`
 
-Defined in: ai/index.ts:63
+Defined in: [ai/index.ts:81](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L81)
 
 カテゴリ
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:63
 
 > `optional` **codeSnippet**: `string`
 
-Defined in: ai/index.ts:77
+Defined in: [ai/index.ts:95](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L95)
 
 コードスニペット
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:77
 
 > `optional` **column**: `number`
 
-Defined in: ai/index.ts:71
+Defined in: [ai/index.ts:89](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L89)
 
 列番号
 
@@ -44,9 +44,9 @@ Defined in: ai/index.ts:71
 
 ### impact
 
-> **impact**: `"high"` \| `"medium"` \| `"low"`
+> **impact**: `"low"` \| `"medium"` \| `"high"`
 
-Defined in: ai/index.ts:75
+Defined in: [ai/index.ts:93](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L93)
 
 影響度
 
@@ -56,7 +56,7 @@ Defined in: ai/index.ts:75
 
 > `optional` **line**: `number`
 
-Defined in: ai/index.ts:69
+Defined in: [ai/index.ts:87](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L87)
 
 行番号
 
@@ -66,7 +66,7 @@ Defined in: ai/index.ts:69
 
 > **message**: `string`
 
-Defined in: ai/index.ts:67
+Defined in: [ai/index.ts:85](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L85)
 
 メッセージ
 
@@ -76,7 +76,7 @@ Defined in: ai/index.ts:67
 
 > **severity**: `string`
 
-Defined in: ai/index.ts:65
+Defined in: [ai/index.ts:83](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L83)
 
 深刻度
 
@@ -86,6 +86,6 @@ Defined in: ai/index.ts:65
 
 > `optional` **suggestion**: `string`
 
-Defined in: ai/index.ts:73
+Defined in: [ai/index.ts:91](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L91)
 
 修正提案

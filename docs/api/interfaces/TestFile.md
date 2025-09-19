@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestFile
 
-Defined in: testing/index.ts:191
+Defined in: [testing/index.ts:201](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L201)
 
 テストファイル情報
 
@@ -16,7 +16,7 @@ Defined in: testing/index.ts:191
 
 > `optional` **coverage**: `object`
 
-Defined in: testing/index.ts:201
+Defined in: [testing/index.ts:211](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L211)
 
 カバレッジ情報
 
@@ -42,7 +42,7 @@ Defined in: testing/index.ts:201
 
 > `optional` **framework**: `string`
 
-Defined in: testing/index.ts:197
+Defined in: [testing/index.ts:207](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L207)
 
 テストフレームワーク
 
@@ -52,7 +52,7 @@ Defined in: testing/index.ts:197
 
 > `optional` **metadata**: `object`
 
-Defined in: testing/index.ts:208
+Defined in: [testing/index.ts:218](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L218)
 
 ファイルメタデータ
 
@@ -74,7 +74,7 @@ Defined in: testing/index.ts:208
 
 > **path**: `string`
 
-Defined in: testing/index.ts:193
+Defined in: [testing/index.ts:203](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L203)
 
 ファイルパス
 
@@ -84,7 +84,7 @@ Defined in: testing/index.ts:193
 
 > **testCases**: [`TestCase`](TestCase.md)[]
 
-Defined in: testing/index.ts:199
+Defined in: [testing/index.ts:209](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L209)
 
 テストケースのリスト
 
@@ -94,6 +94,6 @@ Defined in: testing/index.ts:199
 
 > **type**: [`TestType`](../type-aliases/TestType.md)
 
-Defined in: testing/index.ts:195
+Defined in: [testing/index.ts:205](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L205)
 
 テストの種類

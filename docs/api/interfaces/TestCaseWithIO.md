@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestCaseWithIO
 
-Defined in: testing/index.ts:52
+Defined in: [testing/index.ts:62](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L62)
 
 入出力情報を持つテストケース
 
@@ -18,9 +18,9 @@ Defined in: testing/index.ts:52
 
 ### actualOutput?
 
-> `optional` **actualOutput**: `any`
+> `optional` **actualOutput**: `unknown`
 
-Defined in: testing/index.ts:58
+Defined in: [testing/index.ts:68](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L68)
 
 実際の出力
 
@@ -30,7 +30,7 @@ Defined in: testing/index.ts:58
 
 > `optional` **error**: `object`
 
-Defined in: testing/index.ts:60
+Defined in: [testing/index.ts:70](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L70)
 
 エラー情報（失敗時）
 
@@ -50,9 +50,9 @@ Defined in: testing/index.ts:60
 
 ### expectedOutput?
 
-> `optional` **expectedOutput**: `any`
+> `optional` **expectedOutput**: `unknown`
 
-Defined in: testing/index.ts:56
+Defined in: [testing/index.ts:66](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L66)
 
 期待される出力
 
@@ -60,8 +60,8 @@ Defined in: testing/index.ts:56
 
 ### input?
 
-> `optional` **input**: `any`
+> `optional` **input**: `unknown`
 
-Defined in: testing/index.ts:54
+Defined in: [testing/index.ts:64](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L64)
 
 テストの入力データ

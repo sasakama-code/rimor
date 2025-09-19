@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TaskRegistry
 
-Defined in: workers/index.ts:202
+Defined in: [workers/index.ts:202](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L202)
 
 タスクレジストリ
 
@@ -16,7 +16,7 @@ Defined in: workers/index.ts:202
 
 > **getHandler**(`type`): `undefined` \| [`TaskHandler`](../type-aliases/TaskHandler.md)\<`any`, `any`\>
 
-Defined in: workers/index.ts:208
+Defined in: [workers/index.ts:208](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L208)
 
 タスクハンドラーの取得
 
@@ -36,7 +36,7 @@ Defined in: workers/index.ts:208
 
 > **getTypes**(): `string`[]
 
-Defined in: workers/index.ts:210
+Defined in: [workers/index.ts:210](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L210)
 
 すべてのタスクタイプの取得
 
@@ -50,7 +50,7 @@ Defined in: workers/index.ts:210
 
 > **register**\<`T`, `R`\>(`type`, `handler`): `void`
 
-Defined in: workers/index.ts:204
+Defined in: [workers/index.ts:204](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L204)
 
 タスクハンドラーの登録
 
@@ -84,7 +84,7 @@ Defined in: workers/index.ts:204
 
 > **unregister**(`type`): `void`
 
-Defined in: workers/index.ts:206
+Defined in: [workers/index.ts:206](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L206)
 
 タスクハンドラーの登録解除
 

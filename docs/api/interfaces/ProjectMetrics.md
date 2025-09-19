@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ProjectMetrics
 
-Defined in: shared/index.ts:259
+Defined in: [shared/index.ts:259](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L259)
 
 プロジェクトメトリクス
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:259
 
 > **blankLines**: `number`
 
-Defined in: shared/index.ts:269
+Defined in: [shared/index.ts:269](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L269)
 
 空行数
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:269
 
 > **commentLines**: `number`
 
-Defined in: shared/index.ts:267
+Defined in: [shared/index.ts:267](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L267)
 
 コメント行数
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:267
 
 > `optional` **complexity**: `object`
 
-Defined in: shared/index.ts:277
+Defined in: [shared/index.ts:280](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L280)
 
 複雑度
 
@@ -58,7 +58,7 @@ Defined in: shared/index.ts:277
 
 > **languages**: `Record`\<`string`, \{ `files`: `number`; `lines`: `number`; `percentage`: `number`; \}\>
 
-Defined in: shared/index.ts:271
+Defined in: [shared/index.ts:271](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L271)
 
 言語別統計
 
@@ -68,7 +68,7 @@ Defined in: shared/index.ts:271
 
 > **linesOfCode**: `number`
 
-Defined in: shared/index.ts:265
+Defined in: [shared/index.ts:265](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L265)
 
 コード行数
 
@@ -78,7 +78,7 @@ Defined in: shared/index.ts:265
 
 > **totalFiles**: `number`
 
-Defined in: shared/index.ts:261
+Defined in: [shared/index.ts:261](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L261)
 
 総ファイル数
 
@@ -88,6 +88,6 @@ Defined in: shared/index.ts:261
 
 > **totalLines**: `number`
 
-Defined in: shared/index.ts:263
+Defined in: [shared/index.ts:263](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L263)
 
 総行数

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TaintFlow
 
-Defined in: security/index.ts:12
+Defined in: [security/index.ts:12](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L12)
 
 Taintフローの基本構造
 KISS原則: 必要最小限のフィールドで表現
@@ -17,7 +17,7 @@ KISS原則: 必要最小限のフィールドで表現
 
 > **id**: `string`
 
-Defined in: security/index.ts:14
+Defined in: [security/index.ts:14](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L14)
 
 フローの一意識別子
 
@@ -25,9 +25,9 @@ Defined in: security/index.ts:14
 
 ### metadata?
 
-> `optional` **metadata**: `Record`\<`string`, `any`\>
+> `optional` **metadata**: `Record`\<`string`, `unknown`\>
 
-Defined in: security/index.ts:24
+Defined in: [security/index.ts:24](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L24)
 
 追加情報（オプション）
 
@@ -37,7 +37,7 @@ Defined in: security/index.ts:24
 
 > **path**: `string`[]
 
-Defined in: security/index.ts:20
+Defined in: [security/index.ts:20](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L20)
 
 フローの経路
 
@@ -47,7 +47,7 @@ Defined in: security/index.ts:20
 
 > **severity**: [`TaintSeverity`](../type-aliases/TaintSeverity.md)
 
-Defined in: security/index.ts:22
+Defined in: [security/index.ts:22](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L22)
 
 深刻度
 
@@ -57,7 +57,7 @@ Defined in: security/index.ts:22
 
 > **sink**: `string`
 
-Defined in: security/index.ts:18
+Defined in: [security/index.ts:18](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L18)
 
 汚染の到達先
 
@@ -67,6 +67,6 @@ Defined in: security/index.ts:18
 
 > **source**: `string`
 
-Defined in: security/index.ts:16
+Defined in: [security/index.ts:16](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L16)
 
 汚染の発生源

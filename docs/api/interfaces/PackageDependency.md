@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: PackageDependency
 
-Defined in: shared/index.ts:154
+Defined in: [shared/index.ts:154](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L154)
 
 パッケージ依存関係
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:154
 
 > **name**: `string`
 
-Defined in: shared/index.ts:156
+Defined in: [shared/index.ts:156](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L156)
 
 パッケージ名
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:156
 
 > `optional` **resolvedVersion**: `string`
 
-Defined in: shared/index.ts:162
+Defined in: [shared/index.ts:162](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L162)
 
 解決済みバージョン
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:162
 
 > **type**: `"dependencies"` \| `"devDependencies"` \| `"peerDependencies"` \| `"optionalDependencies"`
 
-Defined in: shared/index.ts:160
+Defined in: [shared/index.ts:160](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L160)
 
 依存タイプ
 
@@ -46,7 +46,7 @@ Defined in: shared/index.ts:160
 
 > **version**: `string`
 
-Defined in: shared/index.ts:158
+Defined in: [shared/index.ts:158](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L158)
 
 バージョン
 
@@ -56,7 +56,7 @@ Defined in: shared/index.ts:158
 
 > `optional` **vulnerabilities**: `object`[]
 
-Defined in: shared/index.ts:164
+Defined in: [shared/index.ts:164](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L164)
 
 脆弱性
 

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AntiPattern
 
-Defined in: shared/index.ts:89
+Defined in: [shared/index.ts:89](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L89)
 
 アンチパターン
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:89
 
 > **description**: `string`
 
-Defined in: shared/index.ts:95
+Defined in: [shared/index.ts:95](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L95)
 
 説明
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:95
 
 > `optional` **estimatedFixTime**: `number`
 
-Defined in: shared/index.ts:111
+Defined in: [shared/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L111)
 
 推定修正時間（分）
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:111
 
 > **impact**: `string`
 
-Defined in: shared/index.ts:107
+Defined in: [shared/index.ts:107](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L107)
 
 影響範囲
 
@@ -46,7 +46,7 @@ Defined in: shared/index.ts:107
 
 > **location**: `object`
 
-Defined in: shared/index.ts:97
+Defined in: [shared/index.ts:97](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L97)
 
 検出場所
 
@@ -76,7 +76,7 @@ Defined in: shared/index.ts:97
 
 > **name**: `string`
 
-Defined in: shared/index.ts:93
+Defined in: [shared/index.ts:93](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L93)
 
 名前
 
@@ -86,7 +86,7 @@ Defined in: shared/index.ts:93
 
 > **refactoringSuggestions**: `string`[]
 
-Defined in: shared/index.ts:109
+Defined in: [shared/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L109)
 
 リファクタリング提案
 
@@ -96,7 +96,7 @@ Defined in: shared/index.ts:109
 
 > **severity**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: shared/index.ts:105
+Defined in: [shared/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L105)
 
 深刻度
 
@@ -106,6 +106,6 @@ Defined in: shared/index.ts:105
 
 > **type**: [`AntiPatternType`](../type-aliases/AntiPatternType.md)
 
-Defined in: shared/index.ts:91
+Defined in: [shared/index.ts:91](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L91)
 
 パターンタイプ

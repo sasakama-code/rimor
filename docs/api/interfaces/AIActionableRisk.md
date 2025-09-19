@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIActionableRisk
 
-Defined in: ai/index.ts:336
+Defined in: [ai/index.ts:354](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L354)
 
 アクション可能なリスク
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:336
 
 > **affectedFiles**: `string`[]
 
-Defined in: ai/index.ts:346
+Defined in: [ai/index.ts:364](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L364)
 
 影響を受けるファイル
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:346
 
 > **description**: `string`
 
-Defined in: ai/index.ts:344
+Defined in: [ai/index.ts:362](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L362)
 
 説明
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:344
 
 > **id**: `string`
 
-Defined in: ai/index.ts:338
+Defined in: [ai/index.ts:356](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L356)
 
 リスクID
 
@@ -46,7 +46,7 @@ Defined in: ai/index.ts:338
 
 > **impact**: [`ImpactEstimation`](ImpactEstimation.md)
 
-Defined in: ai/index.ts:350
+Defined in: [ai/index.ts:368](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L368)
 
 影響度評価
 
@@ -54,9 +54,9 @@ Defined in: ai/index.ts:350
 
 ### level
 
-> **level**: [`RiskLevel`](../type-aliases/RiskLevel.md)
+> **level**: `RiskLevel`
 
-Defined in: ai/index.ts:342
+Defined in: [ai/index.ts:360](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L360)
 
 リスクレベル
 
@@ -66,7 +66,7 @@ Defined in: ai/index.ts:342
 
 > **suggestedActions**: [`ActionStep`](ActionStep.md)[]
 
-Defined in: ai/index.ts:348
+Defined in: [ai/index.ts:366](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L366)
 
 推奨アクション
 
@@ -76,6 +76,6 @@ Defined in: ai/index.ts:348
 
 > **title**: `string`
 
-Defined in: ai/index.ts:340
+Defined in: [ai/index.ts:358](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L358)
 
 タイトル

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TaskSection
 
-Defined in: ai/index.ts:244
+Defined in: [ai/index.ts:262](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L262)
 
 タスクセクション
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:244
 
 > **priority**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: ai/index.ts:248
+Defined in: [ai/index.ts:266](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L266)
 
 優先度
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:248
 
 > **tasks**: `string`[]
 
-Defined in: ai/index.ts:250
+Defined in: [ai/index.ts:268](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L268)
 
 タスクリスト
 
@@ -36,6 +36,6 @@ Defined in: ai/index.ts:250
 
 > **title**: `string`
 
-Defined in: ai/index.ts:246
+Defined in: [ai/index.ts:264](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L264)
 
 タイトル

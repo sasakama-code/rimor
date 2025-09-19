@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIOutputError
 
-Defined in: ai/index.ts:356
+Defined in: [ai/index.ts:374](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L374)
 
 AIエラー
 
@@ -20,7 +20,7 @@ AIエラー
 
 > **code**: `string`
 
-Defined in: ai/index.ts:358
+Defined in: [ai/index.ts:376](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L376)
 
 エラーコード
 
@@ -28,8 +28,8 @@ Defined in: ai/index.ts:358
 
 ### details?
 
-> `optional` **details**: `any`
+> `optional` **details**: `unknown`
 
-Defined in: ai/index.ts:360
+Defined in: [ai/index.ts:378](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L378)
 
 詳細

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: DomainEntity
 
-Defined in: domain/index.ts:106
+Defined in: [domain/index.ts:106](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L106)
 
 ドメインエンティティ
 
@@ -16,7 +16,7 @@ Defined in: domain/index.ts:106
 
 > `optional` **businessRules**: `string`[]
 
-Defined in: domain/index.ts:130
+Defined in: [domain/index.ts:130](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L130)
 
 ビジネスルール
 
@@ -26,7 +26,7 @@ Defined in: domain/index.ts:130
 
 > **id**: `string`
 
-Defined in: domain/index.ts:108
+Defined in: [domain/index.ts:108](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L108)
 
 ID
 
@@ -36,7 +36,7 @@ ID
 
 > `optional` **invariants**: `string`[]
 
-Defined in: domain/index.ts:128
+Defined in: [domain/index.ts:128](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L128)
 
 不変条件
 
@@ -46,7 +46,7 @@ Defined in: domain/index.ts:128
 
 > **methods**: `object`[]
 
-Defined in: domain/index.ts:121
+Defined in: [domain/index.ts:121](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L121)
 
 メソッド
 
@@ -72,7 +72,7 @@ Defined in: domain/index.ts:121
 
 > **name**: `string`
 
-Defined in: domain/index.ts:110
+Defined in: [domain/index.ts:110](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L110)
 
 名前
 
@@ -82,7 +82,7 @@ Defined in: domain/index.ts:110
 
 > **properties**: `object`[]
 
-Defined in: domain/index.ts:114
+Defined in: [domain/index.ts:114](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L114)
 
 プロパティ
 
@@ -108,6 +108,6 @@ Defined in: domain/index.ts:114
 
 > **type**: [`DomainPattern`](../type-aliases/DomainPattern.md)
 
-Defined in: domain/index.ts:112
+Defined in: [domain/index.ts:112](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L112)
 
 タイプ

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: DomainAnalysisResult
 
-Defined in: domain/index.ts:220
+Defined in: [domain/index.ts:220](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L220)
 
 ドメイン分析結果
 
@@ -16,7 +16,7 @@ Defined in: domain/index.ts:220
 
 > **issues**: `object`[]
 
-Defined in: domain/index.ts:230
+Defined in: [domain/index.ts:230](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L230)
 
 問題点
 
@@ -42,7 +42,7 @@ Defined in: domain/index.ts:230
 
 > **metrics**: `object`
 
-Defined in: domain/index.ts:239
+Defined in: [domain/index.ts:239](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L239)
 
 メトリクス
 
@@ -76,7 +76,7 @@ Defined in: domain/index.ts:239
 
 > **model**: [`DomainModel`](DomainModel.md)
 
-Defined in: domain/index.ts:222
+Defined in: [domain/index.ts:222](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L222)
 
 モデル
 
@@ -86,7 +86,7 @@ Defined in: domain/index.ts:222
 
 > **patterns**: `object`[]
 
-Defined in: domain/index.ts:224
+Defined in: [domain/index.ts:224](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L224)
 
 検出されたパターン
 
@@ -108,6 +108,6 @@ Defined in: domain/index.ts:224
 
 > **recommendations**: `string`[]
 
-Defined in: domain/index.ts:237
+Defined in: [domain/index.ts:237](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/domain/index.ts#L237)
 
 推奨事項

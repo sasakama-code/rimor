@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AnalysisResultWithParallelStats
 
-Defined in: analysis/index.ts:60
+Defined in: [analysis/index.ts:69](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L69)
 
 並列処理統計を持つ分析結果
 パフォーマンス最適化のための情報
@@ -25,7 +25,7 @@ Defined in: analysis/index.ts:60
 
 > **executionTime**: `number`
 
-Defined in: analysis/index.ts:24
+Defined in: [analysis/index.ts:33](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L33)
 
 実行時間（ミリ秒）
 
@@ -39,7 +39,7 @@ Defined in: analysis/index.ts:24
 
 > **issues**: `Issue`[]
 
-Defined in: analysis/index.ts:21
+Defined in: [analysis/index.ts:30](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L30)
 
 検出された問題のリスト
 
@@ -53,13 +53,13 @@ Defined in: analysis/index.ts:21
 
 > `optional` **parallelStats**: `object`
 
-Defined in: analysis/index.ts:62
+Defined in: [analysis/index.ts:71](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L71)
 
 並列処理の統計情報
 
 #### Index Signature
 
-\[`key`: `string`\]: `any`
+\[`key`: `string`\]: `unknown`
 
 その他の統計
 
@@ -105,7 +105,7 @@ Defined in: analysis/index.ts:62
 
 > **totalFiles**: `number`
 
-Defined in: analysis/index.ts:18
+Defined in: [analysis/index.ts:27](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L27)
 
 分析されたファイル数
 

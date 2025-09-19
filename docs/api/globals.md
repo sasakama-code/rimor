@@ -1,8 +1,8 @@
-[**Rimor API Documentation v0.8.0**](README.md)
+[**Rimor API Documentation v0.9.0**](README.md)
 
 ***
 
-# Rimor API Documentation v0.8.0
+# Rimor API Documentation v0.9.0
 
 ## Interfaces
 
@@ -124,6 +124,7 @@
 - [PluginType](type-aliases/PluginType.md)
 - [PoolStats](type-aliases/PoolStats.md)
 - [RiskLevel](type-aliases/RiskLevel.md)
+- [RiskLevel](type-aliases/RiskLevel-1.md)
 - [SecurityAnalysisResult](type-aliases/SecurityAnalysisResult.md)
 - [SecurityPlugin](type-aliases/SecurityPlugin.md)
 - [~~SecurityTaintResult~~](type-aliases/SecurityTaintResult.md)

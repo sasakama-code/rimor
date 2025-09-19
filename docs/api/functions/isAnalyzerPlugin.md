@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -8,7 +8,7 @@
 
 > **isAnalyzerPlugin**(`obj`): `obj is IAnalyzerPlugin`
 
-Defined in: plugins/index.ts:286
+Defined in: [plugins/index.ts:291](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L291)
 
 型ガード: IAnalyzerPluginかどうかを判定
 
@@ -16,7 +16,7 @@ Defined in: plugins/index.ts:286
 
 ### obj
 
-`any`
+`unknown`
 
 ## Returns
 

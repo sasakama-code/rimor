@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestCaseWithAssertions
 
-Defined in: testing/index.ts:113
+Defined in: [testing/index.ts:123](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L123)
 
 アサーション情報を持つテストケース
 
@@ -20,7 +20,7 @@ Defined in: testing/index.ts:113
 
 > `optional` **assertions**: [`Assertion`](Assertion.md)[]
 
-Defined in: testing/index.ts:115
+Defined in: [testing/index.ts:125](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L125)
 
 アサーションのリスト
 
@@ -30,7 +30,7 @@ Defined in: testing/index.ts:115
 
 > `optional` **assertionSummary**: `object`
 
-Defined in: testing/index.ts:117
+Defined in: [testing/index.ts:127](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L127)
 
 アサーション数のサマリー
 

@@ -6,9 +6,6 @@
 
 # Type Alias: RiskLevel
 
-> **RiskLevel** = *typeof* `RiskLevel`
+> **RiskLevel** = `CoreTypes.RiskLevel`
 
 Defined in: [ai/index.ts:15](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L15)
-
-リスクレベルの定義
-CoreTypesのRiskLevel enumを再エクスポート

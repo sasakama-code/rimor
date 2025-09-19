@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: FileAnalysisResult
 
-Defined in: analysis/index.ts:84
+Defined in: [analysis/index.ts:93](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L93)
 
 ファイル別の分析結果
 個別ファイルの詳細情報を含む
@@ -21,7 +21,7 @@ Defined in: analysis/index.ts:84
 
 > **executionTime**: `number`
 
-Defined in: analysis/index.ts:24
+Defined in: [analysis/index.ts:33](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L33)
 
 実行時間（ミリ秒）
 
@@ -35,7 +35,7 @@ Defined in: analysis/index.ts:24
 
 > `optional` **fileMetadata**: `object`
 
-Defined in: analysis/index.ts:90
+Defined in: [analysis/index.ts:99](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L99)
 
 ファイル固有のメタデータ
 
@@ -63,7 +63,7 @@ Defined in: analysis/index.ts:90
 
 > **filePath**: `string`
 
-Defined in: analysis/index.ts:86
+Defined in: [analysis/index.ts:95](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L95)
 
 ファイルの絶対パス
 
@@ -73,7 +73,7 @@ Defined in: analysis/index.ts:86
 
 > **issues**: `Issue`[]
 
-Defined in: analysis/index.ts:21
+Defined in: [analysis/index.ts:30](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L30)
 
 検出された問題のリスト
 
@@ -87,7 +87,7 @@ Defined in: analysis/index.ts:21
 
 > `optional` **relativePath**: `string`
 
-Defined in: analysis/index.ts:88
+Defined in: [analysis/index.ts:97](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L97)
 
 プロジェクトルートからの相対パス
 
@@ -97,7 +97,7 @@ Defined in: analysis/index.ts:88
 
 > **totalFiles**: `number`
 
-Defined in: analysis/index.ts:18
+Defined in: [analysis/index.ts:27](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/analysis/index.ts#L27)
 
 分析されたファイル数
 

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: WorkerInfo
 
-Defined in: workers/index.ts:61
+Defined in: [workers/index.ts:61](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L61)
 
 ワーカー情報
 
@@ -16,7 +16,7 @@ Defined in: workers/index.ts:61
 
 > `optional` **cpuUsage**: `number`
 
-Defined in: workers/index.ts:75
+Defined in: [workers/index.ts:75](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L75)
 
 CPU使用率
 
@@ -26,7 +26,7 @@ CPU使用率
 
 > **createdAt**: `string`
 
-Defined in: workers/index.ts:79
+Defined in: [workers/index.ts:79](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L79)
 
 作成日時
 
@@ -36,7 +36,7 @@ Defined in: workers/index.ts:79
 
 > `optional` **currentTask**: [`WorkerTask`](WorkerTask.md)
 
-Defined in: workers/index.ts:69
+Defined in: [workers/index.ts:69](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L69)
 
 現在のタスク
 
@@ -46,7 +46,7 @@ Defined in: workers/index.ts:69
 
 > **errorCount**: `number`
 
-Defined in: workers/index.ts:73
+Defined in: [workers/index.ts:73](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L73)
 
 エラー数
 
@@ -56,7 +56,7 @@ Defined in: workers/index.ts:73
 
 > **id**: `string`
 
-Defined in: workers/index.ts:63
+Defined in: [workers/index.ts:63](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L63)
 
 ワーカーID
 
@@ -66,7 +66,7 @@ Defined in: workers/index.ts:63
 
 > `optional` **lastActiveAt**: `string`
 
-Defined in: workers/index.ts:81
+Defined in: [workers/index.ts:81](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L81)
 
 最終活動日時
 
@@ -76,7 +76,7 @@ Defined in: workers/index.ts:81
 
 > `optional` **memoryUsage**: `number`
 
-Defined in: workers/index.ts:77
+Defined in: [workers/index.ts:77](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L77)
 
 メモリ使用量
 
@@ -86,7 +86,7 @@ Defined in: workers/index.ts:77
 
 > `optional` **name**: `string`
 
-Defined in: workers/index.ts:65
+Defined in: [workers/index.ts:65](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L65)
 
 ワーカー名
 
@@ -96,7 +96,7 @@ Defined in: workers/index.ts:65
 
 > **processedTasks**: `number`
 
-Defined in: workers/index.ts:71
+Defined in: [workers/index.ts:71](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L71)
 
 処理済みタスク数
 
@@ -106,6 +106,6 @@ Defined in: workers/index.ts:71
 
 > **status**: [`WorkerStatus`](../type-aliases/WorkerStatus.md)
 
-Defined in: workers/index.ts:67
+Defined in: [workers/index.ts:67](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L67)
 
 状態

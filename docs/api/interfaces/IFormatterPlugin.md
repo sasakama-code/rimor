@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IFormatterPlugin
 
-Defined in: plugins/index.ts:132
+Defined in: [plugins/index.ts:132](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L132)
 
 フォーマッタープラグイン
 
@@ -20,7 +20,7 @@ Defined in: plugins/index.ts:132
 
 > `optional` **metadata**: [`PluginMetadata`](PluginMetadata.md)
 
-Defined in: plugins/index.ts:109
+Defined in: [plugins/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L109)
 
 メタデータ
 
@@ -34,7 +34,7 @@ Defined in: plugins/index.ts:109
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:105
+Defined in: [plugins/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L105)
 
 プラグイン名
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:105
 
 > **supportedFormats**: `string`[]
 
-Defined in: plugins/index.ts:137
+Defined in: [plugins/index.ts:137](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L137)
 
 サポートされるフォーマット
 
@@ -58,7 +58,7 @@ Defined in: plugins/index.ts:137
 
 > **type**: `"FORMATTER"`
 
-Defined in: plugins/index.ts:133
+Defined in: [plugins/index.ts:133](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L133)
 
 プラグインタイプ
 
@@ -72,7 +72,7 @@ Defined in: plugins/index.ts:133
 
 > `optional` **cleanup**(): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:115
+Defined in: [plugins/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L115)
 
 クリーンアップ
 
@@ -88,9 +88,9 @@ Defined in: plugins/index.ts:115
 
 ### execute()
 
-> **execute**(`input`, `context?`): `Promise`\<`any`\>
+> **execute**(`input`, `context?`): `Promise`\<`unknown`\>
 
-Defined in: plugins/index.ts:113
+Defined in: [plugins/index.ts:113](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L113)
 
 実行
 
@@ -98,7 +98,7 @@ Defined in: plugins/index.ts:113
 
 ##### input
 
-`any`
+`unknown`
 
 ##### context?
 
@@ -106,7 +106,7 @@ Defined in: plugins/index.ts:113
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`unknown`\>
 
 #### Inherited from
 
@@ -118,7 +118,7 @@ Defined in: plugins/index.ts:113
 
 > **format**(`data`, `options?`): `Promise`\<`string`\>
 
-Defined in: plugins/index.ts:135
+Defined in: [plugins/index.ts:135](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L135)
 
 フォーマット
 
@@ -126,11 +126,11 @@ Defined in: plugins/index.ts:135
 
 ##### data
 
-`any`
+`unknown`
 
 ##### options?
 
-`Record`\<`string`, `any`\>
+`Record`\<`string`, `unknown`\>
 
 #### Returns
 
@@ -142,7 +142,7 @@ Defined in: plugins/index.ts:135
 
 > `optional` **initialize**(`context`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:111
+Defined in: [plugins/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L111)
 
 初期化
 

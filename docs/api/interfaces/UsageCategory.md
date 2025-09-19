@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: UsageCategory
 
-Defined in: shared/index.ts:193
+Defined in: [shared/index.ts:193](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L193)
 
 使用状況カテゴリ
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:193
 
 > **count**: `number`
 
-Defined in: shared/index.ts:197
+Defined in: [shared/index.ts:197](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L197)
 
 使用回数
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:197
 
 > `optional` **details**: `Record`\<`string`, `any`\>
 
-Defined in: shared/index.ts:201
+Defined in: [shared/index.ts:201](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L201)
 
 詳細
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:201
 
 > **files**: `string`[]
 
-Defined in: shared/index.ts:199
+Defined in: [shared/index.ts:199](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L199)
 
 ファイル
 
@@ -46,6 +46,6 @@ Defined in: shared/index.ts:199
 
 > **name**: `string`
 
-Defined in: shared/index.ts:195
+Defined in: [shared/index.ts:195](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L195)
 
 カテゴリ名

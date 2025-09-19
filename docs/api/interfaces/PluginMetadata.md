@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: PluginMetadata
 
-Defined in: plugins/index.ts:41
+Defined in: [plugins/index.ts:41](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L41)
 
 プラグインメタデータ
 
@@ -16,7 +16,7 @@ Defined in: plugins/index.ts:41
 
 > `optional` **author**: `string`
 
-Defined in: plugins/index.ts:49
+Defined in: [plugins/index.ts:49](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L49)
 
 作者
 
@@ -26,7 +26,7 @@ Defined in: plugins/index.ts:49
 
 > `optional` **dependencies**: `Record`\<`string`, `string`\>
 
-Defined in: plugins/index.ts:55
+Defined in: [plugins/index.ts:55](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L55)
 
 依存関係
 
@@ -36,7 +36,7 @@ Defined in: plugins/index.ts:55
 
 > `optional` **description**: `string`
 
-Defined in: plugins/index.ts:47
+Defined in: [plugins/index.ts:47](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L47)
 
 説明
 
@@ -46,7 +46,7 @@ Defined in: plugins/index.ts:47
 
 > `optional` **license**: `string`
 
-Defined in: plugins/index.ts:51
+Defined in: [plugins/index.ts:51](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L51)
 
 ライセンス
 
@@ -56,7 +56,7 @@ Defined in: plugins/index.ts:51
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:43
+Defined in: [plugins/index.ts:43](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L43)
 
 プラグイン名
 
@@ -66,7 +66,7 @@ Defined in: plugins/index.ts:43
 
 > `optional` **tags**: `string`[]
 
-Defined in: plugins/index.ts:53
+Defined in: [plugins/index.ts:53](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L53)
 
 タグ
 
@@ -76,6 +76,6 @@ Defined in: plugins/index.ts:53
 
 > **version**: `string`
 
-Defined in: plugins/index.ts:45
+Defined in: [plugins/index.ts:45](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L45)
 
 バージョン

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: SecurityViolation
 
-Defined in: security/index.ts:53
+Defined in: [security/index.ts:53](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L53)
 
 セキュリティ違反の定義
 ISP（インターフェース分離原則）: 必要な情報のみを含む
@@ -17,7 +17,7 @@ ISP（インターフェース分離原則）: 必要な情報のみを含む
 
 > **description**: `string`
 
-Defined in: security/index.ts:63
+Defined in: [security/index.ts:63](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L63)
 
 違反の説明
 
@@ -27,7 +27,7 @@ Defined in: security/index.ts:63
 
 > `optional` **fix**: `string`
 
-Defined in: security/index.ts:71
+Defined in: [security/index.ts:71](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L71)
 
 修正提案（オプション）
 
@@ -37,7 +37,7 @@ Defined in: security/index.ts:71
 
 > `optional` **location**: `object`
 
-Defined in: security/index.ts:65
+Defined in: [security/index.ts:65](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L65)
 
 発生場所（オプション）
 
@@ -59,7 +59,7 @@ Defined in: security/index.ts:65
 
 > **severity**: [`TaintSeverity`](../type-aliases/TaintSeverity.md)
 
-Defined in: security/index.ts:57
+Defined in: [security/index.ts:57](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L57)
 
 深刻度
 
@@ -69,7 +69,7 @@ Defined in: security/index.ts:57
 
 > **sink**: `string`
 
-Defined in: security/index.ts:61
+Defined in: [security/index.ts:61](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L61)
 
 影響先
 
@@ -79,7 +79,7 @@ Defined in: security/index.ts:61
 
 > **source**: `string`
 
-Defined in: security/index.ts:59
+Defined in: [security/index.ts:59](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L59)
 
 発生源
 
@@ -89,6 +89,6 @@ Defined in: security/index.ts:59
 
 > **type**: [`ViolationType`](../type-aliases/ViolationType.md)
 
-Defined in: security/index.ts:55
+Defined in: [security/index.ts:55](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L55)
 
 違反の種類

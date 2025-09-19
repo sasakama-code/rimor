@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: PatternRecommendation
 
-Defined in: shared/index.ts:136
+Defined in: [shared/index.ts:136](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L136)
 
 パターン推奨事項
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:136
 
 > `optional` **applicablePattern**: [`DesignPatternType`](../type-aliases/DesignPatternType.md)
 
-Defined in: shared/index.ts:144
+Defined in: [shared/index.ts:144](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L144)
 
 適用可能なパターン
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:144
 
 > **description**: `string`
 
-Defined in: shared/index.ts:140
+Defined in: [shared/index.ts:140](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L140)
 
 説明
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:140
 
 > `optional` **example**: `string`
 
-Defined in: shared/index.ts:148
+Defined in: [shared/index.ts:148](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L148)
 
 実装例
 
@@ -46,7 +46,7 @@ Defined in: shared/index.ts:148
 
 > **priority**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: shared/index.ts:142
+Defined in: [shared/index.ts:142](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L142)
 
 優先度
 
@@ -56,7 +56,7 @@ Defined in: shared/index.ts:142
 
 > **targetFiles**: `string`[]
 
-Defined in: shared/index.ts:146
+Defined in: [shared/index.ts:146](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L146)
 
 対象ファイル
 
@@ -66,6 +66,6 @@ Defined in: shared/index.ts:146
 
 > **title**: `string`
 
-Defined in: shared/index.ts:138
+Defined in: [shared/index.ts:138](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L138)
 
 タイトル

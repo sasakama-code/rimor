@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TaintAnalysisWithMetrics
 
-Defined in: security/index.ts:178
+Defined in: [security/index.ts:178](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L178)
 
 メトリクスを含むTaint分析結果
 
@@ -20,7 +20,7 @@ Defined in: security/index.ts:178
 
 > **metrics**: `object`
 
-Defined in: security/index.ts:180
+Defined in: [security/index.ts:180](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L180)
 
 分析メトリクス
 

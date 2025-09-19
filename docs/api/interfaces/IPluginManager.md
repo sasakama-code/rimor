@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IPluginManager
 
-Defined in: plugins/index.ts:257
+Defined in: [plugins/index.ts:257](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L257)
 
 プラグインマネージャーインターフェース
 
@@ -16,7 +16,7 @@ Defined in: plugins/index.ts:257
 
 > **execute**(`pluginName`, `input`): `Promise`\<[`PluginResult`](PluginResult.md)\>
 
-Defined in: plugins/index.ts:267
+Defined in: [plugins/index.ts:267](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L267)
 
 プラグイン実行
 
@@ -28,7 +28,7 @@ Defined in: plugins/index.ts:267
 
 ##### input
 
-`any`
+`unknown`
 
 #### Returns
 
@@ -40,7 +40,7 @@ Defined in: plugins/index.ts:267
 
 > **executeAll**(`input`): `Promise`\<[`PluginResult`](PluginResult.md)[]\>
 
-Defined in: plugins/index.ts:269
+Defined in: [plugins/index.ts:269](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L269)
 
 すべてのプラグイン実行
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:269
 
 ##### input
 
-`any`
+`unknown`
 
 #### Returns
 
@@ -60,7 +60,7 @@ Defined in: plugins/index.ts:269
 
 > **getAllPlugins**(): [`IPlugin`](IPlugin.md)[]
 
-Defined in: plugins/index.ts:265
+Defined in: [plugins/index.ts:265](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L265)
 
 すべてのプラグイン取得
 
@@ -74,7 +74,7 @@ Defined in: plugins/index.ts:265
 
 > **getPlugin**(`name`): `undefined` \| [`IPlugin`](IPlugin.md)
 
-Defined in: plugins/index.ts:263
+Defined in: [plugins/index.ts:263](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L263)
 
 プラグイン取得
 
@@ -94,7 +94,7 @@ Defined in: plugins/index.ts:263
 
 > **register**(`plugin`): `void`
 
-Defined in: plugins/index.ts:259
+Defined in: [plugins/index.ts:259](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L259)
 
 プラグイン登録
 
@@ -114,7 +114,7 @@ Defined in: plugins/index.ts:259
 
 > **unregister**(`pluginName`): `void`
 
-Defined in: plugins/index.ts:261
+Defined in: [plugins/index.ts:261](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L261)
 
 プラグイン登録解除
 

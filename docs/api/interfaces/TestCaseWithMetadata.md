@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestCaseWithMetadata
 
-Defined in: testing/index.ts:70
+Defined in: [testing/index.ts:80](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L80)
 
 メタデータを持つテストケース
 
@@ -20,7 +20,7 @@ Defined in: testing/index.ts:70
 
 > `optional` **metadata**: `object`
 
-Defined in: testing/index.ts:72
+Defined in: [testing/index.ts:82](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L82)
 
 テスト実行のメタデータ
 

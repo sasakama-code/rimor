@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIContext
 
-Defined in: ai/index.ts:97
+Defined in: [ai/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L115)
 
 AIコンテキスト情報
 
@@ -16,7 +16,7 @@ AIコンテキスト情報
 
 > **configuration**: `object`
 
-Defined in: ai/index.ts:109
+Defined in: [ai/index.ts:127](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L127)
 
 設定情報
 
@@ -46,7 +46,7 @@ Defined in: ai/index.ts:109
 
 > **dependencies**: `string`[] \| `Record`\<`string`, `string`\>
 
-Defined in: ai/index.ts:107
+Defined in: [ai/index.ts:125](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L125)
 
 依存関係
 
@@ -56,7 +56,7 @@ Defined in: ai/index.ts:107
 
 > **framework**: `string`
 
-Defined in: ai/index.ts:101
+Defined in: [ai/index.ts:119](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L119)
 
 フレームワーク
 
@@ -66,7 +66,7 @@ Defined in: ai/index.ts:101
 
 > **languages**: `string`[]
 
-Defined in: ai/index.ts:105
+Defined in: [ai/index.ts:123](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L123)
 
 使用言語
 
@@ -76,7 +76,7 @@ Defined in: ai/index.ts:105
 
 > **projectType**: `string`
 
-Defined in: ai/index.ts:99
+Defined in: [ai/index.ts:117](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L117)
 
 プロジェクトタイプ
 
@@ -86,6 +86,6 @@ Defined in: ai/index.ts:99
 
 > **testFramework**: `string`
 
-Defined in: ai/index.ts:103
+Defined in: [ai/index.ts:121](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L121)
 
 テストフレームワーク

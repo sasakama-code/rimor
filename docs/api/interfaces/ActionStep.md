@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ActionStep
 
-Defined in: ai/index.ts:172
+Defined in: [ai/index.ts:190](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L190)
 
 アクションステップ
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:172
 
 > **action**: `string`
 
-Defined in: ai/index.ts:176
+Defined in: [ai/index.ts:194](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L194)
 
 アクション
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:176
 
 > **details**: `string`
 
-Defined in: ai/index.ts:178
+Defined in: [ai/index.ts:196](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L196)
 
 詳細
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:178
 
 > `optional` **estimatedMinutes**: `number`
 
-Defined in: ai/index.ts:182
+Defined in: [ai/index.ts:200](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L200)
 
 推定時間（分）
 
@@ -46,7 +46,7 @@ Defined in: ai/index.ts:182
 
 > **order**: `number`
 
-Defined in: ai/index.ts:174
+Defined in: [ai/index.ts:192](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L192)
 
 ステップ番号
 
@@ -56,6 +56,6 @@ Defined in: ai/index.ts:174
 
 > **required**: `boolean`
 
-Defined in: ai/index.ts:180
+Defined in: [ai/index.ts:198](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L198)
 
 必須かどうか

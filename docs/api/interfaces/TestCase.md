@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestCase
 
-Defined in: testing/index.ts:219
+Defined in: [testing/index.ts:229](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L229)
 
 統一されたテストケース型
 DRY原則: 既存のインターフェースを組み合わせて定義
@@ -19,9 +19,9 @@ DRY原則: 既存のインターフェースを組み合わせて定義
 
 ### actualOutput?
 
-> `optional` **actualOutput**: `any`
+> `optional` **actualOutput**: `unknown`
 
-Defined in: testing/index.ts:58
+Defined in: [testing/index.ts:68](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L68)
 
 実際の出力
 
@@ -35,7 +35,7 @@ Defined in: testing/index.ts:58
 
 > `optional` **assertions**: [`Assertion`](Assertion.md)[]
 
-Defined in: testing/index.ts:115
+Defined in: [testing/index.ts:125](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L125)
 
 アサーションのリスト
 
@@ -49,7 +49,7 @@ Defined in: testing/index.ts:115
 
 > `optional` **assertionSummary**: `object`
 
-Defined in: testing/index.ts:117
+Defined in: [testing/index.ts:127](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L127)
 
 アサーション数のサマリー
 
@@ -75,7 +75,7 @@ Defined in: testing/index.ts:117
 
 > `optional` **description**: `string`
 
-Defined in: testing/index.ts:44
+Defined in: [testing/index.ts:54](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L54)
 
 テストの説明（オプション）
 
@@ -89,7 +89,7 @@ Defined in: testing/index.ts:44
 
 > `optional` **error**: `object`
 
-Defined in: testing/index.ts:60
+Defined in: [testing/index.ts:70](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L70)
 
 エラー情報（失敗時）
 
@@ -113,9 +113,9 @@ Defined in: testing/index.ts:60
 
 ### expectedOutput?
 
-> `optional` **expectedOutput**: `any`
+> `optional` **expectedOutput**: `unknown`
 
-Defined in: testing/index.ts:56
+Defined in: [testing/index.ts:66](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L66)
 
 期待される出力
 
@@ -129,7 +129,7 @@ Defined in: testing/index.ts:56
 
 > `optional` **filePath**: `string`
 
-Defined in: testing/index.ts:228
+Defined in: [testing/index.ts:238](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L238)
 
 所属するファイルパス（オプション）
 
@@ -139,7 +139,7 @@ Defined in: testing/index.ts:228
 
 > **id**: `string`
 
-Defined in: testing/index.ts:40
+Defined in: [testing/index.ts:50](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L50)
 
 テストケースの一意識別子
 
@@ -151,9 +151,9 @@ Defined in: testing/index.ts:40
 
 ### input?
 
-> `optional` **input**: `any`
+> `optional` **input**: `unknown`
 
-Defined in: testing/index.ts:54
+Defined in: [testing/index.ts:64](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L64)
 
 テストの入力データ
 
@@ -167,7 +167,7 @@ Defined in: testing/index.ts:54
 
 > `optional` **metadata**: `object`
 
-Defined in: testing/index.ts:72
+Defined in: [testing/index.ts:82](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L82)
 
 テスト実行のメタデータ
 
@@ -217,7 +217,7 @@ Defined in: testing/index.ts:72
 
 > **name**: `string`
 
-Defined in: testing/index.ts:42
+Defined in: [testing/index.ts:52](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L52)
 
 テストケース名
 
@@ -231,7 +231,7 @@ Defined in: testing/index.ts:42
 
 > `optional` **pluginData**: `Record`\<`string`, `any`\>
 
-Defined in: testing/index.ts:230
+Defined in: [testing/index.ts:240](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L240)
 
 プラグイン固有の情報（オプション）
 
@@ -241,7 +241,7 @@ Defined in: testing/index.ts:230
 
 > `optional` **qualityMetrics**: `object`
 
-Defined in: testing/index.ts:150
+Defined in: [testing/index.ts:160](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L160)
 
 品質メトリクス
 
@@ -285,7 +285,7 @@ Defined in: testing/index.ts:150
 
 > **status**: [`TestStatus`](../type-aliases/TestStatus.md)
 
-Defined in: testing/index.ts:46
+Defined in: [testing/index.ts:56](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L56)
 
 テストのステータス
 
@@ -299,6 +299,6 @@ Defined in: testing/index.ts:46
 
 > `optional` **suiteId**: `string`
 
-Defined in: testing/index.ts:226
+Defined in: [testing/index.ts:236](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L236)
 
 所属するスイートID（オプション）

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: FormatterOptions
 
-Defined in: ai/index.ts:270
+Defined in: [ai/index.ts:288](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L288)
 
 フォーマッターオプション
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:270
 
 > `optional` **contextLines**: `number`
 
-Defined in: ai/index.ts:276
+Defined in: [ai/index.ts:294](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L294)
 
 コンテキスト行数
 
@@ -26,7 +26,7 @@ Defined in: ai/index.ts:276
 
 > `optional` **maxIssues**: `number`
 
-Defined in: ai/index.ts:272
+Defined in: [ai/index.ts:290](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L290)
 
 最大問題数
 
@@ -36,7 +36,7 @@ Defined in: ai/index.ts:272
 
 > `optional` **minSeverity**: `string`
 
-Defined in: ai/index.ts:274
+Defined in: [ai/index.ts:292](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L292)
 
 最小深刻度
 
@@ -44,8 +44,8 @@ Defined in: ai/index.ts:274
 
 ### verbosity?
 
-> `optional` **verbosity**: `"normal"` \| `"detailed"` \| `"minimal"`
+> `optional` **verbosity**: `"normal"` \| `"minimal"` \| `"detailed"`
 
-Defined in: ai/index.ts:278
+Defined in: [ai/index.ts:296](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L296)
 
 詳細レベル

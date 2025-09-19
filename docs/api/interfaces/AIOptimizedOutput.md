@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: AIOptimizedOutput
 
-Defined in: ai/index.ts:285
+Defined in: [ai/index.ts:303](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L303)
 
 AI最適化出力
 DRY原則: 既存の型を組み合わせて定義
@@ -17,7 +17,7 @@ DRY原則: 既存の型を組み合わせて定義
 
 > `optional` **actionableRisks**: [`AIActionableRisk`](AIActionableRisk.md)[]
 
-Defined in: ai/index.ts:330
+Defined in: [ai/index.ts:348](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L348)
 
 アクション可能なリスク
 
@@ -27,7 +27,7 @@ Defined in: ai/index.ts:330
 
 > **context**: `object`
 
-Defined in: ai/index.ts:299
+Defined in: [ai/index.ts:317](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L317)
 
 コンテキスト
 
@@ -53,7 +53,7 @@ Defined in: ai/index.ts:299
 
 > **files**: `object`[]
 
-Defined in: ai/index.ts:313
+Defined in: [ai/index.ts:331](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L331)
 
 ファイル情報
 
@@ -79,7 +79,7 @@ Defined in: ai/index.ts:313
 
 > **format**: `"ai-optimized"`
 
-Defined in: ai/index.ts:289
+Defined in: [ai/index.ts:307](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L307)
 
 フォーマット
 
@@ -89,7 +89,7 @@ Defined in: ai/index.ts:289
 
 > **metadata**: `object`
 
-Defined in: ai/index.ts:291
+Defined in: [ai/index.ts:309](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L309)
 
 メタデータ
 
@@ -119,7 +119,7 @@ Defined in: ai/index.ts:291
 
 > **qualityOverview**: `object`
 
-Defined in: ai/index.ts:306
+Defined in: [ai/index.ts:324](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L324)
 
 品質概要
 
@@ -145,7 +145,7 @@ Defined in: ai/index.ts:306
 
 > **summary**: [`AISummary`](AISummary.md)
 
-Defined in: ai/index.ts:328
+Defined in: [ai/index.ts:346](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L346)
 
 サマリー
 
@@ -155,6 +155,6 @@ Defined in: ai/index.ts:328
 
 > **version**: `string`
 
-Defined in: ai/index.ts:287
+Defined in: [ai/index.ts:305](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L305)
 
 バージョン

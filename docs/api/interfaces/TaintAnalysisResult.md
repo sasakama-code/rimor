@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TaintAnalysisResult
 
-Defined in: security/index.ts:200
+Defined in: [security/index.ts:200](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L200)
 
 統一されたTaint分析結果型
 DRY原則: 既存のインターフェースを組み合わせて定義
@@ -21,7 +21,7 @@ DRY原則: 既存のインターフェースを組み合わせて定義
 
 > `optional` **annotations**: `object`
 
-Defined in: security/index.ts:135
+Defined in: [security/index.ts:135](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L135)
 
 アノテーション情報
 
@@ -65,7 +65,7 @@ PolyTaintメソッド
 
 > **flows**: [`TaintFlow`](TaintFlow.md)[]
 
-Defined in: security/index.ts:123
+Defined in: [security/index.ts:123](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L123)
 
 検出されたTaintフロー
 
@@ -79,7 +79,7 @@ Defined in: security/index.ts:123
 
 > **improvements**: [`SecurityImprovement`](SecurityImprovement.md)[]
 
-Defined in: security/index.ts:172
+Defined in: [security/index.ts:172](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L172)
 
 セキュリティ改善提案
 
@@ -93,7 +93,7 @@ Defined in: security/index.ts:172
 
 > `optional` **metadata**: `object`
 
-Defined in: security/index.ts:207
+Defined in: [security/index.ts:207](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L207)
 
 分析のメタデータ（オプション）
 
@@ -121,7 +121,7 @@ Defined in: security/index.ts:207
 
 > **metrics**: `object`
 
-Defined in: security/index.ts:180
+Defined in: [security/index.ts:180](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L180)
 
 分析メトリクス
 
@@ -171,7 +171,7 @@ Defined in: security/index.ts:180
 
 > **recommendations**: `string`[]
 
-Defined in: security/index.ts:127
+Defined in: [security/index.ts:127](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L127)
 
 推奨事項
 
@@ -185,7 +185,7 @@ Defined in: security/index.ts:127
 
 > **summary**: [`TaintSummary`](TaintSummary.md)
 
-Defined in: security/index.ts:125
+Defined in: [security/index.ts:125](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L125)
 
 分析サマリー
 
@@ -199,7 +199,7 @@ Defined in: security/index.ts:125
 
 > `optional` **taintPaths**: `object`[]
 
-Defined in: security/index.ts:160
+Defined in: [security/index.ts:160](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L160)
 
 違反パス
 
@@ -225,7 +225,7 @@ Defined in: security/index.ts:160
 
 > **violations**: [`SecurityViolation`](SecurityViolation.md)[]
 
-Defined in: security/index.ts:158
+Defined in: [security/index.ts:158](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/security/index.ts#L158)
 
 セキュリティ違反のリスト
 

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: WorkerPoolStats
 
-Defined in: workers/index.ts:129
+Defined in: [workers/index.ts:129](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L129)
 
 ワーカープール統計
 
@@ -16,7 +16,7 @@ Defined in: workers/index.ts:129
 
 > **activeWorkers**: `number`
 
-Defined in: workers/index.ts:131
+Defined in: [workers/index.ts:131](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L131)
 
 アクティブワーカー数
 
@@ -26,7 +26,7 @@ Defined in: workers/index.ts:131
 
 > **avgExecutionTime**: `number`
 
-Defined in: workers/index.ts:141
+Defined in: [workers/index.ts:141](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L141)
 
 平均実行時間（ミリ秒）
 
@@ -36,7 +36,7 @@ Defined in: workers/index.ts:141
 
 > **cpuUsage**: `number`
 
-Defined in: workers/index.ts:143
+Defined in: [workers/index.ts:143](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L143)
 
 CPU使用率
 
@@ -46,7 +46,7 @@ CPU使用率
 
 > **failedTasks**: `number`
 
-Defined in: workers/index.ts:139
+Defined in: [workers/index.ts:139](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L139)
 
 失敗したタスク数
 
@@ -56,7 +56,7 @@ Defined in: workers/index.ts:139
 
 > **idleWorkers**: `number`
 
-Defined in: workers/index.ts:133
+Defined in: [workers/index.ts:133](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L133)
 
 アイドルワーカー数
 
@@ -66,7 +66,7 @@ Defined in: workers/index.ts:133
 
 > **memoryUsage**: `number`
 
-Defined in: workers/index.ts:145
+Defined in: [workers/index.ts:145](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L145)
 
 メモリ使用量（MB）
 
@@ -76,7 +76,7 @@ Defined in: workers/index.ts:145
 
 > **pendingTasks**: `number`
 
-Defined in: workers/index.ts:135
+Defined in: [workers/index.ts:135](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L135)
 
 待機中のタスク数
 
@@ -86,7 +86,7 @@ Defined in: workers/index.ts:135
 
 > **processedTasks**: `number`
 
-Defined in: workers/index.ts:137
+Defined in: [workers/index.ts:137](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L137)
 
 処理済みタスク数
 
@@ -96,6 +96,6 @@ Defined in: workers/index.ts:137
 
 > **uptime**: `number`
 
-Defined in: workers/index.ts:147
+Defined in: [workers/index.ts:147](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L147)
 
 稼働時間（秒）

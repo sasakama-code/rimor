@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IReporterPlugin
 
-Defined in: plugins/index.ts:143
+Defined in: [plugins/index.ts:143](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L143)
 
 レポータープラグイン
 
@@ -20,7 +20,7 @@ Defined in: plugins/index.ts:143
 
 > `optional` **metadata**: [`PluginMetadata`](PluginMetadata.md)
 
-Defined in: plugins/index.ts:109
+Defined in: [plugins/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L109)
 
 メタデータ
 
@@ -34,7 +34,7 @@ Defined in: plugins/index.ts:109
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:105
+Defined in: [plugins/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L105)
 
 プラグイン名
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:105
 
 > **supportedOutputs**: `string`[]
 
-Defined in: plugins/index.ts:148
+Defined in: [plugins/index.ts:148](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L148)
 
 サポートされる出力形式
 
@@ -58,7 +58,7 @@ Defined in: plugins/index.ts:148
 
 > **type**: `"REPORTER"`
 
-Defined in: plugins/index.ts:144
+Defined in: [plugins/index.ts:144](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L144)
 
 プラグインタイプ
 
@@ -72,7 +72,7 @@ Defined in: plugins/index.ts:144
 
 > `optional` **cleanup**(): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:115
+Defined in: [plugins/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L115)
 
 クリーンアップ
 
@@ -88,9 +88,9 @@ Defined in: plugins/index.ts:115
 
 ### execute()
 
-> **execute**(`input`, `context?`): `Promise`\<`any`\>
+> **execute**(`input`, `context?`): `Promise`\<`unknown`\>
 
-Defined in: plugins/index.ts:113
+Defined in: [plugins/index.ts:113](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L113)
 
 実行
 
@@ -98,7 +98,7 @@ Defined in: plugins/index.ts:113
 
 ##### input
 
-`any`
+`unknown`
 
 ##### context?
 
@@ -106,7 +106,7 @@ Defined in: plugins/index.ts:113
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`unknown`\>
 
 #### Inherited from
 
@@ -118,7 +118,7 @@ Defined in: plugins/index.ts:113
 
 > **generateReport**(`data`, `outputPath?`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:146
+Defined in: [plugins/index.ts:146](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L146)
 
 レポート生成
 
@@ -126,7 +126,7 @@ Defined in: plugins/index.ts:146
 
 ##### data
 
-`any`
+`unknown`
 
 ##### outputPath?
 
@@ -142,7 +142,7 @@ Defined in: plugins/index.ts:146
 
 > `optional` **initialize**(`context`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:111
+Defined in: [plugins/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L111)
 
 初期化
 

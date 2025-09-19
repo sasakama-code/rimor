@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: DesignPattern
 
-Defined in: shared/index.ts:64
+Defined in: [shared/index.ts:64](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L64)
 
 デザインパターン
 
@@ -16,7 +16,7 @@ Defined in: shared/index.ts:64
 
 > **confidence**: `number`
 
-Defined in: shared/index.ts:79
+Defined in: [shared/index.ts:79](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L79)
 
 信頼度（0-100）
 
@@ -26,7 +26,7 @@ Defined in: shared/index.ts:79
 
 > **description**: `string`
 
-Defined in: shared/index.ts:70
+Defined in: [shared/index.ts:70](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L70)
 
 説明
 
@@ -36,7 +36,7 @@ Defined in: shared/index.ts:70
 
 > **location**: `object`
 
-Defined in: shared/index.ts:72
+Defined in: [shared/index.ts:72](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L72)
 
 検出場所
 
@@ -62,7 +62,7 @@ Defined in: shared/index.ts:72
 
 > **name**: `string`
 
-Defined in: shared/index.ts:68
+Defined in: [shared/index.ts:68](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L68)
 
 名前
 
@@ -72,7 +72,7 @@ Defined in: shared/index.ts:68
 
 > `optional` **quality**: `"GOOD"` \| `"ACCEPTABLE"` \| `"POOR"`
 
-Defined in: shared/index.ts:81
+Defined in: [shared/index.ts:81](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L81)
 
 実装の品質
 
@@ -82,7 +82,7 @@ Defined in: shared/index.ts:81
 
 > `optional` **suggestions**: `string`[]
 
-Defined in: shared/index.ts:83
+Defined in: [shared/index.ts:83](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L83)
 
 改善提案
 
@@ -92,6 +92,6 @@ Defined in: shared/index.ts:83
 
 > **type**: [`DesignPatternType`](../type-aliases/DesignPatternType.md)
 
-Defined in: shared/index.ts:66
+Defined in: [shared/index.ts:66](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/shared/index.ts#L66)
 
 パターンタイプ

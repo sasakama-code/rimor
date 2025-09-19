@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ImpactEstimation
 
-Defined in: ai/index.ts:188
+Defined in: [ai/index.ts:206](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L206)
 
 影響度評価
 
@@ -16,7 +16,7 @@ Defined in: ai/index.ts:188
 
 > **effort**: `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: ai/index.ts:196
+Defined in: [ai/index.ts:214](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L214)
 
 実装難易度
 
@@ -24,9 +24,9 @@ Defined in: ai/index.ts:196
 
 ### maintainability
 
-> **maintainability**: [`RiskLevel`](../type-aliases/RiskLevel.md)
+> **maintainability**: `RiskLevel`
 
-Defined in: ai/index.ts:194
+Defined in: [ai/index.ts:212](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L212)
 
 保守性への影響
 
@@ -34,9 +34,9 @@ Defined in: ai/index.ts:194
 
 ### performance
 
-> **performance**: [`RiskLevel`](../type-aliases/RiskLevel.md)
+> **performance**: `RiskLevel`
 
-Defined in: ai/index.ts:192
+Defined in: [ai/index.ts:210](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L210)
 
 パフォーマンスへの影響
 
@@ -44,8 +44,8 @@ Defined in: ai/index.ts:192
 
 ### security
 
-> **security**: [`RiskLevel`](../type-aliases/RiskLevel.md)
+> **security**: `RiskLevel`
 
-Defined in: ai/index.ts:190
+Defined in: [ai/index.ts:208](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/ai/index.ts#L208)
 
 セキュリティへの影響

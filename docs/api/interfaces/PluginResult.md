@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: PluginResult
 
-Defined in: plugins/index.ts:239
+Defined in: [plugins/index.ts:239](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L239)
 
 プラグイン実行結果
 
@@ -14,9 +14,9 @@ Defined in: plugins/index.ts:239
 
 ### data?
 
-> `optional` **data**: `any`
+> `optional` **data**: `unknown`
 
-Defined in: plugins/index.ts:245
+Defined in: [plugins/index.ts:245](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L245)
 
 結果データ
 
@@ -26,7 +26,7 @@ Defined in: plugins/index.ts:245
 
 > `optional` **error**: `Error`
 
-Defined in: plugins/index.ts:247
+Defined in: [plugins/index.ts:247](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L247)
 
 エラー
 
@@ -36,7 +36,7 @@ Defined in: plugins/index.ts:247
 
 > **executionTime**: `number`
 
-Defined in: plugins/index.ts:249
+Defined in: [plugins/index.ts:249](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L249)
 
 実行時間
 
@@ -46,7 +46,7 @@ Defined in: plugins/index.ts:249
 
 > `optional` **metrics**: `Record`\<`string`, `any`\>
 
-Defined in: plugins/index.ts:251
+Defined in: [plugins/index.ts:251](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L251)
 
 メトリクス
 
@@ -56,7 +56,7 @@ Defined in: plugins/index.ts:251
 
 > **pluginName**: `string`
 
-Defined in: plugins/index.ts:241
+Defined in: [plugins/index.ts:241](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L241)
 
 プラグイン名
 
@@ -66,6 +66,6 @@ Defined in: plugins/index.ts:241
 
 > **success**: `boolean`
 
-Defined in: plugins/index.ts:243
+Defined in: [plugins/index.ts:243](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L243)
 
 成功/失敗

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestSuite
 
-Defined in: testing/index.ts:168
+Defined in: [testing/index.ts:178](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L178)
 
 テストスイート
 ISP（インターフェース分離原則）: 必要な機能のみを含む
@@ -17,7 +17,7 @@ ISP（インターフェース分離原則）: 必要な機能のみを含む
 
 > `optional` **description**: `string`
 
-Defined in: testing/index.ts:174
+Defined in: [testing/index.ts:184](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L184)
 
 説明
 
@@ -27,7 +27,7 @@ Defined in: testing/index.ts:174
 
 > **id**: `string`
 
-Defined in: testing/index.ts:170
+Defined in: [testing/index.ts:180](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L180)
 
 スイートID
 
@@ -37,7 +37,7 @@ Defined in: testing/index.ts:170
 
 > **name**: `string`
 
-Defined in: testing/index.ts:172
+Defined in: [testing/index.ts:182](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L182)
 
 スイート名
 
@@ -47,7 +47,7 @@ Defined in: testing/index.ts:172
 
 > `optional` **summary**: `object`
 
-Defined in: testing/index.ts:178
+Defined in: [testing/index.ts:188](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L188)
 
 サマリー情報
 
@@ -81,6 +81,6 @@ Defined in: testing/index.ts:178
 
 > **testCases**: [`TestCase`](TestCase.md)[]
 
-Defined in: testing/index.ts:176
+Defined in: [testing/index.ts:186](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L186)
 
 テストケースのリスト

@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: PluginTestCase
 
-Defined in: testing/index.ts:127
+Defined in: [testing/index.ts:137](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L137)
 
 プラグイン拡張を持つテストケース
 
@@ -20,7 +20,7 @@ Defined in: testing/index.ts:127
 
 > `optional` **description**: `string`
 
-Defined in: testing/index.ts:44
+Defined in: [testing/index.ts:54](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L54)
 
 テストの説明（オプション）
 
@@ -34,7 +34,7 @@ Defined in: testing/index.ts:44
 
 > **id**: `string`
 
-Defined in: testing/index.ts:40
+Defined in: [testing/index.ts:50](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L50)
 
 テストケースの一意識別子
 
@@ -48,7 +48,7 @@ Defined in: testing/index.ts:40
 
 > **name**: `string`
 
-Defined in: testing/index.ts:42
+Defined in: [testing/index.ts:52](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L52)
 
 テストケース名
 
@@ -62,13 +62,13 @@ Defined in: testing/index.ts:42
 
 > `optional` **pluginConfig**: `object`
 
-Defined in: testing/index.ts:131
+Defined in: [testing/index.ts:141](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L141)
 
 プラグイン固有の設定
 
 #### Index Signature
 
-\[`key`: `string`\]: `any`
+\[`key`: `string`\]: `unknown`
 
 その他のプラグイン固有設定
 
@@ -102,7 +102,7 @@ Defined in: testing/index.ts:131
 
 > **pluginName**: `string`
 
-Defined in: testing/index.ts:129
+Defined in: [testing/index.ts:139](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L139)
 
 プラグイン名
 
@@ -112,7 +112,7 @@ Defined in: testing/index.ts:129
 
 > **status**: [`TestStatus`](../type-aliases/TestStatus.md)
 
-Defined in: testing/index.ts:46
+Defined in: [testing/index.ts:56](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L56)
 
 テストのステータス
 

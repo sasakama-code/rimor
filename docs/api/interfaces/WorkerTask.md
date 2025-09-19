@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: WorkerTask
 
-Defined in: workers/index.ts:37
+Defined in: [workers/index.ts:37](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L37)
 
 ワーカータスク
 SRP: タスクの情報に特化
@@ -17,7 +17,7 @@ SRP: タスクの情報に特化
 
 > `optional` **completedAt**: `string`
 
-Defined in: workers/index.ts:55
+Defined in: [workers/index.ts:55](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L55)
 
 完了日時
 
@@ -27,7 +27,7 @@ Defined in: workers/index.ts:55
 
 > **createdAt**: `string`
 
-Defined in: workers/index.ts:51
+Defined in: [workers/index.ts:51](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L51)
 
 作成日時
 
@@ -37,7 +37,7 @@ Defined in: workers/index.ts:51
 
 > **id**: `string`
 
-Defined in: workers/index.ts:39
+Defined in: [workers/index.ts:39](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L39)
 
 タスクID
 
@@ -45,9 +45,9 @@ Defined in: workers/index.ts:39
 
 ### payload
 
-> **payload**: `any`
+> **payload**: `unknown`
 
-Defined in: workers/index.ts:45
+Defined in: [workers/index.ts:45](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L45)
 
 ペイロード
 
@@ -57,7 +57,7 @@ Defined in: workers/index.ts:45
 
 > `optional` **priority**: [`TaskPriority`](../type-aliases/TaskPriority.md)
 
-Defined in: workers/index.ts:43
+Defined in: [workers/index.ts:43](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L43)
 
 優先度
 
@@ -67,7 +67,7 @@ Defined in: workers/index.ts:43
 
 > `optional` **retryCount**: `number`
 
-Defined in: workers/index.ts:49
+Defined in: [workers/index.ts:49](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L49)
 
 リトライ回数
 
@@ -77,7 +77,7 @@ Defined in: workers/index.ts:49
 
 > `optional` **startedAt**: `string`
 
-Defined in: workers/index.ts:53
+Defined in: [workers/index.ts:53](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L53)
 
 開始日時
 
@@ -87,7 +87,7 @@ Defined in: workers/index.ts:53
 
 > `optional` **timeout**: `number`
 
-Defined in: workers/index.ts:47
+Defined in: [workers/index.ts:47](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L47)
 
 タイムアウト（ミリ秒）
 
@@ -97,6 +97,6 @@ Defined in: workers/index.ts:47
 
 > **type**: `string`
 
-Defined in: workers/index.ts:41
+Defined in: [workers/index.ts:41](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/workers/index.ts#L41)
 
 タスクタイプ

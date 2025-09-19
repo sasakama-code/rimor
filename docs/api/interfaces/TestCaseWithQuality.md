@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: TestCaseWithQuality
 
-Defined in: testing/index.ts:148
+Defined in: [testing/index.ts:158](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L158)
 
 品質メトリクスを持つテストケース
 
@@ -20,7 +20,7 @@ Defined in: testing/index.ts:148
 
 > `optional` **qualityMetrics**: `object`
 
-Defined in: testing/index.ts:150
+Defined in: [testing/index.ts:160](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/testing/index.ts#L160)
 
 品質メトリクス
 

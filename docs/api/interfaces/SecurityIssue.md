@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: SecurityIssue
 
-Defined in: plugins/index.ts:195
+Defined in: [plugins/index.ts:195](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L195)
 
 セキュリティ問題
 
@@ -16,7 +16,7 @@ Defined in: plugins/index.ts:195
 
 > **description**: `string`
 
-Defined in: plugins/index.ts:203
+Defined in: [plugins/index.ts:203](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L203)
 
 説明
 
@@ -26,7 +26,7 @@ Defined in: plugins/index.ts:203
 
 > `optional` **location**: `object`
 
-Defined in: plugins/index.ts:205
+Defined in: [plugins/index.ts:205](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L205)
 
 場所
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:205
 
 > `optional` **references**: `string`[]
 
-Defined in: plugins/index.ts:213
+Defined in: [plugins/index.ts:213](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L213)
 
 参照
 
@@ -58,7 +58,7 @@ Defined in: plugins/index.ts:213
 
 > `optional` **remediation**: `string`
 
-Defined in: plugins/index.ts:211
+Defined in: [plugins/index.ts:211](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L211)
 
 修正方法
 
@@ -68,7 +68,7 @@ Defined in: plugins/index.ts:211
 
 > **severity**: `"CRITICAL"` \| `"HIGH"` \| `"MEDIUM"` \| `"LOW"`
 
-Defined in: plugins/index.ts:199
+Defined in: [plugins/index.ts:199](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L199)
 
 深刻度
 
@@ -78,7 +78,7 @@ Defined in: plugins/index.ts:199
 
 > **title**: `string`
 
-Defined in: plugins/index.ts:201
+Defined in: [plugins/index.ts:201](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L201)
 
 タイトル
 
@@ -88,6 +88,6 @@ Defined in: plugins/index.ts:201
 
 > **type**: `string`
 
-Defined in: plugins/index.ts:197
+Defined in: [plugins/index.ts:197](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L197)
 
 タイプ

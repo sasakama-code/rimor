@@ -1,4 +1,4 @@
-[**Rimor API Documentation v0.8.0**](../README.md)
+[**Rimor API Documentation v0.9.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: IValidatorPlugin
 
-Defined in: plugins/index.ts:154
+Defined in: [plugins/index.ts:154](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L154)
 
 バリデータープラグイン
 
@@ -20,7 +20,7 @@ Defined in: plugins/index.ts:154
 
 > `optional` **metadata**: [`PluginMetadata`](PluginMetadata.md)
 
-Defined in: plugins/index.ts:109
+Defined in: [plugins/index.ts:109](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L109)
 
 メタデータ
 
@@ -34,7 +34,7 @@ Defined in: plugins/index.ts:109
 
 > **name**: `string`
 
-Defined in: plugins/index.ts:105
+Defined in: [plugins/index.ts:105](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L105)
 
 プラグイン名
 
@@ -48,7 +48,7 @@ Defined in: plugins/index.ts:105
 
 > `optional` **supportedSchemas**: `string`[]
 
-Defined in: plugins/index.ts:159
+Defined in: [plugins/index.ts:159](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L159)
 
 サポートされるスキーマ
 
@@ -58,7 +58,7 @@ Defined in: plugins/index.ts:159
 
 > **type**: `"VALIDATOR"`
 
-Defined in: plugins/index.ts:155
+Defined in: [plugins/index.ts:155](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L155)
 
 プラグインタイプ
 
@@ -72,7 +72,7 @@ Defined in: plugins/index.ts:155
 
 > `optional` **cleanup**(): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:115
+Defined in: [plugins/index.ts:115](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L115)
 
 クリーンアップ
 
@@ -88,9 +88,9 @@ Defined in: plugins/index.ts:115
 
 ### execute()
 
-> **execute**(`input`, `context?`): `Promise`\<`any`\>
+> **execute**(`input`, `context?`): `Promise`\<`unknown`\>
 
-Defined in: plugins/index.ts:113
+Defined in: [plugins/index.ts:113](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L113)
 
 実行
 
@@ -98,7 +98,7 @@ Defined in: plugins/index.ts:113
 
 ##### input
 
-`any`
+`unknown`
 
 ##### context?
 
@@ -106,7 +106,7 @@ Defined in: plugins/index.ts:113
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`unknown`\>
 
 #### Inherited from
 
@@ -118,7 +118,7 @@ Defined in: plugins/index.ts:113
 
 > `optional` **initialize**(`context`): `Promise`\<`void`\>
 
-Defined in: plugins/index.ts:111
+Defined in: [plugins/index.ts:111](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L111)
 
 初期化
 
@@ -142,7 +142,7 @@ Defined in: plugins/index.ts:111
 
 > **validate**(`data`, `schema?`): `Promise`\<[`ValidationResult`](ValidationResult.md)\>
 
-Defined in: plugins/index.ts:157
+Defined in: [plugins/index.ts:157](https://github.com/sasakama-code/rimor/blob/0d428f9bf9f700bab9c108eb64db95ded6548e2e/src/types/plugins/index.ts#L157)
 
 検証
 
@@ -150,11 +150,11 @@ Defined in: plugins/index.ts:157
 
 ##### data
 
-`any`
+`unknown`
 
 ##### schema?
 
-`any`
+`unknown`
 
 #### Returns
 
