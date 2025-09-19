@@ -281,4 +281,46 @@ describe('DomainInferenceEngine', () => {
       }
     });
   });
+
+  // Issue #134対応: 空文字ドメイン問題のテスト
+  describe('空文字ドメイン問題 (Issue #134)', () => {
+    it('何もマッチしない場合はunknownドメインとlowの重要度を返すこと', async () => {
+      const context = {
+        filePath: '/some/unrelated/path/RandomFile.ts',
+        className: 'UnknownClass',
+        imports: ['SomeUnrelatedImport']
+      };
+
+      const result = await engine.inferDomainFromContext(context);
+
+      // Issue #134: 空文字ではなく'unknown'ドメインを返すことを期待
+      expect(result.domain).toBe('unknown');
+      expect(result.businessImportance).toBe('low');
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeLessThanOrEqual(1.0);
+    });
+
+    it('getDomainImportanceが空文字に対してmediumを返さないこと', async () => {
+      // 直接空文字をgetDomainImportanceに渡した場合のテスト
+      const importance = await engine.getDomainImportance('');
+      
+      // Issue #134: 空文字に対してmediumが返されるのは不適切
+      // 代わりにlowまたは適切なデフォルト値を期待
+      expect(importance).not.toBe('medium');
+    });
+
+    it('未知ドメインの信頼度が適切なデフォルト値を持つこと', async () => {
+      const context = {
+        filePath: '/completely/unknown/path.ts',
+        className: 'VeryUnknownClass',
+        imports: []
+      };
+
+      const result = await engine.inferDomainFromContext(context);
+
+      // Issue #134: 信頼度が0の場合でも適切なデフォルト値を期待
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.3); // デフォルト信頼度
+    });
+  });
 });

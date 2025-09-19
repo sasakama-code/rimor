@@ -166,7 +166,8 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
   async inferDomainFromContext(context: DomainContext): Promise<DomainInference> {
     // ファイルパスからドメインを推論
     const pathParts = context.filePath.split('/');
-    let inferredDomain = '';
+    // Issue #134対応: 初期値を'unknown'に変更（空文字問題の解決）
+    let inferredDomain: string = 'unknown';
     let confidence = 0;
     const concepts: string[] = [];
 
@@ -244,6 +245,11 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     // uniqueRelatedDomainsからrelatedDomains配列を生成（順序付き）
     const orderedRelatedDomains = Array.from(uniqueRelatedDomains).sort();
 
+    // Issue #134対応: 信頼度のデフォルト値処理
+    if (confidence === 0 && inferredDomain === 'unknown') {
+      confidence = this.confidenceConfig.defaultConfidence ?? 0.3;
+    }
+
     const importance = await this.getDomainImportance(inferredDomain);
 
     return {
@@ -256,6 +262,10 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
   }
 
   async getDomainImportance(domain: string): Promise<BusinessImportance> {
+    // Issue #134対応: 空文字や'unknown'ドメインに対する適切な重要度処理
+    if (!domain || domain === '' || domain === 'unknown') {
+      return 'low';
+    }
     return this.domainImportanceMap.get(domain) || 'medium';
   }
 
