@@ -19,6 +19,34 @@ export class MarkdownFormatter extends BaseFormatter {
   name = 'markdown';
 
   /**
+   * Markdownエスケープ（Markdownインジェクション対策）
+   * Issue #131対応: セキュリティ脆弱性の修正 - 確実な動作のため明示的実装
+   */
+  protected escapeMarkdown(text: string): string {
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
+    
+    const escapeMap: Record<string, string> = {
+      '\\': '\\\\',
+      '*': '\\*',
+      '_': '\\_',
+      '`': '\\`',
+      '#': '\\#',
+      '[': '\\[',
+      ']': '\\]',
+      '(': '\\(',
+      ')': '\\)',
+      '!': '\\!',
+      '<': '&lt;',
+      '>': '&gt;',
+      '|': '\\|'
+    };
+    
+    return text.replace(/[\\*_`#\[\]()!<>|]/g, char => escapeMap[char] || char);
+  }
+
+  /**
    * Markdown形式でレポートを生成
    * Template Methodパターンの具体実装
    */
@@ -37,21 +65,25 @@ export class MarkdownFormatter extends BaseFormatter {
     markdown.push('');
     
     if (result.summary) {
-      markdown.push(`- **総合スコア**: ${result.summary.overallScore}/100`);
-      markdown.push(`- **グレード**: ${result.summary.overallGrade}`);
-      markdown.push(`- **ファイル数**: ${result.summary.statistics.totalFiles}`);
-      markdown.push(`- **テスト数**: ${result.summary.statistics.totalTests || 0}`);
+      // Issue #130対応: Defensive Programming適用
+      const summary = result.summary;
+      const stats = summary.statistics ?? {};
+      
+      markdown.push(`- **総合スコア**: ${summary.overallScore ?? 'N/A'}/100`);
+      markdown.push(`- **グレード**: ${summary.overallGrade ?? 'N/A'}`);
+      markdown.push(`- **ファイル数**: ${(stats as any).totalFiles ?? 0}`);
+      markdown.push(`- **テスト数**: ${(stats as any).totalTests ?? 0}`);
       markdown.push('');
 
-      // リスク統計
+      // リスク統計（Defensive Programming: nullish coalescing適用）
       markdown.push('### リスク統計');
       markdown.push('');
-      const riskCounts = result.summary.statistics.riskCounts;
-      markdown.push(`- CRITICAL: ${riskCounts.CRITICAL}件`);
-      markdown.push(`- HIGH: ${riskCounts.HIGH}件`);
-      markdown.push(`- MEDIUM: ${riskCounts.MEDIUM}件`);
-      markdown.push(`- LOW: ${riskCounts.LOW}件`);
-      markdown.push(`- MINIMAL: ${riskCounts.MINIMAL}件`);
+      const riskCounts = (stats as any).riskCounts ?? {};
+      markdown.push(`- CRITICAL: ${riskCounts.CRITICAL ?? 0}件`);
+      markdown.push(`- HIGH: ${riskCounts.HIGH ?? 0}件`);
+      markdown.push(`- MEDIUM: ${riskCounts.MEDIUM ?? 0}件`);
+      markdown.push(`- LOW: ${riskCounts.LOW ?? 0}件`);
+      markdown.push(`- MINIMAL: ${riskCounts.MINIMAL ?? 0}件`);
       markdown.push('');
     }
 
@@ -64,6 +96,7 @@ export class MarkdownFormatter extends BaseFormatter {
       const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
 
       risksToShow.forEach((risk, index) => {
+        // Issue #131対応: Markdownインジェクション対策強化
         const title = this.escapeMarkdown(risk.title || risk.problem || '');
         markdown.push(`### ${index + 1}. ${title}`);
         markdown.push('');

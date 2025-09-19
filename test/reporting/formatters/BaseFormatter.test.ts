@@ -66,7 +66,7 @@ describe('BaseFormatter', () => {
 
     test('HTMLタグをエスケープする', () => {
       const input = '<script>alert("xss")</script>';
-      const expected = '&lt;script&gt;alert("xss")&lt;/script&gt;';
+      const expected = '&lt;script&gt;alert\\("xss"\\)&lt;/script&gt;';
       
       const result = formatter.testEscapeMarkdown(input);
       expect(result).toBe(expected);
