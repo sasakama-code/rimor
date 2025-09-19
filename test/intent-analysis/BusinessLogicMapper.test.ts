@@ -17,28 +17,30 @@ describe('BusinessLogicMapper', () => {
   describe('mapTestToBusinessLogic', () => {
     it('テストファイルから関連するビジネスロジックをマッピングできる', async () => {
       const testFilePath = '/test/services/PaymentService.test.ts';
-      
+
       const callGraph: CallGraphNode[] = [
         {
           id: '/src/services/PaymentService.ts:processPayment',
           name: 'processPayment',
           filePath: '/src/services/PaymentService.ts',
           line: 25,
-          calls: [{
-            id: '/src/validators/PaymentValidator.ts:validatePayment',
-            name: 'validatePayment',
-            filePath: '/src/validators/PaymentValidator.ts',
-            line: 10,
-            calls: [],
-            calledBy: []
-          }],
-          calledBy: []
-        }
+          calls: [
+            {
+              id: '/src/validators/PaymentValidator.ts:validatePayment',
+              name: 'validatePayment',
+              filePath: '/src/validators/PaymentValidator.ts',
+              line: 10,
+              calls: [],
+              calledBy: [],
+            },
+          ],
+          calledBy: [],
+        },
       ];
 
       const typeInfo = new Map<string, TypeInfo>([
         ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }],
-        ['Payment', { typeName: 'Payment', isPrimitive: false }]
+        ['Payment', { typeName: 'Payment', isPrimitive: false }],
       ]);
 
       const result = await mapper.mapTestToBusinessLogic(testFilePath, callGraph, typeInfo);
@@ -46,14 +48,14 @@ describe('BusinessLogicMapper', () => {
       expect(result.testFilePath).toBe(testFilePath);
       expect(result.businessLogicFiles).toHaveLength(2);
       expect(result.businessLogicFiles[0].filePath).toBe('/src/services/PaymentService.ts');
-      expect(result.businessLogicFiles[0].importanceScore).toBeGreaterThan(60);  // 特別扱いがなくなったため調整
-      expect(result.businessCriticality.level).toBe('high');  // 実際の複雑度に基づいた評価
-      expect(result.coverageDepth).toBeGreaterThan(0.5);  // より現実的な期待値に
+      expect(result.businessLogicFiles[0].importanceScore).toBeGreaterThan(60); // 特別扱いがなくなったため調整
+      expect(result.businessCriticality.level).toBe('high'); // 実際の複雑度に基づいた評価
+      expect(result.coverageDepth).toBeGreaterThan(0.5); // より現実的な期待値に
     });
 
     it('複雑な呼び出しグラフから影響範囲を分析できる', async () => {
       const testFilePath = '/test/controllers/OrderController.test.ts';
-      
+
       const callGraph: CallGraphNode[] = [
         {
           id: '/src/controllers/OrderController.ts:createOrder',
@@ -67,7 +69,7 @@ describe('BusinessLogicMapper', () => {
               filePath: '/src/services/OrderService.ts',
               line: 30,
               calls: [],
-              calledBy: []
+              calledBy: [],
             },
             {
               id: '/src/services/PaymentService.ts:processPayment',
@@ -75,11 +77,11 @@ describe('BusinessLogicMapper', () => {
               filePath: '/src/services/PaymentService.ts',
               line: 25,
               calls: [],
-              calledBy: []
-            }
+              calledBy: [],
+            },
           ],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
 
       const typeInfo = new Map<string, TypeInfo>();
@@ -102,7 +104,7 @@ describe('BusinessLogicMapper', () => {
           isTested: true,
           complexity: 15,
           dependencyCount: 5,
-          containsBusinessRules: true
+          containsBusinessRules: true,
         },
         {
           name: 'formatCurrency',
@@ -110,15 +112,15 @@ describe('BusinessLogicMapper', () => {
           isTested: true,
           complexity: 3,
           dependencyCount: 1,
-          containsBusinessRules: false
-        }
+          containsBusinessRules: false,
+        },
       ];
 
       const domain: DomainInference = {
         domain: 'billing',
         confidence: 0.9,
         concepts: ['請求', '課金'],
-        businessImportance: 'critical'
+        businessImportance: 'critical',
       };
 
       const result = await mapper.calculateBusinessImportance(functions, domain);
@@ -137,15 +139,15 @@ describe('BusinessLogicMapper', () => {
           isTested: false,
           complexity: 2,
           dependencyCount: 1,
-          containsBusinessRules: false
-        }
+          containsBusinessRules: false,
+        },
       ];
 
       const domain: DomainInference = {
         domain: 'logging',
         confidence: 0.8,
         concepts: ['ログ'],
-        businessImportance: 'low'
+        businessImportance: 'low',
       };
 
       const result = await mapper.calculateBusinessImportance(functions, domain);
@@ -163,7 +165,7 @@ describe('BusinessLogicMapper', () => {
         filePath: '/src/a.ts',
         line: 1,
         calls: [],
-        calledBy: []
+        calledBy: [],
       };
 
       const nodeB: CallGraphNode = {
@@ -172,7 +174,7 @@ describe('BusinessLogicMapper', () => {
         filePath: '/src/b.ts',
         line: 1,
         calls: [nodeA],
-        calledBy: []
+        calledBy: [],
       };
 
       const nodeC: CallGraphNode = {
@@ -181,7 +183,7 @@ describe('BusinessLogicMapper', () => {
         filePath: '/src/c.ts',
         line: 1,
         calls: [nodeB],
-        calledBy: []
+        calledBy: [],
       };
 
       nodeA.calledBy = [nodeB];
@@ -216,7 +218,7 @@ describe('BusinessLogicMapper', () => {
 
       const typeInfo = new Map<string, TypeInfo>([
         ['amount', { typeName: 'number', isPrimitive: true }],
-        ['customer', { typeName: 'Customer', isPrimitive: false }]
+        ['customer', { typeName: 'Customer', isPrimitive: false }],
       ]);
 
       const result = await mapper.detectBusinessRules(functionBody, typeInfo);
@@ -230,7 +232,7 @@ describe('BusinessLogicMapper', () => {
       `;
 
       const typeInfo = new Map<string, TypeInfo>([
-        ['str', { typeName: 'string', isPrimitive: true }]
+        ['str', { typeName: 'string', isPrimitive: true }],
       ]);
 
       const result = await mapper.detectBusinessRules(functionBody, typeInfo);
@@ -247,7 +249,7 @@ describe('BusinessLogicMapper', () => {
         filePath: '/src/services/PaymentService.ts',
         line: 10,
         calls: [],
-        calledBy: []
+        calledBy: [],
       };
 
       const criticalDomains = ['payment', 'authentication', 'billing'];
@@ -264,7 +266,7 @@ describe('BusinessLogicMapper', () => {
         filePath: '/src/utils/dateFormatter.ts',
         line: 5,
         calls: [],
-        calledBy: []
+        calledBy: [],
       };
 
       const criticalDomains = ['payment', 'authentication', 'billing'];
@@ -278,7 +280,7 @@ describe('BusinessLogicMapper', () => {
   describe('ドメイン重要度評価の改善', () => {
     it('Paymentドメインが公平に評価されることを検証', async () => {
       const testFilePath = '/test/services/ProcessorService.test.ts';
-      
+
       const callGraph: CallGraphNode[] = [
         {
           id: '/src/services/ProcessorService.ts:process',
@@ -286,17 +288,17 @@ describe('BusinessLogicMapper', () => {
           filePath: '/src/services/ProcessorService.ts',
           line: 10,
           calls: [],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
 
       const typeInfo = new Map<string, TypeInfo>([
-        ['ProcessorService', { typeName: 'ProcessorService', isPrimitive: false }]
+        ['ProcessorService', { typeName: 'ProcessorService', isPrimitive: false }],
       ]);
 
       // まず通常のドメインでテスト
       const generalResult = await mapper.mapTestToBusinessLogic(testFilePath, callGraph, typeInfo);
-      
+
       // 次にPaymentドメインでテスト（特別扱いされるはず）
       const paymentCallGraph: CallGraphNode[] = [
         {
@@ -305,57 +307,59 @@ describe('BusinessLogicMapper', () => {
           filePath: '/src/services/PaymentService.ts',
           line: 25,
           calls: [],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
-      
+
       const paymentTypeInfo = new Map<string, TypeInfo>([
-        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }]
+        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }],
       ]);
-      
+
       const paymentResult = await mapper.mapTestToBusinessLogic(
         '/test/services/PaymentService.test.ts',
         paymentCallGraph,
         paymentTypeInfo
       );
-      
+
       // Paymentドメインは特別扱いされず、実際の複雑度に基づいて評価される
       expect(paymentResult.businessCriticality.level).toBeDefined();
-      expect(paymentResult.businessCriticality.score).toBeGreaterThan(0);  // スコアは計算によって決定
+      expect(paymentResult.businessCriticality.score).toBeGreaterThan(0); // スコアは計算によって決定
     });
 
     it('ドメイン重要度の重み付けが設定可能であることを検証', async () => {
       // 新しいmapperインスタンスで設定をテスト
       const customMapper = new BusinessLogicMapper();
-      
+
       // カスタム設定を適用
       customMapper.setDomainImportanceConfig({
         weightMap: {
           critical: 90,
           high: 70,
           medium: 40,
-          low: 20
-        }
+          low: 20,
+        },
       });
-      
-      const functions = [{
-        name: 'testFunction',
-        line: 10,
-        isTested: true,
-        complexity: 5,
-        dependencyCount: 2,
-        containsBusinessRules: false
-      }];
-      
+
+      const functions = [
+        {
+          name: 'testFunction',
+          line: 10,
+          isTested: true,
+          complexity: 5,
+          dependencyCount: 2,
+          containsBusinessRules: false,
+        },
+      ];
+
       const domain: DomainInference = {
         domain: 'test-domain',
         confidence: 0.8,
         concepts: [],
-        businessImportance: 'high'
+        businessImportance: 'high',
       };
-      
+
       const result = await customMapper.calculateBusinessImportance(functions, domain);
-      
+
       // カスタム設定が適用されていることを検証（high = 70）
       expect(result.score).toBeGreaterThanOrEqual(70);
     });
@@ -364,9 +368,9 @@ describe('BusinessLogicMapper', () => {
       // オーバーライドを無効化したmapper
       const customMapper = new BusinessLogicMapper();
       customMapper.setDomainImportanceConfig({
-        disableDomainOverrides: true
+        disableDomainOverrides: true,
       });
-      
+
       const paymentCallGraph: CallGraphNode[] = [
         {
           id: '/src/services/PaymentService.ts:processPayment',
@@ -374,50 +378,52 @@ describe('BusinessLogicMapper', () => {
           filePath: '/src/services/PaymentService.ts',
           line: 25,
           calls: [],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
-      
+
       const paymentTypeInfo = new Map<string, TypeInfo>([
-        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }]
+        ['PaymentService', { typeName: 'PaymentService', isPrimitive: false }],
       ]);
-      
+
       const result = await customMapper.mapTestToBusinessLogic(
         '/test/services/PaymentService.test.ts',
         paymentCallGraph,
         paymentTypeInfo
       );
-      
+
       // オーバーライドが無効化されているので、85以上に強制されない
       // （実際のスコアは計算によって決まる）
       expect(result.businessCriticality.level).toBeDefined();
     });
 
     it('ドメイン重要度の重み付けが設定可能であることを検証', async () => {
-      const functions = [{
-        name: 'testFunction',
-        line: 10,
-        isTested: true,
-        complexity: 5,
-        dependencyCount: 2,
-        containsBusinessRules: false
-      }];
-      
+      const functions = [
+        {
+          name: 'testFunction',
+          line: 10,
+          isTested: true,
+          complexity: 5,
+          dependencyCount: 2,
+          containsBusinessRules: false,
+        },
+      ];
+
       const testCases = [
         { importance: 'critical' as const, minScore: 70 },
         { importance: 'high' as const, minScore: 50 },
         { importance: 'medium' as const, minScore: 30 },
-        { importance: 'low' as const, minScore: 15 }
+        { importance: 'low' as const, minScore: 15 },
       ];
-      
+
       for (const testCase of testCases) {
         const domain: DomainInference = {
           domain: 'test-domain',
           confidence: 0.8,
           concepts: [],
-          businessImportance: testCase.importance
+          businessImportance: testCase.importance,
         };
-        
+
         const result = await mapper.calculateBusinessImportance(functions, domain);
         expect(result.score).toBeGreaterThanOrEqual(testCase.minScore);
       }

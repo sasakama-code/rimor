@@ -9,7 +9,7 @@ import path from 'path';
 
 describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
   let tempTestFile: string;
-  
+
   beforeEach(() => {
     // 一時的なテストファイルを作成
     tempTestFile = path.join(process.cwd(), `temp-unhandled-rejection-test-${Date.now()}.test.js`);
@@ -41,22 +41,24 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
         });
       });
     `;
-    
+
     fs.writeFileSync(tempTestFile, testContent);
   };
 
-  const runJestWithEnvironment = (isCI: boolean): Promise<{
+  const runJestWithEnvironment = (
+    isCI: boolean
+  ): Promise<{
     exitCode: number | null;
     stdout: string;
     stderr: string;
   }> => {
-    return new Promise((resolve) => {
-      const env = { 
-        ...process.env, 
+    return new Promise(resolve => {
+      const env = {
+        ...process.env,
         NODE_OPTIONS: '--max-old-space-size=512',
-        CI: isCI ? 'true' : undefined 
+        CI: isCI ? 'true' : undefined,
       };
-      
+
       // CIフラグを削除（undefinedの場合）
       if (!isCI && env.CI) {
         delete env.CI;
@@ -71,27 +73,27 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
           '--forceExit',
           '--runInBand',
           '--no-cache',
-          tempTestFile
+          tempTestFile,
         ],
-        { 
+        {
           env,
           cwd: process.cwd(),
-          stdio: ['pipe', 'pipe', 'pipe']
+          stdio: ['pipe', 'pipe', 'pipe'],
         }
       );
 
       let stdout = '';
       let stderr = '';
 
-      jestProcess.stdout?.on('data', (data) => {
+      jestProcess.stdout?.on('data', data => {
         stdout += data.toString();
       });
 
-      jestProcess.stderr?.on('data', (data) => {
+      jestProcess.stderr?.on('data', data => {
         stderr += data.toString();
       });
 
-      jestProcess.on('close', (exitCode) => {
+      jestProcess.on('close', exitCode => {
         resolve({ exitCode, stdout, stderr });
       });
 
@@ -105,9 +107,9 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
 
   test('CI環境では未処理Promise拒否でプロセスが終了すること', async () => {
     createTestFileWithUnhandledRejection();
-    
+
     const result = await runJestWithEnvironment(true);
-    
+
     // CI環境では未処理Promise拒否によりプロセスが終了する（非ゼロ終了コード）
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toMatch(/Unhandled Rejection|unhandled promise rejection/i);
@@ -115,13 +117,13 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
 
   test('ローカル環境（非CI）では未処理Promise拒否でもテストが継続されること', async () => {
     createTestFileWithUnhandledRejection();
-    
+
     const result = await runJestWithEnvironment(false);
-    
+
     // ローカル環境では警告は出るが、テスト自体は成功する場合がある
     // （現在の実装では非CI環境でもprocess.exit(1)が呼ばれるが、
     // Jest環境では実際のプロセス終了ではなくエラーがスローされる）
-    
+
     // stderr にunhandled rejection の警告が含まれていることを確認
     expect(result.stderr).toMatch(/Unhandled Rejection|unhandled promise rejection/i);
   }, 20000);
@@ -129,19 +131,19 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
   test('process.exitのモック動作を検証', () => {
     // Jest設定で process.exit がモックされていることを確認
     const mockExit = process.exit as jest.MockedFunction<typeof process.exit>;
-    
+
     // モック関数であることを検証
     expect(mockExit).toBeDefined();
     expect(typeof mockExit).toBe('function');
-    
+
     // 現在の実装では Jest 設定で process.exit がモックされている
     if (jest.isMockFunction(mockExit)) {
       const calls = mockExit.mock.calls.length;
-      
+
       // 未処理Promise拒否を発生させる
       const unhandledPromise = Promise.reject(new Error('Test unhandled rejection'));
-      
-      return new Promise<void>((resolve) => {
+
+      return new Promise<void>(resolve => {
         setTimeout(() => {
           // process.exit がより多く呼ばれていることを確認
           // （完全な確認は難しいため、ログでの検証も含む）
@@ -153,7 +155,7 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
 
   describe('環境変数による動作の違い', () => {
     const originalCI = process.env.CI;
-    
+
     afterAll(() => {
       // 環境変数を復元
       if (originalCI !== undefined) {
@@ -165,19 +167,19 @@ describe('Jest Setup: Unhandled Promise Rejection Handler', () => {
 
     test('CI=true の時の動作を検証', () => {
       process.env.CI = 'true';
-      
+
       // CI環境設定の確認
       expect(process.env.CI).toBe('true');
-      
+
       // 実際の未処理Promise拒否の動作は上記の統合テストで確認
     });
 
     test('CI 環境変数が設定されていない時の動作を検証', () => {
       delete process.env.CI;
-      
+
       // 非CI環境設定の確認
       expect(process.env.CI).toBeUndefined();
-      
+
       // 実際の未処理Promise拒否の動作は上記の統合テストで確認
     });
   });

@@ -15,7 +15,7 @@ import {
   SecurityType,
   SecurityRequirement,
   TypeInferenceResult,
-  SecurityTypeAnnotation
+  SecurityTypeAnnotation,
 } from '../types';
 import { SecurityMethodChange } from '../types/flow-types';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
@@ -44,8 +44,14 @@ export class ModularTestAnalyzer {
     const startTime = Date.now();
 
     // 入力検証
-    if (!method || !method.name || method.content === null || method.content === undefined || 
-        method.body === null || method.body === undefined) {
+    if (
+      !method ||
+      !method.name ||
+      method.content === null ||
+      method.content === undefined ||
+      method.body === null ||
+      method.body === undefined
+    ) {
       throw new Error('Invalid method input: missing required fields');
     }
 
@@ -91,33 +97,34 @@ export class ModularTestAnalyzer {
         issues,
         metrics,
         suggestions,
-        analysisTime: Date.now() - startTime
+        analysisTime: Date.now() - startTime,
       };
 
       // キャッシュに保存
       this.cache.set(method, result);
 
       return result;
-
     } catch (error) {
       // エラーハンドリング
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         methodName: method.name,
-        issues: [{
-          id: `analysis-error-${method.name}`,
-          severity: 'error',
-          type: 'missing-sanitizer', // fallback type
-          message: `解析エラー: ${errorMessage}`,
-          location: {
-            file: method.filePath || 'unknown',
-            line: method.location?.start?.line || 0,
-            column: method.location?.start?.column || 0
-          }
-        }],
+        issues: [
+          {
+            id: `analysis-error-${method.name}`,
+            severity: 'error',
+            type: 'missing-sanitizer', // fallback type
+            message: `解析エラー: ${errorMessage}`,
+            location: {
+              file: method.filePath || 'unknown',
+              line: method.location?.start?.line || 0,
+              column: method.location?.start?.column || 0,
+            },
+          },
+        ],
         metrics: this.getDefaultMetrics(),
         suggestions: [],
-        analysisTime: Date.now() - startTime
+        analysisTime: Date.now() - startTime,
       };
     }
   }
@@ -134,7 +141,7 @@ export class ModularTestAnalyzer {
       changedMethods.map(async method => ({
         method: method.name,
         result: await this.analyzeTestMethod(method),
-        cached: false
+        cached: false,
       }))
     );
 
@@ -145,7 +152,7 @@ export class ModularTestAnalyzer {
       analyzed: results.length,
       cached: this.cache.getHitCount(),
       totalTime: Date.now() - startTime,
-      results: results.map(r => r.result)
+      results: results.map(r => r.result),
     };
   }
 
@@ -154,11 +161,9 @@ export class ModularTestAnalyzer {
    */
   async analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]> {
     const chunks = this.partitionMethods(methods);
-    
+
     const results = await Promise.all(
-      chunks.map(chunk => 
-        Promise.all(chunk.map(method => this.analyzeTestMethod(method)))
-      )
+      chunks.map(chunk => Promise.all(chunk.map(method => this.analyzeTestMethod(method))))
     );
 
     return results.flat();
@@ -179,7 +184,7 @@ export class ModularTestAnalyzer {
       variables,
       imports,
       libraries,
-      complexity: this.calculateComplexity(content)
+      complexity: this.calculateComplexity(content),
     };
   }
 
@@ -187,16 +192,29 @@ export class ModularTestAnalyzer {
    * メソッドシグネチャの解析
    */
   private analyzeMethodSignature(method: TestMethod): AnalyzedSignature {
-    const signature: MethodSignature = (typeof method.signature === 'string')
-      ? { name: method.signature, parameters: [], returnType: 'void', annotations: [], isAsync: false }
-      : (method.signature || { name: method.name, parameters: [], returnType: 'void', annotations: [], isAsync: false });
-    
+    const signature: MethodSignature =
+      typeof method.signature === 'string'
+        ? {
+            name: method.signature,
+            parameters: [],
+            returnType: 'void',
+            annotations: [],
+            isAsync: false,
+          }
+        : method.signature || {
+            name: method.name,
+            parameters: [],
+            returnType: 'void',
+            annotations: [],
+            isAsync: false,
+          };
+
     return {
       ...signature,
       securityRelevant: this.isSecurityRelevant(signature),
       taintSources: this.identifyTaintSources(signature),
       potentialSinks: this.identifyPotentialSinks(signature),
-      requiredValidations: this.identifyRequiredValidations(signature)
+      requiredValidations: this.identifyRequiredValidations(signature),
     };
   }
 
@@ -213,7 +231,7 @@ export class ModularTestAnalyzer {
         type: 'auth-test',
         required: ['success', 'failure', 'token-validation', 'session-management'],
         minTaintLevel: TaintLevel.UNTAINTED,
-        applicableSources: []
+        applicableSources: [],
       });
     }
 
@@ -224,7 +242,7 @@ export class ModularTestAnalyzer {
         type: 'input-validation',
         required: ['sanitization', 'boundary-check', 'type-validation'],
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: []
+        applicableSources: [],
       });
     }
 
@@ -235,7 +253,7 @@ export class ModularTestAnalyzer {
         type: 'api-security',
         required: ['rate-limiting', 'cors', 'auth-header', 'response-validation'],
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: []
+        applicableSources: [],
       });
     }
 
@@ -259,7 +277,10 @@ export class ModularTestAnalyzer {
     // フローグラフを走査して汚染を追跡
     for (const [nodeId, node] of flowGraph.nodes) {
       if (node.statement) {
-        const taintLevel = lattice.transferFunction(node.statement, node.inputTaint || 'untainted' as TaintLevel);
+        const taintLevel = lattice.transferFunction(
+          node.statement,
+          node.inputTaint || ('untainted' as TaintLevel)
+        );
         lattice.setTaintLevel(node.id, taintLevel, node.metadata);
       }
     }
@@ -272,7 +293,7 @@ export class ModularTestAnalyzer {
       lattice,
       violations,
       taintPaths: this.extractTaintPaths(flowGraph),
-      criticalFlows: this.identifyCriticalFlows(flowGraph, violations)
+      criticalFlows: this.identifyCriticalFlows(flowGraph, violations),
     };
   }
 
@@ -296,16 +317,16 @@ export class ModularTestAnalyzer {
         /UPDATE.*SET.*\$\{[^}]+\}/i,
         /DELETE.*WHERE.*\$\{[^}]+\}/i,
         /db\.execute\s*\([^,]+\$\{[^}]+\}/i,
-        /db\.query\s*\([^,]+\$\{[^}]+\}/i
+        /db\.query\s*\([^,]+\$\{[^}]+\}/i,
       ];
-      
+
       for (const pattern of sqlPatterns) {
         const content = method.content || '';
         if (pattern.test(content)) {
           // 汚染されたデータが含まれているかチェック
           const taintedVarPattern = /@Tainted|request\.body|request\.params|req\.body|req\.params/;
           const sanitizePattern = /sanitize|@Untainted|パラメータ化|プリペアド/;
-          
+
           // サニタイズされていないか、またはパラメータ化されていない場合のみ検出
           if (taintedVarPattern.test(content) && !sanitizePattern.test(content)) {
             issues.push({
@@ -316,9 +337,9 @@ export class ModularTestAnalyzer {
               location: {
                 file: method.filePath || 'unknown',
                 line: method.location?.start?.line || 0,
-                column: method.location?.start?.column || 0
+                column: method.location?.start?.column || 0,
               },
-              fixSuggestion: 'パラメータ化クエリまたはプリペアドステートメントを使用してください'
+              fixSuggestion: 'パラメータ化クエリまたはプリペアドステートメントを使用してください',
             });
             break;
           }
@@ -330,13 +351,14 @@ export class ModularTestAnalyzer {
         /eval\s*\(/,
         /new\s+Function\s*\(/,
         /setTimeout\s*\([^,]+,/,
-        /setInterval\s*\([^,]+,/
+        /setInterval\s*\([^,]+,/,
       ];
-      
+
       for (const pattern of codeExecPatterns) {
         if (method.content && pattern.test(method.content)) {
           // 汚染されたデータが含まれているかチェック
-          const taintedVarPattern = /@Tainted|request\.body|request\.params|req\.body|req\.params|req\./;
+          const taintedVarPattern =
+            /@Tainted|request\.body|request\.params|req\.body|req\.params|req\./;
           if (method.content && taintedVarPattern.test(method.content)) {
             issues.push({
               id: `code-execution-${method.name}`,
@@ -346,9 +368,9 @@ export class ModularTestAnalyzer {
               location: {
                 file: method.filePath || 'unknown',
                 line: method.location?.start?.line || 0,
-                column: method.location?.start?.column || 0
+                column: method.location?.start?.column || 0,
               },
-              fixSuggestion: 'evalの使用を避け、安全な代替手段を使用してください'
+              fixSuggestion: 'evalの使用を避け、安全な代替手段を使用してください',
             });
             break;
           }
@@ -366,9 +388,9 @@ export class ModularTestAnalyzer {
         location: {
           file: (violation as any).metadata?.location?.file || method?.filePath || 'unknown',
           line: (violation as any).metadata?.location?.line || 0,
-          column: (violation as any).metadata?.location?.column || 0
+          column: (violation as any).metadata?.location?.column || 0,
         },
-        fixSuggestion: violation.suggestedFix
+        fixSuggestion: violation.suggestedFix,
         // taintInfo: violation.metadata // TODO: 将来的にメタデータを追加
       });
     }
@@ -376,7 +398,8 @@ export class ModularTestAnalyzer {
     // セキュリティ要件の未達成をチェック
     for (const requirement of requirements) {
       const coverage = this.checkRequirementCoverage(requirement, typeInference);
-      if (coverage < 0.8) { // 80%未満のカバレッジ
+      if (coverage < 0.8) {
+        // 80%未満のカバレッジ
         issues.push({
           id: `requirement-${requirement.id}`,
           severity: 'warning',
@@ -385,15 +408,15 @@ export class ModularTestAnalyzer {
           location: {
             file: 'unknown',
             line: 0,
-            column: 0
+            column: 0,
           },
-          fixSuggestion: `${requirement.required.join(', ')}のテストケースを追加してください`
+          fixSuggestion: `${requirement.required.join(', ')}のテストケースを追加してください`,
         });
       }
     }
 
     // 基本的なセキュリティチェック
-    // ハードコードされた認証情報のチェック  
+    // ハードコードされた認証情報のチェック
     if (method && method.content) {
       const hardcodedPattern = /password['"]?\s*[:=]\s*['"][^'"]+['"]/i;
       if (hardcodedPattern.test(method.content)) {
@@ -405,9 +428,9 @@ export class ModularTestAnalyzer {
           location: {
             file: 'unknown',
             line: 0,
-            column: 0
+            column: 0,
           },
-          fixSuggestion: '認証情報を環境変数または設定ファイルから読み込むように修正してください'
+          fixSuggestion: '認証情報を環境変数または設定ファイルから読み込むように修正してください',
         });
       }
     }
@@ -416,18 +439,22 @@ export class ModularTestAnalyzer {
     if (method && method.name.toLowerCase().includes('validation') && method.content) {
       const hasValidation = /validate|sanitize|check/i.test(method.content);
       const hasInputKeywords = /validateInput|validatePassword/i.test(method.content);
-      if (hasInputKeywords && !method.content.includes('edge case') && !method.content.includes('special')) {
+      if (
+        hasInputKeywords &&
+        !method.content.includes('edge case') &&
+        !method.content.includes('special')
+      ) {
         issues.push({
           id: 'insufficient-validation',
           severity: 'warning',
-          type: 'insufficient-validation',  
+          type: 'insufficient-validation',
           message: '入力検証が不十分である可能性があります',
           location: {
             file: 'unknown',
             line: 0,
-            column: 0
+            column: 0,
           },
-          fixSuggestion: '入力値の検証ロジックを追加してください'
+          fixSuggestion: '入力値の検証ロジックを追加してください',
         });
       }
     }
@@ -444,9 +471,9 @@ export class ModularTestAnalyzer {
           location: {
             file: 'unknown',
             line: 0,
-            column: 0
+            column: 0,
           },
-          fixSuggestion: '強力なパスワードポリシーのテストを追加してください'
+          fixSuggestion: '強力なパスワードポリシーのテストを追加してください',
         });
       }
     }
@@ -472,11 +499,12 @@ export class ModularTestAnalyzer {
         authentication: calculateAuthCoverage(method),
         inputValidation: calculateInputValidationCoverage(method),
         apiSecurity: calculateApiSecurityCoverage(method),
-        overall: this.calculateOverallSecurityCoverage(method)
+        overall: this.calculateOverallSecurityCoverage(method),
       },
-      taintFlowDetection: totalVariables > 0 ? (totalVariables - taintedVariables) / totalVariables : 1.0,
+      taintFlowDetection:
+        totalVariables > 0 ? (totalVariables - taintedVariables) / totalVariables : 1.0,
       sanitizerCoverage: totalVariables > 0 ? Math.min(1.0, sanitizerCount / totalVariables) : 0,
-      invariantCompliance: taintAnalysis.violations.length === 0 ? 1.0 : 0.5
+      invariantCompliance: taintAnalysis.violations.length === 0 ? 1.0 : 0.5,
     };
   }
 
@@ -497,45 +525,51 @@ export class ModularTestAnalyzer {
           description: issue.message,
           location: { line: issue.location.line, column: issue.location.column || 0 },
           impact: issue.severity === 'critical' ? 'high' : 'medium',
-          suggestedCode: this.generateSanitizerCode(issue)
+          suggestedCode: this.generateSanitizerCode(issue),
         });
       }
     }
 
     // テストカバレッジの改善提案
     if (method.testType === 'unit' || method.testType === 'security') {
-      const hasMultipleScenarios = method.content ? method.content.split('expect').length > 2 : false;
+      const hasMultipleScenarios = method.content
+        ? method.content.split('expect').length > 2
+        : false;
       if (!hasMultipleScenarios) {
         suggestions.push({
           type: 'add-assertion',
           description: 'エッジケースやエラー処理のテストを追加してください',
           location: method.location?.start || { line: 0, column: 0 },
           impact: 'medium',
-          suggestedCode: '// 追加のテストケース\nexpect(complexFunction("edge-case")).toThrow();\nexpect(complexFunction(null)).toBe(false);',
+          suggestedCode:
+            '// 追加のテストケース\nexpect(complexFunction("edge-case")).toThrow();\nexpect(complexFunction(null)).toBe(false);',
         });
       }
     }
 
     // セキュリティ関連メソッドの基本的な改善提案
-    if (method.name.toLowerCase().includes('auth') || 
-        method.name.toLowerCase().includes('security') ||
-        (method.content && method.content.toLowerCase().includes('sql'))) {
-      
+    if (
+      method.name.toLowerCase().includes('auth') ||
+      method.name.toLowerCase().includes('security') ||
+      (method.content && method.content.toLowerCase().includes('sql'))
+    ) {
       suggestions.push({
         type: 'add-assertion',
         description: 'セキュリティ関連のテストカバレッジを強化してください',
         location: {
           file: method.filePath || 'unknown',
           line: method.location?.startLine || 0,
-          column: method.location?.startColumn || 0
+          column: method.location?.startColumn || 0,
         },
         suggestedCode: undefined,
-        impact: 'medium' as const
+        impact: 'medium' as const,
       });
     }
 
     // アサーションが少ない場合の提案
-    const assertionCount = method.content ? (method.content.match(/expect\(|assert\(/g) || []).length : 0;
+    const assertionCount = method.content
+      ? (method.content.match(/expect\(|assert\(/g) || []).length
+      : 0;
     if (assertionCount < 3) {
       suggestions.push({
         type: 'add-assertion',
@@ -543,10 +577,10 @@ export class ModularTestAnalyzer {
         location: {
           file: method.filePath || 'unknown',
           line: method.location?.startLine || 0,
-          column: method.location?.startColumn || 0
+          column: method.location?.startColumn || 0,
         },
         suggestedCode: undefined,
-        impact: 'low' as const
+        impact: 'low' as const,
       });
     }
 
@@ -577,16 +611,20 @@ export class ModularTestAnalyzer {
   }
 
   private isSecurityRelevant(signature: MethodSignature): boolean {
-    const securityKeywords = ['auth', 'login', 'token', 'password', 'secure', 'validate', 'sanitize'];
-    return securityKeywords.some(keyword => 
-      signature.name.toLowerCase().includes(keyword)
-    );
+    const securityKeywords = [
+      'auth',
+      'login',
+      'token',
+      'password',
+      'secure',
+      'validate',
+      'sanitize',
+    ];
+    return securityKeywords.some(keyword => signature.name.toLowerCase().includes(keyword));
   }
 
   private identifyTaintSources(signature: MethodSignature): string[] {
-    return signature.parameters
-      .filter(p => p.source === 'user-input')
-      .map(p => p.name);
+    return signature.parameters.filter(p => p.source === 'user-input').map(p => p.name);
   }
 
   private identifyPotentialSinks(signature: MethodSignature): string[] {
@@ -602,11 +640,11 @@ export class ModularTestAnalyzer {
   private partitionMethods(methods: TestMethod[]): TestMethod[][] {
     const chunkSize = Math.max(1, Math.ceil(methods.length / 4));
     const chunks: TestMethod[][] = [];
-    
+
     for (let i = 0; i < methods.length; i += chunkSize) {
       chunks.push(methods.slice(i, i + chunkSize));
     }
-    
+
     return chunks;
   }
 
@@ -619,12 +657,18 @@ export class ModularTestAnalyzer {
     return [];
   }
 
-  private identifyCriticalFlows(flowGraph: FlowGraph, violations: SecurityViolation[]): CriticalFlow[] {
+  private identifyCriticalFlows(
+    flowGraph: FlowGraph,
+    violations: SecurityViolation[]
+  ): CriticalFlow[] {
     // 実装簡略化
     return [];
   }
 
-  private checkRequirementCoverage(requirement: SecurityRequirement, typeInference: TypeInferenceResult): number {
+  private checkRequirementCoverage(
+    requirement: SecurityRequirement,
+    typeInference: TypeInferenceResult
+  ): number {
     // 実装簡略化 - 常に0.5を返す
     return 0.5;
   }
@@ -671,11 +715,11 @@ export class ModularTestAnalyzer {
         authentication: 0,
         inputValidation: 0,
         apiSecurity: 0,
-        overall: 0
+        overall: 0,
       },
       taintFlowDetection: 0,
       sanitizerCoverage: 0,
-      invariantCompliance: 0
+      invariantCompliance: 0,
     };
   }
 }
@@ -723,22 +767,22 @@ class TypeInferenceEngine {
   async inferTypes(method: TestMethod): Promise<TypeInferenceResult> {
     // 簡易実装
     const variables = this.extractLocalVariables(method.content || '');
-    
+
     return {
       annotations: variables.map((variable, index) => ({
         target: variable,
         securityType: SecurityType.USER_INPUT,
         taintLevel: TaintLevel.POSSIBLY_TAINTED,
         confidence: 0.7,
-        evidence: [`Found in method ${method.name}`]
+        evidence: [`Found in method ${method.name}`],
       })),
       statistics: {
         totalVariables: variables.length,
         inferred: variables.length,
         failed: 0,
-        averageConfidence: 0.7
+        averageConfidence: 0.7,
       },
-      inferenceTime: 50
+      inferenceTime: 50,
     };
   }
 
@@ -752,85 +796,85 @@ class TypeInferenceEngine {
  * ローカルヘルパー関数
  */
 function calculateAuthCoverage(method: TestMethod): number {
-    const content = (method.content || '').toLowerCase();
-    let coverage = 0;
-    
-    // 認証関連のキーワードや関数をチェック
-    if (content.includes('auth') || content.includes('token') || content.includes('login')) {
-      coverage += 0.4;
-    }
-    if (content.includes('verify') || content.includes('validate')) {
-      coverage += 0.3;
-    }
-    if (content.includes('permission') || content.includes('role') || content.includes('access')) {
-      coverage += 0.3;
-    }
-    
-    // securityRelevance スコアを考慮(将来的に実装予定)
-    // if (method.securityRelevance && method.securityRelevance > 0.8) {
-    //   coverage = Math.max(coverage, 0.8);
-    // }
-    
-    return Math.min(1.0, coverage);
+  const content = (method.content || '').toLowerCase();
+  let coverage = 0;
+
+  // 認証関連のキーワードや関数をチェック
+  if (content.includes('auth') || content.includes('token') || content.includes('login')) {
+    coverage += 0.4;
   }
+  if (content.includes('verify') || content.includes('validate')) {
+    coverage += 0.3;
+  }
+  if (content.includes('permission') || content.includes('role') || content.includes('access')) {
+    coverage += 0.3;
+  }
+
+  // securityRelevance スコアを考慮(将来的に実装予定)
+  // if (method.securityRelevance && method.securityRelevance > 0.8) {
+  //   coverage = Math.max(coverage, 0.8);
+  // }
+
+  return Math.min(1.0, coverage);
+}
 
 /**
  * 入力検証カバレッジの計算
  */
 function calculateInputValidationCoverage(method: TestMethod): number {
-    const content = (method.content || '').toLowerCase();
-    let coverage = 0;
-    
-    // 入力検証関連のキーワードや関数をチェック
-    if (content.includes('sanitize') || content.includes('escape') || content.includes('clean')) {
-      coverage += 0.4;
-    }
-    if (content.includes('validate') || content.includes('check') || content.includes('verify')) {
-      coverage += 0.3;
-    }
-    if (content.includes('input') || content.includes('param') || content.includes('data')) {
-      coverage += 0.2;
-    }
-    if (content.includes('injection') || content.includes('xss') || content.includes('sql')) {
-      coverage += 0.1;
-    }
-    
-    // securityRelevance スコアを考慮(将来的に実装予定)
-    // if (method.securityRelevance && method.securityRelevance > 0.8) {
-    //   coverage = Math.max(coverage, 0.9);
-    // }
-    
-    return Math.min(1.0, coverage);
+  const content = (method.content || '').toLowerCase();
+  let coverage = 0;
+
+  // 入力検証関連のキーワードや関数をチェック
+  if (content.includes('sanitize') || content.includes('escape') || content.includes('clean')) {
+    coverage += 0.4;
   }
+  if (content.includes('validate') || content.includes('check') || content.includes('verify')) {
+    coverage += 0.3;
+  }
+  if (content.includes('input') || content.includes('param') || content.includes('data')) {
+    coverage += 0.2;
+  }
+  if (content.includes('injection') || content.includes('xss') || content.includes('sql')) {
+    coverage += 0.1;
+  }
+
+  // securityRelevance スコアを考慮(将来的に実装予定)
+  // if (method.securityRelevance && method.securityRelevance > 0.8) {
+  //   coverage = Math.max(coverage, 0.9);
+  // }
+
+  return Math.min(1.0, coverage);
+}
 
 /**
  * API セキュリティカバレッジの計算
  */
 function calculateApiSecurityCoverage(method: TestMethod): number {
-    const content = (method.content || '').toLowerCase();
-    let coverage = 0;
-    
-    // API セキュリティ関連のキーワードや関数をチェック
-    if (content.includes('api') || content.includes('endpoint') || content.includes('route')) {
-      coverage += 0.3;
-    }
-    if (content.includes('cors') || content.includes('csrf') || content.includes('rate')) {
-      coverage += 0.3;
-    }
-    if (content.includes('request') || content.includes('response') || content.includes('http')) {
-      coverage += 0.2;
-    }
-    if (content.includes('security') || content.includes('protect') || content.includes('secure')) {
-      coverage += 0.2;
-    }
-    
-    // securityRelevance スコアを考慮(将来的に実装予定)
-    // if (method.securityRelevance && method.securityRelevance > 0.8) {
-    //   coverage = Math.max(coverage, 0.8);
-    // }
-    
-    return Math.min(1.0, coverage);
+  const content = (method.content || '').toLowerCase();
+  let coverage = 0;
+
+  // API セキュリティ関連のキーワードや関数をチェック
+  if (content.includes('api') || content.includes('endpoint') || content.includes('route')) {
+    coverage += 0.3;
   }
+  if (content.includes('cors') || content.includes('csrf') || content.includes('rate')) {
+    coverage += 0.3;
+  }
+  if (content.includes('request') || content.includes('response') || content.includes('http')) {
+    coverage += 0.2;
+  }
+  if (content.includes('security') || content.includes('protect') || content.includes('secure')) {
+    coverage += 0.2;
+  }
+
+  // securityRelevance スコアを考慮(将来的に実装予定)
+  // if (method.securityRelevance && method.securityRelevance > 0.8) {
+  //   coverage = Math.max(coverage, 0.8);
+  // }
+
+  return Math.min(1.0, coverage);
+}
 
 // 関連するインターフェースの定義
 interface LocalContext {

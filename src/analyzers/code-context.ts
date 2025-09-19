@@ -1,10 +1,10 @@
 import { Issue } from '../core/types';
-import { 
-  AnalysisOptions, 
+import {
+  AnalysisOptions,
   ExtractedCodeContext,
   FunctionInfo,
   ScopeInfo,
-  RelatedFileInfo
+  RelatedFileInfo,
 } from './types';
 import { AdvancedCodeContextAnalyzer as CoreAdvancedCodeContextAnalyzer } from './code-analysis/context-extractor';
 import { ResourceLimitMonitor } from '../utils/resourceLimits';
@@ -34,8 +34,8 @@ export class CodeContextAnalyzer {
    * 包括的なコードコンテキスト分析
    */
   async analyzeCodeContext(
-    issue: Issue, 
-    projectPath: string, 
+    issue: Issue,
+    projectPath: string,
     options: AnalysisOptions = {}
   ): Promise<ExtractedCodeContext> {
     return this.coreAnalyzer.analyzeCodeContext(issue, projectPath, options);
@@ -59,8 +59,8 @@ export class CodeContextAnalyzer {
    * 関連コードの検出
    */
   async detectRelatedCode(
-    targetFile: string, 
-    projectPath: string, 
+    targetFile: string,
+    projectPath: string,
     options: AnalysisOptions = {}
   ): Promise<RelatedFileInfo[]> {
     return this.fileAnalyzer.findRelatedFiles(targetFile, projectPath, options);

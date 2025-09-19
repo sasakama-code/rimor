@@ -9,7 +9,7 @@ export class MetricsCalculator {
    */
   calculateCyclomaticComplexity(code: string): number {
     let complexity = 1;
-    
+
     const decisionPoints = [
       /\bif\b/g,
       /\belse\s+if\b/g,
@@ -20,19 +20,19 @@ export class MetricsCalculator {
       /\bcatch\b/g,
       /\?\s*[^:]/g,
       /&&/g,
-      /\|\|/g
+      /\|\|/g,
     ];
-    
+
     decisionPoints.forEach(pattern => {
       const matches = code.match(pattern);
       if (matches) {
         complexity += matches.length;
       }
     });
-    
+
     return complexity;
   }
-  
+
   /**
    * ネストの深さを計算
    */
@@ -42,11 +42,11 @@ export class MetricsCalculator {
     let inString = false;
     let stringChar = '';
     let inComment = false;
-    
+
     for (let i = 0; i < code.length; i++) {
       const char = code[i];
       const nextChar = code[i + 1];
-      
+
       // 文字列内のチェック
       if (!inComment && (char === '"' || char === "'" || char === '`')) {
         if (!inString) {
@@ -57,7 +57,7 @@ export class MetricsCalculator {
         }
         continue;
       }
-      
+
       // コメント内のチェック
       if (!inString) {
         if (char === '/' && nextChar === '/') {
@@ -79,7 +79,7 @@ export class MetricsCalculator {
           continue;
         }
       }
-      
+
       // 文字列やコメント内でない場合のみカウント
       if (!inString && !inComment) {
         if (char === '{') {
@@ -90,12 +90,12 @@ export class MetricsCalculator {
         }
       }
     }
-    
+
     // 関数定義のブロックはカウントしないため、最外層を除く
     // テストケースの期待値に合わせて調整
     return Math.max(0, maxDepth - 1);
   }
-  
+
   /**
    * 保守性インデックスを計算
    */
@@ -103,42 +103,40 @@ export class MetricsCalculator {
     const complexity = this.calculateCyclomaticComplexity(code);
     const lines = code.split('\n').length;
     const volume = lines * Math.log2(lines + 1);
-    
+
     const maintainabilityIndex = Math.max(
       0,
-      (171 - 5.2 * Math.log(volume) - 0.23 * complexity - 16.2 * Math.log(lines)) * 100 / 171
+      ((171 - 5.2 * Math.log(volume) - 0.23 * complexity - 16.2 * Math.log(lines)) * 100) / 171
     );
-    
+
     return Math.round(maintainabilityIndex);
   }
-  
+
   /**
    * コメント密度を計算
    */
   calculateCommentDensity(code: string): number {
     const lines = code.split('\n');
-    
+
     // 空白行を除外
     const nonEmptyLines = lines.filter(line => line.trim().length > 0);
     const totalLines = nonEmptyLines.length;
-    
+
     if (totalLines === 0) return 0;
-    
+
     let commentLines = 0;
-    
+
     nonEmptyLines.forEach(line => {
       const trimmed = line.trim();
       // コメント行の判定
-      if (trimmed.startsWith('//') || 
-          trimmed.startsWith('/*') || 
-          trimmed.startsWith('*')) {
+      if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
         commentLines++;
       }
     });
-    
+
     return commentLines / totalLines;
   }
-  
+
   /**
    * メトリクスの総合レポートを生成
    */
@@ -148,7 +146,7 @@ export class MetricsCalculator {
       nestingDepth: this.calculateNestingDepth(code),
       maintainability: this.calculateMaintainability(code),
       commentDensity: this.calculateCommentDensity(code),
-      lines: code.split('\n').length
+      lines: code.split('\n').length,
     };
   }
 }

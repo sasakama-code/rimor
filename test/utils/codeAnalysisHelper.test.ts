@@ -26,7 +26,7 @@ describe('CodeAnalysisHelper', () => {
 
     it('should handle non-existent files gracefully', async () => {
       const filePath = '/non/existent/file.ts';
-      
+
       await expect(helper.parseFile(filePath)).rejects.toThrow();
     });
   });
@@ -37,7 +37,7 @@ describe('CodeAnalysisHelper', () => {
       const fileContent = await helper.parseFile(filePath);
 
       const patterns = helper.findPatterns(fileContent, /describe\s*\(/g);
-      
+
       expect(patterns.length).toBeGreaterThan(0);
       patterns.forEach(pattern => {
         expect(pattern.line).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe('CodeAnalysisHelper', () => {
       const fileContent = await helper.parseFile(filePath);
 
       const patterns = helper.findPatterns(fileContent, /nonexistentpattern/g);
-      
+
       expect(patterns).toEqual([]);
     });
   });
@@ -62,7 +62,7 @@ describe('CodeAnalysisHelper', () => {
       const fileContent = await helper.parseFile(filePath);
 
       const assertions = helper.findAssertions(fileContent);
-      
+
       expect(assertions.length).toBeGreaterThan(0);
       assertions.forEach((assertion: any) => {
         expect(['expect', 'assert', 'should']).toContain(assertion.type);
@@ -85,7 +85,7 @@ describe('Test Suite', () => {
       try {
         const fileContent = await helper.parseFile(tempPath);
         const assertions = helper.findAssertions(fileContent);
-        
+
         expect(assertions).toEqual([]);
       } finally {
         fs.unlinkSync(tempPath);
@@ -99,10 +99,10 @@ describe('Test Suite', () => {
       const fileContent = await helper.parseFile(filePath);
 
       const structures = helper.findTestStructures(fileContent);
-      
+
       expect(structures.describes.length).toBeGreaterThan(0);
       expect(structures.tests.length).toBeGreaterThan(0);
-      
+
       structures.describes.forEach((desc: any) => {
         expect(desc.location.line).toBeGreaterThan(0);
         expect(desc.name).toBeDefined();
@@ -129,7 +129,7 @@ describe('Outer Suite', () => {
       try {
         const fileContent = await helper.parseFile(tempPath);
         const structures = helper.findTestStructures(fileContent);
-        
+
         expect(structures.describes.length).toBe(2);
         expect(structures.describes[0].name).toContain('Outer Suite');
         expect(structures.describes[1].name).toContain('Inner Suite');
@@ -170,7 +170,7 @@ it('complex test', () => {
       try {
         const fileContent = await helper.parseFile(tempPath);
         const complexity = helper.analyzeComplexity(fileContent);
-        
+
         expect(complexity.cyclomatic).toBeGreaterThan(1);
         expect(complexity.cognitive).toBeGreaterThan(0);
         expect(complexity.nesting).toBeGreaterThan(0);
@@ -191,7 +191,7 @@ it('simple test', () => {
       try {
         const fileContent = await helper.parseFile(tempPath);
         const complexity = helper.analyzeComplexity(fileContent);
-        
+
         expect(complexity.cyclomatic).toBe(1);
         expect(complexity.cognitive).toBe(0);
         expect(complexity.nesting).toBe(1); // 関数ブロックのネスティング
@@ -218,7 +218,7 @@ describe('Test', () => {
       try {
         const fileContent = await helper.parseFile(tempPath);
         const imports = helper.extractImports(fileContent);
-        
+
         expect(imports.length).toBe(4);
         expect(imports[0].module).toBe('@jest/globals');
         expect(imports[0].imports).toContain('expect');
@@ -239,7 +239,7 @@ describe('Test', () => {
       const location: CodeLocation = {
         file: 'test.ts',
         line: 10,
-        column: 5
+        column: 5,
       };
       const code = 'expect(value).toBe(42);';
 
@@ -256,11 +256,21 @@ describe('Test', () => {
       const location: CodeLocation = {
         file: 'test.ts',
         line: 1,
-        column: 1
+        column: 1,
       };
 
-      const strongEvidence = helper.createEvidence('assertion', 'Exact strong assertion found', location, 'expect(value).toBe(42)');
-      const weakEvidence = helper.createEvidence('import', 'Possible weak match', location, 'maybe');
+      const strongEvidence = helper.createEvidence(
+        'assertion',
+        'Exact strong assertion found',
+        location,
+        'expect(value).toBe(42)'
+      );
+      const weakEvidence = helper.createEvidence(
+        'import',
+        'Possible weak match',
+        location,
+        'maybe'
+      );
 
       expect(strongEvidence.confidence || 0).toBeGreaterThan(weakEvidence.confidence || 0);
     });

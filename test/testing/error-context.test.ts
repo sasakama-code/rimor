@@ -17,9 +17,9 @@ jest.mock('../../src/analyzers/code-context', () => ({
       exports: [],
       functions: [],
       classes: [],
-      testSuites: []
-    })
-  }))
+      testSuites: [],
+    }),
+  })),
 }));
 
 describe('TestErrorContext type safety', () => {
@@ -34,33 +34,33 @@ describe('TestErrorContext type safety', () => {
           message: 'Expected true to be false',
           stack: 'at Test...',
           actual: true,
-          expected: false
+          expected: false,
         },
         codeContext: {
           failedLine: 10,
           failedCode: 'expect(true).toBe(false)',
           surroundingCode: {
             before: 'it("should work", () => {',
-            after: '});'
+            after: '});',
           },
           testStructure: {
             describes: ['Suite'],
             currentTest: 'should work',
-            hooks: []
-          }
+            hooks: [],
+          },
         },
         environment: {
           nodeVersion: '18.0.0',
           jestVersion: '29.0.0',
           ciEnvironment: false,
-          memoryUsage: process.memoryUsage()
+          memoryUsage: process.memoryUsage(),
         },
         relatedFiles: {
           sourceFile: 'src/module.ts',
           dependencies: [],
-          configFiles: []
+          configFiles: [],
         },
-        suggestedActions: []
+        suggestedActions: [],
       };
 
       expect(context.error.message).toBe('Expected true to be false');
@@ -77,31 +77,31 @@ describe('TestErrorContext type safety', () => {
         error: {
           message: 'Error',
           actual: { complex: 'object', nested: { deep: true } },
-          expected: [1, 2, 3, { four: 4 }]
+          expected: [1, 2, 3, { four: 4 }],
         },
         codeContext: {
           failedLine: 10,
           failedCode: 'expect(actual).toEqual(expected)',
           surroundingCode: {
             before: '',
-            after: ''
+            after: '',
           },
           testStructure: {
             describes: [],
             currentTest: 'test',
-            hooks: []
-          }
+            hooks: [],
+          },
         },
         environment: {
           nodeVersion: '18.0.0',
           ciEnvironment: false,
-          memoryUsage: process.memoryUsage()
+          memoryUsage: process.memoryUsage(),
         },
         relatedFiles: {
           dependencies: [],
-          configFiles: []
+          configFiles: [],
         },
-        suggestedActions: []
+        suggestedActions: [],
       };
 
       // unknown型として扱われることを確認
@@ -117,29 +117,29 @@ describe('TestErrorContext type safety', () => {
         testName: 'should work',
         errorType: ErrorType.UNKNOWN,
         error: {
-          message: 'Error'
+          message: 'Error',
         },
         codeContext: {
           failedLine: 10,
           failedCode: 'code',
           surroundingCode: {
             before: '',
-            after: ''
+            after: '',
           },
           testStructure: {
             describes: [],
             currentTest: 'test',
-            hooks: []
-          }
+            hooks: [],
+          },
         },
         environment: {
           nodeVersion: '18.0.0',
           ciEnvironment: true,
-          memoryUsage: process.memoryUsage()
+          memoryUsage: process.memoryUsage(),
         },
         relatedFiles: {
           dependencies: [],
-          configFiles: []
+          configFiles: [],
         },
         ciTraceability: {
           jobId: 'job-123',
@@ -149,10 +149,10 @@ describe('TestErrorContext type safety', () => {
           commit: 'abc123',
           metadata: {
             triggeredBy: 'push',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         },
-        suggestedActions: []
+        suggestedActions: [],
       };
 
       expect(contextWithCI.ciTraceability).toBeDefined();
@@ -168,32 +168,32 @@ describe('TestErrorContext type safety', () => {
         error: {
           message: 'Error',
           actual: null,
-          expected: null
+          expected: null,
         },
         codeContext: {
           failedLine: 10,
           failedCode: 'code',
           surroundingCode: {
             before: '',
-            after: ''
+            after: '',
           },
           testStructure: {
             describes: [],
             currentTest: 'test',
-            hooks: []
-          }
+            hooks: [],
+          },
         },
         environment: {
           nodeVersion: '18.0.0',
           ciEnvironment: false,
-          memoryUsage: process.memoryUsage()
+          memoryUsage: process.memoryUsage(),
         },
         relatedFiles: {
           dependencies: [],
-          configFiles: []
+          configFiles: [],
         },
         ciTraceability: null as any,
-        suggestedActions: []
+        suggestedActions: [],
       };
 
       expect(context.error.actual).toBeNull();
@@ -215,8 +215,8 @@ describe('TestErrorContext type safety', () => {
         code: 'ERR_CUSTOM',
         customProperty: 'custom value',
         nested: {
-          deep: true
-        }
+          deep: true,
+        },
       };
 
       const context = await collector.collectErrorContext(
@@ -251,7 +251,7 @@ describe('TestErrorContext type safety', () => {
         message: 'Expected value to be different',
         actual: { value: 10 },
         expected: { value: 20 },
-        stack: 'at Test...'
+        stack: 'at Test...',
       };
 
       const context = await collector.collectErrorContext(

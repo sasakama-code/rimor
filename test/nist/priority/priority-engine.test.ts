@@ -1,19 +1,19 @@
 /**
  * PriorityEngine テスト
  * NIST準拠リスク優先度エンジンのテストスイート
- * 
+ *
  * TDD Red Phase: まず失敗するテストを作成
  * t_wadaのTDD原則に従う
  */
 
 import { PriorityEngine } from '../../../src/nist/priority/PriorityEngine';
 import { RiskLevel } from '../../../src/nist/types/unified-analysis-result';
-import { 
+import {
   RiskPriorityRequest,
   RiskPriorityResult,
   PriorityScore,
   BusinessImpact,
-  TechnicalComplexity
+  TechnicalComplexity,
 } from '../../../src/nist/types/priority-types';
 
 describe('PriorityEngine', () => {
@@ -30,7 +30,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.LOW,
         affectedComponents: 5,
-        dependencies: 10
+        dependencies: 10,
       };
 
       const result = engine.calculatePriority(request);
@@ -46,7 +46,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.LOW,
         technicalComplexity: TechnicalComplexity.HIGH,
         affectedComponents: 1,
-        dependencies: 0
+        dependencies: 0,
       };
 
       const result = engine.calculatePriority(request);
@@ -62,12 +62,12 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.LOW,
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 3,
-        dependencies: 5
+        dependencies: 5,
       };
 
       const highImpactRequest: RiskPriorityRequest = {
         ...baseRequest,
-        businessImpact: BusinessImpact.CRITICAL
+        businessImpact: BusinessImpact.CRITICAL,
       };
 
       const basePriority = engine.calculatePriority(baseRequest);
@@ -83,7 +83,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.MEDIUM,
         technicalComplexity: TechnicalComplexity.LOW,
         affectedComponents: 2,
-        dependencies: 3
+        dependencies: 3,
       };
 
       const result = engine.calculatePriority(request);
@@ -102,7 +102,7 @@ describe('PriorityEngine', () => {
           businessImpact: BusinessImpact.LOW,
           technicalComplexity: TechnicalComplexity.HIGH,
           affectedComponents: 1,
-          dependencies: 0
+          dependencies: 0,
         },
         {
           riskId: 'RISK-002',
@@ -110,7 +110,7 @@ describe('PriorityEngine', () => {
           businessImpact: BusinessImpact.CRITICAL,
           technicalComplexity: TechnicalComplexity.MEDIUM,
           affectedComponents: 10,
-          dependencies: 20
+          dependencies: 20,
         },
         {
           riskId: 'RISK-003',
@@ -118,8 +118,8 @@ describe('PriorityEngine', () => {
           businessImpact: BusinessImpact.HIGH,
           technicalComplexity: TechnicalComplexity.LOW,
           affectedComponents: 5,
-          dependencies: 8
-        }
+          dependencies: 8,
+        },
       ];
 
       const results = engine.calculateBatchPriority(risks);
@@ -139,7 +139,7 @@ describe('PriorityEngine', () => {
           businessImpact: BusinessImpact.LOW,
           technicalComplexity: TechnicalComplexity.MEDIUM,
           affectedComponents: 3,
-          dependencies: 3
+          dependencies: 3,
         },
         {
           riskId: 'RISK-B',
@@ -147,8 +147,8 @@ describe('PriorityEngine', () => {
           businessImpact: BusinessImpact.CRITICAL,
           technicalComplexity: TechnicalComplexity.MEDIUM,
           affectedComponents: 3,
-          dependencies: 3
-        }
+          dependencies: 3,
+        },
       ];
 
       const results = engine.calculateBatchPriority(risks);
@@ -165,7 +165,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 7,
-        dependencies: 15
+        dependencies: 15,
       };
 
       const result = engine.calculatePriority(request);
@@ -185,17 +185,19 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.MEDIUM,
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 5,
-        dependencies: 10
+        dependencies: 10,
       };
 
       const result = engine.calculatePriority(request);
       const scoreBreakdown = result.scoreBreakdown;
 
-      const expectedFinalScore = Math.min(100,
-        scoreBreakdown.baseRiskScore * 
-        scoreBreakdown.businessImpactScore * 
-        (1 + scoreBreakdown.scopeScore / 100) *
-        (2 - scoreBreakdown.technicalComplexityScore));
+      const expectedFinalScore = Math.min(
+        100,
+        scoreBreakdown.baseRiskScore *
+          scoreBreakdown.businessImpactScore *
+          (1 + scoreBreakdown.scopeScore / 100) *
+          (2 - scoreBreakdown.technicalComplexityScore)
+      );
 
       expect(scoreBreakdown.finalScore).toBeCloseTo(expectedFinalScore, 0);
     });
@@ -208,11 +210,11 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.CRITICAL,
         technicalComplexity: TechnicalComplexity.LOW,
         affectedComponents: 10,
-        dependencies: 20
+        dependencies: 20,
       };
 
       const criticalResult = engine.calculatePriority(criticalRisk);
-      
+
       expect(criticalResult.recommendedAction).toContain('即座に対応');
       expect(criticalResult.urgency).toBe('IMMEDIATE');
       expect(criticalResult.timeline).toContain('24時間以内');
@@ -224,7 +226,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.VERY_HIGH,
         affectedComponents: 5,
-        dependencies: 10
+        dependencies: 10,
       };
 
       const result = engine.calculatePriority(complexRisk);
@@ -243,12 +245,12 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.MEDIUM,
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 3,
-        dependencies: 2
+        dependencies: 2,
       };
 
       const manyDeps: RiskPriorityRequest = {
         ...fewDeps,
-        dependencies: 50
+        dependencies: 50,
       };
 
       const fewDepsResult = engine.calculatePriority(fewDeps);
@@ -265,12 +267,12 @@ describe('PriorityEngine', () => {
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 3,
         dependencies: 5,
-        isOnCriticalPath: true
+        isOnCriticalPath: true,
       };
 
       const normalRisk: RiskPriorityRequest = {
         ...criticalPathRisk,
-        isOnCriticalPath: false
+        isOnCriticalPath: false,
       };
 
       const criticalPathResult = engine.calculatePriority(criticalPathRisk);
@@ -288,7 +290,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.LOW,
         affectedComponents: -1,
-        dependencies: -5
+        dependencies: -5,
       };
 
       expect(() => engine.calculatePriority(invalidRequest)).toThrow('Invalid risk level');
@@ -296,10 +298,12 @@ describe('PriorityEngine', () => {
 
     it('必須パラメータが欠けている場合にエラーを返す', () => {
       const incompleteRequest: any = {
-        riskLevel: RiskLevel.HIGH
+        riskLevel: RiskLevel.HIGH,
       };
 
-      expect(() => engine.calculatePriority(incompleteRequest)).toThrow('Missing required parameters');
+      expect(() => engine.calculatePriority(incompleteRequest)).toThrow(
+        'Missing required parameters'
+      );
     });
 
     it('境界値の入力を適切に処理する', () => {
@@ -308,7 +312,7 @@ describe('PriorityEngine', () => {
         businessImpact: BusinessImpact.HIGH,
         technicalComplexity: TechnicalComplexity.MEDIUM,
         affectedComponents: 0,
-        dependencies: 0
+        dependencies: 0,
       };
 
       const result = engine.calculatePriority(boundaryRequest);

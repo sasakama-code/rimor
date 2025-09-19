@@ -6,11 +6,6 @@
     "outDir": "../../../dist/types/analysis",
     "tsBuildInfoFile": "../../../dist/types/analysis/.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }

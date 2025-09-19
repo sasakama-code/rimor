@@ -4,7 +4,7 @@
  * TDD: Green Phase - テストを通す最小限の実装
  */
 
-import { 
+import {
   ITestIntentAnalyzer,
   TestIntent,
   TestType,
@@ -15,12 +15,11 @@ import {
   IntentRiskLevel,
   TestAssertion,
   GapType,
-  Severity
+  Severity,
 } from './ITestIntentAnalyzer';
 import { TestCase } from '../security/types/security';
 import { DomainInference } from './IDomainInferenceEngine';
 import { BusinessLogicMapping } from './IBusinessLogicMapper';
-
 
 // Type definitions for analysis results
 interface TestScenario {
@@ -78,21 +77,21 @@ import { IntentPatternMatcher } from './IntentPatternMatcher';
 import { DomainInferenceEngine } from './DomainInferenceEngine';
 import { BusinessLogicMapper } from './BusinessLogicMapper';
 import { TypeInfo, CallGraphNode } from './ITypeScriptAnalyzer';
-import { 
-  ImplementationTruth, 
-  MethodBehavior, 
-  DataFlow, 
-  SideEffect 
+import {
+  ImplementationTruth,
+  MethodBehavior,
+  DataFlow,
+  SideEffect,
 } from '../types/implementation-truth';
-import { 
-  IntentRealizationGap, 
-  IntentRealizationResult, 
+import {
+  IntentRealizationGap,
+  IntentRealizationResult,
   IntentGapType,
   UntestedBehavior,
   TestAssumption,
   QualitativeCoverage,
   GapRecommendation,
-  SecurityImpact
+  SecurityImpact,
 } from '../types/intent-realization';
 
 /**
@@ -104,7 +103,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   private parser: TreeSitterParser;
   private domainEngine?: DomainInferenceEngine;
   private businessMapper?: BusinessLogicMapper;
-  
+
   constructor(parser?: TreeSitterParser) {
     this.parser = parser || TreeSitterParser.getInstance();
     this.patternMatcher = new IntentPatternMatcher();
@@ -120,25 +119,25 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     implementationTruth: ImplementationTruth
   ): Promise<IntentRealizationResult> {
     const startTime = Date.now();
-    
+
     // 1. テスト意図の抽出
     const testIntent = await this.extractIntent(testFilePath, ast);
-    
+
     // 2. 実装と意図の照合分析
     const gaps = await this.detectRealizationGaps(testIntent, implementationTruth);
-    
+
     // 3. 実現度スコアの計算
     const realizationScore = this.calculateRealizationScore(testIntent, implementationTruth, gaps);
-    
+
     // 4. 質的カバレッジの評価
     const qualityMetrics = this.calculateQualityMetrics(testIntent, implementationTruth, gaps);
-    
+
     // 5. 改善提案の生成
     const recommendations = await this.generateRecommendations(gaps, implementationTruth);
-    
+
     // 6. セキュリティ評価
     const securityAssessment = this.assessSecurity(testIntent, implementationTruth, gaps);
-    
+
     // 7. 総合評価
     const overallAssessment = this.generateOverallAssessment(
       realizationScore,
@@ -157,7 +156,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       qualityMetrics,
       recommendations,
       securityAssessment,
-      overallAssessment
+      overallAssessment,
     };
   }
 
@@ -174,16 +173,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
     // 1. ターゲットメソッドの検証
     await this.detectTargetMethodGaps(testIntent, implementationTruth, gaps, gapIdCounter);
-    
+
     // 2. 期待される振る舞いの検証
     await this.detectBehaviorGaps(testIntent, implementationTruth, gaps, gapIdCounter);
-    
+
     // 3. セキュリティ要件の検証
     await this.detectSecurityGaps(testIntent, implementationTruth, gaps, gapIdCounter);
-    
+
     // 4. 副作用の検証
     await this.detectSideEffectGaps(testIntent, implementationTruth, gaps, gapIdCounter);
-    
+
     // 5. エラーハンドリングの検証
     await this.detectErrorHandlingGaps(testIntent, implementationTruth, gaps, gapIdCounter);
 
@@ -216,18 +215,21 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         affectedIntent: testIntent,
         affectedImplementation: [],
         untestedBehaviors: [],
-        incorrectAssumptions: [{
-          assumption: `メソッド '${testIntent.targetMethod}' が存在する`,
-          actualBehavior: '指定されたメソッドが実装に見つからない',
-          severity: Severity.HIGH,
-          affectedTestCases: [testIntent.description],
-          correctionSuggestion: 'テスト対象メソッド名を確認し、実装と一致させるか、実装にメソッドを追加してください',
-          correctionPriority: 'critical'
-        }],
+        incorrectAssumptions: [
+          {
+            assumption: `メソッド '${testIntent.targetMethod}' が存在する`,
+            actualBehavior: '指定されたメソッドが実装に見つからない',
+            severity: Severity.HIGH,
+            affectedTestCases: [testIntent.description],
+            correctionSuggestion:
+              'テスト対象メソッド名を確認し、実装と一致させるか、実装にメソッドを追加してください',
+            correctionPriority: 'critical',
+          },
+        ],
         qualitativeCoverage: this.createDefaultQualitativeCoverage(),
         aiPriorityScore: 0.9,
         recommendations: [],
-        securityImpact: this.createDefaultSecurityImpact()
+        securityImpact: this.createDefaultSecurityImpact(),
       });
     }
   }
@@ -246,7 +248,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
     for (const expectedBehavior of expectedBehaviors) {
       const isImplemented = this.checkBehaviorImplementation(expectedBehavior, implementedMethods);
-      
+
       if (!isImplemented) {
         gaps.push({
           gapId: `gap-${gapIdCounter++}`,
@@ -255,19 +257,21 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           description: `期待される振る舞い '${expectedBehavior}' のテストが不完全です`,
           affectedIntent: testIntent,
           affectedImplementation: implementedMethods,
-          untestedBehaviors: [{
-            method: implementedMethods[0] || this.createDummyMethodBehavior(),
-            reason: 'INCOMPLETE_TEST' as any,
-            riskLevel: 'medium',
-            recommendedTestMethod: `${expectedBehavior}のテストケースを追加`,
-            conditionsToTest: [expectedBehavior],
-            securityConsiderations: []
-          }],
+          untestedBehaviors: [
+            {
+              method: implementedMethods[0] || this.createDummyMethodBehavior(),
+              reason: 'INCOMPLETE_TEST' as any,
+              riskLevel: 'medium',
+              recommendedTestMethod: `${expectedBehavior}のテストケースを追加`,
+              conditionsToTest: [expectedBehavior],
+              securityConsiderations: [],
+            },
+          ],
           incorrectAssumptions: [],
           qualitativeCoverage: this.createDefaultQualitativeCoverage(),
           aiPriorityScore: 0.6,
           recommendations: [],
-          securityImpact: this.createDefaultSecurityImpact()
+          securityImpact: this.createDefaultSecurityImpact(),
         });
       }
     }
@@ -283,11 +287,12 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     gapIdCounter: number
   ): Promise<void> {
     const vulnerabilities = implementationTruth.vulnerabilities;
-    
+
     if (vulnerabilities.length > 0) {
-      const hasSecurityTests = testIntent.testType === TestType.SECURITY ||
-                              testIntent.description.toLowerCase().includes('security') ||
-                              testIntent.description.toLowerCase().includes('セキュリティ');
+      const hasSecurityTests =
+        testIntent.testType === TestType.SECURITY ||
+        testIntent.description.toLowerCase().includes('security') ||
+        testIntent.description.toLowerCase().includes('セキュリティ');
 
       if (!hasSecurityTests) {
         gaps.push({
@@ -298,14 +303,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           affectedIntent: testIntent,
           affectedImplementation: implementationTruth.actualBehaviors.methods,
           untestedBehaviors: [],
-          incorrectAssumptions: [{
-            assumption: 'セキュリティテストは不要',
-            actualBehavior: `${vulnerabilities.map(v => v.type).join(', ')}の脆弱性が存在`,
-            severity: Severity.HIGH,
-            affectedTestCases: [testIntent.description],
-            correctionSuggestion: 'セキュリティテストケースを追加してください',
-            correctionPriority: 'high'
-          }],
+          incorrectAssumptions: [
+            {
+              assumption: 'セキュリティテストは不要',
+              actualBehavior: `${vulnerabilities.map(v => v.type).join(', ')}の脆弱性が存在`,
+              severity: Severity.HIGH,
+              affectedTestCases: [testIntent.description],
+              correctionSuggestion: 'セキュリティテストケースを追加してください',
+              correctionPriority: 'high',
+            },
+          ],
           qualitativeCoverage: this.createDefaultQualitativeCoverage(),
           aiPriorityScore: 0.8,
           recommendations: [],
@@ -318,11 +325,11 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
               description: v.message,
               exploitability: 'medium' as any,
               impactScope: 'local' as any,
-              cweId: undefined
+              cweId: undefined,
             })),
             impactDescription: 'セキュリティテストの欠如により脆弱性が見過ごされる可能性',
-            mitigationStrategies: []
-          }
+            mitigationStrategies: [],
+          },
         });
       }
     }
@@ -342,9 +349,10 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     );
 
     if (methodsWithSideEffects.length > 0) {
-      const testsSideEffects = testIntent.description.toLowerCase().includes('side') ||
-                              testIntent.description.toLowerCase().includes('effect') ||
-                              testIntent.description.toLowerCase().includes('副作用');
+      const testsSideEffects =
+        testIntent.description.toLowerCase().includes('side') ||
+        testIntent.description.toLowerCase().includes('effect') ||
+        testIntent.description.toLowerCase().includes('副作用');
 
       if (!testsSideEffects) {
         gaps.push({
@@ -360,13 +368,15 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
             riskLevel: 'medium',
             recommendedTestMethod: '副作用の検証テストを追加',
             conditionsToTest: method.sideEffects?.map(se => se.description) || [],
-            securityConsiderations: method.sideEffects?.flatMap(se => se.securityImplications.map(si => si.message)) || []
+            securityConsiderations:
+              method.sideEffects?.flatMap(se => se.securityImplications.map(si => si.message)) ||
+              [],
           })),
           incorrectAssumptions: [],
           qualitativeCoverage: this.createDefaultQualitativeCoverage(),
           aiPriorityScore: 0.5,
           recommendations: [],
-          securityImpact: this.createDefaultSecurityImpact()
+          securityImpact: this.createDefaultSecurityImpact(),
         });
       }
     }
@@ -386,10 +396,11 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     );
 
     if (methodsWithExceptions.length > 0) {
-      const testsErrorCases = testIntent.description.toLowerCase().includes('error') ||
-                             testIntent.description.toLowerCase().includes('exception') ||
-                             testIntent.description.toLowerCase().includes('エラー') ||
-                             testIntent.description.toLowerCase().includes('例外');
+      const testsErrorCases =
+        testIntent.description.toLowerCase().includes('error') ||
+        testIntent.description.toLowerCase().includes('exception') ||
+        testIntent.description.toLowerCase().includes('エラー') ||
+        testIntent.description.toLowerCase().includes('例外');
 
       if (!testsErrorCases) {
         gaps.push({
@@ -400,18 +411,20 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           affectedIntent: testIntent,
           affectedImplementation: methodsWithExceptions,
           untestedBehaviors: [],
-          incorrectAssumptions: [{
-            assumption: 'エラーケースのテストは不要',
-            actualBehavior: 'エラーハンドリングが実装されている',
-            severity: Severity.MEDIUM,
-            affectedTestCases: [testIntent.description],
-            correctionSuggestion: 'エラーケースのテストを追加してください',
-            correctionPriority: 'medium'
-          }],
+          incorrectAssumptions: [
+            {
+              assumption: 'エラーケースのテストは不要',
+              actualBehavior: 'エラーハンドリングが実装されている',
+              severity: Severity.MEDIUM,
+              affectedTestCases: [testIntent.description],
+              correctionSuggestion: 'エラーケースのテストを追加してください',
+              correctionPriority: 'medium',
+            },
+          ],
           qualitativeCoverage: this.createDefaultQualitativeCoverage(),
           aiPriorityScore: 0.4,
           recommendations: [],
-          securityImpact: this.createDefaultSecurityImpact()
+          securityImpact: this.createDefaultSecurityImpact(),
         });
       }
     }
@@ -427,7 +440,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     gaps: IntentRealizationGap[]
   ): number {
     let baseScore = 100;
-    
+
     // ギャップによる減点
     gaps.forEach(gap => {
       switch (gap.severity) {
@@ -447,9 +460,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     });
 
     // AIスコアによる補正
-    const avgAiScore = gaps.length > 0 
-      ? gaps.reduce((sum, gap) => sum + gap.aiPriorityScore, 0) / gaps.length 
-      : 1;
+    const avgAiScore =
+      gaps.length > 0 ? gaps.reduce((sum, gap) => sum + gap.aiPriorityScore, 0) / gaps.length : 1;
     baseScore = baseScore * (1 - avgAiScore * 0.1);
 
     return Math.max(0, Math.min(100, baseScore));
@@ -464,8 +476,9 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     gaps: IntentRealizationGap[]
   ): any {
     const totalMethods = implementationTruth.actualBehaviors.methods.length;
-    const testedMethods = totalMethods - gaps.filter(g => g.type === IntentGapType.WRONG_TARGET).length;
-    
+    const testedMethods =
+      totalMethods - gaps.filter(g => g.type === IntentGapType.WRONG_TARGET).length;
+
     return {
       testCoverage: totalMethods > 0 ? (testedMethods / totalMethods) * 100 : 0,
       qualitativeCoverage: this.calculateOverallQualitativeCoverage(gaps),
@@ -473,7 +486,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       maintainabilityScore: 85, // 固定値（実際の実装では詳細な計算を行う）
       executionTime: 0, // 実行時間は別途計測
       complexityScore: implementationTruth.structure.complexity.cyclomaticComplexity,
-      duplicationScore: implementationTruth.structure.complexity.duplicationRate
+      duplicationScore: implementationTruth.structure.complexity.duplicationRate,
     };
   }
 
@@ -496,8 +509,10 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
     return recommendations.sort((a, b) => {
       const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      return priorityOrder[a.priority as keyof typeof priorityOrder] - 
-             priorityOrder[b.priority as keyof typeof priorityOrder];
+      return (
+        priorityOrder[a.priority as keyof typeof priorityOrder] -
+        priorityOrder[b.priority as keyof typeof priorityOrder]
+      );
     });
   }
 
@@ -511,7 +526,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   ): any {
     const securityGaps = gaps.filter(g => g.type === IntentGapType.MISSING_SECURITY_TEST);
     const vulnerabilityCount = implementationTruth.vulnerabilities.length;
-    
+
     let overallRisk: 'low' | 'medium' | 'high' | 'critical' = 'low';
     if (vulnerabilityCount > 5) overallRisk = 'critical';
     else if (vulnerabilityCount > 2) overallRisk = 'high';
@@ -522,7 +537,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       securityTestCoverage: securityGaps.length === 0 ? 100 : 0,
       untestedSecurityRequirements: securityGaps.map(g => g.description),
       securityTestRecommendations: securityGaps.flatMap(g => g.recommendations),
-      owaspTop10Coverage: this.generateOwaspCoverage(implementationTruth)
+      owaspTop10Coverage: this.generateOwaspCoverage(implementationTruth),
     };
   }
 
@@ -552,7 +567,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       weaknesses: this.identifyWeaknesses(recommendations),
       priorityImprovements: criticalRecommendations.map(r => r.description),
       nextSteps: highRecommendations.slice(0, 3).map(r => r.description),
-      longTermImprovementPlan: recommendations.slice(0, 5).map(r => r.description)
+      longTermImprovementPlan: recommendations.slice(0, 5).map(r => r.description),
     };
   }
 
@@ -568,7 +583,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       dataFlowCovered: 0,
       dependencyCovered: 0,
       performanceRequirementsCovered: 0,
-      overallQualityCoverage: 0
+      overallQualityCoverage: 0,
     };
   }
 
@@ -579,7 +594,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       potentialVulnerabilities: [],
       attackVectors: [],
       impactDescription: '特定のセキュリティ影響は検出されませんでした',
-      mitigationStrategies: []
+      mitigationStrategies: [],
     };
   }
 
@@ -593,7 +608,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         inputPaths: [],
         outputPaths: [],
         transformations: [],
-        taintPropagation: []
+        taintPropagation: [],
       },
       sideEffects: [],
       exceptionHandling: [],
@@ -604,15 +619,18 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         hasOutputSanitization: false,
         vulnerabilities: [],
         accessesSensitiveData: false,
-        hasSecurityLogging: false
-      }
+        hasSecurityLogging: false,
+      },
     };
   }
 
-  private checkBehaviorImplementation(expectedBehavior: string, methods: MethodBehavior[]): boolean {
+  private checkBehaviorImplementation(
+    expectedBehavior: string,
+    methods: MethodBehavior[]
+  ): boolean {
     // Issue #119 対応: 期待される振る舞いがメソッド名やコメントに含まれているかチェック
     const behaviorKeywords = expectedBehavior.toLowerCase().split(/\s+/);
-    
+
     return methods.some(method => {
       const methodNameLower = method.name.toLowerCase();
       return KeywordSearchUtils.containsAnyKeyword(methodNameLower, behaviorKeywords);
@@ -622,7 +640,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   private calculateOverallQualitativeCoverage(gaps: IntentRealizationGap[]): number {
     const totalAspects = 8; // criticalPaths, edgeCases, security, errorHandling, sideEffects, dataFlow, dependency, performance
     const uncoveredAspects = new Set<string>();
-    
+
     gaps.forEach(gap => {
       switch (gap.type) {
         case IntentGapType.MISSING_SECURITY_TEST:
@@ -650,17 +668,25 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     return (coveredAspects / totalAspects) * 100;
   }
 
-  private calculateSecurityCoverage(implementationTruth: ImplementationTruth, gaps: IntentRealizationGap[]): number {
+  private calculateSecurityCoverage(
+    implementationTruth: ImplementationTruth,
+    gaps: IntentRealizationGap[]
+  ): number {
     const vulnerabilityCount = implementationTruth.vulnerabilities.length;
-    const securityGapCount = gaps.filter(g => g.type === IntentGapType.MISSING_SECURITY_TEST).length;
-    
+    const securityGapCount = gaps.filter(
+      g => g.type === IntentGapType.MISSING_SECURITY_TEST
+    ).length;
+
     if (vulnerabilityCount === 0) return 100; // 脆弱性がない場合は100%
-    
+
     const coveredVulnerabilities = Math.max(0, vulnerabilityCount - securityGapCount);
     return (coveredVulnerabilities / vulnerabilityCount) * 100;
   }
 
-  private createRecommendationForGap(gap: IntentRealizationGap, id: number): GapRecommendation | null {
+  private createRecommendationForGap(
+    gap: IntentRealizationGap,
+    id: number
+  ): GapRecommendation | null {
     const baseRecommendation = {
       recommendationId: `rec-${id}`,
       type: this.mapGapTypeToRecommendationType(gap.type),
@@ -674,11 +700,11 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         coverageImprovement: 0.15,
         maintainabilityImprovement: 0.1,
         estimatedImplementationTime: 2,
-        longTermValue: 0.3
+        longTermValue: 0.3,
       },
       relatedFiles: [gap.affectedIntent.description],
       codeExample: this.generateCodeExample(gap),
-      references: ['https://rimor.dev/best-practices', 'https://owasp.org/testing-guide']
+      references: ['https://rimor.dev/best-practices', 'https://owasp.org/testing-guide'],
     };
 
     return baseRecommendation;
@@ -720,11 +746,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
   private mapSeverityToPriority(severity: Severity): 'low' | 'medium' | 'high' | 'critical' {
     switch (severity) {
-      case Severity.CRITICAL: return 'critical';
-      case Severity.HIGH: return 'high';
-      case Severity.MEDIUM: return 'medium';
-      case Severity.LOW: return 'low';
-      default: return 'medium';
+      case Severity.CRITICAL:
+        return 'critical';
+      case Severity.HIGH:
+        return 'high';
+      case Severity.MEDIUM:
+        return 'medium';
+      case Severity.LOW:
+        return 'low';
+      default:
+        return 'medium';
     }
   }
 
@@ -745,20 +776,26 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         owaspCategory: 'A01:2021 – Broken Access Control',
         coverageRate: 0,
         testStatus: 'not_tested',
-        recommendations: ['認可テストを追加']
+        recommendations: ['認可テストを追加'],
       },
       {
         owaspCategory: 'A03:2021 – Injection',
-        coverageRate: implementationTruth.vulnerabilities.some(v => v.type.includes('injection')) ? 0 : 100,
+        coverageRate: implementationTruth.vulnerabilities.some(v => v.type.includes('injection'))
+          ? 0
+          : 100,
         testStatus: 'partially_tested',
-        recommendations: ['SQLインジェクション対策のテストを追加']
-      }
+        recommendations: ['SQLインジェクション対策のテストを追加'],
+      },
     ];
   }
 
-  private identifyStrengths(realizationScore: number, qualityMetrics: any, securityAssessment: any): string[] {
+  private identifyStrengths(
+    realizationScore: number,
+    qualityMetrics: any,
+    securityAssessment: any
+  ): string[] {
     const strengths: string[] = [];
-    
+
     if (realizationScore >= 80) {
       strengths.push('高い意図実現度スコア');
     }
@@ -771,7 +808,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (strengths.length === 0) {
       strengths.push('基本的なテスト構造が整備されている');
     }
-    
+
     return strengths;
   }
 
@@ -779,7 +816,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     const weaknesses: string[] = [];
     const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
     const highCount = recommendations.filter(r => r.priority === 'high').length;
-    
+
     if (criticalCount > 0) {
       weaknesses.push(`${criticalCount}件の重大な問題`);
     }
@@ -789,7 +826,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (weaknesses.length === 0) {
       weaknesses.push('軽微な改善点のみ');
     }
-    
+
     return weaknesses;
   }
 
@@ -799,7 +836,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   async extractIntent(testFilePath: string, ast: ASTNode): Promise<TestIntent> {
     // 新しい統合分析機能があるが、後方互換性のため既存のAPIも提供
     const testFunctions = this.parser.findTestFunctions(ast);
-    
+
     if (testFunctions.length === 0) {
       return this.createDefaultIntent();
     }
@@ -814,7 +851,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       testType: this.detectTestType(firstTest),
       expectedBehavior: this.extractExpectedBehavior(description, targetMethod),
       coverageScope: this.createDefaultCoverageScope(),
-      scenario: this.extractScenario(ast, firstTest)
+      scenario: this.extractScenario(ast, firstTest),
     };
   }
 
@@ -830,16 +867,19 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         happyPath: false,
         errorCases: false,
         edgeCases: false,
-        boundaryValues: false
+        boundaryValues: false,
       },
-      complexity: 1
+      complexity: 1,
     };
   }
 
   /**
    * 実現度評価（ITestIntentAnalyzer実装）
    */
-  async evaluateRealization(intent: TestIntent, actual: ActualTestAnalysis): Promise<TestRealizationResult> {
+  async evaluateRealization(
+    intent: TestIntent,
+    actual: ActualTestAnalysis
+  ): Promise<TestRealizationResult> {
     // 既存のAPIとの互換性のため、簡易実装を提供
     const gaps = await this.compareIntentAndRealization(intent, actual);
     const realizationScore = this.calculateRealizationScore2(intent, actual, gaps);
@@ -850,7 +890,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       actual,
       gaps,
       realizationScore,
-      riskLevel
+      riskLevel,
     };
   }
 
@@ -859,9 +899,9 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   assessRisk(gaps: TestGap[]): IntentRiskLevel {
     if (gaps.length === 0) return IntentRiskLevel.MINIMAL;
-    
+
     const severities = gaps.map(gap => gap.severity);
-    
+
     if (severities.includes(Severity.CRITICAL)) {
       return IntentRiskLevel.CRITICAL;
     }
@@ -871,7 +911,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (severities.includes(Severity.MEDIUM)) {
       return IntentRiskLevel.MEDIUM;
     }
-    
+
     return IntentRiskLevel.LOW;
   }
 
@@ -921,7 +961,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       happyPath: false,
       errorCases: false,
       edgeCases: false,
-      boundaryValues: false
+      boundaryValues: false,
     };
   }
 
@@ -929,7 +969,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     return {
       description: this.extractTestDescription(testNode),
       context: 'テストコンテキスト',
-      testCases: [this.extractTestDescription(testNode)]
+      testCases: [this.extractTestDescription(testNode)],
     };
   }
 
@@ -940,33 +980,48 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       testType: TestType.UNKNOWN,
       expectedBehavior: [],
       coverageScope: this.createDefaultCoverageScope(),
-      scenario: {}
+      scenario: {},
     };
   }
 
-  private async compareIntentAndRealization(intent: TestIntent, actual: ActualTestAnalysis): Promise<TestGap[]> {
+  private async compareIntentAndRealization(
+    intent: TestIntent,
+    actual: ActualTestAnalysis
+  ): Promise<TestGap[]> {
     const gaps: TestGap[] = [];
-    
+
     if (intent.targetMethod && !actual.actualTargetMethods.includes(intent.targetMethod)) {
       gaps.push({
         type: GapType.WRONG_TARGET,
         description: `期待されるメソッド '${intent.targetMethod}' がテストされていません`,
         severity: Severity.HIGH,
-        suggestions: [`テストに ${intent.targetMethod} の呼び出しを追加してください`]
+        suggestions: [`テストに ${intent.targetMethod} の呼び出しを追加してください`],
       });
     }
 
     return gaps;
   }
 
-  private calculateRealizationScore2(intent: TestIntent, actual: ActualTestAnalysis, gaps: TestGap[]): number {
+  private calculateRealizationScore2(
+    intent: TestIntent,
+    actual: ActualTestAnalysis,
+    gaps: TestGap[]
+  ): number {
     let score = 100;
     gaps.forEach(gap => {
       switch (gap.severity) {
-        case Severity.CRITICAL: score -= 30; break;
-        case Severity.HIGH: score -= 20; break;
-        case Severity.MEDIUM: score -= 10; break;
-        case Severity.LOW: score -= 5; break;
+        case Severity.CRITICAL:
+          score -= 30;
+          break;
+        case Severity.HIGH:
+          score -= 20;
+          break;
+        case Severity.MEDIUM:
+          score -= 10;
+          break;
+        case Severity.LOW:
+          score -= 5;
+          break;
       }
     });
     return Math.max(0, score);
@@ -977,27 +1032,27 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * Issue #106対応後の高精度評価
    */
   async evaluateRealizationWithTypeInfo(
-    intent: TestIntent, 
+    intent: TestIntent,
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
   ): Promise<EnhancedTestRealizationResult> {
     // 基本的な評価に型情報を追加
     const basicResult = await this.evaluateRealization(intent, actual);
-    
+
     // 型情報を活用した詳細評価
     const enhancedScore = this.enhanceScoreWithTypeInfo(basicResult.realizationScore, typeInfo);
-    
+
     // ドメイン関連性の評価
     const domainRelevance = this.evaluateDomainRelevance(intent, typeInfo);
-    
+
     // ドメイン固有ギャップの検出
     const domainSpecificGaps = this.detectDomainSpecificGaps(intent, typeInfo);
-    
+
     return {
       ...basicResult,
       realizationScore: enhancedScore,
       domainRelevance,
-      domainSpecificGaps
+      domainSpecificGaps,
     };
   }
 
@@ -1013,23 +1068,23 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (!Array.isArray(callGraph)) {
       callGraph = [];
     }
-    
+
     // AST からテスト意図を抽出
     const intent = await this.extractIntent(testFilePath, ast);
-    
+
     // 全ての関数を再帰的に収集
     const allFunctions = this.collectAllFunctions(callGraph);
     const coveredFunctions = intent.targetMethod ? [intent.targetMethod] : [];
     const uncoveredFunctions = allFunctions.filter(f => !coveredFunctions.includes(f));
-    
+
     const businessLogicCoverage = {
       domain: this.extractDomain(intent.description),
       functions: allFunctions,
       coveredFunctions,
       uncoveredFunctions,
-      coverage: allFunctions.length > 0 ? (coveredFunctions.length / allFunctions.length) * 100 : 0
+      coverage: allFunctions.length > 0 ? (coveredFunctions.length / allFunctions.length) * 100 : 0,
     };
-    
+
     return { businessLogicCoverage };
   }
 
@@ -1042,55 +1097,58 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     typeInfo: Map<string, TypeInfo>
   ): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
-    
+
     // AST からテスト意図を抽出
     const intent = await this.extractIntent(testFilePath, ast);
     const actual = await this.analyzeActualTest(testFilePath, ast);
-    
+
     // Defensive Programming: パラメータの検証
     if (!intent || !actual) {
       return suggestions;
     }
-    
+
     // ドメイン別の提案を生成
     const domain = this.extractDomain(intent.description);
-    
+
     // 認証ドメインの場合の特別な提案
-    if (domain.toLowerCase().includes('auth') || intent.description.toLowerCase().includes('auth')) {
+    if (
+      domain.toLowerCase().includes('auth') ||
+      intent.description.toLowerCase().includes('auth')
+    ) {
       suggestions.push({
         type: 'security',
         description: '無効な認証情報に対するテストを追加',
         priority: 'critical',
         impact: 'critical',
-        example: 'expect(() => authService.login(invalidCredentials)).toThrow();'
+        example: 'expect(() => authService.login(invalidCredentials)).toThrow();',
       });
-      
+
       suggestions.push({
         type: 'security',
         description: 'ブルートフォース攻撃対策のテストを追加',
         priority: 'critical',
         impact: 'critical',
-        example: 'expect(authService.isBlocked(attackerIp)).toBe(true);'
+        example: 'expect(authService.isBlocked(attackerIp)).toBe(true);',
       });
-      
+
       suggestions.push({
         type: 'security',
         description: 'トークンの有効期限チェックテストを追加',
         priority: 'high',
         impact: 'high',
-        example: 'expect(authService.validateToken(expiredToken)).toBe(false);'
+        example: 'expect(authService.validateToken(expiredToken)).toBe(false);',
       });
     }
-    
+
     // Defensive Programming: actualTargetMethodsが存在するかチェック
     const actualTargetMethods = actual.actualTargetMethods || [];
     const actualCoverage = actual.actualCoverage || {
       happyPath: false,
       errorCases: false,
       edgeCases: false,
-      boundaryValues: false
+      boundaryValues: false,
     };
-    
+
     // 基本的な改善提案
     if (actualTargetMethods.length === 0) {
       suggestions.push({
@@ -1098,53 +1156,53 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         description: 'テスト対象メソッドを明確にしてテストカバレッジを向上させる',
         priority: 'high',
         impact: 'high',
-        example: 'expect(targetMethod()).toBe(expectedValue);'
+        example: 'expect(targetMethod()).toBe(expectedValue);',
       });
     }
-    
+
     if (!actualCoverage.errorCases) {
       suggestions.push({
         type: 'error_handling',
         description: 'エラーケースのテストを追加して例外処理を検証する',
         priority: 'medium',
         impact: 'medium',
-        example: 'expect(() => methodWithError()).toThrow();'
+        example: 'expect(() => methodWithError()).toThrow();',
       });
     }
-    
+
     return suggestions;
   }
 
   // ヘルパーメソッド
-  
+
   private enhanceScoreWithTypeInfo(baseScore: number, typeInfo: Map<string, TypeInfo>): number {
     // 型情報が豊富な場合にスコアを向上
     const typeCount = typeInfo.size;
     const enhancement = Math.min(10, typeCount * 2); // 最大10点の向上
     return Math.min(100, baseScore + enhancement);
   }
-  
+
   private extractDomain(description: string): string {
     // Defensive Programming: descriptionがundefinedまたはnullの場合の対処
     if (!description || typeof description !== 'string') {
       return 'General';
     }
-    
+
     const domainKeywords = {
-      'payment': 'Payment',
-      'user': 'User Management',
-      'order': 'Order Processing',
-      'auth': 'Authentication',
-      'security': 'Security'
+      payment: 'Payment',
+      user: 'User Management',
+      order: 'Order Processing',
+      auth: 'Authentication',
+      security: 'Security',
     };
-    
+
     // Issue #119 対応: 統一キーワード検索を使用
     for (const [keyword, domain] of Object.entries(domainKeywords)) {
       if (KeywordSearchUtils.containsAnyKeyword(description, [keyword])) {
         return domain;
       }
     }
-    
+
     return 'General';
   }
 
@@ -1152,33 +1210,36 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * ドメイン関連性の評価
    * Issue #153対応: テスト意図とドメインコンテキストの関連性を評価
    */
-  private evaluateDomainRelevance(intent: TestIntent, typeInfo: Map<string, TypeInfo>): {
+  private evaluateDomainRelevance(
+    intent: TestIntent,
+    typeInfo: Map<string, TypeInfo>
+  ): {
     domain: string;
     confidence: number;
     businessImportance: 'low' | 'medium' | 'high' | 'critical';
   } {
     const domain = this.extractDomain(intent.description);
-    
+
     // 型情報に基づく信頼度計算
     let confidence = 0.5; // 基本信頼度
-    
+
     // ドメイン関連の型が含まれているかチェック
     for (const [varName, typeData] of typeInfo) {
       if (this.isDomainRelevantType(varName, typeData, domain)) {
         confidence += 0.3;
       }
     }
-    
+
     // 最大値を1.0に制限
     confidence = Math.min(1.0, confidence);
-    
+
     // ビジネス重要度の判定
     const businessImportance = this.assessBusinessImportance(domain, intent);
-    
+
     return {
       domain: domain.toLowerCase().replace(/\s+/g, '-'),
       confidence,
-      businessImportance
+      businessImportance,
     };
   }
 
@@ -1186,7 +1247,10 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * ドメイン固有ギャップの検出
    * Issue #153対応: ドメイン特有の要件に対するテストギャップを検出
    */
-  private detectDomainSpecificGaps(intent: TestIntent, typeInfo: Map<string, TypeInfo>): Array<{
+  private detectDomainSpecificGaps(
+    intent: TestIntent,
+    typeInfo: Map<string, TypeInfo>
+  ): Array<{
     type: string;
     description: string;
     domain: string;
@@ -1198,9 +1262,9 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
       domain: string;
       severity?: string;
     }> = [];
-    
+
     const domain = this.extractDomain(intent.description);
-    
+
     // ドメイン別の必須要件チェック
     switch (domain.toLowerCase()) {
       case 'user management':
@@ -1209,7 +1273,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
             type: 'MISSING_DOMAIN_REQUIREMENT',
             description: '認証機能のテストが不足しています',
             domain: 'user-management',
-            severity: 'high'
+            severity: 'high',
           });
         }
         if (!this.hasAuthorizationTest(intent)) {
@@ -1217,34 +1281,34 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
             type: 'MISSING_DOMAIN_REQUIREMENT',
             description: '認可機能のテストが不足しています',
             domain: 'user-management',
-            severity: 'medium'
+            severity: 'medium',
           });
         }
         break;
-        
+
       case 'payment':
         if (!this.hasSecurityTest(intent)) {
           gaps.push({
             type: 'MISSING_DOMAIN_REQUIREMENT',
             description: '支払い処理のセキュリティテストが不足しています',
             domain: 'payment',
-            severity: 'critical'
+            severity: 'critical',
           });
         }
         break;
-        
+
       case 'order processing':
         if (!this.hasTransactionTest(intent)) {
           gaps.push({
             type: 'MISSING_DOMAIN_REQUIREMENT',
             description: 'トランザクション処理のテストが不足しています',
             domain: 'order-processing',
-            severity: 'high'
+            severity: 'high',
           });
         }
         break;
     }
-    
+
     return gaps;
   }
 
@@ -1255,23 +1319,26 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     const domainKeywords = domain.toLowerCase().split(/\s+/);
     const typeName = typeData.typeName.toLowerCase();
     const variableName = varName.toLowerCase();
-    
-    return domainKeywords.some(keyword => 
-      typeName.includes(keyword) || variableName.includes(keyword)
+
+    return domainKeywords.some(
+      keyword => typeName.includes(keyword) || variableName.includes(keyword)
     );
   }
 
   /**
    * ビジネス重要度の評価
    */
-  private assessBusinessImportance(domain: string, intent: TestIntent): 'low' | 'medium' | 'high' | 'critical' {
+  private assessBusinessImportance(
+    domain: string,
+    intent: TestIntent
+  ): 'low' | 'medium' | 'high' | 'critical' {
     // 重要度の高いドメイン
     const criticalDomains = ['payment', 'security', 'authentication'];
     const highDomains = ['user management', 'order processing'];
     const mediumDomains = ['analytics', 'reporting'];
-    
+
     const domainLower = domain.toLowerCase();
-    
+
     if (criticalDomains.some(d => domainLower.includes(d))) {
       return 'critical';
     }
@@ -1281,7 +1348,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     if (mediumDomains.some(d => domainLower.includes(d))) {
       return 'medium';
     }
-    
+
     return 'low';
   }
 
@@ -1290,7 +1357,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   private hasAuthenticationTest(intent: TestIntent): boolean {
     const keywords = ['auth', 'login', 'signin', 'token', '認証', 'ログイン'];
-    return keywords.some(keyword => 
+    return keywords.some(keyword =>
       intent.description.toLowerCase().includes(keyword.toLowerCase())
     );
   }
@@ -1300,7 +1367,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   private hasAuthorizationTest(intent: TestIntent): boolean {
     const keywords = ['authorize', 'permission', 'role', 'access', '認可', '権限'];
-    return keywords.some(keyword => 
+    return keywords.some(keyword =>
       intent.description.toLowerCase().includes(keyword.toLowerCase())
     );
   }
@@ -1309,8 +1376,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * セキュリティテストの存在チェック
    */
   private hasSecurityTest(intent: TestIntent): boolean {
-    const keywords = ['security', 'secure', 'encrypt', 'hash', 'sanitize', 'セキュリティ', '暗号化'];
-    return keywords.some(keyword => 
+    const keywords = [
+      'security',
+      'secure',
+      'encrypt',
+      'hash',
+      'sanitize',
+      'セキュリティ',
+      '暗号化',
+    ];
+    return keywords.some(keyword =>
       intent.description.toLowerCase().includes(keyword.toLowerCase())
     );
   }
@@ -1320,7 +1395,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   private hasTransactionTest(intent: TestIntent): boolean {
     const keywords = ['transaction', 'rollback', 'commit', 'atomic', 'トランザクション'];
-    return keywords.some(keyword => 
+    return keywords.some(keyword =>
       intent.description.toLowerCase().includes(keyword.toLowerCase())
     );
   }
@@ -1330,7 +1405,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   private collectAllFunctions(callGraph: CallGraphNode[]): string[] {
     const functions = new Set<string>();
-    
+
     const addFunctionsRecursively = (nodes: CallGraphNode[]) => {
       for (const node of nodes) {
         functions.add(node.name);
@@ -1339,9 +1414,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
         }
       }
     };
-    
+
     addFunctionsRecursively(callGraph);
     return Array.from(functions);
   }
 }
-

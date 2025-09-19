@@ -5,25 +5,25 @@
 
 export interface CITraceability {
   // GitHub Actions情報
-  runId: string;           // GITHUB_RUN_ID
-  runNumber: string;       // GITHUB_RUN_NUMBER
-  workflow: string;        // GITHUB_WORKFLOW
-  job: string;            // GITHUB_JOB
-  actor: string;          // GITHUB_ACTOR
-  
+  runId: string; // GITHUB_RUN_ID
+  runNumber: string; // GITHUB_RUN_NUMBER
+  workflow: string; // GITHUB_WORKFLOW
+  job: string; // GITHUB_JOB
+  actor: string; // GITHUB_ACTOR
+
   // リポジトリ情報
-  repository: string;      // GITHUB_REPOSITORY
-  branch: string;         // GITHUB_REF_NAME
-  sha: string;           // GITHUB_SHA
-  prNumber?: string;      // PR番号（該当する場合）
-  
+  repository: string; // GITHUB_REPOSITORY
+  branch: string; // GITHUB_REF_NAME
+  sha: string; // GITHUB_SHA
+  prNumber?: string; // PR番号（該当する場合）
+
   // 実行環境
-  nodeVersion: string;    // マトリックス情報から取得
-  os: string;            // ランナーOS (RUNNER_OS)
-  timestamp: string;      // 実行日時
-  
+  nodeVersion: string; // マトリックス情報から取得
+  os: string; // ランナーOS (RUNNER_OS)
+  timestamp: string; // 実行日時
+
   // エラー照合用
-  errorHash: string;      // エラーの一意識別子
+  errorHash: string; // エラーの一意識別子
 }
 
 export class CITraceabilityCollector {
@@ -35,9 +35,9 @@ export class CITraceabilityCollector {
     if (process.env.CI !== 'true') {
       return null;
     }
-    
+
     const prNumber = this.extractPRNumber();
-    
+
     return {
       runId: process.env.GITHUB_RUN_ID || 'unknown',
       runNumber: process.env.GITHUB_RUN_NUMBER || 'unknown',
@@ -51,10 +51,10 @@ export class CITraceabilityCollector {
       nodeVersion: process.version,
       os: process.env.RUNNER_OS || process.platform,
       timestamp: new Date().toISOString(),
-      errorHash: '' // エラー収集時に設定
+      errorHash: '', // エラー収集時に設定
     };
   }
-  
+
   /**
    * PR番号を抽出
    */
@@ -67,17 +67,17 @@ export class CITraceabilityCollector {
         return match[1];
       }
     }
-    
+
     // GitHub Actions のPRイベント
     if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
       // PR番号は通常、イベントペイロードから取得するが、
       // ここでは簡易的にREFから取得
       return undefined;
     }
-    
+
     return undefined;
   }
-  
+
   /**
    * エラーハッシュを生成
    */
@@ -90,7 +90,7 @@ export class CITraceabilityCollector {
     const data = `${error.testFile}:${error.testName}:${error.errorMessage}`;
     return crypto.createHash('md5').update(data).digest('hex').substring(0, 8);
   }
-  
+
   /**
    * CI実行へのディープリンクを生成
    */
@@ -98,7 +98,7 @@ export class CITraceabilityCollector {
     const { repository, runId } = traceability;
     return `https://github.com/${repository}/actions/runs/${runId}`;
   }
-  
+
   /**
    * PRへのリンクを生成
    */

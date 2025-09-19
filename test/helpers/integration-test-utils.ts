@@ -26,12 +26,12 @@ export function createTempProject(prefix: string = 'test-project-'): string {
 export function createTestFile(projectDir: string, relativePath: string, content: string): void {
   const fullPath = path.join(projectDir, relativePath);
   const dir = path.dirname(fullPath);
-  
+
   // ディレクトリが存在しない場合は作成
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  
+
   fs.writeFileSync(fullPath, content, 'utf-8');
 }
 
@@ -60,9 +60,9 @@ export function createPackageJson(
     name: 'test-project',
     version: '1.0.0',
     dependencies,
-    devDependencies
+    devDependencies,
   };
-  
+
   createTestFile(projectDir, 'package.json', JSON.stringify(packageJson, null, 2));
 }
 
@@ -82,14 +82,14 @@ export function createTypeScriptProject(projectDir: string): void {
       strict: true,
       esModuleInterop: true,
       skipLibCheck: true,
-      forceConsistentCasingInFileNames: true
+      forceConsistentCasingInFileNames: true,
     },
     include: ['src/**/*'],
-    exclude: ['node_modules', 'dist']
+    exclude: ['node_modules', 'dist'],
   };
-  
+
   createTestFile(projectDir, 'tsconfig.json', JSON.stringify(tsConfig, null, 2));
-  
+
   // srcディレクトリを作成
   fs.mkdirSync(path.join(projectDir, 'src'), { recursive: true });
 }
@@ -242,15 +242,18 @@ function processData(data: any) {
  * @param projectDir プロジェクトディレクトリ
  * @param extensions 対象の拡張子
  */
-export function getAllFiles(projectDir: string, extensions: string[] = ['.ts', '.js', '.tsx', '.jsx']): string[] {
+export function getAllFiles(
+  projectDir: string,
+  extensions: string[] = ['.ts', '.js', '.tsx', '.jsx']
+): string[] {
   const files: string[] = [];
-  
+
   function walk(dir: string) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
-      
+
       if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
         walk(fullPath);
       } else if (entry.isFile() && extensions.some(ext => entry.name.endsWith(ext))) {
@@ -258,7 +261,7 @@ export function getAllFiles(projectDir: string, extensions: string[] = ['.ts', '
       }
     }
   }
-  
+
   walk(projectDir);
   return files;
 }

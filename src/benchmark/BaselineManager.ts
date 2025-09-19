@@ -1,12 +1,12 @@
 /**
  * ベースライン管理システム
  * Phase 3: 継続的改善とベースライン基準の確立
- * 
+ *
  * SOLID原則に基づく設計:
  * - Single Responsibility: ベースライン管理に特化
  * - Open/Closed: 新しい比較アルゴリズムや分析方法の追加に開放
  * - Dependency Inversion: 永続化層やファイルシステムへの依存を抽象化
- * 
+ *
  * Defensive Programming原則:
  * - 入力検証とセキュリティ対策
  * - 例外安全保証
@@ -125,9 +125,9 @@ export interface BaselineComparison {
   projectComparisons: ProjectComparison[];
   /** 5ms/file目標達成改善 */
   target5msImprovements: {
-    improved: string[];    // 新規達成
-    maintained: string[];  // 達成継続
-    degraded: string[];    // 達成から未達成に
+    improved: string[]; // 新規達成
+    maintained: string[]; // 達成継続
+    degraded: string[]; // 達成から未達成に
   };
   /** 推奨事項 */
   recommendations: string[];
@@ -198,7 +198,7 @@ export class BaselineManager {
       baselineDir: config.baselineDir || './.rimor/baselines',
       retentionPeriod: config.retentionPeriod || 90, // 90日間保持
       compressionEnabled: config.compressionEnabled || false,
-      autoCleanup: config.autoCleanup || true
+      autoCleanup: config.autoCleanup || true,
     };
 
     // ディレクトリの確保
@@ -207,12 +207,15 @@ export class BaselineManager {
 
   /**
    * 新しいベースラインを作成
-   * 
+   *
    * @param results ベンチマーク結果配列
    * @param metadata オプションのメタデータ
    * @returns 作成されたベースラインのID
    */
-  async createBaseline(results: BenchmarkResult[], metadata: BaselineMetadata = {}): Promise<string> {
+  async createBaseline(
+    results: BenchmarkResult[],
+    metadata: BaselineMetadata = {}
+  ): Promise<string> {
     // 入力検証（Defensive Programming）
     if (!Array.isArray(results) || results.length === 0) {
       throw new Error('空の結果配列からベースラインを作成することはできません');
@@ -237,9 +240,9 @@ export class BaselineManager {
         description: metadata.description || 'Auto-generated baseline',
         createdBy: metadata.createdBy || 'system',
         tags: metadata.tags || [],
-        ...metadata
+        ...metadata,
       },
-      statistics
+      statistics,
     };
 
     // ベースラインファイルの保存
@@ -255,7 +258,7 @@ export class BaselineManager {
 
   /**
    * ベースラインを取得
-   * 
+   *
    * @param baselineId ベースラインID
    * @returns ベースライン（見つからない場合はundefined）
    */
@@ -277,12 +280,15 @@ export class BaselineManager {
 
   /**
    * 現在の結果をベースラインと比較
-   * 
+   *
    * @param currentResults 現在のベンチマーク結果
    * @param baselineId 比較対象のベースラインID
    * @returns 比較結果
    */
-  async compareWithBaseline(currentResults: BenchmarkResult[], baselineId: string): Promise<BaselineComparison> {
+  async compareWithBaseline(
+    currentResults: BenchmarkResult[],
+    baselineId: string
+  ): Promise<BaselineComparison> {
     const baseline = await this.getBaseline(baselineId);
     if (!baseline) {
       throw new Error(`ベースライン '${baselineId}' が見つかりません`);
@@ -297,8 +303,10 @@ export class BaselineManager {
 
     // プロジェクトごとの比較
     for (const currentResult of currentResults) {
-      const baselineResult = baseline.results.find(r => r.projectName === currentResult.projectName);
-      
+      const baselineResult = baseline.results.find(
+        r => r.projectName === currentResult.projectName
+      );
+
       if (!baselineResult) {
         // 新しいプロジェクトの場合
         projectComparisons.push({
@@ -309,17 +317,24 @@ export class BaselineManager {
           baselineMetrics: { timePerFile: 0, accuracy: 0 },
           currentMetrics: {
             timePerFile: currentResult.performance.timePerFile,
-            accuracy: currentResult.accuracy.taintTyperSuccessRate
-          }
+            accuracy: currentResult.accuracy.taintTyperSuccessRate,
+          },
         });
         continue;
       }
 
       // パフォーマンス改善率の計算
-      const performanceImprovement = ((baselineResult.performance.timePerFile - currentResult.performance.timePerFile) / baselineResult.performance.timePerFile) * 100;
-      
+      const performanceImprovement =
+        ((baselineResult.performance.timePerFile - currentResult.performance.timePerFile) /
+          baselineResult.performance.timePerFile) *
+        100;
+
       // 精度改善率の計算
-      const accuracyImprovement = ((currentResult.accuracy.taintTyperSuccessRate - baselineResult.accuracy.taintTyperSuccessRate) / baselineResult.accuracy.taintTyperSuccessRate) * 100;
+      const accuracyImprovement =
+        ((currentResult.accuracy.taintTyperSuccessRate -
+          baselineResult.accuracy.taintTyperSuccessRate) /
+          baselineResult.accuracy.taintTyperSuccessRate) *
+        100;
 
       // 5ms/file目標達成状況
       let target5msStatus: ProjectComparison['target5msStatus'] = 'maintained';
@@ -341,17 +356,19 @@ export class BaselineManager {
         target5msStatus,
         baselineMetrics: {
           timePerFile: baselineResult.performance.timePerFile,
-          accuracy: baselineResult.accuracy.taintTyperSuccessRate
+          accuracy: baselineResult.accuracy.taintTyperSuccessRate,
         },
         currentMetrics: {
           timePerFile: currentResult.performance.timePerFile,
-          accuracy: currentResult.accuracy.taintTyperSuccessRate
-        }
+          accuracy: currentResult.accuracy.taintTyperSuccessRate,
+        },
       });
     }
 
     // 全体改善率の計算
-    const overallImprovement = projectComparisons.reduce((sum, comp) => sum + comp.performanceImprovement, 0) / projectComparisons.length;
+    const overallImprovement =
+      projectComparisons.reduce((sum, comp) => sum + comp.performanceImprovement, 0) /
+      projectComparisons.length;
 
     // 推奨事項の生成
     const recommendations = this.generateRecommendations(projectComparisons);
@@ -362,13 +379,13 @@ export class BaselineManager {
       overallImprovement,
       projectComparisons,
       target5msImprovements,
-      recommendations
+      recommendations,
     };
   }
 
   /**
    * 最適なベースラインを自動選択
-   * 
+   *
    * @param projectNames 対象プロジェクト名配列
    * @returns 最適なベースラインID
    */
@@ -383,12 +400,13 @@ export class BaselineManager {
       // プロジェクトマッチ度の計算
       const matchingProjects = baseline.statistics.projectCount;
       const matchRatio = matchingProjects / Math.max(projectNames.length, matchingProjects);
-      
+
       // スコア計算（5ms/file達成率と精度を重視）
-      const score = (baseline.statistics.target5msAchievementRate * 0.4) + 
-                   (baseline.statistics.averageAccuracy * 0.3) + 
-                   (matchRatio * 0.2) + 
-                   ((5 - baseline.statistics.averageTimePerFile) * 0.1); // 低い実行時間を優遇
+      const score =
+        baseline.statistics.target5msAchievementRate * 0.4 +
+        baseline.statistics.averageAccuracy * 0.3 +
+        matchRatio * 0.2 +
+        (5 - baseline.statistics.averageTimePerFile) * 0.1; // 低い実行時間を優遇
 
       if (score > bestScore) {
         bestScore = score;
@@ -401,11 +419,13 @@ export class BaselineManager {
 
   /**
    * プロジェクトごとの最適ベースラインを選択
-   * 
+   *
    * @param projectNames プロジェクト名配列
    * @returns プロジェクトごとの最適ベースラインIDのマップ
    */
-  async selectOptimalBaselinesPerProject(projectNames: string[]): Promise<{ [projectName: string]: string }> {
+  async selectOptimalBaselinesPerProject(
+    projectNames: string[]
+  ): Promise<{ [projectName: string]: string }> {
     const baselines = await this.listBaselines();
     const optimalBaselines: { [projectName: string]: string } = {};
 
@@ -421,9 +441,10 @@ export class BaselineManager {
         if (!projectResult) continue;
 
         // プロジェクト固有のスコア計算
-        const score = (projectResult.target5ms.achieved ? 40 : 0) + 
-                     (projectResult.accuracy.taintTyperSuccessRate * 30) + 
-                     ((5 - projectResult.performance.timePerFile) * 30);
+        const score =
+          (projectResult.target5ms.achieved ? 40 : 0) +
+          projectResult.accuracy.taintTyperSuccessRate * 30 +
+          (5 - projectResult.performance.timePerFile) * 30;
 
         if (score > bestScore) {
           bestScore = score;
@@ -441,7 +462,7 @@ export class BaselineManager {
 
   /**
    * ベースライン統計情報を計算
-   * 
+   *
    * @param baselineId ベースラインID
    * @returns 統計情報
    */
@@ -456,36 +477,42 @@ export class BaselineManager {
 
   /**
    * 複数ベースライン間の傾向分析
-   * 
+   *
    * @param baselineIds 分析対象のベースラインID配列
    * @returns 傾向分析結果
    */
   async analyzeTrends(baselineIds: string[]): Promise<TrendAnalysis> {
-    const baselines = await Promise.all(
-      baselineIds.map(id => this.getBaseline(id))
-    );
-    
+    const baselines = await Promise.all(baselineIds.map(id => this.getBaseline(id)));
+
     const validBaselines = baselines.filter((b): b is Baseline => b !== undefined);
     if (validBaselines.length < 2) {
       throw new Error('傾向分析には最低2つのベースラインが必要です');
     }
 
     // 時系列順にソート
-    validBaselines.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    validBaselines.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
 
     const firstBaseline = validBaselines[0];
     const lastBaseline = validBaselines[validBaselines.length - 1];
 
     // 全体パフォーマンス改善率
-    const performanceImprovementRate = ((firstBaseline.statistics.averageTimePerFile - lastBaseline.statistics.averageTimePerFile) / firstBaseline.statistics.averageTimePerFile) * 100;
-    
+    const performanceImprovementRate =
+      ((firstBaseline.statistics.averageTimePerFile - lastBaseline.statistics.averageTimePerFile) /
+        firstBaseline.statistics.averageTimePerFile) *
+      100;
+
     // 全体精度改善率
-    const accuracyImprovementRate = ((lastBaseline.statistics.averageAccuracy - firstBaseline.statistics.averageAccuracy) / firstBaseline.statistics.averageAccuracy) * 100;
+    const accuracyImprovementRate =
+      ((lastBaseline.statistics.averageAccuracy - firstBaseline.statistics.averageAccuracy) /
+        firstBaseline.statistics.averageAccuracy) *
+      100;
 
     // 全体傾向の判定
     let overallTrend: TrendAnalysis['overallTrend'] = 'stable';
     const combinedImprovementRate = (performanceImprovementRate + accuracyImprovementRate) / 2;
-    
+
     if (combinedImprovementRate > 5) {
       overallTrend = 'improving';
     } else if (combinedImprovementRate < -5) {
@@ -505,9 +532,12 @@ export class BaselineManager {
       if (projectResults.length >= 2) {
         const firstResult = projectResults[0];
         const lastResult = projectResults[projectResults.length - 1];
-        
-        const projectImprovementRate = ((firstResult.performance.timePerFile - lastResult.performance.timePerFile) / firstResult.performance.timePerFile) * 100;
-        
+
+        const projectImprovementRate =
+          ((firstResult.performance.timePerFile - lastResult.performance.timePerFile) /
+            firstResult.performance.timePerFile) *
+          100;
+
         let projectTrend: 'improving' | 'stable' | 'degrading' = 'stable';
         if (projectImprovementRate > 10) {
           projectTrend = 'improving';
@@ -517,7 +547,7 @@ export class BaselineManager {
 
         projectTrends[projectName] = {
           trend: projectTrend,
-          improvementRate: projectImprovementRate
+          improvementRate: projectImprovementRate,
         };
       }
     }
@@ -529,22 +559,24 @@ export class BaselineManager {
       analysisWindow: {
         startDate: firstBaseline.createdAt,
         endDate: lastBaseline.createdAt,
-        baselineCount: validBaselines.length
+        baselineCount: validBaselines.length,
       },
-      projectTrends
+      projectTrends,
     };
   }
 
   /**
    * ベースライン一覧を取得
-   * 
+   *
    * @returns ベースライン要約情報の配列
    */
   async listBaselines(): Promise<BaselineSummary[]> {
     try {
       const files = await fs.readdir(this.config.baselineDir);
-      const baselineFiles = files.filter(f => f.endsWith('.json') && this.isValidBaselineId(f.replace('.json', '')));
-      
+      const baselineFiles = files.filter(
+        f => f.endsWith('.json') && this.isValidBaselineId(f.replace('.json', ''))
+      );
+
       const summaries: BaselineSummary[] = [];
       for (const file of baselineFiles) {
         const baselineId = file.replace('.json', '');
@@ -554,13 +586,15 @@ export class BaselineManager {
             id: baseline.id,
             metadata: baseline.metadata,
             createdAt: baseline.createdAt,
-            statistics: baseline.statistics
+            statistics: baseline.statistics,
           });
         }
       }
 
       // 作成日時の降順でソート
-      return summaries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return summaries.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     } catch (error) {
       return [];
     }
@@ -568,14 +602,14 @@ export class BaselineManager {
 
   /**
    * 古いベースラインのクリーンアップ
-   * 
+   *
    * @returns クリーンアップ結果
    */
   async cleanup(): Promise<CleanupResult> {
     const result: CleanupResult = {
       deletedCount: 0,
       freedSpace: 0,
-      errors: []
+      errors: [],
     };
 
     try {
@@ -583,7 +617,7 @@ export class BaselineManager {
       cutoffDate.setDate(cutoffDate.getDate() - this.config.retentionPeriod);
 
       const baselines = await this.listBaselines();
-      
+
       for (const baseline of baselines) {
         const baselineDate = new Date(baseline.createdAt);
         if (baselineDate < cutoffDate) {
@@ -591,7 +625,7 @@ export class BaselineManager {
             const baselinePath = this.getBaselinePath(baseline.id);
             const stats = await fs.stat(baselinePath);
             await fs.unlink(baselinePath);
-            
+
             result.deletedCount++;
             result.freedSpace += stats.size;
           } catch (error) {
@@ -640,7 +674,7 @@ export class BaselineManager {
   private async saveBaseline(baseline: Baseline): Promise<void> {
     const baselinePath = this.getBaselinePath(baseline.id);
     const baselineData = JSON.stringify(baseline, null, 2);
-    
+
     await fs.writeFile(baselinePath, baselineData, 'utf-8');
   }
 
@@ -649,7 +683,7 @@ export class BaselineManager {
    */
   private calculateStatistics(results: BenchmarkResult[]): BaselineStatistics {
     const successfulResults = results.filter(r => r.success);
-    
+
     if (successfulResults.length === 0) {
       // 全て失敗の場合のデフォルト値
       return {
@@ -658,7 +692,7 @@ export class BaselineManager {
         projectCount: results.length,
         overallSuccessRate: 0,
         averageAccuracy: 0,
-        performanceDistribution: { min: 0, max: 0, median: 0, standardDeviation: 0 }
+        performanceDistribution: { min: 0, max: 0, median: 0, standardDeviation: 0 },
       };
     }
 
@@ -667,17 +701,20 @@ export class BaselineManager {
     const target5msAchieved = successfulResults.filter(r => r.target5ms.achieved).length;
 
     // 基本統計の計算
-    const averageTimePerFile = timesPerFile.reduce((sum, time) => sum + time, 0) / timesPerFile.length;
+    const averageTimePerFile =
+      timesPerFile.reduce((sum, time) => sum + time, 0) / timesPerFile.length;
     const averageAccuracy = accuracyRates.reduce((sum, acc) => sum + acc, 0) / accuracyRates.length;
-    
+
     // パフォーマンス分布の計算
     const sortedTimes = [...timesPerFile].sort((a, b) => a - b);
     const min = sortedTimes[0];
     const max = sortedTimes[sortedTimes.length - 1];
     const median = sortedTimes[Math.floor(sortedTimes.length / 2)];
-    
+
     // 標準偏差の計算
-    const variance = timesPerFile.reduce((sum, time) => sum + Math.pow(time - averageTimePerFile, 2), 0) / timesPerFile.length;
+    const variance =
+      timesPerFile.reduce((sum, time) => sum + Math.pow(time - averageTimePerFile, 2), 0) /
+      timesPerFile.length;
     const standardDeviation = Math.sqrt(variance);
 
     return {
@@ -690,8 +727,8 @@ export class BaselineManager {
         min,
         max,
         median,
-        standardDeviation
-      }
+        standardDeviation,
+      },
     };
   }
 
@@ -700,28 +737,36 @@ export class BaselineManager {
    */
   private generateRecommendations(comparisons: ProjectComparison[]): string[] {
     const recommendations: string[] = [];
-    
+
     const improvedProjects = comparisons.filter(c => c.performanceImprovement > 5);
     const degradedProjects = comparisons.filter(c => c.performanceImprovement < -5);
-    
+
     if (improvedProjects.length > degradedProjects.length) {
-      recommendations.push('全体的に良好なパフォーマンス改善が見られます。現在の最適化戦略を継続してください。');
+      recommendations.push(
+        '全体的に良好なパフォーマンス改善が見られます。現在の最適化戦略を継続してください。'
+      );
     } else if (degradedProjects.length > improvedProjects.length) {
-      recommendations.push('複数のプロジェクトでパフォーマンス劣化が検出されています。最新の変更内容を確認してください。');
+      recommendations.push(
+        '複数のプロジェクトでパフォーマンス劣化が検出されています。最新の変更内容を確認してください。'
+      );
     }
-    
+
     // 5ms/file目標関連の推奨事項
     const target5msImproved = comparisons.filter(c => c.target5msStatus === 'improved');
     const target5msDegraded = comparisons.filter(c => c.target5msStatus === 'degraded');
-    
+
     if (target5msImproved.length > 0) {
-      recommendations.push(`${target5msImproved.map(c => c.projectName).join(', ')} で5ms/file目標が新たに達成されました。`);
+      recommendations.push(
+        `${target5msImproved.map(c => c.projectName).join(', ')} で5ms/file目標が新たに達成されました。`
+      );
     }
-    
+
     if (target5msDegraded.length > 0) {
-      recommendations.push(`${target5msDegraded.map(c => c.projectName).join(', ')} で5ms/file目標が未達成になりました。最適化の見直しが必要です。`);
+      recommendations.push(
+        `${target5msDegraded.map(c => c.projectName).join(', ')} で5ms/file目標が未達成になりました。最適化の見直しが必要です。`
+      );
     }
-    
+
     return recommendations;
   }
 }

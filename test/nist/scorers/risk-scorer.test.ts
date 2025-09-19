@@ -1,19 +1,14 @@
 /**
  * RiskScorer テスト
  * 総合リスクスコア算出システムのテスト仕様
- * 
+ *
  * TDD Red Phase: 失敗するテストを最初に作成
  * YAGNI原則: 必要な機能のみテスト
  */
 
 import { RiskScorer, RiskAssessmentInfo } from '../../../src/nist/scorers/RiskScorer';
 import { RiskLevel } from '../../../src/nist/types/unified-analysis-result';
-import { 
-  Threat, 
-  Vulnerability, 
-  Impact,
-  RiskMatrix
-} from '../../../src/nist/types/nist-types';
+import { Threat, Vulnerability, Impact, RiskMatrix } from '../../../src/nist/types/nist-types';
 
 describe('RiskScorer', () => {
   let scorer: RiskScorer;
@@ -29,7 +24,7 @@ describe('RiskScorer', () => {
         name: 'SQLインジェクション攻撃',
         category: 'INJECTION',
         likelihood: 'HIGH',
-        description: '外部攻撃者によるSQLインジェクション'
+        description: '外部攻撃者によるSQLインジェクション',
       };
 
       const vulnerability: Vulnerability = {
@@ -39,7 +34,7 @@ describe('RiskScorer', () => {
         exploitability: 'HIGH',
         detectability: 'EASY',
         affectedAssets: ['database'],
-        cvssScore: 8.5
+        cvssScore: 8.5,
       };
 
       const riskLevel = scorer.applyNistMatrix(threat, vulnerability);
@@ -48,18 +43,18 @@ describe('RiskScorer', () => {
 
     it('複数の脅威・脆弱性ペアから最高リスクを特定する', () => {
       const pairs = [
-        { 
-          threat: { likelihood: 'LOW' } as Threat, 
-          vulnerability: { severity: 'LOW' } as Vulnerability 
+        {
+          threat: { likelihood: 'LOW' } as Threat,
+          vulnerability: { severity: 'LOW' } as Vulnerability,
         },
-        { 
-          threat: { likelihood: 'HIGH' } as Threat, 
-          vulnerability: { severity: 'CRITICAL' } as Vulnerability 
+        {
+          threat: { likelihood: 'HIGH' } as Threat,
+          vulnerability: { severity: 'CRITICAL' } as Vulnerability,
         },
-        { 
-          threat: { likelihood: 'MODERATE' } as Threat, 
-          vulnerability: { severity: 'MODERATE' } as Vulnerability 
-        }
+        {
+          threat: { likelihood: 'MODERATE' } as Threat,
+          vulnerability: { severity: 'MODERATE' } as Vulnerability,
+        },
       ];
 
       const highestRisk = scorer.findHighestRisk(pairs);
@@ -73,7 +68,7 @@ describe('RiskScorer', () => {
         threatScore: 80,
         vulnerabilityScore: 75,
         impactScore: 90,
-        likelihoodScore: 70
+        likelihoodScore: 70,
       };
 
       const overallScore = scorer.calculateOverallRisk(components);
@@ -86,15 +81,15 @@ describe('RiskScorer', () => {
       const components = {
         threatScore: 50,
         vulnerabilityScore: 50,
-        impactScore: 100,  // 影響度が高い
-        likelihoodScore: 30
+        impactScore: 100, // 影響度が高い
+        likelihoodScore: 30,
       };
 
       const weights = {
         threat: 0.2,
         vulnerability: 0.25,
-        impact: 0.4,  // 影響度を重視
-        likelihood: 0.15
+        impact: 0.4, // 影響度を重視
+        likelihood: 0.15,
       };
 
       const weightedScore = scorer.calculateWeightedScore(components, weights);
@@ -109,7 +104,7 @@ describe('RiskScorer', () => {
         { riskLevel: RiskLevel.HIGH, score: 80 },
         { riskLevel: RiskLevel.HIGH, score: 75 },
         { riskLevel: RiskLevel.MEDIUM, score: 60 },
-        { riskLevel: RiskLevel.LOW, score: 30 }
+        { riskLevel: RiskLevel.LOW, score: 30 },
       ];
 
       const aggregated = scorer.aggregateRisks(risks);
@@ -121,11 +116,11 @@ describe('RiskScorer', () => {
     });
 
     it('カテゴリ別にリスクを集約する', () => {
-      const categorizedRisks: { category: string, riskLevel: RiskLevel, score: number }[] = [
+      const categorizedRisks: { category: string; riskLevel: RiskLevel; score: number }[] = [
         { category: 'INJECTION', riskLevel: RiskLevel.HIGH, score: 80 },
         { category: 'INJECTION', riskLevel: RiskLevel.MEDIUM, score: 60 },
         { category: 'AUTH', riskLevel: RiskLevel.CRITICAL, score: 95 },
-        { category: 'XSS', riskLevel: RiskLevel.LOW, score: 30 }
+        { category: 'XSS', riskLevel: RiskLevel.LOW, score: 30 },
       ];
 
       const byCategory = scorer.aggregateByCategory(categorizedRisks);
@@ -137,11 +132,11 @@ describe('RiskScorer', () => {
 
   describe('リスクトレンド分析', () => {
     it('時系列でリスクの変化を分析する', () => {
-      const historicalData: { date: string, score: number, riskLevel: RiskLevel }[] = [
+      const historicalData: { date: string; score: number; riskLevel: RiskLevel }[] = [
         { date: '2024-01-01', score: 60, riskLevel: RiskLevel.MEDIUM },
         { date: '2024-02-01', score: 70, riskLevel: RiskLevel.HIGH },
         { date: '2024-03-01', score: 75, riskLevel: RiskLevel.HIGH },
-        { date: '2024-04-01', score: 85, riskLevel: RiskLevel.CRITICAL }
+        { date: '2024-04-01', score: 85, riskLevel: RiskLevel.CRITICAL },
       ];
 
       const trend = scorer.analyzeTrend(historicalData);
@@ -157,7 +152,7 @@ describe('RiskScorer', () => {
         riskLevel: RiskLevel.CRITICAL,
         score: 92,
         category: 'INJECTION',
-        affectedAssets: ['database', 'api']
+        affectedAssets: ['database', 'api'],
       };
 
       const actions = scorer.generateRecommendedActions(riskAssessment);
@@ -169,8 +164,7 @@ describe('RiskScorer', () => {
 
   describe('エラーハンドリング', () => {
     it('無効な入力を適切に処理する', () => {
-      expect(() => scorer.calculateOverallRisk(null as any))
-        .toThrow('Invalid risk components');
+      expect(() => scorer.calculateOverallRisk(null as any)).toThrow('Invalid risk components');
     });
 
     it('空のリスクリストを適切に処理する', () => {

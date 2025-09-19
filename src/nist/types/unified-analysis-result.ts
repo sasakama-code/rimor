@@ -2,7 +2,7 @@ import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definiti
 /**
  * UnifiedAnalysisResult v2.0
  * Issue #52: NIST SP 800-30準拠リスク評価機能
- * 
+ *
  * 後続のレポート機能（#57, #58）が利用する統一データ形式
  * SOLID原則: インターフェース分離の原則に準拠
  */
@@ -23,7 +23,7 @@ export enum AIActionType {
   ADD_ASSERTION = 'ADD_ASSERTION',
   SANITIZE_VARIABLE = 'SANITIZE_VARIABLE',
   REFACTOR_COMPLEX_CODE = 'REFACTOR_COMPLEX_CODE',
-  ADD_MISSING_TEST = 'ADD_MISSING_TEST'
+  ADD_MISSING_TEST = 'ADD_MISSING_TEST',
 }
 
 /**

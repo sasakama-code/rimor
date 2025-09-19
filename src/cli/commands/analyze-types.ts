@@ -9,7 +9,7 @@ import {
   TaintAnalysisResult,
   Issue,
   TaintFlow,
-  TaintSummary
+  TaintSummary,
 } from '../../core/types';
 
 // AI JSON出力用の型定義
@@ -68,9 +68,9 @@ export interface ReportResult {
 // 型ガード関数
 export function isAIJsonOutput(value: unknown): value is AIJsonOutput {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.overallAssessment === 'string' &&
     Array.isArray(obj.keyRisks) &&
@@ -81,9 +81,9 @@ export function isAIJsonOutput(value: unknown): value is AIJsonOutput {
 
 export function isAIRisk(value: unknown): value is AIRisk {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.problem === 'string' &&
     ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(obj.riskLevel as string) &&
@@ -94,9 +94,9 @@ export function isAIRisk(value: unknown): value is AIRisk {
 
 function isAIRiskContext(value: unknown): value is AIRiskContext {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.filePath === 'string' &&
     typeof obj.codeSnippet === 'string' &&
@@ -107,9 +107,9 @@ function isAIRiskContext(value: unknown): value is AIRiskContext {
 
 function isAISuggestedAction(value: unknown): value is AISuggestedAction {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.type === 'string' &&
     typeof obj.description === 'string' &&
@@ -119,9 +119,9 @@ function isAISuggestedAction(value: unknown): value is AISuggestedAction {
 
 export function isReportOutput(value: unknown): value is ReportOutput {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.projectPath === 'string' &&
     typeof obj.timestamp === 'string' &&
@@ -133,9 +133,9 @@ export function isReportOutput(value: unknown): value is ReportOutput {
 
 function isReportSummary(value: unknown): value is ReportSummary {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.totalFiles === 'number' &&
     typeof obj.analyzedFiles === 'number' &&
@@ -149,9 +149,9 @@ function isReportSummary(value: unknown): value is ReportSummary {
 
 function isReportResult(value: unknown): value is ReportResult {
   if (!value || typeof value !== 'object') return false;
-  
+
   const obj = value as Record<string, unknown>;
-  
+
   return (
     typeof obj.filePath === 'string' &&
     Array.isArray(obj.issues) &&
@@ -168,25 +168,25 @@ export function convertToAIJson(analysisResult: unknown): AIJsonOutput {
   const issueCount = issues.length;
   const score = issueCount === 0 ? 100 : Math.max(0, 100 - issueCount * 10);
   const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-  
+
   return {
     overallAssessment: `プロジェクト品質評価結果:\n総合スコア: ${score}/100\nグレード: ${grade}\n\n検出された問題: ${issueCount}件`,
-    keyRisks: issues.slice(0, 10).map((issue) => ({
+    keyRisks: issues.slice(0, 10).map(issue => ({
       problem: issue.message || '問題が検出されました',
       riskLevel: mapSeverityToRiskLevel(issue.severity),
       context: {
         filePath: issue.file || 'unknown',
         codeSnippet: '',
         startLine: issue.line || 0,
-        endLine: issue.line || 0
+        endLine: issue.line || 0,
       },
       suggestedAction: {
         type: 'ADD_MISSING_TEST',
         description: 'テストを追加してください',
-        example: ''
-      }
+        example: '',
+      },
     })),
-    fullReportUrl: '.rimor/reports/index.html'
+    fullReportUrl: '.rimor/reports/index.html',
   };
 }
 
@@ -194,7 +194,7 @@ export function convertToReportOutput(taintResult: unknown): ReportOutput {
   const result = taintResult as Partial<TaintAnalysisResult>;
   const flows = result.flows || [];
   const summary = result.summary || createDefaultTaintSummary();
-  
+
   return {
     projectPath: '/project',
     timestamp: new Date().toISOString(),
@@ -205,9 +205,9 @@ export function convertToReportOutput(taintResult: unknown): ReportOutput {
       criticalIssues: summary.criticalFlows || 0,
       highIssues: summary.highFlows || 0,
       mediumIssues: summary.mediumFlows || 0,
-      lowIssues: summary.lowFlows || 0
+      lowIssues: summary.lowFlows || 0,
     },
-    results: []
+    results: [],
   };
 }
 
@@ -238,7 +238,7 @@ function createDefaultTaintSummary(): TaintSummary {
     lowFlows: 0,
     sourcesCount: 0,
     sinksCount: 0,
-    sanitizersCount: 0
+    sanitizersCount: 0,
   };
 }
 

@@ -22,13 +22,14 @@ describe('UnifiedAnalyzeCommand', () => {
   beforeEach(() => {
     // モックのリセット
     jest.clearAllMocks();
-    
+
     // ファイルシステムモック
     (fs.existsSync as jest.Mock).mockReturnValue(true);
     (fs.statSync as jest.Mock).mockReturnValue({ isDirectory: () => true });
-    
+
     // オーケストレータモック
-    mockOrchestrator = new UnifiedSecurityAnalysisOrchestrator() as jest.Mocked<UnifiedSecurityAnalysisOrchestrator>;
+    mockOrchestrator =
+      new UnifiedSecurityAnalysisOrchestrator() as jest.Mocked<UnifiedSecurityAnalysisOrchestrator>;
     command = new UnifiedAnalyzeCommand(mockOrchestrator);
   });
 
@@ -40,7 +41,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act
@@ -58,7 +59,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: '.',
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act
@@ -71,31 +72,29 @@ describe('UnifiedAnalyzeCommand', () => {
     it('存在しないパスを指定した場合、適切なエラーが発生する', async () => {
       // Arrange
       (fs.existsSync as jest.Mock).mockReturnValue(false);
-      
+
       const options = {
         path: '/nonexistent/path',
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act & Assert
-      await expect(command.execute(options))
-        .rejects
-        .toThrow('指定されたパスが存在しません');
+      await expect(command.execute(options)).rejects.toThrow('指定されたパスが存在しません');
     });
 
     it('ファイルパスを指定した場合、適切なエラーが発生する', async () => {
       // Arrange
       (fs.statSync as jest.Mock).mockReturnValue({ isDirectory: () => false });
-      
+
       const options = {
         path: '/test/file.ts',
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act & Assert
-      await expect(command.execute(options))
-        .rejects
-        .toThrow('指定されたパスはディレクトリである必要があります');
+      await expect(command.execute(options)).rejects.toThrow(
+        '指定されたパスはディレクトリである必要があります'
+      );
     });
   });
 
@@ -107,7 +106,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act
@@ -125,7 +124,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'json' as const
+        format: 'json' as const,
       };
 
       // Act
@@ -143,7 +142,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'markdown' as const
+        format: 'markdown' as const,
       };
 
       // Act
@@ -161,7 +160,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'html' as const
+        format: 'html' as const,
       };
 
       // Act
@@ -183,7 +182,7 @@ describe('UnifiedAnalyzeCommand', () => {
       const options = {
         path: testPath,
         format: 'text' as const,
-        verbose: true
+        verbose: true,
       };
 
       // Act
@@ -206,18 +205,14 @@ describe('UnifiedAnalyzeCommand', () => {
       const options = {
         path: testPath,
         format: 'json' as const,
-        output: outputPath
+        output: outputPath,
       };
 
       // Act
       await command.execute(options);
 
       // Assert
-      expect(mockWriteFileSync).toHaveBeenCalledWith(
-        outputPath,
-        expect.any(String),
-        'utf8'
-      );
+      expect(mockWriteFileSync).toHaveBeenCalledWith(outputPath, expect.any(String), 'utf8');
     });
 
     it('includeRecommendationsオプションが正しく処理される', async () => {
@@ -228,7 +223,7 @@ describe('UnifiedAnalyzeCommand', () => {
       const options = {
         path: testPath,
         format: 'text' as const,
-        includeRecommendations: true
+        includeRecommendations: true,
       };
 
       // Act
@@ -250,7 +245,7 @@ describe('UnifiedAnalyzeCommand', () => {
       const options = {
         path: testPath,
         format: 'text' as const,
-        verbose: true
+        verbose: true,
       };
 
       // Act
@@ -259,7 +254,7 @@ describe('UnifiedAnalyzeCommand', () => {
       // Assert
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('分析開始'));
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('完了'));
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -272,13 +267,13 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act & Assert
       await expect(command.execute(options)).rejects.toThrow('分析エラー');
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('エラー'));
-      
+
       consoleErrorSpy.mockRestore();
     });
   });
@@ -295,7 +290,7 @@ describe('UnifiedAnalyzeCommand', () => {
         enableTaintAnalysis: true,
         enableIntentExtraction: true,
         enableGapDetection: false,
-        enableNistEvaluation: true
+        enableNistEvaluation: true,
       };
 
       // Act
@@ -316,7 +311,7 @@ describe('UnifiedAnalyzeCommand', () => {
 
       const options = {
         path: testPath,
-        format: 'text' as const
+        format: 'text' as const,
       };
 
       // Act
@@ -339,8 +334,8 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         totalVulnerabilities: 0,
         highSeverity: 0,
         mediumSeverity: 0,
-        lowSeverity: 0
-      }
+        lowSeverity: 0,
+      },
     },
     intentAnalysis: {
       testIntents: [],
@@ -348,8 +343,8 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         totalTests: 0,
         highRiskTests: 0,
         mediumRiskTests: 0,
-        lowRiskTests: 0
-      }
+        lowRiskTests: 0,
+      },
     },
     gapAnalysis: {
       gaps: [],
@@ -358,8 +353,8 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         criticalGaps: 0,
         highGaps: 0,
         mediumGaps: 0,
-        lowGaps: 0
-      }
+        lowGaps: 0,
+      },
     },
     nistEvaluation: {
       riskAssessments: [],
@@ -370,8 +365,8 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         criticalRisks: 0,
         highRisks: 0,
         mediumRisks: 0,
-        lowRisks: 0
-      }
+        lowRisks: 0,
+      },
     },
     unifiedReport: {
       summary: {
@@ -380,26 +375,26 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         highIssues: 0,
         mediumIssues: 0,
         lowIssues: 0,
-        overallGrade: 'A'
+        overallGrade: 'A',
       },
       taintSummary: {
         totalVulnerabilities: 0,
         highSeverity: 0,
         mediumSeverity: 0,
-        lowSeverity: 0
+        lowSeverity: 0,
       },
       intentSummary: {
         totalTests: 0,
         highRiskTests: 0,
         mediumRiskTests: 0,
-        lowRiskTests: 0
+        lowRiskTests: 0,
       },
       gapSummary: {
         totalGaps: 0,
         criticalGaps: 0,
         highGaps: 0,
         mediumGaps: 0,
-        lowGaps: 0
+        lowGaps: 0,
       },
       nistSummary: {
         overallScore: 100,
@@ -408,7 +403,7 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         criticalRisks: 0,
         highRisks: 0,
         mediumRisks: 0,
-        lowRisks: 0
+        lowRisks: 0,
       },
       overallRiskScore: 100,
       metadata: {
@@ -416,8 +411,8 @@ function createMockUnifiedAnalysisResult(): UnifiedAnalysisResult {
         timestamp: new Date().toISOString(),
         rimorVersion: '0.8.0',
         analysisType: 'unified-security',
-        executionTime: 1000
-      }
-    }
+        executionTime: 1000,
+      },
+    },
   };
 }

@@ -45,16 +45,14 @@ describe('SecurityMisconfigurationPlugin', () => {
 
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
-    expect(plugin.cweIds).toEqual([
-      'CWE-16', 'CWE-611'
-    ]);
+    expect(plugin.cweIds).toEqual(['CWE-16', 'CWE-611']);
   });
 
   describe('isApplicable', () => {
     // ステップ8: Webフレームワークがある場合
     it('should return true when web framework is present', () => {
       const context: ProjectContext = {
-        dependencies: ['express', 'helmet']
+        dependencies: ['express', 'helmet'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -65,8 +63,8 @@ describe('SecurityMisconfigurationPlugin', () => {
         filePatterns: {
           source: ['src/config/security.js', 'src/settings.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -78,8 +76,8 @@ describe('SecurityMisconfigurationPlugin', () => {
         filePatterns: {
           source: ['src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -96,11 +94,13 @@ describe('SecurityMisconfigurationPlugin', () => {
             expect(response.headers['x-frame-options']).toBe('DENY');
             expect(response.headers['content-security-policy']).toBeDefined();
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const securityHeadersPattern = patterns.find(p => p.patternId && p.patternId.includes('security-headers'));
+      const securityHeadersPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('security-headers')
+      );
       expect(securityHeadersPattern).toBeDefined();
       expect(securityHeadersPattern?.confidence).toBeGreaterThan(0.8);
     });
@@ -118,7 +118,7 @@ describe('SecurityMisconfigurationPlugin', () => {
               expect(response.status).toBe(403);
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
@@ -135,11 +135,13 @@ describe('SecurityMisconfigurationPlugin', () => {
             const user = getUser(1);
             expect(user.name).toBe('John');
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-config-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-config-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -150,7 +152,7 @@ describe('SecurityMisconfigurationPlugin', () => {
       const patterns = [
         { patternId: 'config-security-headers', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'config-cors', metadata: { hasTest: true }, confidence: 0.8 },
-        { patternId: 'config-error-handling', metadata: { hasTest: true }, confidence: 0.85 }
+        { patternId: 'config-error-handling', metadata: { hasTest: true }, confidence: 0.85 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -168,7 +170,7 @@ describe('SecurityMisconfigurationPlugin', () => {
         security: 0.3,
         coverage: 30,
         confidence: 0.9,
-        dimensions: {} // QualityScore型に必要
+        dimensions: {}, // QualityScore型に必要
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -186,7 +188,7 @@ describe('SecurityMisconfigurationPlugin', () => {
           it('should have secure headers', () => {
             expect(app.get('x-frame-options')).toBe('DENY');
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -219,7 +221,7 @@ describe('SecurityMisconfigurationPlugin', () => {
     it('should generate security test code', () => {
       const context: ProjectContext = {
         dependencies: ['express', 'helmet'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

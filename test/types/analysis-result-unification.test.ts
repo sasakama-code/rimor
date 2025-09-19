@@ -14,7 +14,7 @@ describe('統一AnalysisResult型の仕様', () => {
     it('必須フィールドを持つこと', () => {
       // 統一型をインポート（まだ存在しない - Red phase）
       // import { AnalysisResult } from '../../src/types/analysis/index';
-      
+
       type AnalysisResult = {
         totalFiles: number;
         issues: any[];
@@ -24,7 +24,7 @@ describe('統一AnalysisResult型の仕様', () => {
       const result: AnalysisResult = {
         totalFiles: 10,
         issues: [],
-        executionTime: 1000
+        executionTime: 1000,
       };
 
       expect(result.totalFiles).toBeDefined();
@@ -48,7 +48,7 @@ describe('統一AnalysisResult型の仕様', () => {
       const minimalResult: AnalysisResult = {
         totalFiles: 5,
         issues: [],
-        executionTime: 500
+        executionTime: 500,
       };
 
       const fullResult: AnalysisResult = {
@@ -58,9 +58,9 @@ describe('統一AnalysisResult型の仕様', () => {
         metadata: {
           startTime: '2025-01-17T00:00:00Z',
           endTime: '2025-01-17T00:00:01Z',
-          version: '1.0.0'
+          version: '1.0.0',
         },
-        pluginsExecuted: ['security', 'performance']
+        pluginsExecuted: ['security', 'performance'],
       };
 
       expect(minimalResult.metadata).toBeUndefined();
@@ -100,14 +100,14 @@ describe('統一AnalysisResult型の仕様', () => {
       const coreResult: CoreAnalysisResult = {
         totalFiles: 5,
         issues: [],
-        executionTime: 100
+        executionTime: 100,
       };
 
       const interfaceResult: InterfaceAnalysisResult = {
         totalFiles: 10,
         issues: [],
         executionTime: 200,
-        pluginsExecuted: ['test']
+        pluginsExecuted: ['test'],
       };
 
       const parallelResult: ParallelAnalysisResult = {
@@ -117,8 +117,8 @@ describe('統一AnalysisResult型の仕様', () => {
         parallelStats: {
           batchCount: 4,
           threadsUsed: 4,
-          speedup: 3.5
-        }
+          speedup: 3.5,
+        },
       };
 
       expect(coreResult.totalFiles).toBe(5);
@@ -143,7 +143,7 @@ describe('統一AnalysisResult型の仕様', () => {
         relativePath: 'src/file.ts',
         totalFiles: 1,
         issues: [],
-        executionTime: 50
+        executionTime: 50,
       };
 
       expect(fileResult.filePath).toBe('/path/to/file.ts');
@@ -154,31 +154,39 @@ describe('統一AnalysisResult型の仕様', () => {
   describe('型ガード', () => {
     it('isAnalysisResult型ガードが正しく動作すること', () => {
       const isAnalysisResult = (obj: any): boolean => {
-        return obj !== null &&
+        return (
+          obj !== null &&
           obj !== undefined &&
           typeof obj === 'object' &&
           typeof obj.totalFiles === 'number' &&
           Array.isArray(obj.issues) &&
-          typeof obj.executionTime === 'number';
+          typeof obj.executionTime === 'number'
+        );
       };
 
-      expect(isAnalysisResult({
-        totalFiles: 10,
-        issues: [],
-        executionTime: 100
-      })).toBe(true);
+      expect(
+        isAnalysisResult({
+          totalFiles: 10,
+          issues: [],
+          executionTime: 100,
+        })
+      ).toBe(true);
 
-      expect(isAnalysisResult({
-        totalFiles: '10', // 型が違う
-        issues: [],
-        executionTime: 100
-      })).toBe(false);
+      expect(
+        isAnalysisResult({
+          totalFiles: '10', // 型が違う
+          issues: [],
+          executionTime: 100,
+        })
+      ).toBe(false);
 
-      expect(isAnalysisResult({
-        issues: [],
-        executionTime: 100
-        // totalFilesが欠けている
-      })).toBe(false);
+      expect(
+        isAnalysisResult({
+          issues: [],
+          executionTime: 100,
+          // totalFilesが欠けている
+        })
+      ).toBe(false);
 
       expect(isAnalysisResult(null)).toBe(false);
       expect(isAnalysisResult(undefined)).toBe(false);
@@ -192,21 +200,27 @@ describe('統一AnalysisResult型の仕様', () => {
       }
 
       const hasPluginMetadata = (obj: any): obj is WithPluginMetadata => {
-        return obj &&
+        return (
+          obj &&
           (obj.pluginsExecuted === undefined || Array.isArray(obj.pluginsExecuted)) &&
-          (obj.metadata === undefined || typeof obj.metadata === 'object');
+          (obj.metadata === undefined || typeof obj.metadata === 'object')
+        );
       };
 
-      expect(hasPluginMetadata({
-        pluginsExecuted: ['test'],
-        metadata: { version: '1.0.0' }
-      })).toBe(true);
+      expect(
+        hasPluginMetadata({
+          pluginsExecuted: ['test'],
+          metadata: { version: '1.0.0' },
+        })
+      ).toBe(true);
 
       expect(hasPluginMetadata({})).toBe(true); // オプショナルフィールド
 
-      expect(hasPluginMetadata({
-        pluginsExecuted: 'not-array' // 型が違う
-      })).toBe(false);
+      expect(
+        hasPluginMetadata({
+          pluginsExecuted: 'not-array', // 型が違う
+        })
+      ).toBe(false);
     });
   });
 
@@ -236,7 +250,7 @@ describe('統一AnalysisResult型の仕様', () => {
         totalFiles: 10,
         issues: [{}, {}],
         executionTime: 100,
-        metadata: { extra: 'data' }
+        metadata: { extra: 'data' },
       };
 
       // NewAnalysisResultはLegacyAnalysisResultのスーパーセット
@@ -259,7 +273,7 @@ describe('統一AnalysisResult型の仕様', () => {
       const result: CoreAnalysisResult = {
         totalFiles: 5,
         issues: [],
-        executionTime: 50
+        executionTime: 50,
       };
 
       // 同じ型として扱える

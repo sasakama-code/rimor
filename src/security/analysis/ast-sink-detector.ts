@@ -1,7 +1,7 @@
 /**
  * TypeScript AST を使用したTaint Sink検出器
  * arXiv:2504.18529v2の理論に基づいた実装
- * 
+ *
  * Sink検出の目的:
  * - セキュリティホールとなる危険な関数呼び出しを特定
  * - 汚染されたデータが到達すると脆弱性を引き起こす箇所を検出
@@ -15,7 +15,15 @@ import * as ts from 'typescript';
  */
 export interface TaintSink {
   /** シンクのタイプ */
-  type: 'sql-injection' | 'path-traversal' | 'command-injection' | 'xss' | 'code-injection' | 'file-write' | 'ssrf-vulnerability' | 'data-integrity-failure';
+  type:
+    | 'sql-injection'
+    | 'path-traversal'
+    | 'command-injection'
+    | 'xss'
+    | 'code-injection'
+    | 'file-write'
+    | 'ssrf-vulnerability'
+    | 'data-integrity-failure';
   /** シンクの詳細カテゴリ */
   category: string;
   /** シンクの場所 */
@@ -56,7 +64,7 @@ export class ASTSinkDetector {
    */
   async detectSinks(sourceCode: string, fileName: string): Promise<TaintSink[]> {
     const isJavaScript = fileName.endsWith('.js');
-    
+
     // TypeScript プログラムの作成
     const compilerOptions: ts.CompilerOptions = {
       target: ts.ScriptTarget.ES2020,
@@ -66,18 +74,24 @@ export class ASTSinkDetector {
       noImplicitAny: !isJavaScript,
       // JSファイルのサポート
       allowJs: true,
-      checkJs: isJavaScript
+      checkJs: isJavaScript,
     };
 
     // 仮想的なファイルシステムでコンパイルホストを作成
     const host = ts.createCompilerHost(compilerOptions);
     const originalGetSourceFile = host.getSourceFile;
-    
+
     host.getSourceFile = (name, languageVersion, onError, shouldCreateNewSourceFile) => {
       if (name === fileName) {
         return ts.createSourceFile(fileName, sourceCode, languageVersion, true);
       }
-      return originalGetSourceFile.call(host, name, languageVersion, onError, shouldCreateNewSourceFile);
+      return originalGetSourceFile.call(
+        host,
+        name,
+        languageVersion,
+        onError,
+        shouldCreateNewSourceFile
+      );
     };
 
     // プログラム作成
@@ -90,7 +104,7 @@ export class ASTSinkDetector {
     }
 
     const sinks: TaintSink[] = [];
-    
+
     // AST をトラバースしてSink を検出
     this.visitNode(this.sourceFile, sinks);
 
@@ -120,7 +134,7 @@ export class ASTSinkDetector {
     }
 
     // 子ノードも再帰的に訪問
-    ts.forEachChild(node, (child) => this.visitNode(child, sinks));
+    ts.forEachChild(node, child => this.visitNode(child, sinks));
   }
 
   /**
@@ -131,14 +145,14 @@ export class ASTSinkDetector {
 
     const functionName = this.extractFunctionName(node);
     const objectName = this.extractObjectName(node);
-    
+
     // メソッド呼び出しの場合は専用ロジックを使用
     if (objectName) {
       const methodSinkInfo = this.identifyMethodSink(objectName, functionName);
       if (methodSinkInfo) {
         const location = this.getNodeLocation(node);
         const args = node.arguments.map(arg => arg.getText(this.sourceFile!));
-        
+
         sinks.push({
           type: methodSinkInfo.type,
           category: methodSinkInfo.category,
@@ -147,21 +161,21 @@ export class ASTSinkDetector {
             functionName,
             objectName,
             arguments: args,
-            dangerousParameterIndex: methodSinkInfo.dangerousParameterIndex
+            dangerousParameterIndex: methodSinkInfo.dangerousParameterIndex,
           },
           riskLevel: methodSinkInfo.riskLevel,
-          confidence: methodSinkInfo.confidence
+          confidence: methodSinkInfo.confidence,
         });
         return; // メソッド呼び出しとして処理完了
       }
     }
-    
+
     // 既知のTaint Sink を検査（単体関数）
     const sinkInfo = this.identifyTaintSink(functionName, objectName);
     if (sinkInfo) {
       const location = this.getNodeLocation(node);
       const args = node.arguments.map(arg => arg.getText(this.sourceFile!));
-      
+
       sinks.push({
         type: sinkInfo.type,
         category: sinkInfo.category,
@@ -170,10 +184,10 @@ export class ASTSinkDetector {
           functionName,
           objectName,
           arguments: args,
-          dangerousParameterIndex: sinkInfo.dangerousParameterIndex
+          dangerousParameterIndex: sinkInfo.dangerousParameterIndex,
         },
         riskLevel: sinkInfo.riskLevel,
-        confidence: sinkInfo.confidence
+        confidence: sinkInfo.confidence,
       });
     }
   }
@@ -185,12 +199,12 @@ export class ASTSinkDetector {
     if (!this.sourceFile) return;
 
     const constructorName = this.extractConstructorName(node);
-    
+
     // 危険なコンストラクタをチェック
     if (constructorName === 'Function') {
       const location = this.getNodeLocation(node);
       const args = node.arguments?.map(arg => arg.getText(this.sourceFile!)) || [];
-      
+
       sinks.push({
         type: 'code-injection',
         category: 'dynamic-execution',
@@ -199,10 +213,10 @@ export class ASTSinkDetector {
           functionName: 'Function',
           objectName: undefined,
           arguments: args,
-          dangerousParameterIndex: args.length > 0 ? args.length - 1 : 0 // 最後の引数がコード
+          dangerousParameterIndex: args.length > 0 ? args.length - 1 : 0, // 最後の引数がコード
         },
         riskLevel: 'CRITICAL',
-        confidence: 0.95
+        confidence: 0.95,
       });
     }
   }
@@ -215,13 +229,13 @@ export class ASTSinkDetector {
 
     const functionName = this.extractFunctionName(node);
     const objectName = this.extractObjectName(node);
-    
+
     // メソッド呼び出し形式のSinkを検査
     const sinkInfo = this.identifyMethodSink(objectName, functionName);
     if (sinkInfo) {
       const location = this.getNodeLocation(node);
       const args = node.arguments.map(arg => arg.getText(this.sourceFile!));
-      
+
       sinks.push({
         type: sinkInfo.type,
         category: sinkInfo.category,
@@ -230,10 +244,10 @@ export class ASTSinkDetector {
           functionName,
           objectName,
           arguments: args,
-          dangerousParameterIndex: sinkInfo.dangerousParameterIndex
+          dangerousParameterIndex: sinkInfo.dangerousParameterIndex,
         },
         riskLevel: sinkInfo.riskLevel,
-        confidence: sinkInfo.confidence
+        confidence: sinkInfo.confidence,
       });
     }
   }
@@ -249,7 +263,7 @@ export class ASTSinkDetector {
     } else if (ts.isPropertyAccessExpression(node.expression)) {
       return node.expression.name.text;
     }
-    
+
     return node.expression.getText(this.sourceFile);
   }
 
@@ -262,7 +276,7 @@ export class ASTSinkDetector {
     if (ts.isPropertyAccessExpression(node.expression)) {
       return node.expression.expression.getText(this.sourceFile);
     }
-    
+
     return undefined;
   }
 
@@ -275,53 +289,63 @@ export class ASTSinkDetector {
     if (ts.isIdentifier(node.expression)) {
       return node.expression.text;
     }
-    
+
     return node.expression.getText(this.sourceFile);
   }
 
   /**
    * 関数ベースのTaint Sinkの特定
    */
-  private identifyTaintSink(functionName: string, objectName?: string): {
+  private identifyTaintSink(
+    functionName: string,
+    objectName?: string
+  ): {
     type: TaintSink['type'];
     category: string;
     riskLevel: TaintSink['riskLevel'];
     confidence: number;
     dangerousParameterIndex: number;
   } | null {
-    
     // SQLクエリ実行
     if (functionName === 'query' || functionName === 'execute') {
       return {
         type: 'sql-injection',
         category: 'database-query',
         riskLevel: 'CRITICAL',
-        confidence: 0.90,
-        dangerousParameterIndex: 0
+        confidence: 0.9,
+        dangerousParameterIndex: 0,
       };
     }
 
     // ファイルシステム操作
-    if (functionName === 'readFile' || functionName === 'readFileSync' ||
-        functionName === 'writeFile' || functionName === 'writeFileSync') {
+    if (
+      functionName === 'readFile' ||
+      functionName === 'readFileSync' ||
+      functionName === 'writeFile' ||
+      functionName === 'writeFileSync'
+    ) {
       return {
         type: 'path-traversal',
         category: 'filesystem',
         riskLevel: 'HIGH',
         confidence: 0.85,
-        dangerousParameterIndex: 0
+        dangerousParameterIndex: 0,
       };
     }
 
     // コマンド実行
-    if (functionName === 'exec' || functionName === 'execSync' ||
-        functionName === 'spawn' || functionName === 'spawnSync') {
+    if (
+      functionName === 'exec' ||
+      functionName === 'execSync' ||
+      functionName === 'spawn' ||
+      functionName === 'spawnSync'
+    ) {
       return {
         type: 'command-injection',
         category: 'system-command',
         riskLevel: 'CRITICAL',
         confidence: 0.95,
-        dangerousParameterIndex: 0
+        dangerousParameterIndex: 0,
       };
     }
 
@@ -332,7 +356,7 @@ export class ASTSinkDetector {
         category: 'dynamic-execution',
         riskLevel: 'CRITICAL',
         confidence: 0.95,
-        dangerousParameterIndex: 0
+        dangerousParameterIndex: 0,
       };
     }
 
@@ -342,8 +366,8 @@ export class ASTSinkDetector {
         type: 'ssrf-vulnerability',
         category: 'network-request',
         riskLevel: 'HIGH',
-        confidence: 0.90,
-        dangerousParameterIndex: 0
+        confidence: 0.9,
+        dangerousParameterIndex: 0,
       };
     }
 
@@ -354,7 +378,7 @@ export class ASTSinkDetector {
         category: 'deserialization',
         riskLevel: 'HIGH',
         confidence: 0.85,
-        dangerousParameterIndex: 0
+        dangerousParameterIndex: 0,
       };
     }
 
@@ -364,14 +388,16 @@ export class ASTSinkDetector {
   /**
    * メソッドベースのTaint Sinkの特定
    */
-  private identifyMethodSink(objectName: string | undefined, methodName: string): {
+  private identifyMethodSink(
+    objectName: string | undefined,
+    methodName: string
+  ): {
     type: TaintSink['type'];
     category: string;
     riskLevel: TaintSink['riskLevel'];
     confidence: number;
     dangerousParameterIndex: number;
   } | null {
-    
     // データベースオブジェクトのメソッド
     if (objectName && ['db', 'connection', 'pool'].includes(objectName.toLowerCase())) {
       if (methodName === 'query' || methodName === 'execute') {
@@ -379,8 +405,8 @@ export class ASTSinkDetector {
           type: 'sql-injection',
           category: 'database-method',
           riskLevel: 'CRITICAL',
-          confidence: 0.90,
-          dangerousParameterIndex: 0
+          confidence: 0.9,
+          dangerousParameterIndex: 0,
         };
       }
     }
@@ -393,7 +419,7 @@ export class ASTSinkDetector {
           category: 'fs-method',
           riskLevel: 'HIGH',
           confidence: 0.85,
-          dangerousParameterIndex: 0
+          dangerousParameterIndex: 0,
         };
       }
     }
@@ -405,8 +431,8 @@ export class ASTSinkDetector {
           type: 'xss',
           category: 'http-response',
           riskLevel: 'HIGH',
-          confidence: 0.80,
-          dangerousParameterIndex: 0
+          confidence: 0.8,
+          dangerousParameterIndex: 0,
         };
       }
     }
@@ -419,7 +445,7 @@ export class ASTSinkDetector {
           category: 'dom-manipulation',
           riskLevel: 'HIGH',
           confidence: 0.85,
-          dangerousParameterIndex: 0
+          dangerousParameterIndex: 0,
         };
       }
     }
@@ -432,7 +458,7 @@ export class ASTSinkDetector {
           category: 'child-process',
           riskLevel: 'CRITICAL',
           confidence: 0.95,
-          dangerousParameterIndex: 0
+          dangerousParameterIndex: 0,
         };
       }
     }
@@ -444,7 +470,7 @@ export class ASTSinkDetector {
         category: 'deserialization',
         riskLevel: 'HIGH',
         confidence: 0.85,
-        dangerousParameterIndex: 0
+        dangerousParameterIndex: 0,
       };
     }
 
@@ -462,12 +488,12 @@ export class ASTSinkDetector {
     const sourceFile = this.sourceFile;
     const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
     const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
-    
+
     return {
       file: sourceFile.fileName,
       line: start.line + 1, // 1-based line numbers
       column: start.character + 1, // 1-based column numbers
-      length: node.getEnd() - node.getStart(sourceFile)
+      length: node.getEnd() - node.getStart(sourceFile),
     };
   }
 
@@ -476,16 +502,16 @@ export class ASTSinkDetector {
    */
   private removeDuplicateSinks(sinks: TaintSink[]): TaintSink[] {
     const seen = new Map<string, TaintSink>();
-    
+
     for (const sink of sinks) {
       // ユニークキーを作成（位置 + 関数呼び出し）
       const key = `${sink.location.file}:${sink.location.line}:${sink.location.column}:${sink.dangerousFunction.functionName}:${sink.dangerousFunction.objectName || ''}`;
-      
+
       if (!seen.has(key)) {
         seen.set(key, sink);
       }
     }
-    
+
     return Array.from(seen.values());
   }
 }

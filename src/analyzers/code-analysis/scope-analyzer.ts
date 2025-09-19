@@ -12,7 +12,7 @@ export class ScopeAnalyzer {
     const lines = fileContent.split('\n');
     const scopeStack: ScopeInfo[] = [];
     let braceLevel = 0;
-    
+
     // グローバルスコープを作成
     const globalScope: ScopeInfo = {
       type: 'global',
@@ -23,24 +23,33 @@ export class ScopeAnalyzer {
       children: [],
       functions: [],
       level: 0,
-      parentScope: undefined
+      parentScope: undefined,
     };
     scopes.push(globalScope);
     scopeStack.push(globalScope);
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
       const trimmedLine = line.trim();
-      
+
       // スコープ開始の検出（{の前に判定）
       const scopeType = this.determineScopeType(line);
       const hasOpenBrace = line.includes('{');
-      
-      if (hasOpenBrace && (scopeType === 'function' || scopeType === 'block' || scopeType === 'if' || scopeType === 'loop')) {
+
+      if (
+        hasOpenBrace &&
+        (scopeType === 'function' ||
+          scopeType === 'block' ||
+          scopeType === 'if' ||
+          scopeType === 'loop')
+      ) {
         const parentScope = scopeStack[scopeStack.length - 1];
         const newScope: ScopeInfo = {
-          type: scopeType === 'if' || scopeType === 'loop' ? 'block' : scopeType as 'global' | 'function' | 'class' | 'block' | 'module',
+          type:
+            scopeType === 'if' || scopeType === 'loop'
+              ? 'block'
+              : (scopeType as 'global' | 'function' | 'class' | 'block' | 'module'),
           startLine: lineNumber,
           endLine: -1,
           variables: [],
@@ -48,16 +57,16 @@ export class ScopeAnalyzer {
           children: [],
           functions: [],
           level: scopeStack.length,
-          parentScope: parentScope?.type
+          parentScope: parentScope?.type,
         };
-        
+
         scopes.push(newScope);
         scopeStack.push(newScope);
         if (parentScope) {
           parentScope.children.push(newScope);
         }
       }
-      
+
       // 現在のスコープに変数を追加
       const currentScope = scopeStack[scopeStack.length - 1];
       if (currentScope) {
@@ -65,7 +74,7 @@ export class ScopeAnalyzer {
         if (variable) {
           currentScope.variables.push(variable);
         }
-        
+
         const functionName = this.extractFunctionFromLine(line);
         if (functionName) {
           if (!currentScope.functions) {
@@ -74,14 +83,14 @@ export class ScopeAnalyzer {
           currentScope.functions.push(functionName);
         }
       }
-      
+
       // ブレースのカウント
       for (const char of line) {
         if (char === '{') {
           braceLevel++;
         } else if (char === '}') {
           braceLevel--;
-          
+
           // スコープの終了
           if (scopeStack.length > 1) {
             const closingScope = scopeStack.pop();
@@ -92,14 +101,14 @@ export class ScopeAnalyzer {
         }
       }
     }
-    
+
     // 未完了のスコープを閉じる
     for (const scope of scopes) {
       if (scope.endLine === -1) {
         scope.endLine = lines.length;
       }
     }
-    
+
     // すべてのスコープを返す（getScopeHierarchyなどで使用するため）
     return scopes;
   }
@@ -121,12 +130,12 @@ export class ScopeAnalyzer {
     // 同期的に処理を実行（後方互換性のため）
     const scopes: ScopeInfo[] = [];
     const lines = content.split('\n');
-    
+
     // 簡易的なスコープ抽出
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = line.trim();
-      
+
       if (trimmedLine.includes('{')) {
         scopes.push({
           type: 'block',
@@ -134,11 +143,11 @@ export class ScopeAnalyzer {
           endLine: i + 1,
           variables: [],
           children: [],
-          level: 0
+          level: 0,
         });
       }
     }
-    
+
     return scopes;
   }
 
@@ -147,14 +156,14 @@ export class ScopeAnalyzer {
    */
   findScopeAtLine(scopes: ScopeInfo[], targetLine: number): ScopeInfo | null {
     // 対象行を含むすべてのスコープを見つける
-    const containingScopes = scopes.filter(scope => 
-      targetLine >= scope.startLine && targetLine <= scope.endLine
+    const containingScopes = scopes.filter(
+      scope => targetLine >= scope.startLine && targetLine <= scope.endLine
     );
-    
+
     if (containingScopes.length === 0) {
       return null;
     }
-    
+
     // レベルが最も深いスコープを返す
     containingScopes.sort((a, b) => (b.level || 0) - (a.level || 0));
     return containingScopes[0];
@@ -165,15 +174,15 @@ export class ScopeAnalyzer {
    */
   getScopeHierarchy(scopes: ScopeInfo[], targetLine: number): ScopeInfo[] {
     const hierarchy: ScopeInfo[] = [];
-    
+
     // 対象行を含むすべてのスコープを収集
-    const containingScopes = scopes.filter(scope => 
-      targetLine >= scope.startLine && targetLine <= scope.endLine
+    const containingScopes = scopes.filter(
+      scope => targetLine >= scope.startLine && targetLine <= scope.endLine
     );
-    
+
     // レベル順にソート
     containingScopes.sort((a, b) => (a.level || 0) - (b.level || 0));
-    
+
     return containingScopes;
   }
 
@@ -198,44 +207,57 @@ export class ScopeAnalyzer {
    */
   private determineScopeType(line: string): string {
     const trimmedLine = line.trim();
-    
+
     // 関数定義の検出（より厳密に）
-    if (trimmedLine.match(/(?:async\s+)?function\s+[a-zA-Z_$]/) || 
-        trimmedLine.match(/(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?function/) ||
-        trimmedLine.match(/(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*\([^)]*\)\s*=>/) ||
-        trimmedLine.match(/^\s*(?:async\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/) && !trimmedLine.includes('if') && !trimmedLine.includes('for') && !trimmedLine.includes('while')) {
+    if (
+      trimmedLine.match(/(?:async\s+)?function\s+[a-zA-Z_$]/) ||
+      trimmedLine.match(
+        /(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?function/
+      ) ||
+      trimmedLine.match(/(?:const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*\([^)]*\)\s*=>/) ||
+      (trimmedLine.match(
+        /^\s*(?:async\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/
+      ) &&
+        !trimmedLine.includes('if') &&
+        !trimmedLine.includes('for') &&
+        !trimmedLine.includes('while'))
+    ) {
       return 'function';
     }
-    
+
     if (trimmedLine.includes('class ')) {
       return 'class';
     }
-    
+
     if (trimmedLine.match(/\bif\s*\(/)) {
       return 'if';
     }
-    
+
     if (trimmedLine.match(/\b(?:for|while)\s*\(/)) {
       return 'loop';
     }
-    
+
     if (trimmedLine.match(/\btry\s*\{/)) {
       return 'try';
     }
-    
+
     if (trimmedLine.match(/\bcatch\s*\(/)) {
       return 'catch';
     }
-    
+
     if (trimmedLine.includes('=>') && trimmedLine.includes('{')) {
       return 'function';
     }
-    
+
     // ブロックスコープ（単独の{}）
-    if (trimmedLine === '{' || (trimmedLine.includes('{') && !trimmedLine.match(/\b(?:function|class|if|for|while|try|catch)\b/))) {
+    if (
+      trimmedLine === '{' ||
+      (trimmedLine.includes('{') &&
+        !trimmedLine.match(/\b(?:function|class|if|for|while|try|catch)\b/))
+    ) {
       return 'block';
     }
-    
+
     return 'block';
   }
 
@@ -245,16 +267,16 @@ export class ScopeAnalyzer {
   private extractVariableFromLine(line: string): string | null {
     const patterns = [
       /(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/,
-      /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?!function)/
+      /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?!function)/,
     ];
-    
+
     for (const pattern of patterns) {
       const match = line.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return null;
   }
 
@@ -266,16 +288,16 @@ export class ScopeAnalyzer {
       /function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/,
       /(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?:async\s+)?function/,
       /(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
-      /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:async\s+)?function/
+      /([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:async\s+)?function/,
     ];
-    
+
     for (const pattern of patterns) {
       const match = line.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return null;
   }
 
@@ -284,7 +306,7 @@ export class ScopeAnalyzer {
    */
   calculateNestingLevel(line: string, currentLevel: number): number {
     let level = currentLevel;
-    
+
     for (const char of line) {
       if (char === '{') {
         level++;
@@ -292,7 +314,7 @@ export class ScopeAnalyzer {
         level--;
       }
     }
-    
+
     return Math.max(0, level);
   }
 
@@ -309,12 +331,12 @@ export class ScopeAnalyzer {
       endLine: number;
       capturedVariables: string[];
     }> = [];
-    
+
     const lines = fileContent.split('\n');
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // 関数内関数や関数を返す関数を検出
       if (line.includes('function') && (line.includes('return') || line.includes('=>'))) {
         const capturedVars = this.findCapturedVariables(lines, i);
@@ -322,12 +344,12 @@ export class ScopeAnalyzer {
           closures.push({
             startLine: i + 1,
             endLine: this.findClosureEnd(lines, i),
-            capturedVariables: capturedVars
+            capturedVariables: capturedVars,
           });
         }
       }
     }
-    
+
     return closures;
   }
 
@@ -337,14 +359,14 @@ export class ScopeAnalyzer {
   private findCapturedVariables(lines: string[], startLine: number): string[] {
     const capturedVars: string[] = [];
     const localVars = new Set<string>();
-    
+
     // 関数の終了を探す
     let braceCount = 0;
     let foundStart = false;
-    
+
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const char of line) {
         if (char === '{') {
           braceCount++;
@@ -353,14 +375,14 @@ export class ScopeAnalyzer {
           braceCount--;
         }
       }
-      
+
       if (foundStart) {
         // ローカル変数を収集
         const localVar = this.extractVariableFromLine(line);
         if (localVar) {
           localVars.add(localVar);
         }
-        
+
         // 変数の使用を検出
         const usedVars = this.extractUsedVariables(line);
         for (const usedVar of usedVars) {
@@ -369,12 +391,12 @@ export class ScopeAnalyzer {
           }
         }
       }
-      
+
       if (foundStart && braceCount === 0) {
         break;
       }
     }
-    
+
     return capturedVars;
   }
 
@@ -385,13 +407,13 @@ export class ScopeAnalyzer {
     const variables: string[] = [];
     const pattern = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g;
     const matches = line.matchAll(pattern);
-    
+
     for (const match of matches) {
       if (match[1] && !this.isKeyword(match[1])) {
         variables.push(match[1]);
       }
     }
-    
+
     return variables;
   }
 
@@ -400,12 +422,41 @@ export class ScopeAnalyzer {
    */
   private isKeyword(word: string): boolean {
     const keywords = [
-      'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
-      'do', 'switch', 'case', 'break', 'continue', 'try', 'catch', 'finally',
-      'throw', 'new', 'this', 'super', 'class', 'extends', 'import', 'export',
-      'default', 'async', 'await', 'yield', 'typeof', 'instanceof', 'in', 'of'
+      'const',
+      'let',
+      'var',
+      'function',
+      'return',
+      'if',
+      'else',
+      'for',
+      'while',
+      'do',
+      'switch',
+      'case',
+      'break',
+      'continue',
+      'try',
+      'catch',
+      'finally',
+      'throw',
+      'new',
+      'this',
+      'super',
+      'class',
+      'extends',
+      'import',
+      'export',
+      'default',
+      'async',
+      'await',
+      'yield',
+      'typeof',
+      'instanceof',
+      'in',
+      'of',
     ];
-    
+
     return keywords.includes(word);
   }
 
@@ -415,10 +466,10 @@ export class ScopeAnalyzer {
   private findClosureEnd(lines: string[], startLine: number): number {
     let braceCount = 0;
     let foundStart = false;
-    
+
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const char of line) {
         if (char === '{') {
           braceCount++;
@@ -427,12 +478,12 @@ export class ScopeAnalyzer {
           braceCount--;
         }
       }
-      
+
       if (foundStart && braceCount === 0) {
         return i + 1;
       }
     }
-    
+
     return lines.length;
   }
 
@@ -449,32 +500,33 @@ export class ScopeAnalyzer {
       outerScope: ScopeInfo;
       innerScope: ScopeInfo;
     }> = [];
-    
+
     for (let i = 0; i < scopes.length; i++) {
       const outerScope = scopes[i];
-      
+
       for (let j = i + 1; j < scopes.length; j++) {
         const innerScope = scopes[j];
-        
+
         // 内側のスコープが外側のスコープに含まれているかチェック
-        if (innerScope.startLine >= outerScope.startLine && 
-            innerScope.endLine <= outerScope.endLine &&
-            (innerScope.level || 0) > (outerScope.level || 0)) {
-          
+        if (
+          innerScope.startLine >= outerScope.startLine &&
+          innerScope.endLine <= outerScope.endLine &&
+          (innerScope.level || 0) > (outerScope.level || 0)
+        ) {
           // 同じ変数名を探す
           for (const outerVar of outerScope.variables) {
             if (innerScope.variables.includes(outerVar)) {
               shadowings.push({
                 variable: outerVar,
                 outerScope,
-                innerScope
+                innerScope,
               });
             }
           }
         }
       }
     }
-    
+
     return shadowings;
   }
 }

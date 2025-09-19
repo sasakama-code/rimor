@@ -1,7 +1,7 @@
 /**
  * ImpactEvaluator
  * ビジネスインパクト評価システム
- * 
+ *
  * SOLID原則: 単一責任の原則 - ビジネスインパクト評価に特化
  * DRY原則: 共通ロジックの一元化
  * KISS原則: シンプルで理解しやすい実装
@@ -222,13 +222,13 @@ export class ImpactEvaluator {
     }
 
     const scoreMap: Record<ImpactLevel, number> = {
-      'VERY_HIGH': 100,
-      'HIGH': 80,
-      'MODERATE': 60,
-      'LOW': 40,
-      'VERY_LOW': 20
+      VERY_HIGH: 100,
+      HIGH: 80,
+      MODERATE: 60,
+      LOW: 40,
+      VERY_LOW: 20,
     };
-    
+
     return scoreMap[level];
   }
 
@@ -242,8 +242,10 @@ export class ImpactEvaluator {
     }
 
     // ビジネス価値とダウンタイム影響から評価
-    const isHighValue = criticalPath.businessValue === 'CRITICAL' || criticalPath.businessValue === 'HIGH';
-    const isSevereImpact = criticalPath.downTimeImpact === 'SEVERE' || criticalPath.downTimeImpact === 'HIGH';
+    const isHighValue =
+      criticalPath.businessValue === 'CRITICAL' || criticalPath.businessValue === 'HIGH';
+    const isSevereImpact =
+      criticalPath.downTimeImpact === 'SEVERE' || criticalPath.downTimeImpact === 'HIGH';
 
     let riskLevel: RiskLevel;
     let businessImpactScore: number;
@@ -270,7 +272,7 @@ export class ImpactEvaluator {
     return {
       riskLevel,
       businessImpactScore,
-      urgency
+      urgency,
     };
   }
 
@@ -283,15 +285,15 @@ export class ImpactEvaluator {
       return {
         totalAssets: 0,
         criticalAssets: 0,
-        overallImpact: affectedAssets === null ? 'NONE' as any : 'LOW'
+        overallImpact: affectedAssets === null ? ('NONE' as any) : 'LOW',
       };
     }
 
     const totalAssets = affectedAssets.length;
     const criticalAssets = affectedAssets.filter(asset => asset.criticality === 'HIGH').length;
-    
+
     let overallImpact: ImpactScope['overallImpact'];
-    
+
     if (criticalAssets > 0) {
       overallImpact = 'HIGH';
     } else if (affectedAssets.some(asset => asset.criticality === 'MEDIUM')) {
@@ -303,7 +305,7 @@ export class ImpactEvaluator {
     return {
       totalAssets,
       criticalAssets,
-      overallImpact
+      overallImpact,
     };
   }
 
@@ -321,7 +323,7 @@ export class ImpactEvaluator {
     const totalLoss = revenueLoss + operationalCost;
 
     let severity: FinancialImpact['severity'];
-    
+
     if (totalLoss >= 1000000) {
       severity = 'CRITICAL';
     } else if (totalLoss >= 100000) {
@@ -336,7 +338,7 @@ export class ImpactEvaluator {
       totalLoss,
       revenueLoss,
       operationalCost,
-      severity
+      severity,
     };
   }
 
@@ -351,7 +353,7 @@ export class ImpactEvaluator {
 
     let riskLevel: RiskLevel;
     let reputationalDamage: ComplianceImpact['reputationalDamage'];
-    
+
     // GDPR等の重要な規制
     if (compliance.regulation === 'GDPR' || compliance.regulation === 'HIPAA') {
       if (compliance.violationType === 'DATA_BREACH' && compliance.affectedRecords >= 1000) {
@@ -367,15 +369,12 @@ export class ImpactEvaluator {
     }
 
     // 潜在的な罰金の計算（簡略化）
-    const potentialPenalty = Math.min(
-      compliance.maxPenalty,
-      compliance.affectedRecords * 100
-    );
+    const potentialPenalty = Math.min(compliance.maxPenalty, compliance.affectedRecords * 100);
 
     return {
       riskLevel,
       potentialPenalty,
-      reputationalDamage
+      reputationalDamage,
     };
   }
 
@@ -394,7 +393,7 @@ export class ImpactEvaluator {
 
     const isHighExposure = incident.publicExposure === 'HIGH';
     const isSignificantAttention = incident.mediaAttention === 'SIGNIFICANT';
-    
+
     if (incident.type === 'DATA_BREACH' && isHighExposure && isSignificantAttention) {
       severity = 'HIGH';
       recoveryTime = 'MONTHS';
@@ -412,7 +411,7 @@ export class ImpactEvaluator {
     return {
       severity,
       recoveryTime,
-      customerTrustLoss
+      customerTrustLoss,
     };
   }
 
@@ -491,7 +490,7 @@ export class ImpactEvaluator {
 
     // 最高リスクレベルを決定
     const overallRiskLevel = this.getHighestRiskLevel(risks);
-    
+
     // 総合スコアを計算
     const totalImpactScore = scoreCount > 0 ? totalScore / scoreCount : 0;
 
@@ -499,7 +498,7 @@ export class ImpactEvaluator {
       overallRiskLevel,
       totalImpactScore,
       primaryConcern,
-      recommendations
+      recommendations,
     };
   }
 
@@ -512,13 +511,13 @@ export class ImpactEvaluator {
       throw new Error('CustomerImpactInfo is required');
     }
 
-    const potentialRevenueLoss = 
-      customerImpact.affectedCustomers * 
-      customerImpact.averageLifetimeValue * 
+    const potentialRevenueLoss =
+      customerImpact.affectedCustomers *
+      customerImpact.averageLifetimeValue *
       customerImpact.churnProbability;
 
     let riskLevel: CustomerChurnRisk['riskLevel'];
-    
+
     if (potentialRevenueLoss >= 5000000) {
       riskLevel = 'CRITICAL';
     } else if (potentialRevenueLoss >= 1000000) {
@@ -531,7 +530,7 @@ export class ImpactEvaluator {
 
     return {
       potentialRevenueLoss,
-      riskLevel
+      riskLevel,
     };
   }
 
@@ -549,10 +548,10 @@ export class ImpactEvaluator {
       technical: 0.2,
       business: 0.4,
       financial: 0.25,
-      reputation: 0.15
+      reputation: 0.15,
     };
 
-    const combinedScore = 
+    const combinedScore =
       impacts.technical.score * weights.technical +
       impacts.business.score * weights.business +
       impacts.financial.score * weights.financial +
@@ -561,9 +560,9 @@ export class ImpactEvaluator {
     // 最も重大な要因を特定
     const risks = Object.entries(impacts).map(([key, value]) => ({
       name: key,
-      score: value.score
+      score: value.score,
     }));
-    const primaryRisk = risks.reduce((max, current) => 
+    const primaryRisk = risks.reduce((max, current) =>
       current.score > max.score ? current : max
     ).name;
 
@@ -584,7 +583,7 @@ export class ImpactEvaluator {
     return {
       combinedScore,
       primaryRisk,
-      riskLevel
+      riskLevel,
     };
   }
 
@@ -603,7 +602,7 @@ export class ImpactEvaluator {
     const longRecovery = timeFactors.recoveryTime > 30;
 
     let urgencyLevel: TemporalImpact['urgencyLevel'];
-    
+
     if (hasLongTermCritical && longRecovery) {
       urgencyLevel = 'IMMEDIATE';
     } else if (hasShortTermHigh || longRecovery) {
@@ -615,12 +614,11 @@ export class ImpactEvaluator {
     }
 
     // エスカレーションリスクの判定
-    const escalationRisk = hasLongTermCritical || 
-      (hasShortTermHigh && longRecovery);
+    const escalationRisk = hasLongTermCritical || (hasShortTermHigh && longRecovery);
 
     return {
       urgencyLevel,
-      escalationRisk
+      escalationRisk,
     };
   }
 
@@ -640,7 +638,7 @@ export class ImpactEvaluator {
       strategies.push({
         priority: 'IMMEDIATE',
         strategy: 'フェイルオーバーシステムの即座な起動と切り替え',
-        estimatedEffort: '1-2時間'
+        estimatedEffort: '1-2時間',
       });
     }
 
@@ -649,7 +647,7 @@ export class ImpactEvaluator {
       strategies.push({
         priority: 'HIGH',
         strategy: '決済システムの代替ルート確立',
-        estimatedEffort: '2-4時間'
+        estimatedEffort: '2-4時間',
       });
     }
 
@@ -657,7 +655,7 @@ export class ImpactEvaluator {
       strategies.push({
         priority: 'HIGH',
         strategy: '認証システムのバックアップ起動',
-        estimatedEffort: '1-3時間'
+        estimatedEffort: '1-3時間',
       });
     }
 
@@ -666,7 +664,7 @@ export class ImpactEvaluator {
       strategies.push({
         priority: 'MEDIUM',
         strategy: '影響範囲の特定と一時的な回避策の実施',
-        estimatedEffort: '4-8時間'
+        estimatedEffort: '4-8時間',
       });
     }
 
@@ -690,11 +688,7 @@ export class ImpactEvaluator {
     phases.push({
       name: '初期対応',
       duration: 1,
-      tasks: [
-        'インシデントチーム招集',
-        '影響範囲の特定',
-        '暫定対策の実施'
-      ]
+      tasks: ['インシデントチーム招集', '影響範囲の特定', '暫定対策の実施'],
     });
     totalTime += 1;
     criticalMilestones.push('インシデント対応開始');
@@ -704,11 +698,7 @@ export class ImpactEvaluator {
     phases.push({
       name: 'システム復旧',
       duration: recoveryDuration,
-      tasks: [
-        'システムバックアップからの復元',
-        '機能テストの実施',
-        '段階的サービス再開'
-      ]
+      tasks: ['システムバックアップからの復元', '機能テストの実施', '段階的サービス再開'],
     });
     totalTime += recoveryDuration;
     criticalMilestones.push('主要システム復旧');
@@ -717,11 +707,7 @@ export class ImpactEvaluator {
     phases.push({
       name: '正常化',
       duration: 2,
-      tasks: [
-        '全サービスの復旧確認',
-        'パフォーマンス監視',
-        '顧客通知'
-      ]
+      tasks: ['全サービスの復旧確認', 'パフォーマンス監視', '顧客通知'],
     });
     totalTime += 2;
     criticalMilestones.push('完全復旧');
@@ -731,11 +717,7 @@ export class ImpactEvaluator {
       phases.push({
         name: '事後対応',
         duration: 3,
-        tasks: [
-          '根本原因分析',
-          '再発防止策の策定',
-          'ポストモーテム実施'
-        ]
+        tasks: ['根本原因分析', '再発防止策の策定', 'ポストモーテム実施'],
       });
       totalTime += 3;
       criticalMilestones.push('改善策実装');
@@ -744,7 +726,7 @@ export class ImpactEvaluator {
     return {
       phases,
       totalEstimatedTime: totalTime,
-      criticalMilestones
+      criticalMilestones,
     };
   }
 
@@ -761,7 +743,7 @@ export class ImpactEvaluator {
       [CoreTypes.RiskLevel.HIGH]: 4,
       [CoreTypes.RiskLevel.MEDIUM]: 3,
       [CoreTypes.RiskLevel.LOW]: 2,
-      [CoreTypes.RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.MINIMAL]: 1,
     };
 
     return risks.reduce((highest, current) => {

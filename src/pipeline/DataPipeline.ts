@@ -4,16 +4,16 @@
  * Phase 4: データパイプラインの実装
  */
 
-import { 
-  TaintAnalysisResult, 
-  IntentAnalysisResult, 
-  GapAnalysisResult, 
-  NistEvaluationResult 
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+  NistEvaluationResult,
 } from '../orchestrator/types';
 
 import {
   DataTransformationStrategyFactory,
-  TransformationError
+  TransformationError,
 } from './strategies/DataTransformationStrategies';
 
 /**
@@ -135,13 +135,13 @@ export class DataPipeline {
       batchSize: 10,
       timeoutMs: 30000,
       enableCaching: false,
-      ...config
+      ...config,
     };
 
     this.healthStatus = {
       isHealthy: true,
       processedCount: 0,
-      errorCount: 0
+      errorCount: 0,
     };
   }
 
@@ -153,24 +153,26 @@ export class DataPipeline {
   async transformTaintToIntent(taintResult: TaintAnalysisResult): Promise<IntentExtractionInput> {
     try {
       // Strategy Patternの適用：戦略の動的選択
-      const strategy = DataTransformationStrategyFactory.createStrategy<TaintAnalysisResult, IntentExtractionInput>('taint-to-intent');
-      
+      const strategy = DataTransformationStrategyFactory.createStrategy<
+        TaintAnalysisResult,
+        IntentExtractionInput
+      >('taint-to-intent');
+
       // 戦略による変換実行
       const result = await strategy.transform(taintResult);
-      
+
       // 成功時の後処理
       this.updateProcessedCount();
       return result;
-
     } catch (error) {
       // エラーハンドリングの強化
       this.handleTransformationError(error, 'transformTaintToIntent');
-      
+
       // より具体的なエラー情報の提供
       if (error instanceof TransformationError) {
         throw error; // カスタムエラーはそのまま再スロー
       }
-      
+
       throw new TransformationError(
         `TaintToIntent変換に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         'TRANSFORMATION_FAILED',
@@ -184,32 +186,31 @@ export class DataPipeline {
    * Strategy Pattern: 複合入力を処理する戦略の適用
    */
   async transformIntentToGap(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapDetectionInput> {
     try {
       // Strategy Patternの適用：複合入力用戦略の取得
       const strategy = DataTransformationStrategyFactory.createStrategy<
-        {intent: IntentAnalysisResult, taint: TaintAnalysisResult}, 
+        { intent: IntentAnalysisResult; taint: TaintAnalysisResult },
         GapDetectionInput
       >('intent-to-gap');
-      
+
       // 戦略による変換実行
       const result = await strategy.transform({ intent: intentResult, taint: taintResult });
-      
+
       // 成功時の後処理
       this.updateProcessedCount();
       return result;
-
     } catch (error) {
       // エラーハンドリングの強化
       this.handleTransformationError(error, 'transformIntentToGap');
-      
+
       // カスタムエラーの適切な処理
       if (error instanceof TransformationError) {
         throw error;
       }
-      
+
       throw new TransformationError(
         `IntentToGap変換に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         'TRANSFORMATION_FAILED',
@@ -230,30 +231,29 @@ export class DataPipeline {
     try {
       // Strategy Patternの適用：3入力用戦略の取得
       const strategy = DataTransformationStrategyFactory.createStrategy<
-        {gap: GapAnalysisResult, intent: IntentAnalysisResult, taint: TaintAnalysisResult}, 
+        { gap: GapAnalysisResult; intent: IntentAnalysisResult; taint: TaintAnalysisResult },
         NistEvaluationInput
       >('gap-to-nist');
-      
+
       // 戦略による変換実行
-      const result = await strategy.transform({ 
-        gap: gapResult, 
-        intent: intentResult, 
-        taint: taintResult 
+      const result = await strategy.transform({
+        gap: gapResult,
+        intent: intentResult,
+        taint: taintResult,
       });
-      
+
       // 成功時の後処理
       this.updateProcessedCount();
       return result;
-
     } catch (error) {
       // エラーハンドリングの強化
       this.handleTransformationError(error, 'transformGapToNist');
-      
+
       // カスタムエラーの適切な処理
       if (error instanceof TransformationError) {
         throw error;
       }
-      
+
       throw new TransformationError(
         `GapToNist変換に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         'TRANSFORMATION_FAILED',
@@ -266,23 +266,23 @@ export class DataPipeline {
    * リトライ付き実行
    * エラー処理とリカバリ機能
    */
-  async executeWithRetry<T>(
-    operation: (data: any) => Promise<T>,
-    data: any
-  ): Promise<T> {
+  async executeWithRetry<T>(operation: (data: any) => Promise<T>, data: any): Promise<T> {
     if (!this.retryStrategy) {
       return await operation(data);
     }
 
     let lastError: Error;
-    
+
     for (let attempt = 0; attempt <= this.retryStrategy.maxRetries; attempt++) {
       try {
         return await operation(data);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
-        if (attempt === this.retryStrategy.maxRetries || !this.retryStrategy.shouldRetry(lastError)) {
+
+        if (
+          attempt === this.retryStrategy.maxRetries ||
+          !this.retryStrategy.shouldRetry(lastError)
+        ) {
           break;
         }
 
@@ -298,7 +298,7 @@ export class DataPipeline {
    * カスタム変換器の登録
    */
   registerTransformer<TInput, TOutput>(
-    name: string, 
+    name: string,
     transformer: IDataTransformer<TInput, TOutput>
   ): void {
     this.transformers.set(name, transformer);
@@ -403,7 +403,7 @@ export class DataPipeline {
    */
   private calculateOverallRiskLevel(taintResult: TaintAnalysisResult): string {
     const { highSeverity, mediumSeverity, lowSeverity } = taintResult.summary;
-    
+
     if (highSeverity > 0) return 'HIGH';
     if (mediumSeverity > 0) return 'MEDIUM';
     if (lowSeverity > 0) return 'LOW';
@@ -420,10 +420,13 @@ export class DataPipeline {
   /**
    * 結合リスク評価
    */
-  private assessCombinedRisk(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): string {
+  private assessCombinedRisk(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): string {
     const intentRisk = intentResult.summary.highRiskTests > 0 ? 'HIGH' : 'LOW';
     const taintRisk = this.calculateOverallRiskLevel(taintResult);
-    
+
     if (intentRisk === 'HIGH' || taintRisk === 'HIGH') return 'HIGH';
     return 'MEDIUM';
   }
@@ -432,7 +435,7 @@ export class DataPipeline {
    * 結合リスクレベル計算
    */
   private calculateCombinedRiskLevel(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): string {
     return this.assessCombinedRisk(intentResult, taintResult);
@@ -447,7 +450,7 @@ export class DataPipeline {
   ): number {
     const totalVulns = taintResult.summary.totalVulnerabilities;
     const coveredVulns = intentResult.testIntents.length;
-    
+
     if (totalVulns === 0) return 100;
     return Math.min(100, (coveredVulns / totalVulns) * 100);
   }
@@ -460,7 +463,7 @@ export class DataPipeline {
     taintResult: TaintAnalysisResult
   ): string {
     const coverage = this.calculateTestCoverage(intentResult, taintResult);
-    
+
     if (coverage >= 80) return 'STRONG';
     if (coverage >= 60) return 'MODERATE';
     return 'WEAK';
@@ -472,9 +475,9 @@ export class DataPipeline {
   private analyzeIntentRiskProfile(intentResult: IntentAnalysisResult): string {
     const total = intentResult.summary.totalTests;
     const highRisk = intentResult.summary.highRiskTests;
-    
+
     if (total === 0) return 'UNKNOWN';
-    
+
     const riskRatio = highRisk / total;
     if (riskRatio >= 0.5) return 'HIGH_RISK_DOMINANT';
     if (riskRatio >= 0.2) return 'MIXED_RISK';
@@ -490,7 +493,7 @@ export class DataPipeline {
   ): string {
     const criticalGaps = gapResult.summary.criticalGaps;
     const testCoverage = intentResult.summary.totalTests;
-    
+
     if (criticalGaps === 0 && testCoverage > 0) return 'COMPLIANT';
     if (criticalGaps <= 2) return 'PARTIALLY_COMPLIANT';
     return 'NON_COMPLIANT';
@@ -505,7 +508,7 @@ export class DataPipeline {
   ): string {
     const totalVulns = taintResult.summary.totalVulnerabilities;
     const criticalGaps = gapResult.summary.criticalGaps;
-    
+
     if (totalVulns > 10 && criticalGaps > 3) return 'HIGH_THREAT';
     if (totalVulns > 5 || criticalGaps > 1) return 'MODERATE_THREAT';
     return 'LOW_THREAT';
@@ -520,9 +523,9 @@ export class DataPipeline {
   ): string {
     const vulnTypes = new Set(taintResult.vulnerabilities.map(v => v.type)).size;
     const testTypes = new Set(intentResult.testIntents.map((t: any) => t.riskLevel)).size;
-    
+
     const complexity = vulnTypes + testTypes;
-    
+
     if (complexity >= 8) return 'EXTENSIVE';
     if (complexity >= 4) return 'MODERATE';
     return 'LIMITED';
@@ -541,7 +544,7 @@ export class DataPipeline {
   private handleTransformationError(error: unknown, operation: string): void {
     this.healthStatus.errorCount++;
     this.healthStatus.lastError = error instanceof Error ? error : new Error(String(error));
-    
+
     if (this.healthStatus.errorCount > 10) {
       this.healthStatus.isHealthy = false;
     }

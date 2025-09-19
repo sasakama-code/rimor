@@ -1,13 +1,13 @@
 /**
  * Structured Reporter
  * v0.9.0 - Phase 4: Context Engineering
- * 
+ *
  * 分析結果を決定論的な構造化JSONに変換する
  * これが全ての出力の「単一の真実の源」となる
  */
 
 import { injectable } from 'inversify';
-import { 
+import {
   StructuredAnalysisResult,
   AnalysisMetadata,
   AnalysisSummary,
@@ -18,7 +18,7 @@ import {
   AnalysisMetrics,
   CodeLocation,
   DataFlow,
-  PluginResult
+  PluginResult,
 } from './types';
 import { AnalysisResult as CoreAnalysisResult } from '../core/interfaces/IAnalysisEngine';
 import { SecurityAuditResult, SecurityThreat } from '../core/interfaces/ISecurityAuditor';
@@ -49,7 +49,7 @@ export class StructuredReporter {
       summary,
       issues,
       metrics,
-      plugins: this.extractPluginResults(result)
+      plugins: this.extractPluginResults(result),
     };
   }
 
@@ -67,21 +67,15 @@ export class StructuredReporter {
     );
 
     // 問題をマージ（重複を避ける）
-    const mergedIssues = this.mergeIssues(
-      structuredResult.issues,
-      securityIssues
-    );
+    const mergedIssues = this.mergeIssues(structuredResult.issues, securityIssues);
 
     // サマリーを再計算
-    const updatedSummary = this.createSummary(
-      structuredResult.summary.totalFiles,
-      mergedIssues
-    );
+    const updatedSummary = this.createSummary(structuredResult.summary.totalFiles, mergedIssues);
 
     return {
       ...structuredResult,
       summary: updatedSummary,
-      issues: mergedIssues
+      issues: mergedIssues,
     };
   }
 
@@ -92,12 +86,12 @@ export class StructuredReporter {
     // PIIマスキングを適用
     const resolvedPath = path.resolve(analyzedPath);
     const maskedPath = PathSecurity.toRelativeOrMasked(resolvedPath);
-    
+
     return {
       version: this.version,
       timestamp: new Date().toISOString(),
       analyzedPath: maskedPath,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 
@@ -112,7 +106,7 @@ export class StructuredReporter {
       totalFiles,
       totalIssues: issues.length,
       issueBySeverity,
-      issueByType
+      issueByType,
     };
   }
 
@@ -125,7 +119,7 @@ export class StructuredReporter {
       high: 0,
       medium: 0,
       low: 0,
-      info: 0
+      info: 0,
     };
 
     issues.forEach(issue => {
@@ -156,15 +150,17 @@ export class StructuredReporter {
    * コア形式の問題を構造化形式に変換
    */
   private convertIssues(coreIssues: CoreIssue[], basePath: string): Issue[] {
-    return coreIssues.map((coreIssue, index) => 
-      this.convertIssue(coreIssue, index, basePath)
-    );
+    return coreIssues.map((coreIssue, index) => this.convertIssue(coreIssue, index, basePath));
   }
 
   /**
    * 個別の問題を変換
    */
-  private convertIssue(coreIssue: CoreIssue | ExtendedIssue, index: number, basePath: string): Issue {
+  private convertIssue(
+    coreIssue: CoreIssue | ExtendedIssue,
+    index: number,
+    basePath: string
+  ): Issue {
     const extIssue = coreIssue as ExtendedIssue;
     const id = this.generateIssueId(coreIssue.type, index);
     const type = this.mapIssueType(coreIssue.type);
@@ -177,7 +173,7 @@ export class StructuredReporter {
       severity,
       location,
       message: coreIssue.message,
-      category: coreIssue.category
+      category: coreIssue.category,
     } as Issue;
 
     // オプショナルフィールドの追加
@@ -201,10 +197,7 @@ export class StructuredReporter {
   /**
    * セキュリティ問題を変換
    */
-  private convertSecurityIssues(
-    threats: SecurityThreat[],
-    basePath: string
-  ): Issue[] {
+  private convertSecurityIssues(threats: SecurityThreat[], basePath: string): Issue[] {
     return threats.map((threat, index) => {
       const id = this.generateIssueId(threat.type || 'SECURITY', index + 1000);
       const type = this.mapSecurityType(threat.type);
@@ -217,10 +210,10 @@ export class StructuredReporter {
         location: {
           file: path.relative(basePath, threat.file || ''),
           startLine: threat.line || 1,
-          endLine: threat.line || 1
+          endLine: threat.line || 1,
         },
         message: threat.message || 'Security vulnerability detected',
-        category: 'security' // セキュリティカテゴリを追加
+        category: 'security', // セキュリティカテゴリを追加
       } as Issue;
 
       // 推奨事項を追加
@@ -264,11 +257,11 @@ export class StructuredReporter {
       'test-quality': IssueType.TEST_QUALITY,
       'code-quality': IssueType.CODE_QUALITY,
       'sql-injection': IssueType.SQL_INJECTION,
-      'SQL_INJECTION': IssueType.SQL_INJECTION,
-      'xss': IssueType.XSS,
-      'XSS': IssueType.XSS,
+      SQL_INJECTION: IssueType.SQL_INJECTION,
+      xss: IssueType.XSS,
+      XSS: IssueType.XSS,
       'path-traversal': IssueType.PATH_TRAVERSAL,
-      'PATH_TRAVERSAL': IssueType.PATH_TRAVERSAL
+      PATH_TRAVERSAL: IssueType.PATH_TRAVERSAL,
     };
 
     return typeMap[coreType] || IssueType.CODE_QUALITY;
@@ -279,15 +272,15 @@ export class StructuredReporter {
    */
   private mapSecurityType(threatType: string): IssueType {
     const typeMap: Record<string, IssueType> = {
-      'injection': IssueType.SQL_INJECTION,
-      'xss': IssueType.XSS,
-      'path_traversal': IssueType.PATH_TRAVERSAL,
-      'csrf': IssueType.SECURITY_MISCONFIGURATION,
-      'auth_bypass': IssueType.SECURITY_MISCONFIGURATION,
-      'data_exposure': IssueType.SENSITIVE_DATA_EXPOSURE,
-      'insecure_crypto': IssueType.SECURITY_MISCONFIGURATION,
-      'hardcoded_secret': IssueType.SENSITIVE_DATA_EXPOSURE,
-      'unvalidated_input': IssueType.SECURITY_MISCONFIGURATION
+      injection: IssueType.SQL_INJECTION,
+      xss: IssueType.XSS,
+      path_traversal: IssueType.PATH_TRAVERSAL,
+      csrf: IssueType.SECURITY_MISCONFIGURATION,
+      auth_bypass: IssueType.SECURITY_MISCONFIGURATION,
+      data_exposure: IssueType.SENSITIVE_DATA_EXPOSURE,
+      insecure_crypto: IssueType.SECURITY_MISCONFIGURATION,
+      hardcoded_secret: IssueType.SENSITIVE_DATA_EXPOSURE,
+      unvalidated_input: IssueType.SECURITY_MISCONFIGURATION,
     };
 
     return typeMap[threatType.toLowerCase()] || IssueType.SECURITY_MISCONFIGURATION;
@@ -298,15 +291,15 @@ export class StructuredReporter {
    */
   private mapSeverity(coreSeverity: string | undefined): Severity {
     if (!coreSeverity) return Severity.LOW;
-    
+
     const severityMap: Record<string, Severity> = {
-      'error': Severity.HIGH,
-      'warning': Severity.MEDIUM,
-      'info': Severity.INFO,
-      'critical': Severity.CRITICAL,
-      'high': Severity.HIGH,
-      'medium': Severity.MEDIUM,
-      'low': Severity.LOW
+      error: Severity.HIGH,
+      warning: Severity.MEDIUM,
+      info: Severity.INFO,
+      critical: Severity.CRITICAL,
+      high: Severity.HIGH,
+      medium: Severity.MEDIUM,
+      low: Severity.LOW,
     };
 
     return severityMap[coreSeverity.toLowerCase()] || Severity.LOW;
@@ -317,13 +310,13 @@ export class StructuredReporter {
    */
   private mapToIssueBySeverity(severity: string): keyof IssueBySeverity {
     const mappingTable: Record<string, keyof IssueBySeverity> = {
-      'critical': 'critical',
-      'error': 'high',  // errorをhighにマップ
-      'high': 'high',
-      'warning': 'medium',  // warningをmediumにマップ
-      'medium': 'medium',
-      'low': 'low',
-      'info': 'info'
+      critical: 'critical',
+      error: 'high', // errorをhighにマップ
+      high: 'high',
+      warning: 'medium', // warningをmediumにマップ
+      medium: 'medium',
+      low: 'low',
+      info: 'info',
     };
 
     return mappingTable[severity.toLowerCase()] || 'low';
@@ -336,7 +329,7 @@ export class StructuredReporter {
     const location: CodeLocation = {
       file: path.relative(basePath, coreIssue.file || ''),
       startLine: coreIssue.line || 1,
-      endLine: coreIssue.endLine || coreIssue.line || 1
+      endLine: coreIssue.endLine || coreIssue.line || 1,
     };
 
     if (coreIssue.column) {
@@ -362,13 +355,22 @@ export class StructuredReporter {
   /**
    * 脆弱性の位置情報を変換
    */
-  private convertVulnLocation(vulnLocation: { file?: string; line?: number; endLine?: number; column?: number; endColumn?: number }, basePath: string): CodeLocation {
+  private convertVulnLocation(
+    vulnLocation: {
+      file?: string;
+      line?: number;
+      endLine?: number;
+      column?: number;
+      endColumn?: number;
+    },
+    basePath: string
+  ): CodeLocation {
     return {
       file: path.relative(basePath, vulnLocation.file || ''),
       startLine: vulnLocation.line || 1,
       endLine: vulnLocation.endLine || vulnLocation.line || 1,
       startColumn: vulnLocation.column,
-      endColumn: vulnLocation.endColumn
+      endColumn: vulnLocation.endColumn,
     };
   }
 
@@ -380,7 +382,7 @@ export class StructuredReporter {
     const testCoverage = {
       overall: this.calculateOverallCoverage(result),
       byModule: this.calculateModuleCoverage(result),
-      missingTests: this.extractMissingTests(result)
+      missingTests: this.extractMissingTests(result),
     };
 
     // コード品質メトリクス（将来の拡張用）
@@ -388,17 +390,17 @@ export class StructuredReporter {
       complexity: {
         average: 0,
         max: 0,
-        highComplexityMethods: []
+        highComplexityMethods: [],
       },
       maintainability: {
         score: 100,
-        issues: []
-      }
+        issues: [],
+      },
     };
 
     return {
       testCoverage,
-      codeQuality
+      codeQuality,
     };
   }
 
@@ -408,9 +410,7 @@ export class StructuredReporter {
   private calculateOverallCoverage(result: CoreAnalysisResult): number {
     if (result.totalFiles === 0) return 100;
 
-    const testedFiles = result.issues.filter(
-      issue => issue.type !== 'test-missing'
-    ).length;
+    const testedFiles = result.issues.filter(issue => issue.type !== 'test-missing').length;
 
     return Math.round((testedFiles / result.totalFiles) * 100);
   }
@@ -418,26 +418,28 @@ export class StructuredReporter {
   /**
    * モジュール別のカバレッジを計算
    */
-  private calculateModuleCoverage(result: CoreAnalysisResult): Record<string, { coverage: number; testedFiles: number; untestedFiles: number }> {
+  private calculateModuleCoverage(
+    result: CoreAnalysisResult
+  ): Record<string, { coverage: number; testedFiles: number; untestedFiles: number }> {
     // 簡易実装：将来的にはモジュール情報を詳細に解析
     return {
-      'src': {
+      src: {
         coverage: this.calculateOverallCoverage(result),
         testedFiles: result.totalFiles,
-        untestedFiles: 0
-      }
+        untestedFiles: 0,
+      },
     };
   }
 
   /**
    * テストが不足しているファイルを抽出
    */
-  private extractMissingTests(result: CoreAnalysisResult): Array<{file: string, reason: string}> {
+  private extractMissingTests(result: CoreAnalysisResult): Array<{ file: string; reason: string }> {
     return result.issues
       .filter(issue => issue.type === 'test-missing')
       .map(issue => ({
         file: issue.file || '',
-        reason: issue.message
+        reason: issue.message,
       }));
   }
 
@@ -454,7 +456,7 @@ export class StructuredReporter {
           executed: true,
           issues: result.issues.filter(
             issue => (issue as ExtendedIssue & { plugin?: string }).plugin === pluginName
-          ).length
+          ).length,
         };
       });
     }
@@ -494,14 +496,10 @@ export class StructuredReporter {
       issue.severity,
       issue.location?.file || '',
       issue.location?.startLine || 0,
-      issue.location?.endLine || 0
+      issue.location?.endLine || 0,
     ];
 
-    return crypto
-      .createHash('sha256')
-      .update(parts.join('|'))
-      .digest('hex')
-      .substring(0, 16);
+    return crypto.createHash('sha256').update(parts.join('|')).digest('hex').substring(0, 16);
   }
 
   /**
@@ -510,7 +508,7 @@ export class StructuredReporter {
   toJSON(result: StructuredAnalysisResult): string {
     // 循環参照を検出するためのWeakSet
     const seen = new WeakSet();
-    
+
     const replacer = (key: string, value: unknown): unknown => {
       if (value && typeof value === 'object') {
         // 循環参照のチェック
@@ -518,19 +516,21 @@ export class StructuredReporter {
           return '[Circular Reference]';
         }
         seen.add(value);
-        
+
         // 配列でない場合はキーをソート
         if (!Array.isArray(value)) {
           const sorted: Record<string, unknown> = {};
-          Object.keys(value).sort().forEach(k => {
-            sorted[k] = (value as any)[k];
-          });
+          Object.keys(value)
+            .sort()
+            .forEach(k => {
+              sorted[k] = (value as any)[k];
+            });
           return sorted;
         }
       }
       return value;
     };
-    
+
     return JSON.stringify(result, replacer, 2);
   }
 }

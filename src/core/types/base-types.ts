@@ -8,7 +8,12 @@
 // export type SeverityLevel = 'info' | 'low' | 'medium' | 'high' | 'critical'; // Removed duplicate definition
 
 // Security-related types
-export type SecurityThreatType = 'xss' | 'sql-injection' | 'path-traversal' | 'command-injection' | 'other';
+export type SecurityThreatType =
+  | 'xss'
+  | 'sql-injection'
+  | 'path-traversal'
+  | 'command-injection'
+  | 'other';
 
 // SecurityType列挙型（値として使用可能）
 export enum SecurityType {
@@ -33,12 +38,17 @@ export enum SecurityType {
   /** 入力検証型 */
   INPUT_VALIDATION = 'input-validation',
   /** APIセキュリティ型 */
-  API_SECURITY = 'api-security'
+  API_SECURITY = 'api-security',
 }
 
 // 共通型定義からインポート（重複を避けるため）
 import { CoreTypes, TypeGuards, TypeUtils } from './core-definitions';
-import type { TaintLevel, TaintSource, SecuritySink, SanitizerType } from '../../types/common-types';
+import type {
+  TaintLevel,
+  TaintSource,
+  SecuritySink,
+  SanitizerType,
+} from '../../types/common-types';
 export type { TaintLevel, TaintSource, SecuritySink, SanitizerType };
 
 // Re-export Issue from CoreTypes for backward compatibility
@@ -51,19 +61,33 @@ export type PluginType = 'core' | 'framework' | 'pattern' | 'domain' | 'security
 export type TestType = 'unit' | 'integration' | 'e2e' | 'performance' | 'security' | 'unknown';
 
 // Quality dimensions
-export type QualityDimension = 'completeness' | 'correctness' | 'maintainability' | 'performance' | 'security';
+export type QualityDimension =
+  | 'completeness'
+  | 'correctness'
+  | 'maintainability'
+  | 'performance'
+  | 'security';
 
 // Improvement types and priorities
-export type ImprovementType = 
+export type ImprovementType =
   // 基本的な改善タイプ
-  | 'add' | 'modify' | 'remove' | 'refactor'
+  | 'add'
+  | 'modify'
+  | 'remove'
+  | 'refactor'
   // テスト関連の改善タイプ
-  | 'add-test' | 'fix-assertion' | 'improve-coverage'
+  | 'add-test'
+  | 'fix-assertion'
+  | 'improve-coverage'
   // セキュリティ関連の改善タイプ
-  | 'add-input-validation-tests' | 'enhance-sanitization-testing' 
-  | 'add-boundary-condition-tests' | 'improve-error-handling-tests'
+  | 'add-input-validation-tests'
+  | 'enhance-sanitization-testing'
+  | 'add-boundary-condition-tests'
+  | 'improve-error-handling-tests'
   // その他の改善タイプ
-  | 'documentation' | 'performance' | 'security';
+  | 'documentation'
+  | 'performance'
+  | 'security';
 export type ImprovementPriority = 'low' | 'medium' | 'high' | 'critical';
 
 // Position in source code
@@ -139,15 +163,15 @@ export interface BaseIssue {
   // Identification
   id?: string;
   type: string;
-  
+
   // Severity and priority
   severity: IssueSeverity;
   priority?: number;
-  
+
   // Description
   message: string;
   details?: string;
-  
+
   // Location
   filePath: string; // Required for compatibility
   file?: string;
@@ -157,30 +181,30 @@ export interface BaseIssue {
   endColumn?: number;
   location?: CodeLocation;
   position?: Position;
-  
+
   // Resolution
   recommendation?: string;
   suggestedFix?: string;
   autoFixable?: boolean;
-  
+
   // Context
   codeSnippet?: string;
   context?: string[];
-  
+
   // Source
   plugin?: string;
   rule?: string;
   category: IssueCategory; // Required for compatibility
-  
+
   // Additional info
   documentation?: string;
   examples?: string[];
   references?: string[];
   tags?: string[];
-  
+
   // Confidence
   confidence?: ConfidenceInfo;
-  
+
   // Metadata
   metadata?: Record<string, unknown>;
 }

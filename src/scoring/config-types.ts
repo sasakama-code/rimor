@@ -8,10 +8,13 @@ import { GradeType, WeightConfig } from './types';
  * Legacy configuration structure for backward compatibility
  */
 export interface LegacyConfig {
-  plugins?: Record<string, {
-    weight?: number;
-    [key: string]: unknown;
-  }>;
+  plugins?: Record<
+    string,
+    {
+      weight?: number;
+      [key: string]: unknown;
+    }
+  >;
   quality?: {
     thresholds?: {
       excellent?: number;
@@ -39,13 +42,7 @@ export interface LegacyConfig {
 /**
  * JSON value types for safe parsing
  */
-export type JsonValue = 
-  | string 
-  | number 
-  | boolean 
-  | null 
-  | JsonObject 
-  | JsonArray;
+export type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
 export interface JsonObject {
   [key: string]: JsonValue;
@@ -82,9 +79,7 @@ export interface PartialScoringConfig {
  * Type guards
  */
 export function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === 'object' && 
-         value !== null && 
-         !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isJsonArray(value: unknown): value is JsonArray {
@@ -108,24 +103,24 @@ export function isJsonValue(value: unknown): value is JsonValue {
 export function isLegacyConfig(value: unknown): value is LegacyConfig {
   if (!isJsonObject(value)) return false;
   const config = value as Record<string, unknown>;
-  
+
   // Check optional properties have correct types
   if (config.plugins !== undefined && !isJsonObject(config.plugins)) return false;
   if (config.quality !== undefined && !isJsonObject(config.quality)) return false;
   if (config.strictMode !== undefined && typeof config.strictMode !== 'boolean') return false;
   if (config.scoring !== undefined && !isJsonObject(config.scoring)) return false;
-  
+
   return true;
 }
 
 export function isPartialScoringConfig(value: unknown): value is PartialScoringConfig {
   if (!isJsonObject(value)) return false;
   const config = value as Record<string, unknown>;
-  
+
   if (config.enabled !== undefined && typeof config.enabled !== 'boolean') return false;
   if (config.weights !== undefined && !isJsonObject(config.weights)) return false;
   if (config.gradeThresholds !== undefined && !isJsonObject(config.gradeThresholds)) return false;
   if (config.options !== undefined && !isJsonObject(config.options)) return false;
-  
+
   return true;
 }

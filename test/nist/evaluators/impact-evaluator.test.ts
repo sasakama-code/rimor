@@ -1,7 +1,7 @@
 /**
  * ImpactEvaluator テスト
  * ビジネスインパクト評価システムのテスト仕様
- * 
+ *
  * TDD Red Phase: 失敗するテストを最初に作成
  * YAGNI原則: 必要な機能のみテスト
  */
@@ -32,7 +32,7 @@ describe('ImpactEvaluator', () => {
         pathName: '決済処理システム',
         components: ['auth', 'payment', 'database'],
         businessValue: 'CRITICAL' as const,
-        downTimeImpact: 'SEVERE' as const
+        downTimeImpact: 'SEVERE' as const,
       };
 
       const impact = evaluator.assessCriticalPathImpact(criticalPath);
@@ -45,7 +45,7 @@ describe('ImpactEvaluator', () => {
       const affectedAssets = [
         { assetId: 'A-001', type: 'DATABASE', criticality: 'HIGH' as const },
         { assetId: 'A-002', type: 'API', criticality: 'MEDIUM' as const },
-        { assetId: 'A-003', type: 'UI', criticality: 'LOW' as const }
+        { assetId: 'A-003', type: 'UI', criticality: 'LOW' as const },
       ];
 
       const scope = evaluator.calculateImpactScope(affectedAssets);
@@ -60,7 +60,7 @@ describe('ImpactEvaluator', () => {
       const downtime = {
         estimatedHours: 4,
         revenuePerHour: 50000,
-        operationalCostPerHour: 10000
+        operationalCostPerHour: 10000,
       };
 
       const financialImpact = evaluator.calculateFinancialImpact(downtime);
@@ -75,7 +75,7 @@ describe('ImpactEvaluator', () => {
         regulation: 'GDPR',
         violationType: 'DATA_BREACH',
         affectedRecords: 10000,
-        maxPenalty: 20000000
+        maxPenalty: 20000000,
       };
 
       const impact = evaluator.assessComplianceImpact(compliance);
@@ -91,7 +91,7 @@ describe('ImpactEvaluator', () => {
         type: 'DATA_BREACH',
         publicExposure: 'HIGH' as const,
         mediaAttention: 'SIGNIFICANT' as const,
-        customerImpact: 5000
+        customerImpact: 5000,
       };
 
       const reputationImpact = evaluator.assessReputationImpact(incident);
@@ -104,7 +104,7 @@ describe('ImpactEvaluator', () => {
       const customerImpact = {
         affectedCustomers: 1000,
         averageLifetimeValue: 10000,
-        churnProbability: 0.2
+        churnProbability: 0.2,
       };
 
       const churnRisk = evaluator.calculateCustomerChurnRisk(customerImpact);
@@ -119,7 +119,7 @@ describe('ImpactEvaluator', () => {
         technical: { severity: 'HIGH', score: 80 },
         business: { severity: 'CRITICAL', score: 95 },
         financial: { severity: 'MODERATE', score: 60 },
-        reputation: { severity: 'HIGH', score: 75 }
+        reputation: { severity: 'HIGH', score: 75 },
       };
 
       const overallImpact = evaluator.calculateOverallImpact(impacts);
@@ -133,7 +133,7 @@ describe('ImpactEvaluator', () => {
         immediateImpact: 'MODERATE',
         shortTermImpact: 'HIGH',
         longTermImpact: 'CRITICAL',
-        recoveryTime: 90 // days
+        recoveryTime: 90, // days
       };
 
       const temporalImpact = evaluator.assessTemporalImpact(timeFactors);
@@ -147,7 +147,7 @@ describe('ImpactEvaluator', () => {
       const impact = {
         level: 'CRITICAL' as ImpactLevel,
         type: 'BUSINESS_CONTINUITY',
-        affectedSystems: ['payment', 'authentication']
+        affectedSystems: ['payment', 'authentication'],
       };
 
       const mitigations = evaluator.generateMitigationStrategies(impact);
@@ -160,7 +160,7 @@ describe('ImpactEvaluator', () => {
       const incident = {
         impactLevel: 'HIGH' as ImpactLevel,
         affectedComponents: 5,
-        estimatedDowntime: 4
+        estimatedDowntime: 4,
       };
 
       const recoveryPlan = evaluator.generateRecoveryPlan(incident);
@@ -172,8 +172,7 @@ describe('ImpactEvaluator', () => {
 
   describe('エラーハンドリング', () => {
     it('無効な影響度レベルを適切に処理する', () => {
-      expect(() => evaluator.impactLevelToScore('INVALID' as any))
-        .toThrow('Invalid impact level');
+      expect(() => evaluator.impactLevelToScore('INVALID' as any)).toThrow('Invalid impact level');
     });
 
     it('nullの資産リストを適切に処理する', () => {

@@ -1,14 +1,17 @@
 /**
  * RiskLevel Enum移行ユーティリティ
  * v0.8.0のSeverity/RiskLevel（小文字）からv0.9.0のRiskLevel（大文字）への移行
- * 
+ *
  * DRY原則: 共通変換ロジックの一元化
  * KISS原則: シンプルで明確な変換処理
  */
 
 import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
-import { Severity as OldSeverity, IntentRiskLevel as OldRiskLevel } from '../../intent-analysis/ITestIntentAnalyzer';
+import {
+  Severity as OldSeverity,
+  IntentRiskLevel as OldRiskLevel,
+} from '../../intent-analysis/ITestIntentAnalyzer';
 
 /**
  * リスクレベル移行統計
@@ -41,20 +44,20 @@ export class RiskLevelMigrator {
    */
   migrateFromSeverity(severity: OldSeverity): RiskLevel {
     const mapping: Record<string, RiskLevel> = {
-      'critical': CoreTypes.RiskLevel.CRITICAL,
-      'high': CoreTypes.RiskLevel.HIGH,
-      'medium': CoreTypes.RiskLevel.MEDIUM,
-      'low': CoreTypes.RiskLevel.LOW
+      critical: CoreTypes.RiskLevel.CRITICAL,
+      high: CoreTypes.RiskLevel.HIGH,
+      medium: CoreTypes.RiskLevel.MEDIUM,
+      low: CoreTypes.RiskLevel.LOW,
     };
 
     const severityValue = severity.toLowerCase();
     const mapped = mapping[severityValue];
-    
+
     if (!mapped) {
       // SeverityにMINIMALは存在しないため、デフォルトでLOWを返す
       return CoreTypes.RiskLevel.LOW;
     }
-    
+
     return mapped;
   }
 
@@ -63,20 +66,20 @@ export class RiskLevelMigrator {
    */
   migrateFromOldRiskLevel(oldRiskLevel: OldRiskLevel): RiskLevel {
     const mapping: Record<string, RiskLevel> = {
-      'critical': CoreTypes.RiskLevel.CRITICAL,
-      'high': CoreTypes.RiskLevel.HIGH,
-      'medium': CoreTypes.RiskLevel.MEDIUM,
-      'low': CoreTypes.RiskLevel.LOW,
-      'minimal': CoreTypes.RiskLevel.MINIMAL
+      critical: CoreTypes.RiskLevel.CRITICAL,
+      high: CoreTypes.RiskLevel.HIGH,
+      medium: CoreTypes.RiskLevel.MEDIUM,
+      low: CoreTypes.RiskLevel.LOW,
+      minimal: CoreTypes.RiskLevel.MINIMAL,
     };
 
     const riskValue = oldRiskLevel.toLowerCase();
     const mapped = mapping[riskValue];
-    
+
     if (!mapped) {
       throw new Error(`Unknown old risk level: ${oldRiskLevel}`);
     }
-    
+
     return mapped;
   }
 
@@ -86,7 +89,7 @@ export class RiskLevelMigrator {
    */
   migrateFromString(value: string): RiskLevel {
     const normalizedValue = value.toUpperCase();
-    
+
     switch (normalizedValue) {
       case 'CRITICAL':
         return CoreTypes.RiskLevel.CRITICAL;
@@ -134,7 +137,7 @@ export class RiskLevelMigrator {
       HIGH: 0,
       MEDIUM: 0,
       LOW: 0,
-      MINIMAL: 0
+      MINIMAL: 0,
     };
 
     for (const severity of severities) {
@@ -163,7 +166,7 @@ export class RiskLevelMigrator {
       [CoreTypes.RiskLevel.HIGH]: 4,
       [CoreTypes.RiskLevel.MEDIUM]: 3,
       [CoreTypes.RiskLevel.LOW]: 2,
-      [CoreTypes.RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.MINIMAL]: 1,
     };
     return priorities[riskLevel];
   }

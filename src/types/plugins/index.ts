@@ -1,6 +1,6 @@
 /**
  * プラグイン関連の統一型定義
- * 
+ *
  * プラグインシステムの型定義を集約
  * ISP（インターフェース分離原則）に基づいた設計
  */
@@ -10,25 +10,25 @@ import type { Issue } from '../../core/types/core-definitions';
 /**
  * プラグインの種類
  */
-export type PluginType = 
-  | 'ANALYZER'      // 分析プラグイン
-  | 'FORMATTER'     // フォーマッタープラグイン
-  | 'REPORTER'      // レポータープラグイン
-  | 'TRANSFORMER'   // トランスフォーマープラグイン
-  | 'VALIDATOR'     // バリデータープラグイン
-  | 'SECURITY'      // セキュリティプラグイン
-  | 'PERFORMANCE'   // パフォーマンスプラグイン
-  | 'QUALITY';      // 品質プラグイン
+export type PluginType =
+  | 'ANALYZER' // 分析プラグイン
+  | 'FORMATTER' // フォーマッタープラグイン
+  | 'REPORTER' // レポータープラグイン
+  | 'TRANSFORMER' // トランスフォーマープラグイン
+  | 'VALIDATOR' // バリデータープラグイン
+  | 'SECURITY' // セキュリティプラグイン
+  | 'PERFORMANCE' // パフォーマンスプラグイン
+  | 'QUALITY'; // 品質プラグイン
 
 /**
  * プラグインの状態
  */
-export type PluginStatus = 
-  | 'ACTIVE'        // アクティブ
-  | 'INACTIVE'      // 非アクティブ
-  | 'LOADING'       // ロード中
-  | 'ERROR'         // エラー
-  | 'DISABLED';     // 無効化
+export type PluginStatus =
+  | 'ACTIVE' // アクティブ
+  | 'INACTIVE' // 非アクティブ
+  | 'LOADING' // ロード中
+  | 'ERROR' // エラー
+  | 'DISABLED'; // 無効化
 
 /**
  * プラグインの優先度
@@ -273,32 +273,36 @@ export interface IPluginManager {
  * 型ガード: IPluginかどうかを判定
  */
 export function isPlugin(obj: unknown): obj is IPlugin {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'name' in obj &&
     'type' in obj &&
     'execute' in obj &&
     typeof (obj as any).name === 'string' &&
     (obj as any).type !== undefined &&
-    typeof (obj as any).execute === 'function';
+    typeof (obj as any).execute === 'function'
+  );
 }
 
 /**
  * 型ガード: IAnalyzerPluginかどうかを判定
  */
 export function isAnalyzerPlugin(obj: unknown): obj is IAnalyzerPlugin {
-  return isPlugin(obj) &&
+  return (
+    isPlugin(obj) &&
     obj.type === 'ANALYZER' &&
-    typeof (obj as IAnalyzerPlugin).analyzeFile === 'function';
+    typeof (obj as IAnalyzerPlugin).analyzeFile === 'function'
+  );
 }
 
 /**
  * 型ガード: ISecurityPluginかどうかを判定
  */
 export function isSecurityPlugin(obj: unknown): obj is ISecurityPlugin {
-  return isPlugin(obj) &&
-    obj.type === 'SECURITY' &&
-    typeof (obj as ISecurityPlugin).scan === 'function';
+  return (
+    isPlugin(obj) && obj.type === 'SECURITY' && typeof (obj as ISecurityPlugin).scan === 'function'
+  );
 }
 
 /**
@@ -306,9 +310,9 @@ export function isSecurityPlugin(obj: unknown): obj is ISecurityPlugin {
  */
 export function priorityToNumber(priority: PluginPriority): number {
   const mapping: Record<PluginPriority, number> = {
-    'HIGH': 3,
-    'MEDIUM': 2,
-    'LOW': 1
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1,
   };
   return mapping[priority] || 0;
 }
@@ -316,7 +320,7 @@ export function priorityToNumber(priority: PluginPriority): number {
 /**
  * ヘルパー関数: プラグインのソート
  */
-export function sortPluginsByPriority(plugins: Array<{priority?: PluginPriority}>): void {
+export function sortPluginsByPriority(plugins: Array<{ priority?: PluginPriority }>): void {
   plugins.sort((a, b) => {
     const aPriority = priorityToNumber(a.priority || 'MEDIUM');
     const bPriority = priorityToNumber(b.priority || 'MEDIUM');

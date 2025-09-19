@@ -53,28 +53,60 @@ export interface ProjectIntentAnalysis {
 const PATTERN_KEYWORDS = {
   ERROR_CASE: [
     // 英語キーワード
-    'error', 'throw', 'invalid', 'fail', 'exception', 'reject',
+    'error',
+    'throw',
+    'invalid',
+    'fail',
+    'exception',
+    'reject',
     // 日本語キーワード
-    'エラー', '例外', '失敗', '異常', '不正'
+    'エラー',
+    '例外',
+    '失敗',
+    '異常',
+    '不正',
   ],
   EDGE_CASE: [
-    // 英語キーワード  
-    'edge case', 'empty', 'null', 'undefined',
+    // 英語キーワード
+    'edge case',
+    'empty',
+    'null',
+    'undefined',
     // 日本語キーワード
-    'エッジケース', '境界ケース', '空', 'null値'
+    'エッジケース',
+    '境界ケース',
+    '空',
+    'null値',
   ],
   BOUNDARY_VALUE: [
     // 英語キーワード
-    'boundary', 'maximum', 'minimum', 'limit', 'max', 'min',
+    'boundary',
+    'maximum',
+    'minimum',
+    'limit',
+    'max',
+    'min',
     // 日本語キーワード
-    '境界値', '最大', '最小', '上限', '下限'
+    '境界値',
+    '最大',
+    '最小',
+    '上限',
+    '下限',
   ],
   HAPPY_PATH: [
     // 英語キーワード（より精密に）
-    'valid', 'correct', 'should return', 'success', 'normal',
+    'valid',
+    'correct',
+    'should return',
+    'success',
+    'normal',
     // 日本語キーワード
-    '正常', '成功', '有効', '正しい', '適切'
-  ]
+    '正常',
+    '成功',
+    '有効',
+    '正しい',
+    '適切',
+  ],
 } as const;
 
 /**
@@ -136,7 +168,7 @@ export class IntentPatternMatcher {
       happyPath: patterns.includes('happy-path'),
       errorCases: patterns.includes('error-case'),
       edgeCases: patterns.includes('edge-case'),
-      boundaryValues: patterns.includes('boundary-value')
+      boundaryValues: patterns.includes('boundary-value'),
     };
   }
 
@@ -189,7 +221,7 @@ export class IntentPatternMatcher {
     const fileScanner = new FileScanner({
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       filePatterns: ['*.test.*', '*.spec.*'],
-      excludeDirectories: ['node_modules', 'dist', 'build', '.git']
+      excludeDirectories: ['node_modules', 'dist', 'build', '.git'],
     });
 
     try {
@@ -202,7 +234,7 @@ export class IntentPatternMatcher {
         'error-case': 0,
         'edge-case': 0,
         'boundary-value': 0,
-        'unknown': 0
+        unknown: 0,
       };
 
       let totalTests = 0;
@@ -212,7 +244,7 @@ export class IntentPatternMatcher {
         try {
           const fileIntents = await this.analyzeTestFile(filePath);
           intents.push(...fileIntents);
-          
+
           // パターン分布の更新
           for (const intent of fileIntents) {
             patternDistribution[intent.pattern]++;
@@ -232,11 +264,12 @@ export class IntentPatternMatcher {
         totalTestFiles: testFiles.length,
         totalTests,
         coverageAnalysis,
-        patternDistribution
+        patternDistribution,
       };
-
     } catch (error) {
-      throw new Error(`プロジェクト意図分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `プロジェクト意図分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -253,7 +286,7 @@ export class IntentPatternMatcher {
       const lines = content.split('\n');
 
       let currentDescribeBlock = '';
-      
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmedLine = line.trim();
@@ -280,15 +313,16 @@ export class IntentPatternMatcher {
             securityRequirements,
             pattern,
             filePath,
-            line: i + 1
+            line: i + 1,
           });
         }
       }
 
       return intents;
-
     } catch (error) {
-      throw new Error(`テストファイル分析に失敗しました (${filePath}): ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `テストファイル分析に失敗しました (${filePath}): ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -331,14 +365,14 @@ export class IntentPatternMatcher {
 
     // セキュリティ関連キーワードマッピング
     const securityKeywords = {
-      'authentication': ['auth', 'login', 'ログイン', '認証'],
-      'authorization': ['permission', 'access', '権限', 'role'],
-      'validation': ['validate', 'check', '検証', '入力値'],
-      'sanitization': ['sanitize', 'escape', 'サニタイズ', 'エスケープ'],
-      'encryption': ['encrypt', 'decrypt', '暗号', 'hash'],
+      authentication: ['auth', 'login', 'ログイン', '認証'],
+      authorization: ['permission', 'access', '権限', 'role'],
+      validation: ['validate', 'check', '検証', '入力値'],
+      sanitization: ['sanitize', 'escape', 'サニタイズ', 'エスケープ'],
+      encryption: ['encrypt', 'decrypt', '暗号', 'hash'],
       'sql-injection': ['sql', 'query', 'database', 'injection'],
-      'xss': ['xss', 'script', 'html', 'javascript'],
-      'csrf': ['csrf', 'token', 'form']
+      xss: ['xss', 'script', 'html', 'javascript'],
+      csrf: ['csrf', 'token', 'form'],
     };
 
     for (const [requirement, keywords] of Object.entries(securityKeywords)) {
@@ -362,14 +396,14 @@ export class IntentPatternMatcher {
    */
   private translateSecurityRequirement(requirement: string): string {
     const translations: Record<string, string> = {
-      'authentication': '認証',
-      'authorization': '認可',
-      'validation': '入力値検証',
-      'sanitization': 'データサニタイゼーション',
-      'encryption': '暗号化',
+      authentication: '認証',
+      authorization: '認可',
+      validation: '入力値検証',
+      sanitization: 'データサニタイゼーション',
+      encryption: '暗号化',
       'sql-injection': 'SQLインジェクション対策',
-      'xss': 'XSS対策',
-      'csrf': 'CSRF対策'
+      xss: 'XSS対策',
+      csrf: 'CSRF対策',
     };
 
     return translations[requirement] || requirement;
@@ -382,8 +416,15 @@ export class IntentPatternMatcher {
    */
   private isSecurityRelated(description: string): boolean {
     const securityIndicators = [
-      'security', 'secure', 'safe', 'protect', 'guard',
-      'セキュリティ', '安全', '保護', '防御'
+      'security',
+      'secure',
+      'safe',
+      'protect',
+      'guard',
+      'セキュリティ',
+      '安全',
+      '保護',
+      '防御',
     ];
 
     const lowerDesc = description.toLowerCase();
@@ -408,7 +449,7 @@ export class IntentPatternMatcher {
 
     // package.jsonが見つからない場合、与えられたパスまたはその親ディレクトリを使用
     const absoluteGivenPath = path.resolve(givenPath);
-    
+
     // srcディレクトリが与えられた場合、その親ディレクトリをプロジェクトルートとする
     if (path.basename(absoluteGivenPath) === 'src') {
       return path.dirname(absoluteGivenPath);

@@ -3,12 +3,7 @@
  * TaintTyper論文の5ms/fileと3-20x速度向上の検証・測定
  */
 
-import {
-  TestMethod,
-  TestCase,
-  MethodAnalysisResult,
-  TypeBasedSecurityConfig
-} from '../types';
+import { TestMethod, TestCase, MethodAnalysisResult, TypeBasedSecurityConfig } from '../types';
 import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { ModularTestAnalyzer } from '../analysis/modular';
 import * as os from 'os';
@@ -115,11 +110,10 @@ export class PerformanceBenchmark {
    */
   async runSmallTest(): Promise<BenchmarkResult> {
     const testCases = this.testData.get('small') || [];
-    return this.measureAnalysisPerformance(
-      '小規模テスト',
-      testCases,
-      { enableCache: true, parallelism: 1 }
-    );
+    return this.measureAnalysisPerformance('小規模テスト', testCases, {
+      enableCache: true,
+      parallelism: 1,
+    });
   }
 
   /**
@@ -127,11 +121,10 @@ export class PerformanceBenchmark {
    */
   async runMediumTest(): Promise<BenchmarkResult> {
     const testCases = this.testData.get('medium') || [];
-    return this.measureAnalysisPerformance(
-      '中規模テスト',
-      testCases,
-      { enableCache: true, parallelism: Math.min(os.cpus().length, 4) }
-    );
+    return this.measureAnalysisPerformance('中規模テスト', testCases, {
+      enableCache: true,
+      parallelism: Math.min(os.cpus().length, 4),
+    });
   }
 
   /**
@@ -139,11 +132,10 @@ export class PerformanceBenchmark {
    */
   async runLargeTest(): Promise<BenchmarkResult> {
     const testCases = this.testData.get('large') || [];
-    return this.measureAnalysisPerformance(
-      '大規模テスト',
-      testCases,
-      { enableCache: true, parallelism: os.cpus().length }
-    );
+    return this.measureAnalysisPerformance('大規模テスト', testCases, {
+      enableCache: true,
+      parallelism: os.cpus().length,
+    });
   }
 
   /**
@@ -186,18 +178,17 @@ export class PerformanceBenchmark {
    * 5ms/file目標の検証
    */
   async verify5msPerFileTarget(testCases: TestCase[]): Promise<boolean> {
-    const result = await this.measureAnalysisPerformance(
-      '5ms/file目標検証',
-      testCases,
-      { enableCache: true, parallelism: os.cpus().length }
-    );
+    const result = await this.measureAnalysisPerformance('5ms/file目標検証', testCases, {
+      enableCache: true,
+      parallelism: os.cpus().length,
+    });
 
     const achieved = result.timePerFile <= 5.0;
-    
+
     console.log(`📊 5ms/file目標検証結果:`);
     console.log(`   実測値: ${result.timePerFile.toFixed(2)}ms/file`);
     console.log(`   目標達成: ${achieved ? '✅ 達成' : '❌ 未達成'}`);
-    
+
     return achieved;
   }
 
@@ -206,18 +197,16 @@ export class PerformanceBenchmark {
    */
   async verifySpeedupTarget(testCases: TestCase[]): Promise<number> {
     // ベースライン（非最適化）の測定
-    const baseline = await this.measureAnalysisPerformance(
-      'ベースライン測定',
-      testCases,
-      { enableCache: false, parallelism: 1 }
-    );
+    const baseline = await this.measureAnalysisPerformance('ベースライン測定', testCases, {
+      enableCache: false,
+      parallelism: 1,
+    });
 
     // 最適化版の測定
-    const optimized = await this.measureAnalysisPerformance(
-      '最適化版測定',
-      testCases,
-      { enableCache: true, parallelism: os.cpus().length }
-    );
+    const optimized = await this.measureAnalysisPerformance('最適化版測定', testCases, {
+      enableCache: true,
+      parallelism: os.cpus().length,
+    });
 
     const speedupRatio = baseline.totalTime / optimized.totalTime;
     const targetAchieved = speedupRatio >= 3.0 && speedupRatio <= 20.0;
@@ -238,18 +227,16 @@ export class PerformanceBenchmark {
     const testCases = this.testData.get('medium') || [];
 
     // 単一スレッド実行
-    const baseline = await this.measureAnalysisPerformance(
-      '単一スレッド解析',
-      testCases,
-      { parallelism: 1, enableCache: false }
-    );
+    const baseline = await this.measureAnalysisPerformance('単一スレッド解析', testCases, {
+      parallelism: 1,
+      enableCache: false,
+    });
 
     // 並列実行
-    const optimized = await this.measureAnalysisPerformance(
-      '並列解析',
-      testCases,
-      { parallelism: os.cpus().length, enableCache: false }
-    );
+    const optimized = await this.measureAnalysisPerformance('並列解析', testCases, {
+      parallelism: os.cpus().length,
+      enableCache: false,
+    });
 
     return this.createComparison('並列処理比較', baseline, optimized);
   }
@@ -261,25 +248,22 @@ export class PerformanceBenchmark {
     const testCases = this.testData.get('small') || [];
 
     // キャッシュ無効
-    const baseline = await this.measureAnalysisPerformance(
-      'キャッシュ無効',
-      testCases,
-      { enableCache: false, parallelism: 1 }
-    );
+    const baseline = await this.measureAnalysisPerformance('キャッシュ無効', testCases, {
+      enableCache: false,
+      parallelism: 1,
+    });
 
     // 同じデータを再度処理（キャッシュ有効）
-    const optimized = await this.measureAnalysisPerformance(
-      'キャッシュ有効',
-      testCases,
-      { enableCache: true, parallelism: 1 }
-    );
+    const optimized = await this.measureAnalysisPerformance('キャッシュ有効', testCases, {
+      enableCache: true,
+      parallelism: 1,
+    });
 
     // キャッシュの効果を見るため、再度同じデータを処理
-    await this.measureAnalysisPerformance(
-      'キャッシュ有効（2回目）',
-      testCases,
-      { enableCache: true, parallelism: 1 }
-    );
+    await this.measureAnalysisPerformance('キャッシュ有効（2回目）', testCases, {
+      enableCache: true,
+      parallelism: 1,
+    });
 
     return this.createComparison('キャッシュ比較', baseline, optimized);
   }
@@ -291,17 +275,13 @@ export class PerformanceBenchmark {
     const testCases = this.testData.get('large') || [];
 
     // 一括解析のシミュレーション
-    const baseline = await this.measureAnalysisPerformance(
-      '一括解析',
-      testCases,
-      { parallelism: 1, enableCache: false }
-    );
+    const baseline = await this.measureAnalysisPerformance('一括解析', testCases, {
+      parallelism: 1,
+      enableCache: false,
+    });
 
     // モジュラー解析
-    const optimized = await this.measureModularAnalysisPerformance(
-      'モジュラー解析',
-      testCases
-    );
+    const optimized = await this.measureModularAnalysisPerformance('モジュラー解析', testCases);
 
     return this.createComparison('モジュラー解析比較', baseline, optimized);
   }
@@ -323,10 +303,10 @@ export class PerformanceBenchmark {
     const optimized = await this.measureAnalysisPerformance(
       '大規模プロジェクト（最適化）',
       testCases,
-      { 
+      {
         parallelism: Math.min(os.cpus().length, 8),
         enableCache: true,
-        maxAnalysisTime: 60000 
+        maxAnalysisTime: 60000,
       }
     );
 
@@ -348,7 +328,7 @@ export class PerformanceBenchmark {
 
     // メモリ使用量の初期値
     const initialMemory = process.memoryUsage();
-    
+
     // CPU使用率の監視開始
     const cpuMonitor = this.startCpuMonitoring();
 
@@ -363,7 +343,7 @@ export class PerformanceBenchmark {
         try {
           const result = await this.engine.analyzeAtCompileTime([testCase]);
           successCount++;
-          
+
           // メソッド数の推定
           const methodCount = this.estimateMethodCount(testCase.content);
           totalMethods += methodCount;
@@ -398,10 +378,12 @@ export class PerformanceBenchmark {
       successRate: testCases.length > 0 ? (successCount / testCases.length) * 100 : 0,
       errorCount,
       parallelism: config.parallelism || 1,
-      cacheHitRate: perfStats.cacheHitRate
+      cacheHitRate: perfStats.cacheHitRate,
     };
 
-    console.log(`   ✅ 完了: ${result.timePerFile.toFixed(2)}ms/file, ${result.throughput.toFixed(1)} files/sec`);
+    console.log(
+      `   ✅ 完了: ${result.timePerFile.toFixed(2)}ms/file, ${result.throughput.toFixed(1)} files/sec`
+    );
 
     return result;
   }
@@ -460,10 +442,12 @@ export class PerformanceBenchmark {
       successRate: testCases.length > 0 ? (successCount / testCases.length) * 100 : 0,
       errorCount,
       parallelism: os.cpus().length,
-      cacheHitRate: 0 // モジュラー解析では別途計算
+      cacheHitRate: 0, // モジュラー解析では別途計算
     };
 
-    console.log(`   ✅ 完了: ${result.timePerFile.toFixed(2)}ms/file, ${result.throughput.toFixed(1)} files/sec`);
+    console.log(
+      `   ✅ 完了: ${result.timePerFile.toFixed(2)}ms/file, ${result.throughput.toFixed(1)} files/sec`
+    );
 
     return result;
   }
@@ -486,9 +470,10 @@ export class PerformanceBenchmark {
 
     // 改善・劣化項目の判定
     if (speedupRatio > 1.1) improvements.push(`実行時間 ${speedupRatio.toFixed(1)}x向上`);
-    else if (speedupRatio < 0.9) regressions.push(`実行時間 ${(1/speedupRatio).toFixed(1)}x劣化`);
+    else if (speedupRatio < 0.9) regressions.push(`実行時間 ${(1 / speedupRatio).toFixed(1)}x劣化`);
 
-    if (memoryEfficiencyRatio > 1.1) improvements.push(`メモリ効率 ${memoryEfficiencyRatio.toFixed(1)}x向上`);
+    if (memoryEfficiencyRatio > 1.1)
+      improvements.push(`メモリ効率 ${memoryEfficiencyRatio.toFixed(1)}x向上`);
     else if (memoryEfficiencyRatio < 0.9) regressions.push(`メモリ使用量増加`);
 
     if (optimized.successRate > baseline.successRate) improvements.push('成功率向上');
@@ -508,7 +493,7 @@ export class PerformanceBenchmark {
       target5msAchieved,
       speedupTargetAchieved,
       improvements,
-      regressions
+      regressions,
     };
   }
 
@@ -542,7 +527,7 @@ export class PerformanceBenchmark {
     for (let i = 0; i < count; i++) {
       const complexity = this.getComplexityForSize(size);
       const content = this.generateTestFileContent(complexity);
-      
+
       testCases.push({
         name: `test-${size}-${i}`,
         file: `test-${size}-${i}.test.ts`,
@@ -550,8 +535,8 @@ export class PerformanceBenchmark {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       });
     }
 
@@ -563,11 +548,16 @@ export class PerformanceBenchmark {
    */
   private getComplexityForSize(size: string): number {
     switch (size) {
-      case 'small': return 3;
-      case 'medium': return 8;
-      case 'large': return 15;
-      case 'xlarge': return 25;
-      default: return 5;
+      case 'small':
+        return 3;
+      case 'medium':
+        return 8;
+      case 'large':
+        return 15;
+      case 'xlarge':
+        return 25;
+      default:
+        return 5;
     }
   }
 
@@ -576,10 +566,10 @@ export class PerformanceBenchmark {
    */
   private generateTestFileContent(complexity: number): string {
     const methods: string[] = [];
-    
+
     for (let i = 0; i < complexity; i++) {
       const methodType = i % 3;
-      
+
       if (methodType === 0) {
         // 認証テスト
         methods.push(`
@@ -624,24 +614,24 @@ ${methods.join('\n')}
   private async getSystemInfo(): Promise<SystemInfo> {
     const cpus = os.cpus();
     const mem = process.memoryUsage();
-    
+
     return {
       cpu: {
         model: cpus[0]?.model || 'Unknown',
         cores: cpus.length,
-        speed: cpus[0]?.speed || 0
+        speed: cpus[0]?.speed || 0,
       },
       memory: {
         total: os.totalmem(),
         free: os.freemem(),
-        used: mem.heapUsed
+        used: mem.heapUsed,
       },
       os: {
         platform: os.platform(),
         release: os.release(),
-        arch: os.arch()
+        arch: os.arch(),
       },
-      nodeVersion: process.version
+      nodeVersion: process.version,
     };
   }
 
@@ -670,8 +660,9 @@ ${methods.join('\n')}
   private async extractTestMethods(testCase: TestCase): Promise<TestMethod[]> {
     const methods: TestMethod[] = [];
     const content = testCase.content;
-    
-    const methodPattern = /it\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(?:async\s+)?(?:function\s*)?\(\s*\)\s*=>\s*\{([\s\S]*?)\}/g;
+
+    const methodPattern =
+      /it\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(?:async\s+)?(?:function\s*)?\(\s*\)\s*=>\s*\{([\s\S]*?)\}/g;
     let match: RegExpExecArray | null;
 
     while ((match = methodPattern.exec(content)) !== null) {
@@ -683,8 +674,8 @@ ${methods.join('\n')}
         signature: match[1],
         location: {
           start: { line: 1, column: 0 },
-          end: { line: 10, column: 0 }
-        }
+          end: { line: 10, column: 0 },
+        },
       });
     }
 
@@ -709,7 +700,7 @@ ${methods.join('\n')}
   ): Promise<void> {
     const reportContent = this.formatBenchmarkReport(comparisons, systemInfo);
     const reportPath = path.join(process.cwd(), 'benchmark-report.md');
-    
+
     try {
       await fs.writeFile(reportPath, reportContent, 'utf-8');
       console.log(`📄 ベンチマークレポートを生成しました: ${reportPath}`);
@@ -726,7 +717,7 @@ ${methods.join('\n')}
     systemInfo: SystemInfo
   ): string {
     const timestamp = new Date().toISOString();
-    
+
     let report = `# 型ベースセキュリティ解析 性能ベンチマークレポート
 
 生成日時: ${timestamp}
@@ -746,7 +737,7 @@ ${methods.join('\n')}
     const target5msResults = comparisons.map(c => c.target5msAchieved);
     const target5msAchieved = target5msResults.some(achieved => achieved);
     report += `- **達成状況**: ${target5msAchieved ? '✅ 達成' : '❌ 未達成'}\n`;
-    
+
     const bestTimePerFile = Math.min(...comparisons.map(c => c.optimized.timePerFile));
     report += `- **最速値**: ${bestTimePerFile.toFixed(2)}ms/file\n\n`;
 
@@ -756,7 +747,7 @@ ${methods.join('\n')}
     const speedupResults = comparisons.map(c => c.speedupTargetAchieved);
     const speedupAchieved = speedupResults.some(achieved => achieved);
     report += `- **達成状況**: ${speedupAchieved ? '✅ 達成' : '❌ 未達成'}\n`;
-    
+
     const bestSpeedup = Math.max(...comparisons.map(c => c.speedupRatio));
     report += `- **最高速度向上**: ${bestSpeedup.toFixed(1)}x\n\n`;
 
@@ -764,7 +755,7 @@ ${methods.join('\n')}
 
     comparisons.forEach((comparison, index) => {
       report += `### ${index + 1}. ${comparison.baseline.testName} vs ${comparison.optimized.testName}\n\n`;
-      
+
       report += `| 項目 | ベースライン | 最適化版 | 改善率 |\n`;
       report += `|------|-------------|----------|--------|\n`;
       report += `| 実行時間 | ${comparison.baseline.totalTime.toFixed(0)}ms | ${comparison.optimized.totalTime.toFixed(0)}ms | ${comparison.speedupRatio.toFixed(1)}x |\n`;
@@ -777,7 +768,7 @@ ${methods.join('\n')}
       if (comparison.improvements.length > 0) {
         report += `**改善項目**: ${comparison.improvements.join(', ')}\n\n`;
       }
-      
+
       if (comparison.regressions.length > 0) {
         report += `**劣化項目**: ${comparison.regressions.join(', ')}\n\n`;
       }
@@ -787,7 +778,7 @@ ${methods.join('\n')}
     report += `この型ベースセキュリティ解析システムは、TaintTyperの理論に基づく効率的な実装により、`;
     report += `${target5msAchieved ? '5ms/file目標を達成し、' : ''}`;
     report += `${speedupAchieved ? '3-20x速度向上目標も達成' : '速度向上は確認されたが目標範囲には未到達'}しました。\n\n`;
-    
+
     report += `モジュラー解析とキャッシュ機能により、大規模プロジェクトでも実用的な性能を実現しています。\n`;
 
     return report;
@@ -806,15 +797,15 @@ class CpuMonitor {
   constructor() {
     this.startTime = process.hrtime();
     this.startUsage = process.cpuUsage();
-    
+
     // 定期的にCPU使用率をサンプリング
     this.intervalId = setInterval(() => {
       const currentUsage = process.cpuUsage(this.startUsage);
       const currentTime = process.hrtime(this.startTime);
-      
+
       const totalTime = currentTime[0] * 1000000 + currentTime[1] / 1000; // microseconds
-      const cpuPercent = (currentUsage.user + currentUsage.system) / totalTime * 100;
-      
+      const cpuPercent = ((currentUsage.user + currentUsage.system) / totalTime) * 100;
+
       this.samples.push(cpuPercent);
     }, 100);
   }

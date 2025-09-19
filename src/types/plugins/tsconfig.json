@@ -6,11 +6,6 @@
     "outDir": "../../../dist/types/plugins",
     "tsBuildInfoFile": "../../../dist/types/plugins/.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }

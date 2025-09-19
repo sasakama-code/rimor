@@ -69,28 +69,28 @@ export class PatternDetector {
   private readonly DESIGN_PATTERNS = {
     Singleton: {
       indicators: ['private static instance', 'getInstance', 'private constructor'],
-      confidence: 0.9
+      confidence: 0.9,
     },
     Factory: {
       indicators: ['Factory', 'create', 'switch', 'case', 'return new'],
-      confidence: 0.8
+      confidence: 0.8,
     },
     Observer: {
       indicators: ['listeners', 'on(', 'emit(', 'subscribe', 'notify', 'observers'],
-      confidence: 0.85
+      confidence: 0.85,
     },
     Strategy: {
       indicators: ['Strategy', 'algorithm', 'execute', 'interface', 'implements'],
-      confidence: 0.75
+      confidence: 0.75,
     },
     Builder: {
       indicators: ['Builder', 'build(', 'with', 'set', 'return this'],
-      confidence: 0.8
+      confidence: 0.8,
     },
     Decorator: {
       indicators: ['Decorator', 'wrapper', 'extends', 'super(', 'enhance'],
-      confidence: 0.75
-    }
+      confidence: 0.75,
+    },
   };
 
   // アンチパターンの検出パターン
@@ -99,36 +99,36 @@ export class PatternDetector {
       indicators: {
         methodCount: 20,
         propertyCount: 15,
-        responsibilities: 5
+        responsibilities: 5,
       },
-      severity: 'high' as const
+      severity: 'high' as const,
     },
     'Spaghetti Code': {
       indicators: {
         maxNestingLevel: 5,
-        cyclomaticComplexity: 20
+        cyclomaticComplexity: 20,
       },
-      severity: 'medium' as const
+      severity: 'medium' as const,
     },
     'Copy-Paste Programming': {
       indicators: {
         duplicateThreshold: 0.7,
-        minLines: 5
+        minLines: 5,
       },
-      severity: 'medium' as const
+      severity: 'medium' as const,
     },
     'Magic Numbers': {
       indicators: {
-        pattern: /(?<![\w])(?:[1-9]\d{2,}|[2-9]\d)(?![\w])/g
+        pattern: /(?<![\w])(?:[1-9]\d{2,}|[2-9]\d)(?![\w])/g,
       },
-      severity: 'low' as const
+      severity: 'low' as const,
     },
     'Dead Code': {
       indicators: {
-        unusedPattern: /^\s*\/\/.*$|^\s*\/\*[\s\S]*?\*\//gm
+        unusedPattern: /^\s*\/\/.*$|^\s*\/\*[\s\S]*?\*\//gm,
       },
-      severity: 'low' as const
-    }
+      severity: 'low' as const,
+    },
   };
 
   /**
@@ -144,7 +144,7 @@ export class PatternDetector {
           type: 'Singleton',
           confidence: this.DESIGN_PATTERNS.Singleton.confidence,
           location: fileName,
-          description: 'Singleton pattern ensures only one instance of a class exists'
+          description: 'Singleton pattern ensures only one instance of a class exists',
         });
       }
 
@@ -154,7 +154,7 @@ export class PatternDetector {
           type: 'Factory',
           confidence: this.DESIGN_PATTERNS.Factory.confidence,
           location: fileName,
-          description: 'Factory pattern provides an interface for creating objects'
+          description: 'Factory pattern provides an interface for creating objects',
         });
       }
 
@@ -164,7 +164,7 @@ export class PatternDetector {
           type: 'Observer',
           confidence: this.DESIGN_PATTERNS.Observer.confidence,
           location: fileName,
-          description: 'Observer pattern defines a one-to-many dependency between objects'
+          description: 'Observer pattern defines a one-to-many dependency between objects',
         });
       }
 
@@ -174,7 +174,7 @@ export class PatternDetector {
           type: 'Strategy',
           confidence: this.DESIGN_PATTERNS.Strategy.confidence,
           location: fileName,
-          description: 'Strategy pattern defines a family of algorithms'
+          description: 'Strategy pattern defines a family of algorithms',
         });
       }
 
@@ -184,7 +184,7 @@ export class PatternDetector {
           type: 'Builder',
           confidence: this.DESIGN_PATTERNS.Builder.confidence,
           location: fileName,
-          description: 'Builder pattern separates object construction from representation'
+          description: 'Builder pattern separates object construction from representation',
         });
       }
 
@@ -194,7 +194,7 @@ export class PatternDetector {
           type: 'Decorator',
           confidence: this.DESIGN_PATTERNS.Decorator.confidence,
           location: fileName,
-          description: 'Decorator pattern adds new functionality to objects dynamically'
+          description: 'Decorator pattern adds new functionality to objects dynamically',
         });
       }
     } catch (error) {
@@ -218,8 +218,9 @@ export class PatternDetector {
           type: 'God Object',
           severity: 'high',
           location: fileName,
-          recommendation: 'Consider applying Single Responsibility Principle. Break down the class into smaller, focused classes.',
-          description: 'Class has too many responsibilities'
+          recommendation:
+            'Consider applying Single Responsibility Principle. Break down the class into smaller, focused classes.',
+          description: 'Class has too many responsibilities',
         });
       }
 
@@ -229,8 +230,9 @@ export class PatternDetector {
           type: 'Spaghetti Code',
           severity: 'medium',
           location: fileName,
-          recommendation: 'Consider refactoring deeply nested code. Extract methods and apply early returns.',
-          description: 'Code has excessive nesting and complexity'
+          recommendation:
+            'Consider refactoring deeply nested code. Extract methods and apply early returns.',
+          description: 'Code has excessive nesting and complexity',
         });
       }
 
@@ -240,8 +242,9 @@ export class PatternDetector {
           type: 'Copy-Paste Programming',
           severity: 'medium',
           location: fileName,
-          recommendation: 'Apply DRY principle. Extract common logic into reusable functions or classes.',
-          description: 'Duplicate code detected'
+          recommendation:
+            'Apply DRY principle. Extract common logic into reusable functions or classes.',
+          description: 'Duplicate code detected',
         });
       }
 
@@ -252,7 +255,7 @@ export class PatternDetector {
           severity: 'low',
           location: fileName,
           recommendation: 'Replace magic numbers with named constants for better readability.',
-          description: 'Hardcoded numeric values detected'
+          description: 'Hardcoded numeric values detected',
         });
       }
 
@@ -263,7 +266,7 @@ export class PatternDetector {
           severity: 'low',
           location: fileName,
           recommendation: 'Remove commented or unused code to improve maintainability.',
-          description: 'Potentially unused code detected'
+          description: 'Potentially unused code detected',
         });
       }
     } catch (error) {
@@ -287,34 +290,36 @@ export class PatternDetector {
         type: 'MVC',
         confidence: projectStructure.architecture.confidence || 0.7,
         location: 'Project Architecture',
-        description: 'Model-View-Controller architectural pattern'
+        description: 'Model-View-Controller architectural pattern',
       });
     }
 
     // ディレクトリ構造からFactoryパターンを検出
     const hasFactoryDir = projectStructure.directories?.some(
-      dir => dir.path.toLowerCase().includes('factory') || dir.path.toLowerCase().includes('factories')
+      dir =>
+        dir.path.toLowerCase().includes('factory') || dir.path.toLowerCase().includes('factories')
     );
     if (hasFactoryDir) {
       designPatterns.push({
         type: 'Factory',
         confidence: 0.7,
         location: 'Project Structure',
-        description: 'Factory pattern detected from directory structure'
+        description: 'Factory pattern detected from directory structure',
       });
     }
 
     // メトリクスから問題を検出
     if (projectStructure.metrics) {
       const { complexity, maintainability } = projectStructure.metrics;
-      
+
       if (complexity?.averageCyclomaticComplexity && complexity.averageCyclomaticComplexity > 20) {
         antiPatterns.push({
           type: 'High Complexity',
           severity: 'high',
           location: 'Project',
-          recommendation: 'Reduce cyclomatic complexity by extracting methods and simplifying logic.',
-          description: `Average cyclomatic complexity: ${complexity.averageCyclomaticComplexity}`
+          recommendation:
+            'Reduce cyclomatic complexity by extracting methods and simplifying logic.',
+          description: `Average cyclomatic complexity: ${complexity.averageCyclomaticComplexity}`,
         });
       }
 
@@ -323,8 +328,9 @@ export class PatternDetector {
           type: 'Low Maintainability',
           severity: 'medium',
           location: 'Project',
-          recommendation: 'Improve code maintainability through refactoring and better documentation.',
-          description: `Maintainability index: ${maintainability.maintainabilityIndex}`
+          recommendation:
+            'Improve code maintainability through refactoring and better documentation.',
+          description: `Maintainability index: ${maintainability.maintainabilityIndex}`,
         });
       }
     }
@@ -339,7 +345,7 @@ export class PatternDetector {
       designPatterns,
       antiPatterns,
       recommendations,
-      score
+      score,
     };
   }
 
@@ -356,15 +362,15 @@ export class PatternDetector {
         totalDesignPatterns: analysis.designPatterns.length,
         totalAntiPatterns: analysis.antiPatterns.length,
         overallScore: analysis.score,
-        grade
+        grade,
       },
       designPatterns: analysis.designPatterns,
       antiPatterns: analysis.antiPatterns,
       recommendations: analysis.recommendations,
       metrics: {
         patternDiversity,
-        antiPatternSeverity
-      }
+        antiPatternSeverity,
+      },
     };
   }
 
@@ -372,54 +378,60 @@ export class PatternDetector {
 
   private isSingletonPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Singleton.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 2;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 2
+    );
   }
 
   private isFactoryPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Factory.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 3;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 3
+    );
   }
 
   private isObserverPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Observer.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 2;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 2
+    );
   }
 
   private isStrategyPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Strategy.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 2;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 2
+    );
   }
 
   private isBuilderPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Builder.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 3;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 3
+    );
   }
 
   private isDecoratorPattern(content: string): boolean {
     const indicators = this.DESIGN_PATTERNS.Decorator.indicators;
-    return indicators.filter(indicator => 
-      content.toLowerCase().includes(indicator.toLowerCase())
-    ).length >= 2;
+    return (
+      indicators.filter(indicator => content.toLowerCase().includes(indicator.toLowerCase()))
+        .length >= 2
+    );
   }
 
   private isGodObject(content: string): boolean {
     // クラス内のメソッド数をカウント（インデント対応）
     const methodPatterns = [
       /\s+(public|private|protected)?\s*\w+\s*\([^)]*\)\s*[{:]/gm,
-      /\s+\w+\s*\([^)]*\)\s*\{/gm,  // メソッド定義の簡易形式
-      /\s+(async\s+)?\w+\s*\([^)]*\)\s*\{/gm  // async関数も含む
+      /\s+\w+\s*\([^)]*\)\s*\{/gm, // メソッド定義の簡易形式
+      /\s+(async\s+)?\w+\s*\([^)]*\)\s*\{/gm, // async関数も含む
     ];
-    
+
     let methodCount = 0;
     for (const pattern of methodPatterns) {
       const matches = content.match(pattern);
@@ -427,13 +439,13 @@ export class PatternDetector {
         methodCount = Math.max(methodCount, matches.length);
       }
     }
-    
+
     // プロパティ数をカウント（インデント対応）
     const propertyPatterns = [
       /\s+(private|public|protected)\s+\w+\s*[:;]/gm,
-      /\s+private\s+\w+:\s*\w+/gm  // private property: Type形式
+      /\s+private\s+\w+:\s*\w+/gm, // private property: Type形式
     ];
-    
+
     let propertyCount = 0;
     for (const pattern of propertyPatterns) {
       const matches = content.match(pattern);
@@ -443,10 +455,12 @@ export class PatternDetector {
     }
 
     // God Objectの判定基準
-    return methodCount >= 12 || 
-           (propertyCount >= 7 && methodCount >= 10) ||
-           methodCount > this.ANTI_PATTERNS['God Object'].indicators.methodCount ||
-           propertyCount > this.ANTI_PATTERNS['God Object'].indicators.propertyCount;
+    return (
+      methodCount >= 12 ||
+      (propertyCount >= 7 && methodCount >= 10) ||
+      methodCount > this.ANTI_PATTERNS['God Object'].indicators.methodCount ||
+      propertyCount > this.ANTI_PATTERNS['God Object'].indicators.propertyCount
+    );
   }
 
   private isSpaghettiCode(content: string): boolean {
@@ -456,16 +470,18 @@ export class PatternDetector {
 
   private isCopyPasteProgramming(content: string): boolean {
     const functions = content.match(/function\s+\w+[^{]*{[^}]*}/g) || [];
-    
+
     for (let i = 0; i < functions.length; i++) {
       for (let j = i + 1; j < functions.length; j++) {
         const similarity = this.calculateSimilarity(functions[i], functions[j]);
-        if (similarity > this.ANTI_PATTERNS['Copy-Paste Programming'].indicators.duplicateThreshold) {
+        if (
+          similarity > this.ANTI_PATTERNS['Copy-Paste Programming'].indicators.duplicateThreshold
+        ) {
           return true;
         }
       }
     }
-    
+
     return false;
   }
 
@@ -484,7 +500,7 @@ export class PatternDetector {
   private calculateMaxNesting(content: string): number {
     let maxNesting = 0;
     let currentNesting = 0;
-    
+
     for (const char of content) {
       if (char === '{') {
         currentNesting++;
@@ -493,7 +509,7 @@ export class PatternDetector {
         currentNesting = Math.max(0, currentNesting - 1);
       }
     }
-    
+
     return maxNesting;
   }
 
@@ -501,25 +517,25 @@ export class PatternDetector {
     const len1 = str1.length;
     const len2 = str2.length;
     const maxLen = Math.max(len1, len2);
-    
+
     if (maxLen === 0) return 1.0;
-    
+
     // 簡易的なレーベンシュタイン距離の実装
     const distance = this.levenshteinDistance(str1, str2);
-    return 1 - (distance / maxLen);
+    return 1 - distance / maxLen;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix: number[][] = [];
-    
+
     for (let i = 0; i <= str2.length; i++) {
       matrix[i] = [i];
     }
-    
+
     for (let j = 0; j <= str1.length; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= str2.length; i++) {
       for (let j = 1; j <= str1.length; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -533,7 +549,7 @@ export class PatternDetector {
         }
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
@@ -556,7 +572,7 @@ export class PatternDetector {
         pattern: antiPattern.type,
         action: antiPattern.recommendation,
         priority,
-        estimatedEffort: this.estimateEffort(antiPattern)
+        estimatedEffort: this.estimateEffort(antiPattern),
       });
     });
 
@@ -564,9 +580,10 @@ export class PatternDetector {
     if (designPatterns.length === 0) {
       recommendations.push({
         pattern: 'Design Patterns',
-        action: 'Consider implementing common design patterns to improve code structure and maintainability.',
+        action:
+          'Consider implementing common design patterns to improve code structure and maintainability.',
         priority: 'low',
-        estimatedEffort: 'Medium'
+        estimatedEffort: 'Medium',
       });
     }
 
@@ -648,13 +665,10 @@ export class PatternDetector {
       critical: 4,
       high: 3,
       medium: 2,
-      low: 1
+      low: 1,
     };
 
-    const totalSeverity = antiPatterns.reduce(
-      (sum, ap) => sum + severityScores[ap.severity],
-      0
-    );
+    const totalSeverity = antiPatterns.reduce((sum, ap) => sum + severityScores[ap.severity], 0);
 
     return totalSeverity / antiPatterns.length;
   }

@@ -1,12 +1,12 @@
 /**
  * Keyword Search Utilities
  * Issue #119 対応: 曖昧な部分一致による誤検知問題を解決する統一キーワード検索システム
- * 
+ *
  * SOLID原則:
  * - 単一責任の原則: キーワード検索機能のみに特化
  * - オープンクローズドの原則: 将来的な分かち書き対応等の拡張可能性を保持
  * - 依存関係逆転の原則: 具体的な検索アルゴリズムではなく抽象的なインターフェースを提供
- * 
+ *
  * DRY原則: 全プロジェクトで統一されたキーワード検索ロジック
  */
 
@@ -16,10 +16,10 @@
 export interface KeywordSearchOptions {
   /** 大文字小文字を区別するかどうか（デフォルト: false） */
   caseSensitive?: boolean;
-  
+
   /** 記法ゆれの正規化を行うかどうか（デフォルト: true） */
   normalizeNotation?: boolean;
-  
+
   /** デバッグモード（詳細ログ出力）（デフォルト: false） */
   debug?: boolean;
 }
@@ -30,10 +30,10 @@ export interface KeywordSearchOptions {
 export interface KeywordSearchResult {
   /** マッチしたかどうか */
   matches: boolean;
-  
+
   /** マッチしたキーワード（複数ある場合は最初の一つ） */
   matchedKeyword?: string;
-  
+
   /** マッチした位置情報（デバッグ用） */
   matchInfo?: {
     originalText: string;
@@ -48,7 +48,6 @@ export interface KeywordSearchResult {
  * Issue #119 対応: 語境界を考慮した精密なキーワード検索
  */
 export class KeywordSearchUtils {
-  
   /**
    * 文字列が指定されたキーワードのいずれかを含むかチェック（シンプル版）
    * @param text チェック対象の文字列
@@ -57,8 +56,8 @@ export class KeywordSearchUtils {
    * @returns いずれかのキーワードを含む場合true
    */
   static containsAnyKeyword(
-    text: string, 
-    keywords: readonly string[], 
+    text: string,
+    keywords: readonly string[],
     options: KeywordSearchOptions = {}
   ): boolean {
     const result = this.searchKeywords(text, keywords, options);
@@ -67,7 +66,7 @@ export class KeywordSearchUtils {
 
   /**
    * 文字列が指定されたキーワードのいずれかを含むかチェック（詳細結果版）
-   * @param text チェック対象の文字列  
+   * @param text チェック対象の文字列
    * @param keywords キーワードの配列
    * @param options 検索オプション
    * @returns 詳細な検索結果
@@ -77,11 +76,7 @@ export class KeywordSearchUtils {
     keywords: readonly string[],
     options: KeywordSearchOptions = {}
   ): KeywordSearchResult {
-    const {
-      caseSensitive = false,
-      normalizeNotation = true,
-      debug = false
-    } = options;
+    const { caseSensitive = false, normalizeNotation = true, debug = false } = options;
 
     // 入力値検証
     if (!text || keywords.length === 0) {
@@ -92,10 +87,10 @@ export class KeywordSearchUtils {
     const processedText = caseSensitive ? text : text.toLowerCase();
 
     // 記法ゆれの正規化（kebab-case, snake_case → スペース区切り）
-    const normalized = normalizeNotation 
+    const normalized = normalizeNotation
       ? processedText
-          .replace(/[-_]+/g, ' ')       // ハイフン・アンダースコアをスペースに変換
-          .replace(/\s+/g, ' ')         // 連続するスペースを単一スペースに
+          .replace(/[-_]+/g, ' ') // ハイフン・アンダースコアをスペースに変換
+          .replace(/\s+/g, ' ') // 連続するスペースを単一スペースに
           .trim()
       : processedText;
 
@@ -108,10 +103,10 @@ export class KeywordSearchUtils {
 
     for (const keyword of keywords) {
       const processedKeyword = caseSensitive ? keyword : keyword.toLowerCase();
-      
+
       // ASCII文字（英語）かどうかの判定
       const isAsciiOnly = /^[\x00-\x7F]+$/.test(processedKeyword);
-      
+
       if (isAsciiOnly) {
         // 英語キーワード：語境界を考慮した完全一致
         const result = this.matchEnglishKeyword(normalized, processedKeyword, text);
@@ -122,12 +117,14 @@ export class KeywordSearchUtils {
           return {
             matches: true,
             matchedKeyword: keyword,
-            matchInfo: debug ? {
-              originalText: text,
-              normalizedText: normalized,
-              pattern: result.pattern,
-              isAscii: true
-            } : undefined
+            matchInfo: debug
+              ? {
+                  originalText: text,
+                  normalizedText: normalized,
+                  pattern: result.pattern,
+                  isAscii: true,
+                }
+              : undefined,
           };
         }
       } else {
@@ -139,12 +136,14 @@ export class KeywordSearchUtils {
           return {
             matches: true,
             matchedKeyword: keyword,
-            matchInfo: debug ? {
-              originalText: text,
-              normalizedText: normalized,
-              pattern: 'partial-match',
-              isAscii: false
-            } : undefined
+            matchInfo: debug
+              ? {
+                  originalText: text,
+                  normalizedText: normalized,
+                  pattern: 'partial-match',
+                  isAscii: false,
+                }
+              : undefined,
           };
         }
       }
@@ -167,11 +166,11 @@ export class KeywordSearchUtils {
   ): { pattern: string } | null {
     // 正規表現特殊文字のエスケープ処理
     const escapedKeyword = this.escapeRegExp(keyword);
-    
+
     // 語境界を考慮したパターンマッチング
     const wordBoundaryPattern = new RegExp(`(?:^|\\s)${escapedKeyword}(?:\\s|$)`, 'i');
     const matches = wordBoundaryPattern.test(normalizedText);
-    
+
     if (!matches) {
       return null;
     }
@@ -182,7 +181,7 @@ export class KeywordSearchUtils {
       `\\w+_${escapedKeyword}_\\w+|${escapedKeyword}_\\w+(?=\\s|$)|(?<=\\s|^)\\w+_${escapedKeyword}(?=\\s|$)`,
       'i'
     );
-    
+
     if (functionNamePattern.test(originalLower)) {
       return null; // 関数名・変数名の一部の場合は除外
     }
@@ -205,14 +204,11 @@ export class KeywordSearchUtils {
    * @param caseSensitive 大文字小文字を区別するか
    * @returns 正規化済みキーワードリスト
    */
-  static normalizeKeywords(
-    keywords: string[],
-    caseSensitive: boolean = false
-  ): string[] {
+  static normalizeKeywords(keywords: string[], caseSensitive: boolean = false): string[] {
     const processed = keywords
-      .filter(kw => kw && kw.trim().length > 0)  // 空文字列・null・undefined除去
-      .map(kw => caseSensitive ? kw.trim() : kw.trim().toLowerCase());
-    
+      .filter(kw => kw && kw.trim().length > 0) // 空文字列・null・undefined除去
+      .map(kw => (caseSensitive ? kw.trim() : kw.trim().toLowerCase()));
+
     // 重複除去
     return [...new Set(processed)];
   }
@@ -232,10 +228,10 @@ export class KeywordSearchUtils {
     const startTime = performance.now();
     const result = this.searchKeywords(text, keywords, options);
     const endTime = performance.now();
-    
+
     return {
       ...result,
-      performanceMs: endTime - startTime
+      performanceMs: endTime - startTime,
     };
   }
 }

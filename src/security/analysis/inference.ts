@@ -14,7 +14,7 @@ import {
   SecurityTestMetrics,
   TestMethod,
   TypeInferenceResult,
-  SecurityTypeAnnotation
+  SecurityTypeAnnotation,
 } from '../types';
 import { TypeConstructors } from '../types/checker-framework-types';
 
@@ -61,9 +61,22 @@ export class SignatureBasedInference {
     const annotations: SecurityTypeAnnotation[] = [];
 
     // メソッドシグネチャからの推論
-    const sig: MethodSignature = (typeof method.signature === 'string') 
-      ? { name: method.signature, parameters: [], returnType: 'void', annotations: [], isAsync: false }
-      : (method.signature || { name: method.name, parameters: [], returnType: 'void', annotations: [], isAsync: false });
+    const sig: MethodSignature =
+      typeof method.signature === 'string'
+        ? {
+            name: method.signature,
+            parameters: [],
+            returnType: 'void',
+            annotations: [],
+            isAsync: false,
+          }
+        : method.signature || {
+            name: method.name,
+            parameters: [],
+            returnType: 'void',
+            annotations: [],
+            isAsync: false,
+          };
     const signatureAnnotations = this.inferFromSignature(sig);
     annotations.push(...signatureAnnotations);
 
@@ -85,9 +98,9 @@ export class SignatureBasedInference {
         totalVariables,
         inferred: inferredCount,
         failed: failedCount,
-        averageConfidence: this.calculateAverageConfidence(annotations)
+        averageConfidence: this.calculateAverageConfidence(annotations),
       },
-      inferenceTime: Date.now() - startTime
+      inferenceTime: Date.now() - startTime,
     };
   }
 
@@ -105,7 +118,7 @@ export class SignatureBasedInference {
       testingNeeds,
       recommendedTestTypes: this.recommendTestTypes(signature),
       estimatedTestCount: this.estimateRequiredTestCount(signature),
-      riskLevel: this.assessRiskLevel(signature)
+      riskLevel: this.assessRiskLevel(signature),
     };
   }
 
@@ -117,15 +130,11 @@ export class SignatureBasedInference {
 
     // アノテーションによる判定（@RequiresAdmin, @Authenticated など）
     const annotations = signature.annotations || [];
-    
-    const requiresAdmin = annotations.some(
-      annotation => annotation === '@RequiresAdmin'
-    );
-    
-    const requiresAuth = annotations.some(
-      annotation => annotation === '@Authenticated'
-    );
-    
+
+    const requiresAdmin = annotations.some(annotation => annotation === '@RequiresAdmin');
+
+    const requiresAuth = annotations.some(annotation => annotation === '@Authenticated');
+
     if (requiresAdmin) {
       requirements.push({
         id: `admin-auth-req-${signature.name}`,
@@ -134,7 +143,7 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.UNTAINTED,
         applicableSources: [TaintSource.USER_INPUT],
         severity: 'critical',
-        checks: ['admin_role_verification', 'permission_validation']
+        checks: ['admin_role_verification', 'permission_validation'],
       });
     } else if (requiresAuth) {
       requirements.push({
@@ -144,14 +153,14 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.UNTAINTED,
         applicableSources: [TaintSource.USER_INPUT],
         severity: 'high',
-        checks: ['authentication', 'session_validation']
+        checks: ['authentication', 'session_validation'],
       });
     }
 
     // メソッド名パターンによる判定
     if (this.isAuthRelated(signature.name)) {
       const authCoverageTypes = this.determineAuthCoverageTypes(signature);
-      
+
       requirements.push({
         id: `auth-req-${signature.name}`,
         type: 'auth-test',
@@ -159,14 +168,12 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.UNTAINTED,
         applicableSources: [TaintSource.USER_INPUT],
         severity: 'high',
-        checks: authCoverageTypes
+        checks: authCoverageTypes,
       });
     }
 
     // パラメータによる判定
-    const hasCredentialParams = signature.parameters.some(p => 
-      this.isCredentialParameter(p.name)
-    );
+    const hasCredentialParams = signature.parameters.some(p => this.isCredentialParameter(p.name));
 
     if (hasCredentialParams) {
       requirements.push({
@@ -176,7 +183,7 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.DEFINITELY_TAINTED,
         applicableSources: [TaintSource.USER_INPUT],
         severity: 'critical',
-        checks: ['credential-validation', 'brute-force-protection', 'timing-attack-protection']
+        checks: ['credential-validation', 'brute-force-protection', 'timing-attack-protection'],
       });
     }
 
@@ -190,13 +197,13 @@ export class SignatureBasedInference {
     const requirements: SecurityRequirement[] = [];
 
     // ユーザー入力パラメータの検出
-    const userInputParams = signature.parameters.filter(p => 
-      p.source === 'user-input' || this.isUserInputParameter(p.name)
+    const userInputParams = signature.parameters.filter(
+      p => p.source === 'user-input' || this.isUserInputParameter(p.name)
     );
 
     if (userInputParams.length > 0) {
       const validationTypes = this.determineValidationTypes(userInputParams);
-      
+
       requirements.push({
         id: `input-validation-req-${signature.name}`,
         type: 'input-validation',
@@ -204,14 +211,12 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
         applicableSources: [TaintSource.USER_INPUT, TaintSource.EXTERNAL_API],
         severity: 'medium',
-        checks: validationTypes
+        checks: validationTypes,
       });
     }
 
     // 特殊なデータ型の検出
-    const hasFileParams = signature.parameters.some(p => 
-      this.isFileParameter(p.type || p.name)
-    );
+    const hasFileParams = signature.parameters.some(p => this.isFileParameter(p.type || p.name));
 
     if (hasFileParams) {
       requirements.push({
@@ -221,7 +226,7 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.LIKELY_TAINTED,
         applicableSources: [TaintSource.FILE_SYSTEM],
         severity: 'high',
-        checks: ['file-type-validation', 'file-size-validation', 'malware-scanning']
+        checks: ['file-type-validation', 'file-size-validation', 'malware-scanning'],
       });
     }
 
@@ -235,13 +240,13 @@ export class SignatureBasedInference {
     const requirements: SecurityRequirement[] = [];
 
     // API アノテーションの検出
-    const isApiEndpoint = (signature.annotations || []).some(annotation => 
-      this.isApiAnnotation(annotation)
-    ) || this.isApiMethodName(signature.name);
+    const isApiEndpoint =
+      (signature.annotations || []).some(annotation => this.isApiAnnotation(annotation)) ||
+      this.isApiMethodName(signature.name);
 
     if (isApiEndpoint) {
       const securityFeatures = this.determineApiSecurityFeatures(signature);
-      
+
       requirements.push({
         id: `api-security-req-${signature.name}`,
         type: 'api-security',
@@ -249,7 +254,7 @@ export class SignatureBasedInference {
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
         applicableSources: [TaintSource.USER_INPUT, TaintSource.NETWORK],
         severity: 'high',
-        checks: securityFeatures
+        checks: securityFeatures,
       });
     }
 
@@ -269,7 +274,7 @@ export class SignatureBasedInference {
         type: 'session-management',
         required: ['session-validation', 'session-timeout', 'concurrent-session-control'],
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: [TaintSource.USER_INPUT]
+        applicableSources: [TaintSource.USER_INPUT],
       });
     }
 
@@ -286,14 +291,14 @@ export class SignatureBasedInference {
     signature.parameters.forEach(param => {
       const securityType = this.inferParameterSecurityType(param);
       const taintLevel = this.inferParameterTaintLevel(param);
-      
+
       if (securityType) {
         annotations.push({
           target: param.name,
           securityType,
           taintLevel,
           confidence: 0.85,
-          evidence: [`Parameter type: ${param.type}`, `Parameter source: ${param.source}`]
+          evidence: [`Parameter type: ${param.type}`, `Parameter source: ${param.source}`],
         });
       }
     });
@@ -306,7 +311,7 @@ export class SignatureBasedInference {
         securityType: methodSecurityType,
         taintLevel: TaintLevel.UNTAINTED,
         confidence: 0.7,
-        evidence: [`Method name pattern: ${signature.name}`]
+        evidence: [`Method name pattern: ${signature.name}`],
       });
     }
 
@@ -329,7 +334,7 @@ export class SignatureBasedInference {
           securityType: securityType.type,
           taintLevel: securityType.taintLevel,
           confidence: securityType.confidence,
-          evidence: securityType.evidence
+          evidence: securityType.evidence,
         });
       }
     });
@@ -342,7 +347,7 @@ export class SignatureBasedInference {
         securityType: call.securityType,
         taintLevel: call.resultTaintLevel,
         confidence: 0.8,
-        evidence: [`Security API call: ${call.method}`]
+        evidence: [`Security API call: ${call.method}`],
       });
     });
 
@@ -364,7 +369,7 @@ export class SignatureBasedInference {
         securityType: SecurityType.USER_INPUT,
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
         confidence: 0.9,
-        evidence: [`User input detected: ${input.source}`]
+        evidence: [`User input detected: ${input.source}`],
       });
     });
 
@@ -376,7 +381,7 @@ export class SignatureBasedInference {
         securityType: SecurityType.SANITIZED_DATA,
         taintLevel: TaintLevel.UNTAINTED,
         confidence: 0.85,
-        evidence: ['Sanitizer applied']
+        evidence: ['Sanitizer applied'],
       });
     });
 
@@ -394,109 +399,95 @@ export class SignatureBasedInference {
   // ヘルパーメソッドの実装
   private isAuthRelated(methodName: string): boolean {
     const patterns = ['auth', 'login', 'logout', 'signin', 'signout', 'authenticate', 'authorize'];
-    return patterns.some(pattern => 
-      methodName.toLowerCase().includes(pattern.toLowerCase())
-    );
+    return patterns.some(pattern => methodName.toLowerCase().includes(pattern.toLowerCase()));
   }
 
   private determineAuthCoverageTypes(signature: MethodSignature): string[] {
     const types = ['success', 'failure'];
-    
+
     if (signature.name.toLowerCase().includes('token')) {
       types.push('token-expiry', 'token-validation');
     }
-    
+
     if (signature.name.toLowerCase().includes('password')) {
       types.push('brute-force-protection');
     }
-    
+
     return types;
   }
 
   private isCredentialParameter(paramName: string): boolean {
     const patterns = ['password', 'passwd', 'token', 'credential', 'auth', 'login'];
-    return patterns.some(pattern => 
-      paramName.toLowerCase().includes(pattern)
-    );
+    return patterns.some(pattern => paramName.toLowerCase().includes(pattern));
   }
 
   private isUserInputParameter(paramName: string): boolean {
     const patterns = ['input', 'data', 'value', 'param', 'body', 'query'];
-    return patterns.some(pattern => 
-      paramName.toLowerCase().includes(pattern)
-    );
+    return patterns.some(pattern => paramName.toLowerCase().includes(pattern));
   }
 
   private isFileParameter(paramType: string): boolean {
     const patterns = ['file', 'upload', 'attachment', 'document', 'image'];
-    return patterns.some(pattern => 
-      paramType.toLowerCase().includes(pattern)
-    );
+    return patterns.some(pattern => paramType.toLowerCase().includes(pattern));
   }
 
   private determineValidationTypes(params: Parameter[]): string[] {
     const types = ['input-validation', 'type-validation'];
-    
+
     if (params.some(p => p.type?.includes('string'))) {
       types.push('string-validation', 'length-validation');
     }
-    
+
     if (params.some(p => p.type?.includes('number'))) {
       types.push('numeric-validation', 'range-validation');
     }
-    
+
     return types;
   }
 
   private isApiAnnotation(annotation: string): boolean {
     const patterns = ['@api', '@endpoint', '@route', '@controller', '@restcontroller'];
-    return patterns.some(pattern => 
-      annotation.toLowerCase().includes(pattern.toLowerCase())
-    );
+    return patterns.some(pattern => annotation.toLowerCase().includes(pattern.toLowerCase()));
   }
 
   private isApiMethodName(methodName: string): boolean {
     const patterns = ['endpoint', 'api', 'route', 'handler', 'controller', 'payment', 'process'];
-    return patterns.some(pattern => 
-      methodName.toLowerCase().includes(pattern)
-    );
+    return patterns.some(pattern => methodName.toLowerCase().includes(pattern));
   }
 
   private determineApiSecurityFeatures(signature: MethodSignature): string[] {
     const features = ['authentication', 'authorization', 'input-validation'];
-    
+
     if (signature.parameters.length > 0) {
       features.push('parameter-validation');
     }
-    
+
     // Rate limiting の判定
     const hasRateLimitAnnotation = (signature.annotations || []).some(
       annotation => annotation === '@RateLimit'
     );
-    
+
     if (hasRateLimitAnnotation || signature.name.toLowerCase().includes('public')) {
       features.push('rate_limiting');
     }
-    
+
     return features;
   }
 
   private isSessionRelated(methodName: string): boolean {
     const patterns = ['session', 'cookie', 'state', 'context'];
-    return patterns.some(pattern => 
-      methodName.toLowerCase().includes(pattern)
-    );
+    return patterns.some(pattern => methodName.toLowerCase().includes(pattern));
   }
 
   private inferParameterSecurityType(param: Parameter): SecurityType | undefined {
     if (param.source === 'user-input') {
       return SecurityType.USER_INPUT;
     }
-    
+
     if (this.isCredentialParameter(param.name)) {
       return SecurityType.AUTH_TOKEN;
     }
-    
+
     return undefined;
   }
 
@@ -504,11 +495,11 @@ export class SignatureBasedInference {
     if (param.source === 'user-input') {
       return TaintLevel.DEFINITELY_TAINTED;
     }
-    
+
     if (param.source === 'database') {
       return TaintLevel.POSSIBLY_TAINTED;
     }
-    
+
     return TaintLevel.UNTAINTED;
   }
 
@@ -516,18 +507,18 @@ export class SignatureBasedInference {
     if (this.isAuthRelated(methodName)) {
       return SecurityType.AUTH_TOKEN;
     }
-    
+
     if (methodName.toLowerCase().includes('validate')) {
       return SecurityType.VALIDATED_INPUT;
     }
-    
+
     return undefined;
   }
 
   private extractVariableDeclarations(content: string): VariableDeclaration[] {
     const declarations: VariableDeclaration[] = [];
     const lines = content.split('\n');
-    
+
     lines.forEach((line, index) => {
       const match = line.match(/(const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+);?/);
       if (match) {
@@ -535,42 +526,42 @@ export class SignatureBasedInference {
           name: match[2],
           type: match[1],
           initializer: match[3].trim(),
-          line: index + 1
+          line: index + 1,
         });
       }
     });
-    
+
     return declarations;
   }
 
   private inferVariableSecurityType(decl: VariableDeclaration): InferredSecurityType | undefined {
     const initializer = decl.initializer.toLowerCase();
-    
+
     if (initializer.includes('req.body') || initializer.includes('req.query')) {
       return {
         type: SecurityType.USER_INPUT,
         taintLevel: TaintLevel.DEFINITELY_TAINTED,
         confidence: 0.9,
-        evidence: ['Request parameter assignment']
+        evidence: ['Request parameter assignment'],
       };
     }
-    
+
     if (initializer.includes('sanitize') || initializer.includes('validate')) {
       return {
         type: SecurityType.SANITIZED_DATA,
         taintLevel: TaintLevel.UNTAINTED,
         confidence: 0.85,
-        evidence: ['Sanitization function call']
+        evidence: ['Sanitization function call'],
       };
     }
-    
+
     return undefined;
   }
 
   private extractSecurityApiCalls(content: string): SecurityApiCall[] {
     const calls: SecurityApiCall[] = [];
     const lines = content.split('\n');
-    
+
     lines.forEach(line => {
       // JWT トークン関連
       if (line.includes('jwt.verify') || line.includes('jwt.sign')) {
@@ -578,21 +569,21 @@ export class SignatureBasedInference {
           method: 'jwt',
           securityType: SecurityType.AUTH_TOKEN,
           resultTaintLevel: TaintLevel.UNTAINTED,
-          variable: this.extractAssignmentTarget(line)
+          variable: this.extractAssignmentTarget(line),
         });
       }
-      
+
       // 暗号化関連
       if (line.includes('bcrypt') || line.includes('crypto')) {
         calls.push({
           method: 'crypto',
           securityType: SecurityType.SANITIZED_DATA,
           resultTaintLevel: TaintLevel.UNTAINTED,
-          variable: this.extractAssignmentTarget(line)
+          variable: this.extractAssignmentTarget(line),
         });
       }
     });
-    
+
     return calls;
   }
 
@@ -601,27 +592,27 @@ export class SignatureBasedInference {
     const patterns = [
       { pattern: /(\w+)\s*=\s*req\.body/g, source: 'request body' },
       { pattern: /(\w+)\s*=\s*req\.query/g, source: 'query parameter' },
-      { pattern: /(\w+)\s*=\s*req\.params/g, source: 'path parameter' }
+      { pattern: /(\w+)\s*=\s*req\.params/g, source: 'path parameter' },
     ];
-    
+
     patterns.forEach(({ pattern, source }) => {
       const matches = [...content.matchAll(pattern)];
       matches.forEach(match => {
         inputs.push({
           variable: match[1],
           source,
-          confidence: 0.9
+          confidence: 0.9,
         });
       });
     });
-    
+
     return inputs;
   }
 
   private detectSanitizedVariables(content: string): string[] {
     const variables: string[] = [];
     const lines = content.split('\n');
-    
+
     lines.forEach(line => {
       if (line.includes('sanitize(') || line.includes('escape(') || line.includes('validate(')) {
         const target = this.extractAssignmentTarget(line);
@@ -630,7 +621,7 @@ export class SignatureBasedInference {
         }
       }
     });
-    
+
     return variables;
   }
 
@@ -659,52 +650,52 @@ export class SignatureBasedInference {
 
   private calculateSecurityRelevance(signature: MethodSignature): number {
     let relevance = 0;
-    
+
     if (this.isAuthRelated(signature.name)) relevance += 0.4;
     if (signature.parameters.some(p => p.source === 'user-input')) relevance += 0.3;
     if ((signature.annotations || []).some(a => this.isApiAnnotation(a))) relevance += 0.2;
     if (signature.parameters.some(p => this.isCredentialParameter(p.name))) relevance += 0.1;
-    
+
     return Math.min(1.0, relevance);
   }
 
   private assessTestingNeeds(signature: MethodSignature): TestingNeeds {
     const securityRelevance = this.calculateSecurityRelevance(signature);
     const complexity = this.calculateSignatureComplexity(signature);
-    
+
     return {
       priority: securityRelevance > 0.5 ? 'high' : 'medium',
       estimatedEffort: Math.ceil(complexity * securityRelevance * 10),
-      requiredCoverage: securityRelevance * 0.8 + 0.2
+      requiredCoverage: securityRelevance * 0.8 + 0.2,
     };
   }
 
   private recommendTestTypes(signature: MethodSignature): string[] {
     const types: string[] = [];
-    
+
     if (this.isAuthRelated(signature.name)) {
       types.push('authentication-test', 'authorization-test');
     }
-    
+
     if (signature.parameters.some(p => p.source === 'user-input')) {
       types.push('input-validation-test', 'boundary-test');
     }
-    
+
     if ((signature.annotations || []).some(a => this.isApiAnnotation(a))) {
       types.push('api-security-test', 'integration-test');
     }
-    
+
     return types.length > 0 ? types : ['unit-test'];
   }
 
   private estimateRequiredTestCount(signature: MethodSignature): number {
     const base = 2; // minimum tests
     let count = base;
-    
+
     count += signature.parameters.length; // parameter combinations
     if (this.isAuthRelated(signature.name)) count += 3; // auth scenarios
     if (signature.parameters.some(p => p.source === 'user-input')) count += 2; // input validation
-    
+
     return Math.min(15, count); // reasonable upper limit
   }
 
@@ -712,7 +703,7 @@ export class SignatureBasedInference {
     const securityRelevance = this.calculateSecurityRelevance(signature);
     const hasUserInput = signature.parameters.some(p => p.source === 'user-input');
     const isAuthRelated = this.isAuthRelated(signature.name);
-    
+
     if (isAuthRelated && hasUserInput && securityRelevance > 0.7) return 'critical';
     if (securityRelevance > 0.5) return 'high';
     if (hasUserInput || securityRelevance > 0.3) return 'medium';

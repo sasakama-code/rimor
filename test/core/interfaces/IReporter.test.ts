@@ -7,7 +7,7 @@ import {
   ReportFormat,
   ReportOptions,
   ReportResult,
-  IReporter
+  IReporter,
 } from '../../../src/core/interfaces/IReporter';
 import { AnalysisResult } from '../../../src/core/interfaces/IAnalysisEngine';
 import { SecurityAuditResult } from '../../../src/core/interfaces/ISecurityAuditor';
@@ -34,7 +34,7 @@ describe('IReporter Interface', () => {
   describe('ReportOptions Type', () => {
     it('should have required format property', () => {
       const options: ReportOptions = {
-        format: ReportFormat.JSON
+        format: ReportFormat.JSON,
       };
 
       expect(options.format).toBe('json');
@@ -47,7 +47,7 @@ describe('IReporter Interface', () => {
         includeDetails: true,
         includeSummary: true,
         includeRecommendations: true,
-        customTemplate: '<html>{{content}}</html>'
+        customTemplate: '<html>{{content}}</html>',
       };
 
       expect(fullOptions.outputPath).toBe('/path/to/report.html');
@@ -59,7 +59,7 @@ describe('IReporter Interface', () => {
 
     it('should support minimal options', () => {
       const minimalOptions: ReportOptions = {
-        format: ReportFormat.TEXT
+        format: ReportFormat.TEXT,
       };
 
       expect(minimalOptions.outputPath).toBeUndefined();
@@ -71,7 +71,7 @@ describe('IReporter Interface', () => {
   describe('ReportResult Type', () => {
     it('should have required success property', () => {
       const result: ReportResult = {
-        success: true
+        success: true,
       };
 
       expect(result.success).toBe(true);
@@ -81,7 +81,7 @@ describe('IReporter Interface', () => {
       const successResult: ReportResult = {
         success: true,
         outputPath: '/path/to/output.json',
-        content: '{"result": "success"}'
+        content: '{"result": "success"}',
       };
 
       expect(successResult.success).toBe(true);
@@ -92,7 +92,7 @@ describe('IReporter Interface', () => {
     it('should allow failure with error', () => {
       const failureResult: ReportResult = {
         success: false,
-        error: 'Failed to generate report'
+        error: 'Failed to generate report',
       };
 
       expect(failureResult.success).toBe(false);
@@ -109,7 +109,7 @@ describe('IReporter Interface', () => {
       ): Promise<ReportResult> {
         return {
           success: true,
-          content: JSON.stringify(result)
+          content: JSON.stringify(result),
         };
       }
 
@@ -119,7 +119,7 @@ describe('IReporter Interface', () => {
       ): Promise<ReportResult> {
         return {
           success: true,
-          content: JSON.stringify(result)
+          content: JSON.stringify(result),
         };
       }
 
@@ -130,7 +130,7 @@ describe('IReporter Interface', () => {
       ): Promise<ReportResult> {
         return {
           success: true,
-          content: JSON.stringify({ analysisResult, securityResult })
+          content: JSON.stringify({ analysisResult, securityResult }),
         };
       }
 
@@ -141,7 +141,7 @@ describe('IReporter Interface', () => {
 
     it('should implement all required methods', () => {
       const reporter = new MockReporter();
-      
+
       expect(reporter.generateAnalysisReport).toBeDefined();
       expect(reporter.generateSecurityReport).toBeDefined();
       expect(reporter.printToConsole).toBeDefined();
@@ -161,13 +161,12 @@ describe('IReporter Interface', () => {
       const analysisResult: AnalysisResult = {
         totalFiles: 10,
         issues: [],
-        executionTime: 1000
+        executionTime: 1000,
       };
 
-      const result = await reporter.generateAnalysisReport(
-        analysisResult,
-        { format: ReportFormat.JSON }
-      );
+      const result = await reporter.generateAnalysisReport(analysisResult, {
+        format: ReportFormat.JSON,
+      });
 
       expect(result.success).toBe(true);
       expect(result.content).toBeDefined();
@@ -183,16 +182,15 @@ describe('IReporter Interface', () => {
           high: 0,
           medium: 0,
           low: 0,
-          total: 0
+          total: 0,
         },
         executionTime: 500,
-        filesScanned: 20
+        filesScanned: 20,
       };
 
-      const result = await reporter.generateSecurityReport(
-        securityResult,
-        { format: ReportFormat.JSON }
-      );
+      const result = await reporter.generateSecurityReport(securityResult, {
+        format: ReportFormat.JSON,
+      });
 
       expect(result.success).toBe(true);
       expect(result.content).toBeDefined();
@@ -246,15 +244,15 @@ describe('IReporter Interface', () => {
 
     it('should validate ReportOptions correctly', () => {
       const valid: ReportOptions = {
-        format: ReportFormat.JSON
+        format: ReportFormat.JSON,
       };
 
       const invalid = {
-        format: 'invalid-format'
+        format: 'invalid-format',
       };
 
       const incomplete = {
-        includeDetails: true
+        includeDetails: true,
         // missing format
       };
 
@@ -267,17 +265,17 @@ describe('IReporter Interface', () => {
     it('should validate ReportResult correctly', () => {
       const valid: ReportResult = {
         success: true,
-        content: 'Report content'
+        content: 'Report content',
       };
 
       const validFailure: ReportResult = {
         success: false,
-        error: 'Error message'
+        error: 'Error message',
       };
 
       const invalid = {
         // missing success property
-        content: 'Report content'
+        content: 'Report content',
       };
 
       expect(isReportResult(valid)).toBe(true);
@@ -293,13 +291,13 @@ describe('IReporter Interface', () => {
         ReportFormat.TEXT,
         ReportFormat.JSON,
         ReportFormat.HTML,
-        ReportFormat.MARKDOWN
+        ReportFormat.MARKDOWN,
       ];
 
       formats.forEach(format => {
         const options: ReportOptions = {
           format,
-          includeDetails: true
+          includeDetails: true,
         };
 
         expect(options.format).toBeDefined();
@@ -312,17 +310,17 @@ describe('IReporter Interface', () => {
         format: ReportFormat.HTML,
         customTemplate: '<html>{{content}}</html>',
         includeDetails: true,
-        includeSummary: true
+        includeSummary: true,
       };
 
       const jsonOptions: ReportOptions = {
         format: ReportFormat.JSON,
-        outputPath: '/path/to/report.json'
+        outputPath: '/path/to/report.json',
       };
 
       const markdownOptions: ReportOptions = {
         format: ReportFormat.MARKDOWN,
-        includeRecommendations: true
+        includeRecommendations: true,
       };
 
       expect(htmlOptions.customTemplate).toBeDefined();

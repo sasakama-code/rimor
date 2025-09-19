@@ -16,19 +16,22 @@ import { AIJsonOutput } from '../../core/types/core-definitions';
  * Martin Fowlerの「Replace Inheritance with Delegation」の逆適用
  */
 export declare class AIJsonFormatter extends BaseFormatter {
-    name: string;
-    /**
-     * AI向けJSON形式でレポートを生成
-     * Template Methodパターンの具体実装
-     */
-    protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): AIJsonOutput;
-    /**
-     * 全体評価を生成
-     */
-    private generateOverallAssessment;
-    /**
-     * suggestedActionをオブジェクト形式にフォーマット
-     */
-    private formatActionObject;
+  name: string;
+  /**
+   * AI向けJSON形式でレポートを生成
+   * Template Methodパターンの具体実装
+   */
+  protected doFormat(
+    result: UnifiedAnalysisResult,
+    options?: Record<string, unknown>
+  ): AIJsonOutput;
+  /**
+   * 全体評価を生成
+   */
+  private generateOverallAssessment;
+  /**
+   * suggestedActionをオブジェクト形式にフォーマット
+   */
+  private formatActionObject;
 }
 //# sourceMappingURL=AIJsonFormatter.d.ts.map

@@ -1,7 +1,7 @@
 /**
  * Implementation Truth機能 エンドツーエンドテスト
  * v0.9.0 AIコーディング時代の品質保証エンジン対応
- * 
+ *
  * 実際のファイルシステムとCLIを使用した統合テスト
  */
 
@@ -17,10 +17,10 @@ describe('Implementation Truth E2E テスト', () => {
   beforeAll(() => {
     // テスト用の一時ディレクトリを作成
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-e2e-'));
-    
+
     // Rimorバイナリのパスを設定
     rimorBinary = path.resolve(__dirname, '../../dist/index.js');
-    
+
     // バイナリが存在することを確認
     if (!fs.existsSync(rimorBinary)) {
       throw new Error(`Rimor binary not found at ${rimorBinary}. Run 'npm run build' first.`);
@@ -48,7 +48,7 @@ describe('Implementation Truth E2E テスト', () => {
       // Arrange: テスト用のTypeScriptファイルを作成
       const srcDir = path.join(tempDir, 'src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'user.ts');
       const testCode = `
 export class User {
@@ -69,15 +69,15 @@ export class User {
 
       // Act: Implementation Truth分析を実行
       const command = `node "${rimorBinary}" analyze "${srcDir}" --implementation-truth --format=json`;
-      const result = execSync(command, { 
+      const result = execSync(command, {
         encoding: 'utf8',
         cwd: tempDir,
-        timeout: 30000 // 30秒のタイムアウト
+        timeout: 30000, // 30秒のタイムアウト
       });
 
       // Assert: 結果の検証
       expect(result).toBeDefined();
-      
+
       const jsonResult = JSON.parse(result);
       expect(jsonResult).toHaveProperty('metadata');
       expect(jsonResult.metadata).toHaveProperty('analysisMode', 'implementation-truth');
@@ -128,19 +128,19 @@ describe('Calculator', () => {
 
       // Act: 統合分析を実行
       const command = `node "${rimorBinary}" analyze "${srcDir}" --implementation-truth --test-path="${testDir}" --format=json --verbose`;
-      const result = execSync(command, { 
+      const result = execSync(command, {
         encoding: 'utf8',
         cwd: tempDir,
-        timeout: 30000
+        timeout: 30000,
       });
 
       // Assert: 結果の検証
       expect(result).toContain('v0.9.0 (Implementation Truth Analysis)');
-      
+
       const lines = result.split('\n');
       const jsonLine = lines.find(line => line.trim().startsWith('{'));
       expect(jsonLine).toBeDefined();
-      
+
       if (jsonLine) {
         const jsonResult = JSON.parse(jsonLine);
         expect(jsonResult.metadata).toHaveProperty('implementationTruthData');
@@ -154,7 +154,7 @@ describe('Calculator', () => {
       // Arrange: テスト用ファイルを作成
       const srcDir = path.join(tempDir, 'src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'api.ts');
       const testCode = `
 export class APIClient {
@@ -174,10 +174,10 @@ export class APIClient {
 
       // Act: AI向け出力で分析
       const command = `node "${rimorBinary}" analyze "${srcDir}" --ai-output --format=ai-json`;
-      const result = execSync(command, { 
+      const result = execSync(command, {
         encoding: 'utf8',
         cwd: tempDir,
-        timeout: 30000
+        timeout: 30000,
       });
 
       // Assert: AI-JSON形式の検証
@@ -193,7 +193,7 @@ export class APIClient {
       // Arrange: テスト用ファイルを作成
       const srcDir = path.join(tempDir, 'src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'service.ts');
       const testCode = `
 export class UserService {
@@ -211,17 +211,17 @@ export class UserService {
 
       // Act: 専用コマンドを実行
       const command = `node "${rimorBinary}" implementation-truth-analyze "${srcDir}" --format=ai-json --verbose`;
-      
+
       try {
-        const result = execSync(command, { 
+        const result = execSync(command, {
           encoding: 'utf8',
           cwd: tempDir,
-          timeout: 30000
+          timeout: 30000,
         });
 
         // Assert: 専用コマンドの実行成功
         expect(result).toContain('Implementation Truth分析');
-        
+
         // JSON部分を抽出して検証
         const lines = result.split('\n');
         const jsonLine = lines.find(line => line.trim().startsWith('{'));
@@ -241,12 +241,12 @@ export class UserService {
       // Act & Assert: 存在しないパスでエラーが発生することを確認
       const nonExistentPath = path.join(tempDir, 'non-existent');
       const command = `node "${rimorBinary}" analyze "${nonExistentPath}" --implementation-truth`;
-      
+
       expect(() => {
-        execSync(command, { 
+        execSync(command, {
           encoding: 'utf8',
           cwd: tempDir,
-          timeout: 10000
+          timeout: 10000,
         });
       }).toThrow();
     });
@@ -259,12 +259,12 @@ export class UserService {
 
       // Act & Assert: 不正なフォーマット指定でエラーが発生することを確認
       const command = `node "${rimorBinary}" analyze "${srcDir}" --implementation-truth --format=invalid-format`;
-      
+
       expect(() => {
-        execSync(command, { 
+        execSync(command, {
           encoding: 'utf8',
           cwd: tempDir,
-          timeout: 10000
+          timeout: 10000,
         });
       }).toThrow();
     });
@@ -277,7 +277,7 @@ export class UserService {
       const outputDir = path.join(tempDir, 'output');
       fs.mkdirSync(srcDir, { recursive: true });
       fs.mkdirSync(outputDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'example.ts');
       fs.writeFileSync(testFile, 'export const example = "test";');
 
@@ -285,15 +285,15 @@ export class UserService {
 
       // Act: ファイル出力で分析
       const command = `node "${rimorBinary}" analyze "${srcDir}" --implementation-truth --output-json="${outputFile}"`;
-      execSync(command, { 
+      execSync(command, {
         encoding: 'utf8',
         cwd: tempDir,
-        timeout: 30000
+        timeout: 30000,
       });
 
       // Assert: 出力ファイルが作成され、有効なJSONであることを確認
       expect(fs.existsSync(outputFile)).toBe(true);
-      
+
       const fileContent = fs.readFileSync(outputFile, 'utf8');
       const jsonResult = JSON.parse(fileContent);
       expect(jsonResult).toHaveProperty('metadata');
@@ -327,19 +327,19 @@ export class Module${i} {
       // Act: パフォーマンス測定
       const startTime = Date.now();
       const command = `node "${rimorBinary}" analyze "${srcDir}" --implementation-truth --format=json`;
-      
-      const result = execSync(command, { 
+
+      const result = execSync(command, {
         encoding: 'utf8',
         cwd: tempDir,
-        timeout: 60000 // 1分のタイムアウト
+        timeout: 60000, // 1分のタイムアウト
       });
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
 
       // Assert: 合理的な実行時間（30秒以内）
       expect(executionTime).toBeLessThan(30000);
-      
+
       const jsonResult = JSON.parse(result);
       expect(jsonResult.totalFiles).toBeGreaterThanOrEqual(10);
     });

@@ -11,7 +11,7 @@ import {
   createTestFile,
   createGodObjectCode,
   createSpaghettiCode,
-  cleanupTempProject
+  cleanupTempProject,
 } from '../../helpers/integration-test-utils';
 
 describe('PatternDetector Integration Tests', () => {
@@ -53,15 +53,15 @@ export class DatabaseConnection {
 
       const filePath = path.join(projectDir, 'DatabaseConnection.ts');
       createTestFile(projectDir, 'DatabaseConnection.ts', singletonCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'DatabaseConnection.ts');
-      
+
       expect(patterns).toContainEqual(
         expect.objectContaining({
           name: 'Singleton',
           type: 'Creational',
-          location: 'DatabaseConnection.ts'
+          location: 'DatabaseConnection.ts',
         })
       );
     });
@@ -100,15 +100,15 @@ export class AnimalFactory {
 
       const filePath = path.join(projectDir, 'AnimalFactory.ts');
       createTestFile(projectDir, 'AnimalFactory.ts', factoryCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'AnimalFactory.ts');
-      
+
       expect(patterns).toContainEqual(
         expect.objectContaining({
           name: 'Factory',
           type: 'Creational',
-          location: 'AnimalFactory.ts'
+          location: 'AnimalFactory.ts',
         })
       );
     });
@@ -154,10 +154,10 @@ export class EventEmitter {
 
       const filePath = path.join(projectDir, 'EventEmitter.ts');
       createTestFile(projectDir, 'EventEmitter.ts', observerCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'EventEmitter.ts');
-      
+
       // パターン検出器が動作していることを確認
       expect(Array.isArray(patterns)).toBe(true);
       // パターンが検出される場合はObserverパターンが含まれることを期待（検出されなくても合格）
@@ -172,16 +172,16 @@ export class EventEmitter {
       const godObjectCode = createGodObjectCode();
       const filePath = path.join(projectDir, 'ApplicationManager.ts');
       createTestFile(projectDir, 'ApplicationManager.ts', godObjectCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'ApplicationManager.ts');
-      
+
       expect(antiPatterns).toContainEqual(
         expect.objectContaining({
           type: 'God Object',
           severity: 'high',
           location: 'ApplicationManager.ts',
-          recommendation: expect.stringContaining('Single Responsibility')
+          recommendation: expect.stringContaining('Single Responsibility'),
         })
       );
     });
@@ -190,16 +190,16 @@ export class EventEmitter {
       const spaghettiCode = createSpaghettiCode();
       const filePath = path.join(projectDir, 'processData.ts');
       createTestFile(projectDir, 'processData.ts', spaghettiCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'processData.ts');
-      
+
       expect(antiPatterns).toContainEqual(
         expect.objectContaining({
           type: 'Spaghetti Code',
           severity: 'medium',
           location: 'processData.ts',
-          recommendation: expect.stringContaining('nested')
+          recommendation: expect.stringContaining('nested'),
         })
       );
     });
@@ -230,16 +230,16 @@ function calculateTax3(amount: number): number {
 
       const filePath = path.join(projectDir, 'taxCalculator.ts');
       createTestFile(projectDir, 'taxCalculator.ts', copyPasteCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'taxCalculator.ts');
-      
+
       expect(antiPatterns).toContainEqual(
         expect.objectContaining({
           type: 'Copy-Paste Programming',
           severity: 'medium',
           location: 'taxCalculator.ts',
-          recommendation: expect.stringContaining('DRY')
+          recommendation: expect.stringContaining('DRY'),
         })
       );
     });
@@ -275,10 +275,10 @@ export class DataProcessor {
 
       const filePath = path.join(projectDir, 'DataProcessor.ts');
       createTestFile(projectDir, 'DataProcessor.ts', longMethodCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'DataProcessor.ts');
-      
+
       // アンチパターン検出器が動作していることを確認
       expect(Array.isArray(antiPatterns)).toBe(true);
       // アンチパターンが検出される場合はLong Methodが含まれることを期待（検出されなくても合格）
@@ -291,7 +291,10 @@ export class DataProcessor {
   describe('Integration with multiple files', () => {
     it('should analyze patterns across multiple files in a project', () => {
       // 複数のファイルを作成
-      createTestFile(projectDir, 'src/singleton.ts', `
+      createTestFile(
+        projectDir,
+        'src/singleton.ts',
+        `
 export class Config {
   private static instance: Config;
   private constructor() {}
@@ -300,9 +303,13 @@ export class Config {
     return this.instance;
   }
 }
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/factory.ts', `
+      createTestFile(
+        projectDir,
+        'src/factory.ts',
+        `
 export class ShapeFactory {
   createShape(type: string) {
     switch(type) {
@@ -312,7 +319,8 @@ export class ShapeFactory {
     }
   }
 }
-      `);
+      `
+      );
 
       createTestFile(projectDir, 'src/god-object.ts', createGodObjectCode());
 
@@ -325,15 +333,9 @@ export class ShapeFactory {
       const factoryPatterns = detector.detectDesignPatterns(factoryContent, 'factory.ts');
       const godObjectAntiPatterns = detector.detectAntiPatterns(godObjectContent, 'god-object.ts');
 
-      expect(singletonPatterns).toContainEqual(
-        expect.objectContaining({ name: 'Singleton' })
-      );
-      expect(factoryPatterns).toContainEqual(
-        expect.objectContaining({ name: 'Factory' })
-      );
-      expect(godObjectAntiPatterns).toContainEqual(
-        expect.objectContaining({ type: 'God Object' })
-      );
+      expect(singletonPatterns).toContainEqual(expect.objectContaining({ name: 'Singleton' }));
+      expect(factoryPatterns).toContainEqual(expect.objectContaining({ name: 'Factory' }));
+      expect(godObjectAntiPatterns).toContainEqual(expect.objectContaining({ type: 'God Object' }));
     });
   });
 
@@ -341,11 +343,11 @@ export class ShapeFactory {
     it('should handle empty files gracefully', () => {
       const emptyFile = path.join(projectDir, 'empty.ts');
       createTestFile(projectDir, 'empty.ts', '');
-      
+
       const fileContent = fs.readFileSync(emptyFile, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'empty.ts');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'empty.ts');
-      
+
       expect(patterns).toEqual([]);
       expect(antiPatterns).toEqual([]);
     });
@@ -357,14 +359,14 @@ export class ShapeFactory {
    comment */
 // Another comment
       `;
-      
+
       const filePath = path.join(projectDir, 'comments.ts');
       createTestFile(projectDir, 'comments.ts', commentOnlyCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const patterns = detector.detectDesignPatterns(fileContent, 'comments.ts');
       const antiPatterns = detector.detectAntiPatterns(fileContent, 'comments.ts');
-      
+
       expect(patterns).toEqual([]);
       expect(antiPatterns).toEqual([]);
     });
@@ -372,12 +374,12 @@ export class ShapeFactory {
     it('should handle very large files', () => {
       // 大きなファイルを生成
       const largeCode = Array(1000).fill('function test() { return true; }').join('\n');
-      
+
       const filePath = path.join(projectDir, 'large.ts');
       createTestFile(projectDir, 'large.ts', largeCode);
-      
+
       const fileContent = fs.readFileSync(filePath, 'utf-8');
-      
+
       // エラーなく処理できることを確認
       expect(() => {
         detector.detectDesignPatterns(fileContent, 'large.ts');

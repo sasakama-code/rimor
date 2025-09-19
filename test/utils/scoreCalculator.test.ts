@@ -14,13 +14,13 @@ describe('ScoreCalculator', () => {
         {
           overall: 80,
           dimensions: { completeness: 85, correctness: 75, maintainability: 80 },
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           overall: 70,
           dimensions: { completeness: 75, correctness: 65, maintainability: 70 },
-          confidence: 0.8
-        }
+          confidence: 0.8,
+        },
       ];
 
       const aggregated = calculator.aggregateScores(pluginScores);
@@ -42,7 +42,7 @@ describe('ScoreCalculator', () => {
       const score: QualityScore = {
         overall: 85,
         dimensions: { completeness: 90, correctness: 80, maintainability: 85 },
-        confidence: 0.95
+        confidence: 0.95,
       };
 
       const aggregated = calculator.aggregateScores([score]);
@@ -52,5 +52,4 @@ describe('ScoreCalculator', () => {
       expect(aggregated.metadata.aggregatedFrom).toBe(1);
     });
   });
-
 });

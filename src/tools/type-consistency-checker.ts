@@ -30,7 +30,7 @@ export class TypeConsistencyChecker {
    */
   async collectTypeDefinitions(rootDir: string): Promise<void> {
     const files = this.getAllTypeScriptFiles(rootDir);
-    
+
     for (const file of files) {
       await this.analyzeFile(file);
     }
@@ -45,7 +45,7 @@ export class TypeConsistencyChecker {
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
-      
+
       if (entry.isDirectory() && !entry.name.includes('node_modules')) {
         files.push(...this.getAllTypeScriptFiles(fullPath));
       } else if (entry.isFile() && entry.name.endsWith('.ts')) {
@@ -61,12 +61,7 @@ export class TypeConsistencyChecker {
    */
   private async analyzeFile(filePath: string): Promise<void> {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const sourceFile = ts.createSourceFile(
-      filePath,
-      content,
-      ts.ScriptTarget.Latest,
-      true
-    );
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
 
     const visit = (node: ts.Node) => {
       if (ts.isInterfaceDeclaration(node)) {
@@ -75,7 +70,7 @@ export class TypeConsistencyChecker {
           filePath,
           definition: node.getText(sourceFile),
           kind: 'interface',
-          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal'
+          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal',
         });
       } else if (ts.isTypeAliasDeclaration(node)) {
         this.registerTypeDefinition({
@@ -83,7 +78,7 @@ export class TypeConsistencyChecker {
           filePath,
           definition: node.getText(sourceFile),
           kind: 'type',
-          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal'
+          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal',
         });
       } else if (ts.isEnumDeclaration(node)) {
         this.registerTypeDefinition({
@@ -91,7 +86,7 @@ export class TypeConsistencyChecker {
           filePath,
           definition: node.getText(sourceFile),
           kind: 'enum',
-          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal'
+          exportStatus: this.hasExportModifier(node) ? 'exported' : 'internal',
         });
       }
 
@@ -104,7 +99,9 @@ export class TypeConsistencyChecker {
   /**
    * export修飾子の確認
    */
-  private hasExportModifier(node: ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration): boolean {
+  private hasExportModifier(
+    node: ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration
+  ): boolean {
     if (!node.modifiers) return false;
     return node.modifiers.some((m: any) => m.kind === ts.SyntaxKind.ExportKeyword);
   }
@@ -127,11 +124,11 @@ export class TypeConsistencyChecker {
     for (const [typeName, definitions] of this.typeDefinitions.entries()) {
       if (definitions.length > 1) {
         const isInconsistent = this.areDefinitionsInconsistent(definitions);
-        
+
         this.conflicts.push({
           typeName,
           definitions,
-          conflictType: isInconsistent ? 'inconsistent' : 'duplicate'
+          conflictType: isInconsistent ? 'inconsistent' : 'duplicate',
         });
       }
     }
@@ -143,9 +140,7 @@ export class TypeConsistencyChecker {
    * 定義の不整合をチェック
    */
   private areDefinitionsInconsistent(definitions: TypeDefinition[]): boolean {
-    const normalizedDefs = definitions.map(d => 
-      this.normalizeDefinition(d.definition)
-    );
+    const normalizedDefs = definitions.map(d => this.normalizeDefinition(d.definition));
 
     return new Set(normalizedDefs).size > 1;
   }
@@ -166,19 +161,19 @@ export class TypeConsistencyChecker {
    */
   generateReport(): string {
     const report: string[] = [];
-    
+
     report.push('# 型定義一貫性チェックレポート');
     report.push(`\n生成日時: ${new Date().toISOString()}`);
     report.push(`\n## サマリー`);
     report.push(`- 総型定義数: ${this.typeDefinitions.size}`);
     report.push(`- 競合数: ${this.conflicts.length}`);
-    
+
     if (this.conflicts.length > 0) {
       report.push(`\n## 競合詳細`);
-      
+
       for (const conflict of this.conflicts) {
         report.push(`\n### ${conflict.typeName} (${conflict.conflictType})`);
-        
+
         for (const def of conflict.definitions) {
           report.push(`\n#### ${def.filePath}`);
           report.push(`- 種別: ${def.kind}`);
@@ -191,7 +186,7 @@ export class TypeConsistencyChecker {
     }
 
     report.push(`\n## 推奨アクション`);
-    
+
     for (const conflict of this.conflicts) {
       if (conflict.conflictType === 'inconsistent') {
         report.push(`- ${conflict.typeName}: 定義を統一してください`);
@@ -208,7 +203,7 @@ export class TypeConsistencyChecker {
    */
   generateUnifiedTypes(outputPath: string): void {
     const unifiedTypes: string[] = [];
-    
+
     unifiedTypes.push('/**');
     unifiedTypes.push(' * 統一型定義ファイル');
     unifiedTypes.push(' * 自動生成: ' + new Date().toISOString());
@@ -219,18 +214,18 @@ export class TypeConsistencyChecker {
 
     for (const [typeName, definitions] of this.typeDefinitions.entries()) {
       if (processedTypes.has(typeName)) continue;
-      
+
       const exportedDef = definitions.find(d => d.exportStatus === 'exported');
       const selectedDef = exportedDef || definitions[0];
-      
+
       if (definitions.length > 1) {
         unifiedTypes.push(`// 注意: ${typeName}は${definitions.length}箇所で定義されています`);
         unifiedTypes.push(`// 選択元: ${selectedDef.filePath}`);
       }
-      
+
       unifiedTypes.push(selectedDef.definition);
       unifiedTypes.push('');
-      
+
       processedTypes.add(typeName);
     }
 
@@ -245,20 +240,20 @@ if (require.main === module) {
   (async () => {
     const checker = new TypeConsistencyChecker();
     const srcDir = path.join(__dirname, '../../src');
-    
+
     console.log('型定義を収集中...');
     await checker.collectTypeDefinitions(srcDir);
-    
+
     console.log('競合を検出中...');
     const conflicts = checker.detectConflicts();
-    
+
     console.log(`検出された競合: ${conflicts.length}件`);
-    
+
     const reportPath = path.join(__dirname, '../../reports/type-consistency-report.md');
     fs.mkdirSync(path.dirname(reportPath), { recursive: true });
     fs.writeFileSync(reportPath, checker.generateReport());
     console.log(`レポート生成: ${reportPath}`);
-    
+
     if (conflicts.length > 0) {
       // unified-types.tsは廃止されました (issue #77)
       // 新しい型定義は src/types/ 配下のモジュールを使用してください

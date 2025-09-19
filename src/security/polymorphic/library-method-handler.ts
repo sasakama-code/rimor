@@ -1,7 +1,7 @@
 /**
  * ポリモーフィック汚染処理
  * arXiv:2504.18529v2 Section 3.3の実装
- * 
+ *
  * ライブラリメソッドの汚染伝播を多相的に処理し、
  * 未アノテーションのメソッドに対して適切な型推論を行う
  */
@@ -31,12 +31,12 @@ export interface MethodSignature {
 export class LibraryMethodHandler {
   private methodDatabase: Map<string, MethodSignature>;
   private unknownMethodBehavior: 'conservative' | 'optimistic' = 'conservative';
-  
+
   constructor() {
     this.methodDatabase = new Map();
     this.initializeBuiltinMethods();
   }
-  
+
   /**
    * 組み込みメソッドの初期化
    */
@@ -50,10 +50,10 @@ export class LibraryMethodHandler {
         isPolymorphic: true,
         parameterIndices: [],
         propagationRule: 'any',
-        returnQualifier: null
+        returnQualifier: null,
       });
     });
-    
+
     // Array メソッド
     const arrayPolyMethods = ['map', 'filter', 'reduce'];
     arrayPolyMethods.forEach(method => {
@@ -63,10 +63,10 @@ export class LibraryMethodHandler {
         isPolymorphic: true,
         parameterIndices: [0],
         propagationRule: 'any',
-        returnQualifier: null
+        returnQualifier: null,
       });
     });
-    
+
     // Object.keys は常に安全
     this.methodDatabase.set('Object.keys', {
       className: 'Object',
@@ -74,17 +74,17 @@ export class LibraryMethodHandler {
       isPolymorphic: false,
       parameterIndices: [],
       propagationRule: 'none',
-      returnQualifier: '@Untainted'
+      returnQualifier: '@Untainted',
     });
   }
-  
+
   /**
    * メソッドシグネチャの取得
    */
   getMethodSignature(className: string, methodName: string): MethodSignature | undefined {
     return this.methodDatabase.get(`${className}.${methodName}`);
   }
-  
+
   /**
    * カスタムライブラリメソッドの登録
    */
@@ -92,7 +92,7 @@ export class LibraryMethodHandler {
     const key = `${signature.className}.${signature.methodName}`;
     this.methodDatabase.set(key, signature);
   }
-  
+
   /**
    * 汚染伝播の計算
    */
@@ -103,22 +103,22 @@ export class LibraryMethodHandler {
     parameterTaints: TaintQualifier[]
   ): TaintQualifier {
     const signature = this.getMethodSignature(className, methodName);
-    
+
     if (!signature) {
       // 未知のメソッド
       return this.handleUnknownMethod(receiverTaint);
     }
-    
+
     // 固定の戻り値型がある場合
     if (signature.returnQualifier) {
       return signature.returnQualifier;
     }
-    
+
     // ポリモーフィックでない場合
     if (!signature.isPolymorphic) {
       return '@Tainted'; // 保守的
     }
-    
+
     // 伝播ルールに基づく処理
     switch (signature.propagationRule) {
       case 'any':
@@ -128,7 +128,7 @@ export class LibraryMethodHandler {
           if (parameterTaints[idx] === '@Tainted') return '@Tainted';
         }
         return '@Untainted';
-        
+
       case 'all':
         // すべてが汚染されている場合のみ汚染
         // レシーバーが汚染されていない場合は@Untainted
@@ -139,15 +139,15 @@ export class LibraryMethodHandler {
         }
         // レシーバーも全パラメータも汚染されている
         return '@Tainted';
-        
+
       case 'none':
         return '@Untainted';
-        
+
       default:
         return receiverTaint;
     }
   }
-  
+
   /**
    * 未知のメソッドの処理
    */
@@ -158,7 +158,7 @@ export class LibraryMethodHandler {
       return receiverTaint;
     }
   }
-  
+
   /**
    * 未知のメソッドの振る舞いを設定
    */
@@ -172,7 +172,7 @@ export class LibraryMethodHandler {
  */
 export class GenericTaintHandler {
   private genericMethods: Map<string, any> = new Map();
-  
+
   /**
    * ジェネリックメソッドの登録
    */
@@ -180,63 +180,60 @@ export class GenericTaintHandler {
     const key = `${signature.className}.${signature.methodName}`;
     this.genericMethods.set(key, signature);
   }
-  
+
   /**
    * 配列要素の汚染取得
    */
   getArrayElementTaint(arrayTaint: TaintQualifier): TaintQualifier {
     return arrayTaint;
   }
-  
+
   /**
    * Map の汚染取得
    */
-  getMapTaint(keyTaint: TaintQualifier, valueTaint: TaintQualifier): {
+  getMapTaint(
+    keyTaint: TaintQualifier,
+    valueTaint: TaintQualifier
+  ): {
     keyTaint: TaintQualifier;
     valueTaint: TaintQualifier;
   } {
     return { keyTaint, valueTaint };
   }
-  
+
   /**
    * Set要素の汚染取得
    */
   getSetElementTaint(elementTaint: TaintQualifier): TaintQualifier {
     return elementTaint;
   }
-  
+
   /**
    * Promise の汚染取得
    */
   getPromiseTaint(resolvedTaint: TaintQualifier): TaintQualifier {
     return resolvedTaint;
   }
-  
+
   /**
    * Promise チェーンの伝播
    */
-  propagatePromiseChain(
-    initialTaint: TaintQualifier,
-    methods: string[]
-  ): TaintQualifier {
+  propagatePromiseChain(initialTaint: TaintQualifier, methods: string[]): TaintQualifier {
     // 簡易実装：初期の汚染を保持
     return initialTaint;
   }
-  
+
   /**
    * 高階関数の解析
    */
-  analyzeHigherOrderFunction(
-    functionType: string,
-    inputTaint: TaintQualifier
-  ): TaintQualifier {
+  analyzeHigherOrderFunction(functionType: string, inputTaint: TaintQualifier): TaintQualifier {
     // 簡易実装
     if (functionType.includes('@Untainted')) {
       return '@Untainted';
     }
     return inputTaint;
   }
-  
+
   /**
    * カリー化関数の解析
    */
@@ -249,7 +246,7 @@ export class GenericTaintHandler {
   } {
     return {
       partial: (index: number) => paramTaints[index] || '@Tainted',
-      final: () => resultTaint
+      final: () => resultTaint,
     };
   }
 }
@@ -259,11 +256,11 @@ export class GenericTaintHandler {
  */
 export class PolymorphicTaintPropagator {
   private libraryHandler: LibraryMethodHandler;
-  
+
   constructor() {
     this.libraryHandler = new LibraryMethodHandler();
   }
-  
+
   /**
    * メソッドチェーンの伝播
    */
@@ -276,7 +273,7 @@ export class PolymorphicTaintPropagator {
     }>
   ): TaintQualifier {
     let currentTaint: TaintQualifier = '@Untainted';
-    
+
     for (const call of chain) {
       const receiverTaint = call.receiver || currentTaint;
       currentTaint = this.libraryHandler.propagateTaint(
@@ -286,10 +283,10 @@ export class PolymorphicTaintPropagator {
         call.args
       );
     }
-    
+
     return currentTaint;
   }
-  
+
   /**
    * ネストしたメソッド呼び出しの解析
    */
@@ -315,11 +312,11 @@ export class PolymorphicTaintPropagator {
       config.inner.receiver,
       config.inner.args
     );
-    
+
     // 外側の引数に適用
     const outerArgs = [...config.outer.args];
     outerArgs[config.innerPosition] = innerResult;
-    
+
     // 外側の呼び出しを評価
     return this.libraryHandler.propagateTaint(
       config.outer.className,
@@ -328,7 +325,7 @@ export class PolymorphicTaintPropagator {
       outerArgs as TaintQualifier[]
     );
   }
-  
+
   /**
    * 条件式の汚染解析
    */
@@ -343,7 +340,7 @@ export class PolymorphicTaintPropagator {
     }
     return '@Untainted';
   }
-  
+
   /**
    * ライブラリパターンの解析
    */
@@ -369,23 +366,23 @@ export class PolymorphicTaintPropagator {
  */
 export class LibraryMethodDatabase {
   private libraries: Map<string, any> = new Map();
-  
+
   constructor() {
     this.initializeBuiltins();
   }
-  
+
   private initializeBuiltins(): void {
     this.libraries.set('JavaScript', {});
     this.libraries.set('Node.js', {});
   }
-  
+
   /**
    * 組み込みライブラリの取得
    */
   getBuiltinLibraries(): string[] {
     return Array.from(this.libraries.keys());
   }
-  
+
   /**
    * ライブラリ定義のインポート
    */
@@ -396,7 +393,7 @@ export class LibraryMethodDatabase {
   }): void {
     this.libraries.set(definition.libraryName, definition);
   }
-  
+
   /**
    * メソッドの検索
    */
@@ -407,9 +404,9 @@ export class LibraryMethodDatabase {
   ): MethodSignature | undefined {
     const library = this.libraries.get(libraryName);
     if (!library || !library.methods) return undefined;
-    
-    return library.methods.find((m: MethodSignature) => 
-      m.className === className && m.methodName === methodName
+
+    return library.methods.find(
+      (m: MethodSignature) => m.className === className && m.methodName === methodName
     );
   }
 }

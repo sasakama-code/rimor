@@ -1,7 +1,7 @@
 /**
  * UnifiedResultGenerator テスト
  * 全評価結果を統合してUnifiedAnalysisResultを生成するジェネレーターのテスト
- * 
+ *
  * TDD Red Phase: 失敗するテストを先に作成
  * t_wadaのTDD原則に従う
  */
@@ -16,17 +16,14 @@ import {
   AIActionType,
   ExecutiveSummary,
   DetailedIssue,
-  AIActionableRisk
+  AIActionableRisk,
 } from '../../../src/nist/types/unified-analysis-result';
 import { CoreTypes } from '../../../src/core/types/core-definitions';
-import { 
-  TaintAnalysisResult, 
-  TaintLevel 
-} from '../../../src/security/types/taint-analysis-types';
-import { 
+import { TaintAnalysisResult, TaintLevel } from '../../../src/security/types/taint-analysis-types';
+import {
   RiskPriorityRequest,
   BusinessImpact,
-  TechnicalComplexity
+  TechnicalComplexity,
 } from '../../../src/nist/types/priority-types';
 
 describe('UnifiedResultGenerator', () => {
@@ -41,12 +38,8 @@ describe('UnifiedResultGenerator', () => {
     vulnerabilityEvaluator = new VulnerabilityEvaluator();
     taintAdapter = new TaintVulnerabilityAdapter(vulnerabilityEvaluator);
     nistEvaluator = new NistRiskEvaluator();
-    
-    generator = new UnifiedResultGenerator(
-      priorityEngine,
-      taintAdapter,
-      nistEvaluator
-    );
+
+    generator = new UnifiedResultGenerator(priorityEngine, taintAdapter, nistEvaluator);
   });
 
   describe('統合分析結果の生成', () => {
@@ -61,7 +54,7 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.85,
             path: ['api.ts:20', 'service.ts:50', 'db.ts:100'],
             description: 'SQLインジェクション脆弱性',
-            cweId: '89'
+            cweId: '89',
           },
           {
             id: 'FLOW-002',
@@ -71,16 +64,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.7,
             path: ['input.ts:15', 'output.ts:30'],
             description: 'XSS脆弱性',
-            cweId: '79'
-          }
+            cweId: '79',
+          },
         ],
         summary: {
           totalFlows: 2,
           criticalFlows: 0,
           highFlows: 1,
           mediumFlows: 1,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -102,16 +95,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.95,
             path: ['critical.ts:10', 'exec.ts:50'],
             description: 'リモートコード実行',
-            cweId: '94'
-          }
+            cweId: '94',
+          },
         ],
         summary: {
           totalFlows: 1,
           criticalFlows: 1,
           highFlows: 0,
           mediumFlows: 0,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -135,16 +128,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.8,
             path: ['auth.ts:25', 'middleware.ts:40', 'session.ts:75'],
             description: '認証バイパスの可能性',
-            cweId: '287'
-          }
+            cweId: '287',
+          },
         ],
         summary: {
           totalFlows: 1,
           criticalFlows: 0,
           highFlows: 1,
           mediumFlows: 0,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -169,7 +162,7 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.5,
             path: ['low.ts:5', 'log.ts:10'],
             description: '情報漏洩の可能性',
-            cweId: '200'
+            cweId: '200',
           },
           {
             id: 'FLOW-002',
@@ -179,16 +172,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.9,
             path: ['high.ts:15', 'db.ts:30'],
             description: 'SQLインジェクション',
-            cweId: '89'
-          }
+            cweId: '89',
+          },
         ],
         summary: {
           totalFlows: 2,
           criticalFlows: 0,
           highFlows: 1,
           mediumFlows: 0,
-          lowFlows: 1
-        }
+          lowFlows: 1,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -213,16 +206,16 @@ describe('UnifiedResultGenerator', () => {
             taintLevel: TaintLevel.MEDIUM,
             confidence: 0.75,
             path: ['test.ts:10', 'prod.ts:20'],
-            description: '中程度のリスク'
-          }
+            description: '中程度のリスク',
+          },
         ],
         summary: {
           totalFlows: 1,
           criticalFlows: 0,
           highFlows: 0,
           mediumFlows: 1,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -235,11 +228,11 @@ describe('UnifiedResultGenerator', () => {
       expect(intentDimension).toBeDefined();
       expect(securityDimension).toBeDefined();
       expect(coverageDimension).toBeDefined();
-      
+
       expect(intentDimension!.weight).toBeGreaterThan(0);
       expect(securityDimension!.weight).toBeGreaterThan(0);
       expect(coverageDimension!.weight).toBeGreaterThan(0);
-      
+
       const totalWeight = dimensions.reduce((sum, d) => sum + d.weight, 0);
       expect(totalWeight).toBeCloseTo(1.0, 2);
     });
@@ -250,29 +243,32 @@ describe('UnifiedResultGenerator', () => {
         { riskLevel: TaintLevel.LOW, expectedGrade: 'A' },
         { riskLevel: TaintLevel.MEDIUM, expectedGrade: 'C' },
         { riskLevel: TaintLevel.HIGH, expectedGrade: 'D' },
-        { riskLevel: TaintLevel.CRITICAL, expectedGrade: 'F' }
+        { riskLevel: TaintLevel.CRITICAL, expectedGrade: 'F' },
       ];
 
       for (const scenario of scenarios) {
         const taintResult: TaintAnalysisResult = {
-          flows: scenario.riskLevel === TaintLevel.SAFE ? [] : [
-            {
-              id: 'FLOW-TEST',
-              sourceLocation: { file: 'test.ts', line: 1, column: 1 },
-              sinkLocation: { file: 'test.ts', line: 2, column: 1 },
-              taintLevel: scenario.riskLevel,
-              confidence: 0.9,
-              path: ['test.ts:1', 'test.ts:2'],
-              description: 'テストリスク'
-            }
-          ],
+          flows:
+            scenario.riskLevel === TaintLevel.SAFE
+              ? []
+              : [
+                  {
+                    id: 'FLOW-TEST',
+                    sourceLocation: { file: 'test.ts', line: 1, column: 1 },
+                    sinkLocation: { file: 'test.ts', line: 2, column: 1 },
+                    taintLevel: scenario.riskLevel,
+                    confidence: 0.9,
+                    path: ['test.ts:1', 'test.ts:2'],
+                    description: 'テストリスク',
+                  },
+                ],
           summary: {
             totalFlows: scenario.riskLevel === TaintLevel.SAFE ? 0 : 1,
             criticalFlows: scenario.riskLevel === TaintLevel.CRITICAL ? 1 : 0,
             highFlows: scenario.riskLevel === TaintLevel.HIGH ? 1 : 0,
             mediumFlows: scenario.riskLevel === TaintLevel.MEDIUM ? 1 : 0,
-            lowFlows: scenario.riskLevel === TaintLevel.LOW ? 1 : 0
-          }
+            lowFlows: scenario.riskLevel === TaintLevel.LOW ? 1 : 0,
+          },
         };
 
         const result = await generator.generate(taintResult);
@@ -293,16 +289,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.9,
             path: ['input.ts:10', 'db.ts:50'],
             description: 'SQLインジェクション脆弱性',
-            cweId: '89'
-          }
+            cweId: '89',
+          },
         ],
         summary: {
           totalFlows: 1,
           criticalFlows: 0,
           highFlows: 1,
           mediumFlows: 0,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -324,16 +320,16 @@ describe('UnifiedResultGenerator', () => {
             confidence: 0.75,
             path: ['form.ts:25', 'process.ts:40', 'render.ts:60'],
             description: 'XSS脆弱性',
-            cweId: '79'
-          }
+            cweId: '79',
+          },
         ],
         summary: {
           totalFlows: 1,
           criticalFlows: 0,
           highFlows: 0,
           mediumFlows: 1,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(taintResult);
@@ -355,8 +351,8 @@ describe('UnifiedResultGenerator', () => {
           criticalFlows: 0,
           highFlows: 0,
           mediumFlows: 0,
-          lowFlows: 0
-        }
+          lowFlows: 0,
+        },
       };
 
       const result = await generator.generate(emptyTaintResult);

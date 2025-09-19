@@ -13,7 +13,7 @@ import {
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement
+  Improvement,
 } from '../../core/types';
 import {
   MethodAnalysisResult,
@@ -25,7 +25,7 @@ import {
   SecurityIssue,
   SecurityTestMetrics,
   SecurityImprovement,
-  FlowGraph
+  FlowGraph,
 } from '../types/flow-types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
@@ -34,7 +34,7 @@ import {
   TaintQualifier,
   QualifiedType,
   TypeConstructors,
-  TypeGuards
+  TypeGuards,
 } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import {
@@ -44,7 +44,7 @@ import {
   AuthCriticalFlow,
   AnalysisError,
   isAuthASTNode,
-  isAuthTypeInferenceResult
+  isAuthTypeInferenceResult,
 } from './typed-auth-plugin-types';
 import { FlowNode } from '../types/flow-types';
 import { KeywordSearchUtils } from '../../utils/KeywordSearchUtils';
@@ -58,11 +58,11 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   readonly name = '型ベース認証テスト品質監査';
   readonly version = '0.7.0';
   readonly type = 'core' as const;
-  
+
   // 型システムとの統合
   readonly requiredTypes = [SecurityType.USER_INPUT, SecurityType.AUTH_TOKEN];
   readonly providedTypes = [SecurityType.VALIDATED_AUTH];
-  
+
   private flowAnalyzer: FlowSensitiveAnalyzer;
   private inferenceEngine: SignatureBasedInference;
   private analysisCache = new Map<string, MethodAnalysisResult>();
@@ -78,15 +78,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   isApplicable(context: ProjectContext): boolean {
     // 認証関連のファイルやライブラリが存在するかチェック
     const authLibraries = ['passport', 'jwt', 'bcrypt', 'express-session'];
-    const hasAuthLibrary = authLibraries.some(lib => 
-      context.packageJson?.dependencies?.[lib] || 
-      context.packageJson?.devDependencies?.[lib]
+    const hasAuthLibrary = authLibraries.some(
+      lib => context.packageJson?.dependencies?.[lib] || context.packageJson?.devDependencies?.[lib]
     );
 
     // 認証関連のテストファイルが存在するかチェック
-    const hasAuthTests = context.filePatterns?.test?.some(pattern => 
-      pattern.includes('auth') || pattern.includes('login')
-    ) || false;
+    const hasAuthTests =
+      context.filePatterns?.test?.some(
+        pattern => pattern.includes('auth') || pattern.includes('login')
+      ) || false;
 
     return hasAuthLibrary || hasAuthTests;
   }
@@ -96,7 +96,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    */
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const patterns: DetectionResult[] = [];
-    
+
     // 認証関連のパターンを検出
     const authPatterns = this.detectAuthPatterns(testFile.content);
     patterns.push(...authPatterns);
@@ -109,16 +109,21 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    */
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     // 認証カバレッジの計算
-    const requiredPatterns = ['login-success', 'login-failure', 'token-validation', 'session-management'];
-    const coveredPatterns = patterns.filter(p => 
-      p.patternId && requiredPatterns.includes(p.patternId)
+    const requiredPatterns = [
+      'login-success',
+      'login-failure',
+      'token-validation',
+      'session-management',
+    ];
+    const coveredPatterns = patterns.filter(
+      p => p.patternId && requiredPatterns.includes(p.patternId)
     );
-    
+
     // 0.0-1.0の範囲で計算
     const authCoverage = coveredPatterns.length / requiredPatterns.length;
     const correctness = this.calculateCorrectness(patterns) / 100; // 0.0-1.0に正規化
     const maintainability = this.calculateMaintainability(patterns) / 100; // 0.0-1.0に正規化
-    
+
     // overallスコアを計算（0.0-1.0の範囲）
     const score = Math.min(1.0, authCoverage);
 
@@ -127,15 +132,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       dimensions: {
         completeness: authCoverage, // 0.0-1.0の範囲
         correctness: correctness, // 0.0-1.0の範囲
-        maintainability: maintainability // 0.0-1.0の範囲
+        maintainability: maintainability, // 0.0-1.0の範囲
       },
       // 後方互換性のためbreakdownも提供（100スケール）
       breakdown: {
         completeness: authCoverage * 100,
         correctness: correctness * 100,
-        maintainability: maintainability * 100
+        maintainability: maintainability * 100,
       },
-      confidence: this.calculateConfidence(patterns)
+      confidence: this.calculateConfidence(patterns),
     };
   }
 
@@ -146,7 +151,10 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const improvements: Improvement[] = [];
 
     // 0.0-1.0の範囲で判定（0.8未満を低カバレッジとする）
-    if (evaluation.dimensions?.completeness !== undefined && evaluation.dimensions.completeness < 0.8) {
+    if (
+      evaluation.dimensions?.completeness !== undefined &&
+      evaluation.dimensions.completeness < 0.8
+    ) {
       improvements.push({
         id: 'auth-coverage-improvement',
         priority: 'high',
@@ -155,7 +163,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         description: '不足している認証シナリオのテストケースを追加してください',
         location: { file: '', line: 0, column: 0 },
         impact: { scoreImprovement: 20, effortMinutes: 30 },
-        automatable: false
+        automatable: false,
       });
     }
 
@@ -167,7 +175,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
    */
   async analyzeMethod(method: TestMethod): Promise<MethodAnalysisResult> {
     const startTime = Date.now();
-    
+
     try {
       // キャッシュチェック
       const cacheKey = this.generateCacheKey(method);
@@ -204,13 +212,12 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         improvements: suggestions,
         issues,
         suggestions: suggestions.map(s => s.description), // string[]に変換
-        analysisTime: Date.now() - startTime // 分析時間を追加
+        analysisTime: Date.now() - startTime, // 分析時間を追加
       };
 
       // キャッシュに保存
       this.analysisCache.set(cacheKey, result);
       return result;
-
     } catch (error) {
       return this.createErrorResult(method.name, error, Date.now() - startTime);
     }
@@ -249,15 +256,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       sanitizerCoverage: 0,
       sinkCoverage: 0,
       securityAssertions: 0,
-      vulnerableFlows: violations.length
+      vulnerableFlows: violations.length,
     };
     const improvements: SecurityImprovement[] = [];
-    
+
     return {
       methods: methodResults,
       overallMetrics,
       violations,
-      improvements
+      improvements,
     };
   }
 
@@ -272,7 +279,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       ...result,
       inferredTypes: authResult.inferredTypes || {},
       typeConstraints: authResult.typeConstraints || [],
-      typeErrors: authResult.typeErrors || []
+      typeErrors: authResult.typeErrors || [],
     } as TypeInferenceResult;
   }
 
@@ -286,10 +293,10 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     const resolvedIssues: string[] = [];
 
     const analysisResults: MethodAnalysisResult[] = [];
-    
+
     for (const change of changes) {
       const methodName = change.method.name;
-      
+
       switch (change.type) {
         case 'added':
         case 'modified':
@@ -301,7 +308,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
             newIssues.push(...result.issues);
           }
           break;
-          
+
         case 'deleted':
           // 削除されたメソッドのキャッシュを無効化
           const cacheKey = this.generateCacheKey(change.method);
@@ -315,7 +322,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       changes,
       affectedMethods: changes.map(c => c.method),
       updatedMethods: analysisResults, // MethodAnalysisResult[]を返す
-      reanalysisRequired: newIssues.length > 0
+      reanalysisRequired: newIssues.length > 0,
     };
   }
 
@@ -332,7 +339,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           patternName: 'ログイン成功テスト',
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.9,
-          evidence: [{ type: 'code', description: 'ログイン成功のテストケース', location: { file: '', line: index + 1, column: 0 }, code: line.trim(), confidence: 0.9 }]
+          evidence: [
+            {
+              type: 'code',
+              description: 'ログイン成功のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.9,
+            },
+          ],
         });
       }
 
@@ -343,7 +358,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           patternName: 'ログイン失敗テスト',
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.9,
-          evidence: [{ type: 'code', description: 'ログイン失敗のテストケース', location: { file: '', line: index + 1, column: 0 }, code: line.trim(), confidence: 0.9 }]
+          evidence: [
+            {
+              type: 'code',
+              description: 'ログイン失敗のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.9,
+            },
+          ],
         });
       }
 
@@ -354,7 +377,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           patternName: 'トークン検証テスト',
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.8,
-          evidence: [{ type: 'code', description: 'トークン検証のテストケース', location: { file: '', line: index + 1, column: 0 }, code: line.trim(), confidence: 0.8 }]
+          evidence: [
+            {
+              type: 'code',
+              description: 'トークン検証のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.8,
+            },
+          ],
         });
       }
     });
@@ -380,13 +411,24 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private isAuthRelatedTest(method: TestMethod): boolean {
-    const authKeywords = ['auth', 'login', 'logout', 'signin', 'signout', 'token', 'password', 'credential'];
+    const authKeywords = [
+      'auth',
+      'login',
+      'logout',
+      'signin',
+      'signout',
+      'token',
+      'password',
+      'credential',
+    ];
     const methodName = method.name.toLowerCase();
     const methodContent = (method.content || '').toLowerCase();
-    
+
     // Issue #119 対応: 統一キーワード検索を使用
-    return KeywordSearchUtils.containsAnyKeyword(methodName, authKeywords) ||
-           KeywordSearchUtils.containsAnyKeyword(methodContent, authKeywords);
+    return (
+      KeywordSearchUtils.containsAnyKeyword(methodName, authKeywords) ||
+      KeywordSearchUtils.containsAnyKeyword(methodContent, authKeywords)
+    );
   }
 
   private isAuthRelatedNode(node: FlowNode): boolean {
@@ -404,17 +446,17 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       return TypeConstructors.untainted(node.statement || {});
     }
     const content = node.statement.content.toLowerCase();
-    
+
     // ユーザー入力（パスワード、認証情報）は高汚染
     if (content.includes('password') || content.includes('credential')) {
       return TypeConstructors.tainted(node.statement, 'auth-credentials', 0.95);
     }
-    
+
     // トークン生成・検証は中程度の汚染
     if (content.includes('token') || content.includes('jwt')) {
       return TypeConstructors.tainted(node.statement, 'auth-token', 0.25);
     }
-    
+
     return TypeConstructors.untainted(node.statement);
   }
 
@@ -429,12 +471,17 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
 
   private verifyAuthInvariants(flow: FlowGraph, lattice: SecurityLattice): SecurityViolation[] {
     const violations: SecurityViolation[] = [];
-    
+
     // 認証特有の不変条件をチェック
     // 例: パスワードが平文でアサートされていないか
     flow.nodes.forEach(node => {
       const content = node.statement?.content;
-      if (content && content.includes('password') && content.includes('expect') && !content.includes('hash')) {
+      if (
+        content &&
+        content.includes('password') &&
+        content.includes('expect') &&
+        !content.includes('hash')
+      ) {
         violations.push({
           type: 'unsafe-assertion',
           message: 'パスワードが平文でアサートされています',
@@ -447,15 +494,15 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
             sanitizers: [],
             // confidence removed - not in TaintMetadata
             // location removed - not in TaintMetadata
-            propagationPath: []
+            propagationPath: [],
             // tracePath and securityRules removed - not in TaintMetadata
           },
           severity: 'critical',
-          suggestedFix: 'パスワードは平文ではなくハッシュ値でテストしてください'
+          suggestedFix: 'パスワードは平文ではなくハッシュ値でテストしてください',
         });
       }
     });
-    
+
     return violations;
   }
 
@@ -464,14 +511,17 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
     return [];
   }
 
-  private identifyAuthCriticalFlows(flow: FlowGraph, violations: SecurityViolation[]): AuthCriticalFlow[] {
+  private identifyAuthCriticalFlows(
+    flow: FlowGraph,
+    violations: SecurityViolation[]
+  ): AuthCriticalFlow[] {
     // 認証関連のクリティカルフローを特定
     return [];
   }
 
   private evaluateAuthQuality(
-    method: TestMethod, 
-    taintResult: TaintAnalysisResult, 
+    method: TestMethod,
+    taintResult: TaintAnalysisResult,
     typeResult: TypeInferenceResult
   ): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
@@ -483,49 +533,55 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         severity: violation.severity as SecurityIssue['severity'],
         type: 'unsafe-taint-flow',
         message: `認証テストで${violation.suggestedFix}`,
-        location: { file: method.filePath, line: 0, column: 0 }
+        location: { file: method.filePath, line: 0, column: 0 },
       });
     });
 
     // 認証カバレッジの不足をチェック
     const requiredCoverage: string[] = ['success', 'failure', 'token-expiry'];
     const missingCoverage = this.checkAuthCoverage(method, requiredCoverage);
-    
+
     missingCoverage.forEach(missing => {
       issues.push({
         id: `auth-missing-${missing}-${method.name}`,
         severity: 'warning',
         type: 'authentication',
         message: `認証テストで${missing}のシナリオが不足しています`,
-        location: { file: method.filePath, line: 0, column: 0 }
+        location: { file: method.filePath, line: 0, column: 0 },
       });
     });
 
     return issues;
   }
 
-  private calculateAuthMetrics(method: TestMethod, taintResult: TaintAnalysisResult): SecurityTestMetrics {
+  private calculateAuthMetrics(
+    method: TestMethod,
+    taintResult: TaintAnalysisResult
+  ): SecurityTestMetrics {
     const content = (method.content || '').toLowerCase();
-    
+
     // 認証関連のメトリクスを計算
     const hasLoginTest = content.includes('login');
     const hasPasswordTest = content.includes('password');
     const hasTokenTest = content.includes('token');
     const hasSessionTest = content.includes('session');
 
-    const authCoverage = [hasLoginTest, hasPasswordTest, hasTokenTest, hasSessionTest]
-      .filter(Boolean).length / 4;
+    const authCoverage =
+      [hasLoginTest, hasPasswordTest, hasTokenTest, hasSessionTest].filter(Boolean).length / 4;
 
     return {
       taintCoverage: authCoverage,
       sanitizerCoverage: 0.7,
       sinkCoverage: 0.5,
       securityAssertions: hasTokenTest || hasSessionTest ? 1 : 0,
-      vulnerableFlows: 0
+      vulnerableFlows: 0,
     };
   }
 
-  private generateAuthSuggestions(issues: SecurityIssue[], method: TestMethod): SecurityImprovement[] {
+  private generateAuthSuggestions(
+    issues: SecurityIssue[],
+    method: TestMethod
+  ): SecurityImprovement[] {
     const suggestions: SecurityImprovement[] = [];
 
     issues.forEach(issue => {
@@ -534,7 +590,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
           type: 'add-assertion',
           description: issue.message,
           location: issue.location,
-          impact: 'high'
+          impact: 'high',
         });
       }
     });
@@ -548,19 +604,20 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
 
     required.forEach(coverage => {
       let covered = false;
-      
+
       switch (coverage) {
         case 'success':
           covered = content.includes('success') || content.includes('正常');
           break;
         case 'failure':
-          covered = content.includes('fail') || content.includes('error') || content.includes('失敗');
+          covered =
+            content.includes('fail') || content.includes('error') || content.includes('失敗');
           break;
         case 'token-expiry':
           covered = content.includes('expir') || content.includes('期限');
           break;
       }
-      
+
       if (!covered) {
         missing.push(coverage);
       }
@@ -579,7 +636,7 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       filePath: '',
       content: '',
       type: 'test',
-      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
     };
     return {
       method: emptyMethod,
@@ -591,22 +648,26 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         sanitizerCoverage: 0,
         sinkCoverage: 0,
         securityAssertions: 0,
-        vulnerableFlows: 0
+        vulnerableFlows: 0,
       },
       improvements: [],
       issues: [],
       suggestions: [],
-      analysisTime: analysisTime
+      analysisTime: analysisTime,
     };
   }
 
-  private createErrorResult(methodName: string, error: unknown, analysisTime: number): MethodAnalysisResult {
+  private createErrorResult(
+    methodName: string,
+    error: unknown,
+    analysisTime: number
+  ): MethodAnalysisResult {
     const emptyMethod: TestMethod = {
       name: methodName,
       filePath: '',
       content: '',
       type: 'test',
-      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
     };
     return {
       method: emptyMethod,
@@ -618,18 +679,20 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
         sanitizerCoverage: 0,
         sinkCoverage: 0,
         securityAssertions: 0,
-        vulnerableFlows: 0
+        vulnerableFlows: 0,
       },
       improvements: [],
-      issues: [{
-        id: `error-${methodName}`,
-        severity: 'critical',
-        type: 'validation',
-        message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
-        location: { file: '', line: 0, column: 0 }
-      }],
+      issues: [
+        {
+          id: `error-${methodName}`,
+          severity: 'critical',
+          type: 'validation',
+          message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+          location: { file: '', line: 0, column: 0 },
+        },
+      ],
       suggestions: [],
-      analysisTime: analysisTime
+      analysisTime: analysisTime,
     };
   }
 
@@ -643,26 +706,27 @@ export class TypedAuthTestQualityPlugin implements ITypeBasedSecurityPlugin {
       filePath: method.filePath || '',
       content: method.content || '',
       type: 'test',
-      location: method.location || { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } }
+      location: method.location || { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
     };
 
     // 既存のanalyzeMethodを使用
     const result = await this.analyzeMethod(testMethod);
-    
+
     // レスポンスを整形
     const testMethodResult: TestMethodAnalysisResult = {
       taintFlow: {
         nodes: result.flowGraph?.nodes || [],
         edges: result.flowGraph?.edges || [],
         exitNodes: result.flowGraph?.exitNodes || [],
-        sources: result.flowGraph?.taintSources?.map(s => s.variable || s.source || 'unknown') || [],
+        sources:
+          result.flowGraph?.taintSources?.map(s => s.variable || s.source || 'unknown') || [],
         sanitizers: result.flowGraph?.sanitizers?.map(s => s.variable || 'unknown') || [],
-        sinks: result.flowGraph?.securitySinks?.map(s => s.sink || 'unknown') || []
+        sinks: result.flowGraph?.securitySinks?.map(s => s.sink || 'unknown') || [],
       },
       issues: result.issues || [],
-      securityScore: 0.5 // デフォルトスコア
+      securityScore: 0.5, // デフォルトスコア
     };
-    
+
     return testMethodResult;
   }
 }

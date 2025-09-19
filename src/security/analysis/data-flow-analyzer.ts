@@ -1,7 +1,7 @@
 /**
  * データフロー解析器
  * arXiv:2504.18529v2の理論に基づいた実装
- * 
+ *
  * 機能:
  * - SourceからSinkまでのデータフローを追跡
  * - 汚染されたデータの伝播パスを特定
@@ -91,7 +91,7 @@ export class DataFlowAnalyzer {
     // SourceとSinkを検出
     const [detectedSources, sinks] = await Promise.all([
       this.sourceDetector.detectSources(sourceCode, fileName),
-      this.sinkDetector.detectSinks(sourceCode, fileName)
+      this.sinkDetector.detectSinks(sourceCode, fileName),
     ]);
 
     // 同じ関数呼び出しがsourceとsinkの両方で検出されている場合は、sourceから除外
@@ -110,30 +110,33 @@ export class DataFlowAnalyzer {
       paths,
       sources,
       sinks,
-      summary
+      summary,
     };
   }
 
   /**
    * 同じ関数呼び出しがsourceとsinkの両方で検出されている場合は、sourceから除外
    */
-  private filterDuplicateSourceSinkPairs(sources: TaintSource[], sinks: TaintSink[]): TaintSource[] {
+  private filterDuplicateSourceSinkPairs(
+    sources: TaintSource[],
+    sinks: TaintSink[]
+  ): TaintSource[] {
     return sources.filter(source => {
       // 同じ位置で同じ関数呼び出しがsinkとして存在するかチェック
       const conflictingSink = sinks.find(sink => {
         // 位置が同じかチェック
-        const sameLocation = 
+        const sameLocation =
           sink.location.line === source.location.line &&
           Math.abs(sink.location.column - source.location.column) <= 5; // 若干の誤差を許容
-        
+
         // 関数名が同じかチェック
-        const sameFunctionCall = 
+        const sameFunctionCall =
           sink.dangerousFunction.functionName === source.apiCall.functionName &&
           sink.dangerousFunction.objectName === source.apiCall.objectName;
-        
+
         return sameLocation && sameFunctionCall;
       });
-      
+
       // 競合するsinkが見つからない場合のみsourceとして保持
       return !conflictingSink;
     });
@@ -147,17 +150,23 @@ export class DataFlowAnalyzer {
       target: ts.ScriptTarget.ES2020,
       module: ts.ModuleKind.CommonJS,
       strict: true,
-      noImplicitAny: true
+      noImplicitAny: true,
     };
 
     const host = ts.createCompilerHost(compilerOptions);
     const originalGetSourceFile = host.getSourceFile;
-    
+
     host.getSourceFile = (name, languageVersion, onError, shouldCreateNewSourceFile) => {
       if (name === fileName) {
         return ts.createSourceFile(fileName, sourceCode, languageVersion, true);
       }
-      return originalGetSourceFile.call(host, name, languageVersion, onError, shouldCreateNewSourceFile);
+      return originalGetSourceFile.call(
+        host,
+        name,
+        languageVersion,
+        onError,
+        shouldCreateNewSourceFile
+      );
     };
 
     this.program = ts.createProgram([fileName], compilerOptions, host);
@@ -211,7 +220,7 @@ export class DataFlowAnalyzer {
 
     // リスクレベルを計算
     const riskLevel = this.calculateRiskLevel(source, sink);
-    
+
     // 信頼度を計算
     const confidence = this.calculateConfidence(source, sink, sourcePath);
 
@@ -220,7 +229,7 @@ export class DataFlowAnalyzer {
       sink,
       path: sourcePath,
       confidence,
-      riskLevel
+      riskLevel,
     };
   }
 
@@ -244,27 +253,31 @@ export class DataFlowAnalyzer {
       if (!line) continue;
 
       // プロパティアクセスを最初にチェック (例: const filename = data.filename)
-      const propertyMatch = line.match(new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*${currentVariableName}\\.(\\w+)`));
+      const propertyMatch = line.match(
+        new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*${currentVariableName}\\.(\\w+)`)
+      );
       if (propertyMatch) {
         const targetVar = propertyMatch[2];
         const propertyName = propertyMatch[3];
-        
+
         steps.push({
           type: 'property-access',
           location: {
             file: this.sourceFile.fileName,
             line: lineIndex + 1,
-            column: line.indexOf(propertyMatch[0]) + 1
+            column: line.indexOf(propertyMatch[0]) + 1,
           },
           variableName: targetVar,
-          description: `${currentVariableName} のプロパティ ${propertyName} を ${targetVar} に代入`
+          description: `${currentVariableName} のプロパティ ${propertyName} を ${targetVar} に代入`,
         });
         currentVariableName = targetVar; // 新しい変数名を追跡
       }
       // 通常の変数代入を検出 (例: const data = req.body) - プロパティアクセスでない場合のみ
       else {
         // 単純な代入
-        const assignmentMatch = line.match(new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*${currentVariableName}(?!\\.)(?:\\s|;|$)`));
+        const assignmentMatch = line.match(
+          new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*${currentVariableName}(?!\\.)(?:\\s|;|$)`)
+        );
         if (assignmentMatch) {
           const newVar = assignmentMatch[2];
           steps.push({
@@ -272,16 +285,18 @@ export class DataFlowAnalyzer {
             location: {
               file: this.sourceFile.fileName,
               line: lineIndex + 1,
-              column: line.indexOf(assignmentMatch[0]) + 1
+              column: line.indexOf(assignmentMatch[0]) + 1,
             },
             variableName: newVar,
-            description: `${currentVariableName} から ${newVar} に代入`
+            description: `${currentVariableName} から ${newVar} に代入`,
           });
           currentVariableName = newVar; // 追跡する変数名を更新
         }
         // 文字列結合や式を含む代入を検出
         else {
-          const complexAssignmentMatch = line.match(new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*[^;]*${currentVariableName}[^;]*;?`));
+          const complexAssignmentMatch = line.match(
+            new RegExp(`(const|let|var)\\s+(\\w+)\\s*=\\s*[^;]*${currentVariableName}[^;]*;?`)
+          );
           if (complexAssignmentMatch) {
             const newVar = complexAssignmentMatch[2];
             steps.push({
@@ -289,10 +304,10 @@ export class DataFlowAnalyzer {
               location: {
                 file: this.sourceFile.fileName,
                 line: lineIndex + 1,
-                column: line.indexOf(complexAssignmentMatch[0]) + 1
+                column: line.indexOf(complexAssignmentMatch[0]) + 1,
               },
               variableName: newVar,
-              description: `${currentVariableName} から ${newVar} に代入（文字列結合を含む）`
+              description: `${currentVariableName} から ${newVar} に代入（文字列結合を含む）`,
             });
             currentVariableName = newVar; // 追跡する変数名を更新
           }
@@ -307,10 +322,10 @@ export class DataFlowAnalyzer {
           location: {
             file: this.sourceFile.fileName,
             line: lineIndex + 1,
-            column: line.indexOf(parameterMatch[0]) + 1
+            column: line.indexOf(parameterMatch[0]) + 1,
           },
           variableName: currentVariableName,
-          description: `${currentVariableName} が ${parameterMatch[1]} のパラメーターとして渡される`
+          description: `${currentVariableName} が ${parameterMatch[1]} のパラメーターとして渡される`,
         });
       }
 
@@ -323,10 +338,10 @@ export class DataFlowAnalyzer {
           location: {
             file: this.sourceFile.fileName,
             line: lineIndex + 1,
-            column: line.indexOf(directPropertyMatch[0]) + 1
+            column: line.indexOf(directPropertyMatch[0]) + 1,
           },
           variableName: `${currentVariableName}.${directPropertyMatch[1]}`,
-          description: `${currentVariableName} のプロパティ ${directPropertyMatch[1]} にアクセス`
+          description: `${currentVariableName} のプロパティ ${directPropertyMatch[1]} にアクセス`,
         });
       }
     }
@@ -337,14 +352,11 @@ export class DataFlowAnalyzer {
   /**
    * リスクレベルを計算
    */
-  private calculateRiskLevel(
-    source: TaintSource,
-    sink: TaintSink
-  ): DataFlowPath['riskLevel'] {
+  private calculateRiskLevel(source: TaintSource, sink: TaintSink): DataFlowPath['riskLevel'] {
     // SourceとSinkのリスクレベルを組み合わせて判断
     const sourceRiskScore = this.getRiskScore(source.type);
     const sinkRiskScore = this.getSinkRiskScore(sink.type);
-    
+
     const totalScore = sourceRiskScore + sinkRiskScore;
 
     if (totalScore >= 8) return 'CRITICAL';
@@ -361,8 +373,8 @@ export class DataFlowAnalyzer {
       'user-input': 4,
       'network-input': 3,
       'file-input': 2,
-      'environment': 2,
-      'database': 1
+      environment: 2,
+      database: 1,
     };
     return scores[sourceType] || 1;
   }
@@ -376,8 +388,8 @@ export class DataFlowAnalyzer {
       'command-injection': 4,
       'code-injection': 4,
       'path-traversal': 3,
-      'xss': 3,
-      'file-write': 2
+      xss: 3,
+      'file-write': 2,
     };
     return scores[sinkType] || 1;
   }
@@ -385,14 +397,10 @@ export class DataFlowAnalyzer {
   /**
    * 信頼度を計算
    */
-  private calculateConfidence(
-    source: TaintSource,
-    sink: TaintSink,
-    path: DataFlowStep[]
-  ): number {
+  private calculateConfidence(source: TaintSource, sink: TaintSink, path: DataFlowStep[]): number {
     // 基本信頼度はSourceとSinkの信頼度の平均
     let baseConfidence = (source.confidence + sink.confidence) / 2;
-    
+
     // パス長による信頼度の調整
     const pathLengthPenalty = Math.min(path.length * 0.05, 0.3); // 最大30%減
     baseConfidence -= pathLengthPenalty;
@@ -409,7 +417,7 @@ export class DataFlowAnalyzer {
       criticalPaths: 0,
       highRiskPaths: 0,
       mediumRiskPaths: 0,
-      lowRiskPaths: 0
+      lowRiskPaths: 0,
     };
 
     for (const path of paths) {

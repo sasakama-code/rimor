@@ -2,18 +2,18 @@
  * BaseFormatter
  * v0.9.0 - Issue #64: REFACTOR段階
  * Martin Fowlerの手法による共通ロジックの抽出
- * 
+ *
  * SOLID原則: 単一責任（基本フォーマット機能）
  * DRY原則: 共通ロジックの一元化
  * Template Methodパターン: 共通処理とカスタマイズポイントの分離
  */
 
 import { IFormattingStrategy } from '../core/types';
-import { 
-  UnifiedAnalysisResult, 
+import {
+  UnifiedAnalysisResult,
   RiskLevel,
   AIActionableRisk,
-  ExecutiveSummary 
+  ExecutiveSummary,
 } from '../../nist/types/unified-analysis-result';
 
 /**
@@ -22,23 +22,23 @@ import {
  */
 export abstract class BaseFormatter implements IFormattingStrategy {
   abstract name: string;
-  
+
   // リスクレベルの優先度マップ（共通）
   protected readonly riskPriorityMap: Record<string, number> = {
-    'CRITICAL': 5,
-    'HIGH': 4,
-    'MEDIUM': 3,
-    'LOW': 2,
-    'MINIMAL': 1
+    CRITICAL: 5,
+    HIGH: 4,
+    MEDIUM: 3,
+    LOW: 2,
+    MINIMAL: 1,
   };
 
   // リスクレベルのラベル（共通）
   protected readonly riskLevelLabels: Record<string, string> = {
-    'CRITICAL': 'CRITICAL',
-    'HIGH': 'HIGH',
-    'MEDIUM': 'MEDIUM',
-    'LOW': 'LOW',
-    'MINIMAL': 'MINIMAL'
+    CRITICAL: 'CRITICAL',
+    HIGH: 'HIGH',
+    MEDIUM: 'MEDIUM',
+    LOW: 'LOW',
+    MINIMAL: 'MINIMAL',
   };
 
   /**
@@ -47,13 +47,13 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   format(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string | object {
     // 入力検証（共通）
     this.validateInput(result);
-    
+
     // 前処理（オプション）
     const preprocessed = this.preprocess(result, options);
-    
+
     // 具体的なフォーマット処理（サブクラスで実装）
     const formatted = this.doFormat(preprocessed, options);
-    
+
     // 後処理（オプション）
     return this.postprocess(formatted, options) as string | object;
   }
@@ -61,7 +61,10 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * 非同期版のフォーマット処理
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: Record<string, unknown>): Promise<string | object> {
+  async formatAsync(
+    result: UnifiedAnalysisResult,
+    options?: Record<string, unknown>
+  ): Promise<string | object> {
     return this.format(result, options);
   }
 
@@ -73,11 +76,11 @@ export abstract class BaseFormatter implements IFormattingStrategy {
     if (!result) {
       throw new Error('Invalid analysis result: result is null or undefined');
     }
-    
+
     if (!result.summary) {
       throw new Error('Invalid analysis result: summary is missing');
     }
-    
+
     if (!result.schemaVersion) {
       throw new Error('Invalid analysis result: schemaVersion is missing');
     }
@@ -86,7 +89,10 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * 前処理（オプション、サブクラスでオーバーライド可能）
    */
-  protected preprocess(result: UnifiedAnalysisResult, options?: Record<string, unknown>): UnifiedAnalysisResult {
+  protected preprocess(
+    result: UnifiedAnalysisResult,
+    options?: Record<string, unknown>
+  ): UnifiedAnalysisResult {
     return result;
   }
 
@@ -94,12 +100,18 @@ export abstract class BaseFormatter implements IFormattingStrategy {
    * 具体的なフォーマット処理（サブクラスで実装必須）
    * Template Methodパターンの抽象メソッド
    */
-  protected abstract doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string | object;
+  protected abstract doFormat(
+    result: UnifiedAnalysisResult,
+    options?: Record<string, unknown>
+  ): string | object;
 
   /**
    * 後処理（オプション、サブクラスでオーバーライド可能）
    */
-  protected postprocess(formatted: string | object, options?: Record<string, unknown>): string | object {
+  protected postprocess(
+    formatted: string | object,
+    options?: Record<string, unknown>
+  ): string | object {
     return formatted;
   }
 
@@ -118,14 +130,11 @@ export abstract class BaseFormatter implements IFormattingStrategy {
   /**
    * リスクのフィルタリング（共通）
    */
-  protected filterRisksByLevel(
-    risks: AIActionableRisk[], 
-    levels?: string[]
-  ): AIActionableRisk[] {
+  protected filterRisksByLevel(risks: AIActionableRisk[], levels?: string[]): AIActionableRisk[] {
     if (!levels || levels.length === 0) {
       return risks;
     }
-    
+
     return risks.filter(risk => levels.includes(risk.riskLevel));
   }
 
@@ -138,15 +147,15 @@ export abstract class BaseFormatter implements IFormattingStrategy {
       HIGH: 0,
       MEDIUM: 0,
       LOW: 0,
-      MINIMAL: 0
+      MINIMAL: 0,
     };
-    
+
     risks.forEach(risk => {
       if (stats[risk.riskLevel] !== undefined) {
         stats[risk.riskLevel]++;
       }
     });
-    
+
     return stats;
   }
 
@@ -163,7 +172,7 @@ export abstract class BaseFormatter implements IFormattingStrategy {
       score: summary.overallScore,
       grade: summary.overallGrade,
       fileCount: summary.statistics.totalFiles,
-      testCount: summary.statistics.totalTests || 0
+      testCount: summary.statistics.totalTests || 0,
     };
   }
 
@@ -181,16 +190,16 @@ export abstract class BaseFormatter implements IFormattingStrategy {
     if (!action) {
       return '改善アクションの検討が必要です';
     }
-    
+
     if (typeof action === 'string') {
       return action;
     }
-    
+
     const actionObj = action as any;
     if (actionObj && actionObj.description) {
       return actionObj.description;
     }
-    
+
     return JSON.stringify(action);
   }
 
@@ -217,9 +226,9 @@ export abstract class BaseFormatter implements IFormattingStrategy {
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#39;'
+      "'": '&#39;',
     };
-    
+
     return text.replace(/[&<>"']/g, char => escapeMap[char] || char);
   }
 
@@ -231,11 +240,11 @@ export abstract class BaseFormatter implements IFormattingStrategy {
     if (!text || typeof text !== 'string') {
       return '';
     }
-    
+
     const escapeMap: Record<string, string> = {
       '\\': '\\\\',
       '*': '\\*',
-      '_': '\\_',
+      _: '\\_',
       '`': '\\`',
       '#': '\\#',
       '[': '\\[',
@@ -245,9 +254,9 @@ export abstract class BaseFormatter implements IFormattingStrategy {
       '!': '\\!',
       '<': '&lt;',
       '>': '&gt;',
-      '|': '\\|'
+      '|': '\\|',
     };
-    
+
     return text.replace(/[\\*_`#\[\]()!<>|]/g, char => escapeMap[char] || char);
   }
 

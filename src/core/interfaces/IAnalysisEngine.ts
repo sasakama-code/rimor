@@ -45,12 +45,12 @@ export interface IAnalysisEngine {
    * 指定されたパスを分析
    */
   analyze(targetPath: string, options?: AnalysisOptions): Promise<AnalysisResult>;
-  
+
   /**
    * AST生成（v0.9.0: Tree-sitter対応）
    */
   generateAST(filePath: string): Promise<ASTNode>;
-  
+
   /**
    * キャッシュのクリア
    */

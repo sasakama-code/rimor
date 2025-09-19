@@ -2,7 +2,7 @@
  * UnifiedReportEngine
  * v0.9.0 - Issue #64: レポートシステムの統合
  * TDD GREEN段階 - 最小限の実装でテストを通す
- * 
+ *
  * SOLID原則: 単一責任（レポート生成のみ）、開放閉鎖（戦略の追加が容易）
  * DRY原則: 共通ロジックの集約
  * KISS原則: シンプルな戦略パターン
@@ -14,7 +14,7 @@ import {
   ReportFormat,
   UnifiedReport,
   ReportGenerationOptions,
-  ILegacyAdapter
+  ILegacyAdapter,
 } from './types';
 import { UnifiedAnalysisResult } from '../../nist/types/unified-analysis-result';
 import { MarkdownFormatter } from '../formatters/MarkdownFormatter';
@@ -71,7 +71,7 @@ export class UnifiedReportEngine {
     try {
       // 戦略に応じたフォーマット処理
       let content: string | object;
-      
+
       // formatAsyncが定義されている場合は優先的に使用
       if (this.strategy.formatAsync) {
         content = await this.strategy.formatAsync(result, options);
@@ -91,11 +91,14 @@ export class UnifiedReportEngine {
         format,
         content,
         timestamp: new Date().toISOString(),
-        metadata: options?.includeMetadata !== false ? {
-          generatedBy: 'UnifiedReportEngine',
-          version: '0.9.0',
-          processingTime
-        } : undefined
+        metadata:
+          options?.includeMetadata !== false
+            ? {
+                generatedBy: 'UnifiedReportEngine',
+                version: '0.9.0',
+                processingTime,
+              }
+            : undefined,
       };
 
       return report;
@@ -114,14 +117,12 @@ export class UnifiedReportEngine {
    */
   getLegacyAdapter(adapterName: string): ILegacyAdapter | undefined {
     const adapter = this.legacyAdapters.get(adapterName);
-    
+
     if (adapter) {
       // deprecated警告を出力
-      console.warn(
-        `Warning: ${adapterName} is deprecated. ${adapter.deprecationMessage}`
-      );
+      console.warn(`Warning: ${adapterName} is deprecated. ${adapter.deprecationMessage}`);
     }
-    
+
     return adapter;
   }
 
@@ -131,10 +132,10 @@ export class UnifiedReportEngine {
   private detectFormat(strategyName: string): ReportFormat {
     const formatMap: Record<string, ReportFormat> = {
       'ai-json': 'ai-json',
-      'markdown': 'markdown',
-      'html': 'html',
+      markdown: 'markdown',
+      html: 'html',
       'executive-summary': 'executive-summary',
-      'structured-json': 'structured-json'
+      'structured-json': 'structured-json',
     };
 
     return formatMap[strategyName] || 'markdown';
@@ -156,7 +157,7 @@ export class UnifiedReportEngine {
         return report.content;
       },
       isDeprecated: true,
-      deprecationMessage: 'Use UnifiedReportEngine with AIJsonFormatter strategy instead'
+      deprecationMessage: 'Use UnifiedReportEngine with AIJsonFormatter strategy instead',
     });
 
     // StructuredReporterのアダプター
@@ -169,7 +170,7 @@ export class UnifiedReportEngine {
         return report.content;
       },
       isDeprecated: true,
-      deprecationMessage: 'Use UnifiedReportEngine with MarkdownFormatter strategy instead'
+      deprecationMessage: 'Use UnifiedReportEngine with MarkdownFormatter strategy instead',
     });
   }
 }

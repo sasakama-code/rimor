@@ -75,7 +75,7 @@ describe('DebugLogger', () => {
     it('should log error when level is ERROR or higher', () => {
       DebugLogger.setLevel(DebugLevel.ERROR);
       DebugLogger.error('test error message', { data: 'test' });
-      
+
       expect(console.error).toHaveBeenCalledWith(
         expect.stringMatching(/🔴 \[ERROR\] .* test error message/),
         { data: 'test' }
@@ -85,7 +85,7 @@ describe('DebugLogger', () => {
     it('should not log error when level is NONE', () => {
       DebugLogger.setLevel(DebugLevel.NONE);
       DebugLogger.error('test error message');
-      
+
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -94,7 +94,7 @@ describe('DebugLogger', () => {
     it('should log warning when level is WARN or higher', () => {
       DebugLogger.setLevel(DebugLevel.WARN);
       DebugLogger.warn('test warning message');
-      
+
       expect(console.warn).toHaveBeenCalledWith(
         expect.stringMatching(/🟡 \[WARN\]  .* test warning message/)
       );
@@ -103,7 +103,7 @@ describe('DebugLogger', () => {
     it('should not log warning when level is ERROR', () => {
       DebugLogger.setLevel(DebugLevel.ERROR);
       DebugLogger.warn('test warning message');
-      
+
       expect(console.warn).not.toHaveBeenCalled();
     });
   });
@@ -112,7 +112,7 @@ describe('DebugLogger', () => {
     it('should log info when level is INFO or higher', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
       DebugLogger.info('test info message');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🔵 \[INFO\]  .* test info message/)
       );
@@ -121,7 +121,7 @@ describe('DebugLogger', () => {
     it('should not log info when level is WARN', () => {
       DebugLogger.setLevel(DebugLevel.WARN);
       DebugLogger.info('test info message');
-      
+
       expect(console.log).not.toHaveBeenCalled();
     });
   });
@@ -130,7 +130,7 @@ describe('DebugLogger', () => {
     it('should log verbose when level is VERBOSE or higher', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
       DebugLogger.verbose('test verbose message');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🟢 \[VERB\]  .* test verbose message/)
       );
@@ -139,7 +139,7 @@ describe('DebugLogger', () => {
     it('should not log verbose when level is INFO', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
       DebugLogger.verbose('test verbose message');
-      
+
       expect(console.log).not.toHaveBeenCalled();
     });
   });
@@ -148,7 +148,7 @@ describe('DebugLogger', () => {
     it('should log trace when level is TRACE', () => {
       DebugLogger.setLevel(DebugLevel.TRACE);
       DebugLogger.trace('test trace message');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/⚪ \[TRACE\] .* test trace message/)
       );
@@ -157,7 +157,7 @@ describe('DebugLogger', () => {
     it('should not log trace when level is VERBOSE', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
       DebugLogger.trace('test trace message');
-      
+
       expect(console.log).not.toHaveBeenCalled();
     });
   });
@@ -165,7 +165,7 @@ describe('DebugLogger', () => {
   describe('time measurement', () => {
     it('should call console.time and timeEnd when level is VERBOSE or higher', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
-      
+
       DebugLogger.time('test-timer');
       expect(console.time).toHaveBeenCalledWith('⏱️  [TIME]  test-timer');
 
@@ -175,7 +175,7 @@ describe('DebugLogger', () => {
 
     it('should not call console.time when level is INFO', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
-      
+
       DebugLogger.time('test-timer');
       expect(console.time).not.toHaveBeenCalled();
 
@@ -188,9 +188,9 @@ describe('DebugLogger', () => {
     it('should inspect object when level is TRACE', () => {
       DebugLogger.setLevel(DebugLevel.TRACE);
       const testObj = { test: 'data', nested: { value: 123 } };
-      
+
       DebugLogger.inspect('test-object', testObj);
-      
+
       expect(console.log).toHaveBeenCalledWith('🔍 [INSPECT] test-object:');
       expect(console.dir).toHaveBeenCalledWith(testObj, { depth: 3, colors: true });
     });
@@ -198,9 +198,9 @@ describe('DebugLogger', () => {
     it('should not inspect when level is VERBOSE', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
       const testObj = { test: 'data' };
-      
+
       DebugLogger.inspect('test-object', testObj);
-      
+
       expect(console.log).not.toHaveBeenCalled();
       expect(console.dir).not.toHaveBeenCalled();
     });
@@ -209,10 +209,10 @@ describe('DebugLogger', () => {
   describe('measureAsync', () => {
     it('should measure async function execution time when level is VERBOSE', async () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
-      
+
       const asyncFn = jest.fn().mockResolvedValue('result');
       const result = await DebugLogger.measureAsync('test-async', asyncFn);
-      
+
       expect(result).toBe('result');
       expect(asyncFn).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
@@ -225,12 +225,14 @@ describe('DebugLogger', () => {
 
     it('should handle async function errors and still measure time', async () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
-      
+
       const error = new Error('Test error');
       const asyncFn = jest.fn().mockRejectedValue(error);
-      
-      await expect(DebugLogger.measureAsync('test-async-error', asyncFn)).rejects.toThrow('Test error');
-      
+
+      await expect(DebugLogger.measureAsync('test-async-error', asyncFn)).rejects.toThrow(
+        'Test error'
+      );
+
       expect(console.error).toHaveBeenCalledWith(
         expect.stringMatching(/🔴 \[ERROR\] .* Failed: test-async-error \(\d+ms\)/),
         error
@@ -239,10 +241,10 @@ describe('DebugLogger', () => {
 
     it('should execute function without measurement when level is INFO', async () => {
       DebugLogger.setLevel(DebugLevel.INFO);
-      
+
       const asyncFn = jest.fn().mockResolvedValue('result');
       const result = await DebugLogger.measureAsync('test-async', asyncFn);
-      
+
       expect(result).toBe('result');
       expect(asyncFn).toHaveBeenCalled();
       expect(console.log).not.toHaveBeenCalled();
@@ -252,10 +254,10 @@ describe('DebugLogger', () => {
   describe('measure', () => {
     it('should measure sync function execution time when level is VERBOSE', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
-      
+
       const syncFn = jest.fn().mockReturnValue('sync-result');
       const result = DebugLogger.measure('test-sync', syncFn);
-      
+
       expect(result).toBe('sync-result');
       expect(syncFn).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
@@ -268,12 +270,14 @@ describe('DebugLogger', () => {
 
     it('should handle sync function errors and still measure time', () => {
       DebugLogger.setLevel(DebugLevel.VERBOSE);
-      
+
       const error = new Error('Sync error');
-      const syncFn = jest.fn().mockImplementation(() => { throw error; });
-      
+      const syncFn = jest.fn().mockImplementation(() => {
+        throw error;
+      });
+
       expect(() => DebugLogger.measure('test-sync-error', syncFn)).toThrow('Sync error');
-      
+
       expect(console.error).toHaveBeenCalledWith(
         expect.stringMatching(/🔴 \[ERROR\] .* Failed: test-sync-error \(\d+ms\)/),
         error
@@ -288,7 +292,7 @@ describe('DebugLogger', () => {
 
     it('should log error when condition is true', () => {
       DebugLogger.logIf(true, DebugLevel.ERROR, 'conditional error');
-      
+
       expect(console.error).toHaveBeenCalledWith(
         expect.stringMatching(/🔴 \[ERROR\] .* conditional error/)
       );
@@ -296,13 +300,13 @@ describe('DebugLogger', () => {
 
     it('should not log when condition is false', () => {
       DebugLogger.logIf(false, DebugLevel.ERROR, 'conditional error');
-      
+
       expect(console.error).not.toHaveBeenCalled();
     });
 
     it('should log warn when condition is true', () => {
       DebugLogger.logIf(true, DebugLevel.WARN, 'conditional warning');
-      
+
       expect(console.warn).toHaveBeenCalledWith(
         expect.stringMatching(/🟡 \[WARN\]  .* conditional warning/)
       );
@@ -310,7 +314,7 @@ describe('DebugLogger', () => {
 
     it('should log info when condition is true', () => {
       DebugLogger.logIf(true, DebugLevel.INFO, 'conditional info');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🔵 \[INFO\]  .* conditional info/)
       );
@@ -318,7 +322,7 @@ describe('DebugLogger', () => {
 
     it('should log verbose when condition is true', () => {
       DebugLogger.logIf(true, DebugLevel.VERBOSE, 'conditional verbose');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🟢 \[VERB\]  .* conditional verbose/)
       );
@@ -326,7 +330,7 @@ describe('DebugLogger', () => {
 
     it('should log trace when condition is true', () => {
       DebugLogger.logIf(true, DebugLevel.TRACE, 'conditional trace');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/⚪ \[TRACE\] .* conditional trace/)
       );
@@ -352,9 +356,9 @@ describe('DebugLogger', () => {
 
     it('should work correctly when called through debug object', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
-      
+
       debug.info('test from debug object');
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🔵 \[INFO\]  .* test from debug object/)
       );
@@ -364,12 +368,12 @@ describe('DebugLogger', () => {
   describe('multiple arguments handling', () => {
     it('should pass multiple arguments to console methods', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
-      
+
       const obj1 = { test: 1 };
       const obj2 = { test: 2 };
-      
+
       DebugLogger.info('test message', obj1, obj2);
-      
+
       expect(console.log).toHaveBeenCalledWith(
         expect.stringMatching(/🔵 \[INFO\]  .* test message/),
         obj1,
@@ -381,9 +385,9 @@ describe('DebugLogger', () => {
   describe('ISO timestamp format', () => {
     it('should include ISO timestamp in log messages', () => {
       DebugLogger.setLevel(DebugLevel.INFO);
-      
+
       DebugLogger.info('timestamp test');
-      
+
       const logCall = (console.log as jest.Mock).mock.calls[0][0];
       // ISO 8601フォーマットの正規表現でタイムスタンプをチェック
       expect(logCall).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);

@@ -1,6 +1,6 @@
 /**
  * BaseSecurityPlugin
- * 
+ *
  * セキュリティプラグインの基底クラス
  * SOLID原則に従い、セキュリティ固有の共通機能を提供
  */
@@ -34,7 +34,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'critical',
           description: 'Potential SQL injection vulnerability detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
 
@@ -45,7 +45,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'high',
           description: 'Potential XSS vulnerability detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
 
@@ -56,7 +56,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'critical',
           description: 'Potential Command injection vulnerability detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
 
@@ -67,7 +67,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'high',
           description: 'Potential Path traversal vulnerability detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
 
@@ -78,7 +78,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'high',
           description: 'Hardcoded credentials detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
 
@@ -89,7 +89,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
           severity: 'medium',
           description: 'Use of weak cryptographic algorithm detected',
           line: index + 1,
-          column: 1
+          column: 1,
         });
       }
     });
@@ -111,7 +111,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       high: 0.5,
       medium: 0.3,
       low: 0.1,
-      info: 0.05
+      info: 0.05,
     };
 
     patterns.forEach(pattern => {
@@ -137,7 +137,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       'localStorage',
       'sessionStorage',
       'document.cookie',
-      'window.location'
+      'window.location',
     ];
 
     return taintSources.some(source => value.includes(source));
@@ -158,7 +158,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       'db.query',
       'db.execute',
       'fs.readFileSync',
-      'fs.writeFileSync'
+      'fs.writeFileSync',
     ];
 
     return dangerousSinks.some(sink => value.includes(sink));
@@ -173,7 +173,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /UPDATE.*SET.*\+/i,
       /DELETE.*FROM.*\+/i,
       /query\s*\(\s*["'`].*\+/,
-      /execute\s*\(\s*["'`].*\+/
+      /execute\s*\(\s*["'`].*\+/,
     ];
 
     return patterns.some(pattern => pattern.test(line));
@@ -185,7 +185,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /innerHTML\s*=\s*[^'"`]/,
       /outerHTML\s*=\s*[^'"`]/,
       /document\.write\s*\(/,
-      /insertAdjacentHTML/
+      /insertAdjacentHTML/,
     ];
 
     return patterns.some(pattern => pattern.test(line));
@@ -197,7 +197,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /exec\s*\(\s*['"`].*\+/,
       /execSync\s*\(\s*['"`].*\+/,
       /spawn\s*\(\s*['"`].*\+/,
-      /system\s*\(\s*['"`].*\+/
+      /system\s*\(\s*['"`].*\+/,
     ];
 
     return patterns.some(pattern => pattern.test(line));
@@ -209,7 +209,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /readFile.*\.\.\//,
       /readFileSync.*\.\.\//,
       /require\s*\(\s*['"`]\.\.\//,
-      /path\.join.*\.\.\//
+      /path\.join.*\.\.\//,
     ];
 
     return patterns.some(pattern => pattern.test(line));
@@ -224,7 +224,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /secret\s*[:=]\s*["'`][^"'`]+["'`]/i,
       /token\s*[:=]\s*["'`][^"'`]+["'`]/i,
       /sk_test_/i,
-      /sk_live_/i
+      /sk_live_/i,
     ];
 
     return patterns.some(pattern => pattern.test(line));
@@ -236,7 +236,7 @@ export abstract class BaseSecurityPlugin extends BasePlugin {
       /createHash\s*\(\s*['"`]md5/i,
       /createHash\s*\(\s*['"`]sha1/i,
       /createCipher\s*\(\s*['"`]des/i,
-      /createCipher\s*\(\s*['"`]rc4/i
+      /createCipher\s*\(\s*['"`]rc4/i,
     ];
 
     return patterns.some(pattern => pattern.test(line));

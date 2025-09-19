@@ -50,19 +50,19 @@ export class LanguageAnalyzer {
   async extractFunctionInfo(fileContent: string, language: string): Promise<FunctionInfo[]> {
     const functions: FunctionInfo[] = [];
     const lines = fileContent.split('\n');
-    
+
     if (this.isJavaScriptLikeLanguage(language)) {
       return this.extractJavaScriptFunctions(lines);
     }
-    
+
     if (language === 'python') {
       return this.extractPythonFunctions(lines);
     }
-    
+
     if (language === 'java') {
       return this.extractJavaFunctions(lines);
     }
-    
+
     return functions;
   }
 
@@ -72,19 +72,19 @@ export class LanguageAnalyzer {
   extractClassInfo(fileContent: string, language: string): ClassInfo[] {
     const classes: ClassInfo[] = [];
     const lines = fileContent.split('\n');
-    
+
     if (this.isJavaScriptLikeLanguage(language)) {
       return this.extractJavaScriptClasses(lines, language);
     }
-    
+
     if (language === 'python') {
       return this.extractPythonClasses(lines);
     }
-    
+
     if (language === 'java') {
       return this.extractJavaClasses(lines);
     }
-    
+
     return classes;
   }
 
@@ -94,15 +94,15 @@ export class LanguageAnalyzer {
   extractInterfaceInfo(fileContent: string, language: string): InterfaceInfo[] {
     const interfaces: InterfaceInfo[] = [];
     const lines = fileContent.split('\n');
-    
+
     if (this.isTypeScriptLikeLanguage(language)) {
       return this.extractTypeScriptInterfaces(lines);
     }
-    
+
     if (language === 'java') {
       return this.extractJavaInterfaces(lines);
     }
-    
+
     return interfaces;
   }
 
@@ -112,10 +112,10 @@ export class LanguageAnalyzer {
   extractVariableInfo(fileContent: string, language: string): VariableInfo[] {
     const variables: VariableInfo[] = [];
     const lines = fileContent.split('\n');
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       if (this.isJavaScriptLikeLanguage(language)) {
         const jsVars = this.extractJavaScriptVariables(line, i + 1, lines);
         variables.push(...jsVars);
@@ -124,7 +124,7 @@ export class LanguageAnalyzer {
         variables.push(...pyVars);
       }
     }
-    
+
     return variables;
   }
 
@@ -134,9 +134,9 @@ export class LanguageAnalyzer {
   extractImports(fileContent: string, language: string): Array<{ source: string }> {
     const imports: Array<{ source: string }> = [];
     const lines = fileContent.split('\n');
-    
+
     const importRegexes = this.getImportRegexes(language);
-    
+
     for (const line of lines) {
       for (const regex of importRegexes) {
         const match = line.match(regex);
@@ -145,7 +145,7 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return imports;
   }
 
@@ -154,20 +154,20 @@ export class LanguageAnalyzer {
    */
   extractExports(fileContent: string, language: string): string[] {
     const exports: string[] = [];
-    
+
     // Defensive programming: Check if language is supported
     if (!this.isJavaScriptLikeLanguage(language)) {
       return exports;
     }
-    
+
     try {
       // Remove comments to avoid false positives
       const cleanContent = this.removeCommentsFromCode(fileContent);
       const exportRegexes = this.getJavaScriptExportRegexes(language);
-      
+
       for (const regex of exportRegexes) {
         const matches = Array.from(cleanContent.matchAll(regex));
-        
+
         for (const match of matches) {
           // Handle different regex patterns
           if (this.isDefaultExportRegex(regex)) {
@@ -182,15 +182,14 @@ export class LanguageAnalyzer {
           }
         }
       }
-      
+
       // Handle destructuring exports
       this.processDestructuringExports(cleanContent, exports);
-      
     } catch (error) {
       // Defensive programming: Log error but continue
       console.warn(`Error extracting exports from ${language} file:`, error);
     }
-    
+
     // Remove duplicates while preserving order
     return [...new Set(exports)];
   }
@@ -216,7 +215,9 @@ export class LanguageAnalyzer {
   }
 
   private isCommonJSObjectExportRegex(regex: RegExp): boolean {
-    return regex.source.includes('exports') && regex.source.includes('=') && regex.source.includes('\\{');
+    return (
+      regex.source.includes('exports') && regex.source.includes('=') && regex.source.includes('\\{')
+    );
   }
 
   private processDefaultExport(match: RegExpMatchArray, exports: string[]): void {
@@ -239,13 +240,13 @@ export class LanguageAnalyzer {
 
   private parseBracedExportNames(bracedContent: string): string[] {
     const names: string[] = [];
-    
+
     // Split by comma, but be careful with nested structures
     const parts = this.splitExportNames(bracedContent);
-    
+
     for (let part of parts) {
       part = part.trim();
-      
+
       if (part.includes(' as ')) {
         // Handle alias: "original as alias"
         const [, alias] = part.split(' as ');
@@ -257,7 +258,7 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return names;
   }
 
@@ -266,10 +267,10 @@ export class LanguageAnalyzer {
     let current = '';
     let braceDepth = 0;
     let parenDepth = 0;
-    
+
     for (let i = 0; i < content.length; i++) {
       const char = content[i];
-      
+
       switch (char) {
         case '{':
           braceDepth++;
@@ -300,11 +301,11 @@ export class LanguageAnalyzer {
           break;
       }
     }
-    
+
     if (current.trim()) {
       names.push(current.trim());
     }
-    
+
     return names;
   }
 
@@ -318,21 +319,21 @@ export class LanguageAnalyzer {
 
   private parseObjectProperties(objectContent: string): string[] {
     const properties: string[] = [];
-    
+
     // Clean up the content - remove extra whitespace and newlines
     const cleanContent = objectContent.replace(/\s+/g, ' ').trim();
-    
+
     // Split by comma but handle nested structures
     const parts = this.splitExportNames(cleanContent);
-    
+
     for (const part of parts) {
       const trimmedPart = part.trim();
-      
+
       if (trimmedPart.includes(':')) {
         // Key-value property: key: value
         const colonIndex = trimmedPart.indexOf(':');
         const key = trimmedPart.substring(0, colonIndex).trim();
-        
+
         if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) {
           properties.push(key);
         }
@@ -341,13 +342,15 @@ export class LanguageAnalyzer {
         properties.push(trimmedPart);
       }
     }
-    
+
     return [...new Set(properties)]; // Remove duplicates
   }
 
   private processDestructuringExports(content: string, exports: string[]): void {
     // Handle object destructuring exports: export const { foo, bar: { nested } } = obj;
-    const objectDestructuringMatches = content.matchAll(/export\s+(?:const|let|var)\s*\{([^}]+)\}\s*=/g);
+    const objectDestructuringMatches = content.matchAll(
+      /export\s+(?:const|let|var)\s*\{([^}]+)\}\s*=/g
+    );
     for (const match of objectDestructuringMatches) {
       if (match[1]) {
         const names = this.parseDestructuringPattern(match[1]);
@@ -356,7 +359,9 @@ export class LanguageAnalyzer {
     }
 
     // Handle array destructuring exports: export const [first, second] = array;
-    const arrayDestructuringMatches = content.matchAll(/export\s+(?:const|let|var)\s*\[([^\]]+)\]\s*=/g);
+    const arrayDestructuringMatches = content.matchAll(
+      /export\s+(?:const|let|var)\s*\[([^\]]+)\]\s*=/g
+    );
     for (const match of arrayDestructuringMatches) {
       if (match[1]) {
         const names = this.parseArrayDestructuring(match[1]);
@@ -368,15 +373,15 @@ export class LanguageAnalyzer {
   private parseDestructuringPattern(pattern: string): string[] {
     const names: string[] = [];
     const parts = this.splitExportNames(pattern);
-    
+
     for (let part of parts) {
       part = part.trim();
-      
+
       if (part.includes(':')) {
         // Handle nested destructuring: bar: { nested }
         const colonIndex = part.indexOf(':');
         const afterColon = part.substring(colonIndex + 1).trim();
-        
+
         if (afterColon.startsWith('{') && afterColon.endsWith('}')) {
           // Nested object destructuring
           const nestedContent = afterColon.slice(1, -1);
@@ -391,23 +396,23 @@ export class LanguageAnalyzer {
         names.push(part);
       }
     }
-    
+
     return names;
   }
 
   private parseArrayDestructuring(pattern: string): string[] {
     const names: string[] = [];
     const parts = pattern.split(',');
-    
+
     for (let part of parts) {
       part = part.trim();
-      
+
       if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(part)) {
         names.push(part);
       }
       // Note: Skip array holes and complex patterns for now
     }
-    
+
     return names;
   }
 
@@ -417,7 +422,7 @@ export class LanguageAnalyzer {
   extractUsedAPIs(fileContent: string, language: string): string[] {
     const apis: string[] = [];
     const patterns = this.getAPIPatterns(language);
-    
+
     for (const pattern of patterns) {
       const matches = fileContent.matchAll(pattern);
       for (const match of matches) {
@@ -426,7 +431,7 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return [...new Set(apis)];
   }
 
@@ -438,18 +443,18 @@ export class LanguageAnalyzer {
       /^[\s]*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/,
       /^[\s]*(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
       /^[\s]*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>/,
-      /^[\s]*(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/
+      /^[\s]*(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/,
     ];
-    
+
     // Skip if-statements, for-loops, etc
     const skipPatterns = [
       /^[\s]*(?:if|for|while|switch|catch|try)\s*\(/,
-      /^[\s]*}\s*else\s*(?:if)?/
+      /^[\s]*}\s*else\s*(?:if)?/,
     ];
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // Skip lines that are not function declarations
       let shouldSkip = false;
       for (const skipPattern of skipPatterns) {
@@ -459,25 +464,25 @@ export class LanguageAnalyzer {
         }
       }
       if (shouldSkip) continue;
-      
+
       for (const regex of functionRegexes) {
         const match = line.match(regex);
         if (match) {
           const functionName = match[1];
-          
+
           // constructorはスキップ
           if (functionName === 'constructor') {
             break;
           }
-          
+
           let braceCount = 0;
           let foundStart = false;
           let endLine = i;
-          
+
           // 関数の終了行を探す
           for (let j = i; j < lines.length; j++) {
             const currentLine = lines[j];
-            
+
             for (const char of currentLine) {
               if (char === '{') {
                 braceCount++;
@@ -486,15 +491,15 @@ export class LanguageAnalyzer {
                 braceCount--;
               }
             }
-            
+
             if (foundStart && braceCount === 0) {
               endLine = j;
               break;
             }
           }
-          
+
           const functionLines = lines.slice(i, endLine + 1);
-          
+
           functions.push({
             name: functionName,
             startLine: i + 1,
@@ -507,32 +512,32 @@ export class LanguageAnalyzer {
             calls: this.extractFunctionCalls(functionLines),
             calledBy: [],
             variables: this.extractVariablesFromLines(functionLines),
-            documentation: this.extractDocumentation(lines, i)
+            documentation: this.extractDocumentation(lines, i),
           });
           break;
         }
       }
     }
-    
+
     return functions;
   }
 
   private extractJavaScriptClasses(lines: string[], language: string): ClassInfo[] {
     const classes: ClassInfo[] = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       const classMatch = line.match(/^[\s]*(?:export\s+)?class\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-      
+
       if (classMatch) {
         const className = classMatch[1];
         let braceCount = 0;
         let foundStart = false;
         let endLine = i;
-        
+
         for (let j = i; j < lines.length; j++) {
           const currentLine = lines[j];
-          
+
           for (const char of currentLine) {
             if (char === '{') {
               braceCount++;
@@ -541,15 +546,15 @@ export class LanguageAnalyzer {
               braceCount--;
             }
           }
-          
+
           if (foundStart && braceCount === 0) {
             endLine = j;
             break;
           }
         }
-        
+
         const members = this.extractClassMembers(lines, i, language);
-        
+
         classes.push({
           name: className,
           startLine: i + 1,
@@ -559,30 +564,32 @@ export class LanguageAnalyzer {
           extends: this.extractExtendsClass(line),
           implements: this.extractImplementsInterfaces(line),
           isExported: this.isExported(line),
-          documentation: this.extractDocumentation(lines, i)
+          documentation: this.extractDocumentation(lines, i),
         });
       }
     }
-    
+
     return classes;
   }
 
   private extractTypeScriptInterfaces(lines: string[]): InterfaceInfo[] {
     const interfaces: InterfaceInfo[] = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      const interfaceMatch = line.match(/^[\s]*(?:export\s+)?interface\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-      
+      const interfaceMatch = line.match(
+        /^[\s]*(?:export\s+)?interface\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/
+      );
+
       if (interfaceMatch) {
         const interfaceName = interfaceMatch[1];
         let braceCount = 0;
         let foundStart = false;
         let endLine = i;
-        
+
         for (let j = i; j < lines.length; j++) {
           const currentLine = lines[j];
-          
+
           for (const char of currentLine) {
             if (char === '{') {
               braceCount++;
@@ -591,15 +598,15 @@ export class LanguageAnalyzer {
               braceCount--;
             }
           }
-          
+
           if (foundStart && braceCount === 0) {
             endLine = j;
             break;
           }
         }
-        
+
         const members = this.extractInterfaceMembers(lines, i);
-        
+
         interfaces.push({
           name: interfaceName,
           startLine: i + 1,
@@ -608,29 +615,35 @@ export class LanguageAnalyzer {
           properties: members.properties,
           extends: this.extractExtendsInterface(line) ? [this.extractExtendsInterface(line)!] : [],
           isExported: this.isExported(line),
-          documentation: this.extractDocumentation(lines, i)
+          documentation: this.extractDocumentation(lines, i),
         });
       }
     }
-    
+
     return interfaces;
   }
 
-  private extractJavaScriptVariables(line: string, lineNumber: number, lines: string[]): VariableInfo[] {
+  private extractJavaScriptVariables(
+    line: string,
+    lineNumber: number,
+    lines: string[]
+  ): VariableInfo[] {
     const variables: VariableInfo[] = [];
-    
+
     // 通常の変数宣言
-    const normalPattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
-    
+    const normalPattern =
+      /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
+
     // オブジェクトデストラクチャリング構文
     const destructuringPattern = /(const|let|var)\s*\{([^}]+)\}\s*=/g;
-    
+
     // 配列デストラクチャリング構文
     const arrayDestructuringPattern = /(const|let|var)\s*\[([^\]]+)\]\s*=/g;
-    
+
     // クラスプロパティ宣言 (private, public, protected, static等)
-    const classPropertyPattern = /^\s*(?:(private|public|protected|static)\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?::\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]|]*))?\s*=/;
-    
+    const classPropertyPattern =
+      /^\s*(?:(private|public|protected|static)\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?::\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]|]*))?\s*=/;
+
     // 通常の変数を抽出
     const normalMatches = line.matchAll(normalPattern);
     for (const match of normalMatches) {
@@ -643,11 +656,11 @@ export class LanguageAnalyzer {
           isConst: match[1] === 'const',
           isExported: this.isExported(line),
           usage: [],
-          kind: match[1] as 'const' | 'let' | 'var'
+          kind: match[1] as 'const' | 'let' | 'var',
         });
       }
     }
-    
+
     // クラスプロパティを抽出
     const classPropertyMatch = line.match(classPropertyPattern);
     if (classPropertyMatch && classPropertyMatch[2]) {
@@ -659,10 +672,10 @@ export class LanguageAnalyzer {
         isConst: false, // クラスプロパティは技術的にはconst/let/varではない
         isExported: this.isExported(line),
         usage: [],
-        kind: 'var' // クラスプロパティは var 相当として扱う
+        kind: 'var', // クラスプロパティは var 相当として扱う
       });
     }
-    
+
     // オブジェクトデストラクチャリング変数を抽出
     const destructMatches = line.matchAll(destructuringPattern);
     for (const match of destructMatches) {
@@ -681,13 +694,13 @@ export class LanguageAnalyzer {
               isConst: match[1] === 'const',
               isExported: this.isExported(line),
               usage: [],
-              kind: match[1] as 'const' | 'let' | 'var'
+              kind: match[1] as 'const' | 'let' | 'var',
             });
           }
         }
       }
     }
-    
+
     // 配列デストラクチャリング変数を抽出
     const arrayDestructMatches = line.matchAll(arrayDestructuringPattern);
     for (const match of arrayDestructMatches) {
@@ -704,13 +717,13 @@ export class LanguageAnalyzer {
               isConst: match[1] === 'const',
               isExported: this.isExported(line),
               usage: [],
-              kind: match[1] as 'const' | 'let' | 'var'
+              kind: match[1] as 'const' | 'let' | 'var',
             });
           }
         }
       }
     }
-    
+
     return variables;
   }
 
@@ -725,14 +738,18 @@ export class LanguageAnalyzer {
     return [];
   }
 
-  private extractPythonVariables(line: string, lineNumber: number, lines: string[]): VariableInfo[] {
+  private extractPythonVariables(
+    line: string,
+    lineNumber: number,
+    lines: string[]
+  ): VariableInfo[] {
     // TODO: Implement Python variable extraction with proper scope determination
     const variables: VariableInfo[] = [];
-    
+
     // Basic Python variable detection (simplified)
     const pythonVarPattern = /^(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*=/;
     const match = line.match(pythonVarPattern);
-    
+
     if (match && match[2]) {
       variables.push({
         name: match[2],
@@ -742,10 +759,10 @@ export class LanguageAnalyzer {
         isConst: false, // Python にはconstがないのでfalse
         isExported: false, // 簡単のためfalse
         usage: [],
-        kind: 'var' // Python では var 相当として扱う
+        kind: 'var', // Python では var 相当として扱う
       });
     }
-    
+
     return variables;
   }
 
@@ -771,15 +788,9 @@ export class LanguageAnalyzer {
       case 'javascript':
       case 'typescriptreact':
       case 'javascriptreact':
-        return [
-          /import\s+.*from\s+['"]([^'"]+)['"]/,
-          /require\s*\(\s*['"]([^'"]+)['"]\s*\)/
-        ];
+        return [/import\s+.*from\s+['"]([^'"]+)['"]/, /require\s*\(\s*['"]([^'"]+)['"]\s*\)/];
       case 'python':
-        return [
-          /from\s+([a-zA-Z0-9_.]+)\s+import/,
-          /import\s+([a-zA-Z0-9_.]+)/
-        ];
+        return [/from\s+([a-zA-Z0-9_.]+)\s+import/, /import\s+([a-zA-Z0-9_.]+)/];
       default:
         return [];
     }
@@ -801,13 +812,19 @@ export class LanguageAnalyzer {
     const regexes: RegExp[] = [];
 
     // Named exports: export const/let/var/function/class/type/interface/enum
-    const namedKeywords = language === 'typescript' || language === 'typescriptreact'
-      ? ['const', 'let', 'var', 'function', 'class', 'type', 'interface', 'enum']
-      : ['const', 'let', 'var', 'function', 'class'];
+    const namedKeywords =
+      language === 'typescript' || language === 'typescriptreact'
+        ? ['const', 'let', 'var', 'function', 'class', 'type', 'interface', 'enum']
+        : ['const', 'let', 'var', 'function', 'class'];
 
     for (const keyword of namedKeywords) {
       // Handle async functions and abstract classes
-      regexes.push(new RegExp(`export\\s+(?:async\\s+)?(?:abstract\\s+)?${keyword}\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)`, 'g'));
+      regexes.push(
+        new RegExp(
+          `export\\s+(?:async\\s+)?(?:abstract\\s+)?${keyword}\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)`,
+          'g'
+        )
+      );
     }
 
     // Default exports with names
@@ -818,9 +835,9 @@ export class LanguageAnalyzer {
 
     // Anonymous default exports (placeholder) - improved patterns
     regexes.push(
-      /export\s+default\s+function\s*\(/g,      // export default function()
-      /export\s+default\s+class\s*\{/g,        // export default class {}
-      /export\s+default\s+(?:(?!function|class)[^;\n]*)[;\n]/g  // export default value;
+      /export\s+default\s+function\s*\(/g, // export default function()
+      /export\s+default\s+class\s*\{/g, // export default class {}
+      /export\s+default\s+(?:(?!function|class)[^;\n]*)[;\n]/g // export default value;
     );
 
     // Braced exports: export { name1, name2 as alias }
@@ -855,9 +872,7 @@ export class LanguageAnalyzer {
       case 'javascript':
       case 'typescriptreact':
       case 'javascriptreact':
-        return [
-          /([a-zA-Z_$][a-zA-Z0-9_$]*)\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g
-        ];
+        return [/([a-zA-Z_$][a-zA-Z0-9_$]*)\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g];
       default:
         return [];
     }
@@ -867,11 +882,14 @@ export class LanguageAnalyzer {
   private extractParameters(line: string): string[] {
     const match = line.match(/\(([^)]*)\)/);
     if (match && match[1]) {
-      return match[1].split(',').map(p => {
-        // パラメータ名のみを抽出（型情報を除去）
-        const paramName = p.trim().split(':')[0].trim();
-        return paramName;
-      }).filter(p => p);
+      return match[1]
+        .split(',')
+        .map(p => {
+          // パラメータ名のみを抽出（型情報を除去）
+          const paramName = p.trim().split(':')[0].trim();
+          return paramName;
+        })
+        .filter(p => p);
     }
     return [];
   }
@@ -881,7 +899,7 @@ export class LanguageAnalyzer {
     // 最後の ) を見つけて、その後の : から { までの間を取得
     const lastParenIndex = line.lastIndexOf(')');
     if (lastParenIndex === -1) return undefined;
-    
+
     const afterParen = line.substring(lastParenIndex + 1);
     const match = afterParen.match(/^\s*:\s*([^{]+)/);
     return match ? match[1].trim() : undefined;
@@ -890,7 +908,7 @@ export class LanguageAnalyzer {
   private calculateComplexity(lines: string[]): number {
     const complexityKeywords = ['if', 'else', 'for', 'while', 'switch', 'case', 'catch', 'try'];
     let complexity = 1; // Base complexity
-    
+
     for (const line of lines) {
       for (const keyword of complexityKeywords) {
         if (line.includes(keyword)) {
@@ -898,13 +916,13 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return complexity;
   }
 
   private extractFunctionCalls(lines: string[]): string[] {
     const calls: string[] = [];
-    
+
     for (const line of lines) {
       const matches = line.matchAll(/([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g);
       if (matches) {
@@ -915,13 +933,13 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return [...new Set(calls)];
   }
 
   private extractVariablesFromLines(lines: string[]): string[] {
     const variables: string[] = [];
-    
+
     for (const line of lines) {
       const matches = line.matchAll(/(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
       for (const match of matches) {
@@ -930,7 +948,7 @@ export class LanguageAnalyzer {
         }
       }
     }
-    
+
     return [...new Set(variables)];
   }
 
@@ -948,7 +966,11 @@ export class LanguageAnalyzer {
     return undefined;
   }
 
-  private extractClassMembers(lines: string[], startLine: number, language: string): {
+  private extractClassMembers(
+    lines: string[],
+    startLine: number,
+    language: string
+  ): {
     methods: string[];
     properties: string[];
   } {
@@ -956,10 +978,10 @@ export class LanguageAnalyzer {
     const properties: string[] = [];
     let braceLevel = 0;
     let foundStart = false;
-    
+
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const char of line) {
         if (char === '{') {
           braceLevel++;
@@ -968,44 +990,55 @@ export class LanguageAnalyzer {
           braceLevel--;
         }
       }
-      
+
       if (braceLevel > 0) {
         // Match various method patterns including async methods
-        const methodMatch = line.match(/^\s*(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
-        if (methodMatch && methodMatch[1] !== 'if' && methodMatch[1] !== 'for' && methodMatch[1] !== 'while' && methodMatch[1] !== 'switch') {
+        const methodMatch = line.match(
+          /^\s*(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/
+        );
+        if (
+          methodMatch &&
+          methodMatch[1] !== 'if' &&
+          methodMatch[1] !== 'for' &&
+          methodMatch[1] !== 'while' &&
+          methodMatch[1] !== 'switch'
+        ) {
           methods.push(methodMatch[1]);
         }
-        
+
         const propertyMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]/);
         if (propertyMatch && braceLevel > 0) {
           properties.push(propertyMatch[1]);
         }
       }
-      
+
       if (foundStart && braceLevel === 0) {
         break;
       }
     }
-    
+
     return { methods, properties };
   }
 
-  private extractInterfaceMembers(lines: string[], startLine: number): {
+  private extractInterfaceMembers(
+    lines: string[],
+    startLine: number
+  ): {
     methods: string[];
     properties: string[];
   } {
     const methods: string[] = [];
     const properties: string[] = [];
     let braceLevel = 0;
-    
+
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const char of line) {
         if (char === '{') braceLevel++;
         else if (char === '}') braceLevel--;
       }
-      
+
       if (braceLevel > 0) {
         const methodMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
         if (methodMatch) {
@@ -1017,12 +1050,12 @@ export class LanguageAnalyzer {
           }
         }
       }
-      
+
       if (braceLevel === 0 && i > startLine) {
         break;
       }
     }
-    
+
     return { methods, properties };
   }
 
@@ -1034,106 +1067,125 @@ export class LanguageAnalyzer {
   private determineScope(lines: string[], lineIndex: number): string {
     let braceDepth = 0;
     let currentScope = 'global';
-    
+
     // 現在の行から上に向かってスコープを判定
     for (let i = lineIndex; i >= 0; i--) {
       const line = lines[i].trim();
-      
+
       // 空行やコメント行はスキップ
       if (!line || line.startsWith('//') || line.startsWith('/*') || line.startsWith('*')) {
         continue;
       }
-      
+
       // 現在行から上に向かって中括弧をカウント
       for (let j = line.length - 1; j >= 0; j--) {
         if (line[j] === '}') {
           braceDepth++;
         } else if (line[j] === '{') {
           braceDepth--;
-          
+
           // スコープの開始を見つけた
           if (braceDepth < 0) {
             const beforeBrace = line.substring(0, j).trim();
-            
+
             // 各種スコープパターンをチェック
             // 1. クラス定義
             if (/(?:^|\s)(?:export\s+)?class\s+[a-zA-Z_$][a-zA-Z0-9_$]*/.test(beforeBrace)) {
               return 'local'; // クラススコープ
             }
-            
+
             // 2. 通常の関数定義
-            if (/(?:^|\s)(?:async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(beforeBrace)) {
+            if (
+              /(?:^|\s)(?:async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(
+                beforeBrace
+              )
+            ) {
               return 'local'; // 関数スコープ
             }
-            
+
             // 3. メソッド定義（クラス内）
-            if (/(?:^|\s)(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(beforeBrace)) {
+            if (
+              /(?:^|\s)(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(
+                beforeBrace
+              )
+            ) {
               return 'local'; // メソッドスコープ
             }
-            
+
             // 4. constructor
             if (/(?:^|\s)constructor\s*\([^)]*\)/.test(beforeBrace)) {
               return 'local'; // コンストラクタスコープ
             }
-            
+
             // 5. アロー関数（変数宣言形式）
-            if (/(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(beforeBrace)) {
+            if (
+              /(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(
+                beforeBrace
+              )
+            ) {
               return 'local'; // アロー関数スコープ
             }
-            
+
             // 6. アロー関数（単純形式）
-            if (/=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(beforeBrace) || 
-                /=>\s*$/.test(beforeBrace) ||
-                /\)\s*=>\s*$/.test(beforeBrace)) {
+            if (
+              /=\s*(?:async\s+)?\([^)]*\)\s*=>\s*$/.test(beforeBrace) ||
+              /=>\s*$/.test(beforeBrace) ||
+              /\)\s*=>\s*$/.test(beforeBrace)
+            ) {
               return 'local'; // アロー関数スコープ
             }
-            
+
             // 7. パラメータ付きアロー関数
             if (/\([^)]*\)\s*=>\s*$/.test(beforeBrace)) {
               return 'local'; // アロー関数スコープ
             }
-            
+
             // 7. 制御文ブロック（if, for, while など）
             const controlStatements = ['if', 'for', 'while', 'try', 'catch', 'switch', 'else'];
-            const hasControlStatement = controlStatements.some(stmt => 
-              new RegExp(`\\b${stmt}\\b\\s*\\(`).test(beforeBrace) ||
-              new RegExp(`\\}\\s*${stmt}\\b`).test(beforeBrace)
+            const hasControlStatement = controlStatements.some(
+              stmt =>
+                new RegExp(`\\b${stmt}\\b\\s*\\(`).test(beforeBrace) ||
+                new RegExp(`\\}\\s*${stmt}\\b`).test(beforeBrace)
             );
-            
+
             if (hasControlStatement) {
               // ブロックスコープの場合、const/letはブロックスコープ、varは関数スコープ
               // しかし、現在の簡単な実装では継続して親スコープを探す
               braceDepth = 0;
               continue;
             }
-            
+
             // 不明なブロックの場合、継続して親を探す
             braceDepth = 0;
           }
         }
       }
-      
+
       // 行全体のパターンマッチング（ネストの深い場合）
       if (braceDepth === 0) {
         // クラス定義行
         if (/^\s*(?:export\s+)?class\s+[a-zA-Z_$][a-zA-Z0-9_$]*/.test(line)) {
           return 'local'; // この変数はクラス内
         }
-        
+
         // 関数定義行
         if (/^\s*(?:async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*\([^)]*\)/.test(line)) {
           return 'local'; // この変数は関数内
         }
-        
+
         // アロー関数定義行
-        if (/(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/.test(line) ||
-            /=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{/.test(line) ||
-            /\([^)]*\)\s*=>\s*\{/.test(line)) {
+        if (
+          /(const|let|var)\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/.test(
+            line
+          ) ||
+          /=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{/.test(line) ||
+          /\([^)]*\)\s*=>\s*\{/.test(line)
+        ) {
           return 'local'; // この変数はアロー関数内
         }
       }
     }
-    
+
     return currentScope; // デフォルトはglobal
   }
 
@@ -1163,10 +1215,12 @@ export class LanguageAnalyzer {
    * JavaScript系言語かどうかを判定
    */
   private isJavaScriptLikeLanguage(language: string): boolean {
-    return language === 'typescript' || 
-           language === 'javascript' || 
-           language === 'typescriptreact' || 
-           language === 'javascriptreact';
+    return (
+      language === 'typescript' ||
+      language === 'javascript' ||
+      language === 'typescriptreact' ||
+      language === 'javascriptreact'
+    );
   }
 
   /**
@@ -1187,7 +1241,7 @@ export class LanguageAnalyzer {
       hasAsync: false,
       hasGenerics: false,
       hasDecorators: false,
-      hasJSX: false
+      hasJSX: false,
     };
 
     if (this.isJavaScriptLikeLanguage(language)) {

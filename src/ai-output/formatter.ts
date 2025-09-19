@@ -2,7 +2,7 @@
  * AI-optimized output formatter
  */
 
-import { 
+import {
   AnalysisResult,
   ProjectContext,
   Issue,
@@ -11,14 +11,14 @@ import {
   IssueSeverity,
   TestFile,
   TestMethod,
-  QualityScore 
+  QualityScore,
 } from '../core/types';
-import { 
+import {
   AIOptimizedOutput,
   AIFormattedFile,
   AIFormattedIssue,
   AIContext,
-  AISummary 
+  AISummary,
 } from './types';
 
 export class AIOptimizedFormatter {
@@ -29,8 +29,8 @@ export class AIOptimizedFormatter {
    * Format analysis results as JSON for AI consumption
    */
   async formatAsJSON(
-    result: AnalysisResult, 
-    projectPath: string, 
+    result: AnalysisResult,
+    projectPath: string,
     options: Partial<{
       includeContext: boolean;
       includeSourceCode: boolean;
@@ -38,17 +38,18 @@ export class AIOptimizedFormatter {
       format: string;
     }> = {}
   ): Promise<AIOptimizedOutput & { projectPath: string; actionableTasks: unknown[] }> {
-    const output = options.includeContext || options.includeSourceCode || options.optimizeForAI
-      ? this.formatWithOptions(result, { ...options, includeContext: true })
-      : this.format(result);
-    
+    const output =
+      options.includeContext || options.includeSourceCode || options.optimizeForAI
+        ? this.formatWithOptions(result, { ...options, includeContext: true })
+        : this.format(result);
+
     // Generate actionable tasks
     const actionableTasks = this.generateActionableTasks(result);
-    
+
     return {
       ...output,
       projectPath,
-      actionableTasks
+      actionableTasks,
     };
   }
 
@@ -56,8 +57,8 @@ export class AIOptimizedFormatter {
    * Format analysis results as Markdown for AI consumption
    */
   async formatAsMarkdown(
-    result: AnalysisResult, 
-    projectPath: string, 
+    result: AnalysisResult,
+    projectPath: string,
     options: Partial<{
       includeDetails: boolean;
       maxIssues: number;
@@ -78,14 +79,23 @@ export class AIOptimizedFormatter {
 - Quality Grade: ${output.qualityOverview.projectGrade}
 
 ## Critical Issues Summary
-${output.files.filter(f => f.issues.some((i) => i.severity === 'critical'))
-  .map(f => `- ${f.path}: ${f.issues.filter((i) => i.severity === 'critical').length} critical issues`)
-  .join('\n') || '- No critical issues found'}
+${
+  output.files
+    .filter(f => f.issues.some(i => i.severity === 'critical'))
+    .map(
+      f => `- ${f.path}: ${f.issues.filter(i => i.severity === 'critical').length} critical issues`
+    )
+    .join('\n') || '- No critical issues found'
+}
 
 ## Issues by File
-${output.files.map(f => `## File: ${f.path}
+${output.files
+  .map(
+    f => `## File: ${f.path}
 Score: ${Math.round(f.score || 75)}/100
-    ${f.issues.map((i) => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`).join('\n\n')}
+    ${f.issues.map(i => `- ${i.severity}: ${i.description || 'No description'}`).join('\n')}`
+  )
+  .join('\n\n')}
 
 ## Instructions for AI
 ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No specific instructions'}
@@ -108,7 +118,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       metadata: {
         timestamp: new Date().toISOString(),
         totalIssues: result.issues.length,
-        totalFiles: files.length
+        totalFiles: files.length,
       },
       // Add required properties for AIOptimizedOutput
       version: '0.8.0',
@@ -117,11 +127,11 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
         projectScore: result.score?.overall || 75,
         projectGrade: this.calculateGrade(result.score?.overall || 0),
         criticalIssues: result.issues.filter(i => i.severity === 'critical').length,
-        totalIssues: result.issues.length
+        totalIssues: result.issues.length,
       },
       actionableTasks: [],
       insights: [],
-      instructions: this.generateInstructions(result) // instructionsプロパティを追加
+      instructions: this.generateInstructions(result), // instructionsプロパティを追加
     } as any; // Type assertion to handle interface differences
   }
 
@@ -142,7 +152,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
 
     const summary = this.generateSummary(result);
     const files = this.formatFiles(result.issues, maxIssues, maxFiles, options.includeContext);
-    const aiContext = options.includeContext 
+    const aiContext = options.includeContext
       ? this.extractContext(result, result.context)
       : undefined;
 
@@ -154,7 +164,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
         timestamp: new Date().toISOString(),
         totalIssues: result.issues.length,
         totalFiles: files.length,
-        options
+        options,
       },
       // Add required properties for AIOptimizedOutput
       version: '0.8.0',
@@ -163,10 +173,10 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
         projectScore: result.score?.overall || 75,
         projectGrade: this.calculateGrade(result.score?.overall || 0),
         criticalIssues: result.issues.filter(i => i.severity === 'critical').length,
-        totalIssues: result.issues.length
+        totalIssues: result.issues.length,
       },
       actionableTasks: [],
-      insights: []
+      insights: [],
     } as any; // Type assertion to handle interface differences
   }
 
@@ -190,9 +200,9 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
         count: result.issues.filter(
           issue => issue.category === i.category && issue.severity === i.severity
         ).length,
-        message: i.message
+        message: i.message,
       })),
-      keyFindings: this.extractKeyFindings(result)
+      keyFindings: this.extractKeyFindings(result),
     };
   }
 
@@ -200,7 +210,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    * Format files with issues
    */
   private formatFiles(
-    issues: Issue[], 
+    issues: Issue[],
     maxIssuesPerFile = this.maxIssuesPerFile,
     maxFiles = this.maxFilesInOutput,
     includeContext: boolean = false
@@ -216,14 +226,17 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       issues: fileIssues
         .slice(0, maxIssuesPerFile)
         .map(issue => this.formatIssue(issue, includeContext)),
-      score: this.calculateFileScore(fileIssues)
+      score: this.calculateFileScore(fileIssues),
     }));
   }
 
   /**
    * Format single issue
    */
-  private formatIssue(issue: Issue | ExtendedIssue, includeContext: boolean = false): AIFormattedIssue {
+  private formatIssue(
+    issue: Issue | ExtendedIssue,
+    includeContext: boolean = false
+  ): AIFormattedIssue {
     // ExtendedIssueの場合はそのプロパティを使用
     const extIssue = issue as ExtendedIssue;
     const formatted: any = {
@@ -234,22 +247,23 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       column: extIssue.position?.column || issue.column,
       suggestion: extIssue.suggestedFix || issue.suggestion,
       impact: this.calculateImpact(issue),
-      codeSnippet: extIssue.codeSnippet
+      codeSnippet: extIssue.codeSnippet,
     };
-    
+
     if (includeContext) {
       formatted.context = {
         targetCode: {
-          content: extIssue.codeSnippet || `Code at line ${issue.line || extIssue.position?.line || 10}`,
+          content:
+            extIssue.codeSnippet || `Code at line ${issue.line || extIssue.position?.line || 10}`,
           startLine: issue.line || extIssue.position?.line || 0,
-          endLine: issue.line || extIssue.position?.line || 0
+          endLine: issue.line || extIssue.position?.line || 0,
         },
         surroundingCode: [],
         dependencies: [],
-        relatedTests: []
+        relatedTests: [],
       };
     }
-    
+
     return formatted;
   }
 
@@ -264,11 +278,12 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       languages: context?.languages || [],
       dependencies: context?.dependencies || [],
       configuration: {
-        hasTypeScript: context?.languages?.includes('typescript') || context?.language === 'typescript' || false,
+        hasTypeScript:
+          context?.languages?.includes('typescript') || context?.language === 'typescript' || false,
         hasESLint: this.hasDependency(context?.dependencies, 'eslint'),
         hasPrettier: this.hasDependency(context?.dependencies, 'prettier'),
-        hasJest: context?.testFramework === 'jest'
-      }
+        hasJest: context?.testFramework === 'jest',
+      },
     };
   }
 
@@ -276,20 +291,26 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    * Calculate severity distribution
    */
   private calculateSeverityDistribution(issues: Issue[]): Record<IssueSeverity, number> {
-    return issues.reduce((acc, issue) => {
-      acc[issue.severity] = (acc[issue.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<IssueSeverity, number>);
+    return issues.reduce(
+      (acc, issue) => {
+        acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<IssueSeverity, number>
+    );
   }
 
   /**
    * Calculate category distribution
    */
   private calculateCategoryDistribution(issues: Issue[]): Record<IssueCategory, number> {
-    return issues.reduce((acc, issue) => {
-      acc[issue.category] = (acc[issue.category] || 0) + 1;
-      return acc;
-    }, {} as Record<IssueCategory, number>);
+    return issues.reduce(
+      (acc, issue) => {
+        acc[issue.category] = (acc[issue.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<IssueCategory, number>
+    );
   }
 
   /**
@@ -351,7 +372,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    */
   private groupByFile(issues: Issue[]): Map<string, Issue[]> {
     const groups = new Map<string, Issue[]>();
-    
+
     issues.forEach(issue => {
       const file = issue.filePath || issue.file || 'unknown';
       if (!groups.has(file)) {
@@ -371,12 +392,12 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
 
     const severityWeights: Record<IssueSeverity, number> = {
       critical: 0.4,
-      error: 0.3,     // same as high
+      error: 0.3, // same as high
       high: 0.3,
-      warning: 0.25,  // same as medium
+      warning: 0.25, // same as medium
       medium: 0.25,
       low: 0.1,
-      info: 0.05
+      info: 0.05,
     };
 
     const totalWeight = issues.reduce((sum, issue) => {
@@ -384,7 +405,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
     }, 0);
 
     // Normalize to 0-100 scale (inverse of weight)
-    return Math.max(0, (1 - (totalWeight / issues.length)) * 100);
+    return Math.max(0, (1 - totalWeight / issues.length) * 100);
   }
 
   /**
@@ -396,7 +417,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
     if (issue.severity === 'medium') return 'medium';
     return 'low';
   }
-  
+
   /**
    * Calculate grade from score
    */
@@ -413,13 +434,13 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    */
   private generateInstructions(result: AnalysisResult): string[] {
     const instructions: string[] = [];
-    
+
     // 重大な問題がある場合の指示
     const criticalIssues = result.issues.filter(i => i.severity === 'critical');
     if (criticalIssues.length > 0) {
       instructions.push('優先度: まず重大な問題から修正してください');
     }
-    
+
     // カテゴリごとの指示
     const issuesByCategory = this.groupIssuesByCategory(result.issues);
     for (const [category, issues] of Object.entries(issuesByCategory)) {
@@ -427,7 +448,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
         instructions.push(`${category}: ${issues.length}件の問題を修正してください`);
       }
     }
-    
+
     return instructions;
   }
 
@@ -436,7 +457,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    */
   private groupIssuesByCategory(issues: Issue[]): Record<string, Issue[]> {
     const grouped: Record<string, Issue[]> = {};
-    
+
     for (const issue of issues) {
       const category = issue.category || 'その他';
       if (!grouped[category]) {
@@ -444,14 +465,17 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       }
       grouped[category].push(issue);
     }
-    
+
     return grouped;
   }
-  
+
   /**
    * Check if dependency exists
    */
-  private hasDependency(deps: Record<string, string> | string[] | undefined, name: string): boolean {
+  private hasDependency(
+    deps: Record<string, string> | string[] | undefined,
+    name: string
+  ): boolean {
     if (!deps) return false;
     if (Array.isArray(deps)) {
       return deps.includes(name);
@@ -464,42 +488,42 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
    */
   private generateActionableTasks(result: AnalysisResult): any[] {
     const tasks: any[] = [];
-    
+
     // Group issues by severity
     const criticalIssues = result.issues.filter(i => i.severity === 'critical');
     const highIssues = result.issues.filter(i => i.severity === 'high');
     const mediumIssues = result.issues.filter(i => i.severity === 'medium');
-    
+
     // Add critical issue tasks
     if (criticalIssues.length > 0) {
       tasks.push({
         priority: 'critical',
         description: `重要な問題を修正: ${criticalIssues.length}件の重大なエラー`,
         estimatedTime: criticalIssues.length * 30,
-        issues: criticalIssues.slice(0, 5)
+        issues: criticalIssues.slice(0, 5),
       });
     }
-    
+
     // Add high priority tasks
     if (highIssues.length > 0) {
       tasks.push({
         priority: 'high',
         description: `重要な問題を修正: ${highIssues.length}件`,
         estimatedTime: highIssues.length * 20,
-        issues: highIssues.slice(0, 5)
+        issues: highIssues.slice(0, 5),
       });
     }
-    
+
     // Add medium priority tasks
     if (mediumIssues.length > 0) {
       tasks.push({
         priority: 'medium',
         description: `中優先度の問題を修正: ${mediumIssues.length}件`,
         estimatedTime: mediumIssues.length * 10,
-        issues: mediumIssues.slice(0, 3)
+        issues: mediumIssues.slice(0, 3),
       });
     }
-    
+
     return tasks;
   }
 }

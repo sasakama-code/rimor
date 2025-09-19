@@ -1,7 +1,7 @@
 /**
  * Integrity Hash Generator
  * v0.9.0 - 整合性ハッシュ生成エンジン
- * 
+ *
  * KISS原則: シンプルなハッシュ生成と検証
  * YAGNI原則: 必要最小限の機能のみ実装
  * Defensive Programming: 改ざん防止とエラーハンドリング
@@ -32,7 +32,7 @@ export class IntegrityHashGenerator {
       return {
         hash: this.computeHash({}),
         timestamp: new Date(),
-        version: this.version
+        version: this.version,
       };
     }
 
@@ -44,14 +44,14 @@ export class IntegrityHashGenerator {
       return {
         hash,
         timestamp: new Date(),
-        version: this.version
+        version: this.version,
       };
     } catch (error) {
       // エラー時は空のオブジェクトのハッシュを返す
       return {
         hash: this.computeHash({}),
         timestamp: new Date(),
-        version: this.version
+        version: this.version,
       };
     }
   }
@@ -95,7 +95,7 @@ export class IntegrityHashGenerator {
       // 定義にハッシュを追加
       const definitionWithHash: DomainDefinition = {
         ...definition,
-        integrity
+        integrity,
       };
 
       // ファイルに保存
@@ -125,13 +125,13 @@ export class IntegrityHashGenerator {
       if (this.verifyHash(definition)) {
         return {
           valid: true,
-          definition
+          definition,
         };
       } else {
         return {
           valid: false,
           definition: null,
-          error: 'ファイルが改ざんされている可能性があります'
+          error: 'ファイルが改ざんされている可能性があります',
         };
       }
     } catch (error: unknown) {
@@ -141,13 +141,13 @@ export class IntegrityHashGenerator {
         return {
           valid: false,
           definition: null,
-          error: 'ファイルが見つかりません'
+          error: 'ファイルが見つかりません',
         };
       }
       return {
         valid: false,
         definition: null,
-        error: `ファイルの読み込みに失敗しました: ${errorMessage}`
+        error: `ファイルの読み込みに失敗しました: ${errorMessage}`,
       };
     }
   }
@@ -195,7 +195,7 @@ export class IntegrityHashGenerator {
       // オブジェクトのプロパティをソートして正規化
       const normalized: Record<string, unknown> = {};
       const keys = Object.keys(obj).sort();
-      
+
       for (const key of keys) {
         // 循環参照チェック
         if ((obj as Record<string, unknown>)[key] === obj) {
@@ -204,7 +204,7 @@ export class IntegrityHashGenerator {
           normalized[key] = this.normalizeObject((obj as Record<string, unknown>)[key]);
         }
       }
-      
+
       return normalized;
     }
 
@@ -224,7 +224,7 @@ export class IntegrityHashGenerator {
       // SHA-256ハッシュを計算
       const hash = crypto.createHash(this.algorithm);
       hash.update(jsonString);
-      
+
       return hash.digest(this.encoding);
     } catch (error) {
       // エラー時は空文字列のハッシュを返す

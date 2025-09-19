@@ -12,46 +12,43 @@ import * as os from 'os';
 describe('TypeScriptAnalyzer', () => {
   let analyzer: TypeScriptAnalyzer;
   let tempDir: string;
-  
+
   beforeAll(async () => {
     // テスト用の一時ディレクトリを作成
     tempDir = path.join(os.tmpdir(), 'ts-analyzer-test-' + Date.now());
     await fs.mkdir(tempDir, { recursive: true });
-    
+
     // tsconfig.jsonを作成
     const tsConfig = {
       compilerOptions: {
-        target: "es2020",
-        module: "commonjs",
+        target: 'es2020',
+        module: 'commonjs',
         strict: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        forceConsistentCasingInFileNames: true
-      }
+        forceConsistentCasingInFileNames: true,
+      },
     };
-    await fs.writeFile(
-      path.join(tempDir, 'tsconfig.json'),
-      JSON.stringify(tsConfig, null, 2)
-    );
-    
+    await fs.writeFile(path.join(tempDir, 'tsconfig.json'), JSON.stringify(tsConfig, null, 2));
+
     analyzer = new TypeScriptAnalyzer();
   });
-  
+
   afterAll(async () => {
     // 一時ディレクトリをクリーンアップ
     await fs.rm(tempDir, { recursive: true, force: true });
   });
-  
+
   describe('初期化', () => {
     it('TypeScriptプロジェクトを初期化できること', async () => {
       // Act
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Assert
       expect(analyzer.isInitialized()).toBe(true);
     });
   });
-  
+
   describe('型情報の取得', () => {
     it('変数の型情報を取得できること', async () => {
       // Arrange
@@ -64,27 +61,27 @@ describe('TypeScriptAnalyzer', () => {
       `;
       await fs.writeFile(testFile, content);
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
       const numberType = await analyzer.getTypeInfo(testFile, content.indexOf('numberValue'));
       const stringType = await analyzer.getTypeInfo(testFile, content.indexOf('stringValue'));
       const booleanType = await analyzer.getTypeInfo(testFile, content.indexOf('booleanValue'));
       const arrayType = await analyzer.getTypeInfo(testFile, content.indexOf('arrayValue'));
-      
+
       // Assert
       expect(numberType?.typeName).toBe('number');
       expect(numberType?.isPrimitive).toBe(true);
-      
+
       expect(stringType?.typeName).toBe('string');
       expect(stringType?.isPrimitive).toBe(true);
-      
+
       expect(booleanType?.typeName).toBe('boolean');
       expect(booleanType?.isPrimitive).toBe(true);
-      
+
       expect(arrayType?.typeName).toBe('Array');
       expect(arrayType?.typeArguments?.[0]?.typeName).toBe('number');
     });
-    
+
     it('関数の型情報を取得できること', async () => {
       // Arrange
       const testFile = path.join(tempDir, 'test-functions.ts');
@@ -97,21 +94,21 @@ describe('TypeScriptAnalyzer', () => {
       `;
       await fs.writeFile(testFile, content);
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
       const addType = await analyzer.getTypeInfo(testFile, content.indexOf('add'));
       const multiplyType = await analyzer.getTypeInfo(testFile, content.indexOf('multiply'));
-      
+
       // Assert
       expect(addType?.functionSignature).toBeDefined();
       expect(addType?.functionSignature?.parameters).toHaveLength(2);
       expect(addType?.functionSignature?.returnType.typeName).toBe('number');
-      
+
       expect(multiplyType?.functionSignature).toBeDefined();
       expect(multiplyType?.functionSignature?.parameters).toHaveLength(2);
     });
   });
-  
+
   describe('呼び出しグラフの構築', () => {
     it('関数の呼び出し関係を解析できること', async () => {
       // Arrange
@@ -136,15 +133,15 @@ describe('TypeScriptAnalyzer', () => {
       `;
       await fs.writeFile(testFile, content);
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
       const callGraph = await analyzer.buildCallGraph(testFile);
-      
+
       // Assert
       const mainNode = callGraph.find(node => node.name === 'main');
       expect(mainNode).toBeDefined();
       expect(mainNode?.calls).toHaveLength(2); // calculate, log
-      
+
       const calculateNode = callGraph.find(node => node.name === 'calculate');
       expect(calculateNode?.calls).toHaveLength(1); // add
       expect(calculateNode?.calledBy).toContainEqual(expect.objectContaining({ name: 'main' }));
@@ -165,17 +162,17 @@ describe('TypeScriptAnalyzer', () => {
       `;
       await fs.writeFile(testFile, content);
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
       const callGraph = await analyzer.buildCallGraph(testFile);
-      
+
       // Assert - Issue #153: 統一されたID形式の検証
       const calculateNode = callGraph.find(node => node.name === 'calculate');
       const helperNode = callGraph.find(node => node.name === 'helper');
-      
+
       expect(calculateNode?.id).toBe(`${testFile}:calculate`);
       expect(helperNode?.id).toBe(`${testFile}:helper`);
-      
+
       // 既存のname, filePathプロパティも維持されること
       expect(calculateNode?.name).toBe('calculate');
       expect(calculateNode?.filePath).toBe(testFile);
@@ -183,7 +180,7 @@ describe('TypeScriptAnalyzer', () => {
       expect(helperNode?.filePath).toBe(testFile);
     });
   });
-  
+
   describe('モック検出', () => {
     it('Jest mockの使用を検出できること', async () => {
       // Arrange
@@ -204,30 +201,30 @@ describe('TypeScriptAnalyzer', () => {
       `;
       await fs.writeFile(testFile, content);
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
       const mocks = await analyzer.detectMocks(testFile);
-      
+
       // Assert
       expect(mocks).toHaveLength(2); // jest.mock, jest.fn
-      
+
       const moduleMock = mocks.find(m => m.mockType === 'jest.mock');
       expect(moduleMock?.mockedTarget).toBe('./module');
-      
+
       const fnMock = mocks.find(m => m.mockType === 'jest.fn');
       expect(fnMock?.hasImplementation).toBe(true);
     });
   });
-  
+
   describe('型の互換性チェック', () => {
     it('互換性のある型を正しく判定できること', async () => {
       // Arrange
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       const numberType: TypeInfo = { typeName: 'number', isPrimitive: true };
       const stringType: TypeInfo = { typeName: 'string', isPrimitive: true };
       const anyType: TypeInfo = { typeName: 'any', isPrimitive: false };
-      
+
       // Act & Assert
       expect(analyzer.checkTypeCompatibility(numberType, numberType)).toBe(true);
       expect(analyzer.checkTypeCompatibility(numberType, stringType)).toBe(false);
@@ -256,7 +253,7 @@ describe('TypeScriptAnalyzer', () => {
         }
       `;
       await fs.writeFile(typesFile, typesContent);
-      
+
       // Program外のテストファイルを作成
       const externalFile = path.join(tempDir, 'external.ts');
       const externalContent = `
@@ -276,25 +273,34 @@ describe('TypeScriptAnalyzer', () => {
         };
       `;
       await fs.writeFile(externalFile, externalContent);
-      
+
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
-      const userType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('user: User'));
-      const userIdType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('userId: UserId'));
-      const responseType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('response: ApiResponse'));
-      
+      const userType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('user: User')
+      );
+      const userIdType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('userId: UserId')
+      );
+      const responseType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('response: ApiResponse')
+      );
+
       // Assert - TypeScriptコンパイラの型解決によりimport型が正確に処理される
       // issue #106の改善により、TypeCheckerを通した正確な型情報が取得できる
       expect(userType?.typeName).toBe('User');
-      
+
       // 型エイリアス: TypeScriptは型エイリアスを実際の型に展開することがある
       expect(userIdType?.typeName).toBe('number'); // UserId = numberの展開結果
-      
+
       // ジェネリクス型: 完全な型情報が取得できるようになった
       expect(responseType?.typeName).toBe('ApiResponse<User>');
     });
-    
+
     it('Program外ファイルでの複雑な型エイリアスを正確に解決できること', async () => {
       // Arrange
       const utilsFile = path.join(tempDir, 'utils.ts');
@@ -304,7 +310,7 @@ describe('TypeScriptAnalyzer', () => {
         export type EventHandler<T = Event> = (event: T) => void;
       `;
       await fs.writeFile(utilsFile, utilsContent);
-      
+
       const externalFile = path.join(tempDir, 'external-complex.ts');
       const externalContent = `
         import { StringOrNumber, Optional, EventHandler } from './utils';
@@ -314,21 +320,30 @@ describe('TypeScriptAnalyzer', () => {
         const handler: EventHandler<MouseEvent> = (e) => console.log(e);
       `;
       await fs.writeFile(externalFile, externalContent);
-      
+
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
-      const valueType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('value: StringOrNumber'));
-      const optionalType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('optionalValue: Optional'));
-      const handlerType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('handler: EventHandler'));
-      
+      const valueType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('value: StringOrNumber')
+      );
+      const optionalType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('optionalValue: Optional')
+      );
+      const handlerType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('handler: EventHandler')
+      );
+
       // Assert - TypeCheckerによる正確な型解決が実現
       // Program参加により、型エイリアスが正確に認識される
       expect(valueType?.typeName).toBe('StringOrNumber'); // 型エイリアス名が保持される
       expect(optionalType?.typeName).toBe('Optional<string>'); // ジェネリクス型エイリアスが正確に表示
       expect(handlerType?.typeName).toBe('EventHandler<MouseEvent>'); // 完全な型情報が取得
     });
-    
+
     it('Program外ファイルでの型ガードを正確に解析できること', async () => {
       // Arrange
       const guardsFile = path.join(tempDir, 'guards.ts');
@@ -347,7 +362,7 @@ describe('TypeScriptAnalyzer', () => {
         }
       `;
       await fs.writeFile(guardsFile, guardsContent);
-      
+
       const externalFile = path.join(tempDir, 'external-guards.ts');
       const externalContent = `
         import { Dog, Cat, isDog } from './guards';
@@ -360,17 +375,23 @@ describe('TypeScriptAnalyzer', () => {
         }
       `;
       await fs.writeFile(externalFile, externalContent);
-      
+
       await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
-      
+
       // Act
-      const isDogType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('isDog(animal)'));
-      const animalInGuardType = await analyzer.getTypeInfo(externalFile, externalContent.indexOf('animal.breed'));
-      
+      const isDogType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('isDog(animal)')
+      );
+      const animalInGuardType = await analyzer.getTypeInfo(
+        externalFile,
+        externalContent.indexOf('animal.breed')
+      );
+
       // Assert - TypeCheckerによる型ガード関数の正確な解析
       // 型ガード関数の完全な関数シグネチャが取得される
       expect(isDogType?.typeName).toBe('(animal: Dog | Cat) => animal is Dog');
-      
+
       // 型ガード内での型の絞り込みが有効になる
       // animal変数自体がDog型として正確に認識されている
       expect(animalInGuardType?.typeName).toBe('Dog'); // 型ガード内でDog型に絞り込まれている

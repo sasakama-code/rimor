@@ -14,7 +14,7 @@ import {
   SanitizerType,
   SecurityIssue,
   SecurityTestMetrics,
-  BoundaryCondition
+  BoundaryCondition,
 } from '../../../src/security/types';
 import { IncrementalChange } from '../../../src/security/types/flow-types';
 import {
@@ -22,7 +22,7 @@ import {
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement
+  Improvement,
 } from '../../../src/core/types';
 
 describe('InputValidationSecurityPlugin - 入力検証セキュリティプラグイン', () => {
@@ -31,16 +31,16 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
 
   beforeEach(() => {
     plugin = new InputValidationSecurityPlugin();
-    
+
     mockProjectContext = {
       projectPath: '/test/project',
       configuration: {
         testPatterns: ['**/*.test.ts'],
         excludePatterns: ['node_modules/**'],
-        plugins: []
+        plugins: [],
       },
       dependencies: [],
-      framework: 'jest'
+      framework: 'jest',
     };
   });
 
@@ -55,12 +55,12 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
     it('適用可能性を正しく判定すること', () => {
       const applicableContext: ProjectContext = {
         ...mockProjectContext,
-        dependencies: ['express', 'joi', 'validator']
+        dependencies: ['express', 'joi', 'validator'],
       };
 
       const notApplicableContext: ProjectContext = {
         ...mockProjectContext,
-        dependencies: ['lodash', 'moment']
+        dependencies: ['lodash', 'moment'],
       };
 
       expect(plugin.isApplicable(applicableContext)).toBe(true);
@@ -92,23 +92,21 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             type: 'test',
             location: {
               start: { line: 1, column: 1 },
-              end: { line: 5, column: 1 }
+              end: { line: 5, column: 1 },
             },
             signature: 'validateEmail(email: string): boolean',
             body: 'expect(validateEmail(email)).toBe(true);',
             assertions: 1,
-            testType: 'unit'
-          }
-        ]
+            testType: 'unit',
+          },
+        ],
       };
 
       const results = await plugin.detectPatterns(testFile);
 
       expect(results.length).toBeGreaterThan(0);
-      
-      const validationPattern = results.find(r => 
-        r.pattern === 'input-validation-test'
-      );
+
+      const validationPattern = results.find(r => r.pattern === 'input-validation-test');
       expect(validationPattern).toBeDefined();
       expect(validationPattern?.confidence).toBeGreaterThan(0.7);
       expect(validationPattern?.securityRelevance).toBeGreaterThan(0.6);
@@ -139,7 +137,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             type: 'test',
             location: {
               start: { line: 1, column: 1 },
-              end: { line: 8, column: 1 }
+              end: { line: 8, column: 1 },
             },
             signature: 'sanitizeHtml(input: string): string',
             body: `
@@ -148,22 +146,18 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
               expect(sanitized).not.toContain('<script>');
             `,
             assertions: 1,
-            testType: 'security'
-          }
-        ]
+            testType: 'security',
+          },
+        ],
       };
 
       const results = await plugin.detectPatterns(testFile);
 
-      const sanitizationPattern = results.find(r => 
-        r.pattern === 'sanitization-test'
-      );
+      const sanitizationPattern = results.find(r => r.pattern === 'sanitization-test');
       expect(sanitizationPattern).toBeDefined();
       expect(sanitizationPattern?.securityRelevance).toBeGreaterThan(0.8);
-      
-      const xssProtectionPattern = results.find(r => 
-        r.pattern === 'xss-protection-test'
-      );
+
+      const xssProtectionPattern = results.find(r => r.pattern === 'xss-protection-test');
       expect(xssProtectionPattern).toBeDefined();
     });
 
@@ -197,21 +191,19 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             type: 'test',
             location: {
               start: { line: 1, column: 1 },
-              end: { line: 3, column: 1 }
+              end: { line: 3, column: 1 },
             },
             signature: 'validateInput(input: string): boolean',
             body: `expect(validateInput('')).toBe(false);`,
             assertions: 1,
-            testType: 'security'
-          }
-        ]
+            testType: 'security',
+          },
+        ],
       };
 
       const results = await plugin.detectPatterns(testFile);
 
-      const boundaryPattern = results.find(r => 
-        r.pattern === 'boundary-condition-test'
-      );
+      const boundaryPattern = results.find(r => r.pattern === 'boundary-condition-test');
       expect(boundaryPattern).toBeDefined();
       expect(boundaryPattern?.metadata).toBeDefined();
       expect(boundaryPattern?.metadata?.boundaryTypes).toContain('empty-input');
@@ -236,7 +228,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             type: 'test',
             location: {
               start: { line: 1, column: 1 },
-              end: { line: 6, column: 1 }
+              end: { line: 6, column: 1 },
             },
             signature: 'processInput(userInput: string): any',
             body: `
@@ -245,16 +237,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
               expect(result).toBeDefined();
             `,
             assertions: 1,
-            testType: 'unit'
-          }
-        ]
+            testType: 'unit',
+          },
+        ],
       };
 
       const results = await plugin.detectPatterns(testFile);
 
-      const inadequatePattern = results.find(r => 
-        r.pattern === 'inadequate-input-validation'
-      );
+      const inadequatePattern = results.find(r => r.pattern === 'inadequate-input-validation');
       expect(inadequatePattern).toBeDefined();
       expect(inadequatePattern?.severity).toBe('medium');
     });
@@ -272,8 +262,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           metadata: {
             validationTypes: ['email', 'url', 'phone'],
             boundaryTesting: true,
-            errorHandling: true
-          }
+            errorHandling: true,
+          },
         },
         {
           pattern: 'sanitization-test',
@@ -283,9 +273,9 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           location: { file: 'test.ts', line: 20, column: 5 },
           metadata: {
             sanitizerTypes: ['html', 'sql', 'xss'],
-            maliciousInputTesting: true
-          }
-        }
+            maliciousInputTesting: true,
+          },
+        },
       ];
 
       const qualityScore = plugin.evaluateQuality(highQualityPatterns);
@@ -306,9 +296,9 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           location: { file: 'test.ts', line: 10, column: 5 },
           metadata: {
             missingValidations: ['null-check', 'type-validation'],
-            lacksBoundaryTesting: true
-          }
-        }
+            lacksBoundaryTesting: true,
+          },
+        },
       ];
 
       const qualityScore = plugin.evaluateQuality(lowQualityPatterns);
@@ -326,7 +316,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           securityRelevance: 0.7,
           severity: 'info',
           location: { file: 'test.ts', line: 10, column: 5 },
-          metadata: { hasValidation: true }
+          metadata: { hasValidation: true },
         },
         {
           pattern: 'missing-edge-case-test',
@@ -334,8 +324,8 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           securityRelevance: 0.5,
           severity: 'low',
           location: { file: 'test.ts', line: 20, column: 5 },
-          metadata: { missingCases: ['null', 'empty', 'overflow'] }
-        }
+          metadata: { missingCases: ['null', 'empty', 'overflow'] },
+        },
       ];
 
       const qualityScore = plugin.evaluateQuality(mixedQualityPatterns);
@@ -363,28 +353,28 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           suggestions: ['バリデーションテストを追加', 'サニタイザーテストを強化'],
           validationCoverage: 0.3,
           sanitizationQuality: 0.2,
-          boundaryTestingScore: 0.4
-        }
+          boundaryTestingScore: 0.4,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
 
       expect(improvements.length).toBeGreaterThan(0);
-      
-      const validationImprovement = improvements.find(imp => 
-        imp.type === 'add-input-validation-tests'
+
+      const validationImprovement = improvements.find(
+        imp => imp.type === 'add-input-validation-tests'
       );
       expect(validationImprovement).toBeDefined();
       expect(validationImprovement?.priority).toBe('high');
       expect(validationImprovement?.description).toContain('input validation');
-      
-      const sanitizationImprovement = improvements.find(imp => 
-        imp.type === 'enhance-sanitization-testing'
+
+      const sanitizationImprovement = improvements.find(
+        imp => imp.type === 'enhance-sanitization-testing'
       );
       expect(sanitizationImprovement).toBeDefined();
       expect(sanitizationImprovement?.impact).toEqual({
         effortMinutes: 20,
-        scoreImprovement: 25
+        scoreImprovement: 25,
       });
     });
 
@@ -402,14 +392,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           suggestions: ['境界条件テストを追加', 'エッジケースのカバレッジ向上'],
           boundaryTestingScore: 0.2, // 境界条件テストが不十分
           validationCoverage: 0.8,
-          sanitizationQuality: 0.7
-        }
+          sanitizationQuality: 0.7,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
 
-      const boundaryImprovement = improvements.find(imp => 
-        imp.type === 'add-boundary-condition-tests'
+      const boundaryImprovement = improvements.find(
+        imp => imp.type === 'add-boundary-condition-tests'
       );
       expect(boundaryImprovement).toBeDefined();
       expect(boundaryImprovement?.priority).toBe('medium');
@@ -432,14 +422,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           suggestions: ['エラーハンドリングテストを強化', '例外ケースのカバレッジ向上'],
           boundaryTestingScore: 0.3, // 境界条件テストが不十分
           validationCoverage: 0.8,
-          sanitizationQuality: 0.7
-        }
+          sanitizationQuality: 0.7,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
 
-      const errorHandlingImprovement = improvements.find(imp => 
-        imp.type === 'improve-error-handling-tests'
+      const errorHandlingImprovement = improvements.find(
+        imp => imp.type === 'improve-error-handling-tests'
       );
       expect(errorHandlingImprovement).toBeDefined();
       expect(errorHandlingImprovement?.description).toContain('error handling');
@@ -454,16 +444,17 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
         type: 'test',
         location: {
           start: { line: 1, column: 1 },
-          end: { line: 10, column: 1 }
+          end: { line: 10, column: 1 },
         },
-        signature: 'handleTaintedInput(taintedInput: TaintedString, sanitizer: InputSanitizer): SafeString',
+        signature:
+          'handleTaintedInput(taintedInput: TaintedString, sanitizer: InputSanitizer): SafeString',
         body: `
           const cleaned = sanitizer.sanitize(taintedInput);
           expect(cleaned).toBeInstanceOf(SafeString);
           expect(cleaned.getValue()).not.toContain('<script>');
         `,
         assertions: 2,
-        testType: 'security'
+        testType: 'security',
       };
 
       const analysisResult = await plugin.analyzeTestMethod(testMethod);
@@ -481,7 +472,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
         type: 'test',
         location: {
           start: { line: 1, column: 1 },
-          end: { line: 10, column: 1 }
+          end: { line: 10, column: 1 },
         },
         signature: 'processUnsafeInput(userInput: any): any', // 型安全性違反
         body: `
@@ -489,15 +480,15 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           expect(result).toBeDefined();
         `,
         assertions: 1,
-        testType: 'security'
+        testType: 'security',
       };
 
       const analysisResult = await plugin.analyzeTestMethod(unsafeTestMethod);
 
       expect(analysisResult.issues.length).toBeGreaterThan(0);
-      
-      const typeSafetyViolation = analysisResult.issues.find((issue) => 
-        issue.type === 'unsafe-taint-flow'
+
+      const typeSafetyViolation = analysisResult.issues.find(
+        issue => issue.type === 'unsafe-taint-flow'
       );
       expect(typeSafetyViolation).toBeDefined();
       expect(typeSafetyViolation?.severity).toBe('critical');
@@ -511,12 +502,12 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
         type: 'test',
         location: {
           start: { line: 1, column: 1 },
-          end: { line: 5, column: 1 }
+          end: { line: 5, column: 1 },
         },
         signature: 'validateInput(input: string): boolean',
         body: 'expect(validateInput("test")).toBe(true);',
         assertions: 1,
-        testType: 'unit'
+        testType: 'unit',
       };
 
       const modifiedMethod: TestMethod = {
@@ -532,7 +523,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
         type: 'modified',
         methodName: 'handleInput',
         filePath: 'test.ts',
-        content: modifiedMethod.content
+        content: modifiedMethod.content,
       };
 
       const incrementalResult = await plugin.analyzeIncrementally(change);
@@ -556,13 +547,13 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
           type: 'test' as const,
           location: {
             start: { line: i + 1, column: 1 },
-            end: { line: i + 3, column: 1 }
+            end: { line: i + 3, column: 1 },
           },
           signature: `validateInput${i}(input: string): boolean`,
           body: `expect(validateInput${i}("test")).toBe(true);`,
           assertions: 1,
-          testType: 'unit' as const
-        }))
+          testType: 'unit' as const,
+        })),
       };
 
       const startTime = Date.now();
@@ -570,7 +561,7 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
       const endTime = Date.now();
 
       const executionTime = endTime - startTime;
-      
+
       expect(results.length).toBeGreaterThan(0);
       expect(executionTime).toBeLessThan(2000); // 2秒以内で処理
     });
@@ -586,14 +577,14 @@ describe('InputValidationSecurityPlugin - 入力検証セキュリティプラ�
             type: 'test',
             location: {
               start: { line: 1, column: 1 },
-              end: { line: 3, column: 1 }
+              end: { line: 3, column: 1 },
             },
             signature: 'validateCached(input: string): boolean',
             body: 'expect(validateCached("test")).toBe(true);',
             assertions: 1,
-            testType: 'unit'
-          }
-        ]
+            testType: 'unit',
+          },
+        ],
       };
 
       // 初回実行

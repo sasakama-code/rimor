@@ -29,7 +29,7 @@ describe('FeedbackCollectionSystem', () => {
           falsePositive: true,
           actualSeverity: 'low',
           userComment: 'This is not a real issue in our context',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         // Act
@@ -47,7 +47,7 @@ describe('FeedbackCollectionSystem', () => {
         const feedbacks = [
           { issueId: 'test-001', falsePositive: true },
           { issueId: 'test-002', falsePositive: false },
-          { issueId: 'test-003', falsePositive: true }
+          { issueId: 'test-003', falsePositive: true },
         ];
 
         // Act
@@ -117,7 +117,7 @@ describe('FeedbackCollectionSystem', () => {
           { issueId: 'test-002', falsePositive: false },
           { issueId: 'test-003', falsePositive: true },
           { issueId: 'test-004', falsePositive: false },
-          { issueId: 'test-005', falsePositive: true }
+          { issueId: 'test-005', falsePositive: true },
         ];
 
         // Act
@@ -138,7 +138,7 @@ describe('FeedbackCollectionSystem', () => {
           { issueId: 'test-001', rule: 'no-unused-vars', falsePositive: true },
           { issueId: 'test-002', rule: 'no-unused-vars', falsePositive: true },
           { issueId: 'test-003', rule: 'no-console', falsePositive: false },
-          { issueId: 'test-004', rule: 'no-console', falsePositive: false }
+          { issueId: 'test-004', rule: 'no-console', falsePositive: false },
         ];
 
         // Act
@@ -159,7 +159,7 @@ describe('FeedbackCollectionSystem', () => {
         const performanceData = [
           { file: 'test1.ts', analysisTime: 100 },
           { file: 'test2.ts', analysisTime: 200 },
-          { file: 'test3.ts', analysisTime: 150 }
+          { file: 'test3.ts', analysisTime: 150 },
         ];
 
         // Act
@@ -181,7 +181,7 @@ describe('FeedbackCollectionSystem', () => {
           { file: 'fast.ts', analysisTime: 50 },
           { file: 'slow1.ts', analysisTime: 500 },
           { file: 'normal.ts', analysisTime: 100 },
-          { file: 'slow2.ts', analysisTime: 600 }
+          { file: 'slow2.ts', analysisTime: 600 },
         ];
         const threshold = 400;
 
@@ -206,15 +206,16 @@ describe('FeedbackCollectionSystem', () => {
         const invalidFeedbacks = [
           null,
           undefined,
-          { }, // issueIdなし
+          {}, // issueIdなし
           { issueId: '' }, // 空のissueId
-          { issueId: 123 } // 不正な型
+          { issueId: 123 }, // 不正な型
         ];
 
         // Act & Assert
         for (const invalid of invalidFeedbacks) {
-          await expect(system.recordFeedback(invalid as any))
-            .rejects.toThrow('Invalid feedback data');
+          await expect(system.recordFeedback(invalid as any)).rejects.toThrow(
+            'Invalid feedback data'
+          );
         }
       });
 
@@ -255,9 +256,9 @@ describe('FeedbackCollectionSystem', () => {
 
         // Act
         for (let i = 0; i < maxMemoryItems + 100; i++) {
-          await system.recordFeedback({ 
-            issueId: `test-${i}`, 
-            timestamp: new Date(2024, 0, i + 1)
+          await system.recordFeedback({
+            issueId: `test-${i}`,
+            timestamp: new Date(2024, 0, i + 1),
           });
         }
 
@@ -277,7 +278,7 @@ describe('FeedbackCollectionSystem', () => {
         { issueId: '1', rule: 'rule-a', falsePositive: true, impact: 'high' },
         { issueId: '2', rule: 'rule-a', falsePositive: true, impact: 'high' },
         { issueId: '3', rule: 'rule-b', falsePositive: false, impact: 'low' },
-        { issueId: '4', rule: 'rule-c', falsePositive: true, impact: 'medium' }
+        { issueId: '4', rule: 'rule-c', falsePositive: true, impact: 'medium' },
       ];
 
       // Act
@@ -297,7 +298,7 @@ describe('FeedbackCollectionSystem', () => {
       const timeWasted = [
         { issueId: '1', timeSpentInvestigating: 30, wasRealIssue: false },
         { issueId: '2', timeSpentInvestigating: 45, wasRealIssue: false },
-        { issueId: '3', timeSpentInvestigating: 15, wasRealIssue: true }
+        { issueId: '3', timeSpentInvestigating: 15, wasRealIssue: true },
       ];
 
       // Act

@@ -20,7 +20,7 @@ describe('MetricsCollector', () => {
       enableCpuProfiling: true,
       enableMemoryProfiling: true,
       enableIoMonitoring: true,
-      samplingInterval: 100 // 100ms間隔でサンプリング
+      samplingInterval: 100, // 100ms間隔でサンプリング
     });
     // Issue #150対応: PerformanceProfilerに必須設定を提供
     profiler = new PerformanceProfiler({
@@ -32,7 +32,7 @@ describe('MetricsCollector', () => {
       maxSamples: 1000,
       memoryLeakThreshold: 1024 * 1024, // 1MB
       hotspotThreshold: 0.05, // 5%
-      outputDir: tempDir
+      outputDir: tempDir,
     });
   });
 
@@ -77,7 +77,7 @@ describe('MetricsCollector', () => {
   describe('CPU使用率測定テスト', () => {
     it('CPU使用率を正確に測定すること', async () => {
       const sessionId = await collector.startCollection('cpu-test');
-      
+
       // CPU負荷を生成
       await simulateCpuLoad(200); // 200ms間の負荷
 
@@ -104,7 +104,7 @@ describe('MetricsCollector', () => {
 
     it('CPU使用率のスパイクを検出すること', async () => {
       const sessionId = await collector.startCollection('cpu-spike-test');
-      
+
       // 通常負荷
       await simulateCpuLoad(100);
       // スパイク生成
@@ -127,7 +127,7 @@ describe('MetricsCollector', () => {
 
       const result = await collector.stopCollection(sessionId);
       expect(result.success).toBe(true);
-      
+
       const memStats = result.metrics.memory;
       expect(memStats.heap.used).toBeDefined();
       expect(memStats.heap.total).toBeDefined();
@@ -177,7 +177,7 @@ describe('MetricsCollector', () => {
       // ファイルI/Oを実行
       const testFile = path.join(tempDir, 'io-test.txt');
       const data = 'test data '.repeat(1000);
-      
+
       await fs.writeFile(testFile, data);
       await fs.readFile(testFile);
       await fs.unlink(testFile);
@@ -251,7 +251,7 @@ describe('MetricsCollector', () => {
         results.push({
           workerCount,
           executionTime: endTime - startTime,
-          efficiency: result.metrics.threading.efficiency
+          efficiency: result.metrics.threading.efficiency,
         });
       }
 
@@ -272,7 +272,7 @@ describe('MetricsCollector', () => {
       const result = await collector.stopCollection(sessionId);
       expect(result.metrics.hotspots).toBeDefined();
       expect(result.metrics.hotspots.length).toBeGreaterThan(0);
-      
+
       const topHotspot = result.metrics.hotspots[0];
       expect(topHotspot.functionName).toBeDefined();
       expect(topHotspot.executionTime).toBeGreaterThan(0);
@@ -302,7 +302,7 @@ describe('MetricsCollector', () => {
       const result = await collector.stopCollection(sessionId);
       expect(result.metrics.timeline).toBeDefined();
       expect(result.metrics.timeline.phases.length).toBe(3);
-      
+
       const phases = result.metrics.timeline.phases;
       expect(phases.find(p => p.name === 'initialization')).toBeDefined();
       expect(phases.find(p => p.name === 'processing')).toBeDefined();

@@ -1,7 +1,7 @@
 /**
  * RiskScorer
  * 総合リスクスコア算出システム
- * 
+ *
  * SOLID原則: 単一責任の原則 - リスクスコア算出に特化
  * DRY原則: 共通ロジックの一元化
  * KISS原則: シンプルで理解しやすい実装
@@ -11,13 +11,13 @@
 
 import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions';
 import { RiskLevel } from '../types/unified-analysis-result';
-import { 
-  Threat, 
-  Vulnerability, 
+import {
+  Threat,
+  Vulnerability,
   Impact,
   RiskMatrix,
   LikelihoodLevel,
-  SeverityLevel
+  SeverityLevel,
 } from '../types/nist-types';
 
 /**
@@ -121,7 +121,7 @@ export class RiskScorer {
     if (vulnerability.cvssScore !== undefined) {
       const cvssAdjustedScore = vulnerability.cvssScore * 10; // 0-10を0-100にスケール
       const likelihoodScore = this.likelihoodToScore(threat.likelihood);
-      const combinedScore = (cvssAdjustedScore * 0.6 + likelihoodScore * 0.4);
+      const combinedScore = cvssAdjustedScore * 0.6 + likelihoodScore * 0.4;
       return this.scoreToRiskLevel(combinedScore);
     }
 
@@ -144,7 +144,7 @@ export class RiskScorer {
   /**
    * 複数の脅威・脆弱性ペアから最高リスクを特定
    */
-  findHighestRisk(pairs: Array<{threat: Threat, vulnerability: Vulnerability}>): RiskLevel {
+  findHighestRisk(pairs: Array<{ threat: Threat; vulnerability: Vulnerability }>): RiskLevel {
     if (!pairs || pairs.length === 0) {
       return CoreTypes.RiskLevel.MINIMAL;
     }
@@ -176,7 +176,7 @@ export class RiskScorer {
       threat: 0.25,
       vulnerability: 0.3,
       impact: 0.35,
-      likelihood: 0.1
+      likelihood: 0.1,
     };
 
     const score = this.calculateWeightedScore(components, weights);
@@ -188,7 +188,7 @@ export class RiskScorer {
     return {
       score,
       riskLevel,
-      confidence
+      confidence,
     };
   }
 
@@ -202,8 +202,9 @@ export class RiskScorer {
     }
 
     // 重みの正規化（合計が1になるように）
-    const totalWeight = weights.threat + weights.vulnerability + weights.impact + weights.likelihood;
-    
+    const totalWeight =
+      weights.threat + weights.vulnerability + weights.impact + weights.likelihood;
+
     if (totalWeight === 0) {
       throw new Error('Total weight cannot be zero');
     }
@@ -212,11 +213,11 @@ export class RiskScorer {
       threat: weights.threat / totalWeight,
       vulnerability: weights.vulnerability / totalWeight,
       impact: weights.impact / totalWeight,
-      likelihood: weights.likelihood / totalWeight
+      likelihood: weights.likelihood / totalWeight,
     };
 
     // 重み付けスコアの計算
-    const weightedScore = 
+    const weightedScore =
       components.threatScore * normalizedWeights.threat +
       components.vulnerabilityScore * normalizedWeights.vulnerability +
       components.impactScore * normalizedWeights.impact +
@@ -228,7 +229,7 @@ export class RiskScorer {
   /**
    * 複数のリスクを集約
    */
-  aggregateRisks(risks: Array<{riskLevel: RiskLevel, score: number}>): AggregatedRisk {
+  aggregateRisks(risks: Array<{ riskLevel: RiskLevel; score: number }>): AggregatedRisk {
     if (!risks || risks.length === 0) {
       return {
         totalRisks: 0,
@@ -239,7 +240,7 @@ export class RiskScorer {
         minimalCount: 0,
         averageScore: 0,
         maxScore: 0,
-        minScore: 0
+        minScore: 0,
       };
     }
 
@@ -248,7 +249,7 @@ export class RiskScorer {
       highCount: 0,
       mediumCount: 0,
       lowCount: 0,
-      minimalCount: 0
+      minimalCount: 0,
     };
 
     let totalScore = 0;
@@ -286,18 +287,20 @@ export class RiskScorer {
       ...counts,
       averageScore: totalScore / risks.length,
       maxScore,
-      minScore
+      minScore,
     };
   }
 
   /**
    * カテゴリ別にリスクを集約
    */
-  aggregateByCategory(categorizedRisks: Array<{
-    category: string,
-    riskLevel: RiskLevel,
-    score: number
-  }>): Record<string, CategoryRisk> {
+  aggregateByCategory(
+    categorizedRisks: Array<{
+      category: string;
+      riskLevel: RiskLevel;
+      score: number;
+    }>
+  ): Record<string, CategoryRisk> {
     const categoryMap: Record<string, CategoryRisk> = {};
 
     for (const risk of categorizedRisks) {
@@ -306,7 +309,7 @@ export class RiskScorer {
           count: 0,
           averageScore: 0,
           maxRiskLevel: CoreTypes.RiskLevel.MINIMAL,
-          risks: []
+          risks: [],
         };
       }
 
@@ -333,23 +336,25 @@ export class RiskScorer {
   /**
    * 時系列でリスクの変化を分析
    */
-  analyzeTrend(historicalData: Array<{
-    date: string,
-    score: number,
-    riskLevel: RiskLevel
-  }>): RiskTrend {
+  analyzeTrend(
+    historicalData: Array<{
+      date: string;
+      score: number;
+      riskLevel: RiskLevel;
+    }>
+  ): RiskTrend {
     if (!historicalData || historicalData.length < 2) {
       return {
         direction: 'STABLE',
         changeRate: 0,
-        projection: historicalData?.[0]?.score || 0
+        projection: historicalData?.[0]?.score || 0,
       };
     }
 
     // 最初と最後のデータポイントを比較
     const firstPoint = historicalData[0];
     const lastPoint = historicalData[historicalData.length - 1];
-    
+
     const scoreDiff = lastPoint.score - firstPoint.score;
     const changeRate = scoreDiff / firstPoint.score;
 
@@ -363,12 +368,12 @@ export class RiskScorer {
     }
 
     // 簡単な線形投影
-    const projection = lastPoint.score + (scoreDiff / historicalData.length);
+    const projection = lastPoint.score + scoreDiff / historicalData.length;
 
     return {
       direction,
       changeRate,
-      projection: Math.min(100, Math.max(0, projection))
+      projection: Math.min(100, Math.max(0, projection)),
     };
   }
 
@@ -384,7 +389,7 @@ export class RiskScorer {
         priority: 'IMMEDIATE',
         action: '直ちにシステムを隔離し、緊急対応チームを招集',
         estimatedEffort: '1-2時間',
-        expectedRiskReduction: 50
+        expectedRiskReduction: 50,
       });
     }
 
@@ -394,7 +399,7 @@ export class RiskScorer {
         priority: riskAssessment.riskLevel === CoreTypes.RiskLevel.CRITICAL ? 'IMMEDIATE' : 'HIGH',
         action: '入力検証とサニタイゼーションの実装',
         estimatedEffort: '4-8時間',
-        expectedRiskReduction: 40
+        expectedRiskReduction: 40,
       });
     }
 
@@ -404,7 +409,7 @@ export class RiskScorer {
         priority: 'HIGH',
         action: 'データベースアクセスの監査ログ強化',
         estimatedEffort: '2-4時間',
-        expectedRiskReduction: 20
+        expectedRiskReduction: 20,
       });
     }
 
@@ -414,7 +419,7 @@ export class RiskScorer {
         priority: 'MEDIUM',
         action: 'リスク詳細分析と緩和策の策定',
         estimatedEffort: '8-16時間',
-        expectedRiskReduction: 15
+        expectedRiskReduction: 15,
       });
     }
 
@@ -425,23 +430,23 @@ export class RiskScorer {
 
   private likelihoodToScore(likelihood: string): number {
     const mapping: Record<string, number> = {
-      'VERY_HIGH': 100,
-      'HIGH': 80,
-      'MODERATE': 60,
-      'LOW': 40,
-      'VERY_LOW': 20
+      VERY_HIGH: 100,
+      HIGH: 80,
+      MODERATE: 60,
+      LOW: 40,
+      VERY_LOW: 20,
     };
     return mapping[likelihood] || 50;
   }
 
   private severityToScore(severity: SeverityLevel): number {
     const mapping: Record<SeverityLevel, number> = {
-      'CRITICAL': 100,
-      'VERY_HIGH': 90,
-      'HIGH': 75,
-      'MODERATE': 50,
-      'LOW': 30,
-      'VERY_LOW': 10
+      CRITICAL: 100,
+      VERY_HIGH: 90,
+      HIGH: 75,
+      MODERATE: 50,
+      LOW: 30,
+      VERY_LOW: 10,
     };
     return mapping[severity] || 50;
   }
@@ -460,7 +465,7 @@ export class RiskScorer {
       [CoreTypes.RiskLevel.HIGH]: 4,
       [CoreTypes.RiskLevel.MEDIUM]: 3,
       [CoreTypes.RiskLevel.LOW]: 2,
-      [CoreTypes.RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.MINIMAL]: 1,
     };
   }
 
@@ -470,7 +475,7 @@ export class RiskScorer {
       components.threatScore > 0,
       components.vulnerabilityScore > 0,
       components.impactScore > 0,
-      components.likelihoodScore > 0
+      components.likelihoodScore > 0,
     ].filter(valid => valid).length;
 
     // 信頼度は有効なコンポーネントの割合
@@ -481,16 +486,17 @@ export class RiskScorer {
       components.threatScore,
       components.vulnerabilityScore,
       components.impactScore,
-      components.likelihoodScore
+      components.likelihoodScore,
     ];
-    
+
     const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const variance = scores.reduce((sum, score) => sum + Math.pow(score - avg, 2), 0) / scores.length;
+    const variance =
+      scores.reduce((sum, score) => sum + Math.pow(score - avg, 2), 0) / scores.length;
     const stdDev = Math.sqrt(variance);
-    
+
     // 標準偏差が大きいほど信頼度を下げる
-    const balanceFactor = Math.max(0.5, 1 - (stdDev / 50));
-    
+    const balanceFactor = Math.max(0.5, 1 - stdDev / 50);
+
     return Math.min(1, baseConfidence * balanceFactor);
   }
 }

@@ -84,23 +84,47 @@ export class InputValidator implements IInputValidator {
     const typedConfig = config as Partial<OrchestratorConfig>;
 
     // ブール値設定の検証
-    if (typedConfig.enableTaintAnalysis !== undefined && typeof typedConfig.enableTaintAnalysis !== 'boolean') {
-      throw new OrchestratorError('enableTaintAnalysisはブール値である必要があります', 'validation');
+    if (
+      typedConfig.enableTaintAnalysis !== undefined &&
+      typeof typedConfig.enableTaintAnalysis !== 'boolean'
+    ) {
+      throw new OrchestratorError(
+        'enableTaintAnalysisはブール値である必要があります',
+        'validation'
+      );
     }
 
-    if (typedConfig.enableIntentExtraction !== undefined && typeof typedConfig.enableIntentExtraction !== 'boolean') {
-      throw new OrchestratorError('enableIntentExtractionはブール値である必要があります', 'validation');
+    if (
+      typedConfig.enableIntentExtraction !== undefined &&
+      typeof typedConfig.enableIntentExtraction !== 'boolean'
+    ) {
+      throw new OrchestratorError(
+        'enableIntentExtractionはブール値である必要があります',
+        'validation'
+      );
     }
 
-    if (typedConfig.enableGapDetection !== undefined && typeof typedConfig.enableGapDetection !== 'boolean') {
+    if (
+      typedConfig.enableGapDetection !== undefined &&
+      typeof typedConfig.enableGapDetection !== 'boolean'
+    ) {
       throw new OrchestratorError('enableGapDetectionはブール値である必要があります', 'validation');
     }
 
-    if (typedConfig.enableNistEvaluation !== undefined && typeof typedConfig.enableNistEvaluation !== 'boolean') {
-      throw new OrchestratorError('enableNistEvaluationはブール値である必要があります', 'validation');
+    if (
+      typedConfig.enableNistEvaluation !== undefined &&
+      typeof typedConfig.enableNistEvaluation !== 'boolean'
+    ) {
+      throw new OrchestratorError(
+        'enableNistEvaluationはブール値である必要があります',
+        'validation'
+      );
     }
 
-    if (typedConfig.parallelExecution !== undefined && typeof typedConfig.parallelExecution !== 'boolean') {
+    if (
+      typedConfig.parallelExecution !== undefined &&
+      typeof typedConfig.parallelExecution !== 'boolean'
+    ) {
       throw new OrchestratorError('parallelExecutionはブール値である必要があります', 'validation');
     }
 
@@ -114,8 +138,12 @@ export class InputValidator implements IInputValidator {
         throw new OrchestratorError('timeoutMsは正の数である必要があります', 'validation');
       }
 
-      if (typedConfig.timeoutMs > 300000) { // 5分
-        throw new OrchestratorError('timeoutMsは5分（300000ms）以下である必要があります', 'validation');
+      if (typedConfig.timeoutMs > 300000) {
+        // 5分
+        throw new OrchestratorError(
+          'timeoutMsは5分（300000ms）以下である必要があります',
+          'validation'
+        );
       }
     }
   }

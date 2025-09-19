@@ -1,19 +1,19 @@
 /**
  * NistRiskEvaluator テスト
  * NIST SP 800-30準拠のリスク評価システム
- * 
+ *
  * TDD Red Phase: 失敗するテストを最初に作成
  * SOLID原則: 単一責任の原則に従う
  */
 
 import { NistRiskEvaluator } from '../../../src/nist/evaluators/NistRiskEvaluator';
 import { RiskLevel } from '../../../src/nist/types/unified-analysis-result';
-import { 
+import {
   ThreatSource,
   ThreatEvent,
   Vulnerability,
   RiskAssessment,
-  NISTRiskMatrix
+  NISTRiskMatrix,
 } from '../../../src/nist/types/nist-types';
 
 describe('NistRiskEvaluator', () => {
@@ -31,7 +31,7 @@ describe('NistRiskEvaluator', () => {
         type: 'ADVERSARIAL',
         capability: 'HIGH',
         intent: 'HIGH',
-        targeting: 'SPECIFIC'
+        targeting: 'SPECIFIC',
       };
 
       const capability = evaluator.evaluateThreatCapability(threatSource);
@@ -45,7 +45,7 @@ describe('NistRiskEvaluator', () => {
         type: 'ADVERSARIAL',
         capability: 'MODERATE',
         intent: 'LOW',
-        targeting: 'OPPORTUNISTIC'
+        targeting: 'OPPORTUNISTIC',
       };
 
       const riskLevel = evaluator.assessThreatSource(insiderThreat);
@@ -59,7 +59,7 @@ describe('NistRiskEvaluator', () => {
         type: 'ENVIRONMENTAL',
         capability: 'HIGH',
         intent: 'NONE',
-        targeting: 'NONE'
+        targeting: 'NONE',
       };
 
       const impact = evaluator.evaluateEnvironmentalThreat(environmentalThreat);
@@ -76,7 +76,7 @@ describe('NistRiskEvaluator', () => {
         threatSources: ['TS-001'],
         likelihood: 'HIGH',
         impact: 'HIGH',
-        relevance: 'CONFIRMED'
+        relevance: 'CONFIRMED',
       };
 
       const likelihood = evaluator.calculateThreatLikelihood(threatEvent);
@@ -90,7 +90,7 @@ describe('NistRiskEvaluator', () => {
         threatSources: ['TS-001', 'TS-002'],
         likelihood: 'MODERATE',
         impact: 'VERY_HIGH',
-        relevance: 'CONFIRMED'
+        relevance: 'CONFIRMED',
       };
 
       const assessment = evaluator.assessThreatEvent(complexEvent);
@@ -107,7 +107,7 @@ describe('NistRiskEvaluator', () => {
         severity: 'HIGH',
         exploitability: 'HIGH',
         detectability: 'EASY',
-        affectedAssets: ['Database', 'API']
+        affectedAssets: ['Database', 'API'],
       };
 
       const severity = evaluator.evaluateVulnerabilitySeverity(vulnerability);
@@ -121,7 +121,7 @@ describe('NistRiskEvaluator', () => {
         severity: 'MODERATE',
         exploitability: 'MODERATE',
         detectability: 'MODERATE',
-        affectedAssets: ['UserData']
+        affectedAssets: ['UserData'],
       };
 
       const exploitability = evaluator.calculateExploitability(vulnerability);
@@ -137,7 +137,7 @@ describe('NistRiskEvaluator', () => {
           severity: 'HIGH',
           exploitability: 'HIGH',
           detectability: 'EASY',
-          affectedAssets: ['Database']
+          affectedAssets: ['Database'],
         },
         {
           id: 'V-003',
@@ -145,8 +145,8 @@ describe('NistRiskEvaluator', () => {
           severity: 'CRITICAL',
           exploitability: 'MODERATE',
           detectability: 'HARD',
-          affectedAssets: ['Authentication']
-        }
+          affectedAssets: ['Authentication'],
+        },
       ];
 
       const combinedRisk = evaluator.assessCombinedVulnerabilities(vulnerabilities);
@@ -159,7 +159,7 @@ describe('NistRiskEvaluator', () => {
       const matrix: NISTRiskMatrix = {
         threatLikelihood: 'HIGH',
         vulnerabilitySeverity: 'HIGH',
-        impactLevel: 'HIGH'
+        impactLevel: 'HIGH',
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
@@ -170,7 +170,7 @@ describe('NistRiskEvaluator', () => {
       const matrix: NISTRiskMatrix = {
         threatLikelihood: 'LOW',
         vulnerabilitySeverity: 'LOW',
-        impactLevel: 'LOW'
+        impactLevel: 'LOW',
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
@@ -181,7 +181,7 @@ describe('NistRiskEvaluator', () => {
       const matrix: NISTRiskMatrix = {
         threatLikelihood: 'HIGH',
         vulnerabilitySeverity: 'LOW',
-        impactLevel: 'MODERATE'
+        impactLevel: 'MODERATE',
       };
 
       const riskLevel = evaluator.applyRiskMatrix(matrix);
@@ -201,8 +201,8 @@ describe('NistRiskEvaluator', () => {
             type: 'ADVERSARIAL',
             capability: 'HIGH',
             intent: 'HIGH',
-            targeting: 'SPECIFIC'
-          }
+            targeting: 'SPECIFIC',
+          },
         ],
         threatEvents: [
           {
@@ -211,8 +211,8 @@ describe('NistRiskEvaluator', () => {
             threatSources: ['TS-001'],
             likelihood: 'HIGH',
             impact: 'HIGH',
-            relevance: 'CONFIRMED'
-          }
+            relevance: 'CONFIRMED',
+          },
         ],
         vulnerabilities: [
           {
@@ -221,17 +221,19 @@ describe('NistRiskEvaluator', () => {
             severity: 'HIGH',
             exploitability: 'HIGH',
             detectability: 'EASY',
-            affectedAssets: ['Database']
-          }
+            affectedAssets: ['Database'],
+          },
         ],
-        controlEffectiveness: 0.3
+        controlEffectiveness: 0.3,
       };
 
       const result = evaluator.performRiskAssessment(assessment);
-      
+
       expect(result).toBeDefined();
       expect(result.overallRiskLevel).toBeDefined();
-      expect(Object.values(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'])).toContain(result.overallRiskLevel);
+      expect(Object.values(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'])).toContain(
+        result.overallRiskLevel
+      );
       expect(result.recommendations).toBeInstanceOf(Array);
       expect(result.recommendations.length).toBeGreaterThan(0);
     });
@@ -243,15 +245,16 @@ describe('NistRiskEvaluator', () => {
         threatSources: [],
         threatEvents: [],
         vulnerabilities: [],
-        controlEffectiveness: 0.8 // 高いコントロール有効性
+        controlEffectiveness: 0.8, // 高いコントロール有効性
       };
 
       const result = evaluator.performRiskAssessment(assessment);
-      
+
       // コントロールが高い場合、リスクは低減される
       expect(result.mitigatedRiskLevel).toBeDefined();
-      expect(evaluator.getRiskPriority(result.mitigatedRiskLevel))
-        .toBeLessThanOrEqual(evaluator.getRiskPriority(result.inherentRiskLevel));
+      expect(evaluator.getRiskPriority(result.mitigatedRiskLevel)).toBeLessThanOrEqual(
+        evaluator.getRiskPriority(result.inherentRiskLevel)
+      );
     });
   });
 
@@ -270,11 +273,11 @@ describe('NistRiskEvaluator', () => {
         { id: '1', level: 'LOW' },
         { id: '2', level: 'CRITICAL' },
         { id: '3', level: 'MEDIUM' },
-        { id: '4', level: 'HIGH' }
+        { id: '4', level: 'HIGH' },
       ];
 
       const sorted = evaluator.sortByRiskPriority(risks);
-      
+
       expect(sorted[0].level).toBe('CRITICAL');
       expect(sorted[1].level).toBe('HIGH');
       expect(sorted[2].level).toBe('MEDIUM');
@@ -285,7 +288,7 @@ describe('NistRiskEvaluator', () => {
   describe('推奨事項の生成', () => {
     it('リスクレベルに応じた推奨事項を生成する', () => {
       const recommendations = evaluator.generateRecommendations('CRITICAL');
-      
+
       expect(recommendations).toBeInstanceOf(Array);
       expect(recommendations.length).toBeGreaterThan(0);
       expect(recommendations[0]).toHaveProperty('priority');
@@ -295,7 +298,7 @@ describe('NistRiskEvaluator', () => {
 
     it('低リスクの場合の推奨事項', () => {
       const recommendations = evaluator.generateRecommendations('MINIMAL');
-      
+
       expect(recommendations).toBeInstanceOf(Array);
       expect(recommendations.length).toBeGreaterThan(0);
       expect(recommendations[0].priority).toBe('LOW');

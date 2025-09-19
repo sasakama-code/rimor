@@ -13,12 +13,12 @@ export interface TestIntent {
    * テストの意図を表す説明文
    */
   description: string;
-  
+
   /**
    * テスト対象のメソッド/関数名
    */
   targetMethod?: string;
-  
+
   /**
    * テストシナリオ（Given-When-Then形式）
    */
@@ -27,17 +27,17 @@ export interface TestIntent {
     when?: string;
     then?: string;
   };
-  
+
   /**
    * テストのタイプ（unit, integration, e2e等）
    */
   testType: TestType;
-  
+
   /**
    * 期待される動作
    */
   expectedBehavior: string[];
-  
+
   /**
    * カバレッジ範囲
    */
@@ -53,7 +53,7 @@ export enum TestType {
   E2E = 'e2e',
   PERFORMANCE = 'performance',
   SECURITY = 'security',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -64,17 +64,17 @@ export interface CoverageScope {
    * ハッピーパスのカバレッジ
    */
   happyPath: boolean;
-  
+
   /**
    * エラーケースのカバレッジ
    */
   errorCases: boolean;
-  
+
   /**
    * エッジケースのカバレッジ
    */
   edgeCases: boolean;
-  
+
   /**
    * 境界値のカバレッジ
    */
@@ -89,32 +89,32 @@ export interface TestRealizationResult {
    * 意図した内容
    */
   intent: TestIntent;
-  
+
   /**
    * 実際のテストコード分析結果
    */
   actual: ActualTestAnalysis;
-  
+
   /**
    * ギャップ分析
    */
   gaps: TestGap[];
-  
+
   /**
    * 実現度スコア（0-100）
    */
   realizationScore: number;
-  
+
   /**
    * リスクレベル
    */
   riskLevel: IntentRiskLevel;
-  
+
   /**
    * テストファイルパス（レポート生成用）
    */
   file?: string;
-  
+
   /**
    * テストの説明（レポート生成用）
    */
@@ -129,17 +129,17 @@ export interface ActualTestAnalysis {
    * 実際にテストされているメソッド
    */
   actualTargetMethods: string[];
-  
+
   /**
    * 実際のアサーション
    */
   assertions: TestAssertion[];
-  
+
   /**
    * 実際のカバレッジ
    */
   actualCoverage: CoverageScope;
-  
+
   /**
    * テストの複雑度
    */
@@ -167,17 +167,17 @@ export interface TestGap {
    * ギャップの種類
    */
   type: GapType;
-  
+
   /**
    * ギャップの説明
    */
   description: string;
-  
+
   /**
    * 重要度
    */
   severity: Severity;
-  
+
   /**
    * 改善提案
    */
@@ -193,7 +193,7 @@ export enum GapType {
   WRONG_TARGET = 'wrong_target',
   MISSING_ERROR_CASE = 'missing_error_case',
   MISSING_EDGE_CASE = 'missing_edge_case',
-  UNCLEAR_INTENT = 'unclear_intent'
+  UNCLEAR_INTENT = 'unclear_intent',
 }
 
 /**
@@ -203,7 +203,7 @@ export enum Severity {
   CRITICAL = 'critical',
   HIGH = 'high',
   MEDIUM = 'medium',
-  LOW = 'low'
+  LOW = 'low',
 }
 
 /**
@@ -215,7 +215,7 @@ export enum IntentRiskLevel {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low',
-  MINIMAL = 'minimal'
+  MINIMAL = 'minimal',
 }
 
 // 後方互換性のための型エイリアス（非推奨）
@@ -233,12 +233,12 @@ export interface ITestIntentAnalyzer {
    * テストファイルから意図を抽出
    */
   extractIntent(testFilePath: string, ast: ASTNode): Promise<TestIntent>;
-  
+
   /**
    * 実際のテスト実装を分析
    */
   analyzeActualTest(testFilePath: string, ast: ASTNode): Promise<ActualTestAnalysis>;
-  
+
   /**
    * テスト意図と実装のギャップを評価
    */
@@ -246,7 +246,7 @@ export interface ITestIntentAnalyzer {
     intent: TestIntent,
     actual: ActualTestAnalysis
   ): Promise<TestRealizationResult>;
-  
+
   /**
    * リスク評価
    */

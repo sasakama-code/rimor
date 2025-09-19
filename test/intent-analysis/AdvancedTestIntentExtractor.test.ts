@@ -20,7 +20,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
     domainEngine = new DomainInferenceEngine();
     businessMapper = new BusinessLogicMapper();
     extractor = new TestIntentExtractor(parser);
-    
+
     // ExtractorにDomainEngineとBusinessMapperを注入
     (extractor as any).domainEngine = domainEngine;
     (extractor as any).businessMapper = businessMapper;
@@ -46,13 +46,13 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
       const typeInfo = new Map<string, TypeInfo>([
         ['customer', { typeName: 'Customer', isPrimitive: false }],
         ['payment', { typeName: 'Payment', isPrimitive: false }],
-        ['paymentService', { typeName: 'PaymentService', isPrimitive: false }]
+        ['paymentService', { typeName: 'PaymentService', isPrimitive: false }],
       ]);
 
       // 高度な評価メソッドを呼び出す（実装予定）
       const intent = await extractor.extractIntent('test.ts', ast);
       const actual = await extractor.analyzeActualTest('test.ts', ast);
-      
+
       // 型情報を使用した高度な評価
       const result = await (extractor as any).evaluateRealizationWithTypeInfo(
         intent,
@@ -62,8 +62,8 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
 
       expect(result.domainRelevance).toBeDefined();
       expect(result.domainRelevance.domain).toBe('payment');
-      expect(result.domainRelevance.confidence).toBeGreaterThan(0.7);  // デフォルト値に合わせて調整
-      expect(result.domainRelevance.businessImportance).toBe('high');  // businessImportanceはdomainRelevanceのプロパティ
+      expect(result.domainRelevance.confidence).toBeGreaterThan(0.7); // デフォルト値に合わせて調整
+      expect(result.domainRelevance.businessImportance).toBe('high'); // businessImportanceはdomainRelevanceのプロパティ
     });
 
     it('ドメイン固有のギャップを検出できる', async () => {
@@ -80,12 +80,12 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
       const ast = parser.parseContent(testCode, SupportedLanguage.TYPESCRIPT);
       const typeInfo = new Map<string, TypeInfo>([
         ['user', { typeName: 'User', isPrimitive: false }],
-        ['userService', { typeName: 'UserService', isPrimitive: false }]
+        ['userService', { typeName: 'UserService', isPrimitive: false }],
       ]);
 
       const intent = await extractor.extractIntent('test.ts', ast);
       const actual = await extractor.analyzeActualTest('test.ts', ast);
-      
+
       const result = await (extractor as any).evaluateRealizationWithTypeInfo(
         intent,
         actual,
@@ -98,7 +98,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
         expect.objectContaining({
           type: 'MISSING_DOMAIN_REQUIREMENT',
           description: expect.stringContaining('認証'),
-          domain: 'user-management'
+          domain: 'user-management',
         })
       );
     });
@@ -128,18 +128,14 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
               filePath: '/src/utils/TaxCalculator.ts',
               line: 5,
               calls: [],
-              calledBy: []
-            }
+              calledBy: [],
+            },
           ],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
 
-      const result = await (extractor as any).analyzeWithBusinessContext(
-        'test.ts',
-        ast,
-        callGraph
-      );
+      const result = await (extractor as any).analyzeWithBusinessContext('test.ts', ast, callGraph);
 
       expect(result.businessLogicCoverage).toBeDefined();
       // フォールバック処理で関数が検出されない可能性を考慮
@@ -174,25 +170,21 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
               filePath: '/src/services/PricingService.ts',
               line: 35,
               calls: [],
-              calledBy: []
+              calledBy: [],
             },
             {
               name: 'applyPromotions',
               filePath: '/src/services/PricingService.ts',
               line: 50,
               calls: [],
-              calledBy: []
-            }
+              calledBy: [],
+            },
           ],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
 
-      const result = await (extractor as any).analyzeWithBusinessContext(
-        'test.ts',
-        ast,
-        callGraph
-      );
+      const result = await (extractor as any).analyzeWithBusinessContext('test.ts', ast, callGraph);
 
       // 割引やプロモーションのロジックがテストされていない
       expect(result.businessLogicCoverage.uncoveredFunctions).toContain('applyDiscounts');
@@ -221,7 +213,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
 
       const ast = parser.parseContent(testCode, SupportedLanguage.TYPESCRIPT);
       const typeInfo = new Map<string, TypeInfo>([
-        ['authService', { typeName: 'AuthenticationService', isPrimitive: false }]
+        ['authService', { typeName: 'AuthenticationService', isPrimitive: false }],
       ]);
 
       const suggestions = await (extractor as any).generateSmartSuggestions(
@@ -236,7 +228,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
           type: 'security',
           priority: 'critical',
           impact: 'critical',
-          description: expect.stringContaining('無効な認証情報')
+          description: expect.stringContaining('無効な認証情報'),
         })
       );
       expect(suggestions).toContainEqual(
@@ -244,7 +236,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
           type: 'security',
           priority: 'critical',
           impact: 'critical',
-          description: expect.stringContaining('ブルートフォース')
+          description: expect.stringContaining('ブルートフォース'),
         })
       );
       expect(suggestions).toContainEqual(
@@ -252,7 +244,7 @@ describe('Advanced TestIntentExtractor - Phase 2', () => {
           type: 'security',
           priority: 'high',
           impact: 'high',
-          description: expect.stringContaining('トークンの有効期限')
+          description: expect.stringContaining('トークンの有効期限'),
         })
       );
     });

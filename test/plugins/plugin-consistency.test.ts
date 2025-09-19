@@ -1,6 +1,6 @@
 /**
  * プラグインシステム一貫性テスト
- * 
+ *
  * t_wadaのTDD手法に従い、RED段階として失敗するテストを先に作成
  * これらのテストは実装前に失敗することが期待される
  */
@@ -94,7 +94,7 @@ describe('Plugin System Consistency Tests', () => {
         'TestExistencePlugin',
         'AssertionExistencePlugin',
         'TaintAnalysisPlugin',
-        'SecurityTestPatternPlugin'
+        'SecurityTestPatternPlugin',
       ];
 
       pluginClasses.forEach(className => {
@@ -110,7 +110,7 @@ describe('Plugin System Consistency Tests', () => {
         new TestExistencePlugin(),
         new AssertionExistencePlugin(),
         new TaintAnalysisPlugin(),
-        new SecurityTestPatternPlugin()
+        new SecurityTestPatternPlugin(),
       ];
 
       plugins.forEach(plugin => {
@@ -124,10 +124,10 @@ describe('Plugin System Consistency Tests', () => {
       const plugin = new TestExistencePlugin();
       // @ts-ignore - accessing protected method for testing
       const isTestFileMethod = plugin.isTestFile;
-      
+
       // BasePluginから継承されていることを確認
       expect(isTestFileMethod).toBeDefined();
-      
+
       // TestExistencePlugin自体には定義されていないことを確認
       const ownProps = Object.getOwnPropertyNames(TestExistencePlugin.prototype);
       expect(ownProps).not.toContain('isTestFile');
@@ -137,10 +137,10 @@ describe('Plugin System Consistency Tests', () => {
       const plugin = new AssertionExistencePlugin();
       // @ts-ignore - accessing protected method for testing
       const removeMethod = plugin.removeCommentsAndStrings;
-      
+
       // BasePluginから継承されていることを確認
       expect(removeMethod).toBeDefined();
-      
+
       // AssertionExistencePlugin自体には定義されていないことを確認
       const ownProps = Object.getOwnPropertyNames(AssertionExistencePlugin.prototype);
       expect(ownProps).not.toContain('removeCommentsAndStrings');
@@ -149,10 +149,7 @@ describe('Plugin System Consistency Tests', () => {
 
   describe('Plugin types should be consistent', () => {
     test('Core plugins should have type "core"', () => {
-      const corePlugins = [
-        new TestExistencePlugin(),
-        new AssertionExistencePlugin()
-      ];
+      const corePlugins = [new TestExistencePlugin(), new AssertionExistencePlugin()];
 
       corePlugins.forEach(plugin => {
         expect(plugin.type).toBe('core');
@@ -160,10 +157,7 @@ describe('Plugin System Consistency Tests', () => {
     });
 
     test('Security plugins should have type "security"', () => {
-      const securityPlugins = [
-        new TaintAnalysisPlugin(),
-        new SecurityTestPatternPlugin()
-      ];
+      const securityPlugins = [new TaintAnalysisPlugin(), new SecurityTestPatternPlugin()];
 
       securityPlugins.forEach(plugin => {
         expect(plugin.type).toBe('security');

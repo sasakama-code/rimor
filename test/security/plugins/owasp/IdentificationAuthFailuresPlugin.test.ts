@@ -45,16 +45,14 @@ describe('IdentificationAuthFailuresPlugin', () => {
 
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
-    expect(plugin.cweIds).toEqual([
-      'CWE-287', 'CWE-297', 'CWE-384'
-    ]);
+    expect(plugin.cweIds).toEqual(['CWE-287', 'CWE-297', 'CWE-384']);
   });
 
   describe('isApplicable', () => {
     // ステップ8: 認証関連の依存関係がある場合
     it('should return true when authentication libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['passport', 'jsonwebtoken']
+        dependencies: ['passport', 'jsonwebtoken'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -65,8 +63,8 @@ describe('IdentificationAuthFailuresPlugin', () => {
         filePatterns: {
           source: ['src/auth/login.js', 'src/authentication.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -78,8 +76,8 @@ describe('IdentificationAuthFailuresPlugin', () => {
         filePatterns: {
           source: ['src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -97,11 +95,13 @@ describe('IdentificationAuthFailuresPlugin', () => {
             const strongPassword = 'SecureP@ssw0rd123!';
             expect(validatePassword(strongPassword)).toBe(true);
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const passwordPattern = patterns.find(p => p.patternId && p.patternId.includes('password-strength'));
+      const passwordPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('password-strength')
+      );
       expect(passwordPattern).toBeDefined();
     });
 
@@ -119,11 +119,13 @@ describe('IdentificationAuthFailuresPlugin', () => {
               expect(result.blocked).toBe(true);
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const bruteForcePattern = patterns.find(p => p.patternId && p.patternId.includes('brute-force'));
+      const bruteForcePattern = patterns.find(
+        p => p.patternId && p.patternId.includes('brute-force')
+      );
       expect(bruteForcePattern).toBeDefined();
     });
 
@@ -136,11 +138,13 @@ describe('IdentificationAuthFailuresPlugin', () => {
             const user = getUser(1);
             expect(user.name).toBe('John');
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-auth-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-auth-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -149,9 +153,17 @@ describe('IdentificationAuthFailuresPlugin', () => {
     // ステップ14: 高品質スコアの評価
     it('should return high score when authentication tests exist', () => {
       const patterns = [
-        { patternId: 'auth-password-strength', metadata: { hasTest: true, testType: 'password-strength' }, confidence: 0.9 },
-        { patternId: 'auth-brute-force', metadata: { hasTest: true, testType: 'brute-force' }, confidence: 0.9 },
-        { patternId: 'auth-mfa', metadata: { hasTest: true, testType: 'mfa' }, confidence: 0.85 }
+        {
+          patternId: 'auth-password-strength',
+          metadata: { hasTest: true, testType: 'password-strength' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'auth-brute-force',
+          metadata: { hasTest: true, testType: 'brute-force' },
+          confidence: 0.9,
+        },
+        { patternId: 'auth-mfa', metadata: { hasTest: true, testType: 'mfa' }, confidence: 0.85 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -176,8 +188,8 @@ describe('IdentificationAuthFailuresPlugin', () => {
           suggestions: ['ブルートフォース対策を追加'],
           passwordTestImplemented: false,
           bruteForceProtection: false,
-          mfaImplemented: false
-        }
+          mfaImplemented: false,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -198,7 +210,7 @@ describe('IdentificationAuthFailuresPlugin', () => {
           it('should rate limit login attempts', () => {
             expect(rateLimiter.isBlocked()).toBe(true);
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -234,7 +246,7 @@ describe('IdentificationAuthFailuresPlugin', () => {
     it('should generate authentication security test code', () => {
       const context: ProjectContext = {
         dependencies: ['passport', 'bcrypt'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

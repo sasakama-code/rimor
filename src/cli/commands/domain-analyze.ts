@@ -1,7 +1,7 @@
 /**
  * domain-analyze Command
  * v0.9.0 - 統計的ドメイン分析CLIコマンド
- * 
+ *
  * KISS原則: シンプルなコマンドインターフェース
  * YAGNI原則: 必要最小限のオプションから開始
  * Defensive Programming: パス検証とエラーハンドリング
@@ -10,7 +10,11 @@
 import { StatisticalDomainAnalyzer } from '../../domain-analysis/StatisticalDomainAnalyzer';
 import { InteractiveDomainValidator } from '../../domain-analysis/InteractiveDomainValidator';
 import { IntegrityHashGenerator } from '../../domain-analysis/IntegrityHashGenerator';
-import { DomainDefinition, DomainAnalysisResult, UserValidationResult } from '../../domain-analysis/types';
+import {
+  DomainDefinition,
+  DomainAnalysisResult,
+  UserValidationResult,
+} from '../../domain-analysis/types';
 import { PathSecurity } from '../../utils/pathSecurity';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -90,14 +94,16 @@ export class DomainAnalyzeCommand {
         projectPath,
         maxClusters: options.maxClusters,
         minKeywordFrequency: options.minKeywordFrequency,
-        excludePatterns: options.excludePatterns
+        excludePatterns: options.excludePatterns,
       });
 
       // ドメイン分析を実行
       const analysisResult = await this.analyzer.analyze();
 
       if (options.verbose) {
-        console.log(chalk.green(`✅ ${analysisResult.domains.length}個のドメインクラスタを検出しました`));
+        console.log(
+          chalk.green(`✅ ${analysisResult.domains.length}個のドメインクラスタを検出しました`)
+        );
         console.log(chalk.gray(`総ファイル数: ${analysisResult.metadata?.totalFiles || 0}`));
         console.log(chalk.gray(`総トークン数: ${analysisResult.metadata?.totalTokens || 0}`));
       }
@@ -106,13 +112,10 @@ export class DomainAnalyzeCommand {
       let finalDomains = analysisResult.domains;
       if (interactive) {
         const validationResult = await this.validator.validate(analysisResult.domains);
-        
+
         if (validationResult.validated) {
           // 承認・修正されたドメインのみを使用
-          finalDomains = [
-            ...validationResult.approvedDomains,
-            ...validationResult.modifiedDomains
-          ];
+          finalDomains = [...validationResult.approvedDomains, ...validationResult.modifiedDomains];
 
           if (options.verbose) {
             console.log(chalk.green(`✅ 検証完了: ${finalDomains.length}個のドメインを確定`));
@@ -129,15 +132,15 @@ export class DomainAnalyzeCommand {
         project: {
           name: path.basename(projectPath),
           path: projectPath,
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: finalDomains,
         integrity: {
           hash: '',
           timestamp: new Date(),
-          version: '1.0.0'
+          version: '1.0.0',
         },
-        metadata: analysisResult.metadata
+        metadata: analysisResult.metadata,
       };
 
       // 出力ディレクトリを作成
@@ -152,7 +155,6 @@ export class DomainAnalyzeCommand {
       } else {
         this.outputText(domainDefinition, domainFile);
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(chalk.red(`エラーが発生しました: ${errorMessage}`));
@@ -172,20 +174,25 @@ export class DomainAnalyzeCommand {
 
     if (result.valid) {
       console.log(chalk.green('✅ 検証成功: ドメイン定義ファイルは改ざんされていません'));
-      
+
       if (result.definition) {
         console.log(chalk.cyan('\n📊 ドメイン定義の概要:'));
         console.log(`  プロジェクト: ${result.definition.project.name}`);
         console.log(`  分析日時: ${result.definition.project.analyzed}`);
         console.log(`  ドメイン数: ${result.definition.domains.length}`);
-        
+
         console.log(chalk.cyan('\n📦 検出されたドメイン:'));
         for (const domain of result.definition.domains) {
           console.log(`  - ${domain.name} (信頼度: ${Math.round(domain.confidence * 100)}%)`);
         }
       }
     } else {
-      console.error(chalk.red('❌ 検証失敗: ' + (result.error || 'ドメイン定義ファイルが改ざんされている可能性があります')));
+      console.error(
+        chalk.red(
+          '❌ 検証失敗: ' +
+            (result.error || 'ドメイン定義ファイルが改ざんされている可能性があります')
+        )
+      );
     }
   }
 
@@ -197,7 +204,7 @@ export class DomainAnalyzeCommand {
     console.log(chalk.cyan(`\n📊 分析結果:`));
     console.log(`  プロジェクト: ${definition.project.name}`);
     console.log(`  ドメイン数: ${definition.domains.length}`);
-    
+
     if (definition.metadata) {
       console.log(`  総ファイル数: ${definition.metadata.totalFiles}`);
       console.log(`  総トークン数: ${definition.metadata.totalTokens}`);
@@ -208,16 +215,18 @@ export class DomainAnalyzeCommand {
     for (const domain of definition.domains) {
       console.log(chalk.bold(`\n  ${domain.name}`));
       console.log(`    信頼度: ${Math.round(domain.confidence * 100)}%`);
-      console.log(`    キーワード: ${domain.keywords.slice(0, 5).join(', ')}${domain.keywords.length > 5 ? '...' : ''}`);
+      console.log(
+        `    キーワード: ${domain.keywords.slice(0, 5).join(', ')}${domain.keywords.length > 5 ? '...' : ''}`
+      );
       console.log(`    関連ファイル: ${domain.files.length}個`);
     }
 
     console.log(chalk.cyan('\n💾 保存先:'));
     console.log(`  ${domainFile}`);
-    
+
     console.log(chalk.cyan('\n🔐 整合性ハッシュ:'));
     console.log(`  ${definition.integrity.hash.substring(0, 16)}...`);
-    
+
     console.log(chalk.gray('\n検証コマンド:'));
     console.log(chalk.gray(`  rimor domain-analyze --verify`));
   }
@@ -232,8 +241,8 @@ export class DomainAnalyzeCommand {
       domains: definition.domains.map(d => ({
         ...d,
         keywords: d.keywords,
-        files: d.files
-      }))
+        files: d.files,
+      })),
     };
 
     console.log(JSON.stringify(output, null, 2));
@@ -252,21 +261,21 @@ export class DomainAnalyzeCommand {
 
       // 相対パスから絶対パスに変換
       const absolutePath = path.resolve(targetPath);
-      
+
       // 危険なパスパターンのチェック
       const dangerousPatterns = [
-        /\.\.[\/\\]/g,  // パストラバーサル
-        /^[\/\\]etc/,    // /etcディレクトリ
-        /^[\/\\]sys/,    // /sysディレクトリ
-        /^[\/\\]proc/    // /procディレクトリ
+        /\.\.[\/\\]/g, // パストラバーサル
+        /^[\/\\]etc/, // /etcディレクトリ
+        /^[\/\\]sys/, // /sysディレクトリ
+        /^[\/\\]proc/, // /procディレクトリ
       ];
-      
+
       for (const pattern of dangerousPatterns) {
         if (pattern.test(absolutePath)) {
           return false;
         }
       }
-      
+
       return true;
     } catch {
       return false;

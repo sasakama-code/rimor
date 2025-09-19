@@ -57,7 +57,7 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['passport'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -67,7 +67,7 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -77,7 +77,7 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['jsonwebtoken'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -88,9 +88,9 @@ describe('BrokenAccessControlPlugin', () => {
       const plugin = new BrokenAccessControlPlugin();
       const testFile: TestFile = {
         path: '/test/auth.test.ts',
-        content: 'test code'
+        content: 'test code',
       };
-      
+
       const result = await plugin.detectPatterns(testFile);
       expect(result).toBeDefined();
     });
@@ -114,9 +114,9 @@ describe('BrokenAccessControlPlugin', () => {
                 .expect(200);
             });
           });
-        `
+        `,
       };
-      
+
       const result = await plugin.detectPatterns(testFile);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].confidence).toBeGreaterThan(0);
@@ -126,22 +126,26 @@ describe('BrokenAccessControlPlugin', () => {
   describe('evaluateQuality', () => {
     it('メソッドが存在する', () => {
       const plugin = new BrokenAccessControlPlugin();
-      const patterns = [{
-        patternId: 'access-control-test',
-        confidence: 0.8
-      }];
-      
+      const patterns = [
+        {
+          patternId: 'access-control-test',
+          confidence: 0.8,
+        },
+      ];
+
       const result = plugin.evaluateQuality(patterns);
       expect(result).toBeDefined();
     });
 
     it('アクセス制御テストが存在する場合は高いスコアを返す', () => {
       const plugin = new BrokenAccessControlPlugin();
-      const patterns = [{
-        patternId: 'access-control-test',
-        confidence: 0.8
-      }];
-      
+      const patterns = [
+        {
+          patternId: 'access-control-test',
+          confidence: 0.8,
+        },
+      ];
+
       const result = plugin.evaluateQuality(patterns);
       expect(result.overall).toBeGreaterThan(70);
       expect(result.security).toBeDefined();
@@ -151,7 +155,7 @@ describe('BrokenAccessControlPlugin', () => {
     it('アクセス制御テストが存在しない場合は低いスコアを返す', () => {
       const plugin = new BrokenAccessControlPlugin();
       const patterns: DetectionResult[] = [];
-      
+
       const result = plugin.evaluateQuality(patterns);
       expect(result.overall).toBeLessThan(50);
       expect(result.security).toBeLessThan(50);
@@ -165,9 +169,9 @@ describe('BrokenAccessControlPlugin', () => {
         overall: 30,
         security: 30,
         dimensions: {},
-        confidence: 0.8
+        confidence: 0.8,
       };
-      
+
       const result = plugin.suggestImprovements(evaluation);
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -183,10 +187,10 @@ describe('BrokenAccessControlPlugin', () => {
         details: {
           strengths: [],
           weaknesses: ['アクセス制御テストが検出されませんでした'],
-          suggestions: ['アクセス制御テストを追加してください']
-        }
+          suggestions: ['アクセス制御テストを追加してください'],
+        },
       };
-      
+
       const result = plugin.suggestImprovements(evaluation);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].priority).toBe('high');
@@ -203,10 +207,10 @@ describe('BrokenAccessControlPlugin', () => {
         details: {
           strengths: ['アクセス制御テストが適切に実装されています'],
           weaknesses: [],
-          suggestions: []
-        }
+          suggestions: [],
+        },
       };
-      
+
       const result = plugin.suggestImprovements(evaluation);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].priority).toBe('medium');
@@ -218,9 +222,9 @@ describe('BrokenAccessControlPlugin', () => {
       const plugin = new BrokenAccessControlPlugin();
       const testFile: TestFile = {
         path: '/test/auth.test.ts',
-        content: 'test code'
+        content: 'test code',
       };
-      
+
       const result = await plugin.validateSecurityTests(testFile);
       expect(result).toBeDefined();
     });
@@ -248,9 +252,9 @@ describe('BrokenAccessControlPlugin', () => {
               // Role-based access control test
             });
           });
-        `
+        `,
       };
-      
+
       const result = await plugin.validateSecurityTests(testFile);
       expect(result.category).toBe('A01:2021');
       expect(result.coverage).toBeGreaterThan(70);
@@ -261,9 +265,9 @@ describe('BrokenAccessControlPlugin', () => {
       const plugin = new BrokenAccessControlPlugin();
       const testFile: TestFile = {
         path: '/test/auth.test.ts',
-        content: 'describe("Basic test", () => {});'
+        content: 'describe("Basic test", () => {});',
       };
-      
+
       const result = await plugin.validateSecurityTests(testFile);
       expect(result.coverage).toBeLessThan(30);
       expect(result.missingTests.length).toBeGreaterThan(0);
@@ -275,7 +279,7 @@ describe('BrokenAccessControlPlugin', () => {
     it('メソッドが存在する', () => {
       const plugin = new BrokenAccessControlPlugin();
       const content = 'some code';
-      
+
       const result = plugin.detectVulnerabilityPatterns(content);
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -289,7 +293,7 @@ describe('BrokenAccessControlPlugin', () => {
           res.sendFile(file); // 危険：パス検証なし
         });
       `;
-      
+
       const result = plugin.detectVulnerabilityPatterns(content);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].type).toBe('insufficient-validation');
@@ -304,7 +308,7 @@ describe('BrokenAccessControlPlugin', () => {
           return res.json(getAllUsers());
         });
       `;
-      
+
       const result = plugin.detectVulnerabilityPatterns(content);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].message).toContain('認証');
@@ -317,9 +321,9 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express', 'passport'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
-      
+
       const result = plugin.generateSecurityTests(context);
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -330,9 +334,9 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express', 'passport'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
-      
+
       const result = plugin.generateSecurityTests(context);
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]).toContain('401');
@@ -344,9 +348,9 @@ describe('BrokenAccessControlPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express', 'jsonwebtoken'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
-      
+
       const result = plugin.generateSecurityTests(context);
       expect(result.some(test => test.includes('token'))).toBe(true);
       expect(result.some(test => test.includes('Authorization'))).toBe(true);

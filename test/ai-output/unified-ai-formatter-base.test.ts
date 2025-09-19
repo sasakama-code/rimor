@@ -1,7 +1,7 @@
 /**
  * UnifiedAIFormatterBase Test
  * v0.9.0 - DRY原則適用のためのベースクラステスト
- * 
+ *
  * TDD Red Phase: テストを先に作成
  * t_wada推奨のテスト駆動開発アプローチ
  */
@@ -19,8 +19,8 @@ class TestFormatter extends UnifiedAIFormatterBase {
         totalIssues: result.issues?.length || 0,
         criticalIssues: result.issues?.filter((i: any) => i.severity === 'critical').length || 0,
         highIssues: result.issues?.filter((i: any) => i.severity === 'high').length || 0,
-        overallRisk: 'MEDIUM' as const
-      }
+        overallRisk: 'MEDIUM' as const,
+      },
     };
   }
 
@@ -69,26 +69,28 @@ class TestFormatter extends UnifiedAIFormatterBase {
   }
 
   public sortByPriority(risks: AIActionableRisk[]): AIActionableRisk[] {
-    const order: Record<string, number> = { 
-      'CRITICAL': 0, 
-      [RiskLevel.HIGH]: 1, 
-      [RiskLevel.MEDIUM]: 2, 
-      [RiskLevel.LOW]: 3, 
-      [RiskLevel.MINIMAL]: 4 
+    const order: Record<string, number> = {
+      CRITICAL: 0,
+      [RiskLevel.HIGH]: 1,
+      [RiskLevel.MEDIUM]: 2,
+      [RiskLevel.LOW]: 3,
+      [RiskLevel.MINIMAL]: 4,
     };
     return [...risks].sort((a, b) => order[a.riskLevel] - order[b.riskLevel]);
   }
 
   public formatAsAIJson(result: UnifiedAnalysisResult, options?: any) {
     return {
-      keyRisks: this.assessRisks((result.detailedIssues || []).map((issue: any) => ({
-        ...issue,
-        type: issue.type || 'issue',
-        severity: issue.severity || issue.riskLevel || 'medium',
-        message: issue.message || issue.description,
-        category: issue.category || 'general'
-      }))),
-      overallAssessment: result.summary?.overallScore 
+      keyRisks: this.assessRisks(
+        (result.detailedIssues || []).map((issue: any) => ({
+          ...issue,
+          type: issue.type || 'issue',
+          severity: issue.severity || issue.riskLevel || 'medium',
+          message: issue.message || issue.description,
+          category: issue.category || 'general',
+        }))
+      ),
+      overallAssessment: result.summary?.overallScore
         ? `総合スコア: ${result.summary.overallScore}/100`
         : '問題は検出されませんでした',
       fullReportUrl: options?.htmlReportPath || '.rimor/reports/index.html',
@@ -97,8 +99,8 @@ class TestFormatter extends UnifiedAIFormatterBase {
         totalIssues: result.detailedIssues?.length || 0,
         criticalIssues: 0,
         highIssues: 0,
-        overallRisk: 'MEDIUM' as const
-      }
+        overallRisk: 'MEDIUM' as const,
+      },
     };
   }
 }
@@ -131,11 +133,11 @@ describe('UnifiedAIFormatterBase', () => {
           statistics: {
             totalFiles: 10,
             totalTests: 5,
-            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 2, MINIMAL: 0 }
-          }
+            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 2, MINIMAL: 0 },
+          },
         },
         detailedIssues: [],
-        aiKeyRisks: []
+        aiKeyRisks: [],
       };
 
       expect(() => formatter.validateInput(validInput)).not.toThrow();
@@ -146,14 +148,16 @@ describe('UnifiedAIFormatterBase', () => {
     });
 
     it('undefinedの入力でエラーをスロー', () => {
-      expect(() => formatter.validateInput(undefined as any)).toThrow('Invalid UnifiedAnalysisResult');
+      expect(() => formatter.validateInput(undefined as any)).toThrow(
+        'Invalid UnifiedAnalysisResult'
+      );
     });
 
     it('summaryがない場合エラーをスロー', () => {
       const invalidInput = {
         schemaVersion: '1.0',
         detailedIssues: [],
-        aiKeyRisks: []
+        aiKeyRisks: [],
       } as any;
 
       expect(() => formatter.validateInput(invalidInput)).toThrow('Missing required fields');
@@ -169,10 +173,10 @@ describe('UnifiedAIFormatterBase', () => {
           statistics: {
             totalFiles: 10,
             totalTests: 5,
-            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 2, MINIMAL: 0 }
-          }
+            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 2, MINIMAL: 0 },
+          },
         },
-        detailedIssues: []
+        detailedIssues: [],
       } as any;
 
       expect(() => formatter.validateInput(invalidInput)).toThrow('Missing required fields');
@@ -185,23 +189,25 @@ describe('UnifiedAIFormatterBase', () => {
     });
 
     it('リスクがある場合falseを返す', () => {
-      const risks: AIActionableRisk[] = [{
-        riskId: '1',
-        filePath: 'test.ts',
-        riskLevel: RiskLevel.HIGH,
-        title: 'Test Risk',
-        problem: 'Problem',
-        context: {
-          codeSnippet: '',
-          startLine: 1,
-          endLine: 2
+      const risks: AIActionableRisk[] = [
+        {
+          riskId: '1',
+          filePath: 'test.ts',
+          riskLevel: RiskLevel.HIGH,
+          title: 'Test Risk',
+          problem: 'Problem',
+          context: {
+            codeSnippet: '',
+            startLine: 1,
+            endLine: 2,
+          },
+          suggestedAction: {
+            type: 'ADD_MISSING_TEST',
+            description: 'Add test',
+          },
         },
-        suggestedAction: {
-          type: 'ADD_MISSING_TEST',
-          description: 'Add test'
-        }
-      }];
-      
+      ];
+
       expect(formatter.hasNoRisks(risks)).toBe(false);
     });
   });
@@ -212,11 +218,11 @@ describe('UnifiedAIFormatterBase', () => {
         { riskId: '1', problem: 'Issue 1', riskLevel: RiskLevel.CRITICAL } as AIActionableRisk,
         { riskId: '2', problem: 'Issue 2', riskLevel: RiskLevel.HIGH } as AIActionableRisk,
         { riskId: '3', problem: 'Issue 3', riskLevel: RiskLevel.MEDIUM } as AIActionableRisk,
-        { riskId: '4', problem: 'Issue 4', riskLevel: RiskLevel.LOW } as AIActionableRisk
+        { riskId: '4', problem: 'Issue 4', riskLevel: RiskLevel.LOW } as AIActionableRisk,
       ];
 
       const topIssues = formatter.identifyTopIssues(risks);
-      
+
       expect(topIssues).toHaveLength(3);
       expect(topIssues).toEqual(['Issue 1', 'Issue 2', 'Issue 3']);
     });
@@ -224,11 +230,11 @@ describe('UnifiedAIFormatterBase', () => {
     it('3件未満の場合は全て返す', () => {
       const risks: AIActionableRisk[] = [
         { riskId: '1', problem: 'Issue 1', riskLevel: RiskLevel.HIGH } as AIActionableRisk,
-        { riskId: '2', problem: 'Issue 2', riskLevel: RiskLevel.LOW } as AIActionableRisk
+        { riskId: '2', problem: 'Issue 2', riskLevel: RiskLevel.LOW } as AIActionableRisk,
       ];
 
       const topIssues = formatter.identifyTopIssues(risks);
-      
+
       expect(topIssues).toHaveLength(2);
       expect(topIssues).toEqual(['Issue 1', 'Issue 2']);
     });
@@ -242,14 +248,18 @@ describe('UnifiedAIFormatterBase', () => {
     it('リスクレベルで優先順位をソートする', () => {
       const risks: AIActionableRisk[] = [
         { riskId: '1', riskLevel: RiskLevel.LOW, problem: 'Low risk' } as AIActionableRisk,
-        { riskId: '2', riskLevel: RiskLevel.CRITICAL, problem: 'Critical risk' } as AIActionableRisk,
+        {
+          riskId: '2',
+          riskLevel: RiskLevel.CRITICAL,
+          problem: 'Critical risk',
+        } as AIActionableRisk,
         { riskId: '3', riskLevel: RiskLevel.HIGH, problem: 'High risk' } as AIActionableRisk,
         { riskId: '4', riskLevel: RiskLevel.MEDIUM, problem: 'Medium risk' } as AIActionableRisk,
-        { riskId: '5', riskLevel: RiskLevel.MINIMAL, problem: 'Minimal risk' } as AIActionableRisk
+        { riskId: '5', riskLevel: RiskLevel.MINIMAL, problem: 'Minimal risk' } as AIActionableRisk,
       ];
 
       const sorted = formatter.sortByPriority(risks);
-      
+
       expect(sorted[0].riskLevel).toBe(RiskLevel.CRITICAL);
       expect(sorted[1].riskLevel).toBe(RiskLevel.HIGH);
       expect(sorted[2].riskLevel).toBe(RiskLevel.MEDIUM);
@@ -261,11 +271,11 @@ describe('UnifiedAIFormatterBase', () => {
       const risks: AIActionableRisk[] = [
         { riskId: '1', riskLevel: RiskLevel.HIGH, problem: 'First high' } as AIActionableRisk,
         { riskId: '2', riskLevel: RiskLevel.HIGH, problem: 'Second high' } as AIActionableRisk,
-        { riskId: '3', riskLevel: RiskLevel.HIGH, problem: 'Third high' } as AIActionableRisk
+        { riskId: '3', riskLevel: RiskLevel.HIGH, problem: 'Third high' } as AIActionableRisk,
       ];
 
       const sorted = formatter.sortByPriority(risks);
-      
+
       expect(sorted[0].problem).toBe('First high');
       expect(sorted[1].problem).toBe('Second high');
       expect(sorted[2].problem).toBe('Third high');
@@ -283,8 +293,8 @@ describe('UnifiedAIFormatterBase', () => {
           statistics: {
             totalFiles: 10,
             totalTests: 5,
-            riskCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 3, LOW: 4, MINIMAL: 0 }
-          }
+            riskCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 3, LOW: 4, MINIMAL: 0 },
+          },
         },
         detailedIssues: [
           {
@@ -297,8 +307,8 @@ describe('UnifiedAIFormatterBase', () => {
             type: 'security',
             severity: 'critical',
             message: 'Security vulnerability',
-            category: 'security'
-          }
+            category: 'security',
+          },
         ],
         aiKeyRisks: [
           {
@@ -310,14 +320,14 @@ describe('UnifiedAIFormatterBase', () => {
             context: {
               codeSnippet: 'code',
               startLine: 1,
-              endLine: 2
+              endLine: 2,
             },
             suggestedAction: {
               type: 'SANITIZE_VARIABLE',
-              description: 'Sanitize input'
-            }
-          }
-        ]
+              description: 'Sanitize input',
+            },
+          },
+        ],
       };
 
       const output = formatter.formatAsAIJson(input);
@@ -338,11 +348,11 @@ describe('UnifiedAIFormatterBase', () => {
           statistics: {
             totalFiles: 10,
             totalTests: 10,
-            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, MINIMAL: 0 }
-          }
+            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, MINIMAL: 0 },
+          },
         },
         detailedIssues: [],
-        aiKeyRisks: []
+        aiKeyRisks: [],
       };
 
       const output = formatter.formatAsAIJson(input);
@@ -363,12 +373,12 @@ describe('UnifiedAIFormatterBase', () => {
           context: {
             codeSnippet: '',
             startLine: 1,
-            endLine: 2
+            endLine: 2,
           },
           suggestedAction: {
             type: 'ADD_ASSERTION',
-            description: 'Add assertion'
-          }
+            description: 'Add assertion',
+          },
         });
       }
 
@@ -381,8 +391,8 @@ describe('UnifiedAIFormatterBase', () => {
           statistics: {
             totalFiles: 10,
             totalTests: 5,
-            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 20, LOW: 0, MINIMAL: 0 }
-          }
+            riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 20, LOW: 0, MINIMAL: 0 },
+          },
         },
         detailedIssues: risks.map((risk, i) => ({
           filePath: risk.filePath,
@@ -394,9 +404,9 @@ describe('UnifiedAIFormatterBase', () => {
           type: 'issue',
           severity: i % 2 === 0 ? 'medium' : 'high', // 異なる重要度
           message: risk.problem,
-          category: i % 3 === 0 ? 'security' : i % 3 === 1 ? 'testing' : 'general' // 異なるカテゴリ
+          category: i % 3 === 0 ? 'security' : i % 3 === 1 ? 'testing' : 'general', // 異なるカテゴリ
         })),
-        aiKeyRisks: risks
+        aiKeyRisks: risks,
       };
 
       const output = formatter.formatAsAIJson(input);

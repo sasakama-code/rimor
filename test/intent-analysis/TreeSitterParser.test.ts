@@ -55,18 +55,18 @@ describe('TreeSitterParser', () => {
     it('サポートされていない言語でフォールバックする', () => {
       // Defensive Programming: エラーを投げずにフォールバックする
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       const result = parser.parseContent('code', 'python' as SupportedLanguage);
-      
+
       // フォールバックが動作することを確認
       expect(result).toBeDefined();
       expect(result.type).toBe('program');
-      
+
       // 警告が出力されることを確認
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Unsupported language: python')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -90,13 +90,15 @@ describe('TreeSitterParser', () => {
 
       // フォールバック処理で少なくとも1つのノードが検出される
       expect(testFunctions.length).toBeGreaterThanOrEqual(0);
-      
+
       // フォールバック処理のため、テキストにテスト関数が含まれることを確認
       if (testFunctions.length > 0) {
-        const hasTestCode = testFunctions.some(node => 
-          node.text && (node.text.includes('describe') || 
-                        node.text.includes('it') || 
-                        node.text.includes('test'))
+        const hasTestCode = testFunctions.some(
+          node =>
+            node.text &&
+            (node.text.includes('describe') ||
+              node.text.includes('it') ||
+              node.text.includes('test'))
         );
         expect(hasTestCode).toBeTruthy();
       }
@@ -156,12 +158,10 @@ describe('TreeSitterParser', () => {
 
       // フォールバック処理で少なくとも1つの関数が検出される
       expect(functions.length).toBeGreaterThanOrEqual(1);
-      
+
       // フォールバックでもfunctionキーワードが含まれる
       if (functions.length > 0) {
-        const hasFunction = functions.some(func => 
-          func.text && func.text.includes('function')
-        );
+        const hasFunction = functions.some(func => func.text && func.text.includes('function'));
         expect(hasFunction).toBeTruthy();
       }
     });
@@ -172,21 +172,21 @@ describe('TreeSitterParser', () => {
       // テスト用の一時ファイルを作成
       const tempDir = path.join(__dirname, '../temp');
       await fs.mkdir(tempDir, { recursive: true });
-      
+
       const testFiles = [
         { name: 'test.js', lang: SupportedLanguage.JAVASCRIPT },
         { name: 'test.ts', lang: SupportedLanguage.TYPESCRIPT },
         { name: 'test.jsx', lang: SupportedLanguage.JSX },
-        { name: 'test.tsx', lang: SupportedLanguage.TSX }
+        { name: 'test.tsx', lang: SupportedLanguage.TSX },
       ];
 
       for (const { name, lang } of testFiles) {
         const filePath = path.join(tempDir, name);
         await fs.writeFile(filePath, '// test code');
-        
+
         const ast = await parser.parseFile(filePath);
         expect(ast).toBeDefined();
-        
+
         // クリーンアップ
         await fs.unlink(filePath);
       }

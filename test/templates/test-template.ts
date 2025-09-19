@@ -32,7 +32,7 @@ describe('[Component/Feature Name]', () => {
 
       // Assert (検証)
       // expect(result).toBe(expectedOutput);
-      
+
       // REDフェーズではこのテストは失敗する（実装がないため）
       expect(true).toBe(false); // 仮のアサーション
     });
@@ -76,7 +76,7 @@ describe('[Component/Feature Name]', () => {
    * - ハードコーディングも許容
    * - テストが通ることが最優先
    */
-  
+
   // Example minimal implementation:
   /*
   function functionUnderTest(input: any): string {
@@ -95,7 +95,7 @@ describe('[Component/Feature Name]', () => {
    * - パフォーマンスの最適化
    * - デザインパターンの適用
    */
-  
+
   // Refactoring checklist:
   // □ 変数名は適切か？
   // □ 関数は単一責任原則に従っているか？
@@ -181,7 +181,7 @@ describe('Snapshot tests', () => {
     const complexObject = {
       id: 1,
       name: 'Test',
-      data: { nested: 'value' }
+      data: { nested: 'value' },
     };
 
     // Act
@@ -194,13 +194,13 @@ describe('Snapshot tests', () => {
 
 /**
  * テストカバレッジのガイドライン
- * 
+ *
  * 目標カバレッジ:
  * - ステートメント: 80%以上
  * - ブランチ: 75%以上
  * - 関数: 80%以上
  * - 行: 80%以上
- * 
+ *
  * 重要なポイント:
  * - カバレッジ100%を目指すより、意味のあるテストを書く
  * - エッジケースとエラーケースを重視

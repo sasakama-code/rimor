@@ -10,13 +10,13 @@ import {
   IGapDetectionStrategy,
   INistEvaluationStrategy,
   IAnalysisStrategyFactory,
-  AnalysisStrategies
+  AnalysisStrategies,
 } from '../interfaces';
 import {
   TaintAnalysisResult,
   IntentAnalysisResult,
   GapAnalysisResult,
-  NistEvaluationResult
+  NistEvaluationResult,
 } from '../types';
 
 /**
@@ -31,8 +31,8 @@ export class MockTaintAnalysisStrategy implements ITaintAnalysisStrategy {
         totalVulnerabilities: 0,
         highSeverity: 0,
         mediumSeverity: 0,
-        lowSeverity: 0
-      }
+        lowSeverity: 0,
+      },
     };
   }
 }
@@ -41,7 +41,10 @@ export class MockTaintAnalysisStrategy implements ITaintAnalysisStrategy {
  * モック意図抽出戦略
  */
 export class MockIntentExtractionStrategy implements IIntentExtractionStrategy {
-  async extract(targetPath: string, taintResult: TaintAnalysisResult): Promise<IntentAnalysisResult> {
+  async extract(
+    targetPath: string,
+    taintResult: TaintAnalysisResult
+  ): Promise<IntentAnalysisResult> {
     // TODO: 実際の意図抽出エンジンとの統合（Phase 4で実装）
     return {
       testIntents: [],
@@ -49,8 +52,8 @@ export class MockIntentExtractionStrategy implements IIntentExtractionStrategy {
         totalTests: 0,
         highRiskTests: 0,
         mediumRiskTests: 0,
-        lowRiskTests: 0
-      }
+        lowRiskTests: 0,
+      },
     };
   }
 }
@@ -71,8 +74,8 @@ export class MockGapDetectionStrategy implements IGapDetectionStrategy {
         criticalGaps: 0,
         highGaps: 0,
         mediumGaps: 0,
-        lowGaps: 0
-      }
+        lowGaps: 0,
+      },
     };
   }
 }
@@ -92,8 +95,8 @@ export class MockNistEvaluationStrategy implements INistEvaluationStrategy {
         criticalRisks: 0,
         highRisks: 0,
         mediumRisks: 0,
-        lowRisks: 0
-      }
+        lowRisks: 0,
+      },
     };
   }
 }
@@ -124,7 +127,7 @@ export class MockAnalysisStrategyFactory implements IAnalysisStrategyFactory {
       taintStrategy: this.createTaintAnalysisStrategy(),
       intentStrategy: this.createIntentExtractionStrategy(),
       gapStrategy: this.createGapDetectionStrategy(),
-      nistStrategy: this.createNistEvaluationStrategy()
+      nistStrategy: this.createNistEvaluationStrategy(),
     };
   }
 }

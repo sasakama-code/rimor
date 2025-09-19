@@ -1,7 +1,7 @@
 /**
  * ParallelStrategy
  * v0.9.0 - Issue #64: レポートシステムの統合
- * 
+ *
  * SOLID原則: 単一責任（並列処理機能のみ）
  * DRY原則: 並列処理ロジックの再利用
  * KISS原則: シンプルな並列実装
@@ -48,7 +48,10 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * 非同期版の並列処理フォーマット
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: Record<string, unknown>): Promise<UnifiedAnalysisResult> {
+  async formatAsync(
+    result: UnifiedAnalysisResult,
+    options?: Record<string, unknown>
+  ): Promise<UnifiedAnalysisResult> {
     // 小さいデータの場合は直接処理
     if (this.isSmallData(result)) {
       if (this.baseStrategy.formatAsync) {
@@ -69,7 +72,7 @@ export class ParallelStrategy implements IFormattingStrategy {
       maxWorkers: this.maxWorkers,
       activeWorkers: this.activeWorkers,
       queueLength: this.taskQueue.length,
-      workerPoolSize: this.workerPool.length
+      workerPoolSize: this.workerPool.length,
     };
   }
 
@@ -77,9 +80,7 @@ export class ParallelStrategy implements IFormattingStrategy {
    * ワーカープールを終了
    */
   async terminate(): Promise<void> {
-    const terminatePromises = this.workerPool.map(worker => 
-      worker.terminate()
-    );
+    const terminatePromises = this.workerPool.map(worker => worker.terminate());
     await Promise.all(terminatePromises);
     this.workerPool = [];
     this.activeWorkers = 0;
@@ -98,12 +99,12 @@ export class ParallelStrategy implements IFormattingStrategy {
    * 並列処理を実行
    */
   private async processInParallel(
-    result: UnifiedAnalysisResult, 
+    result: UnifiedAnalysisResult,
     options?: Record<string, unknown>
   ): Promise<UnifiedAnalysisResult> {
     // データを分割
     const chunks = this.splitData(result);
-    
+
     if (chunks.length === 1) {
       // 分割不要の場合は通常処理
       if (this.baseStrategy.formatAsync) {
@@ -126,7 +127,7 @@ export class ParallelStrategy implements IFormattingStrategy {
    */
   private splitData(result: UnifiedAnalysisResult): UnifiedAnalysisResult[] {
     const risks = result.aiKeyRisks || [];
-    
+
     if (risks.length <= 10) {
       return [result];
     }
@@ -134,15 +135,15 @@ export class ParallelStrategy implements IFormattingStrategy {
     // リスクを均等に分割
     const chunkSize = Math.ceil(risks.length / this.maxWorkers);
     const chunks: UnifiedAnalysisResult[] = [];
-    
+
     for (let i = 0; i < risks.length; i += chunkSize) {
       const chunkRisks = risks.slice(i, i + chunkSize);
       chunks.push({
         ...result,
-        aiKeyRisks: chunkRisks
+        aiKeyRisks: chunkRisks,
       });
     }
-    
+
     return chunks;
   }
 
@@ -165,22 +166,27 @@ export class ParallelStrategy implements IFormattingStrategy {
    * 結果を結合
    */
   private mergeResults(
-    processedChunks: UnifiedAnalysisResult[], 
+    processedChunks: UnifiedAnalysisResult[],
     originalResult: UnifiedAnalysisResult
   ): UnifiedAnalysisResult {
     // 戦略に応じた結合処理
     const strategyName = this.baseStrategy.name;
-    
+
     switch (strategyName) {
       case 'ai-json':
         return this.mergeAIJsonResults(processedChunks, originalResult);
-      
+
       case 'markdown':
-        return this.mergeMarkdownResults(processedChunks as any) as unknown as UnifiedAnalysisResult;
-      
+        return this.mergeMarkdownResults(
+          processedChunks as any
+        ) as unknown as UnifiedAnalysisResult;
+
       case 'html':
-        return this.mergeHtmlResults(processedChunks as any, originalResult) as unknown as UnifiedAnalysisResult;
-      
+        return this.mergeHtmlResults(
+          processedChunks as any,
+          originalResult
+        ) as unknown as UnifiedAnalysisResult;
+
       default:
         // デフォルトは最初のチャンクを返す
         return processedChunks[0];
@@ -190,18 +196,21 @@ export class ParallelStrategy implements IFormattingStrategy {
   /**
    * AI JSON結果を結合
    */
-  private mergeAIJsonResults(chunks: UnifiedAnalysisResult[], original: UnifiedAnalysisResult): UnifiedAnalysisResult {
+  private mergeAIJsonResults(
+    chunks: UnifiedAnalysisResult[],
+    original: UnifiedAnalysisResult
+  ): UnifiedAnalysisResult {
     const keyRisks: Array<Record<string, unknown>> = [];
-    
+
     chunks.forEach(chunk => {
       if ((chunk as any).aiKeyRisks) {
         keyRisks.push(...(chunk as any).aiKeyRisks);
       }
     });
-    
+
     return {
       ...original,
-      aiKeyRisks: keyRisks
+      aiKeyRisks: keyRisks,
     } as unknown as UnifiedAnalysisResult;
   }
 
@@ -212,9 +221,10 @@ export class ParallelStrategy implements IFormattingStrategy {
     // 最初のチャンクのヘッダーを使用し、
     // 残りのチャンクからリスク部分を抽出して結合
     if (chunks.length === 0) return '';
-    
+
     const firstChunk = chunks[0];
-    const additionalRisks = chunks.slice(1)
+    const additionalRisks = chunks
+      .slice(1)
       .map(chunk => {
         // "## 主要なリスク"セクションを抽出
         const riskMatch = chunk.match(/## 主要なリスク[\s\S]*?(?=##|$)/);
@@ -222,7 +232,7 @@ export class ParallelStrategy implements IFormattingStrategy {
       })
       .filter(Boolean)
       .join('\n');
-    
+
     return firstChunk + '\n' + additionalRisks;
   }
 

@@ -9,20 +9,20 @@ import {
   DetectionResult,
   QualityScore,
   Improvement,
-  SecurityIssue
+  SecurityIssue,
 } from '../../../core/types';
 import {
   IOWASPSecurityPlugin,
   OWASPCategory,
   OWASPTestResult,
   OWASPUtils,
-  OWASPBasePlugin
+  OWASPBasePlugin,
 } from './IOWASPSecurityPlugin';
 import { hasDependencyPattern } from './dependency-utils';
 
 /**
  * A05: Security Misconfiguration プラグイン
- * 
+ *
  * 検出対象:
  * - HTTPセキュリティヘッダーの欠如
  * - デフォルト設定の使用
@@ -41,17 +41,28 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
   isApplicable(context: ProjectContext): boolean {
     // Webフレームワークの確認
     const webFrameworks = [
-      'express', 'koa', 'hapi', 'fastify', '@nestjs/core',
-      'helmet', 'cors', 'dotenv', 'config'
+      'express',
+      'koa',
+      'hapi',
+      'fastify',
+      '@nestjs/core',
+      'helmet',
+      'cors',
+      'dotenv',
+      'config',
     ];
-    
+
     const hasWebFramework = hasDependencyPattern(context, webFrameworks);
 
     // 設定関連ファイルの確認
-    const hasConfigFiles = context.filePatterns?.source?.some((pattern: string) =>
-      pattern.includes('config') || pattern.includes('settings') || 
-      pattern.includes('.env') || pattern.includes('security')
-    ) || false;
+    const hasConfigFiles =
+      context.filePatterns?.source?.some(
+        (pattern: string) =>
+          pattern.includes('config') ||
+          pattern.includes('settings') ||
+          pattern.includes('.env') ||
+          pattern.includes('security')
+      ) || false;
 
     return hasWebFramework || hasConfigFiles;
   }
@@ -61,7 +72,8 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
     const lines = testFile.content.split('\n');
 
     // セキュリティヘッダーテストパターン
-    const securityHeadersPattern = /x-frame-options|content-security-policy|strict-transport-security|x-content-type-options/i;
+    const securityHeadersPattern =
+      /x-frame-options|content-security-policy|strict-transport-security|x-content-type-options/i;
     const corsPattern = /cors|origin|access-control/i;
     const defaultConfigPattern = /default|admin|password|root/i;
     const errorHandlingPattern = /error.*detail|stack.*trace|debug.*true/i;
@@ -75,7 +87,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
           confidence: 0.85,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'high',
-          metadata: { hasTest: true, testType: 'security-headers' }
+          metadata: { hasTest: true, testType: 'security-headers' },
         });
       }
 
@@ -87,7 +99,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
           confidence: 0.8,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'medium',
-          metadata: { hasTest: true, testType: 'cors' }
+          metadata: { hasTest: true, testType: 'cors' },
         });
       }
 
@@ -99,15 +111,14 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
           confidence: 0.7,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'high',
-          metadata: { vulnerability: true }
+          metadata: { vulnerability: true },
         });
       }
     });
 
     // 不足テストの検出
-    const hasSecurityTests = patterns.some(p => 
-      p.metadata?.testType === 'security-headers' || 
-      p.metadata?.testType === 'cors'
+    const hasSecurityTests = patterns.some(
+      p => p.metadata?.testType === 'security-headers' || p.metadata?.testType === 'cors'
     );
 
     if (!hasSecurityTests) {
@@ -116,7 +127,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         pattern: 'missing-security-headers-test',
         confidence: 1,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
 
       patterns.push({
@@ -124,7 +135,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         pattern: 'missing-cors-test',
         confidence: 1,
         severity: 'high',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -132,17 +143,15 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    const configTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('config-') && p.metadata?.hasTest
+    const configTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('config-') && p.metadata?.hasTest
     );
 
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-config-')
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-config-')
     );
 
-    const vulnerabilities = patterns.filter(p => 
-      p.metadata?.vulnerability
-    );
+    const vulnerabilities = patterns.filter(p => p.metadata?.vulnerability);
 
     // カバレッジ計算
     const requiredTests = ['security-headers', 'cors', 'error-handling', 'default-settings'];
@@ -154,12 +163,8 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
       missingTests.length + vulnerabilities.length
     );
 
-    const hasSecurityHeaders = configTests.some(p => 
-      p.metadata?.testType === 'security-headers'
-    );
-    const hasCorsConfig = configTests.some(p => 
-      p.metadata?.testType === 'cors'
-    );
+    const hasSecurityHeaders = configTests.some(p => p.metadata?.testType === 'security-headers');
+    const hasCorsConfig = configTests.some(p => p.metadata?.testType === 'cors');
 
     const coverageScore = testCoverage / 100;
     const securityScore = hasSecurityHeaders ? 0.8 : 0.4;
@@ -172,14 +177,14 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
       dimensions: {
         completeness: testCoverage,
         correctness: configTests.length > 0 ? 75 : 0,
-        maintainability: (hasSecurityHeaders ? 50 : 0) + (hasCorsConfig ? 50 : 0)
+        maintainability: (hasSecurityHeaders ? 50 : 0) + (hasCorsConfig ? 50 : 0),
       },
       details: {
         strengths: hasSecurityHeaders ? ['セキュリティヘッダー実装済み'] : [],
         weaknesses: !hasSecurityHeaders ? ['セキュリティヘッダー不足'] : [],
         suggestions: [],
-        validationCoverage: hasSecurityHeaders ? 100 : 0
-      }
+        validationCoverage: hasSecurityHeaders ? 100 : 0,
+      },
     };
   }
 
@@ -195,7 +200,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         description: 'HTTPセキュリティヘッダー（X-Frame-Options、CSP等）のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 30,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -208,7 +213,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
         description: 'CORS（Cross-Origin Resource Sharing）の適切な設定をテストしてください',
         location: { file: '', line: 0, column: 0 },
         impact: 20,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -222,7 +227,7 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
       issues: [],
       recommendations: [],
       testPatterns: [],
-      missingTests: []
+      missingTests: [],
     };
   }
 
@@ -232,18 +237,20 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
 
     lines.forEach((line, index) => {
       // デフォルト認証情報
-      if ((line.includes('admin') || line.includes('root')) && 
-          (line.includes('password') || line.includes('username'))) {
+      if (
+        (line.includes('admin') || line.includes('root')) &&
+        (line.includes('password') || line.includes('username'))
+      ) {
         issues.push({
           id: `default-creds-${index}`,
           severity: 'critical',
           type: 'insufficient-validation',
           message: 'デフォルトの認証情報が使用されている可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
@@ -254,11 +261,11 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
           severity: 'warning',
           type: 'insufficient-validation',
           message: 'デバッグモードが有効になっています',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
@@ -269,11 +276,11 @@ export class SecurityMisconfigurationPlugin extends OWASPBasePlugin {
           severity: 'warning',
           type: 'insufficient-validation',
           message: 'スタックトレースが露出する可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
     });

@@ -21,15 +21,16 @@ async function testBasicAnnotations() {
   try {
     console.log('📋 テスト1: 単純なJSDocアノテーション');
     const result = await analyzer.analyzeTypeBasedFlow(simpleCode, 'simple.ts');
-    
+
     console.log(`  ✅ 型情報マップサイズ: ${result.typeInfoMap.size}`);
     console.log(`  ✅ 型アノテーション付きパス: ${result.summary.typeAnnotatedPaths}`);
-    
+
     // 型情報マップの詳細を確認
     for (const [varName, typeInfo] of result.typeInfoMap) {
-      console.log(`    - ${varName}: ${typeInfo.taintStatus} (アノテーション: ${typeInfo.typeAnnotation?.customTaintType || 'なし'})`);
+      console.log(
+        `    - ${varName}: ${typeInfo.taintStatus} (アノテーション: ${typeInfo.typeAnnotation?.customTaintType || 'なし'})`
+      );
     }
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -48,17 +49,18 @@ async function testBasicAnnotations() {
   try {
     console.log('📋 テスト2: Express.js基本パターン');
     const result = await analyzer.analyzeTypeBasedFlow(expressCode, 'express.ts');
-    
+
     console.log(`  ✅ 検出パス数: ${result.paths.length}`);
     console.log(`  ✅ 制約数: ${result.constraints.length}`);
-    
+
     if (result.paths.length > 0) {
       const path = result.paths[0];
-      console.log(`    パス: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`    リスク: ${path.riskLevel}`);
       console.log(`    信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
     }
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -81,20 +83,21 @@ async function testBasicAnnotations() {
   try {
     console.log('📋 テスト3: 型アノテーション付きデータフロー');
     const result = await analyzer.analyzeTypeBasedFlow(annotatedFlowCode, 'annotated.ts');
-    
+
     console.log(`  ✅ 検出パス数: ${result.paths.length}`);
     console.log(`  ✅ 型アノテーション付きパス: ${result.summary.typeAnnotatedPaths}`);
     console.log(`  ✅ 型安全パス: ${result.summary.typeSafePaths}`);
     console.log(`  ✅ 制約違反数: ${result.summary.constraintViolations}`);
-    
+
     if (result.paths.length > 0) {
       const path = result.paths[0];
-      console.log(`    パス: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`    型アノテーション有: ${path.typeValidation.hasTypeAnnotations}`);
       console.log(`    型安全: ${path.typeValidation.isTypeSafe}`);
       console.log(`    制約違反: ${path.typeValidation.violatedConstraints.length}件`);
     }
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }

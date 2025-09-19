@@ -1,7 +1,7 @@
 /**
  * 並列型チェッカー
  * arXiv:2504.18529v2 Section 6.1 "Modular Analysis" の実装
- * 
+ *
  * メソッド単位での独立した型チェックを並列実行し、
  * 論文で報告されている2.93X–22.9Xの高速化を実現
  */
@@ -9,22 +9,14 @@
 import * as os from 'os';
 import { Worker } from 'worker_threads';
 import { EventEmitter } from 'events';
-import {
-  TestMethod,
-  TaintLevel,
-  TaintSource
-} from '../../core/types';
-import {
-  MethodAnalysisResult,
-  SecurityIssue,
-  TypeInferenceResult
-} from '../types/flow-types';
+import { TestMethod, TaintLevel, TaintSource } from '../../core/types';
+import { MethodAnalysisResult, SecurityIssue, TypeInferenceResult } from '../types/flow-types';
 import {
   TaintQualifier,
   QualifiedType,
   TypeCheckResult,
   TypeQualifierError,
-  SubtypingChecker
+  SubtypingChecker,
 } from '../types/checker-framework-types';
 import { SearchBasedInferenceEngine } from '../analysis/search-based-inference';
 import { LocalInferenceOptimizer } from '../inference/local-inference-optimizer';
@@ -86,7 +78,10 @@ export class ParallelTypeChecker extends EventEmitter {
   private workerStates: Map<Worker, boolean> = new Map(); // true = busy, false = idle
   private results: Map<string, MethodTypeCheckResult> = new Map();
   private currentTasks: Map<string, WorkerTask> = new Map(); // Store current tasks
-  private taskCallbacks: Map<string, { resolve: Function; reject: Function; timeout?: NodeJS.Timeout }> = new Map();
+  private taskCallbacks: Map<
+    string,
+    { resolve: Function; reject: Function; timeout?: NodeJS.Timeout }
+  > = new Map();
   private inferenceEngine: SearchBasedInferenceEngine;
   private localOptimizer: LocalInferenceOptimizer;
 
@@ -97,12 +92,12 @@ export class ParallelTypeChecker extends EventEmitter {
       methodTimeout: config?.methodTimeout || 30000,
       batchSize: config?.batchSize || 10,
       enableCache: config?.enableCache !== false,
-      debug: config?.debug || false
+      debug: config?.debug || false,
     };
-    
+
     this.inferenceEngine = new SearchBasedInferenceEngine();
     this.localOptimizer = new LocalInferenceOptimizer();
-    
+
     this.initializeWorkers();
   }
 
@@ -125,10 +120,10 @@ export class ParallelTypeChecker extends EventEmitter {
   async checkMethodsInParallel(methods: TestMethod[]): Promise<Map<string, MethodTypeCheckResult>> {
     // 新しいバッチ処理前に結果をクリア
     this.results.clear();
-    
+
     // メソッドの依存関係を解析
     const dependencies = await this.analyzeDependencies(methods);
-    
+
     // タスクを作成
     // Issue #150対応: ファイルパス含む統一IDでタスクID一意性を確保
     const tasks = methods.map(method => {
@@ -136,17 +131,17 @@ export class ParallelTypeChecker extends EventEmitter {
       return {
         id: methodId,
         method,
-        dependencies: Array.from(dependencies.get(methodId) || new Map())
+        dependencies: Array.from(dependencies.get(methodId) || new Map()),
       };
     });
-    
+
     // バッチ処理
     const batches = this.createBatches(tasks, this.config.batchSize);
-    
+
     for (const batch of batches) {
       await this.processBatch(batch);
     }
-    
+
     return this.results;
   }
 
@@ -154,25 +149,27 @@ export class ParallelTypeChecker extends EventEmitter {
    * 依存関係の解析
    * Issue #150対応: 統一IDを使用した依存関係解析
    */
-  private async analyzeDependencies(methods: TestMethod[]): Promise<Map<string, Map<string, QualifiedType<unknown>>>> {
+  private async analyzeDependencies(
+    methods: TestMethod[]
+  ): Promise<Map<string, Map<string, QualifiedType<unknown>>>> {
     const dependencies = new Map<string, Map<string, QualifiedType<unknown>>>();
     const processedMethods = new Set<string>(); // 循環参照防止
-    
+
     // Issue #150対応: 統一ID生成ヘルパー関数
-    const getMethodId = (method: TestMethod) => 
+    const getMethodId = (method: TestMethod) =>
       method.filePath ? `${method.filePath}:${method.name}` : method.name;
-    
+
     // 簡易実装：メソッド間の依存関係を検出
     for (const method of methods) {
       const methodId = getMethodId(method);
-      
+
       if (processedMethods.has(methodId)) {
         continue; // 循環参照を防ぐ
       }
-      
+
       const deps = new Map<string, QualifiedType<unknown>>();
       processedMethods.add(methodId);
-      
+
       // インポートや共有変数の検出
       const imports = this.extractImports(method.content || '');
       for (const imp of imports) {
@@ -180,21 +177,21 @@ export class ParallelTypeChecker extends EventEmitter {
         if (imp === method.name || processedMethods.has(imp)) {
           continue;
         }
-        
+
         // Issue #150修正: 既存結果に依存せず、基本的な依存関係のみマッピング
         // 基本的な型推論を実行（詳細な解析は各タスクで実施）
-        const defaultType: QualifiedType<unknown> = { 
-          __brand: '@PolyTaint', 
-          __value: imp, 
-          __parameterIndices: [], 
-          __propagationRule: 'any' 
+        const defaultType: QualifiedType<unknown> = {
+          __brand: '@PolyTaint',
+          __value: imp,
+          __parameterIndices: [],
+          __propagationRule: 'any',
         } as QualifiedType<unknown>;
         deps.set(imp, defaultType);
       }
-      
+
       dependencies.set(methodId, deps);
     }
-    
+
     return dependencies;
   }
 
@@ -227,41 +224,41 @@ export class ParallelTypeChecker extends EventEmitter {
       if (!task.dependencies || !Array.isArray(task.dependencies)) {
         task.dependencies = [];
       }
-      
+
       // ワーカーが利用できない場合はシングルスレッドで実行
       if (this.workers.size === 0) {
         this.executeTaskLocally(task).then(resolve).catch(reject);
         return;
       }
-      
+
       // タスクを保存
       this.currentTasks.set(task.id, task);
       this.taskCallbacks.set(task.id, { resolve, reject });
-      
+
       let retryCount = 0;
       const maxRetries = Math.ceil(this.config.methodTimeout / 100);
       const startTime = Date.now();
       const maxProcessTime = this.config.methodTimeout * 2; // 全体プロセスのタイムアウト
-      
+
       const tryAssignWorker = () => {
         // Issue #152修正: 全体タイムアウトチェック（Circuit Breaker）
         if (Date.now() - startTime > maxProcessTime) {
           this.executeTaskLocally(task).then(resolve).catch(reject);
           return;
         }
-        
+
         // 最大試行回数に達した場合はローカル実行にフォールバック
         if (retryCount >= maxRetries) {
           this.executeTaskLocally(task).then(resolve).catch(reject);
           return;
         }
-        
+
         // ワーカープール状態の再検証（ワーカーが途中で削除された場合）
         if (this.workers.size === 0) {
           this.executeTaskLocally(task).then(resolve).catch(reject);
           return;
         }
-        
+
         // 利用可能なワーカーを探す
         let availableWorker: Worker | null = null;
         for (const worker of this.workers) {
@@ -270,16 +267,16 @@ export class ParallelTypeChecker extends EventEmitter {
             break;
           }
         }
-        
+
         if (availableWorker) {
           this.workerStates.set(availableWorker, true); // Mark as busy
           this.activeWorkers++;
-          
+
           // タイムアウト設定
           const timeout = setTimeout(() => {
             this.workerStates.set(availableWorker!, false); // Mark as idle
             this.activeWorkers--;
-            
+
             const callback = this.taskCallbacks.get(task.id);
             if (callback) {
               callback.reject(new Error(`Task ${task.id} timed out`));
@@ -287,13 +284,13 @@ export class ParallelTypeChecker extends EventEmitter {
               this.currentTasks.delete(task.id);
             }
           }, this.config.methodTimeout);
-          
+
           // タイムアウトをコールバックに保存
           const callback = this.taskCallbacks.get(task.id);
           if (callback) {
             callback.timeout = timeout;
           }
-          
+
           availableWorker.postMessage(task);
         } else {
           retryCount++;
@@ -302,7 +299,7 @@ export class ParallelTypeChecker extends EventEmitter {
           setTimeout(tryAssignWorker, backoffDelay);
         }
       };
-      
+
       tryAssignWorker();
     });
   }
@@ -315,15 +312,15 @@ export class ParallelTypeChecker extends EventEmitter {
     try {
       // 実際の型チェック処理を実行（performTypeCheckメソッドを使用）
       const result = await this.performTypeCheck(task);
-      
+
       // 結果を保存
       this.results.set(task.id, result);
-      
+
       // 結果イベントを発行
       this.emit('methodCompleted', {
         methodName: task.method.name,
         success: result.typeCheckResult.success,
-        executionTime: result.executionTime
+        executionTime: result.executionTime,
       });
     } catch (error) {
       const startTime = Date.now();
@@ -331,24 +328,26 @@ export class ParallelTypeChecker extends EventEmitter {
         method: task.method,
         typeCheckResult: {
           success: false,
-          errors: [new TypeQualifierError(
-            error instanceof Error ? error.message : 'Unknown error',
-            '@Untainted',
-            '@Tainted'
-          )],
-          warnings: []
+          errors: [
+            new TypeQualifierError(
+              error instanceof Error ? error.message : 'Unknown error',
+              '@Untainted',
+              '@Tainted'
+            ),
+          ],
+          warnings: [],
         },
         inferredTypes: new Map(),
         securityIssues: [],
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - startTime,
       };
-      
+
       this.results.set(task.id, errorResult);
-      
+
       this.emit('methodCompleted', {
         methodName: task.method.name,
         success: false,
-        executionTime: errorResult.executionTime
+        executionTime: errorResult.executionTime,
       });
     }
   }
@@ -360,7 +359,7 @@ export class ParallelTypeChecker extends EventEmitter {
     // ワーカーのアイドル状態に戻す
     this.workerStates.set(worker, false);
     this.activeWorkers--;
-    
+
     // タスクコールバックを取得
     const callback = this.taskCallbacks.get(result.id);
     if (!callback) {
@@ -369,12 +368,12 @@ export class ParallelTypeChecker extends EventEmitter {
       }
       return;
     }
-    
+
     // タイムアウトをクリア
     if (callback.timeout) {
       clearTimeout(callback.timeout);
     }
-    
+
     // タスクを見つける（メソッド情報を取得するため）
     const task = this.currentTasks.get(result.id);
     if (!task) {
@@ -384,7 +383,7 @@ export class ParallelTypeChecker extends EventEmitter {
       this.currentTasks.delete(result.id);
       return;
     }
-    
+
     // ワーカーから返されるのはTypeCheckWorkerResult型
     // それをMethodTypeCheckResultに変換する必要がある
     if (result.success && result.result) {
@@ -394,27 +393,28 @@ export class ParallelTypeChecker extends EventEmitter {
         typeCheckResult: {
           success: result.success,
           errors: [],
-          warnings: result.result.warnings || []
+          warnings: result.result.warnings || [],
         },
         inferredTypes: result.result.inferredTypes || new Map(),
         securityIssues: result.result.securityIssues || [],
-        executionTime: result.executionTime
+        executionTime: result.executionTime,
       };
-      
+
       // エラーがある場合は追加
       if (result.result.violations && result.result.violations.length > 0) {
         methodResult.typeCheckResult.success = false;
-        methodResult.typeCheckResult.errors = result.result.violations.map((v: any) => 
-          new TypeQualifierError(v.description || 'Type violation', '@Untainted', '@Tainted')
+        methodResult.typeCheckResult.errors = result.result.violations.map(
+          (v: any) =>
+            new TypeQualifierError(v.description || 'Type violation', '@Untainted', '@Tainted')
         );
       }
-      
+
       this.results.set(result.id, methodResult);
-      
+
       if (this.config.debug) {
         console.log(`✓ Type checked ${result.id} in ${result.executionTime}ms`);
       }
-      
+
       // 成功を通知
       callback.resolve();
     } else {
@@ -423,7 +423,7 @@ export class ParallelTypeChecker extends EventEmitter {
       }
       callback.reject(new Error(result.error || `Type check failed for ${result.id}`));
     }
-    
+
     // クリーンアップ
     this.taskCallbacks.delete(result.id);
     this.currentTasks.delete(result.id);
@@ -436,11 +436,11 @@ export class ParallelTypeChecker extends EventEmitter {
     const imports: string[] = [];
     const importRegex = /import\s+.*?from\s+['"](.+?)['"]/g;
     let match;
-    
+
     while ((match = importRegex.exec(content)) !== null) {
       imports.push(match[1]);
     }
-    
+
     return imports;
   }
 
@@ -450,51 +450,67 @@ export class ParallelTypeChecker extends EventEmitter {
   async performTypeCheck(task: WorkerTask): Promise<MethodTypeCheckResult> {
     const startTime = Date.now();
     const errors: TypeQualifierError[] = [];
-    const warnings: Array<{ message: string; location?: { file: string; line: number; column: number } }> = [];
+    const warnings: Array<{
+      message: string;
+      location?: { file: string; line: number; column: number };
+    }> = [];
     const inferredTypes = new Map<string, QualifiedType<unknown>>();
     const securityIssues: SecurityIssue[] = [];
-    
+
     try {
       // ローカル変数の最適化
       const localAnalysis = await this.localOptimizer.analyzeLocalVariables(
         task.method.content || '',
         task.method.name || 'anonymous'
       );
-      
+
       // 推論エンジンによる型推論
       const inferenceState = await this.inferenceEngine.inferTypes(
         task.method.content || '',
         task.method.filePath || ''
       );
-      
+
       // 型チェック
       inferenceState.typeMap.forEach((qualifier, variable) => {
         // TaintQualifierをQualifiedTypeに変換
-        const qualifiedType: QualifiedType<unknown> = qualifier === '@Tainted' 
-          ? { __brand: '@Tainted', __value: variable, __source: 'inferred', __confidence: 1.0 } as QualifiedType<unknown>
-          : qualifier === '@Untainted'
-          ? { __brand: '@Untainted', __value: variable } as QualifiedType<unknown>
-          : { __brand: '@PolyTaint', __value: variable, __parameterIndices: [], __propagationRule: 'any' } as QualifiedType<unknown>;
-        
+        const qualifiedType: QualifiedType<unknown> =
+          qualifier === '@Tainted'
+            ? ({
+                __brand: '@Tainted',
+                __value: variable,
+                __source: 'inferred',
+                __confidence: 1.0,
+              } as QualifiedType<unknown>)
+            : qualifier === '@Untainted'
+              ? ({ __brand: '@Untainted', __value: variable } as QualifiedType<unknown>)
+              : ({
+                  __brand: '@PolyTaint',
+                  __value: variable,
+                  __parameterIndices: [],
+                  __propagationRule: 'any',
+                } as QualifiedType<unknown>);
+
         inferredTypes.set(variable, qualifiedType);
-        
+
         // 依存関係の型との整合性チェック
         const depsMap = new Map(task.dependencies);
         const depType = depsMap.get(variable);
         if (depType && !SubtypingChecker.isAssignmentSafe(depType, qualifiedType)) {
-          errors.push(new TypeQualifierError(
-            `Type mismatch for ${variable}`,
-            depType.__brand,
-            qualifiedType.__brand,
-            {
-              file: task.method.filePath || '',
-              line: 0,
-              column: 0
-            }
-          ));
+          errors.push(
+            new TypeQualifierError(
+              `Type mismatch for ${variable}`,
+              depType.__brand,
+              qualifiedType.__brand,
+              {
+                file: task.method.filePath || '',
+                line: 0,
+                column: 0,
+              }
+            )
+          );
         }
       });
-      
+
       // セキュリティ問題の検出
       if (localAnalysis.escapingVariables.length > 0) {
         localAnalysis.escapingVariables.forEach(variable => {
@@ -508,31 +524,32 @@ export class ParallelTypeChecker extends EventEmitter {
               location: {
                 file: task.method.filePath || '',
                 line: 0,
-                column: 0
-              }
+                column: 0,
+              },
             });
           }
         });
       }
-      
     } catch (error) {
-      errors.push(new TypeQualifierError(
-        error instanceof Error ? error.message : 'Unknown error',
-        '@Tainted',
-        '@Untainted'
-      ));
+      errors.push(
+        new TypeQualifierError(
+          error instanceof Error ? error.message : 'Unknown error',
+          '@Tainted',
+          '@Untainted'
+        )
+      );
     }
-    
+
     return {
       method: task.method,
       typeCheckResult: {
         success: errors.length === 0,
         errors,
-        warnings
+        warnings,
       },
       inferredTypes,
       securityIssues,
-      executionTime: Date.now() - startTime
+      executionTime: Date.now() - startTime,
     };
   }
 
@@ -549,7 +566,7 @@ export class ParallelTypeChecker extends EventEmitter {
     }
     this.taskCallbacks.clear();
     this.currentTasks.clear();
-    
+
     // ワーカーの終了
     const terminatePromises = Array.from(this.workers).map(worker => {
       return worker.terminate().catch(err => {
@@ -558,7 +575,7 @@ export class ParallelTypeChecker extends EventEmitter {
         }
       });
     });
-    
+
     await Promise.all(terminatePromises);
     this.workers.clear();
     this.workerStates.clear();
@@ -580,18 +597,18 @@ export class ParallelTypeChecker extends EventEmitter {
     const successfulChecks = results.filter(r => r.typeCheckResult.success).length;
     const totalExecutionTime = results.reduce((sum, r) => sum + r.executionTime, 0);
     const averageExecutionTime = results.length > 0 ? totalExecutionTime / results.length : 0;
-    
+
     // スピードアップの計算（シーケンシャル実行時間との比較）
     const sequentialTime = totalExecutionTime;
     const parallelTime = results.length > 0 ? Math.max(...results.map(r => r.executionTime)) : 0;
     const speedup = parallelTime > 0 ? sequentialTime / parallelTime : 1;
-    
+
     return {
       totalMethods: results.length,
       successfulChecks,
       failedChecks: results.length - successfulChecks,
       averageExecutionTime,
-      speedup
+      speedup,
     };
   }
 }
@@ -626,7 +643,7 @@ export class TypeCheckResultAggregator {
         totalErrors: 0,
         totalWarnings: 0,
         criticalIssues: [],
-        typeStatistics: {}
+        typeStatistics: {},
       };
     }
 
@@ -634,7 +651,7 @@ export class TypeCheckResultAggregator {
     let totalWarnings = 0;
     const criticalIssues: SecurityIssue[] = [];
     const typeStatistics = new Map<TaintQualifier, number>();
-    
+
     for (const result of results) {
       // Defensive Programming: 各結果オブジェクトの検証
       if (!result || !result.typeCheckResult) {
@@ -644,14 +661,16 @@ export class TypeCheckResultAggregator {
       // エラーカウントの安全な集計
       totalErrors += result.typeCheckResult.errors?.length ?? 0;
       totalWarnings += result.typeCheckResult.warnings?.length ?? 0;
-      
+
       // クリティカルな問題を収集（存在チェック付き）
       if (result.securityIssues && Array.isArray(result.securityIssues)) {
-        criticalIssues.push(...result.securityIssues.filter(
-          issue => issue && (issue.severity === 'critical' || issue.severity === 'error')
-        ));
+        criticalIssues.push(
+          ...result.securityIssues.filter(
+            issue => issue && (issue.severity === 'critical' || issue.severity === 'error')
+          )
+        );
       }
-      
+
       // 型統計の収集（堅牢性強化）
       if (result.inferredTypes && result.inferredTypes instanceof Map) {
         result.inferredTypes.forEach(type => {
@@ -663,7 +682,7 @@ export class TypeCheckResultAggregator {
         });
       }
     }
-    
+
     // Issue #154修正: Map → プレーンオブジェクト変換でJSON互換性確保
     // Defensive Programming: Object.fromEntries の安全な実行
     let serializedTypeStatistics: Partial<Record<TaintQualifier, number>>;
@@ -673,13 +692,13 @@ export class TypeCheckResultAggregator {
       // フォールバック処理: 変換に失敗した場合は空オブジェクトを返す
       serializedTypeStatistics = {};
     }
-    
+
     return {
       overallSuccess: totalErrors === 0,
       totalErrors,
       totalWarnings,
       criticalIssues,
-      typeStatistics: serializedTypeStatistics
+      typeStatistics: serializedTypeStatistics,
     };
   }
 }

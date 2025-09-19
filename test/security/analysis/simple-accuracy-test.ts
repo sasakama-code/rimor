@@ -32,7 +32,7 @@ async function testBasicAccuracy() {
   try {
     const [sources, sinks] = await Promise.all([
       sourceDetector.detectSources(sqlInjectionCode, 'test1.ts'),
-      sinkDetector.detectSinks(sqlInjectionCode, 'test1.ts')
+      sinkDetector.detectSinks(sqlInjectionCode, 'test1.ts'),
     ]);
 
     console.log(`  ✅ Source検出数: ${sources.length}`);
@@ -47,13 +47,14 @@ async function testBasicAccuracy() {
 
     const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(sqlInjectionCode, 'test1.ts');
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
-    
+
     analysisResult.paths.forEach((path, index) => {
-      console.log(`    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`      リスクレベル: ${path.riskLevel}`);
       console.log(`      信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
     });
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -77,7 +78,7 @@ async function testBasicAccuracy() {
   try {
     const [sources, sinks] = await Promise.all([
       sourceDetector.detectSources(commandInjectionCode, 'test2.ts'),
-      sinkDetector.detectSinks(commandInjectionCode, 'test2.ts')
+      sinkDetector.detectSinks(commandInjectionCode, 'test2.ts'),
     ]);
 
     console.log(`  ✅ Source検出数: ${sources.length}`);
@@ -90,15 +91,19 @@ async function testBasicAccuracy() {
       console.log(`    - ${sink.dangerousFunction.functionName} (${sink.type})`);
     });
 
-    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(commandInjectionCode, 'test2.ts');
+    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(
+      commandInjectionCode,
+      'test2.ts'
+    );
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
-    
+
     analysisResult.paths.forEach((path, index) => {
-      console.log(`    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`      リスクレベル: ${path.riskLevel}`);
       console.log(`      信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
     });
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -120,7 +125,7 @@ async function testBasicAccuracy() {
   try {
     const [sources, sinks] = await Promise.all([
       sourceDetector.detectSources(pathTraversalCode, 'test3.ts'),
-      sinkDetector.detectSinks(pathTraversalCode, 'test3.ts')
+      sinkDetector.detectSinks(pathTraversalCode, 'test3.ts'),
     ]);
 
     console.log(`  ✅ Source検出数: ${sources.length}`);
@@ -135,13 +140,14 @@ async function testBasicAccuracy() {
 
     const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(pathTraversalCode, 'test3.ts');
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
-    
+
     analysisResult.paths.forEach((path, index) => {
-      console.log(`    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`      リスクレベル: ${path.riskLevel}`);
       console.log(`      信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
     });
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }

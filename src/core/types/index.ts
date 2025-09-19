@@ -51,20 +51,20 @@ export {
   OutdatedDependency,
   CircularDependency,
   MethodAnalysisResult,
-  MethodChange
+  MethodChange,
 } from './analysis-types';
 
 // Handler types (コールバック・ハンドラー用型定義)
 export * from './handler-types';
 
 // Security types (re-export from security module)
-export { 
+export {
   BoundaryCondition,
   ITypeBasedSecurityPlugin,
   AuthTestCoverage,
   AuthTestMetrics,
   SecurityIssue,
-  SecurityTestMetrics
+  SecurityTestMetrics,
 } from '../../security/types/security';
 
 export { SecurityImprovement } from '../../security/types/flow-types';
@@ -93,44 +93,35 @@ export {
   isIssue,
   isTestFile,
   isDetectionResult,
-  isProjectContext
+  isProjectContext,
 } from './type-guards';
 
 // Export plugin type guards
-export {
-  isIPlugin,
-  isITestQualityPlugin
-} from './plugin-interface';
+export { isIPlugin, isITestQualityPlugin } from './plugin-interface';
 
 // Export quality score type guard
-export {
-  isQualityScore
-} from './quality-score';
+export { isQualityScore } from './quality-score';
 
 // Export analysis result type guard
-export {
-  isAnalysisResult
-} from './analysis-result';
+export { isAnalysisResult } from './analysis-result';
 
 // Import types for composite interfaces
-import type { 
-  Issue as IssueType
-} from './base-types';
-import type { 
+import type { Issue as IssueType } from './base-types';
+import type {
   TestFile as TestFileType,
-  ProjectContext as ProjectContextType
+  ProjectContext as ProjectContextType,
 } from './project-context';
-import type { 
+import type {
   DetectionResult as DetectionResultType,
   AnalysisContext as AnalysisContextType,
-  AnalysisOptions as AnalysisOptionsType
+  AnalysisOptions as AnalysisOptionsType,
 } from './analysis-result';
 import { CoreTypes, TypeGuards, TypeUtils } from './core-definitions';
 import type { QualityScore as QualityScoreType } from './quality-score';
 import type { Improvement as ImprovementType } from './improvements';
-import type { 
+import type {
   DomainDictionary as DomainDictionaryType,
-  DomainContext as DomainContextType
+  DomainContext as DomainContextType,
 } from './domain-dictionary';
 
 // Backward compatibility aliases
@@ -166,8 +157,7 @@ export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
-export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
-  Pick<T, Exclude<keyof T, Keys>> &
+export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
   {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
   }[Keys];
@@ -181,5 +171,5 @@ export const MIGRATION_GUIDE_URL = 'https://github.com/rimor/docs/migration-v2';
 // Default export for convenience
 export default {
   VERSION: TYPE_DEFINITIONS_VERSION,
-  MIGRATION_GUIDE: MIGRATION_GUIDE_URL
+  MIGRATION_GUIDE: MIGRATION_GUIDE_URL,
 };

@@ -5,7 +5,13 @@
  */
 
 import { UnifiedSecurityAnalysisOrchestrator } from '../../src/orchestrator/UnifiedSecurityAnalysisOrchestrator';
-import { UnifiedAnalysisResult, TaintAnalysisResult, IntentAnalysisResult, GapAnalysisResult, NistEvaluationResult } from '../../src/orchestrator/types';
+import {
+  UnifiedAnalysisResult,
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+  NistEvaluationResult,
+} from '../../src/orchestrator/types';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -50,29 +56,25 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
       const executionOrder: string[] = [];
 
       // モックストラテジーを使って実行順序を追跡
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
-        .mockImplementation(async () => {
-          executionOrder.push('TaintAnalysis');
-          return mockTaintAnalysisResult();
-        });
+      jest.spyOn(orchestrator as any, 'executeTaintAnalysis').mockImplementation(async () => {
+        executionOrder.push('TaintAnalysis');
+        return mockTaintAnalysisResult();
+      });
 
-      jest.spyOn(orchestrator as any, 'executeIntentExtraction')
-        .mockImplementation(async () => {
-          executionOrder.push('IntentExtraction');
-          return mockIntentAnalysisResult();
-        });
+      jest.spyOn(orchestrator as any, 'executeIntentExtraction').mockImplementation(async () => {
+        executionOrder.push('IntentExtraction');
+        return mockIntentAnalysisResult();
+      });
 
-      jest.spyOn(orchestrator as any, 'executeGapDetection')
-        .mockImplementation(async () => {
-          executionOrder.push('GapDetection');
-          return mockGapAnalysisResult();
-        });
+      jest.spyOn(orchestrator as any, 'executeGapDetection').mockImplementation(async () => {
+        executionOrder.push('GapDetection');
+        return mockGapAnalysisResult();
+      });
 
-      jest.spyOn(orchestrator as any, 'executeNistEvaluation')
-        .mockImplementation(async () => {
-          executionOrder.push('NistEvaluation');
-          return mockNistEvaluationResult();
-        });
+      jest.spyOn(orchestrator as any, 'executeNistEvaluation').mockImplementation(async () => {
+        executionOrder.push('NistEvaluation');
+        return mockNistEvaluationResult();
+      });
 
       // Act
       await orchestrator.analyzeTestDirectory(targetPath);
@@ -82,7 +84,7 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
         'TaintAnalysis',
         'IntentExtraction',
         'GapDetection',
-        'NistEvaluation'
+        'NistEvaluation',
       ]);
     });
 
@@ -91,10 +93,10 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
       const targetPath = testDataPath;
       const mockTaintResult = mockTaintAnalysisResult();
 
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
-        .mockResolvedValue(mockTaintResult);
+      jest.spyOn(orchestrator as any, 'executeTaintAnalysis').mockResolvedValue(mockTaintResult);
 
-      const intentExtractionSpy = jest.spyOn(orchestrator as any, 'executeIntentExtraction')
+      const intentExtractionSpy = jest
+        .spyOn(orchestrator as any, 'executeIntentExtraction')
         .mockResolvedValue(mockIntentAnalysisResult());
 
       // Act
@@ -115,12 +117,13 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
       const mockTaintResult = mockTaintAnalysisResult();
       const mockIntentResult = mockIntentAnalysisResult();
 
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
-        .mockResolvedValue(mockTaintResult);
-      jest.spyOn(orchestrator as any, 'executeIntentExtraction')
+      jest.spyOn(orchestrator as any, 'executeTaintAnalysis').mockResolvedValue(mockTaintResult);
+      jest
+        .spyOn(orchestrator as any, 'executeIntentExtraction')
         .mockResolvedValue(mockIntentResult);
 
-      const gapDetectionSpy = jest.spyOn(orchestrator as any, 'executeGapDetection')
+      const gapDetectionSpy = jest
+        .spyOn(orchestrator as any, 'executeGapDetection')
         .mockResolvedValue(mockGapAnalysisResult());
 
       // Act
@@ -140,14 +143,16 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
       const targetPath = testDataPath;
       const mockGapResult = mockGapAnalysisResult();
 
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
+      jest
+        .spyOn(orchestrator as any, 'executeTaintAnalysis')
         .mockResolvedValue(mockTaintAnalysisResult());
-      jest.spyOn(orchestrator as any, 'executeIntentExtraction')
+      jest
+        .spyOn(orchestrator as any, 'executeIntentExtraction')
         .mockResolvedValue(mockIntentAnalysisResult());
-      jest.spyOn(orchestrator as any, 'executeGapDetection')
-        .mockResolvedValue(mockGapResult);
+      jest.spyOn(orchestrator as any, 'executeGapDetection').mockResolvedValue(mockGapResult);
 
-      const nistEvaluationSpy = jest.spyOn(orchestrator as any, 'executeNistEvaluation')
+      const nistEvaluationSpy = jest
+        .spyOn(orchestrator as any, 'executeNistEvaluation')
         .mockResolvedValue(mockNistEvaluationResult());
 
       // Act
@@ -168,35 +173,38 @@ describe('UnifiedSecurityAnalysisOrchestrator', () => {
       const nonExistentPath = '/non/existent/path';
 
       // Act & Assert
-      await expect(orchestrator.analyzeTestDirectory(nonExistentPath))
-        .rejects
-        .toThrow('指定されたパスが存在しません');
+      await expect(orchestrator.analyzeTestDirectory(nonExistentPath)).rejects.toThrow(
+        '指定されたパスが存在しません'
+      );
     });
 
     it('TaintTyper実行時のエラーが適切にハンドリングされる', async () => {
       // Arrange
       const targetPath = testDataPath;
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
+      jest
+        .spyOn(orchestrator as any, 'executeTaintAnalysis')
         .mockRejectedValue(new Error('TaintTyper実行エラー'));
 
       // Act & Assert
-      await expect(orchestrator.analyzeTestDirectory(targetPath))
-        .rejects
-        .toThrow('統合分析中にエラーが発生しました: TaintTyper実行エラー');
+      await expect(orchestrator.analyzeTestDirectory(targetPath)).rejects.toThrow(
+        '統合分析中にエラーが発生しました: TaintTyper実行エラー'
+      );
     });
 
     it('意図抽出実行時のエラーが適切にハンドリングされる', async () => {
       // Arrange
       const targetPath = testDataPath;
-      jest.spyOn(orchestrator as any, 'executeTaintAnalysis')
+      jest
+        .spyOn(orchestrator as any, 'executeTaintAnalysis')
         .mockResolvedValue(mockTaintAnalysisResult());
-      jest.spyOn(orchestrator as any, 'executeIntentExtraction')
+      jest
+        .spyOn(orchestrator as any, 'executeIntentExtraction')
         .mockRejectedValue(new Error('意図抽出エラー'));
 
       // Act & Assert
-      await expect(orchestrator.analyzeTestDirectory(targetPath))
-        .rejects
-        .toThrow('統合分析中にエラーが発生しました: 意図抽出エラー');
+      await expect(orchestrator.analyzeTestDirectory(targetPath)).rejects.toThrow(
+        '統合分析中にエラーが発生しました: 意図抽出エラー'
+      );
     });
   });
 
@@ -256,7 +264,9 @@ function setupTestProject(): void {
   const testPath = path.resolve(__dirname, '../fixtures/test-project');
   if (!fs.existsSync(testPath)) {
     fs.mkdirSync(testPath, { recursive: true });
-    fs.writeFileSync(path.join(testPath, 'example.test.ts'), `
+    fs.writeFileSync(
+      path.join(testPath, 'example.test.ts'),
+      `
 describe('Example', () => {
   it('should work', () => {
     const userInput = getUserInput(); // Taint source
@@ -264,7 +274,8 @@ describe('Example', () => {
     expect(true).toBe(true);
   });
 });
-`);
+`
+    );
   }
 }
 
@@ -277,70 +288,78 @@ function cleanupTestProject(): void {
 
 function mockTaintAnalysisResult(): TaintAnalysisResult {
   return {
-    vulnerabilities: [{
-      id: 'test-vuln-1',
-      type: 'SQL_INJECTION',
-      severity: 'HIGH',
-      source: { file: 'example.test.ts', line: 3, column: 23 },
-      sink: { file: 'example.test.ts', line: 4, column: 5 },
-      dataFlow: ['getUserInput', 'database.query']
-    }],
+    vulnerabilities: [
+      {
+        id: 'test-vuln-1',
+        type: 'SQL_INJECTION',
+        severity: 'HIGH',
+        source: { file: 'example.test.ts', line: 3, column: 23 },
+        sink: { file: 'example.test.ts', line: 4, column: 5 },
+        dataFlow: ['getUserInput', 'database.query'],
+      },
+    ],
     summary: {
       totalVulnerabilities: 1,
       highSeverity: 1,
       mediumSeverity: 0,
-      lowSeverity: 0
-    }
+      lowSeverity: 0,
+    },
   };
 }
 
 function mockIntentAnalysisResult(): IntentAnalysisResult {
   return {
-    testIntents: [{
-      testName: 'should work',
-      expectedBehavior: 'データベース操作が正常に動作すること',
-      securityRequirements: ['入力値のサニタイズ', 'SQLインジェクション対策'],
-      riskLevel: 'HIGH'
-    }],
+    testIntents: [
+      {
+        testName: 'should work',
+        expectedBehavior: 'データベース操作が正常に動作すること',
+        securityRequirements: ['入力値のサニタイズ', 'SQLインジェクション対策'],
+        riskLevel: 'HIGH',
+      },
+    ],
     summary: {
       totalTests: 1,
       highRiskTests: 1,
       mediumRiskTests: 0,
-      lowRiskTests: 0
-    }
+      lowRiskTests: 0,
+    },
   };
 }
 
 function mockGapAnalysisResult(): GapAnalysisResult {
   return {
-    gaps: [{
-      testName: 'should work',
-      intention: '入力値のサニタイズ',
-      actualImplementation: 'サニタイズ処理なし',
-      riskLevel: 'HIGH',
-      recommendations: ['入力値検証の追加', 'パラメータ化クエリの使用']
-    }],
+    gaps: [
+      {
+        testName: 'should work',
+        intention: '入力値のサニタイズ',
+        actualImplementation: 'サニタイズ処理なし',
+        riskLevel: 'HIGH',
+        recommendations: ['入力値検証の追加', 'パラメータ化クエリの使用'],
+      },
+    ],
     summary: {
       totalGaps: 1,
       criticalGaps: 0,
       highGaps: 1,
       mediumGaps: 0,
-      lowGaps: 0
-    }
+      lowGaps: 0,
+    },
   };
 }
 
 function mockNistEvaluationResult(): NistEvaluationResult {
   return {
-    riskAssessments: [{
-      gapId: 'gap-1',
-      threatLevel: 'HIGH',
-      vulnerabilityLevel: 'HIGH',
-      impactLevel: 'HIGH',
-      overallRisk: 'HIGH',
-      nistScore: 85,
-      recommendations: ['即座にサニタイズ処理を実装', 'セキュリティテストの追加']
-    }],
+    riskAssessments: [
+      {
+        gapId: 'gap-1',
+        threatLevel: 'HIGH',
+        vulnerabilityLevel: 'HIGH',
+        impactLevel: 'HIGH',
+        overallRisk: 'HIGH',
+        nistScore: 85,
+        recommendations: ['即座にサニタイズ処理を実装', 'セキュリティテストの追加'],
+      },
+    ],
     summary: {
       overallScore: 15, // 100 - 85
       riskLevel: 'HIGH',
@@ -348,7 +367,7 @@ function mockNistEvaluationResult(): NistEvaluationResult {
       criticalRisks: 0,
       highRisks: 1,
       mediumRisks: 0,
-      lowRisks: 0
-    }
+      lowRisks: 0,
+    },
   };
 }

@@ -1,7 +1,7 @@
 /**
  * AI Output Legacy Adapter
  * v0.9.0 - Issue #64: 後方互換性のためのアダプター
- * 
+ *
  * 既存のai-outputディレクトリの機能を新しいUnifiedReportEngineに橋渡し
  * SOLID原則: アダプターパターンによる既存コードの保護
  * DRY原則: 新しいシステムへの委譲
@@ -24,10 +24,9 @@ export class UnifiedAIFormatter {
 
   constructor() {
     console.warn(
-      'UnifiedAIFormatter is deprecated. ' +
-      'Use UnifiedReportEngine with AIJsonFormatter instead.'
+      'UnifiedAIFormatter is deprecated. ' + 'Use UnifiedReportEngine with AIJsonFormatter instead.'
     );
-    
+
     this.engine = new UnifiedReportEngine();
     this.formatter = new AIJsonFormatter();
     this.engine.setStrategy(this.formatter);
@@ -37,7 +36,7 @@ export class UnifiedAIFormatter {
    * レガシーAPIのformat メソッド
    */
   async format(
-    result: UnifiedAnalysisResult, 
+    result: UnifiedAnalysisResult,
     options?: UnifiedAIFormatterOptions
   ): Promise<AIJsonOutput> {
     const report = await this.engine.generate(result, options);
@@ -47,10 +46,7 @@ export class UnifiedAIFormatter {
   /**
    * レガシーAPIのformatSync メソッド
    */
-  formatSync(
-    result: UnifiedAnalysisResult, 
-    options?: UnifiedAIFormatterOptions
-  ): AIJsonOutput {
+  formatSync(result: UnifiedAnalysisResult, options?: UnifiedAIFormatterOptions): AIJsonOutput {
     const report = this.engine.generate(result, options);
     return report as any;
   }
@@ -65,7 +61,7 @@ export class UnifiedAIFormatterBase extends UnifiedAIFormatter {
     super();
     console.warn(
       'UnifiedAIFormatterBase is deprecated. ' +
-      'Use UnifiedReportEngine with AIJsonFormatter instead.'
+        'Use UnifiedReportEngine with AIJsonFormatter instead.'
     );
   }
 }
@@ -79,9 +75,9 @@ export class UnifiedAIFormatterOptimized extends UnifiedAIFormatter {
     super();
     console.warn(
       'UnifiedAIFormatterOptimized is deprecated. ' +
-      'Use UnifiedReportEngine with CachingStrategy instead.'
+        'Use UnifiedReportEngine with CachingStrategy instead.'
     );
-    
+
     // キャッシュ戦略を適用
     const cached = new CachingStrategy(this.formatter);
     this.engine.setStrategy(cached);
@@ -97,9 +93,9 @@ export class UnifiedAIFormatterParallel extends UnifiedAIFormatter {
     super();
     console.warn(
       'UnifiedAIFormatterParallel is deprecated. ' +
-      'Use UnifiedReportEngine with ParallelStrategy instead.'
+        'Use UnifiedReportEngine with ParallelStrategy instead.'
     );
-    
+
     // 並列処理戦略を適用
     const parallel = new ParallelStrategy(this.formatter);
     this.engine.setStrategy(parallel);

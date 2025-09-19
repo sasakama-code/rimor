@@ -19,19 +19,19 @@ describe('Type Safety Verification', () => {
       target: ts.ScriptTarget.ES2020,
       module: ts.ModuleKind.CommonJS,
       moduleResolution: ts.ModuleResolutionKind.NodeJs,
-      noResolve: true
+      noResolve: true,
     };
 
     const host = ts.createCompilerHost(options);
     const originalGetSourceFile = host.getSourceFile;
     const originalFileExists = host.fileExists;
     const originalReadFile = host.readFile;
-    
+
     host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
       // Normalize the file name
       const normalizedName = fileName.replace(/\\/g, '/');
       const baseName = path.basename(normalizedName);
-      
+
       if (files[baseName] !== undefined) {
         return ts.createSourceFile(fileName, files[baseName], languageVersion, true);
       }
@@ -51,10 +51,12 @@ describe('Type Safety Verification', () => {
     host.fileExists = (fileName: string): boolean => {
       const normalizedName = fileName.replace(/\\/g, '/');
       const baseName = path.basename(normalizedName);
-      return files[baseName] !== undefined || 
-             files[normalizedName] !== undefined ||
-             (normalizedName.endsWith('/types') && files['types.ts'] !== undefined) ||
-             originalFileExists(fileName);
+      return (
+        files[baseName] !== undefined ||
+        files[normalizedName] !== undefined ||
+        (normalizedName.endsWith('/types') && files['types.ts'] !== undefined) ||
+        originalFileExists(fileName)
+      );
     };
 
     host.readFile = (fileName: string): string | undefined => {
@@ -76,7 +78,7 @@ describe('Type Safety Verification', () => {
     const diagnostics = [
       ...program.getSemanticDiagnostics(),
       ...program.getSyntacticDiagnostics(),
-      ...program.getDeclarationDiagnostics()
+      ...program.getDeclarationDiagnostics(),
     ];
     return diagnostics;
   };
@@ -207,12 +209,12 @@ describe('Type Safety Verification', () => {
             extends?: string;
             references?: Array<{ path: string }>;
           }
-        `
+        `,
       };
 
       const program = createProgram(files);
       const diagnostics = getDiagnostics(program);
-      
+
       const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
       expect(errors).toHaveLength(0);
     });
@@ -316,12 +318,12 @@ describe('Type Safety Verification', () => {
             helpful: boolean;
             comment?: string;
           }
-        `
+        `,
       };
 
       const program = createProgram(files);
       const diagnostics = getDiagnostics(program);
-      
+
       const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
       expect(errors).toHaveLength(0);
     });
@@ -346,7 +348,7 @@ describe('Type Safety Verification', () => {
             metadata: any; // This should cause an error in strict mode
             config: any; // This should cause an error in strict mode
           }
-        `
+        `,
       };
 
       const filesWithoutAny = {
@@ -357,24 +359,23 @@ describe('Type Safety Verification', () => {
             metadata: Record<string, unknown>;
             config: Record<string, unknown>;
           }
-        `
+        `,
       };
 
       // Test with any - should have errors
       const programWithAny = createProgram(filesWithAny);
       const diagnosticsWithAny = getDiagnostics(programWithAny);
       const errorsWithAny = diagnosticsWithAny.filter(
-        d => d.category === ts.DiagnosticCategory.Error && 
-        d.code === 7006 // Parameter implicitly has an 'any' type
+        d => d.category === ts.DiagnosticCategory.Error && d.code === 7006 // Parameter implicitly has an 'any' type
       );
-      
+
       // Test without any - should have no errors
       const programWithoutAny = createProgram(filesWithoutAny);
       const diagnosticsWithoutAny = getDiagnostics(programWithoutAny);
       const errorsWithoutAny = diagnosticsWithoutAny.filter(
         d => d.category === ts.DiagnosticCategory.Error
       );
-      
+
       expect(errorsWithoutAny).toHaveLength(0);
     });
   });
@@ -386,15 +387,15 @@ describe('Type Safety Verification', () => {
       const pluginTypes = ['IPlugin', 'ITestQualityPlugin', 'PluginResult'];
       const analysisTypes = ['DetectionResult', 'QualityScore', 'Evidence'];
       const domainTypes = ['DomainDictionary', 'DomainTerm', 'BusinessRule'];
-      
+
       // Each group should be in its own module
       const expectedStructure = {
         'base-types.ts': baseTypes,
         'plugin-interface.ts': pluginTypes,
         'analysis-result.ts': analysisTypes,
-        'domain-dictionary.ts': domainTypes
+        'domain-dictionary.ts': domainTypes,
       };
-      
+
       // This test verifies the expected structure exists
       // In actual implementation, we'll verify the files exist and contain the expected exports
       expect(expectedStructure).toBeDefined();
@@ -405,30 +406,30 @@ describe('Type Safety Verification', () => {
     it('should not have circular dependencies between type modules', () => {
       // This test would verify that there are no circular imports
       // between the split type files
-      
+
       const imports = {
         'base-types.ts': [],
         'plugin-interface.ts': ['base-types'],
         'analysis-result.ts': ['base-types'],
         'quality-score.ts': ['base-types'],
-        'domain-dictionary.ts': ['base-types']
+        'domain-dictionary.ts': ['base-types'],
       };
-      
+
       // Simple check for circular dependencies
       const checkCircular = (module: string, visited: Set<string> = new Set()): boolean => {
         if (visited.has(module)) return true;
         visited.add(module);
-        
+
         const deps = imports[module as keyof typeof imports] || [];
         for (const dep of deps) {
           if (checkCircular(dep + '.ts', new Set(visited))) {
             return true;
           }
         }
-        
+
         return false;
       };
-      
+
       for (const module of Object.keys(imports)) {
         expect(checkCircular(module)).toBe(false);
       }

@@ -1,6 +1,6 @@
 /**
  * ワーカー関連の統一型定義
- * 
+ *
  * 並列処理とワーカープールの型定義を集約
  * KISS原則に基づいたシンプルな設計
  */
@@ -8,22 +8,22 @@
 /**
  * ワーカーの状態
  */
-export type WorkerStatus = 
-  | 'IDLE'          // アイドル
-  | 'BUSY'          // 処理中
-  | 'TERMINATING'   // 終了中
-  | 'TERMINATED'    // 終了済み
-  | 'ERROR';        // エラー
+export type WorkerStatus =
+  | 'IDLE' // アイドル
+  | 'BUSY' // 処理中
+  | 'TERMINATING' // 終了中
+  | 'TERMINATED' // 終了済み
+  | 'ERROR'; // エラー
 
 /**
  * タスクの状態
  */
-export type TaskStatus = 
-  | 'PENDING'       // 待機中
-  | 'RUNNING'       // 実行中
-  | 'COMPLETED'     // 完了
-  | 'FAILED'        // 失敗
-  | 'CANCELLED';    // キャンセル
+export type TaskStatus =
+  | 'PENDING' // 待機中
+  | 'RUNNING' // 実行中
+  | 'COMPLETED' // 完了
+  | 'FAILED' // 失敗
+  | 'CANCELLED'; // キャンセル
 
 /**
  * タスクの優先度
@@ -152,7 +152,7 @@ export interface WorkerPoolStats {
  */
 export interface WorkerPoolEvent {
   /** イベントタイプ */
-  type: 
+  type:
     | 'WORKER_CREATED'
     | 'WORKER_TERMINATED'
     | 'TASK_STARTED'
@@ -214,7 +214,8 @@ export interface TaskRegistry {
  * 型ガード: WorkerTaskかどうかを判定
  */
 export function isWorkerTask(obj: unknown): obj is WorkerTask {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'id' in obj &&
     'type' in obj &&
@@ -223,21 +224,24 @@ export function isWorkerTask(obj: unknown): obj is WorkerTask {
     typeof (obj as any).id === 'string' &&
     typeof (obj as any).type === 'string' &&
     (obj as any).payload !== undefined &&
-    typeof (obj as any).createdAt === 'string');
+    typeof (obj as any).createdAt === 'string'
+  );
 }
 
 /**
  * 型ガード: TaskResultかどうかを判定
  */
 export function isTaskResult(obj: unknown): obj is TaskResult {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'taskId' in obj &&
     'success' in obj &&
     'executionTime' in obj &&
     typeof (obj as any).taskId === 'string' &&
     typeof (obj as any).success === 'boolean' &&
-    typeof (obj as any).executionTime === 'number');
+    typeof (obj as any).executionTime === 'number'
+  );
 }
 
 /**
@@ -245,9 +249,9 @@ export function isTaskResult(obj: unknown): obj is TaskResult {
  */
 export function taskPriorityToNumber(priority: TaskPriority): number {
   const mapping: Record<TaskPriority, number> = {
-    'HIGH': 3,
-    'NORMAL': 2,
-    'LOW': 1
+    HIGH: 3,
+    NORMAL: 2,
+    LOW: 1,
   };
   return mapping[priority] || 2;
 }

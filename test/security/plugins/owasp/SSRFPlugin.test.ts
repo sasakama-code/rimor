@@ -45,16 +45,14 @@ describe('SSRFPlugin', () => {
 
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
-    expect(plugin.cweIds).toEqual([
-      'CWE-918', 'CWE-611', 'CWE-441'
-    ]);
+    expect(plugin.cweIds).toEqual(['CWE-918', 'CWE-611', 'CWE-441']);
   });
 
   describe('isApplicable', () => {
     // ステップ8: HTTPクライアントライブラリがある場合
     it('should return true when HTTP client libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['axios', 'node-fetch']
+        dependencies: ['axios', 'node-fetch'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -62,7 +60,7 @@ describe('SSRFPlugin', () => {
     // ステップ9: URLパーサーライブラリがある場合
     it('should return true when URL parser libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['url-parse', 'whatwg-url']
+        dependencies: ['url-parse', 'whatwg-url'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -74,8 +72,8 @@ describe('SSRFPlugin', () => {
         filePatterns: {
           source: ['src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -91,11 +89,13 @@ describe('SSRFPlugin', () => {
             const url = 'http://169.254.169.254/latest/meta-data/';
             expect(() => makeRequest(url)).toThrow('Invalid URL');
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const ssrfPattern = patterns.find(p => p.patternId && p.patternId.includes('ssrf-prevention'));
+      const ssrfPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('ssrf-prevention')
+      );
       expect(ssrfPattern).toBeDefined();
     });
 
@@ -110,11 +110,13 @@ describe('SSRFPlugin', () => {
               expect(isAllowedUrl(allowedUrl)).toBe(true);
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const validationPattern = patterns.find(p => p.patternId && p.patternId.includes('url-validation'));
+      const validationPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('url-validation')
+      );
       expect(validationPattern).toBeDefined();
     });
 
@@ -127,11 +129,13 @@ describe('SSRFPlugin', () => {
             const data = fetchData(userProvidedUrl);
             expect(data).toBeDefined();
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-ssrf-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-ssrf-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -140,9 +144,21 @@ describe('SSRFPlugin', () => {
     // ステップ14: 高品質スコアの評価
     it('should return high score when SSRF tests exist', () => {
       const patterns = [
-        { patternId: 'ssrf-ssrf-prevention', metadata: { hasTest: true, testType: 'ssrf-prevention' }, confidence: 0.9 },
-        { patternId: 'ssrf-url-validation', metadata: { hasTest: true, testType: 'url-validation' }, confidence: 0.9 },
-        { patternId: 'ssrf-allowlist', metadata: { hasTest: true, testType: 'allowlist' }, confidence: 0.85 }
+        {
+          patternId: 'ssrf-ssrf-prevention',
+          metadata: { hasTest: true, testType: 'ssrf-prevention' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'ssrf-url-validation',
+          metadata: { hasTest: true, testType: 'url-validation' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'ssrf-allowlist',
+          metadata: { hasTest: true, testType: 'allowlist' },
+          confidence: 0.85,
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -154,7 +170,7 @@ describe('SSRFPlugin', () => {
     it('should return low score when SSRF tests are missing', () => {
       const patterns = [
         { patternId: 'missing-ssrf-prevention', metadata: { hasTest: false }, confidence: 0.9 },
-        { patternId: 'missing-ssrf-validation', metadata: { hasTest: false }, confidence: 0.9 }
+        { patternId: 'missing-ssrf-validation', metadata: { hasTest: false }, confidence: 0.9 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -174,8 +190,8 @@ describe('SSRFPlugin', () => {
           strengths: [],
           weaknesses: ['SSRF対策不足'],
           suggestions: ['URL検証を追加'],
-          coverage: 0.3
-        }
+          coverage: 0.3,
+        },
       };
 
       const improvements = plugin.suggestImprovements(lowScore);
@@ -194,7 +210,7 @@ describe('SSRFPlugin', () => {
             const internalUrl = 'http://192.168.1.1/admin';
             expect(isBlockedUrl(internalUrl)).toBe(true);
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -229,7 +245,7 @@ describe('SSRFPlugin', () => {
     it('should generate SSRF security test code', () => {
       const context: ProjectContext = {
         dependencies: ['axios', 'express'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

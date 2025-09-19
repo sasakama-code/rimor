@@ -42,9 +42,9 @@ describe('統一TaintAnalysisResult型の仕様', () => {
           criticalFlows: 0,
           highRiskFlows: 0,
           mediumRiskFlows: 0,
-          lowRiskFlows: 0
+          lowRiskFlows: 0,
         },
-        recommendations: []
+        recommendations: [],
       };
 
       expect(result.flows).toBeDefined();
@@ -77,18 +77,20 @@ describe('統一TaintAnalysisResult型の仕様', () => {
       const result: TaintAnalysisResultWithViolations = {
         flows: [],
         summary: { totalFlows: 0 },
-        violations: [{
-          type: 'TAINT_FLOW',
-          severity: 'HIGH',
-          source: 'userInput',
-          sink: 'database',
-          description: 'Potential SQL injection',
-          location: {
-            file: 'src/api/users.ts',
-            line: 42
-          }
-        }],
-        recommendations: ['Sanitize user input', 'Use parameterized queries']
+        violations: [
+          {
+            type: 'TAINT_FLOW',
+            severity: 'HIGH',
+            source: 'userInput',
+            sink: 'database',
+            description: 'Potential SQL injection',
+            location: {
+              file: 'src/api/users.ts',
+              line: 42,
+            },
+          },
+        ],
+        recommendations: ['Sanitize user input', 'Use parameterized queries'],
       };
 
       expect(result.violations).toHaveLength(1);
@@ -122,8 +124,8 @@ describe('統一TaintAnalysisResult型の仕様', () => {
           taintedProperties: ['userInput', 'queryParam'],
           untaintedProperties: ['sanitizedData'],
           polyTaintMethods: ['processData'],
-          suppressedMethods: ['internalMethod']
-        }
+          suppressedMethods: ['internalMethod'],
+        },
       };
 
       expect(result.annotations?.taintedProperties).toContain('userInput');
@@ -153,8 +155,8 @@ describe('統一TaintAnalysisResult型の仕様', () => {
           filesAnalyzed: 10,
           methodsAnalyzed: 50,
           coverage: 85.5,
-          falsePositiveRate: 5.2
-        }
+          falsePositiveRate: 5.2,
+        },
       };
 
       expect(result.metrics?.coverage).toBe(85.5);
@@ -181,13 +183,15 @@ describe('統一TaintAnalysisResult型の仕様', () => {
         flows: [],
         summary: { totalFlows: 0 },
         recommendations: [],
-        improvements: [{
-          category: 'INPUT_VALIDATION',
-          priority: 'HIGH',
-          description: 'Add input validation for user parameters',
-          estimatedEffort: 'LOW',
-          impact: 'HIGH'
-        }]
+        improvements: [
+          {
+            category: 'INPUT_VALIDATION',
+            priority: 'HIGH',
+            description: 'Add input validation for user parameters',
+            estimatedEffort: 'LOW',
+            impact: 'HIGH',
+          },
+        ],
       };
 
       expect(result.improvements?.[0].category).toBe('INPUT_VALIDATION');
@@ -198,64 +202,82 @@ describe('統一TaintAnalysisResult型の仕様', () => {
   describe('型ガード', () => {
     it('isTaintAnalysisResult型ガードが正しく動作すること', () => {
       const isTaintAnalysisResult = (obj: any): boolean => {
-        return obj !== null &&
+        return (
+          obj !== null &&
           obj !== undefined &&
           typeof obj === 'object' &&
           Array.isArray(obj.flows) &&
           obj.summary &&
           typeof obj.summary === 'object' &&
           typeof obj.summary.totalFlows === 'number' &&
-          Array.isArray(obj.recommendations);
+          Array.isArray(obj.recommendations)
+        );
       };
 
-      expect(isTaintAnalysisResult({
-        flows: [],
-        summary: { totalFlows: 0 },
-        recommendations: []
-      })).toBe(true);
+      expect(
+        isTaintAnalysisResult({
+          flows: [],
+          summary: { totalFlows: 0 },
+          recommendations: [],
+        })
+      ).toBe(true);
 
-      expect(isTaintAnalysisResult({
-        flows: [],
-        summary: { totalFlows: 0 }
-        // recommendationsが欠けている
-      })).toBe(false);
+      expect(
+        isTaintAnalysisResult({
+          flows: [],
+          summary: { totalFlows: 0 },
+          // recommendationsが欠けている
+        })
+      ).toBe(false);
 
-      expect(isTaintAnalysisResult({
-        flows: 'not-array', // 型が違う
-        summary: { totalFlows: 0 },
-        recommendations: []
-      })).toBe(false);
+      expect(
+        isTaintAnalysisResult({
+          flows: 'not-array', // 型が違う
+          summary: { totalFlows: 0 },
+          recommendations: [],
+        })
+      ).toBe(false);
 
       expect(isTaintAnalysisResult(null)).toBe(false);
     });
 
     it('hasSecurityViolations型ガードが正しく動作すること', () => {
       const hasSecurityViolations = (obj: any): boolean => {
-        return obj &&
+        return (
+          obj &&
           obj.violations &&
           Array.isArray(obj.violations) &&
-          obj.violations.every((v: any) => 
-            v.type && v.severity && v.source && v.sink && v.description
-          );
+          obj.violations.every(
+            (v: any) => v.type && v.severity && v.source && v.sink && v.description
+          )
+        );
       };
 
-      expect(hasSecurityViolations({
-        violations: [{
-          type: 'TAINT_FLOW',
-          severity: 'HIGH',
-          source: 'input',
-          sink: 'output',
-          description: 'test'
-        }]
-      })).toBe(true);
+      expect(
+        hasSecurityViolations({
+          violations: [
+            {
+              type: 'TAINT_FLOW',
+              severity: 'HIGH',
+              source: 'input',
+              sink: 'output',
+              description: 'test',
+            },
+          ],
+        })
+      ).toBe(true);
 
-      expect(hasSecurityViolations({
-        violations: []
-      })).toBe(true); // 空配列もOK
+      expect(
+        hasSecurityViolations({
+          violations: [],
+        })
+      ).toBe(true); // 空配列もOK
 
-      expect(hasSecurityViolations({
-        violations: [{ type: 'INVALID' }] // 必須フィールドが欠けている
-      })).toBe(false);
+      expect(
+        hasSecurityViolations({
+          violations: [{ type: 'INVALID' }], // 必須フィールドが欠けている
+        })
+      ).toBe(false);
     });
   });
 
@@ -267,33 +289,35 @@ describe('統一TaintAnalysisResult型の仕様', () => {
         summary: { totalFlows: 0 },
         recommendations: [],
         taintedProperties: ['input1'],
-        untaintedProperties: ['safe1']
+        untaintedProperties: ['safe1'],
       };
 
       // フロー分析ベースの結果
       const flowResult = {
-        flows: [{
-          id: 'flow1',
-          source: 'userInput',
-          sink: 'database',
-          path: ['method1', 'method2'],
-          severity: 'HIGH' as const
-        }],
+        flows: [
+          {
+            id: 'flow1',
+            source: 'userInput',
+            sink: 'database',
+            path: ['method1', 'method2'],
+            severity: 'HIGH' as const,
+          },
+        ],
         summary: { totalFlows: 1 },
-        recommendations: ['Use prepared statements']
+        recommendations: ['Use prepared statements'],
       };
 
       // 統合関数のシミュレーション
       function mergeTaintResults(results: any[]): any {
         const mergedFlows = results.flatMap(r => r.flows || []);
         const mergedRecommendations = [...new Set(results.flatMap(r => r.recommendations || []))];
-        
+
         return {
           flows: mergedFlows,
           summary: {
-            totalFlows: mergedFlows.length
+            totalFlows: mergedFlows.length,
           },
-          recommendations: mergedRecommendations
+          recommendations: mergedRecommendations,
         };
       }
 
@@ -331,21 +355,21 @@ describe('統一TaintAnalysisResult型の仕様', () => {
             summary: old.overallMetrics || { totalFlows: 0 },
             violations: old.violations || [],
             improvements: old.improvements || [],
-            recommendations: []
+            recommendations: [],
           };
         } else {
           // OldFormat1からの変換
           return {
             flows: old.flows || [],
             summary: old.summary || { totalFlows: 0 },
-            recommendations: []
+            recommendations: [],
           };
         }
       }
 
       const old1: OldFormat1 = {
         flows: [{ id: 'test' }],
-        summary: { totalFlows: 1 }
+        summary: { totalFlows: 1 },
       };
 
       const unified = toUnifiedTaintResult(old1);
@@ -369,7 +393,7 @@ describe('統一TaintAnalysisResult型の仕様', () => {
       const result: SecurityTaintResult = {
         flows: [],
         summary: { totalFlows: 0 },
-        recommendations: []
+        recommendations: [],
       };
 
       // 同じ型として扱える

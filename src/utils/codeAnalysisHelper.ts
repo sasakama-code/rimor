@@ -57,7 +57,7 @@ export class CodeAnalysisHelper {
     return {
       filePath,
       content,
-      lines
+      lines,
     };
   }
 
@@ -68,12 +68,12 @@ export class CodeAnalysisHelper {
     lines.forEach((line, index) => {
       let match;
       const regex = new RegExp(pattern.source, pattern.flags || 'g');
-      
+
       while ((match = regex.exec(line)) !== null) {
         patterns.push({
           line: index + 1,
           column: match.index,
-          match: match[0]
+          match: match[0],
         });
       }
     });
@@ -83,25 +83,24 @@ export class CodeAnalysisHelper {
 
   findAssertions(fileContent: ParsedFile): Assertion[] {
     const assertions: Assertion[] = [];
-    const assertionPatterns = [
-      /expect\(/g,
-      /assert\./g,
-      /should\(/g
-    ];
+    const assertionPatterns = [/expect\(/g, /assert\./g, /should\(/g];
 
     assertionPatterns.forEach(pattern => {
       const matches = this.findPatterns(fileContent, pattern);
       matches.forEach(match => {
-        const type = pattern.source.includes('expect') ? 'expect' :
-                     pattern.source.includes('assert') ? 'assert' : 'should';
-        
+        const type = pattern.source.includes('expect')
+          ? 'expect'
+          : pattern.source.includes('assert')
+            ? 'assert'
+            : 'should';
+
         assertions.push({
           type,
           location: {
             file: fileContent.filePath,
             line: match.line,
-            column: match.column
-          }
+            column: match.column,
+          },
         });
       });
     });
@@ -116,32 +115,32 @@ export class CodeAnalysisHelper {
     // Find describe blocks
     const describePattern = /describe\s*\(\s*['"`]([^'"`]+)['"`]/g;
     const describeMatches = this.findPatterns(fileContent, describePattern);
-    
+
     describeMatches.forEach(match => {
       const nameMatch = match.match.match(/['"`]([^'"`]+)['"`]/);
       describes.push({
         location: {
           file: fileContent.filePath,
           line: match.line,
-          column: match.column
+          column: match.column,
         },
-        name: nameMatch ? nameMatch[1] : 'Unknown'
+        name: nameMatch ? nameMatch[1] : 'Unknown',
       });
     });
 
     // Find it/test blocks
     const testPattern = /(it|test)\s*\(\s*['"`]([^'"`]+)['"`]/g;
     const testMatches = this.findPatterns(fileContent, testPattern);
-    
+
     testMatches.forEach(match => {
       const nameMatch = match.match.match(/['"`]([^'"`]+)['"`]/);
       tests.push({
         location: {
           file: fileContent.filePath,
           line: match.line,
-          column: match.column
+          column: match.column,
         },
-        name: nameMatch ? nameMatch[1] : 'Unknown'
+        name: nameMatch ? nameMatch[1] : 'Unknown',
       });
     });
 
@@ -150,7 +149,7 @@ export class CodeAnalysisHelper {
 
   analyzeComplexity(fileContent: ParsedFile): ComplexityMetrics {
     const content = fileContent.content;
-    
+
     // Count control flow statements for cyclomatic complexity
     const ifStatements = (content.match(/\bif\s*\(/g) || []).length;
     const elseStatements = (content.match(/\belse\s*[{]/g) || []).length;
@@ -158,18 +157,18 @@ export class CodeAnalysisHelper {
     const whileLoops = (content.match(/\bwhile\s*\(/g) || []).length;
     const switchCases = (content.match(/\bcase\s+/g) || []).length;
     const ternaryOps = (content.match(/\?[^:]*:/g) || []).length;
-    
-    const cyclomatic = 1 + ifStatements + elseStatements + forLoops + 
-                       whileLoops + switchCases + ternaryOps;
+
+    const cyclomatic =
+      1 + ifStatements + elseStatements + forLoops + whileLoops + switchCases + ternaryOps;
 
     // Calculate cognitive complexity (simplified)
-    const cognitive = ifStatements * 2 + elseStatements + forLoops * 3 + 
-                     whileLoops * 3 + switchCases;
+    const cognitive =
+      ifStatements * 2 + elseStatements + forLoops * 3 + whileLoops * 3 + switchCases;
 
     // Calculate nesting depth
     let maxNesting = 0;
     let currentNesting = 0;
-    
+
     for (const char of content) {
       if (char === '{') {
         currentNesting++;
@@ -182,7 +181,7 @@ export class CodeAnalysisHelper {
     return {
       cyclomatic,
       cognitive,
-      nesting: maxNesting
+      nesting: maxNesting,
     };
   }
 
@@ -191,15 +190,15 @@ export class CodeAnalysisHelper {
     const lines = fileContent.lines;
 
     const importPattern = /^import\s+(.+)\s+from\s+['"`]([^'"`]+)['"`]/;
-    
+
     lines.forEach(line => {
       const match = line.match(importPattern);
       if (match) {
         const importClause = match[1];
         const modulePath = match[2];
-        
+
         const importObj: Import = {
-          module: modulePath
+          module: modulePath,
         };
 
         if (importClause.startsWith('{')) {
@@ -231,7 +230,7 @@ export class CodeAnalysisHelper {
   ): Evidence {
     // Calculate confidence based on type and description
     let confidence = 0.5;
-    
+
     if (type === 'assertion' && description.includes('strong')) {
       confidence = 0.9;
     } else if (type === 'assertion' && description.includes('Exact')) {
@@ -245,7 +244,7 @@ export class CodeAnalysisHelper {
       description,
       location,
       code,
-      confidence
+      confidence,
     };
   }
 
@@ -254,14 +253,13 @@ export class CodeAnalysisHelper {
     const structures = this.findTestStructures(fileContent);
     const assertions = this.findAssertions(fileContent);
     const complexity = this.analyzeComplexity(fileContent);
-    
-    const codeLines = fileContent.lines.filter(line => 
-      line.trim() && !line.trim().startsWith('//')
+
+    const codeLines = fileContent.lines.filter(
+      line => line.trim() && !line.trim().startsWith('//')
     ).length;
 
-    const avgComplexityPerTest = structures.tests.length > 0 
-      ? complexity.cyclomatic / structures.tests.length 
-      : 0;
+    const avgComplexityPerTest =
+      structures.tests.length > 0 ? complexity.cyclomatic / structures.tests.length : 0;
 
     return {
       totalLines: fileContent.lines.length,
@@ -269,7 +267,7 @@ export class CodeAnalysisHelper {
       testCount: structures.tests.length,
       assertionCount: assertions.length,
       avgComplexityPerTest,
-      maxNestingDepth: complexity.nesting
+      maxNestingDepth: complexity.nesting,
     };
   }
 }

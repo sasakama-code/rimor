@@ -1,7 +1,7 @@
 /**
  * AnalyzeCommand Implementation Truth機能テスト
  * v0.9.0 AIコーディング時代の品質保証エンジン対応
- * 
+ *
  * TDDアプローチによるImplementation Truth機能の検証
  */
 
@@ -13,7 +13,9 @@ import { OutputFormatter } from '../../../src/cli/output';
 jest.mock('../../../src/core/UnifiedAnalysisEngine');
 jest.mock('../../../src/cli/output');
 
-const MockedUnifiedAnalysisEngine = UnifiedAnalysisEngine as jest.MockedClass<typeof UnifiedAnalysisEngine>;
+const MockedUnifiedAnalysisEngine = UnifiedAnalysisEngine as jest.MockedClass<
+  typeof UnifiedAnalysisEngine
+>;
 const MockedOutputFormatter = OutputFormatter as jest.MockedClass<typeof OutputFormatter>;
 
 describe('AnalyzeCommand - Implementation Truth機能', () => {
@@ -22,20 +24,20 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // UnifiedAnalysisEngineのモック
     mockUnifiedEngine = new MockedUnifiedAnalysisEngine() as jest.Mocked<UnifiedAnalysisEngine>;
     mockUnifiedEngine.analyzeWithImplementationTruth = jest.fn();
-    
+
     // OutputFormatterのモック
     MockedOutputFormatter.info = jest.fn().mockResolvedValue('info message');
     MockedOutputFormatter.success = jest.fn().mockResolvedValue('success message');
     MockedOutputFormatter.warning = jest.fn().mockResolvedValue('warning message');
     MockedOutputFormatter.error = jest.fn().mockResolvedValue('error message');
     MockedOutputFormatter.header = jest.fn().mockResolvedValue('header message');
-    
+
     analyzeCommand = new AnalyzeCommand();
-    
+
     // console.logをモック
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
@@ -62,8 +64,8 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
               vulnerabilities: [],
               securityMeasures: [],
               sensitiveDataHandling: [],
-              auditResults: []
-            }
+              auditResults: [],
+            },
           },
           vulnerabilities: [],
           structure: {
@@ -74,22 +76,22 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
               fanIn: 0,
               fanOut: 0,
               linesOfCode: 10,
-              duplicationRate: 0
+              duplicationRate: 0,
             },
             coverage: {
               lineCoverage: [],
               branchCoverage: [],
               functionCoverage: [],
-              conditionCoverage: []
+              conditionCoverage: [],
             },
-            criticalPaths: []
+            criticalPaths: [],
           },
           metadata: {
             engineVersion: '0.9.0',
             analysisTime: 100,
             confidence: 0.9,
-            warnings: []
-          }
+            warnings: [],
+          },
         },
         intentRealizationResults: [],
         summary: {
@@ -97,7 +99,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
           testFilesAnalyzed: 0,
           vulnerabilitiesDetected: 0,
           realizationScore: 85.0,
-          topRecommendations: []
+          topRecommendations: [],
         },
         totalGapsDetected: 0,
         highSeverityGaps: 0,
@@ -105,17 +107,19 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
         overallScore: 85.0,
         metadata: {
           executionTime: 100,
-          timestamp: '2025-01-01T00:00:00.000Z'
-        }
+          timestamp: '2025-01-01T00:00:00.000Z',
+        },
       };
 
-      mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockImplementationTruthResult as any);
+      mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(
+        mockImplementationTruthResult as any
+      );
 
       const options: AnalyzeOptions = {
         path: './test-src',
         implementationTruth: true,
         verbose: true,
-        format: 'json'
+        format: 'json',
       };
 
       // Act
@@ -134,21 +138,21 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const mockResult = {
         implementationTruth: {
           filePath: '/test/src',
-          vulnerabilities: []
+          vulnerabilities: [],
         },
         intentRealizationResults: [],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 1,
           testFilesAnalyzed: 0,
           vulnerabilitiesDetected: 0,
           realizationScore: 90.0,
-          topRecommendations: []
+          topRecommendations: [],
         },
         totalGapsDetected: 0,
         highSeverityGaps: 0,
         executionTime: 50,
         overallScore: 90.0,
-        metadata: { executionTime: 50 }
+        metadata: { executionTime: 50 },
       };
 
       mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockResult as any);
@@ -157,7 +161,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
         path: './src',
         productionCode: true,
         verbose: false,
-        format: 'text'
+        format: 'text',
       };
 
       // Act
@@ -172,18 +176,18 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const mockResult = {
         implementationTruth: { vulnerabilities: [] },
         intentRealizationResults: [],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 1,
           testFilesAnalyzed: 0,
           vulnerabilitiesDetected: 0,
           realizationScore: 95.0,
-          topRecommendations: []
+          topRecommendations: [],
         },
         totalGapsDetected: 0,
         highSeverityGaps: 0,
         executionTime: 75,
         overallScore: 95.0,
-        metadata: { executionTime: 75 }
+        metadata: { executionTime: 75 },
       };
 
       mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockResult as any);
@@ -191,7 +195,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         aiOutput: true,
-        format: 'ai-json'
+        format: 'ai-json',
       };
 
       // Act
@@ -215,23 +219,23 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
                 type: 'missing-assertion',
                 severity: 'medium',
                 description: 'アサーションが不足しています',
-                location: { line: 10, column: 5 }
-              }
-            ]
-          }
+                location: { line: 10, column: 5 },
+              },
+            ],
+          },
         ],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 1,
           testFilesAnalyzed: 1,
           vulnerabilitiesDetected: 0,
           realizationScore: 75.0,
-          topRecommendations: ['テストカバレッジを向上させてください']
+          topRecommendations: ['テストカバレッジを向上させてください'],
         },
         totalGapsDetected: 1,
         highSeverityGaps: 0,
         executionTime: 120,
         overallScore: 75.0,
-        metadata: { executionTime: 120 }
+        metadata: { executionTime: 120 },
       };
 
       mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockResult as any);
@@ -240,7 +244,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
         path: './src',
         implementationTruth: true,
         testPath: './test',
-        verbose: true
+        verbose: true,
       };
 
       // Act
@@ -268,9 +272,9 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
             totalFiles: 1,
             issues: [],
             executionTime: 50,
-            metadata: {}
-          })
-        })
+            metadata: {},
+          }),
+        }),
       };
 
       const analyzeCommandWithMockContainer = new AnalyzeCommand(mockContainer as any);
@@ -278,7 +282,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         implementationTruth: true,
-        verbose: true
+        verbose: true,
       };
 
       // Act
@@ -296,8 +300,8 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
 
       const mockContainer = {
         get: jest.fn().mockReturnValue({
-          analyze: jest.fn().mockResolvedValue({ totalFiles: 0, issues: [], executionTime: 0 })
-        })
+          analyze: jest.fn().mockResolvedValue({ totalFiles: 0, issues: [], executionTime: 0 }),
+        }),
       };
 
       const analyzeCommandWithMockContainer = new AnalyzeCommand(mockContainer as any);
@@ -305,16 +309,14 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         implementationTruth: true,
-        verbose: true
+        verbose: true,
       };
 
       // Act
       await analyzeCommandWithMockContainer.execute(options);
 
       // Assert
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Specific error message')
-      );
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Specific error message'));
     });
   });
 
@@ -328,9 +330,9 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
               type: 'sql-injection',
               severity: 'high',
               description: 'SQLインジェクションの脆弱性',
-              location: { file: 'src/db.ts', line: 42, column: 10 }
-            }
-          ]
+              location: { file: 'src/db.ts', line: 42, column: 10 },
+            },
+          ],
         },
         intentRealizationResults: [
           {
@@ -340,36 +342,41 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
                 type: 'missing-test',
                 severity: 'medium',
                 description: 'セキュリティテストが不足',
-                location: { line: 20, column: 5 }
-              }
-            ]
-          }
+                location: { line: 20, column: 5 },
+              },
+            ],
+          },
         ],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 1,
           testFilesAnalyzed: 1,
           vulnerabilitiesDetected: 1,
           realizationScore: 65.0,
-          topRecommendations: ['セキュリティテストを追加してください', '入力検証を実装してください']
+          topRecommendations: [
+            'セキュリティテストを追加してください',
+            '入力検証を実装してください',
+          ],
         },
         totalGapsDetected: 1,
         highSeverityGaps: 1,
         executionTime: 200,
         overallScore: 65.0,
-        metadata: { executionTime: 200 }
+        metadata: { executionTime: 200 },
       };
 
-      mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockImplementationTruthResult as any);
+      mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(
+        mockImplementationTruthResult as any
+      );
 
       const options: AnalyzeOptions = {
         path: './src',
         implementationTruth: true,
-        format: 'json'
+        format: 'json',
       };
 
       // Act & Assert
       await expect(analyzeCommand.execute(options)).resolves.not.toThrow();
-      
+
       // Implementation Truth結果が呼び出されたことを確認
       expect(mockUnifiedEngine.analyzeWithImplementationTruth).toHaveBeenCalled();
     });
@@ -381,18 +388,18 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const mockResult = {
         implementationTruth: { vulnerabilities: [] },
         intentRealizationResults: [],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 5,
           testFilesAnalyzed: 0,
           vulnerabilitiesDetected: 0,
           realizationScore: 95.0,
-          topRecommendations: []
+          topRecommendations: [],
         },
         totalGapsDetected: 0,
         highSeverityGaps: 0,
         executionTime: 150,
         overallScore: 95.0,
-        metadata: { executionTime: 150 }
+        metadata: { executionTime: 150 },
       };
 
       mockUnifiedEngine.analyzeWithImplementationTruth.mockResolvedValue(mockResult as any);
@@ -400,7 +407,7 @@ describe('AnalyzeCommand - Implementation Truth機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         implementationTruth: true,
-        verbose: true
+        verbose: true,
       };
 
       // Act

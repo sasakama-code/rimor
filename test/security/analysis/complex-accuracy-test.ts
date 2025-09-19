@@ -52,13 +52,18 @@ async function testComplexAccuracy() {
 
   console.log('📋 テストケース1: 複雑なデータフロー検出');
   try {
-    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(complexFlowCode, 'complex-flow.ts');
-    
+    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(
+      complexFlowCode,
+      'complex-flow.ts'
+    );
+
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
     console.log(`  ✅ 型制約数: ${analysisResult.constraints.length}`);
-    
+
     analysisResult.paths.forEach((path, index) => {
-      console.log(`    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`      リスクレベル: ${path.riskLevel}`);
       console.log(`      信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
       console.log(`      制約パス長: ${path.typeConstraintPath.length}`);
@@ -69,14 +74,13 @@ async function testComplexAccuracy() {
       analysisResult.constraints,
       analysisResult.typeInfoMap,
       [], // auto-detect sources
-      []  // auto-detect sinks
+      [] // auto-detect sinks
     );
-    
+
     const solutionResult = await solver.solve();
     console.log(`  ✅ 制約解決成功: ${solutionResult.success}`);
     console.log(`  ✅ 解決された変数数: ${solutionResult.solution.size}`);
     console.log(`  ✅ 推論ステップ数: ${solutionResult.inferenceSteps.length}`);
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -109,14 +113,16 @@ async function testComplexAccuracy() {
   console.log('📋 テストケース2: 型アノテーション付きコード検証');
   try {
     const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(annotatedCode, 'annotated.ts');
-    
+
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
     console.log(`  ✅ 型アノテーション付きパス: ${analysisResult.summary.typeAnnotatedPaths}`);
     console.log(`  ✅ 型安全パス: ${analysisResult.summary.typeSafePaths}`);
     console.log(`  ✅ 制約違反数: ${analysisResult.summary.constraintViolations}`);
-    
+
     analysisResult.paths.forEach((path, index) => {
-      console.log(`    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`);
+      console.log(
+        `    パス${index + 1}: ${path.source.variableName} → ${path.sink.dangerousFunction.functionName}`
+      );
       console.log(`      リスクレベル: ${path.riskLevel}`);
       console.log(`      信頼度: ${(path.typeBasedConfidence * 100).toFixed(1)}%`);
       console.log(`      型アノテーション有: ${path.typeValidation.hasTypeAnnotations}`);
@@ -132,11 +138,14 @@ async function testComplexAccuracy() {
       annotatedCode,
       'annotated.ts'
     );
-    
-    console.log(`  ✅ 推論されたアノテーション数: ${inferenceResult.inferredAnnotations.length}`);
-    console.log(`  ✅ 平均信頼度: ${(inferenceResult.qualityMetrics.averageConfidence * 100).toFixed(1)}%`);
-    console.log(`  ✅ カバレッジ率: ${(inferenceResult.qualityMetrics.coverageRatio * 100).toFixed(1)}%`);
 
+    console.log(`  ✅ 推論されたアノテーション数: ${inferenceResult.inferredAnnotations.length}`);
+    console.log(
+      `  ✅ 平均信頼度: ${(inferenceResult.qualityMetrics.averageConfidence * 100).toFixed(1)}%`
+    );
+    console.log(
+      `  ✅ カバレッジ率: ${(inferenceResult.qualityMetrics.coverageRatio * 100).toFixed(1)}%`
+    );
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -183,46 +192,52 @@ async function testComplexAccuracy() {
   try {
     const [sources, sinks] = await Promise.all([
       sourceDetector.detectSources(expressRouterCode, 'express-router.ts'),
-      sinkDetector.detectSinks(expressRouterCode, 'express-router.ts')
+      sinkDetector.detectSinks(expressRouterCode, 'express-router.ts'),
     ]);
 
     console.log(`  ✅ Source検出数: ${sources.length}`);
     sources.forEach(source => {
-      console.log(`    - ${source.variableName} (${source.type}) [信頼度: ${(source.confidence * 100).toFixed(1)}%]`);
+      console.log(
+        `    - ${source.variableName} (${source.type}) [信頼度: ${(source.confidence * 100).toFixed(1)}%]`
+      );
     });
 
     console.log(`  ✅ Sink検出数: ${sinks.length}`);
     sinks.forEach(sink => {
-      console.log(`    - ${sink.dangerousFunction.functionName} (${sink.type}) [リスク: ${sink.riskLevel}]`);
+      console.log(
+        `    - ${sink.dangerousFunction.functionName} (${sink.type}) [リスク: ${sink.riskLevel}]`
+      );
     });
 
-    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(expressRouterCode, 'express-router.ts');
+    const analysisResult = await flowAnalyzer.analyzeTypeBasedFlow(
+      expressRouterCode,
+      'express-router.ts'
+    );
     console.log(`  ✅ データフローパス数: ${analysisResult.paths.length}`);
-    
+
     // 検出された脆弱性の分類
     const vulnerabilityTypes = new Map<string, number>();
     analysisResult.paths.forEach(path => {
       const count = vulnerabilityTypes.get(path.sink.type) || 0;
       vulnerabilityTypes.set(path.sink.type, count + 1);
     });
-    
+
     console.log('  📊 検出された脆弱性タイプ:');
     vulnerabilityTypes.forEach((count, type) => {
       console.log(`    - ${type}: ${count}件`);
     });
 
     // CRITICAL/HIGHリスクのパス
-    const highRiskPaths = analysisResult.paths.filter(path => 
-      path.riskLevel === 'CRITICAL' || path.riskLevel === 'HIGH'
+    const highRiskPaths = analysisResult.paths.filter(
+      path => path.riskLevel === 'CRITICAL' || path.riskLevel === 'HIGH'
     );
     console.log(`  ⚠️  高リスクパス数: ${highRiskPaths.length}`);
-
   } catch (error) {
     console.error(`  ❌ エラー: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   console.log('\n🎯 Phase 4 複雑検証完了: TaintTyper高度精度確認');
-  
+
   // 最終統計
   console.log('\n📊 検証結果サマリー:');
   console.log('  ✅ 基本パターン検出: 100% (3/3)');

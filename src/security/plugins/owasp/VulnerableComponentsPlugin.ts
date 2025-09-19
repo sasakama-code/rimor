@@ -3,7 +3,13 @@
  * TDD実装
  */
 
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../core/types';
 import { SecurityIssue } from '../../../security/types/security';
 import { SeverityLevel } from '../../../types/common-types';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
@@ -20,20 +26,20 @@ export class VulnerableComponentsPlugin {
   isApplicable(context: ProjectContext): boolean {
     // 依存関係が存在する場合は適用可能
     if (!context.dependencies) return false;
-    
+
     if (Array.isArray(context.dependencies)) {
       return context.dependencies.length > 0;
     } else if (typeof context.dependencies === 'object') {
       return Object.keys(context.dependencies).length > 0;
     }
-    
+
     return false;
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const patterns: DetectionResult[] = [];
     const content = testFile.content.toLowerCase();
-    
+
     // 脆弱性スキャンパターンの検出
     if (content.includes('vulnerabilit') || content.includes('audit')) {
       patterns.push({
@@ -43,12 +49,16 @@ export class VulnerableComponentsPlugin {
         location: { file: testFile.path, line: 1, column: 0 },
         confidence: 0.9,
         securityRelevance: 0.95,
-        metadata: { hasTest: true }
+        metadata: { hasTest: true },
       });
     }
-    
+
     // 依存関係チェックパターンの検出
-    if (content.includes('dependency') || content.includes('outdated') || content.includes('version')) {
+    if (
+      content.includes('dependency') ||
+      content.includes('outdated') ||
+      content.includes('version')
+    ) {
       patterns.push({
         patternId: 'vulnerable-dependency-check',
         patternName: '依存関係チェックテスト',
@@ -56,10 +66,10 @@ export class VulnerableComponentsPlugin {
         location: { file: testFile.path, line: 1, column: 0 },
         confidence: 0.9,
         securityRelevance: 0.9,
-        metadata: { hasTest: true }
+        metadata: { hasTest: true },
       });
     }
-    
+
     // 不足しているテストの検出
     if (!content.includes('vulnerabilit') && !content.includes('dependency')) {
       patterns.push({
@@ -70,35 +80,36 @@ export class VulnerableComponentsPlugin {
         confidence: 1.0,
         securityRelevance: 0.95,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
-    
+
     return patterns;
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     // パターンの分析
-    const hasVulnerabilityScan = patterns.some(p => 
-      p.pattern === 'vulnerability-scan' && p.metadata?.hasTest
+    const hasVulnerabilityScan = patterns.some(
+      p => p.pattern === 'vulnerability-scan' && p.metadata?.hasTest
     );
-    const hasDependencyCheck = patterns.some(p => 
-      p.pattern === 'dependency-check' && p.metadata?.hasTest
+    const hasDependencyCheck = patterns.some(
+      p => p.pattern === 'dependency-check' && p.metadata?.hasTest
     );
-    const hasLicenseCheck = patterns.some(p => 
-      p.pattern === 'license-check' && p.metadata?.hasTest
+    const hasLicenseCheck = patterns.some(
+      p => p.pattern === 'license-check' && p.metadata?.hasTest
     );
-    
+
     // カバレッジの計算
     const vulnerabilityScanCoverage = hasVulnerabilityScan ? 100 : 0;
     const dependencyCheckCoverage = hasDependencyCheck ? 100 : 0;
     const licenseCheckCoverage = hasLicenseCheck ? 100 : 0;
-    
+
     // スコアの計算
-    const coverageScore = (vulnerabilityScanCoverage + dependencyCheckCoverage + licenseCheckCoverage) / 3 / 100;
+    const coverageScore =
+      (vulnerabilityScanCoverage + dependencyCheckCoverage + licenseCheckCoverage) / 3 / 100;
     const overall = coverageScore * 0.8 + 0.2; // ベーススコア20%を追加
     const security = coverageScore;
-    
+
     return {
       overall,
       security,
@@ -107,7 +118,7 @@ export class VulnerableComponentsPlugin {
       dimensions: {
         completeness: Math.round(coverageScore * 100),
         correctness: 50,
-        maintainability: 50
+        maintainability: 50,
       },
       confidence: 0.9,
       details: {
@@ -116,20 +127,21 @@ export class VulnerableComponentsPlugin {
         suggestions: [],
         validationCoverage: vulnerabilityScanCoverage,
         vulnerabilityScanCoverage,
-        dependencyCheckCoverage
-      } as VulnerableComponentsQualityDetails
+        dependencyCheckCoverage,
+      } as VulnerableComponentsQualityDetails,
     };
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
-    
+
     // 脆弱性スキャンテストの改善提案
     if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 50) {
       improvements.push({
         id: 'add-vulnerability-scan-tests',
         title: '脆弱性スキャンテストの追加',
-        description: '依存関係の脆弱性をチェックするテストを追加することで、セキュリティリスクを早期に発見できます。',
+        description:
+          '依存関係の脆弱性をチェックするテストを追加することで、セキュリティリスクを早期に発見できます。',
         priority: 'critical',
         type: 'add-test',
         category: 'security',
@@ -161,10 +173,10 @@ export class VulnerableComponentsPlugin {
     expect(auditResult.critical).toBe(0);
     expect(auditResult.high).toBe(0);
   });
-});`
+});`,
       });
     }
-    
+
     // 依存関係チェックの改善提案
     if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 50) {
       improvements.push({
@@ -176,10 +188,10 @@ export class VulnerableComponentsPlugin {
         category: 'security',
         location: { file: 'test/security/vulnerable-components.test.ts', line: 20, column: 0 },
         automatable: true,
-        impact: 20
+        impact: 20,
       });
     }
-    
+
     return improvements;
   }
 
@@ -188,7 +200,7 @@ export class VulnerableComponentsPlugin {
     const testPatterns: string[] = [];
     const recommendations: string[] = [];
     const missingTests: string[] = [];
-    
+
     // テストパターンの検出
     if (content.includes('vulnerabilit') || content.includes('scan')) {
       testPatterns.push('vulnerability-scan');
@@ -199,12 +211,12 @@ export class VulnerableComponentsPlugin {
     if (content.includes('audit')) {
       testPatterns.push('npm-audit');
     }
-    
+
     // カバレッジの計算
     const requiredPatterns = ['vulnerability-scan', 'dependency-update', 'npm-audit'];
     const foundPatterns = requiredPatterns.filter(p => testPatterns.includes(p));
     const coverage = Math.round((foundPatterns.length / requiredPatterns.length) * 100);
-    
+
     // 推奨事項の生成
     if (!testPatterns.includes('vulnerability-scan')) {
       recommendations.push('脆弱性スキャンテストを追加してください');
@@ -218,38 +230,38 @@ export class VulnerableComponentsPlugin {
       recommendations.push('npm auditテストを追加してください');
       missingTests.push('npm-audit');
     }
-    
+
     if (testPatterns.length > 0) {
       recommendations.push('定期的にセキュリティテストを実行してください');
     }
-    
+
     return {
       category: OWASPCategory.A06_VULNERABLE_COMPONENTS,
       coverage,
       issues: [],
       recommendations,
       testPatterns,
-      missingTests
+      missingTests,
     };
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
-    
+
     // 既知の脆弱なパッケージとバージョン
     const vulnerablePackages = [
       { name: 'express', vulnerableVersions: ['3.0.0', '2.x.x'], severity: 'critical' },
       { name: 'lodash', vulnerableVersions: ['4.17.4', '4.17.11'], severity: 'critical' },
       { name: 'minimist', vulnerableVersions: ['0.0.8', '0.0.10'], severity: 'critical' },
       { name: 'jquery', vulnerableVersions: ['1.6.0', '1.x.x'], severity: 'high' },
-      { name: 'angular', vulnerableVersions: ['1.2.0', '1.0.x'], severity: 'high' }
+      { name: 'angular', vulnerableVersions: ['1.2.0', '1.0.x'], severity: 'high' },
     ];
-    
+
     // パッケージ.jsonの依存関係チェック
     vulnerablePackages.forEach(pkg => {
       const regex = new RegExp(`"${pkg.name}"\\s*:\\s*"([^"]+)"`, 'g');
       const matches = content.matchAll(regex);
-      
+
       for (const match of matches) {
         const version = match[1];
         if (pkg.vulnerableVersions.some(v => version.includes(v.replace('.x.x', '')))) {
@@ -261,24 +273,25 @@ export class VulnerableComponentsPlugin {
             location: {
               file: 'package.json',
               line: content.substring(0, match.index).split('\n').length,
-              column: 0
+              column: 0,
             },
-            recommendation: `${pkg.name}を最新の安全なバージョンに更新してください`
+            recommendation: `${pkg.name}を最新の安全なバージョンに更新してください`,
           });
         }
       }
     });
-    
+
     // require文での古いバージョン検出
     const requireRegex = /require\(['"]([^@]+)@([^'"]+)['"]\)/g;
     const requireMatches = content.matchAll(requireRegex);
-    
+
     for (const match of requireMatches) {
       const packageName = match[1];
       const version = match[2];
-      
+
       // 古いバージョンの検出（簡易的なチェック）
-      if (version.match(/^[01]\./)) { // 0.x または 1.x
+      if (version.match(/^[01]\./)) {
+        // 0.x または 1.x
         issues.push({
           id: 'outdated-version-' + Math.random().toString(36).substr(2, 9),
           type: 'outdated-version',
@@ -287,19 +300,19 @@ export class VulnerableComponentsPlugin {
           location: {
             file: 'unknown',
             line: content.substring(0, match.index).split('\n').length,
-            column: 0
+            column: 0,
           },
-          recommendation: `${packageName}を最新バージョンに更新してください`
+          recommendation: `${packageName}を最新バージョンに更新してください`,
         });
       }
     }
-    
+
     return issues;
   }
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    
+
     // 基本的な脆弱性スキャンテスト
     tests.push(`describe('脆弱性スキャンテスト', () => {
   it('既知の脆弱性がないことを確認する', async () => {
@@ -308,7 +321,7 @@ export class VulnerableComponentsPlugin {
     expect(vulnerabilities.high).toBe(0);
   });
 });`);
-    
+
     // 依存関係チェックテスト
     tests.push(`describe('依存関係セキュリティテスト', () => {
   it('古い依存関係がないことを確認する', async () => {
@@ -321,7 +334,7 @@ export class VulnerableComponentsPlugin {
     expect(vulnerableDeps.length).toBe(0);
   });
 });`);
-    
+
     // package.jsonが存在する場合、npm auditテストを追加
     if (context.filePatterns?.source?.includes('package.json')) {
       tests.push(`describe('npm auditセキュリティテスト', () => {
@@ -333,7 +346,7 @@ export class VulnerableComponentsPlugin {
   });
 });`);
     }
-    
+
     return tests;
   }
 

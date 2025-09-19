@@ -13,7 +13,7 @@ export enum ReportFormat {
   TEXT = 'text',
   JSON = 'json',
   HTML = 'html',
-  MARKDOWN = 'markdown'
+  MARKDOWN = 'markdown',
 }
 
 /**
@@ -46,11 +46,8 @@ export interface IReporter {
   /**
    * 分析結果レポートを生成
    */
-  generateAnalysisReport(
-    result: AnalysisResult,
-    options: ReportOptions
-  ): Promise<ReportResult>;
-  
+  generateAnalysisReport(result: AnalysisResult, options: ReportOptions): Promise<ReportResult>;
+
   /**
    * セキュリティ監査レポートを生成
    */
@@ -58,7 +55,7 @@ export interface IReporter {
     result: SecurityAuditResult,
     options: ReportOptions
   ): Promise<ReportResult>;
-  
+
   /**
    * 統合レポートを生成
    */
@@ -67,7 +64,7 @@ export interface IReporter {
     securityResult: SecurityAuditResult,
     options: ReportOptions
   ): Promise<ReportResult>;
-  
+
   /**
    * コンソール出力
    */

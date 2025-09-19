@@ -17,12 +17,12 @@ describe('UnifiedPluginManager Migration Tests', () => {
     it('registerメソッドがレガシープラグインを正しく登録できること', async () => {
       const testPlugin: IPlugin = {
         name: 'test-plugin',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       manager.register(testPlugin);
       const plugins = manager.getLegacyPlugins();
-      
+
       expect(plugins).toContain(testPlugin);
       expect(plugins.length).toBe(1);
     });
@@ -34,12 +34,12 @@ describe('UnifiedPluginManager Migration Tests', () => {
         severity: 'high',
         message: 'Test issue',
         filePath: 'test.ts',
-        category: 'test-coverage'
+        category: 'test-coverage',
       };
 
       const testPlugin: IPlugin = {
         name: 'test-plugin',
-        analyze: jest.fn().mockResolvedValue([mockIssue])
+        analyze: jest.fn().mockResolvedValue([mockIssue]),
       };
 
       manager.register(testPlugin);
@@ -52,26 +52,30 @@ describe('UnifiedPluginManager Migration Tests', () => {
     it('複数のレガシープラグインを管理できること', async () => {
       const plugin1: IPlugin = {
         name: 'plugin-1',
-        analyze: jest.fn().mockResolvedValue([{
-          id: 'issue-1-id',
-          type: 'issue-1',
-          severity: 'medium',
-          message: 'Issue 1',
-          filePath: 'test.ts',
-          category: 'test-coverage'
-        }])
+        analyze: jest.fn().mockResolvedValue([
+          {
+            id: 'issue-1-id',
+            type: 'issue-1',
+            severity: 'medium',
+            message: 'Issue 1',
+            filePath: 'test.ts',
+            category: 'test-coverage',
+          },
+        ]),
       };
 
       const plugin2: IPlugin = {
         name: 'plugin-2',
-        analyze: jest.fn().mockResolvedValue([{
-          id: 'issue-2-id',
-          type: 'issue-2',
-          severity: 'low',
-          message: 'Issue 2',
-          filePath: 'test.ts',
-          category: 'test-structure'
-        }])
+        analyze: jest.fn().mockResolvedValue([
+          {
+            id: 'issue-2-id',
+            type: 'issue-2',
+            severity: 'low',
+            message: 'Issue 2',
+            filePath: 'test.ts',
+            category: 'test-structure',
+          },
+        ]),
       };
 
       manager.register(plugin1);
@@ -87,7 +91,7 @@ describe('UnifiedPluginManager Migration Tests', () => {
     it('エラーハンドリングが適切に動作すること', async () => {
       const errorPlugin: IPlugin = {
         name: 'error-plugin',
-        analyze: jest.fn().mockRejectedValue(new Error('Plugin error'))
+        analyze: jest.fn().mockRejectedValue(new Error('Plugin error')),
       };
 
       manager.register(errorPlugin);
@@ -97,11 +101,11 @@ describe('UnifiedPluginManager Migration Tests', () => {
       expect(result).toBeDefined();
       expect(result.issues).toBeDefined();
       expect(Array.isArray(result.issues)).toBe(true);
-      
+
       if (result.errors) {
         expect(result.errors[0]).toMatchObject({
           pluginName: 'error-plugin',
-          error: expect.stringContaining('Plugin error')
+          error: expect.stringContaining('Plugin error'),
         });
       }
     });
@@ -111,7 +115,7 @@ describe('UnifiedPluginManager Migration Tests', () => {
     it('品質プラグインとレガシープラグインを同時に管理できること', async () => {
       const legacyPlugin: IPlugin = {
         name: 'legacy-plugin',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       const qualityPlugin = {
@@ -122,7 +126,7 @@ describe('UnifiedPluginManager Migration Tests', () => {
         isApplicable: jest.fn().mockReturnValue(true),
         detectPatterns: jest.fn().mockResolvedValue([]),
         evaluateQuality: jest.fn().mockReturnValue({ score: 85 }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
 
       manager.register(legacyPlugin);
@@ -139,11 +143,11 @@ describe('UnifiedPluginManager Migration Tests', () => {
   describe('パフォーマンスとメモリ使用', () => {
     it('大量のプラグイン登録でもメモリリークが発生しないこと', () => {
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < 100; i++) {
         const plugin: IPlugin = {
           name: `plugin-${i}`,
-          analyze: jest.fn().mockResolvedValue([])
+          analyze: jest.fn().mockResolvedValue([]),
         };
         manager.register(plugin);
       }
@@ -153,7 +157,7 @@ describe('UnifiedPluginManager Migration Tests', () => {
 
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = finalMemory - initialMemory;
-      
+
       // 10MB以下の増加であることを確認
       expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
     });

@@ -54,7 +54,7 @@ export class GradeCalculator {
       case 'F':
         return '\x1b[31m'; // Red
       default:
-        return '\x1b[0m';  // Reset
+        return '\x1b[0m'; // Reset
     }
   }
 
@@ -91,7 +91,7 @@ export class GradeCalculator {
       B: 0,
       C: 0,
       D: 0,
-      F: 0
+      F: 0,
     };
 
     for (const score of scores) {
@@ -109,7 +109,7 @@ export class GradeCalculator {
    */
   calculateGradePercentages(distribution: Record<GradeType, number>): Record<GradeType, number> {
     const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
-    
+
     if (total === 0) {
       return { A: 0, B: 0, C: 0, D: 0, F: 0 };
     }
@@ -119,7 +119,7 @@ export class GradeCalculator {
       B: Math.round((distribution.B / total) * 100 * 10) / 10,
       C: Math.round((distribution.C / total) * 100 * 10) / 10,
       D: Math.round((distribution.D / total) * 100 * 10) / 10,
-      F: Math.round((distribution.F / total) * 100 * 10) / 10
+      F: Math.round((distribution.F / total) * 100 * 10) / 10,
     };
 
     return percentages;
@@ -145,12 +145,12 @@ export class GradeCalculator {
    */
   compareGrades(previousGrade: GradeType, currentGrade: GradeType): number {
     const gradeOrder: Record<GradeType, number> = { F: 0, D: 1, C: 2, B: 3, A: 4 };
-    
+
     const previousOrder = gradeOrder[previousGrade];
     const currentOrder = gradeOrder[currentGrade];
     const difference = currentOrder - previousOrder;
 
-    if (difference >= 2) return 2;  // 大幅改善
+    if (difference >= 2) return 2; // 大幅改善
     if (difference === 1) return 1; // 改善
     if (difference === 0) return 0; // 変化なし
     if (difference === -1) return -1; // 悪化

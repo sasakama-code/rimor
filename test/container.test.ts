@@ -7,12 +7,12 @@
 import { Container, TYPES } from '../src/container';
 import { UnifiedSecurityAnalysisOrchestrator } from '../src/orchestrator/UnifiedSecurityAnalysisOrchestrator';
 import { UnifiedAnalyzeCommand } from '../src/cli/commands/unified-analyze';
-import { 
+import {
   IAnalysisStrategyFactory,
   ITaintAnalysisStrategy,
   IIntentExtractionStrategy,
   IGapDetectionStrategy,
-  INistEvaluationStrategy
+  INistEvaluationStrategy,
 } from '../src/orchestrator/interfaces';
 
 describe('Container', () => {
@@ -25,7 +25,9 @@ describe('Container', () => {
   describe('基本的なサービス解決', () => {
     it('UnifiedSecurityAnalysisOrchestratorを解決できる', () => {
       // Act
-      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
+      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(
+        TYPES.UnifiedSecurityAnalysisOrchestrator
+      );
 
       // Assert
       expect(orchestrator).toBeInstanceOf(UnifiedSecurityAnalysisOrchestrator);
@@ -103,7 +105,9 @@ describe('Container', () => {
 
     it('UnifiedSecurityAnalysisOrchestratorがAnalysisStrategyFactoryを依存関係として受け取る', () => {
       // Act
-      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
+      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(
+        TYPES.UnifiedSecurityAnalysisOrchestrator
+      );
 
       // Assert
       expect(orchestrator).toBeInstanceOf(UnifiedSecurityAnalysisOrchestrator);
@@ -114,8 +118,12 @@ describe('Container', () => {
   describe('シングルトンパターン', () => {
     it('同じ型に対して同じインスタンスを返す（シングルトン）', () => {
       // Act
-      const orchestrator1 = container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
-      const orchestrator2 = container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
+      const orchestrator1 = container.get<UnifiedSecurityAnalysisOrchestrator>(
+        TYPES.UnifiedSecurityAnalysisOrchestrator
+      );
+      const orchestrator2 = container.get<UnifiedSecurityAnalysisOrchestrator>(
+        TYPES.UnifiedSecurityAnalysisOrchestrator
+      );
 
       // Assert
       expect(orchestrator1).toBe(orchestrator2);
@@ -140,7 +148,7 @@ describe('Container', () => {
         enableGapDetection: true,
         enableNistEvaluation: true,
         parallelExecution: false,
-        timeoutMs: 30000
+        timeoutMs: 30000,
       };
 
       const configuredContainer = new Container(mockConfig);
@@ -172,15 +180,20 @@ describe('Container', () => {
   describe('ライフサイクル管理', () => {
     it('コンテナの破棄時にリソースがクリーンアップされる', () => {
       // Arrange
-      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
+      const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(
+        TYPES.UnifiedSecurityAnalysisOrchestrator
+      );
 
       // Act
       container.dispose();
 
       // Assert
       // クリーンアップが正常に行われることを確認
-      expect(() => container.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator))
-        .toThrow('コンテナは既に破棄されています');
+      expect(() =>
+        container.get<UnifiedSecurityAnalysisOrchestrator>(
+          TYPES.UnifiedSecurityAnalysisOrchestrator
+        )
+      ).toThrow('コンテナは既に破棄されています');
     });
   });
 

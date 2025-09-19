@@ -1,7 +1,7 @@
 /**
  * AssertionQualityPlugin 実質的品質テスト
  * Issue #66: アサーション品質評価の実際の動作を検証
- * 
+ *
  * TDD原則: アサーション品質の客観的評価
  * SOLID原則: 単一責任（アサーション品質のみ）
  * YAGNI原則: 必要な品質チェックのみ実装
@@ -38,21 +38,21 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
     it('適用可能なコンテキストを正しく判定する', () => {
       const jsContext: ProjectContext = {
         language: 'javascript',
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
-      
+
       const pythonContext: ProjectContext = {
         language: 'python',
-        testFramework: 'pytest'
+        testFramework: 'pytest',
       };
-      
+
       expect(plugin.isApplicable(jsContext)).toBe(true);
       expect(plugin.isApplicable(pythonContext)).toBe(true);
-      
+
       // サポートされていない言語
       const rustContext: ProjectContext = {
         language: 'rust',
-        testFramework: 'cargo'
+        testFramework: 'cargo',
       };
       expect(plugin.isApplicable(rustContext)).toBe(false);
     });
@@ -72,14 +72,14 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         `,
         testCount: 1,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns).toBeDefined();
       expect(patterns.length).toBeGreaterThan(0);
-      
+
       expect(patterns.some(p => p.patternName === 'Basic Assertions')).toBe(true);
       expect(patterns.every(p => p.confidence > 0)).toBe(true);
     });
@@ -98,16 +98,17 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         `,
         testCount: 1,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
-      const weakAssertions = patterns.filter(p => 
-        p.patternName === 'Weak Assertions' || 
-        (p.patternName && p.patternName.toLowerCase().includes('weak'))
+
+      const weakAssertions = patterns.filter(
+        p =>
+          p.patternName === 'Weak Assertions' ||
+          (p.patternName && p.patternName.toLowerCase().includes('weak'))
       );
-      
+
       expect(weakAssertions.length).toBeGreaterThan(0);
       expect(weakAssertions[0].confidence).toBeGreaterThan(0.5);
       expect(weakAssertions[0].evidence).toBeDefined();
@@ -130,18 +131,19 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         `,
         testCount: 1,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
-      const strongAssertions = patterns.filter(p => 
-        p.patternName === 'High Quality Assertions' || 
-        p.patternName === 'Basic Assertions' ||
-        p.patternId === 'high-quality-assertions' ||
-        p.patternId === 'basic-assertions'
+
+      const strongAssertions = patterns.filter(
+        p =>
+          p.patternName === 'High Quality Assertions' ||
+          p.patternName === 'Basic Assertions' ||
+          p.patternId === 'high-quality-assertions' ||
+          p.patternId === 'basic-assertions'
       );
-      
+
       expect(strongAssertions.length).toBeGreaterThan(0);
       expect(strongAssertions.every(p => p.confidence >= 0.7)).toBe(true);
     });
@@ -164,17 +166,18 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         `,
         testCount: 2,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
-      const noAssertionPatterns = patterns.filter(p => 
-        p.patternName === 'Missing Assertions' || 
-        p.patternId === 'missing-assertions' ||
-        p.patternId === 'no-assertion'
+
+      const noAssertionPatterns = patterns.filter(
+        p =>
+          p.patternName === 'Missing Assertions' ||
+          p.patternId === 'missing-assertions' ||
+          p.patternId === 'no-assertion'
       );
-      
+
       expect(noAssertionPatterns.length).toBeGreaterThan(0);
       expect(noAssertionPatterns[0].severity).toBe('high');
       expect(noAssertionPatterns[0].confidence).toBeGreaterThanOrEqual(0.9);
@@ -189,26 +192,26 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           patternName: 'deep-equality',
           confidence: 0.95,
           severity: 'info',
-          location: { file: 'test.ts', line: 10 }
+          location: { file: 'test.ts', line: 10 },
         },
         {
           patternId: 'error-assertion',
           patternName: 'error-assertion',
           confidence: 0.9,
           severity: 'info',
-          location: { file: 'test.ts', line: 15 }
+          location: { file: 'test.ts', line: 15 },
         },
         {
           patternId: 'boundary-check',
           patternName: 'boundary-check',
           confidence: 0.85,
           severity: 'info',
-          location: { file: 'test.ts', line: 20 }
-        }
+          location: { file: 'test.ts', line: 20 },
+        },
       ];
-      
+
       const score = plugin.evaluateQuality(highQualityPatterns);
-      
+
       expect(score.overall).toBeGreaterThan(0.4);
       expect(score.confidence).toBeGreaterThan(0.8);
       expect(score.dimensions.correctness).toBeGreaterThan(0.4);
@@ -222,19 +225,19 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           patternName: 'weak-assertion',
           confidence: 0.8,
           severity: 'low',
-          location: { file: 'test.ts', line: 10 }
+          location: { file: 'test.ts', line: 10 },
         },
         {
           patternId: 'no-assertion',
           patternName: 'no-assertion',
           confidence: 0.95,
           severity: 'high',
-          location: { file: 'test.ts', line: 15 }
-        }
+          location: { file: 'test.ts', line: 15 },
+        },
       ];
-      
+
       const score = plugin.evaluateQuality(lowQualityPatterns);
-      
+
       expect(score.overall).toBeLessThan(0.5);
       expect(score.confidence).toBeGreaterThan(0.7); // 検出自体は確実
       expect(score.dimensions.correctness).toBeLessThan(0.5);
@@ -248,26 +251,26 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           patternName: 'strong-assertion',
           confidence: 0.9,
           severity: 'info',
-          location: { file: 'test.ts', line: 10 }
+          location: { file: 'test.ts', line: 10 },
         },
         {
           patternId: 'weak-assertion',
           patternName: 'weak-assertion',
           confidence: 0.85,
           severity: 'low',
-          location: { file: 'test.ts', line: 20 }
+          location: { file: 'test.ts', line: 20 },
         },
         {
           patternId: 'basic-assertion',
           patternName: 'basic-assertion',
           confidence: 0.8,
           severity: 'info',
-          location: { file: 'test.ts', line: 30 }
-        }
+          location: { file: 'test.ts', line: 30 },
+        },
       ];
-      
+
       const score = plugin.evaluateQuality(mixedPatterns);
-      
+
       expect(score.overall).toBeGreaterThan(0.4);
       expect(score.overall).toBeLessThan(0.8);
       expect(score.dimensions).toBeDefined();
@@ -283,12 +286,12 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         dimensions: {
           correctness: 0.4,
           completeness: 0.2,
-          maintainability: 0.3
-        }
+          maintainability: 0.3,
+        },
       };
-      
+
       const improvements = plugin.suggestImprovements(evaluation);
-      
+
       expect(improvements).toBeDefined();
       expect(improvements.length).toBeGreaterThan(0);
       expect(improvements[0].type).toBe('fix-assertion');
@@ -304,16 +307,16 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         dimensions: {
           correctness: 0.1,
           completeness: 0.2,
-          maintainability: 0.0
-        }
+          maintainability: 0.0,
+        },
       };
-      
+
       const improvements = plugin.suggestImprovements(evaluation);
-      
-      const addAssertionSuggestions = improvements.filter(i => 
-        i.type === 'add-test' || i.type === 'fix-assertion'
+
+      const addAssertionSuggestions = improvements.filter(
+        i => i.type === 'add-test' || i.type === 'fix-assertion'
       );
-      
+
       expect(addAssertionSuggestions.length).toBeGreaterThan(0);
       expect(addAssertionSuggestions[0].priority).toBe('high');
       expect(addAssertionSuggestions[0].autoFixable).toBe(false);
@@ -326,12 +329,12 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
         dimensions: {
           correctness: 0.95,
           completeness: 0.85,
-          maintainability: 0.9
-        }
+          maintainability: 0.9,
+        },
       };
-      
+
       const improvements = plugin.suggestImprovements(evaluation);
-      
+
       expect(improvements.length).toBeLessThanOrEqual(2);
       if (improvements.length > 0) {
         expect(improvements[0].priority).toBe('low');
@@ -380,18 +383,18 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         });
       `;
-      
+
       const testFile: TestFile = {
         path: path.join(testProjectPath, 'calculator.test.ts'),
         content: jestTestContent,
         framework: 'jest',
         testCount: 5,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
       const score = plugin.evaluateQuality(patterns);
-      
+
       expect(score.overall).toBeGreaterThan(0.6); // 良好な品質
       // パターンが検出されていることを確認
       expect(patterns.length).toBeGreaterThan(0);
@@ -420,16 +423,16 @@ describe('AssertionQualityPlugin - アサーション品質の実質的検証', 
           });
         });
       `;
-      
+
       const testFile: TestFile = {
         path: path.join(testProjectPath, 'performance.test.ts'),
         content: perfTestContent,
         testCount: 2,
-        hasTests: true
+        hasTests: true,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       // 実際に検出されるパターンをチェック
       expect(patterns.length).toBeGreaterThan(0);
       const score = plugin.evaluateQuality(patterns);

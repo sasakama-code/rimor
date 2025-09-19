@@ -29,14 +29,20 @@ export enum SecurityType {
   /** 入力検証型 */
   INPUT_VALIDATION = 'input-validation',
   /** APIセキュリティ型 */
-  API_SECURITY = 'api-security'
+  API_SECURITY = 'api-security',
 }
 
 /**
  * 汚染レベル（TaintLevel）
  * データの汚染度を表す型（文字列型に統一）
  */
-export type TaintLevel = 'untainted' | 'tainted' | 'sanitized' | 'unknown' | 'possibly_tainted' | 'highly_tainted';
+export type TaintLevel =
+  | 'untainted'
+  | 'tainted'
+  | 'sanitized'
+  | 'unknown'
+  | 'possibly_tainted'
+  | 'highly_tainted';
 
 // Enum values for runtime usage
 export const TaintLevel = {
@@ -45,19 +51,25 @@ export const TaintLevel = {
   SANITIZED: 'sanitized' as const,
   UNKNOWN: 'unknown' as const,
   // レガシー互換性と追加の汚染レベル
-  CLEAN: 'untainted' as const,  // CLEANをUNTAINTEDにマップ
+  CLEAN: 'untainted' as const, // CLEANをUNTAINTEDにマップ
   DEFINITELY_TAINTED: 'tainted' as const,
   LIKELY_TAINTED: 'tainted' as const,
   POSSIBLY_TAINTED: 'possibly_tainted' as const,
-  HIGHLY_TAINTED: 'highly_tainted' as const
+  HIGHLY_TAINTED: 'highly_tainted' as const,
 } as const;
 
 /**
  * 汚染源の種類
  */
-export type TaintSource = 'user-input' | 'database' | 'file-system' | 'network' | 'environment' | 'unknown';
+export type TaintSource =
+  | 'user-input'
+  | 'database'
+  | 'file-system'
+  | 'network'
+  | 'environment'
+  | 'unknown';
 
-// Enum values for runtime usage  
+// Enum values for runtime usage
 export const TaintSource = {
   USER_INPUT: 'user-input' as const,
   DATABASE: 'database' as const,
@@ -66,13 +78,26 @@ export const TaintSource = {
   ENVIRONMENT: 'environment' as const,
   UNKNOWN: 'unknown' as const,
   // レガシー互換性のため
-  EXTERNAL_API: 'network' as const
+  EXTERNAL_API: 'network' as const,
 } as const;
 
 /**
  * セキュリティシンク（機密性の高い操作）
  */
-export type SecuritySink = 'database' | 'file-system' | 'network' | 'command' | 'eval' | 'dom' | 'unknown' | 'database-query' | 'html-output' | 'javascript-exec' | 'system-command' | 'file-write' | 'test-assertion';
+export type SecuritySink =
+  | 'database'
+  | 'file-system'
+  | 'network'
+  | 'command'
+  | 'eval'
+  | 'dom'
+  | 'unknown'
+  | 'database-query'
+  | 'html-output'
+  | 'javascript-exec'
+  | 'system-command'
+  | 'file-write'
+  | 'test-assertion';
 
 // Enum values for runtime usage
 export const SecuritySink = {
@@ -89,13 +114,24 @@ export const SecuritySink = {
   JAVASCRIPT_EXEC: 'javascript-exec' as const,
   SYSTEM_COMMAND: 'system-command' as const,
   FILE_WRITE: 'file-write' as const,
-  TEST_ASSERTION: 'test-assertion' as const
+  TEST_ASSERTION: 'test-assertion' as const,
 } as const;
 
 /**
  * サニタイザーの種類
  */
-export type SanitizerType = 'escape' | 'validate' | 'encode' | 'filter' | 'none' | 'html-escape' | 'sql-escape' | 'input-validation' | 'type-conversion' | 'string-sanitize' | 'json-parse';
+export type SanitizerType =
+  | 'escape'
+  | 'validate'
+  | 'encode'
+  | 'filter'
+  | 'none'
+  | 'html-escape'
+  | 'sql-escape'
+  | 'input-validation'
+  | 'type-conversion'
+  | 'string-sanitize'
+  | 'json-parse';
 
 // Enum values for runtime usage
 export const SanitizerType = {
@@ -110,7 +146,7 @@ export const SanitizerType = {
   INPUT_VALIDATION: 'input-validation' as const,
   TYPE_CONVERSION: 'type-conversion' as const,
   STRING_SANITIZE: 'string-sanitize' as const,
-  JSON_PARSE: 'json-parse' as const
+  JSON_PARSE: 'json-parse' as const,
 } as const;
 
 /**
@@ -132,12 +168,12 @@ export type TestType = 'unit' | 'integration' | 'e2e' | 'security';
 /**
  * 品質ディメンション
  */
-export type QualityDimension = 
-  | 'completeness'    // 網羅性
-  | 'correctness'     // 正確性
+export type QualityDimension =
+  | 'completeness' // 網羅性
+  | 'correctness' // 正確性
   | 'maintainability' // 保守性
-  | 'performance'     // パフォーマンス
-  | 'security';       // セキュリティ
+  | 'performance' // パフォーマンス
+  | 'security'; // セキュリティ
 
 // ImprovementTypeはcore/types/base-types.tsで定義済み
 // 重複を避けるためここでは定義しない

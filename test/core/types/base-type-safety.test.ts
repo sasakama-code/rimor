@@ -18,7 +18,7 @@ describe('Base Type Safety - No any types', () => {
         type: 'number',
         required: false,
         defaultValue: 5000,
-        description: 'Timeout in milliseconds'
+        description: 'Timeout in milliseconds',
       };
 
       // unknown型は明示的な型チェックが必要
@@ -33,7 +33,7 @@ describe('Base Type Safety - No any types', () => {
         type: 'object',
         required: false,
         defaultValue: { key: 'value' },
-        description: 'Configuration object'
+        description: 'Configuration object',
       };
 
       // unknown型の型ガード
@@ -60,12 +60,12 @@ describe('Base Type Safety - No any types', () => {
           version: '1.0.0',
           author: 'test',
           tags: ['test', 'sample'],
-          active: true
+          active: true,
         },
         settings: {
           timeout: 3000,
-          debug: false
-        }
+          debug: false,
+        },
       };
 
       // unknown型は型チェックが必要
@@ -97,22 +97,22 @@ describe('Base Type Safety - No any types', () => {
         children: [
           {
             type: 'Identifier',
-            value: 'testFunction'
+            value: 'testFunction',
           },
           {
             type: 'BlockStatement',
-            children: []
-          }
+            children: [],
+          },
         ],
         properties: {
           async: false,
-          generator: false
-        }
+          generator: false,
+        },
       };
 
       expect(astNode.type).toBe('FunctionDeclaration');
       expect(astNode.children).toHaveLength(2);
-      
+
       if (astNode.properties) {
         const asyncProp = astNode.properties.async;
         if (typeof asyncProp === 'boolean') {
@@ -144,16 +144,15 @@ describe('Base Type Safety - No any types', () => {
         if (!plugin || typeof plugin !== 'object') {
           return false;
         }
-        
+
         const p = plugin as Record<string, unknown>;
-        return typeof p.name === 'string' && 
-               typeof p.analyze === 'function';
+        return typeof p.name === 'string' && typeof p.analyze === 'function';
       }
     }
 
     it('should process data safely with unknown type', () => {
       const processor = new TypeSafeProcessor();
-      
+
       expect(processor.processData('test')).toBe('TEST');
       expect(processor.processData(123)).toBe('123');
       expect(processor.processData({ key: 'value' })).toBe('{"key":"value"}');
@@ -162,12 +161,12 @@ describe('Base Type Safety - No any types', () => {
 
     it('should validate plugins with type checking', () => {
       const processor = new TypeSafeProcessor();
-      
+
       const validPlugin = {
         name: 'TestPlugin',
-        analyze: () => []
+        analyze: () => [],
       };
-      
+
       expect(processor.validatePlugin(validPlugin)).toBe(true);
       expect(processor.validatePlugin({ name: 'Invalid' })).toBe(false);
       expect(processor.validatePlugin(null)).toBe(false);
@@ -177,22 +176,19 @@ describe('Base Type Safety - No any types', () => {
 
   describe('Array Processing without any', () => {
     function processArray(items: unknown[]): number[] {
-      return items
-        .filter((item): item is number => typeof item === 'number')
-        .map(num => num * 2);
+      return items.filter((item): item is number => typeof item === 'number').map(num => num * 2);
     }
 
     function extractStrings(items: unknown[]): string[] {
-      return items
-        .filter((item): item is string => typeof item === 'string');
+      return items.filter((item): item is string => typeof item === 'string');
     }
 
     it('should process arrays with type guards', () => {
       const mixedArray: unknown[] = [1, 'test', 2, { key: 'value' }, 3, null];
-      
+
       const numbers = processArray(mixedArray);
       expect(numbers).toEqual([2, 4, 6]);
-      
+
       const strings = extractStrings(mixedArray);
       expect(strings).toEqual(['test']);
     });

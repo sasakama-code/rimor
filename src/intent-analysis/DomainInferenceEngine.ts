@@ -1,18 +1,18 @@
 /**
  * Domain Inference Engine
  * v0.9.0 Phase 2 - 型名からドメイン概念を推論する実装
- * 
+ *
  * KISS原則: シンプルなパターンマッチングから開始
  * YAGNI原則: 必要最小限の機能のみ実装
  */
 
-import { 
-  IDomainInferenceEngine, 
-  DomainInference, 
+import {
+  IDomainInferenceEngine,
+  DomainInference,
   DomainContext,
   BusinessImportance,
   DomainDictionary,
-  ConfidenceConfig
+  ConfidenceConfig,
 } from './IDomainInferenceEngine';
 import { TypeInfo } from './ITypeScriptAnalyzer';
 
@@ -20,23 +20,64 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
   // ドメイン辞書（シンプルなマップとして実装）
   private domainDictionary: DomainDictionary = {
     terms: [],
-    rules: []
+    rules: [],
   };
-  
+
   // 信頼度設定
   private confidenceConfig: ConfidenceConfig = {
     defaultConfidence: 0.5,
-    evidenceBoostFactor: 0.1
+    evidenceBoostFactor: 0.1,
   };
 
   // 組み込みのドメインパターン（設定可能な信頼度を持つ）
-  private builtInPatterns = new Map<string, { domain: string; confidence: number; concepts: string[]; importance: BusinessImportance }>([
-    ['User', { domain: 'user-management', confidence: 0.7, concepts: ['ユーザー', '認証', 'アカウント管理'], importance: 'high' }],
-    ['PaymentService', { domain: 'payment', confidence: 0.75, concepts: ['決済', '支払い', 'トランザクション'], importance: 'high' }],
-    ['Order', { domain: 'order-management', confidence: 0.65, concepts: ['注文'], importance: 'high' }],
-    ['AuthenticationService', { domain: 'authentication', confidence: 0.75, concepts: ['認証', 'アクセス制御', 'セキュリティ'], importance: 'high' }],
-    ['Invoice', { domain: 'billing', confidence: 0.7, concepts: ['請求', '課金'], importance: 'high' }],
-    ['InvoiceProcessor', { domain: 'billing', confidence: 0.7, concepts: ['請求', '課金', '会計', '税務'], importance: 'high' }]
+  private builtInPatterns = new Map<
+    string,
+    { domain: string; confidence: number; concepts: string[]; importance: BusinessImportance }
+  >([
+    [
+      'User',
+      {
+        domain: 'user-management',
+        confidence: 0.7,
+        concepts: ['ユーザー', '認証', 'アカウント管理'],
+        importance: 'high',
+      },
+    ],
+    [
+      'PaymentService',
+      {
+        domain: 'payment',
+        confidence: 0.75,
+        concepts: ['決済', '支払い', 'トランザクション'],
+        importance: 'high',
+      },
+    ],
+    [
+      'Order',
+      { domain: 'order-management', confidence: 0.65, concepts: ['注文'], importance: 'high' },
+    ],
+    [
+      'AuthenticationService',
+      {
+        domain: 'authentication',
+        confidence: 0.75,
+        concepts: ['認証', 'アクセス制御', 'セキュリティ'],
+        importance: 'high',
+      },
+    ],
+    [
+      'Invoice',
+      { domain: 'billing', confidence: 0.7, concepts: ['請求', '課金'], importance: 'high' },
+    ],
+    [
+      'InvoiceProcessor',
+      {
+        domain: 'billing',
+        confidence: 0.7,
+        concepts: ['請求', '課金', '会計', '税務'],
+        importance: 'high',
+      },
+    ],
   ]);
 
   // ドメイン重要度マップ（控えめなデフォルト値）
@@ -48,7 +89,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     ['order-management', 'high'],
     ['logging', 'medium'],
     ['utility', 'low'],
-    ['general', 'low']
+    ['general', 'low'],
   ]);
 
   async inferDomainFromType(typeInfo: TypeInfo): Promise<DomainInference> {
@@ -58,7 +99,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
         domain: 'general',
         confidence: 0.1,
         concepts: [],
-        businessImportance: 'low'
+        businessImportance: 'low',
       };
     }
 
@@ -71,9 +112,9 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
       if (typeInfo.typeName === 'Repository' && argPattern) {
         return {
           domain: argPattern.domain,
-          confidence: Math.min(0.8, argPattern.confidence + 0.1),  // 複合証拠によるわずかな増加
+          confidence: Math.min(0.8, argPattern.confidence + 0.1), // 複合証拠によるわずかな増加
           concepts: [...argPattern.concepts, 'リポジトリ', 'データアクセス'],
-          businessImportance: argPattern.importance
+          businessImportance: argPattern.importance,
         };
       }
     }
@@ -85,7 +126,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
         domain: pattern.domain,
         confidence: this.getConfidence(typeInfo.typeName, pattern.confidence),
         concepts: pattern.concepts,
-        businessImportance: pattern.importance
+        businessImportance: pattern.importance,
       };
     }
 
@@ -97,28 +138,28 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
         domain: dictEntry.domain,
         confidence: dictEntry.weight,
         concepts: this.inferConceptsFromDomain(dictEntry.domain),
-        businessImportance: importance
+        businessImportance: importance,
       };
     }
 
     // ルールベースのマッチング
     let bestMatch: DomainInference | null = null;
     let maxConfidence = 0;
-    
+
     for (const rule of this.domainDictionary.rules) {
       if (rule.pattern.test(typeInfo.typeName)) {
         const importance = await this.getDomainImportance(rule.domain);
         const concepts = this.inferConceptsFromDomain(rule.domain);
-        
+
         // Service系の場合は追加の概念を付与
         if (typeInfo.typeName.endsWith('Service')) {
           concepts.push('サービス層');
         }
-        
+
         // 複合的な名前の場合（例：UserService）、複数のパターンを考慮
         let combinedConfidence = rule.weight;
         const baseConcepts: string[] = [];
-        
+
         // 複合名の各部分をチェック
         for (const [name, pattern] of this.builtInPatterns) {
           if (typeInfo.typeName.includes(name) && name !== typeInfo.typeName) {
@@ -126,7 +167,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
             baseConcepts.push(...pattern.concepts);
           }
         }
-        
+
         // 辞書の用語も考慮
         for (const term of this.domainDictionary.terms) {
           if (typeInfo.typeName.includes(term.term) && term.term !== typeInfo.typeName) {
@@ -134,22 +175,22 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
             baseConcepts.push(...this.inferConceptsFromDomain(term.domain));
           }
         }
-        
+
         // ユニークな概念のみを保持
         const uniqueConcepts = [...new Set([...baseConcepts, ...concepts])];
-        
+
         if (combinedConfidence > maxConfidence) {
           maxConfidence = combinedConfidence;
           bestMatch = {
             domain: rule.domain,
             confidence: combinedConfidence,
             concepts: uniqueConcepts,
-            businessImportance: importance
+            businessImportance: importance,
           };
         }
       }
     }
-    
+
     if (bestMatch) {
       return bestMatch;
     }
@@ -159,7 +200,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
       domain: 'unknown',
       confidence: 0.3,
       concepts: [],
-      businessImportance: 'low'
+      businessImportance: 'low',
     };
   }
 
@@ -201,7 +242,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     // インポートからの推論
     const importDomains = new Set<string>();
     const uniqueRelatedDomains = new Set<string>();
-    
+
     for (const imp of context.imports) {
       const pattern = this.builtInPatterns.get(imp);
       if (pattern) {
@@ -257,7 +298,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
       confidence,
       concepts,
       businessImportance: importance,
-      relatedDomains: orderedRelatedDomains.length > 0 ? orderedRelatedDomains : undefined
+      relatedDomains: orderedRelatedDomains.length > 0 ? orderedRelatedDomains : undefined,
     };
   }
 
@@ -281,12 +322,12 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
         domain: 'unknown',
         confidence: 0,
         concepts: [],
-        businessImportance: 'low'
+        businessImportance: 'low',
       };
     }
 
     // 最も信頼度の高い推論を選択（KISS原則）
-    const best = inferences.reduce((prev, curr) => 
+    const best = inferences.reduce((prev, curr) =>
       curr.confidence > prev.confidence ? curr : prev
     );
 
@@ -296,7 +337,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
 
     return {
       ...best,
-      concepts: Array.from(allConcepts)
+      concepts: Array.from(allConcepts),
     };
   }
 
@@ -305,18 +346,18 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     const conceptMap: Record<string, string[]> = {
       'user-management': ['ユーザー'],
       'service-layer': [],
-      'data-access': ['データアクセス']
+      'data-access': ['データアクセス'],
     };
 
     return conceptMap[domain] || [];
   }
-  
+
   /**
    * 信頼度設定を適用
    */
   setConfidenceConfig(config: ConfidenceConfig): void {
     this.confidenceConfig = { ...this.confidenceConfig, ...config };
-    
+
     // typeConfidenceMapが設定されている場合、builtInPatternsを更新
     if (config.typeConfidenceMap) {
       for (const [typeName, confidence] of Object.entries(config.typeConfidenceMap)) {
@@ -327,7 +368,7 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
       }
     }
   }
-  
+
   /**
    * 設定された信頼度を取得（設定がない場合はデフォルト値を返す）
    */
@@ -336,13 +377,13 @@ export class DomainInferenceEngine implements IDomainInferenceEngine {
     if (this.confidenceConfig.typeConfidenceMap?.[typeName] !== undefined) {
       return this.confidenceConfig.typeConfidenceMap[typeName];
     }
-    
+
     // builtInPatternsから取得
     const pattern = this.builtInPatterns.get(typeName);
     if (pattern) {
       return pattern.confidence;
     }
-    
+
     // デフォルト値を返す
     return defaultValue;
   }

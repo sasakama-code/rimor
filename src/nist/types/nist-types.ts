@@ -2,7 +2,7 @@ import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definiti
 /**
  * NIST SP 800-30準拠の型定義
  * リスク評価フレームワークの標準型
- * 
+ *
  * SOLID原則: インターフェース分離の原則
  * KISS原則: 明確で理解しやすい型定義
  */

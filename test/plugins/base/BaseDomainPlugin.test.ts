@@ -1,11 +1,15 @@
 /**
  * BaseDomainPlugin テスト
- * 
+ *
  * TDD RED段階: ドメインプラグインの基底クラステスト
  * SOLID原則に従い、ドメイン固有の共通機能を提供
  */
 
-import { BaseDomainPlugin, DomainDictionary, DomainQualityScore } from '../../../src/plugins/base/BaseDomainPlugin';
+import {
+  BaseDomainPlugin,
+  DomainDictionary,
+  DomainQualityScore,
+} from '../../../src/plugins/base/BaseDomainPlugin';
 import { BasePlugin } from '../../../src/plugins/base/BasePlugin';
 import { ProjectContext, TestFile, DetectionResult, Improvement } from '../../../src/core/types';
 
@@ -39,12 +43,12 @@ class TestDomainPlugin extends BaseDomainPlugin {
         location: {
           file: testFile.path,
           line: 1,
-          column: 1
+          column: 1,
         },
         metadata: {
           description: 'No domain-specific terms found in test',
-          category: 'domain'
-        }
+          category: 'domain',
+        },
       });
     }
 
@@ -58,12 +62,12 @@ class TestDomainPlugin extends BaseDomainPlugin {
         location: {
           file: testFile.path,
           line: 1,
-          column: 1
+          column: 1,
         },
         metadata: {
           description: rule.description,
-          category: 'business-rule'
-        }
+          category: 'business-rule',
+        },
       });
     }
 
@@ -76,7 +80,8 @@ class TestDomainPlugin extends BaseDomainPlugin {
 
   evaluateDomainQuality(patterns: DetectionResult[]): DomainQualityScore {
     const detectedTerms = this.dictionary ? this.detectDomainTerms('') : [];
-    const violatedRules = patterns.filter(p => p.patternId && p.patternId.startsWith('business-rule-violation'))
+    const violatedRules = patterns
+      .filter(p => p.patternId && p.patternId.startsWith('business-rule-violation'))
       .map(() => this.dictionary?.rules[0])
       .filter(Boolean) as any[];
 
@@ -101,19 +106,19 @@ describe('BaseDomainPlugin', () => {
           term: 'cart',
           definition: 'Shopping cart for products',
           category: 'ecommerce',
-          aliases: ['basket', 'shopping-cart']
+          aliases: ['basket', 'shopping-cart'],
         },
         {
           term: 'checkout',
           definition: 'Process of completing a purchase',
           category: 'ecommerce',
-          relatedTerms: ['payment', 'order']
+          relatedTerms: ['payment', 'order'],
         },
         {
           term: 'inventory',
           definition: 'Product stock management',
-          category: 'ecommerce'
-        }
+          category: 'ecommerce',
+        },
       ],
       rules: [
         {
@@ -121,22 +126,22 @@ describe('BaseDomainPlugin', () => {
           name: 'Payment Validation',
           description: 'All payment processing must be validated',
           priority: 'critical',
-          testRequired: true
+          testRequired: true,
         },
         {
           id: 'rule-2',
           name: 'Inventory Check',
           description: 'Inventory must be checked before order confirmation',
           priority: 'high',
-          testRequired: true
-        }
+          testRequired: true,
+        },
       ],
       context: {
         domain: 'ecommerce',
         subdomains: ['payment', 'inventory', 'shipping'],
         language: 'en',
-        version: '1.0.0'
-      }
+        version: '1.0.0',
+      },
     };
   });
 
@@ -155,7 +160,7 @@ describe('BaseDomainPlugin', () => {
     test('should set and get dictionary', () => {
       plugin.setDictionary(mockDictionary);
       const dictionary = plugin.getDictionary();
-      
+
       expect(dictionary).toBe(mockDictionary);
       expect(dictionary?.terms).toHaveLength(3);
       expect(dictionary?.rules).toHaveLength(2);
@@ -169,7 +174,7 @@ describe('BaseDomainPlugin', () => {
   describe('Domain term detection', () => {
     test('should detect domain terms in content', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const content = `
         test('should add item to cart', () => {
           const cart = new ShoppingCart();
@@ -180,14 +185,14 @@ describe('BaseDomainPlugin', () => {
 
       // @ts-ignore - accessing protected method for testing
       const detectedTerms = plugin.detectDomainTerms(content);
-      
+
       expect(detectedTerms).toHaveLength(1);
       expect(detectedTerms[0].term).toBe('cart');
     });
 
     test('should detect terms using aliases', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const content = `
         test('should update shopping-cart', () => {
           const basket = getBasket();
@@ -197,14 +202,14 @@ describe('BaseDomainPlugin', () => {
 
       // @ts-ignore - accessing protected method for testing
       const detectedTerms = plugin.detectDomainTerms(content);
-      
+
       expect(detectedTerms).toHaveLength(1);
       expect(detectedTerms[0].term).toBe('cart');
     });
 
     test('should detect multiple domain terms', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const content = `
         test('checkout process with inventory check', () => {
           const cart = createCart();
@@ -217,7 +222,7 @@ describe('BaseDomainPlugin', () => {
 
       // @ts-ignore - accessing protected method for testing
       const detectedTerms = plugin.detectDomainTerms(content);
-      
+
       expect(detectedTerms).toHaveLength(3);
       expect(detectedTerms.map(t => t.term)).toContain('cart');
       expect(detectedTerms.map(t => t.term)).toContain('checkout');
@@ -226,10 +231,10 @@ describe('BaseDomainPlugin', () => {
 
     test('should return empty array when no dictionary is set', () => {
       const content = 'test content with cart and checkout';
-      
+
       // @ts-ignore - accessing protected method for testing
       const detectedTerms = plugin.detectDomainTerms(content);
-      
+
       expect(detectedTerms).toHaveLength(0);
     });
   });
@@ -237,7 +242,7 @@ describe('BaseDomainPlugin', () => {
   describe('Business rule compliance', () => {
     test('should detect business rule violations', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const content = `
         test('payment processing', () => {
           const payment = processPayment(amount);
@@ -249,13 +254,13 @@ describe('BaseDomainPlugin', () => {
       const detectedTerms = plugin.detectDomainTerms(content);
       // @ts-ignore - accessing protected method for testing
       const violatedRules = plugin.checkBusinessRuleCompliance(content, detectedTerms);
-      
+
       expect(violatedRules).toHaveLength(0); // No payment term detected, but rule name not in test
     });
 
     test('should detect when test exists for business rule', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const content = `
         test('Payment Validation should work correctly', () => {
           const payment = validatePayment(data);
@@ -265,16 +270,16 @@ describe('BaseDomainPlugin', () => {
 
       // @ts-ignore - accessing protected method for testing
       const hasTest = plugin.hasTestForRule(content, mockDictionary.rules[0]);
-      
+
       expect(hasTest).toBe(true);
     });
 
     test('should return empty array when no dictionary is set', () => {
       const content = 'test content';
-      
+
       // @ts-ignore - accessing protected method for testing
       const violatedRules = plugin.checkBusinessRuleCompliance(content, []);
-      
+
       expect(violatedRules).toHaveLength(0);
     });
   });
@@ -282,13 +287,13 @@ describe('BaseDomainPlugin', () => {
   describe('Domain quality score calculation', () => {
     test('should calculate domain quality score', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       // @ts-ignore - accessing protected method for testing
       const score = plugin.calculateDomainQualityScore(
         [mockDictionary.terms[0]], // 1 out of 3 terms
-        [mockDictionary.rules[0]]  // 1 out of 2 rules violated
+        [mockDictionary.rules[0]] // 1 out of 2 rules violated
       );
-      
+
       expect(score.domainCoverage).toBeCloseTo(33.33, 1);
       expect(score.businessRuleCompliance).toBe(50);
       expect(score.terminologyConsistency).toBe(100);
@@ -297,13 +302,13 @@ describe('BaseDomainPlugin', () => {
 
     test('should give perfect score when all rules are followed', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       // @ts-ignore - accessing protected method for testing
       const score = plugin.calculateDomainQualityScore(
         mockDictionary.terms, // All terms detected
-        []                     // No rules violated
+        [] // No rules violated
       );
-      
+
       expect(score.domainCoverage).toBe(100);
       expect(score.businessRuleCompliance).toBe(100);
       expect(score.terminologyConsistency).toBe(100);
@@ -314,26 +319,23 @@ describe('BaseDomainPlugin', () => {
   describe('Domain improvements generation', () => {
     test('should generate improvements for violated rules', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const score: DomainQualityScore = {
         overall: 60,
         dimensions: {
           completeness: 60,
           correctness: 60,
-          maintainability: 60
+          maintainability: 60,
         },
         confidence: 0.8,
         domainCoverage: 60,
         businessRuleCompliance: 60,
-        terminologyConsistency: 60
+        terminologyConsistency: 60,
       };
-      
+
       // @ts-ignore - accessing protected method for testing
-      const improvements = plugin.generateDomainImprovements(
-        [mockDictionary.rules[0]],
-        score
-      );
-      
+      const improvements = plugin.generateDomainImprovements([mockDictionary.rules[0]], score);
+
       expect(improvements).toHaveLength(1);
       expect(improvements[0].id).toBe('fix-business-rule-rule-1');
       expect(improvements[0].priority).toBe('critical');
@@ -342,23 +344,23 @@ describe('BaseDomainPlugin', () => {
 
     test('should suggest domain coverage improvement for low scores', () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const score: DomainQualityScore = {
         overall: 40,
         dimensions: {
           completeness: 40,
           correctness: 40,
-          maintainability: 40
+          maintainability: 40,
         },
         confidence: 0.8,
         domainCoverage: 30,
         businessRuleCompliance: 50,
-        terminologyConsistency: 40
+        terminologyConsistency: 40,
       };
-      
+
       // @ts-ignore - accessing protected method for testing
       const improvements = plugin.generateDomainImprovements([], score);
-      
+
       expect(improvements).toHaveLength(1);
       expect(improvements[0].id).toBe('improve-domain-coverage');
       expect(improvements[0].priority).toBe('medium');
@@ -372,13 +374,13 @@ describe('BaseDomainPlugin', () => {
         packageJson: {
           name: 'test-project',
           version: '1.0.0',
-          keywords: ['ecommerce', 'shopping', 'cart']
-        }
+          keywords: ['ecommerce', 'shopping', 'cart'],
+        },
       };
-      
+
       // @ts-ignore - accessing protected method for testing
       const domainInfo = plugin.extractDomainInfo(context);
-      
+
       expect(domainInfo).toBe('ecommerce');
     });
 
@@ -388,13 +390,13 @@ describe('BaseDomainPlugin', () => {
         packageJson: {
           name: 'healthcare-system',
           version: '1.0.0',
-          description: 'A healthcare management system for hospitals'
-        }
+          description: 'A healthcare management system for hospitals',
+        },
       };
-      
+
       // @ts-ignore - accessing protected method for testing
       const domainInfo = plugin.extractDomainInfo(context);
-      
+
       expect(domainInfo).toBe('healthcare');
     });
 
@@ -403,13 +405,13 @@ describe('BaseDomainPlugin', () => {
         projectPath: '/test/project',
         packageJson: {
           name: 'my-app',
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       // @ts-ignore - accessing protected method for testing
       const domainInfo = plugin.extractDomainInfo(context);
-      
+
       expect(domainInfo).toBeUndefined();
     });
   });
@@ -421,26 +423,26 @@ describe('BaseDomainPlugin', () => {
         packageJson: {
           name: 'ecommerce-app',
           version: '1.0.0',
-          keywords: ['ecommerce']
-        }
+          keywords: ['ecommerce'],
+        },
       };
-      
+
       const otherContext: ProjectContext = {
         projectPath: '/test/project',
         packageJson: {
           name: 'gaming-app',
           version: '1.0.0',
-          keywords: ['gaming']
-        }
+          keywords: ['gaming'],
+        },
       };
-      
+
       expect(plugin.isApplicable(ecommerceContext)).toBe(true);
       expect(plugin.isApplicable(otherContext)).toBe(false);
     });
 
     test('should detect patterns with domain analysis', async () => {
       plugin.setDictionary(mockDictionary);
-      
+
       const testFile: TestFile = {
         path: '/test/ecommerce.test.ts',
         content: `
@@ -448,11 +450,11 @@ describe('BaseDomainPlugin', () => {
             const cart = new Cart();
             cart.addItem(product);
           });
-        `
+        `,
       };
-      
+
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.length).toBeGreaterThan(0);
       expect(patterns.some(p => p.metadata?.category === 'business-rule')).toBe(true);
     });

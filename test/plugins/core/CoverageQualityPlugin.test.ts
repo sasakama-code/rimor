@@ -1,5 +1,8 @@
 import { CoverageQualityPlugin } from '../../../src/plugins/core/CoverageQualityPlugin';
-import { CoverageAnalyzer, CoverageSummary } from '../../../src/analyzers/coverage/CoverageAnalyzer';
+import {
+  CoverageAnalyzer,
+  CoverageSummary,
+} from '../../../src/analyzers/coverage/CoverageAnalyzer';
 import { TestQualityEvaluator } from '../../../src/analyzers/coverage/TestQualityEvaluator';
 import { TestFile, ProjectContext, DetectionResult, QualityScore } from '../../../src/core/types';
 
@@ -8,7 +11,9 @@ jest.mock('../../../src/analyzers/coverage/CoverageAnalyzer');
 jest.mock('../../../src/analyzers/coverage/TestQualityEvaluator');
 
 const MockCoverageAnalyzer = CoverageAnalyzer as jest.MockedClass<typeof CoverageAnalyzer>;
-const MockTestQualityEvaluator = TestQualityEvaluator as jest.MockedClass<typeof TestQualityEvaluator>;
+const MockTestQualityEvaluator = TestQualityEvaluator as jest.MockedClass<
+  typeof TestQualityEvaluator
+>;
 
 describe('CoverageQualityPlugin', () => {
   let plugin: CoverageQualityPlugin;
@@ -24,37 +29,37 @@ describe('CoverageQualityPlugin', () => {
         });
       });
     `,
-    framework: 'jest'
+    framework: 'jest',
   };
 
   const mockProjectContext: ProjectContext = {
     rootPath: '/project',
     testFramework: 'jest',
-    language: 'typescript'
+    language: 'typescript',
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockCoverageAnalyzer = new MockCoverageAnalyzer() as jest.Mocked<CoverageAnalyzer>;
     mockEvaluator = new MockTestQualityEvaluator() as jest.Mocked<TestQualityEvaluator>;
-    
+
     plugin = new CoverageQualityPlugin();
     (plugin as any).coverageAnalyzer = mockCoverageAnalyzer;
     (plugin as any).qualityEvaluator = mockEvaluator;
-    
+
     // プロジェクトコンテキストを設定
     plugin.setProjectContext(mockProjectContext);
-    
+
     // getCoverageForFileメソッドをスパイしてモック
     jest.spyOn(plugin as any, 'getCoverageForFile');
-    
+
     // CoverageAnalyzerのgetCoverageThresholdsメソッドをモック
     mockCoverageAnalyzer.getCoverageThresholds.mockReturnValue({
       lines: 80,
       statements: 80,
       functions: 80,
-      branches: 70
+      branches: 70,
     });
   });
 
@@ -77,12 +82,12 @@ describe('CoverageQualityPlugin', () => {
         lines: { total: 100, covered: 30, pct: 30 },
         statements: { total: 100, covered: 30, pct: 30 },
         functions: { total: 20, covered: 5, pct: 25 },
-        branches: { total: 50, covered: 10, pct: 20 }
+        branches: { total: 50, covered: 10, pct: 20 },
       };
 
       // getCoverageForFileのモックを設定
       (plugin as any).getCoverageForFile.mockResolvedValue(mockLowCoverage);
-      
+
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockLowCoverage);
       mockCoverageAnalyzer.findLowCoverageFiles.mockResolvedValue([
         {
@@ -90,8 +95,8 @@ describe('CoverageQualityPlugin', () => {
           linesPct: 30,
           statementsPct: 30,
           functionsPct: 25,
-          branchesPct: 20
-        }
+          branchesPct: 20,
+        },
       ]);
 
       const patterns = await plugin.detectPatterns(mockTestFile);
@@ -104,26 +109,26 @@ describe('CoverageQualityPlugin', () => {
       const securityTestFile: TestFile = {
         path: '/src/security/auth.test.ts',
         content: 'security related test',
-        framework: 'jest'
+        framework: 'jest',
       };
 
       const mockSecurityLowCoverage: CoverageSummary = {
         lines: { total: 100, covered: 50, pct: 50 },
         statements: { total: 100, covered: 50, pct: 50 },
         functions: { total: 20, covered: 10, pct: 50 },
-        branches: { total: 50, covered: 20, pct: 40 }
+        branches: { total: 50, covered: 20, pct: 40 },
       };
 
       // getCoverageForFileのモックを設定
       (plugin as any).getCoverageForFile.mockResolvedValue(mockSecurityLowCoverage);
-      
+
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockSecurityLowCoverage);
 
       const patterns = await plugin.detectPatterns(securityTestFile);
 
-      expect(patterns.some(p => 
-        p.severity === 'high' && p.patternId?.includes('security')
-      )).toBe(true);
+      expect(patterns.some(p => p.severity === 'high' && p.patternId?.includes('security'))).toBe(
+        true
+      );
     });
 
     it('極低カバレッジファイルをCRITICALとして検出', async () => {
@@ -131,12 +136,12 @@ describe('CoverageQualityPlugin', () => {
         lines: { total: 100, covered: 5, pct: 5 },
         statements: { total: 100, covered: 5, pct: 5 },
         functions: { total: 20, covered: 1, pct: 5 },
-        branches: { total: 50, covered: 1, pct: 2 }
+        branches: { total: 50, covered: 1, pct: 2 },
       };
 
       // getCoverageForFileのモックを設定
       (plugin as any).getCoverageForFile.mockResolvedValue(mockCriticalLowCoverage);
-      
+
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockCriticalLowCoverage);
 
       const patterns = await plugin.detectPatterns(mockTestFile);
@@ -147,14 +152,12 @@ describe('CoverageQualityPlugin', () => {
     it('カバレッジデータが取得できない場合は警告パターンを生成', async () => {
       // getCoverageForFileのモックを設定
       (plugin as any).getCoverageForFile.mockResolvedValue(null);
-      
+
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(null);
 
       const patterns = await plugin.detectPatterns(mockTestFile);
 
-      expect(patterns.some(p => 
-        p.patternId?.includes('coverage-unavailable')
-      )).toBe(true);
+      expect(patterns.some(p => p.patternId?.includes('coverage-unavailable'))).toBe(true);
     });
   });
 
@@ -165,8 +168,8 @@ describe('CoverageQualityPlugin', () => {
           patternId: 'low-coverage-detected',
           severity: 'high',
           confidence: 0.9,
-          patternName: 'Low coverage detected'
-        }
+          patternName: 'Low coverage detected',
+        },
       ];
 
       const quality = plugin.evaluateQuality(mockPatterns);
@@ -184,8 +187,8 @@ describe('CoverageQualityPlugin', () => {
           patternId: 'security-low-coverage',
           severity: 'medium',
           confidence: 0.95,
-          patternName: 'Security module low coverage'
-        }
+          patternName: 'Security module low coverage',
+        },
       ];
 
       const quality = plugin.evaluateQuality(securityPatterns);
@@ -203,17 +206,17 @@ describe('CoverageQualityPlugin', () => {
         dimensions: {
           completeness: 35,
           correctness: 30,
-          maintainability: 40
+          maintainability: 40,
         },
-        confidence: 0.7
+        confidence: 0.7,
       };
 
       const improvements = plugin.suggestImprovements(lowQuality);
 
       expect(improvements.length).toBeGreaterThan(0);
-      expect(improvements.some(imp => 
-        imp.description.includes('カバレッジ') && imp.priority === 'high'
-      )).toBe(true);
+      expect(
+        improvements.some(imp => imp.description.includes('カバレッジ') && imp.priority === 'high')
+      ).toBe(true);
     });
 
     it('極低品質に対してCRITICAL改善提案を生成', () => {
@@ -222,17 +225,19 @@ describe('CoverageQualityPlugin', () => {
         dimensions: {
           completeness: 15,
           correctness: 10,
-          maintainability: 20
+          maintainability: 20,
         },
-        confidence: 0.5
+        confidence: 0.5,
       };
 
       const improvements = plugin.suggestImprovements(criticalQuality);
 
       expect(improvements.some(imp => imp.priority === 'critical')).toBe(true);
-      expect(improvements.some(imp => 
-        imp.description.includes('緊急') || imp.description.includes('至急')
-      )).toBe(true);
+      expect(
+        improvements.some(
+          imp => imp.description.includes('緊急') || imp.description.includes('至急')
+        )
+      ).toBe(true);
     });
 
     it('セキュリティ関連の改善提案を含む', () => {
@@ -241,23 +246,21 @@ describe('CoverageQualityPlugin', () => {
         dimensions: {
           completeness: 40,
           correctness: 35,
-          maintainability: 45
+          maintainability: 45,
         },
-        confidence: 0.6
+        confidence: 0.6,
       };
 
       // セキュリティファイルのテスト
       (plugin as any).currentTestFile = {
         path: '/src/security/encryption.test.ts',
         content: 'security test',
-        framework: 'jest'
+        framework: 'jest',
       };
 
       const improvements = plugin.suggestImprovements(securityLowQuality);
 
-      expect(improvements.some(imp => 
-        imp.description.includes('セキュリティ')
-      )).toBe(true);
+      expect(improvements.some(imp => imp.description.includes('セキュリティ'))).toBe(true);
     });
   });
 
@@ -267,7 +270,7 @@ describe('CoverageQualityPlugin', () => {
         '/src/auth/login.test.ts',
         '/src/api/users.test.ts',
         '/src/utils/helpers.test.ts',
-        '/src/security/encryption.test.ts'
+        '/src/security/encryption.test.ts',
       ];
 
       const categories = plugin.categorizeFiles(testPaths);
@@ -303,7 +306,7 @@ describe('CoverageQualityPlugin', () => {
         lines: { total: 1000, covered: 603, pct: 60.35 },
         statements: { total: 1100, covered: 655, pct: 59.48 },
         functions: { total: 320, covered: 190, pct: 59.49 },
-        branches: { total: 738, covered: 347, pct: 46.98 }
+        branches: { total: 738, covered: 347, pct: 46.98 },
       };
 
       mockCoverageAnalyzer.getOverallCoverage.mockResolvedValue(mockOverallCoverage);
@@ -321,15 +324,15 @@ describe('CoverageQualityPlugin', () => {
           linesPct: 25,
           statementsPct: 20,
           functionsPct: 30,
-          branchesPct: 15
+          branchesPct: 15,
         },
         {
           filePath: '/src/feature2.ts',
           linesPct: 35,
           statementsPct: 30,
           functionsPct: 40,
-          branchesPct: 25
-        }
+          branchesPct: 25,
+        },
       ];
 
       mockCoverageAnalyzer.findLowCoverageFiles.mockResolvedValue(mockLowCoverageFiles);

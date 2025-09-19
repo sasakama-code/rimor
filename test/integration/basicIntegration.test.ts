@@ -1,13 +1,18 @@
 import * as path from 'path';
 import 'reflect-metadata';
 import { Container } from 'inversify';
-import { 
-  createTestContainer, 
+import {
+  createTestContainer,
   cleanupTestContainer,
   getTestAnalysisEngine,
-  getMockPluginManager
+  getMockPluginManager,
 } from '../helpers/test-container';
-import { IAnalysisEngine, IPluginManager, IPlugin, PluginMetadata } from '../../src/core/interfaces';
+import {
+  IAnalysisEngine,
+  IPluginManager,
+  IPlugin,
+  PluginMetadata,
+} from '../../src/core/interfaces';
 import { Issue } from '../../src/core/types';
 
 const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures', filename);
@@ -15,16 +20,20 @@ const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures',
 // テスト用のモックプラグイン
 class MockTestPlugin implements IPlugin {
   metadata: PluginMetadata;
-  
-  constructor(id: string, name: string, private issues: Issue[] = []) {
+
+  constructor(
+    id: string,
+    name: string,
+    private issues: Issue[] = []
+  ) {
     this.metadata = {
       id,
       name,
       version: '1.0.0',
-      enabled: true
+      enabled: true,
     };
   }
-  
+
   async analyze(filePath: string): Promise<Issue[]> {
     return this.issues;
   }
@@ -36,9 +45,9 @@ class ErrorPlugin implements IPlugin {
     id: 'error-plugin',
     name: 'Error Plugin',
     version: '1.0.0',
-    enabled: true
+    enabled: true,
   };
-  
+
   async analyze(): Promise<Issue[]> {
     throw new Error('Plugin error occurred');
   }
@@ -90,12 +99,14 @@ describe('Basic Integration Tests', () => {
 
   describe('Analysis', () => {
     it('should execute analysis with single plugin', async () => {
-      const testIssues: Issue[] = [{
-        type: 'test-missing',
-        severity: 'high',
-        message: 'Test file is missing'
-      }];
-      
+      const testIssues: Issue[] = [
+        {
+          type: 'test-missing',
+          severity: 'high',
+          message: 'Test file is missing',
+        },
+      ];
+
       const plugin = new MockTestPlugin('test-analyzer', 'Test Analyzer', testIssues);
       pluginManager.register(plugin);
 
@@ -111,7 +122,7 @@ describe('Basic Integration Tests', () => {
       pluginManager.register(plugin);
 
       const result = await analysisEngine.analyze('/non/existent/file.ts');
-      
+
       expect(result).toBeDefined();
       expect(result.issues).toBeDefined();
     });
@@ -172,15 +183,17 @@ describe('Basic Integration Tests', () => {
           id: 'legacy-test-plugin',
           name: 'Legacy Test Plugin',
           version: '1.0.0',
-          enabled: true
+          enabled: true,
         },
         async analyze(_filePath: string) {
-          return [{
-            type: 'legacy-issue',
-            severity: 'medium' as const,
-            message: 'Legacy plugin issue detected'
-          }];
-        }
+          return [
+            {
+              type: 'legacy-issue',
+              severity: 'medium' as const,
+              message: 'Legacy plugin issue detected',
+            },
+          ];
+        },
       };
 
       pluginManager.register(legacyPlugin);
@@ -205,11 +218,13 @@ describe('Basic Integration Tests', () => {
 
     it('should handle multiple plugins with mixed success/failure', async () => {
       const errorPlugin = new ErrorPlugin();
-      const goodPlugin = new MockTestPlugin('good-plugin', 'Good Plugin', [{
-        type: 'test-issue',
-        severity: 'medium',
-        message: 'Test warning'
-      }]);
+      const goodPlugin = new MockTestPlugin('good-plugin', 'Good Plugin', [
+        {
+          type: 'test-issue',
+          severity: 'medium',
+          message: 'Test warning',
+        },
+      ]);
 
       pluginManager.register(errorPlugin);
       pluginManager.register(goodPlugin);

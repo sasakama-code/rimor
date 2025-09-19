@@ -9,45 +9,45 @@ export interface DomainTerm {
   // Identification
   id: string;
   term: string;
-  
+
   // Variations
   aliases?: string[];
   abbreviations?: string[];
   plurals?: string[];
-  
+
   // Classification
   category?: string;
   type?: 'entity' | 'action' | 'attribute' | 'relationship' | 'constraint' | 'event';
   domain?: string;
   subdomain?: string;
-  
+
   // Definition
   definition: string;
   description?: string;
   examples?: string[];
   nonExamples?: string[];
-  
+
   // Context
   context?: string[];
   relatedTerms?: string[];
   synonyms?: string[];
   antonyms?: string[];
-  
+
   // Business rules
   rules?: string[];
   constraints?: string[];
   validations?: string[];
-  
+
   // Technical mapping
   technicalName?: string;
   dataType?: string;
   format?: string;
   pattern?: string;
-  
+
   // Importance
   importance?: 'low' | 'medium' | 'high' | 'critical';
   frequency?: number; // Usage frequency
-  
+
   // Metadata
   source?: string;
   references?: string[];
@@ -62,19 +62,19 @@ export interface BusinessRule {
   id: string;
   name: string;
   code?: string; // Rule code for reference
-  
+
   // Classification
   type?: 'validation' | 'calculation' | 'constraint' | 'workflow' | 'authorization' | 'other';
   category?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
-  
+
   // Definition
   description: string;
   statement: string; // Formal rule statement
   conditions?: string[];
   actions?: string[];
   exceptions?: string[];
-  
+
   // Implementation
   implementation?: {
     pseudocode?: string;
@@ -82,17 +82,17 @@ export interface BusinessRule {
     algorithm?: string;
     flowchart?: string;
   };
-  
+
   // Testing
   testScenarios?: TestScenario[];
   acceptanceCriteria?: string[];
   edgeCases?: string[];
-  
+
   // Related entities
   relatedTerms?: string[];
   relatedRules?: string[];
   dependencies?: string[];
-  
+
   // Compliance
   compliance?: {
     standard?: string;
@@ -100,7 +100,7 @@ export interface BusinessRule {
     requirement?: string;
     auditTrail?: boolean;
   };
-  
+
   // Metadata
   owner?: string;
   approvedBy?: string;
@@ -128,17 +128,17 @@ export interface DomainDictionary {
   id: string;
   name: string;
   version: string;
-  
+
   // Content
   terms: DomainTerm[];
   rules: BusinessRule[];
   relationships?: DomainRelationship[];
-  
+
   // Organization
   categories?: DomainCategory[];
   domains?: string[];
   glossary?: Map<string, string>; // Quick lookup
-  
+
   // Metadata
   language?: string;
   industry?: string;
@@ -222,18 +222,21 @@ export interface DomainCoverage {
   coveredTerms: number;
   uncoveredTerms: string[];
   coverage: number; // Percentage
-  
+
   totalRules: number;
   implementedRules: number;
   violatedRules: number;
   compliance: number; // Percentage
-  
-  byCategory?: Map<string, {
-    total: number;
-    covered: number;
-    coverage: number;
-  }>;
-  
+
+  byCategory?: Map<
+    string,
+    {
+      total: number;
+      covered: number;
+      coverage: number;
+    }
+  >;
+
   suggestions?: string[];
   gaps?: string[];
 }

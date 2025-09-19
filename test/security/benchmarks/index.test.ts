@@ -30,14 +30,18 @@ describe('Security Benchmarks Index - セキュリティベンチマークモジ
 
   describe('モジュール統合', () => {
     it('エクスポートされたクラスが正常にインスタンス化できること', async () => {
-      const { PerformanceBenchmark, BenchmarkRunner } = await import('../../../src/security/benchmarks/index');
+      const { PerformanceBenchmark, BenchmarkRunner } = await import(
+        '../../../src/security/benchmarks/index'
+      );
 
       expect(() => new PerformanceBenchmark()).not.toThrow();
       expect(() => new BenchmarkRunner()).not.toThrow();
     });
 
     it('クラス間の依存関係が正しく動作すること', async () => {
-      const { PerformanceBenchmark, BenchmarkRunner } = await import('../../../src/security/benchmarks/index');
+      const { PerformanceBenchmark, BenchmarkRunner } = await import(
+        '../../../src/security/benchmarks/index'
+      );
 
       const benchmark = new PerformanceBenchmark();
       const runner = new BenchmarkRunner();

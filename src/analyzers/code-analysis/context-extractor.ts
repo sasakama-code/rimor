@@ -1,15 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Issue, ExtendedIssue } from '../../core/types';
-import { 
-  AnalysisOptions, 
-  ExtractedCodeContext, 
-  FunctionInfo, 
-  ClassInfo, 
-  InterfaceInfo, 
-  VariableInfo, 
-  ScopeInfo, 
-  RelatedFileInfo 
+import {
+  AnalysisOptions,
+  ExtractedCodeContext,
+  FunctionInfo,
+  ClassInfo,
+  InterfaceInfo,
+  VariableInfo,
+  ScopeInfo,
+  RelatedFileInfo,
 } from '../types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
 import { PathSecurity } from '../../utils/pathSecurity';
@@ -44,22 +44,26 @@ export class AdvancedCodeContextAnalyzer {
    * 包括的なコードコンテキスト分析
    */
   async analyzeCodeContext(
-    issue: Issue, 
-    projectPath: string, 
+    issue: Issue,
+    projectPath: string,
     options: AnalysisOptions = {}
   ): Promise<ExtractedCodeContext> {
     // リソース監視開始
     this.resourceMonitor.startAnalysis();
     const startTime = Date.now();
-    
+
     try {
-      const filePath = PathSecurity.safeResolve(issue.file || '', projectPath, 'analyzeCodeContext');
+      const filePath = PathSecurity.safeResolve(
+        issue.file || '',
+        projectPath,
+        'analyzeCodeContext'
+      );
       if (!filePath) {
         const language = this.languageAnalyzer.detectLanguage(issue.file || '');
         return this.createEmptyContext(language, startTime);
       }
       const language = this.languageAnalyzer.detectLanguage(filePath);
-      
+
       // ファイル存在確認
       if (!fs.existsSync(filePath)) {
         debug.warn(`ファイルが見つかりません: ${filePath}`);
@@ -92,20 +96,13 @@ export class AdvancedCodeContextAnalyzer {
       debug.info(`📊 詳細コンテキスト分析: ${filePath} (${language}, ${executionTime}ms)`);
 
       // 各種分析の実行
-      const [
-        functions,
-        classes,
-        interfaces,
-        variables,
-        scopes,
-        relatedFiles
-      ] = await Promise.all([
+      const [functions, classes, interfaces, variables, scopes, relatedFiles] = await Promise.all([
         this.languageAnalyzer.extractFunctionInfo(fileContent, language),
         this.languageAnalyzer.extractClassInfo(fileContent, language),
         this.languageAnalyzer.extractInterfaceInfo(fileContent, language),
         this.languageAnalyzer.extractVariableInfo(fileContent, language),
         this.scopeAnalyzer.analyzeScopeHierarchy(fileContent, language),
-        this.fileAnalyzer.findRelatedFiles(filePath, projectPath, options)
+        this.fileAnalyzer.findRelatedFiles(filePath, projectPath, options),
       ]);
 
       // コンテキストの統合
@@ -146,9 +143,9 @@ export class AdvancedCodeContextAnalyzer {
       rule: 'extraction',
       severity: 'low',
       message: 'Context extraction',
-      category: 'documentation'
+      category: 'documentation',
     };
-    
+
     const projectPath = path.dirname(filePath);
     return this.analyzeCodeContext(issue, projectPath, options);
   }
@@ -162,11 +159,11 @@ export class AdvancedCodeContextAnalyzer {
       targetCode: {
         content: '',
         startLine: 0,
-        endLine: 0
+        endLine: 0,
       },
       surroundingCode: {
         before: '',
-        after: ''
+        after: '',
       },
       imports: [],
       exports: [],
@@ -180,14 +177,14 @@ export class AdvancedCodeContextAnalyzer {
       language,
       dependencies: {
         dependencies: [],
-        dependents: []
+        dependents: [],
       },
       metadata: {
         language,
         fileSize: 0,
         analysisTime: executionTime,
-        confidence: 0
-      }
+        confidence: 0,
+      },
     };
   }
 
@@ -208,20 +205,20 @@ export class AdvancedCodeContextAnalyzer {
   ): ExtractedCodeContext {
     const executionTime = Date.now() - startTime;
     const fileSize = Buffer.byteLength(fileContent, 'utf8');
-    
+
     // コード行の取得
     const lines = fileContent.split('\n');
     const startLine = 1;
     const endLine = lines.length;
-    
+
     // インポート・エクスポートの抽出
     const imports: Array<{ source: string }> = [];
     const exports: string[] = [];
-    
+
     // Import文の抽出
     const importRegex = /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
     const requireRegex = /require\s*\(['"]([^'"]+)['"]\)/g;
-    
+
     let match;
     while ((match = importRegex.exec(fileContent)) !== null) {
       imports.push({ source: match[1] });
@@ -229,7 +226,7 @@ export class AdvancedCodeContextAnalyzer {
     while ((match = requireRegex.exec(fileContent)) !== null) {
       imports.push({ source: match[1] });
     }
-    
+
     // 使用APIの検出（簡易実装）
     const usedAPIs: string[] = [];
 
@@ -237,11 +234,11 @@ export class AdvancedCodeContextAnalyzer {
       targetCode: {
         content: fileContent,
         startLine,
-        endLine
+        endLine,
       },
       surroundingCode: {
         before: '',
-        after: ''
+        after: '',
       },
       imports,
       exports,
@@ -255,14 +252,14 @@ export class AdvancedCodeContextAnalyzer {
       language,
       dependencies: {
         dependencies: [],
-        dependents: []
+        dependents: [],
       },
       metadata: {
         language,
         fileSize,
         analysisTime: executionTime,
-        confidence: 0.85
-      }
+        confidence: 0.85,
+      },
     };
   }
 }

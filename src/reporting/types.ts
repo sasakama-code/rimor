@@ -2,7 +2,7 @@
 /**
  * Reporting Type Definitions
  * v0.8.0 - Phase 4: Context Engineering
- * 
+ *
  * 決定論的レポーティングのための型定義
  * JSONスキーマ（schema.json）に準拠
  */
@@ -25,7 +25,7 @@ export enum Severity {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low',
-  INFO = 'info'
+  INFO = 'info',
 }
 
 /**
@@ -46,7 +46,7 @@ export enum IssueType {
   TEST_QUALITY = 'TEST_QUALITY',
   CODE_QUALITY = 'CODE_QUALITY',
   SECURITY_MISCONFIGURATION = 'SECURITY_MISCONFIGURATION',
-  SENSITIVE_DATA_EXPOSURE = 'SENSITIVE_DATA_EXPOSURE'
+  SENSITIVE_DATA_EXPOSURE = 'SENSITIVE_DATA_EXPOSURE',
 }
 
 /**

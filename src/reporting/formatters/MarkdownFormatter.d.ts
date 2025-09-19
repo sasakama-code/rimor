@@ -14,11 +14,11 @@ import { UnifiedAnalysisResult } from '../../nist/types/unified-analysis-result'
  * StructuredReporterの機能を統合
  */
 export declare class MarkdownFormatter extends BaseFormatter {
-    name: string;
-    /**
-     * Markdown形式でレポートを生成
-     * Template Methodパターンの具体実装
-     */
-    protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string;
+  name: string;
+  /**
+   * Markdown形式でレポートを生成
+   * Template Methodパターンの具体実装
+   */
+  protected doFormat(result: UnifiedAnalysisResult, options?: Record<string, unknown>): string;
 }
 //# sourceMappingURL=MarkdownFormatter.d.ts.map

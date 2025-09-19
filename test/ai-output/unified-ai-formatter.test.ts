@@ -1,7 +1,7 @@
 /**
  * UnifiedAIFormatter テスト
  * Issue #58: AIエージェント向けコンテキスト出力機能
- * 
+ *
  * TDD Red Phase: 失敗するテストを先に作成
  * t_wadaのTDD原則に従う
  */
@@ -13,7 +13,7 @@ import {
   AIActionType,
   ExecutiveSummary,
   DetailedIssue,
-  AIActionableRisk
+  AIActionableRisk,
 } from '../../src/nist/types/unified-analysis-result';
 import { AIJsonOutput, UnifiedAIFormatterOptions } from '../../src/ai-output/types';
 
@@ -28,10 +28,10 @@ describe('UnifiedAIFormatter', () => {
     it('UnifiedAnalysisResultをAI JSON形式に変換する', () => {
       // Arrange
       const unifiedResult: UnifiedAnalysisResult = createMockUnifiedResult();
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       expect(result).toBeDefined();
       expect(result.overallAssessment).toBeDefined();
@@ -42,10 +42,10 @@ describe('UnifiedAIFormatter', () => {
     it('overallAssessmentに全体状況と最重要問題点を含める', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       expect(result.overallAssessment).toContain('総合スコア: 45/100');
       expect(result.overallAssessment).toContain('グレード: D');
@@ -56,10 +56,10 @@ describe('UnifiedAIFormatter', () => {
     it('aiKeyRisksを優先順位付きで変換する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       expect(result.keyRisks).toHaveLength(2);
       expect(result.keyRisks[0].problem).toBe('SQLインジェクションの脆弱性');
@@ -72,16 +72,16 @@ describe('UnifiedAIFormatter', () => {
     it('suggestedActionに具体的なアクション指示を含める', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       const firstRisk = result.keyRisks[0];
       expect(firstRisk.suggestedAction).toEqual({
         type: 'SANITIZE_VARIABLE',
         description: 'SQLクエリのパラメータをサニタイズしてください',
-        example: expect.stringContaining('parameterized query')
+        example: expect.stringContaining('parameterized query'),
       });
     });
 
@@ -89,12 +89,12 @@ describe('UnifiedAIFormatter', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResultWithMultipleRisks();
       const options: UnifiedAIFormatterOptions = {
-        includeRiskLevels: ['CRITICAL', 'HIGH']
+        includeRiskLevels: ['CRITICAL', 'HIGH'],
       };
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       const riskLevels = result.keyRisks.map((r: any) => r.riskLevel);
       expect(riskLevels[0]).toBe(RiskLevel.CRITICAL);
@@ -106,10 +106,10 @@ describe('UnifiedAIFormatter', () => {
     it('最大10件のkeyRisksに制限する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResultWithManyRisks(20);
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       expect(result.keyRisks).toHaveLength(10);
     });
@@ -118,10 +118,10 @@ describe('UnifiedAIFormatter', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
       const options = { reportPath: '.rimor/reports/index.html' };
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       expect(result.fullReportUrl).toBe('.rimor/reports/index.html');
     });
@@ -129,10 +129,10 @@ describe('UnifiedAIFormatter', () => {
     it('空のaiKeyRisksの場合でも正常に処理する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResultWithNoRisks();
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult);
-      
+
       // Assert
       expect(result.keyRisks).toEqual([]);
       expect(result.overallAssessment).toContain('問題は検出されませんでした');
@@ -148,7 +148,7 @@ describe('UnifiedAIFormatter', () => {
     it('必須フィールドが欠けている場合にエラーをスローする', () => {
       // Arrange
       const invalidResult = {} as UnifiedAnalysisResult;
-      
+
       // Act & Assert
       expect(() => formatter.formatAsAIJson(invalidResult)).toThrow('Missing required fields');
     });
@@ -159,13 +159,13 @@ describe('UnifiedAIFormatter', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
       const actualHtmlPath = '/projects/rimor/.rimor/reports/analysis-report.html';
-      const options = { 
-        reportPath: actualHtmlPath
+      const options = {
+        reportPath: actualHtmlPath,
       };
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       expect(result.fullReportUrl).toBe(actualHtmlPath);
     });
@@ -174,10 +174,10 @@ describe('UnifiedAIFormatter', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
       const options = {};
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       expect(result.fullReportUrl).toBe('.rimor/reports/index.html');
     });
@@ -185,14 +185,14 @@ describe('UnifiedAIFormatter', () => {
     it('相対パスのHTMLレポートパスを正しく処理する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      const options = { 
+      const options = {
         reportPath: '.rimor/reports',
-        htmlReportPath: './reports/test-report.html'
+        htmlReportPath: './reports/test-report.html',
       };
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       expect(result.fullReportUrl).toBe('./reports/test-report.html');
     });
@@ -200,15 +200,15 @@ describe('UnifiedAIFormatter', () => {
     it('絶対パスのHTMLレポートパスを正しく処理する', () => {
       // Arrange
       const unifiedResult = createMockUnifiedResult();
-      const absolutePath = '/Users/test/project/.rimor/reports/report.html';
-      const options = { 
+      const absolutePath = '/test/project/.rimor/reports/report.html';
+      const options = {
         reportPath: '.rimor/reports',
-        htmlReportPath: absolutePath
+        htmlReportPath: absolutePath,
       };
-      
+
       // Act
       const result = formatter.formatAsAIJson(unifiedResult, options);
-      
+
       // Assert
       expect(result.fullReportUrl).toBe(absolutePath);
     });
@@ -232,10 +232,10 @@ function createMockUnifiedResult(): UnifiedAnalysisResult {
             {
               label: 'SQLインジェクション',
               calculation: '-10点 x 5件',
-              deduction: -50
-            }
-          ]
-        }
+              deduction: -50,
+            },
+          ],
+        },
       ],
       statistics: {
         totalFiles: 100,
@@ -245,9 +245,9 @@ function createMockUnifiedResult(): UnifiedAnalysisResult {
           HIGH: 10,
           MEDIUM: 15,
           LOW: 20,
-          MINIMAL: 5
-        }
-      }
+          MINIMAL: 5,
+        },
+      },
     },
     detailedIssues: [
       {
@@ -257,8 +257,8 @@ function createMockUnifiedResult(): UnifiedAnalysisResult {
         riskLevel: RiskLevel.CRITICAL,
         title: 'SQLインジェクションの脆弱性',
         description: 'ユーザー入力が直接SQLクエリに埋め込まれています',
-        contextSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`;'
-      }
+        contextSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`;',
+      },
     ],
     aiKeyRisks: [
       {
@@ -270,13 +270,13 @@ function createMockUnifiedResult(): UnifiedAnalysisResult {
         context: {
           codeSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`;',
           startLine: 42,
-          endLine: 42
+          endLine: 42,
         },
         suggestedAction: {
           type: AIActionType.SANITIZE_VARIABLE,
           description: 'SQLクエリのパラメータをサニタイズしてください',
-          example: 'const query = "SELECT * FROM users WHERE id = ?"; // Use parameterized query'
-        }
+          example: 'const query = "SELECT * FROM users WHERE id = ?"; // Use parameterized query',
+        },
       },
       {
         riskId: 'missing-test-001',
@@ -287,15 +287,15 @@ function createMockUnifiedResult(): UnifiedAnalysisResult {
         context: {
           codeSnippet: 'function validateEmail(email: string): boolean { ... }',
           startLine: 10,
-          endLine: 15
+          endLine: 15,
         },
         suggestedAction: {
           type: AIActionType.ADD_MISSING_TEST,
           description: 'バリデーション関数のテストを追加してください',
-          example: 'describe("validateEmail", () => { ... });'
-        }
-      }
-    ]
+          example: 'describe("validateEmail", () => { ... });',
+        },
+      },
+    ],
   };
 }
 
@@ -314,14 +314,14 @@ function createMockUnifiedResultWithMultipleRisks(): UnifiedAnalysisResult {
       context: {
         codeSnippet: 'console.log(data);',
         startLine: 5,
-        endLine: 5
+        endLine: 5,
       },
       suggestedAction: {
         type: AIActionType.REFACTOR_COMPLEX_CODE,
         description: '適切なロガーを使用してください',
-        example: 'logger.info(data);'
-      }
-    }
+        example: 'logger.info(data);',
+      },
+    },
   ];
   return base;
 }
@@ -337,13 +337,13 @@ function createMockUnifiedResultWithManyRisks(count: number): UnifiedAnalysisRes
     context: {
       codeSnippet: `code ${i}`,
       startLine: i,
-      endLine: i
+      endLine: i,
     },
     suggestedAction: {
       type: AIActionType.ADD_ASSERTION,
       description: `修正 ${i}`,
-      example: `example ${i}`
-    }
+      example: `example ${i}`,
+    },
   }));
   return base;
 }
@@ -356,7 +356,7 @@ function createMockUnifiedResultWithNoRisks(): UnifiedAnalysisResult {
     HIGH: 0,
     MEDIUM: 0,
     LOW: 0,
-    MINIMAL: 0
+    MINIMAL: 0,
   };
   base.summary.overallScore = 100;
   base.summary.overallGrade = 'A';

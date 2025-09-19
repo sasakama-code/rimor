@@ -7,7 +7,7 @@ import {
   PluginMetadata,
   PluginExecutionResult,
   IPlugin,
-  IPluginManager
+  IPluginManager,
 } from '../../../src/core/interfaces/IPluginManager';
 import { Issue } from '../../../src/core/types';
 
@@ -18,7 +18,7 @@ describe('IPluginManager Interface', () => {
         id: 'test-plugin',
         name: 'Test Plugin',
         version: '1.0.0',
-        enabled: true
+        enabled: true,
       };
 
       expect(metadata.id).toBe('test-plugin');
@@ -33,7 +33,7 @@ describe('IPluginManager Interface', () => {
         name: 'Test Plugin',
         version: '1.0.0',
         description: 'A test plugin for validation',
-        enabled: false
+        enabled: false,
       };
 
       expect(metadataWithDescription.description).toBe('A test plugin for validation');
@@ -46,7 +46,7 @@ describe('IPluginManager Interface', () => {
       const result: PluginExecutionResult = {
         pluginId: 'test-plugin',
         issues: [],
-        executionTime: 100
+        executionTime: 100,
       };
 
       expect(result.pluginId).toBe('test-plugin');
@@ -59,7 +59,7 @@ describe('IPluginManager Interface', () => {
         pluginId: 'failed-plugin',
         issues: [],
         executionTime: 50,
-        error: 'Plugin execution failed'
+        error: 'Plugin execution failed',
       };
 
       expect(resultWithError.error).toBe('Plugin execution failed');
@@ -74,10 +74,10 @@ describe('IPluginManager Interface', () => {
             line: 10,
             column: 5,
             message: 'Test issue',
-            severity: 'medium'
-          } as Issue
+            severity: 'medium',
+          } as Issue,
         ],
-        executionTime: 200
+        executionTime: 200,
       };
 
       expect(resultWithIssues.issues).toHaveLength(1);
@@ -91,7 +91,7 @@ describe('IPluginManager Interface', () => {
         id: 'mock-plugin',
         name: 'Mock Plugin',
         version: '1.0.0',
-        enabled: true
+        enabled: true,
       };
 
       async analyze(filePath: string): Promise<Issue[]> {
@@ -101,7 +101,7 @@ describe('IPluginManager Interface', () => {
 
     it('should implement required properties and methods', () => {
       const plugin = new MockPlugin();
-      
+
       expect(plugin.metadata).toBeDefined();
       expect(plugin.metadata.id).toBe('mock-plugin');
       expect(plugin.analyze).toBeDefined();
@@ -111,7 +111,7 @@ describe('IPluginManager Interface', () => {
     it('should return correct types from analyze method', async () => {
       const plugin = new MockPlugin();
       const result = await plugin.analyze('test.ts');
-      
+
       expect(Array.isArray(result)).toBe(true);
       expect(result).toEqual([]);
     });
@@ -147,14 +147,14 @@ describe('IPluginManager Interface', () => {
               results.push({
                 pluginId: plugin.metadata.id,
                 issues,
-                executionTime: Date.now() - startTime
+                executionTime: Date.now() - startTime,
               });
             } catch (error) {
               results.push({
                 pluginId: plugin.metadata.id,
                 issues: [],
                 executionTime: Date.now() - startTime,
-                error: String(error)
+                error: String(error),
               });
             }
           }
@@ -174,14 +174,14 @@ describe('IPluginManager Interface', () => {
           return {
             pluginId,
             issues,
-            executionTime: Date.now() - startTime
+            executionTime: Date.now() - startTime,
           };
         } catch (error) {
           return {
             pluginId,
             issues: [],
             executionTime: Date.now() - startTime,
-            error: String(error)
+            error: String(error),
           };
         }
       }
@@ -196,7 +196,7 @@ describe('IPluginManager Interface', () => {
 
     it('should implement all required methods', () => {
       const manager = new MockPluginManager();
-      
+
       expect(manager.register).toBeDefined();
       expect(manager.unregister).toBeDefined();
       expect(manager.getPlugins).toBeDefined();
@@ -213,9 +213,9 @@ describe('IPluginManager Interface', () => {
           id: 'test',
           name: 'Test',
           version: '1.0.0',
-          enabled: true
+          enabled: true,
         },
-        analyze: async () => []
+        analyze: async () => [],
       };
 
       // Register plugin
@@ -240,19 +240,21 @@ describe('IPluginManager Interface', () => {
           id: 'test',
           name: 'Test',
           version: '1.0.0',
-          enabled: true
+          enabled: true,
         },
         analyze: async (filePath: string) => {
-          return [{
-            type: 'test-issue',
-            filePath: filePath,
-            line: 1,
-            column: 1,
-            message: 'Test issue',
-            severity: 'low',
-            category: 'testing'
-          } as Issue];
-        }
+          return [
+            {
+              type: 'test-issue',
+              filePath: filePath,
+              line: 1,
+              column: 1,
+              message: 'Test issue',
+              severity: 'low',
+              category: 'testing',
+            } as Issue,
+          ];
+        },
       };
 
       manager.register(plugin);
@@ -304,7 +306,7 @@ describe('IPluginManager Interface', () => {
         id: 'test',
         name: 'Test',
         version: '1.0.0',
-        enabled: true
+        enabled: true,
       };
 
       const invalid = {
@@ -322,13 +324,13 @@ describe('IPluginManager Interface', () => {
       const valid: PluginExecutionResult = {
         pluginId: 'test',
         issues: [],
-        executionTime: 100
+        executionTime: 100,
       };
 
       const invalid = {
         pluginId: 'test',
         issues: 'not an array', // wrong type
-        executionTime: 100
+        executionTime: 100,
       };
 
       expect(isPluginExecutionResult(valid)).toBe(true);

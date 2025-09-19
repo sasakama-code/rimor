@@ -1,8 +1,8 @@
 /**
  * Coverage Threshold Check Tests
- * 
+ *
  * bc依存除去のための閾値チェック機能のテスト
- * 
+ *
  * TDD原則に従いRED（失敗）フェーズから開始
  * Issue #94対応: bc依存除去リファクタリング
  */
@@ -18,12 +18,12 @@ describe('CoverageThresholdCheck', () => {
   beforeEach(() => {
     // プロセス環境のバックアップ
     originalEnv = { ...process.env };
-    
+
     // ファイルシステムのモック
     mockFs = {
       existsSync: jest.fn(),
       readFileSync: jest.fn(),
-      writeFileSync: jest.fn()
+      writeFileSync: jest.fn(),
     };
 
     // プロセス環境のモック
@@ -31,11 +31,11 @@ describe('CoverageThresholdCheck', () => {
       env: { ...originalEnv },
       exit: jest.fn(),
       stdout: {
-        write: jest.fn()
+        write: jest.fn(),
       },
       stderr: {
-        write: jest.fn()
-      }
+        write: jest.fn(),
+      },
     };
   });
 
@@ -51,7 +51,7 @@ describe('CoverageThresholdCheck', () => {
       const thresholdCheck = () => {
         throw new Error('coverage-threshold-check.js is not implemented yet');
       };
-      
+
       expect(() => {
         const coverageThresholdCheck = require('../../scripts/coverage-threshold-check');
         coverageThresholdCheck.checkThreshold(85.5, 80);
@@ -103,8 +103,8 @@ describe('CoverageThresholdCheck', () => {
     test('有効なcoverage-summary.jsonを解析できる', () => {
       const mockCoverageData = {
         total: {
-          statements: { pct: 85.5 }
-        }
+          statements: { pct: 85.5 },
+        },
       };
 
       // RED: この段階では未実装なので失敗予定
@@ -221,18 +221,18 @@ describe('CoverageThresholdCheck', () => {
       // mockFs.existsSync.mockReturnValue(true);
       // mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCoverageData));
       // mockProcess.env.GITHUB_ENV = '/tmp/github_env';
-      
+
       // const result = coverageThresholdCheck.main({
       //   coverageFile: './coverage/coverage-summary.json',
       //   threshold: 80,
       //   fs: mockFs,
       //   process: mockProcess
       // });
-      
-      // expect(result).toEqual({ 
-      //   success: true, 
+
+      // expect(result).toEqual({
+      //   success: true,
       //   coverage: 85.5,
-      //   message: 'Coverage: 85.5%' 
+      //   message: 'Coverage: 85.5%'
       // });
     });
 
@@ -250,18 +250,18 @@ describe('CoverageThresholdCheck', () => {
       // mockFs.existsSync.mockReturnValue(true);
       // mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCoverageData));
       // mockProcess.env.GITHUB_ENV = '/tmp/github_env';
-      
+
       // const result = coverageThresholdCheck.main({
       //   coverageFile: './coverage/coverage-summary.json',
       //   threshold: 80,
       //   fs: mockFs,
       //   process: mockProcess
       // });
-      
-      // expect(result).toEqual({ 
-      //   success: false, 
+
+      // expect(result).toEqual({
+      //   success: false,
       //   coverage: 75.2,
-      //   message: 'Coverage is below 80% threshold: 75.2%' 
+      //   message: 'Coverage is below 80% threshold: 75.2%'
       // });
     });
   });

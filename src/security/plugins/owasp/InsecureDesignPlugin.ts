@@ -9,14 +9,14 @@ import {
   DetectionResult,
   QualityScore,
   Improvement,
-  SecurityIssue
+  SecurityIssue,
 } from '../../../core/types';
 import {
   IOWASPSecurityPlugin,
   OWASPCategory,
   OWASPTestResult,
   OWASPUtils,
-  OWASPBasePlugin
+  OWASPBasePlugin,
 } from './IOWASPSecurityPlugin';
 import { hasDependencyPattern, hasDependency } from './dependency-utils';
 
@@ -32,7 +32,7 @@ interface DesignPattern {
 
 /**
  * A04: Insecure Design プラグイン
- * 
+ *
  * 検出対象:
  * - 脅威モデリングの不足
  * - セキュアな設計パターンの欠如
@@ -47,7 +47,7 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
   readonly type = 'security' as const;
   readonly owaspCategory = OWASPCategory.A04_INSECURE_DESIGN;
   readonly cweIds = [
-    'CWE-73',  // External Control of File Name or Path
+    'CWE-73', // External Control of File Name or Path
     'CWE-183', // Permissive List of Allowed Inputs
     'CWE-209', // Generation of Error Message Containing Sensitive Information
     'CWE-213', // Exposure of Sensitive Information Due to Incompatible Policies
@@ -81,7 +81,7 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
     'CWE-863', // Incorrect Authorization
     'CWE-913', // Improper Control of Dynamically-Managed Code Resources
     'CWE-922', // Insecure Storage of Sensitive Information
-    'CWE-1275' // Sensitive Cookie with Improper SameSite Attribute
+    'CWE-1275', // Sensitive Cookie with Improper SameSite Attribute
   ];
 
   // 設計セキュリティパターン
@@ -90,50 +90,50 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
       name: 'threat-modeling',
       pattern: /(threat.*model|stride|dread|security.*risk|risk.*assessment)/i,
       description: '脅威モデリングテスト',
-      severity: 'critical'
+      severity: 'critical',
     },
     {
       name: 'secure-by-design',
       pattern: /(secure.*by.*design|security.*design|design.*pattern|security.*architecture)/i,
       description: 'セキュアバイデザインテスト',
-      severity: 'high'
+      severity: 'high',
     },
     {
       name: 'business-logic',
       pattern: /(business.*logic|business.*rule|workflow.*security|transaction.*integrity)/i,
       description: 'ビジネスロジックセキュリティテスト',
-      severity: 'high'
+      severity: 'high',
     },
     {
       name: 'rate-limiting',
       pattern: /(rate.*limit|throttl|quota|api.*limit|request.*limit)/i,
       description: 'レート制限テスト',
-      severity: 'high'
+      severity: 'high',
     },
     {
       name: 'fail-secure',
       pattern: /(fail.*secure|fail.*safe|error.*handl|exception.*security|graceful.*degrad)/i,
       description: 'フェイルセキュアテスト',
-      severity: 'medium'
+      severity: 'medium',
     },
     {
       name: 'defense-in-depth',
       pattern: /(defense.*in.*depth|layer.*security|multiple.*control|redundant.*security)/i,
       description: '多層防御テスト',
-      severity: 'high'
+      severity: 'high',
     },
     {
       name: 'least-privilege',
       pattern: /(least.*privilege|minimum.*permission|principle.*of.*least|minimal.*access)/i,
       description: '最小権限の原則テスト',
-      severity: 'high'
+      severity: 'high',
     },
     {
       name: 'separation-of-duties',
       pattern: /(separation.*of.*duties|segregation.*of.*duties|dual.*control|four.*eyes)/i,
       description: '職務分離テスト',
-      severity: 'medium'
-    }
+      severity: 'medium',
+    },
   ];
 
   // 必須テストケース
@@ -145,7 +145,7 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
     'defense-in-depth-test',
     'least-privilege-test',
     'secure-defaults-test',
-    'trust-boundary-test'
+    'trust-boundary-test',
   ];
 
   /**
@@ -153,11 +153,16 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
    */
   isApplicable(context: ProjectContext): boolean {
     // 設計・アーキテクチャ関連のファイルパターンをチェック
-    const hasDesignFiles = context.filePatterns?.source?.some((pattern: string) => 
-      pattern.includes('design') || pattern.includes('architecture') || 
-      pattern.includes('service') || pattern.includes('domain') ||
-      pattern.includes('business') || pattern.includes('workflow')
-    ) || false;
+    const hasDesignFiles =
+      context.filePatterns?.source?.some(
+        (pattern: string) =>
+          pattern.includes('design') ||
+          pattern.includes('architecture') ||
+          pattern.includes('service') ||
+          pattern.includes('domain') ||
+          pattern.includes('business') ||
+          pattern.includes('workflow')
+      ) || false;
 
     // APIやサービス層のライブラリをチェック
     const serviceLibraries = ['express', 'fastify', 'koa', 'nestjs', 'graphql', 'grpc'];
@@ -182,32 +187,39 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
             patternId: `design-${designPattern.name}`,
             patternName: designPattern.description,
             pattern: designPattern.name,
-            location: { 
-              file: testFile.path, 
-              line: index + 1, 
-              column: 0 
+            location: {
+              file: testFile.path,
+              line: index + 1,
+              column: 0,
             },
             confidence: 0.85,
-            securityRelevance: designPattern.severity === 'critical' ? 1.0 : 
-                              designPattern.severity === 'high' ? 0.9 : 
-                              designPattern.severity === 'medium' ? 0.7 : 0.5,
+            securityRelevance:
+              designPattern.severity === 'critical'
+                ? 1.0
+                : designPattern.severity === 'high'
+                  ? 0.9
+                  : designPattern.severity === 'medium'
+                    ? 0.7
+                    : 0.5,
             severity: designPattern.severity,
             metadata: {
               owaspCategory: this.owaspCategory,
               testType: designPattern.name,
-              hasTest: true
+              hasTest: true,
             },
-            evidence: [{
-              type: 'design-test',
-              description: `${designPattern.description}が検出されました`,
-              location: { 
-                file: testFile.path, 
-                line: index + 1, 
-                column: 0 
+            evidence: [
+              {
+                type: 'design-test',
+                description: `${designPattern.description}が検出されました`,
+                location: {
+                  file: testFile.path,
+                  line: index + 1,
+                  column: 0,
+                },
+                code: line.trim(),
+                confidence: 0.85,
               },
-              code: line.trim(),
-              confidence: 0.85
-            }]
+            ],
           });
         }
       });
@@ -218,29 +230,31 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
           patternId: `design-vulnerability-${index}`,
           patternName: '設計上の脆弱性',
           pattern: 'design-vulnerability',
-          location: { 
-            file: testFile.path, 
-            line: index + 1, 
-            column: 0 
+          location: {
+            file: testFile.path,
+            line: index + 1,
+            column: 0,
           },
           confidence: 0.9,
           securityRelevance: 0.95,
           severity: 'high',
           metadata: {
             owaspCategory: this.owaspCategory,
-            vulnerability: true
+            vulnerability: true,
           },
-          evidence: [{
-            type: 'vulnerability',
-            description: '設計上の脆弱性が検出されました',
-            location: { 
-              file: testFile.path, 
-              line: index + 1, 
-              column: 0 
+          evidence: [
+            {
+              type: 'vulnerability',
+              description: '設計上の脆弱性が検出されました',
+              location: {
+                file: testFile.path,
+                line: index + 1,
+                column: 0,
+              },
+              code: line.trim(),
+              confidence: 0.9,
             },
-            code: line.trim(),
-            confidence: 0.9
-          }]
+          ],
         });
       }
     });
@@ -256,16 +270,14 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
    * 品質評価
    */
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    const designTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('design-') && p.metadata?.hasTest
+    const designTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('design-') && p.metadata?.hasTest
     );
 
-    const vulnerabilities = patterns.filter(p => 
-      p.metadata?.vulnerability
-    );
+    const vulnerabilities = patterns.filter(p => p.metadata?.vulnerability);
 
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-design-')
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-design-')
     );
 
     // カバレッジ計算
@@ -283,24 +295,25 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
     const securityScore = Math.max(0, baseScore - vulnerabilityPenalty);
 
     // 各種テストの存在確認
-    const hasThreatModelingTest = designTests.some(p => 
-      p.pattern && p.pattern.includes('threat-modeling')
+    const hasThreatModelingTest = designTests.some(
+      p => p.pattern && p.pattern.includes('threat-modeling')
     );
-    const hasBusinessLogicTest = designTests.some(p => 
-      p.pattern && p.pattern.includes('business-logic')
+    const hasBusinessLogicTest = designTests.some(
+      p => p.pattern && p.pattern.includes('business-logic')
     );
-    const hasRateLimitingTest = designTests.some(p => 
-      p.pattern && p.pattern.includes('rate-limiting')
+    const hasRateLimitingTest = designTests.some(
+      p => p.pattern && p.pattern.includes('rate-limiting')
     );
-    const hasDefenseInDepthTest = designTests.some(p => 
-      p.pattern && p.pattern.includes('defense-in-depth')
+    const hasDefenseInDepthTest = designTests.some(
+      p => p.pattern && p.pattern.includes('defense-in-depth')
     );
 
     const coverageScore = testCoverage / 100;
-    const maintainabilityScore = (hasThreatModelingTest ? 0.3 : 0) + 
-                                (hasBusinessLogicTest ? 0.25 : 0) + 
-                                (hasRateLimitingTest ? 0.25 : 0) +
-                                (hasDefenseInDepthTest ? 0.2 : 0);
+    const maintainabilityScore =
+      (hasThreatModelingTest ? 0.3 : 0) +
+      (hasBusinessLogicTest ? 0.25 : 0) +
+      (hasRateLimitingTest ? 0.25 : 0) +
+      (hasDefenseInDepthTest ? 0.2 : 0);
 
     return {
       overall: securityScore,
@@ -309,17 +322,19 @@ export class InsecureDesignPlugin extends OWASPBasePlugin {
       maintainability: maintainabilityScore,
       dimensions: {
         completeness: testCoverage,
-        correctness: designTests.length > 0 ? 80 - (vulnerabilities.length * 15) : 0,
-        maintainability: maintainabilityScore * 100
+        correctness: designTests.length > 0 ? 80 - vulnerabilities.length * 15 : 0,
+        maintainability: maintainabilityScore * 100,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 0,
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 0,
       details: {
         strengths: hasThreatModelingTest ? ['脅威モデリング実装済み'] : [],
         weaknesses: !hasThreatModelingTest ? ['脅威モデリング不足'] : [],
         suggestions: [],
-        validationCoverage: hasThreatModelingTest ? 100 : 0
-      }
+        validationCoverage: hasThreatModelingTest ? 100 : 0,
+      },
     };
   }
 
@@ -358,7 +373,7 @@ describe('Threat Modeling Tests', () => {
       });
     });
   });
-});`
+});`,
       });
     }
 
@@ -377,8 +392,8 @@ describe('Threat Modeling Tests', () => {
           'トランザクションの一貫性テスト',
           'ワークフローのバイパステスト',
           '同時実行制御テスト',
-          'ビジネスルール違反テスト'
-        ]
+          'ビジネスルール違反テスト',
+        ],
       });
     }
 
@@ -404,7 +419,7 @@ it('should enforce rate limiting', async () => {
   
   expect(rateLimited.length).toBeGreaterThan(0);
   expect(rateLimited[0].headers['retry-after']).toBeDefined();
-});`
+});`,
       });
     }
 
@@ -418,7 +433,7 @@ it('should enforce rate limiting', async () => {
         description: '複数のセキュリティ層が正しく機能することを検証してください',
         location: { file: '', line: 0, column: 0 },
         impact: 20,
-        automatable: false
+        automatable: false,
       });
     }
 
@@ -432,7 +447,7 @@ it('should enforce rate limiting', async () => {
         description: `${evaluation.details.weaknesses.length}個の設計上の脆弱性が検出されました。セキュアな設計パターンに修正してください`,
         location: { file: '', line: 0, column: 0 },
         impact: 40,
-        automatable: false
+        automatable: false,
       });
     }
 
@@ -445,13 +460,14 @@ it('should enforce rate limiting', async () => {
   async validateSecurityTests(testFile: TestFile): Promise<OWASPTestResult> {
     const patterns = await this.detectPatterns(testFile);
     const issues = this.detectVulnerabilityPatterns(testFile.content);
-    
-    const testPatterns = patterns.filter(p => p.metadata?.hasTest)
+
+    const testPatterns = patterns
+      .filter(p => p.metadata?.hasTest)
       .map(p => p.pattern)
       .filter((p): p is string => p !== undefined);
-    
-    const missingTests = this.requiredTests.filter(test => 
-      !testPatterns.some(pattern => pattern && pattern.includes(test.split('-')[0]))
+
+    const missingTests = this.requiredTests.filter(
+      test => !testPatterns.some(pattern => pattern && pattern.includes(test.split('-')[0]))
     );
 
     const coverage = OWASPUtils.calculateTestCoverage(testPatterns, this.requiredTests);
@@ -462,7 +478,7 @@ it('should enforce rate limiting', async () => {
       issues,
       recommendations: this.generateRecommendations(coverage, missingTests, issues),
       testPatterns,
-      missingTests
+      missingTests,
     };
   }
 
@@ -481,27 +497,26 @@ it('should enforce rate limiting', async () => {
           severity: 'critical',
           type: 'insufficient-validation',
           message: '無制限のリソース使用の可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
       // エラー情報の漏洩
-      if (line.includes('console.error(error)') || 
-          line.includes('res.send(error.stack)')) {
+      if (line.includes('console.error(error)') || line.includes('res.send(error.stack)')) {
         issues.push({
           id: `error-exposure-${index}`,
           severity: 'warning',
           type: 'insufficient-validation',
           message: 'エラー情報が外部に漏洩する可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
@@ -512,27 +527,29 @@ it('should enforce rate limiting', async () => {
           severity: 'critical',
           type: 'CODE_EXECUTION',
           message: '動的コード実行の脆弱性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
       // レート制限の欠如
-      if ((line.includes('app.post') || line.includes('app.get')) && 
-          !content.includes('rateLimit')) {
+      if (
+        (line.includes('app.post') || line.includes('app.get')) &&
+        !content.includes('rateLimit')
+      ) {
         issues.push({
           id: `missing-rate-limit-${index}`,
           severity: 'warning',
           type: 'insufficient-validation',
           message: 'レート制限が実装されていない可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
     });
@@ -550,7 +567,7 @@ it('should enforce rate limiting', async () => {
     tests.push('脅威モデリング（STRIDE）の検証テスト');
     tests.push('ビジネスロジックの悪用防止テスト');
     tests.push('レート制限とクォータ管理テスト');
-    
+
     // API使用時のテスト
     if (hasDependencyPattern(context, ['express', 'fastify'])) {
       tests.push('APIエンドポイントのレート制限テスト');
@@ -579,16 +596,16 @@ it('should enforce rate limiting', async () => {
    */
   validateEnterpriseRequirements(testFile: TestFile): boolean {
     const content = testFile.content;
-    
+
     // エンタープライズレベルの設計要件
     const requirements = [
-      /enterprise.*architect|solution.*architect/i,  // エンタープライズアーキテクチャ
-      /microservice|service.*mesh/i,                // マイクロサービス
-      /saga.*pattern|cqrs|event.*sourc/i,          // 高度な設計パターン
-      /circuit.*breaker|bulkhead/i,                // 復元力パターン
-      /zero.*trust|security.*by.*design/i,         // ゼロトラスト設計
-      /compliance.*requirement|regulatory/i,         // コンプライアンス要件
-      /disaster.*recovery|high.*availability/i      // 高可用性設計
+      /enterprise.*architect|solution.*architect/i, // エンタープライズアーキテクチャ
+      /microservice|service.*mesh/i, // マイクロサービス
+      /saga.*pattern|cqrs|event.*sourc/i, // 高度な設計パターン
+      /circuit.*breaker|bulkhead/i, // 復元力パターン
+      /zero.*trust|security.*by.*design/i, // ゼロトラスト設計
+      /compliance.*requirement|regulatory/i, // コンプライアンス要件
+      /disaster.*recovery|high.*availability/i, // 高可用性設計
     ];
 
     return requirements.filter(req => req.test(content)).length >= 3;
@@ -607,7 +624,7 @@ it('should enforce rate limiting', async () => {
       /disable.*security/i,
       /skip.*validation/i,
       /TODO.*security/i,
-      /FIXME.*auth/i
+      /FIXME.*auth/i,
     ];
 
     return vulnerablePatterns.some(pattern => pattern.test(line));
@@ -618,15 +635,11 @@ it('should enforce rate limiting', async () => {
    */
   private detectMissingTests(content: string): DetectionResult[] {
     const patterns: DetectionResult[] = [];
-    const foundTests = this.designPatterns.filter(pattern => 
-      pattern.pattern.test(content)
-    ).map(p => p.name);
+    const foundTests = this.designPatterns
+      .filter(pattern => pattern.pattern.test(content))
+      .map(p => p.name);
 
-    const criticalMissing = [
-      'threat-modeling',
-      'business-logic',
-      'rate-limiting'
-    ];
+    const criticalMissing = ['threat-modeling', 'business-logic', 'rate-limiting'];
 
     criticalMissing.forEach(test => {
       if (!foundTests.includes(test)) {
@@ -641,15 +654,17 @@ it('should enforce rate limiting', async () => {
           metadata: {
             owaspCategory: this.owaspCategory,
             testType: test,
-            hasTest: false
+            hasTest: false,
           },
-          evidence: [{
-            type: 'missing-test',
-            description: `重要な設計セキュリティテスト（${test}）が実装されていません`,
-            location: { file: '', line: 0, column: 0 },
-            code: '',
-            confidence: 1.0
-          }]
+          evidence: [
+            {
+              type: 'missing-test',
+              description: `重要な設計セキュリティテスト（${test}）が実装されていません`,
+              location: { file: '', line: 0, column: 0 },
+              code: '',
+              confidence: 1.0,
+            },
+          ],
         });
       }
     });
@@ -661,18 +676,22 @@ it('should enforce rate limiting', async () => {
    * 推奨事項の生成
    */
   private generateRecommendations(
-    coverage: number, 
-    missingTests: string[], 
+    coverage: number,
+    missingTests: string[],
     issues: SecurityIssue[]
   ): string[] {
     const recommendations: string[] = [];
 
     if (coverage < 50) {
-      recommendations.push('設計セキュリティテストのカバレッジが非常に低いです。セキュアバイデザインの原則に従ってテストを追加してください');
+      recommendations.push(
+        '設計セキュリティテストのカバレッジが非常に低いです。セキュアバイデザインの原則に従ってテストを追加してください'
+      );
     }
 
     if (missingTests.includes('threat-model-validation-test')) {
-      recommendations.push('脅威モデリングを実施し、識別された脅威に対するテストを追加してください');
+      recommendations.push(
+        '脅威モデリングを実施し、識別された脅威に対するテストを追加してください'
+      );
     }
 
     if (missingTests.includes('business-logic-abuse-test')) {
@@ -680,7 +699,9 @@ it('should enforce rate limiting', async () => {
     }
 
     if (issues.some(i => i.message.includes('無制限のリソース'))) {
-      recommendations.push('リソース枯渇攻撃を防ぐため、適切な制限とタイムアウトを実装してください');
+      recommendations.push(
+        'リソース枯渇攻撃を防ぐため、適切な制限とタイムアウトを実装してください'
+      );
     }
 
     if (issues.some(i => i.message.includes('レート制限'))) {

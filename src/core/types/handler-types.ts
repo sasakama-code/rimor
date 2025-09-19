@@ -78,7 +78,10 @@ export type ArrayHelper<T> = (array: T[], ...args: unknown[]) => T[] | T | undef
 /**
  * オブジェクト操作用ヘルパー
  */
-export type ObjectHelper<T = unknown> = (obj: Record<string, T>, ...args: unknown[]) => T | undefined;
+export type ObjectHelper<T = unknown> = (
+  obj: Record<string, T>,
+  ...args: unknown[]
+) => T | undefined;
 
 /**
  * 文字列操作用ヘルパー

@@ -8,7 +8,9 @@ jest.mock('../../../src/analyzers/coverage/CoverageAnalyzer');
 jest.mock('../../../src/analyzers/coverage/TestQualityEvaluator');
 
 const MockCoverageAnalyzer = CoverageAnalyzer as jest.MockedClass<typeof CoverageAnalyzer>;
-const MockTestQualityEvaluator = TestQualityEvaluator as jest.MockedClass<typeof TestQualityEvaluator>;
+const MockTestQualityEvaluator = TestQualityEvaluator as jest.MockedClass<
+  typeof TestQualityEvaluator
+>;
 
 describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
   let plugin: TestCompletenessPlugin;
@@ -28,21 +30,21 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         });
       });
     `,
-    framework: 'jest'
+    framework: 'jest',
   };
 
   const mockProjectContext: ProjectContext = {
     rootPath: '/project',
     testFramework: 'jest',
-    language: 'typescript'
+    language: 'typescript',
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockCoverageAnalyzer = new MockCoverageAnalyzer() as jest.Mocked<CoverageAnalyzer>;
     mockEvaluator = new MockTestQualityEvaluator() as jest.Mocked<TestQualityEvaluator>;
-    
+
     plugin = new TestCompletenessPlugin();
     // プライベートプロパティにモックを注入
     (plugin as any).coverageAnalyzer = mockCoverageAnalyzer;
@@ -55,7 +57,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         lines: { total: 100, covered: 90, pct: 90 },
         statements: { total: 100, covered: 90, pct: 90 },
         functions: { total: 20, covered: 18, pct: 90 },
-        branches: { total: 50, covered: 40, pct: 80 }
+        branches: { total: 50, covered: 40, pct: 80 },
       };
 
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockCoverage);
@@ -64,9 +66,9 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         dimensions: {
           completeness: 85,
           correctness: 80,
-          maintainability: 75
+          maintainability: 75,
         },
-        confidence: 0.9
+        confidence: 0.9,
       });
 
       // 高品質テストファイルを使用（comprehensive-test-suiteパターンを期待）
@@ -91,7 +93,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
             });
           });
         `,
-        framework: 'jest'
+        framework: 'jest',
       };
 
       const patterns = await plugin.detectPatterns(highQualityTestFile);
@@ -107,7 +109,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         lines: { total: 15735, covered: 9497, pct: 60.35 },
         statements: { total: 16696, covered: 9932, pct: 59.48 },
         functions: { total: 3207, covered: 1908, pct: 59.49 },
-        branches: { total: 7387, covered: 3471, pct: 46.98 }
+        branches: { total: 7387, covered: 3471, pct: 46.98 },
       };
 
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockPoorCoverage);
@@ -116,9 +118,9 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         dimensions: {
           completeness: 45,
           correctness: 40,
-          maintainability: 50
+          maintainability: 50,
         },
-        confidence: 0.6
+        confidence: 0.6,
       });
 
       const patterns = await plugin.detectPatterns(mockTestFile);
@@ -148,7 +150,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         lines: { total: 100, covered: 50, pct: 50 },
         statements: { total: 100, covered: 50, pct: 50 },
         functions: { total: 20, covered: 10, pct: 50 },
-        branches: { total: 50, covered: 15, pct: 30 }
+        branches: { total: 50, covered: 15, pct: 30 },
       };
 
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockPoorCoverage);
@@ -160,25 +162,28 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
           title: 'カバレッジ向上',
           description: '分岐カバレッジを70%以上に改善してください',
           location: { file: mockTestFile.path, line: 1, column: 1 },
-          impact: 0.8
-        }
+          impact: 0.8,
+        },
       ]);
 
       const quality = {
         overall: 45,
         dimensions: { completeness: 45, correctness: 40, maintainability: 50 },
-        confidence: 0.6
+        confidence: 0.6,
       };
 
       const improvements = plugin.suggestImprovements(quality);
 
       expect(improvements.length).toBeGreaterThan(0);
       // 実際の実装は静的解析ベースの改善提案を生成
-      expect(improvements.some(imp => 
-        imp.description.includes('テスト') || 
-        imp.title.includes('改善') ||
-        imp.description.includes('カバレッジ')
-      )).toBe(true);
+      expect(
+        improvements.some(
+          imp =>
+            imp.description.includes('テスト') ||
+            imp.title.includes('改善') ||
+            imp.description.includes('カバレッジ')
+        )
+      ).toBe(true);
     });
 
     it('極低カバレッジファイルに対してはCRITICAL改善提案を生成', async () => {
@@ -186,7 +191,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         lines: { total: 100, covered: 2, pct: 2 },
         statements: { total: 100, covered: 2, pct: 2 },
         functions: { total: 20, covered: 0, pct: 0 },
-        branches: { total: 50, covered: 0, pct: 0 }
+        branches: { total: 50, covered: 0, pct: 0 },
       };
 
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockVeryPoorCoverage);
@@ -198,14 +203,14 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
           title: 'CRITICAL: テストケース不足',
           description: 'このファイルは極めて低いカバレッジです',
           location: { file: mockTestFile.path, line: 1, column: 1 },
-          impact: 0.9
-        }
+          impact: 0.9,
+        },
       ]);
 
       const quality = {
         overall: 15,
         dimensions: { completeness: 15, correctness: 10, maintainability: 20 },
-        confidence: 0.3
+        confidence: 0.3,
       };
 
       const improvements = plugin.suggestImprovements(quality);
@@ -220,7 +225,7 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
         lines: { total: 100, covered: 80, pct: 80 },
         statements: { total: 100, covered: 80, pct: 80 },
         functions: { total: 20, covered: 16, pct: 80 },
-        branches: { total: 50, covered: 10, pct: 20 } // 分岐カバレッジだけ極端に低い
+        branches: { total: 50, covered: 10, pct: 20 }, // 分岐カバレッジだけ極端に低い
       };
 
       mockCoverageAnalyzer.getFileCoverage.mockResolvedValue(mockLowBranchCoverage);
@@ -235,18 +240,18 @@ describe('TestCompletenessPlugin (Enhanced with Coverage)', () => {
   describe('Coverage Path Detection', () => {
     it('カバレッジディレクトリを適切に検出する', () => {
       const coveragePath = plugin.getCoveragePath(mockProjectContext);
-      
+
       expect(coveragePath).toMatch(/coverage$/);
     });
 
     it('カスタムカバレッジパスを処理する', () => {
       const customContext = {
         ...mockProjectContext,
-        coverageDir: 'custom-coverage'
+        coverageDir: 'custom-coverage',
       };
 
       const coveragePath = plugin.getCoveragePath(customContext as any);
-      
+
       expect(coveragePath).toMatch(/custom-coverage$/);
     });
   });

@@ -3,13 +3,7 @@
  * 後方互換性のために必要な型をエクスポート
  */
 
-import {
-  TaintLevel,
-  TaintSource,
-  SanitizerType,
-  TestMethod,
-  SecurityViolation
-} from '../types';
+import { TaintLevel, TaintSource, SanitizerType, TestMethod, SecurityViolation } from '../types';
 
 // 汚染源情報
 export interface TaintSourceInfo {

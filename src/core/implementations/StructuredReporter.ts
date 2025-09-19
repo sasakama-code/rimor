@@ -1,17 +1,12 @@
 /**
  * Structured Reporter Implementation
  * v0.8.0 - Phase 4: Context Engineering
- * 
+ *
  * IReporterインターフェースの構造化レポーター実装
  */
 
 import { injectable, inject } from 'inversify';
-import {
-  IReporter,
-  ReportOptions,
-  ReportResult,
-  ReportFormat
-} from '../interfaces/IReporter';
+import { IReporter, ReportOptions, ReportResult, ReportFormat } from '../interfaces/IReporter';
 import { AnalysisResult } from '../interfaces/IAnalysisEngine';
 import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
 import { StructuredReporter as StructuredReporterClass } from '../../reporting/StructuredReporter';
@@ -71,25 +66,19 @@ export class StructuredReporter implements IReporter {
             await this.initialize();
           }
           if (options.includeDetails) {
-            content = await this.templatedReporter.generateDetailedReport(
-              structuredResult,
-              {
-                includeDetails: options.includeDetails,
-                includeSummary: options.includeSummary,
-                includeRecommendations: options.includeRecommendations,
-                includeCodeSnippets: true,
-                includeDataFlow: true
-              }
-            );
+            content = await this.templatedReporter.generateDetailedReport(structuredResult, {
+              includeDetails: options.includeDetails,
+              includeSummary: options.includeSummary,
+              includeRecommendations: options.includeRecommendations,
+              includeCodeSnippets: true,
+              includeDataFlow: true,
+            });
           } else {
-            content = await this.templatedReporter.generateSummaryReport(
-              structuredResult,
-              {
-                includeDetails: false,
-                includeSummary: true,
-                includeRecommendations: options.includeRecommendations
-              }
-            );
+            content = await this.templatedReporter.generateSummaryReport(structuredResult, {
+              includeDetails: false,
+              includeSummary: true,
+              includeRecommendations: options.includeRecommendations,
+            });
           }
           break;
 
@@ -104,9 +93,7 @@ export class StructuredReporter implements IReporter {
           if (!this.templatedReporter) {
             await this.initialize();
           }
-          content = await this.templatedReporter.generateSummaryReport(
-            structuredResult
-          );
+          content = await this.templatedReporter.generateSummaryReport(structuredResult);
           break;
       }
 
@@ -118,7 +105,7 @@ export class StructuredReporter implements IReporter {
           {
             includeDetails: options.includeDetails,
             includeSummary: options.includeSummary,
-            includeRecommendations: options.includeRecommendations
+            includeRecommendations: options.includeRecommendations,
           }
         );
       }
@@ -128,18 +115,18 @@ export class StructuredReporter implements IReporter {
         await this.saveToFile(content, options.outputPath);
         return {
           success: true,
-          outputPath: options.outputPath
+          outputPath: options.outputPath,
         };
       }
 
       return {
         success: true,
-        content
+        content,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -153,7 +140,7 @@ export class StructuredReporter implements IReporter {
       const dummyAnalysisResult: AnalysisResult = {
         totalFiles: 0,
         issues: [],
-        executionTime: 0
+        executionTime: 0,
       };
 
       // 構造化データに変換
@@ -174,7 +161,7 @@ export class StructuredReporter implements IReporter {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -203,7 +190,7 @@ export class StructuredReporter implements IReporter {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -231,48 +218,40 @@ export class StructuredReporter implements IReporter {
 
       if (options.preview) {
         // プレビューモード
-        const preview = this.codeAnnotator.previewAnnotations(
-          structuredResult,
-          {
-            format: options.format,
-            includeDataFlow: options.includeDataFlow
-          }
-        );
+        const preview = this.codeAnnotator.previewAnnotations(structuredResult, {
+          format: options.format,
+          includeDataFlow: options.includeDataFlow,
+        });
 
         return {
           success: true,
-          content: preview
+          content: preview,
         };
       }
 
       // 実際にアノテーションを追加
-      const annotations = await this.codeAnnotator.annotateFiles(
-        structuredResult,
-        {
-          format: options.format,
-          includeDataFlow: options.includeDataFlow,
-          overwrite: options.overwrite
-        }
-      );
+      const annotations = await this.codeAnnotator.annotateFiles(structuredResult, {
+        format: options.format,
+        includeDataFlow: options.includeDataFlow,
+        overwrite: options.overwrite,
+      });
 
       // アノテーションを保存
-      await this.codeAnnotator.saveAnnotatedFiles(
-        annotations,
-        options.outputDir,
-        { overwrite: options.overwrite }
-      );
+      await this.codeAnnotator.saveAnnotatedFiles(annotations, options.outputDir, {
+        overwrite: options.overwrite,
+      });
 
       // サマリーレポートを生成
       const summary = this.codeAnnotator.generateAnnotationSummary(annotations);
 
       return {
         success: true,
-        content: summary
+        content: summary,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -297,20 +276,15 @@ export class StructuredReporter implements IReporter {
 
       case ReportFormat.MARKDOWN:
         if (options.includeDetails) {
-          content = await this.templatedReporter.generateDetailedReport(
-            structuredResult,
-            {
-              includeDetails: options.includeDetails,
-              includeSummary: options.includeSummary,
-              includeRecommendations: options.includeRecommendations,
-              includeCodeSnippets: true,
-              includeDataFlow: true
-            }
-          );
+          content = await this.templatedReporter.generateDetailedReport(structuredResult, {
+            includeDetails: options.includeDetails,
+            includeSummary: options.includeSummary,
+            includeRecommendations: options.includeRecommendations,
+            includeCodeSnippets: true,
+            includeDataFlow: true,
+          });
         } else {
-          content = await this.templatedReporter.generateSummaryReport(
-            structuredResult
-          );
+          content = await this.templatedReporter.generateSummaryReport(structuredResult);
         }
         break;
 
@@ -320,9 +294,7 @@ export class StructuredReporter implements IReporter {
 
       case ReportFormat.TEXT:
       default:
-        content = await this.templatedReporter.generateSummaryReport(
-          structuredResult
-        );
+        content = await this.templatedReporter.generateSummaryReport(structuredResult);
         break;
     }
 
@@ -330,23 +302,23 @@ export class StructuredReporter implements IReporter {
       await this.saveToFile(content, options.outputPath);
       return {
         success: true,
-        outputPath: options.outputPath
+        outputPath: options.outputPath,
       };
     }
 
     return {
       success: true,
-      content
+      content,
     };
   }
 
   /**
    * HTML形式のレポートを生成（簡易実装）
    */
-  private async generateHtmlReport(structuredResult: import('../../reporting/types').StructuredAnalysisResult): Promise<string> {
-    const markdown = await this.templatedReporter.generateDetailedReport(
-      structuredResult
-    );
+  private async generateHtmlReport(
+    structuredResult: import('../../reporting/types').StructuredAnalysisResult
+  ): Promise<string> {
+    const markdown = await this.templatedReporter.generateDetailedReport(structuredResult);
 
     // 簡易的なMarkdown to HTML変換
     const html = `

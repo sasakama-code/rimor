@@ -1,7 +1,7 @@
 /**
  * 解析精度測定システム
  * Phase 2: TaintTyper、Intent抽出、Gap検出の精度詳細分析
- * 
+ *
  * SOLID原則に基づく設計:
  * - Single Responsibility: 精度測定に特化した専用コレクター
  * - Open/Closed: 新しい解析タイプの追加に開放
@@ -23,7 +23,7 @@ import {
   AccuracyStats,
   CurrentAccuracySnapshot,
   AccuracyAlert,
-  AccuracyTrend
+  AccuracyTrend,
 } from './types';
 
 /**
@@ -34,7 +34,9 @@ class AccuracyStatisticsCalculator {
   /**
    * 基本精度統計の計算
    */
-  static calculateAccuracyStats(results: { expected: any; actual: any; confidence: number }[]): AccuracyStats {
+  static calculateAccuracyStats(
+    results: { expected: any; actual: any; confidence: number }[]
+  ): AccuracyStats {
     if (results.length === 0) {
       return { accuracy: 0, sampleCount: 0, averageConfidence: 0 };
     }
@@ -46,7 +48,7 @@ class AccuracyStatisticsCalculator {
     return {
       accuracy,
       sampleCount: results.length,
-      averageConfidence
+      averageConfidence,
     };
   }
 
@@ -72,12 +74,19 @@ class AccuracyStatisticsCalculator {
   /**
    * 精度、再現率、F1スコアの計算
    */
-  static calculatePrecisionRecallF1(confusion: { truePositives: number; falsePositives: number; trueNegatives: number; falseNegatives: number }) {
+  static calculatePrecisionRecallF1(confusion: {
+    truePositives: number;
+    falsePositives: number;
+    trueNegatives: number;
+    falseNegatives: number;
+  }) {
     const { truePositives, falsePositives, falseNegatives } = confusion;
-    
-    const precision = (truePositives + falsePositives) > 0 ? truePositives / (truePositives + falsePositives) : 0;
-    const recall = (truePositives + falseNegatives) > 0 ? truePositives / (truePositives + falseNegatives) : 0;
-    const f1Score = (precision + recall) > 0 ? 2 * (precision * recall) / (precision + recall) : 0;
+
+    const precision =
+      truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
+    const recall =
+      truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
+    const f1Score = precision + recall > 0 ? (2 * (precision * recall)) / (precision + recall) : 0;
 
     return { precision, recall, f1Score };
   }
@@ -104,8 +113,8 @@ class AccuracyStatisticsCalculator {
       for (let j = 1; j <= len2; j++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
         matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,     // 削除
-          matrix[i][j - 1] + 1,     // 挿入
+          matrix[i - 1][j] + 1, // 削除
+          matrix[i][j - 1] + 1, // 挿入
           matrix[i - 1][j - 1] + cost // 置換
         );
       }
@@ -138,8 +147,10 @@ class TaintTyperAccuracyAnalyzer {
 
   generateMetrics(): TaintAnalysisMetrics {
     const confusion = AccuracyStatisticsCalculator.calculateConfusionMatrix(this.results);
-    const { precision, recall, f1Score } = AccuracyStatisticsCalculator.calculatePrecisionRecallF1(confusion);
-    const overallAccuracy = (confusion.truePositives + confusion.trueNegatives) / this.results.length;
+    const { precision, recall, f1Score } =
+      AccuracyStatisticsCalculator.calculatePrecisionRecallF1(confusion);
+    const overallAccuracy =
+      (confusion.truePositives + confusion.trueNegatives) / this.results.length;
 
     // 脆弱性タイプ別分析
     const byVulnerabilityType = this.analyzeByVulnerabilityType();
@@ -154,13 +165,13 @@ class TaintTyperAccuracyAnalyzer {
       f1Score,
       ...confusion,
       byVulnerabilityType,
-      byConfidenceLevel
+      byConfidenceLevel,
     };
   }
 
   private analyzeByVulnerabilityType(): Record<string, AccuracyStats> {
     const typeGroups: Record<string, TaintAnalysisResult[]> = {};
-    
+
     this.results.forEach(result => {
       if (result.vulnerabilityType) {
         if (!typeGroups[result.vulnerabilityType]) {
@@ -178,7 +189,11 @@ class TaintTyperAccuracyAnalyzer {
     return analysis;
   }
 
-  private analyzeByConfidenceLevel(): { high: AccuracyStats; medium: AccuracyStats; low: AccuracyStats } {
+  private analyzeByConfidenceLevel(): {
+    high: AccuracyStats;
+    medium: AccuracyStats;
+    low: AccuracyStats;
+  } {
     const high = this.results.filter(r => r.confidence >= 0.9);
     const medium = this.results.filter(r => r.confidence >= 0.7 && r.confidence < 0.9);
     const low = this.results.filter(r => r.confidence < 0.7);
@@ -186,7 +201,7 @@ class TaintTyperAccuracyAnalyzer {
     return {
       high: AccuracyStatisticsCalculator.calculateAccuracyStats(high),
       medium: AccuracyStatisticsCalculator.calculateAccuracyStats(medium),
-      low: AccuracyStatisticsCalculator.calculateAccuracyStats(low)
+      low: AccuracyStatisticsCalculator.calculateAccuracyStats(low),
     };
   }
 
@@ -214,15 +229,18 @@ class IntentExtractionAccuracyAnalyzer {
         partialMatches: 0,
         mismatches: 0,
         byCategory: {},
-        byFramework: {}
+        byFramework: {},
       };
     }
 
     const exactMatches = this.results.filter(r => r.similarity >= 0.95).length;
-    const partialMatches = this.results.filter(r => r.similarity >= 0.5 && r.similarity < 0.95).length;
+    const partialMatches = this.results.filter(
+      r => r.similarity >= 0.5 && r.similarity < 0.95
+    ).length;
     const mismatches = this.results.filter(r => r.similarity < 0.5).length;
 
-    const averageSimilarity = this.results.reduce((sum, r) => sum + r.similarity, 0) / this.results.length;
+    const averageSimilarity =
+      this.results.reduce((sum, r) => sum + r.similarity, 0) / this.results.length;
     const overallAccuracy = exactMatches / this.results.length;
 
     const byCategory = this.analyzeByCategory();
@@ -235,13 +253,13 @@ class IntentExtractionAccuracyAnalyzer {
       partialMatches,
       mismatches,
       byCategory,
-      byFramework
+      byFramework,
     };
   }
 
   private analyzeByCategory(): Record<string, AccuracyStats> {
     const categoryGroups: Record<string, IntentExtractionResult[]> = {};
-    
+
     this.results.forEach(result => {
       if (result.category) {
         if (!categoryGroups[result.category]) {
@@ -256,7 +274,7 @@ class IntentExtractionAccuracyAnalyzer {
       const accuracyResults = results.map(r => ({
         expected: r.expectedIntent,
         actual: r.extractedIntent,
-        confidence: r.confidence
+        confidence: r.confidence,
       }));
       analysis[category] = AccuracyStatisticsCalculator.calculateAccuracyStats(accuracyResults);
     });
@@ -266,7 +284,7 @@ class IntentExtractionAccuracyAnalyzer {
 
   private analyzeByFramework(): Record<string, AccuracyStats> {
     const frameworkGroups: Record<string, IntentExtractionResult[]> = {};
-    
+
     this.results.forEach(result => {
       if (result.framework) {
         if (!frameworkGroups[result.framework]) {
@@ -281,7 +299,7 @@ class IntentExtractionAccuracyAnalyzer {
       const accuracyResults = results.map(r => ({
         expected: r.expectedIntent,
         actual: r.extractedIntent,
-        confidence: r.confidence
+        confidence: r.confidence,
       }));
       analysis[framework] = AccuracyStatisticsCalculator.calculateAccuracyStats(accuracyResults);
     });
@@ -311,7 +329,7 @@ class GapDetectionAccuracyAnalyzer {
         precision: 0,
         recall: 0,
         averageGapsDetected: 0,
-        byGapType: {}
+        byGapType: {},
       };
     }
 
@@ -341,13 +359,13 @@ class GapDetectionAccuracyAnalyzer {
       precision,
       recall,
       averageGapsDetected,
-      byGapType
+      byGapType,
     };
   }
 
   private analyzeByGapType(): Record<string, AccuracyStats> {
     const typeGroups: Record<string, GapDetectionResult[]> = {};
-    
+
     this.results.forEach(result => {
       if (result.gapType) {
         if (!typeGroups[result.gapType]) {
@@ -362,7 +380,7 @@ class GapDetectionAccuracyAnalyzer {
       const accuracyResults = results.map(r => ({
         expected: r.expectedGaps,
         actual: r.detectedGaps,
-        confidence: r.confidence
+        confidence: r.confidence,
       }));
       analysis[type] = AccuracyStatisticsCalculator.calculateAccuracyStats(accuracyResults);
     });
@@ -389,14 +407,14 @@ export class AccuracyCollector extends EventEmitter {
 
   constructor(config: AccuracyCollectorConfig = {}) {
     super();
-    
+
     // デフォルト設定の適用
     this.config = {
       enableTaintAnalysis: config.enableTaintAnalysis ?? true,
       enableIntentExtraction: config.enableIntentExtraction ?? true,
       enableGapDetection: config.enableGapDetection ?? true,
       confidenceThreshold: config.confidenceThreshold ?? 0.8,
-      sampleSize: config.sampleSize ?? 100
+      sampleSize: config.sampleSize ?? 100,
     };
 
     this.initializeAnalyzers();
@@ -418,13 +436,13 @@ export class AccuracyCollector extends EventEmitter {
 
     this.sessions.set(sessionId, {
       startTime: Date.now(),
-      status: 'active'
+      status: 'active',
     });
 
     this.accuracyHistory.set(sessionId, []);
 
     this.emit('accuracy_session_started', { sessionId, timestamp: Date.now() });
-    
+
     return sessionId;
   }
 
@@ -436,27 +454,26 @@ export class AccuracyCollector extends EventEmitter {
     if (!session) {
       return {
         success: false,
-        error: `Accuracy measurement session ${sessionId} not found`
+        error: `Accuracy measurement session ${sessionId} not found`,
       };
     }
 
     try {
       const accuracyMetrics = this.generateComprehensiveMetrics();
-      
+
       session.status = 'completed';
-      
+
       this.emit('accuracy_session_completed', { sessionId, accuracyMetrics });
 
       return {
         success: true,
-        accuracyMetrics
+        accuracyMetrics,
       };
-
     } catch (error) {
       session.status = 'error';
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -478,7 +495,10 @@ export class AccuracyCollector extends EventEmitter {
   /**
    * Intent抽出結果の記録
    */
-  async recordIntentExtractionResult(sessionId: string, result: IntentExtractionResult): Promise<void> {
+  async recordIntentExtractionResult(
+    sessionId: string,
+    result: IntentExtractionResult
+  ): Promise<void> {
     if (!this.sessions.has(sessionId)) {
       throw new Error(`Session ${sessionId} not found`);
     }
@@ -499,8 +519,12 @@ export class AccuracyCollector extends EventEmitter {
 
     if (this.config.enableGapDetection) {
       this.gapAnalyzer.addResult(result);
-      const accuracy = result.expectedGaps === result.detectedGaps ? 1 : 
-                      1 - Math.abs(result.expectedGaps - result.detectedGaps) / Math.max(result.expectedGaps, result.detectedGaps, 1);
+      const accuracy =
+        result.expectedGaps === result.detectedGaps
+          ? 1
+          : 1 -
+            Math.abs(result.expectedGaps - result.detectedGaps) /
+              Math.max(result.expectedGaps, result.detectedGaps, 1);
       this.updateAccuracyHistory(sessionId, 'gap', accuracy);
     }
   }
@@ -512,13 +536,17 @@ export class AccuracyCollector extends EventEmitter {
     const taintAnalysis = this.taintAnalyzer.generateMetrics();
     const intentExtraction = this.intentAnalyzer.generateMetrics();
     const gapDetection = this.gapAnalyzer.generateMetrics();
-    const integrated = this.calculateIntegratedAccuracy(taintAnalysis, intentExtraction, gapDetection);
+    const integrated = this.calculateIntegratedAccuracy(
+      taintAnalysis,
+      intentExtraction,
+      gapDetection
+    );
 
     return {
       taintAnalysis,
       intentExtraction,
       gapDetection,
-      integrated
+      integrated,
     };
   }
 
@@ -534,24 +562,29 @@ export class AccuracyCollector extends EventEmitter {
     const weights = {
       taint: 0.4,
       intent: 0.35,
-      gap: 0.25
+      gap: 0.25,
     };
 
-    const weightedAccuracy = 
+    const weightedAccuracy =
       taintAnalysis.overallAccuracy * weights.taint +
       intentExtraction.overallAccuracy * weights.intent +
       gapDetection.overallAccuracy * weights.gap;
 
     // 信頼度スコア（各分析の信頼度レベルに基づく）
-    const confidenceScore = this.calculateConfidenceScore(taintAnalysis, intentExtraction, gapDetection);
+    const confidenceScore = this.calculateConfidenceScore(
+      taintAnalysis,
+      intentExtraction,
+      gapDetection
+    );
 
     // 総合スコア（精度と信頼度の調和平均）
-    const overallScore = 2 * (weightedAccuracy * confidenceScore) / (weightedAccuracy + confidenceScore);
+    const overallScore =
+      (2 * (weightedAccuracy * confidenceScore)) / (weightedAccuracy + confidenceScore);
 
     return {
       overallScore,
       weightedAccuracy,
-      confidenceScore
+      confidenceScore,
     };
   }
 
@@ -564,12 +597,19 @@ export class AccuracyCollector extends EventEmitter {
     gapDetection: GapDetectionMetrics
   ): number {
     // 各分析の高信頼度結果の割合を基に算出
-    const taintHighConf = taintAnalysis.byConfidenceLevel.high.sampleCount / 
-                         (taintAnalysis.truePositives + taintAnalysis.falsePositives + taintAnalysis.trueNegatives + taintAnalysis.falseNegatives || 1);
-    
-    const intentHighConf = intentExtraction.exactMatches / 
-                          (intentExtraction.exactMatches + intentExtraction.partialMatches + intentExtraction.mismatches || 1);
-    
+    const taintHighConf =
+      taintAnalysis.byConfidenceLevel.high.sampleCount /
+      (taintAnalysis.truePositives +
+        taintAnalysis.falsePositives +
+        taintAnalysis.trueNegatives +
+        taintAnalysis.falseNegatives || 1);
+
+    const intentHighConf =
+      intentExtraction.exactMatches /
+      (intentExtraction.exactMatches +
+        intentExtraction.partialMatches +
+        intentExtraction.mismatches || 1);
+
     const gapHighConf = 0.8; // Gap検出は簡易実装
 
     return (taintHighConf + intentHighConf + gapHighConf) / 3;
@@ -582,7 +622,7 @@ export class AccuracyCollector extends EventEmitter {
     const history = this.accuracyHistory.get(sessionId) || [];
     history.push({
       timestamp: Date.now(),
-      accuracy
+      accuracy,
     });
 
     // 最新100件のみ保持
@@ -609,9 +649,10 @@ export class AccuracyCollector extends EventEmitter {
     }
 
     const history = this.accuracyHistory.get(sessionId) || [];
-    const currentAccuracy = history.length > 0 
-      ? history.reduce((sum, entry) => sum + entry.accuracy, 0) / history.length 
-      : 0;
+    const currentAccuracy =
+      history.length > 0
+        ? history.reduce((sum, entry) => sum + entry.accuracy, 0) / history.length
+        : 0;
 
     const alerts = this.generateCurrentAlerts(sessionId, currentAccuracy);
 
@@ -620,7 +661,7 @@ export class AccuracyCollector extends EventEmitter {
       currentAccuracy,
       sampleCount: history.length,
       alerts,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -638,7 +679,7 @@ export class AccuracyCollector extends EventEmitter {
         severity: 'high',
         message: `TaintTyper精度が閾値(${taintThreshold})を下回りました: ${currentAccuracy.toFixed(3)}`,
         timestamp: Date.now(),
-        affectedMetric: 'taintAnalysis'
+        affectedMetric: 'taintAnalysis',
       });
     }
 
@@ -647,17 +688,18 @@ export class AccuracyCollector extends EventEmitter {
     if (history.length >= 10) {
       const recent = history.slice(-5).map(h => h.accuracy);
       const older = history.slice(-10, -5).map(h => h.accuracy);
-      
+
       const recentAvg = recent.reduce((sum, acc) => sum + acc, 0) / recent.length;
       const olderAvg = older.reduce((sum, acc) => sum + acc, 0) / older.length;
-      
-      if (recentAvg < olderAvg * 0.9) { // 10%以上の劣化
+
+      if (recentAvg < olderAvg * 0.9) {
+        // 10%以上の劣化
         alerts.push({
           type: 'trend_degradation',
           severity: 'medium',
           message: '精度が劣化傾向にあります',
           timestamp: Date.now(),
-          affectedMetric: 'overall'
+          affectedMetric: 'overall',
         });
       }
     }

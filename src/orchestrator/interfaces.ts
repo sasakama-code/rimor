@@ -7,7 +7,7 @@ import {
   TaintAnalysisResult,
   IntentAnalysisResult,
   GapAnalysisResult,
-  NistEvaluationResult
+  NistEvaluationResult,
 } from './types';
 
 /**
@@ -29,7 +29,10 @@ export interface IIntentExtractionStrategy {
  * ギャップ検出戦略インターフェース
  */
 export interface IGapDetectionStrategy {
-  detect(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): Promise<GapAnalysisResult>;
+  detect(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): Promise<GapAnalysisResult>;
 }
 
 /**

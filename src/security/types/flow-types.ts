@@ -2,27 +2,18 @@
  * Security Flow Analysis Types
  */
 
-import { 
-  TestMethod,
-  Position
-} from '../../core/types';
+import { TestMethod, Position } from '../../core/types';
 
 import {
   TaintLevel,
   TaintSource,
   SecuritySink,
   SanitizerType,
-  SeverityLevel
+  SeverityLevel,
 } from '../../types/common-types';
 
 // 共通型定義からの再エクスポート
-export {
-  TaintLevel,
-  TaintSource,
-  SecuritySink,
-  SanitizerType,
-  Position
-};
+export { TaintLevel, TaintSource, SecuritySink, SanitizerType, Position };
 
 // Extended TestMethod with additional properties for flow analysis
 export interface TestMethodExtended extends TestMethod {
@@ -78,7 +69,17 @@ export interface FlowPath {
 // Test Statement types
 export interface TestStatement {
   id: string;
-  type: 'assertion' | 'setup' | 'action' | 'teardown' | 'declaration' | 'expression' | 'entry' | 'assignment' | 'methodCall' | 'sanitizer';
+  type:
+    | 'assertion'
+    | 'setup'
+    | 'action'
+    | 'teardown'
+    | 'declaration'
+    | 'expression'
+    | 'entry'
+    | 'assignment'
+    | 'methodCall'
+    | 'sanitizer';
   content: string;
   location: Position;
   variables?: string[];
@@ -128,7 +129,17 @@ export interface TaintMetadata {
 
 // Security Violations
 export interface SecurityViolation {
-  type: 'taint' | 'type' | 'flow' | 'invariant' | 'unsanitized-taint-flow' | 'missing-sanitizer' | 'unsafe-assertion' | 'sql-injection' | 'xss' | 'command-injection';
+  type:
+    | 'taint'
+    | 'type'
+    | 'flow'
+    | 'invariant'
+    | 'unsanitized-taint-flow'
+    | 'missing-sanitizer'
+    | 'unsafe-assertion'
+    | 'sql-injection'
+    | 'xss'
+    | 'command-injection';
   severity: SeverityLevel;
   message: string;
   location?: Position;
@@ -366,7 +377,16 @@ export interface TestMethodAnalysisResult {
 // Security Issues
 export interface SecurityIssue {
   id: string;
-  type: 'taint' | 'injection' | 'validation' | 'authentication' | 'authorization' | 'unsafe-taint-flow' | 'missing-sanitizer' | 'sanitization' | 'boundary';
+  type:
+    | 'taint'
+    | 'injection'
+    | 'validation'
+    | 'authentication'
+    | 'authorization'
+    | 'unsafe-taint-flow'
+    | 'missing-sanitizer'
+    | 'sanitization'
+    | 'boundary';
   severity: SeverityLevel;
   message: string;
   location: Position;
@@ -376,7 +396,8 @@ export interface SecurityIssue {
   owasp?: string;
   suggestedFix?: string;
   codeSnippet?: string;
-  taintInfo?: { // テストで使用されているため追加
+  taintInfo?: {
+    // テストで使用されているため追加
     source: TaintSource;
     sink?: string;
     flow?: string[];

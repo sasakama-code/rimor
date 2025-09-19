@@ -1,7 +1,7 @@
 /**
  * Interactive Domain Validator
  * v0.9.0 - 対話型ドメイン検証エンジン
- * 
+ *
  * KISS原則: シンプルな対話フローの実装
  * YAGNI原則: 必要最小限の機能から開始
  * Defensive Programming: 入力検証とエラーハンドリング
@@ -32,7 +32,7 @@ export class InteractiveDomainValidator {
     this.config = {
       skipConfirmation: false,
       maxDisplayKeywords: 10,
-      ...config
+      ...config,
     };
   }
 
@@ -48,7 +48,7 @@ export class InteractiveDomainValidator {
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: false
+        validated: false,
       };
     }
 
@@ -56,7 +56,7 @@ export class InteractiveDomainValidator {
       approvedDomains: [],
       modifiedDomains: [],
       rejectedDomains: [],
-      validated: false
+      validated: false,
     };
 
     try {
@@ -72,7 +72,7 @@ export class InteractiveDomainValidator {
       for (const cluster of clusters) {
         // Defensive Programming: 循環参照を避けるためのクローン
         const safeCluster = this.cloneCluster(cluster);
-        
+
         console.log(this.formatClusterDisplay(safeCluster));
 
         const { action } = await inquirer.prompt([
@@ -83,9 +83,9 @@ export class InteractiveDomainValidator {
             choices: [
               { name: '✅ 承認', value: 'approve' },
               { name: '✏️  修正', value: 'modify' },
-              { name: '❌ 拒否', value: 'reject' }
-            ]
-          }
+              { name: '❌ 拒否', value: 'reject' },
+            ],
+          },
         ]);
 
         if (action === 'approve') {
@@ -104,8 +104,8 @@ export class InteractiveDomainValidator {
           type: 'confirm',
           name: 'continue',
           message: '新しいドメインを追加しますか？',
-          default: false
-        }
+          default: false,
+        },
       ]);
 
       if (addMore) {
@@ -114,10 +114,9 @@ export class InteractiveDomainValidator {
       }
 
       result.validated = true;
-      
+
       console.log(chalk.green('\n✅ ドメイン検証が完了しました\n'));
       this.printSummary(result);
-
     } catch (error) {
       console.error(chalk.red('エラーが発生しました:'), error);
       result.validated = false;
@@ -132,16 +131,18 @@ export class InteractiveDomainValidator {
    */
   formatClusterDisplay(cluster: DomainCluster): string {
     // Defensive Programming: NaN/undefined対応
-    const confidence = isNaN(cluster.confidence) ? 'N/A' : `${Math.round(cluster.confidence * 100)}%`;
+    const confidence = isNaN(cluster.confidence)
+      ? 'N/A'
+      : `${Math.round(cluster.confidence * 100)}%`;
     const color = this.getConfidenceColor(cluster.confidence);
-    
+
     const lines = [
       chalk.bold('━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
       chalk.bold(`📦 ドメイン: ${cluster.name}`),
       `🎯 信頼度: ${chalk[color](confidence)}`,
       `🔑 キーワード: ${this.formatKeywords(cluster.keywords)}`,
       `📄 関連ファイル: ${cluster.files.length} files`,
-      chalk.bold('━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      chalk.bold('━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
     ];
 
     return lines.join('\n');
@@ -163,11 +164,11 @@ export class InteractiveDomainValidator {
     const maxDisplay = this.config.maxDisplayKeywords || 10;
     const displayKeywords = keywords.slice(0, maxDisplay);
     const formatted = displayKeywords.join(', ');
-    
+
     if (keywords.length > maxDisplay) {
       return `${formatted}, ... (他${keywords.length - maxDisplay}個)`;
     }
-    
+
     return formatted;
   }
 
@@ -181,7 +182,8 @@ export class InteractiveDomainValidator {
         name: 'newName',
         message: '新しいドメイン名:',
         default: cluster.name,
-        validate: (input: string) => this.isValidDomainName(input) || '有効なドメイン名を入力してください'
+        validate: (input: string) =>
+          this.isValidDomainName(input) || '有効なドメイン名を入力してください',
       },
       {
         type: 'input',
@@ -189,18 +191,24 @@ export class InteractiveDomainValidator {
         message: 'キーワード (カンマ区切り):',
         default: cluster.keywords.join(', '),
         validate: (input: string) => {
-          const keywords = input.split(',').map(k => k.trim()).filter(k => k);
+          const keywords = input
+            .split(',')
+            .map(k => k.trim())
+            .filter(k => k);
           return this.isValidKeywords(keywords) || '有効なキーワードリストを入力してください';
-        }
-      }
+        },
+      },
     ]);
 
-    const keywords = newKeywords.split(',').map((k: string) => k.trim()).filter((k: string) => k);
+    const keywords = newKeywords
+      .split(',')
+      .map((k: string) => k.trim())
+      .filter((k: string) => k);
 
     return {
       ...cluster,
       name: newName,
-      keywords
+      keywords,
     };
   }
 
@@ -213,27 +221,34 @@ export class InteractiveDomainValidator {
         type: 'input',
         name: 'name',
         message: '新しいドメイン名:',
-        validate: (input: string) => this.isValidDomainName(input) || '有効なドメイン名を入力してください'
+        validate: (input: string) =>
+          this.isValidDomainName(input) || '有効なドメイン名を入力してください',
       },
       {
         type: 'input',
         name: 'keywords',
         message: 'キーワード (カンマ区切り):',
         validate: (input: string) => {
-          const keywords = input.split(',').map(k => k.trim()).filter(k => k);
+          const keywords = input
+            .split(',')
+            .map(k => k.trim())
+            .filter(k => k);
           return this.isValidKeywords(keywords) || '有効なキーワードリストを入力してください';
-        }
-      }
+        },
+      },
     ]);
 
-    const keywords = keywordsStr.split(',').map((k: string) => k.trim()).filter((k: string) => k);
+    const keywords = keywordsStr
+      .split(',')
+      .map((k: string) => k.trim())
+      .filter((k: string) => k);
 
     return {
       id: `custom-${Date.now()}`,
       name,
       keywords,
       confidence: 1.0, // ユーザー定義なので信頼度100%
-      files: []
+      files: [],
     };
   }
 
@@ -268,7 +283,7 @@ export class InteractiveDomainValidator {
         name: cluster.name,
         keywords: [...cluster.keywords],
         confidence: cluster.confidence,
-        files: [...cluster.files]
+        files: [...cluster.files],
       };
     } catch {
       // 循環参照などのエラーの場合は最小限の情報を返す
@@ -277,7 +292,7 @@ export class InteractiveDomainValidator {
         name: cluster.name || 'Unknown Domain',
         keywords: [],
         confidence: 0,
-        files: []
+        files: [],
       };
     }
   }

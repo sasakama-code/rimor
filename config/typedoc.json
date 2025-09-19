@@ -8,10 +8,7 @@
   "includeVersion": true,
   "hideGenerator": false,
   "theme": "default",
-  "plugin": [
-    "typedoc-plugin-markdown",
-    "typedoc-plugin-mermaid"
-  ],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-mermaid"],
   "readme": "README.md",
   "navigationLinks": {
     "GitHub": "https://github.com/rimor-project/rimor",
@@ -19,11 +16,7 @@
   },
   "categorizeByGroup": true,
   "sourceLinkTemplate": "https://github.com/rimor-project/rimor/blob/{gitRevision}/{path}#L{line}",
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/node_modules/**"
-  ],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
   "tsconfig": "./tsconfig.json",
   "name": "Rimor API Documentation",
   "validation": {

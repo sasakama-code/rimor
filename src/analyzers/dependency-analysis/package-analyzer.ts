@@ -11,7 +11,7 @@ import {
   VersionConstraint,
   PackageLockJson,
   PackageLockDependency,
-  YarnLockEntry
+  YarnLockEntry,
 } from '../dependency-types';
 import { PackageJsonConfig } from '../../core/types';
 
@@ -33,10 +33,32 @@ export interface VersionConstraintResult {
 
 export class PackageAnalyzer {
   private readonly BUILT_IN_MODULES = new Set([
-    'fs', 'path', 'http', 'https', 'crypto', 'os', 'util', 'stream',
-    'url', 'querystring', 'child_process', 'cluster', 'events',
-    'buffer', 'process', 'console', 'module', 'require', 'assert',
-    'net', 'tls', 'dns', 'readline', 'repl', 'vm', 'zlib'
+    'fs',
+    'path',
+    'http',
+    'https',
+    'crypto',
+    'os',
+    'util',
+    'stream',
+    'url',
+    'querystring',
+    'child_process',
+    'cluster',
+    'events',
+    'buffer',
+    'process',
+    'console',
+    'module',
+    'require',
+    'assert',
+    'net',
+    'tls',
+    'dns',
+    'readline',
+    'repl',
+    'vm',
+    'zlib',
   ]);
 
   /**
@@ -47,17 +69,17 @@ export class PackageAnalyzer {
     if (fs.existsSync(path.join(projectPath, 'yarn.lock'))) {
       return 'yarn';
     }
-    
+
     // pnpm-lock.yamlがあればpnpm
     if (fs.existsSync(path.join(projectPath, 'pnpm-lock.yaml'))) {
       return 'pnpm';
     }
-    
+
     // package-lock.jsonがあればnpm
     if (fs.existsSync(path.join(projectPath, 'package-lock.json'))) {
       return 'npm';
     }
-    
+
     // デフォルトはnpm
     return 'npm';
   }
@@ -67,7 +89,7 @@ export class PackageAnalyzer {
    */
   async analyzePackageJson(projectPath: string): Promise<PackageAnalysisResult> {
     const packageJsonPath = path.join(projectPath, 'package.json');
-    
+
     if (!fs.existsSync(packageJsonPath)) {
       return {
         name: undefined,
@@ -75,22 +97,22 @@ export class PackageAnalyzer {
         dependencies: {},
         devDependencies: {},
         peerDependencies: {},
-        allDependencies: []
+        allDependencies: [],
       };
     }
 
     try {
       const content = fs.readFileSync(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content) as ExtendedPackageJson;
-      
+
       const dependencies = packageJson.dependencies || {};
       const devDependencies = packageJson.devDependencies || {};
       const peerDependencies = packageJson.peerDependencies || {};
-      
+
       const allDependencies = [
         ...Object.keys(dependencies),
         ...Object.keys(devDependencies),
-        ...Object.keys(peerDependencies)
+        ...Object.keys(peerDependencies),
       ];
 
       return {
@@ -99,7 +121,7 @@ export class PackageAnalyzer {
         dependencies,
         devDependencies,
         peerDependencies,
-        allDependencies
+        allDependencies,
       };
     } catch (error) {
       // パースエラーの場合は空のオブジェクトを返す
@@ -109,7 +131,7 @@ export class PackageAnalyzer {
         dependencies: {},
         devDependencies: {},
         peerDependencies: {},
-        allDependencies: []
+        allDependencies: [],
       };
     }
   }
@@ -120,14 +142,14 @@ export class PackageAnalyzer {
   async findUnusedDependencies(projectPath: string): Promise<string[]> {
     const packageAnalysis = await this.analyzePackageJson(projectPath);
     const allDeps = packageAnalysis.allDependencies;
-    
+
     if (allDeps.length === 0) {
       return [];
     }
 
     const usedPackages = await this.findUsedPackages(projectPath);
     const unusedDeps = allDeps.filter(dep => !usedPackages.has(dep));
-    
+
     return unusedDeps;
   }
 
@@ -137,16 +159,16 @@ export class PackageAnalyzer {
   async findMissingDependencies(projectPath: string): Promise<string[]> {
     const packageAnalysis = await this.analyzePackageJson(projectPath);
     const installedDeps = new Set(packageAnalysis.allDependencies);
-    
+
     const usedPackages = await this.findUsedPackages(projectPath);
     const missingDeps: string[] = [];
-    
+
     usedPackages.forEach(pkg => {
       if (!installedDeps.has(pkg) && !this.BUILT_IN_MODULES.has(pkg)) {
         missingDeps.push(pkg);
       }
     });
-    
+
     return missingDeps;
   }
 
@@ -156,11 +178,11 @@ export class PackageAnalyzer {
   async analyzeVersionConstraints(projectPath: string): Promise<VersionConstraintResult[]> {
     const packageAnalysis = await this.analyzePackageJson(projectPath);
     const results: VersionConstraintResult[] = [];
-    
+
     const allDeps = {
       ...packageAnalysis.dependencies,
       ...packageAnalysis.devDependencies,
-      ...packageAnalysis.peerDependencies
+      ...packageAnalysis.peerDependencies,
     };
 
     for (const [pkg, version] of Object.entries(allDeps)) {
@@ -219,7 +241,7 @@ export class PackageAnalyzer {
     const usedPackages = new Set<string>();
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**'],
     });
 
     for (const file of sourceFiles) {
@@ -246,20 +268,20 @@ export class PackageAnalyzer {
    */
   private extractImports(content: string): Set<string> {
     const imports = new Set<string>();
-    
+
     // ES6 imports
     const importRegex = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"]/g;
     let match;
     while ((match = importRegex.exec(content)) !== null) {
       imports.add(match[1]);
     }
-    
+
     // CommonJS requires
     const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = requireRegex.exec(content)) !== null) {
       imports.add(match[1]);
     }
-    
+
     // Dynamic imports
     const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = dynamicImportRegex.exec(content)) !== null) {
@@ -274,9 +296,9 @@ export class PackageAnalyzer {
    * @private
    */
   private isRelativeImport(importPath: string): boolean {
-    return importPath.startsWith('./') || 
-           importPath.startsWith('../') || 
-           importPath.startsWith('/');
+    return (
+      importPath.startsWith('./') || importPath.startsWith('../') || importPath.startsWith('/')
+    );
   }
 
   /**
@@ -288,13 +310,13 @@ export class PackageAnalyzer {
     if (importPath.startsWith('node:')) {
       importPath = importPath.slice(5);
     }
-    
+
     // スコープ付きパッケージの場合
     if (importPath.startsWith('@')) {
       const parts = importPath.split('/');
       return parts.slice(0, 2).join('/');
     }
-    
+
     // 通常のパッケージ（サブパスはルートに正規化）
     return importPath.split('/')[0];
   }
@@ -328,7 +350,7 @@ export class PackageAnalyzer {
       package: pkg,
       constraint: version,
       type,
-      isRisky
+      isRisky,
     };
   }
 
@@ -340,7 +362,7 @@ export class PackageAnalyzer {
     const packages = new Map<string, string>();
     const lines = content.split('\n');
     let currentPackage = '';
-    
+
     for (const line of lines) {
       // パッケージ名の行
       if (line && !line.startsWith(' ') && line.includes('@')) {
@@ -355,7 +377,7 @@ export class PackageAnalyzer {
         }
       }
     }
-    
+
     return packages;
   }
 
@@ -365,7 +387,7 @@ export class PackageAnalyzer {
    */
   private parsePackageLock(packageLock: PackageLockJson): Map<string, string> {
     const packages = new Map<string, string>();
-    
+
     if (packageLock.packages) {
       Object.entries(packageLock.packages).forEach(([pkgPath, info]) => {
         if (pkgPath && pkgPath.startsWith('node_modules/')) {
@@ -377,7 +399,7 @@ export class PackageAnalyzer {
         }
       });
     }
-    
+
     // 旧形式のpackage-lock.json
     if (packageLock.dependencies) {
       Object.entries(packageLock.dependencies).forEach(([name, info]) => {
@@ -386,7 +408,7 @@ export class PackageAnalyzer {
         }
       });
     }
-    
+
     return packages;
   }
 }

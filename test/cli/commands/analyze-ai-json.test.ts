@@ -1,7 +1,7 @@
 /**
  * Analyze AI JSON Command テスト
  * Issue #58: AIエージェント向けコンテキスト出力機能
- * 
+ *
  * TDD: 統合テスト
  * t_wadaのTDD原則に従う
  */
@@ -18,7 +18,7 @@ import {
   createMockCliSecurity,
   createTestProject,
   createProcessExitSpy,
-  getRelativePath
+  getRelativePath,
 } from './analyze-ai-json.test.helper';
 
 describe('Analyze AI JSON Command', () => {
@@ -30,11 +30,11 @@ describe('Analyze AI JSON Command', () => {
   beforeEach(() => {
     // 一時ディレクトリの作成
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-ai-json-test-'));
-    
+
     // ヘルパーを使用してテスト環境をセットアップ
     testContainer = createTestContainer();
     mockCliSecurity = createMockCliSecurity();
-    
+
     // コンテナインスタンスとセキュリティモックを渡してコマンド作成
     command = new AnalyzeCommandV8(testContainer, mockCliSecurity);
   });
@@ -53,13 +53,13 @@ describe('Analyze AI JSON Command', () => {
       const relativePath = getRelativePath(testProjectPath);
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       const exitSpy = createProcessExitSpy();
-      
+
       // Act
       await command.execute({
         path: relativePath,
-        format: 'ai-json'
+        format: 'ai-json',
       });
-      
+
       // Assert
       expect(consoleSpy).toHaveBeenCalled();
       // セキュリティログを除外してJSONのみを抽出
@@ -74,11 +74,11 @@ describe('Analyze AI JSON Command', () => {
       });
       expect(jsonOutput).toBeDefined();
       const json = JSON.parse(jsonOutput!);
-      
+
       expect(json).toHaveProperty('overallAssessment');
       expect(json).toHaveProperty('keyRisks');
       expect(json).toHaveProperty('fullReportUrl');
-      
+
       consoleSpy.mockRestore();
       exitSpy.mockRestore();
     });
@@ -91,53 +91,53 @@ describe('Analyze AI JSON Command', () => {
       fs.mkdirSync(outputDir, { recursive: true });
       const outputPath = path.join(outputDir, 'ai-report.json');
       const exitSpy = createProcessExitSpy();
-      
+
       // Act
       await command.execute({
         path: relativePath,
         format: 'ai-json',
-        outputAiJson: outputPath
+        outputAiJson: outputPath,
       });
-      
+
       // ファイル作成を待つ（最大5秒）
       let fileExists = false;
       let attempts = 0;
       const maxAttempts = 50;
-      
+
       while (!fileExists && attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 100));
         fileExists = fs.existsSync(outputPath);
         attempts++;
       }
-      
+
       // Assert
       if (!fileExists) {
         // ディレクトリ内容を確認
         const outputDirContents = fs.readdirSync(outputDir);
         console.log('Output directory contents:', outputDirContents);
-        
+
         // 代替ファイル名も確認
         const alternativeFiles = outputDirContents.filter(file => file.endsWith('.json'));
         if (alternativeFiles.length > 0) {
           const alternativeFile = path.join(outputDir, alternativeFiles[0]);
           const content = fs.readFileSync(alternativeFile, 'utf-8');
           const json = JSON.parse(content);
-          
+
           expect(json).toHaveProperty('overallAssessment');
           expect(json).toHaveProperty('keyRisks');
           expect(json).toHaveProperty('fullReportUrl');
           return;
         }
       }
-      
+
       expect(fileExists).toBe(true);
       const content = fs.readFileSync(outputPath, 'utf-8');
       const json = JSON.parse(content);
-      
+
       expect(json).toHaveProperty('overallAssessment');
       expect(json).toHaveProperty('keyRisks');
       expect(json).toHaveProperty('fullReportUrl');
-      
+
       exitSpy.mockRestore();
     });
   });
@@ -149,21 +149,21 @@ describe('Analyze AI JSON Command', () => {
       const relativePath = getRelativePath(testProjectPath);
       const outputPath = path.join(tempDir, 'ai-report.json');
       const exitSpy = createProcessExitSpy();
-      
+
       // Act
       await command.execute({
         path: relativePath,
-        outputAiJson: outputPath
+        outputAiJson: outputPath,
       });
-      
+
       // ファイル作成を少し待つ
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Assert
       const json = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
       expect(json.overallAssessment).toContain('総合スコア');
       expect(json.overallAssessment).toContain('グレード');
-      
+
       exitSpy.mockRestore();
     });
 
@@ -173,19 +173,19 @@ describe('Analyze AI JSON Command', () => {
       const relativePath = getRelativePath(testProjectPath);
       const outputPath = path.join(tempDir, 'ai-report.json');
       const exitSpy = createProcessExitSpy();
-      
+
       // Act
       await command.execute({
         path: relativePath,
-        outputAiJson: outputPath
+        outputAiJson: outputPath,
       });
-      
+
       // ファイル作成を少し待つ
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Assert
       const json = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
-      
+
       if (json.keyRisks.length > 0) {
         const firstRisk = json.keyRisks[0];
         expect(firstRisk).toHaveProperty('problem');
@@ -199,7 +199,7 @@ describe('Analyze AI JSON Command', () => {
         expect(firstRisk.suggestedAction).toHaveProperty('type');
         expect(firstRisk.suggestedAction).toHaveProperty('description');
       }
-      
+
       exitSpy.mockRestore();
     });
 
@@ -211,21 +211,21 @@ describe('Analyze AI JSON Command', () => {
       fs.mkdirSync(outputDir, { recursive: true });
       const outputPath = path.join(outputDir, 'ai-report.json');
       const exitSpy = createProcessExitSpy();
-      
+
       // Act
       await command.execute({
         path: relativePath,
-        outputAiJson: outputPath
+        outputAiJson: outputPath,
       });
-      
+
       // ファイル作成を少し待つ
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Assert
       const json = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
       // デフォルトパスか実際のreportsディレクトリパスであることを確認
       expect(json.fullReportUrl).toMatch(/\.rimor\/reports\/index\.html$|reports\/index\.html$/);
-      
+
       exitSpy.mockRestore();
     });
   });
@@ -236,15 +236,17 @@ describe('Analyze AI JSON Command', () => {
       const nonExistentPath = path.join(tempDir, 'non-existent');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const exitSpy = createProcessExitSpy();
-      
+
       // Act & Assert
-      await expect(command.execute({
-        path: nonExistentPath,
-        format: 'ai-json'
-      })).rejects.toThrow(/Process\.exit called/);
-      
+      await expect(
+        command.execute({
+          path: nonExistentPath,
+          format: 'ai-json',
+        })
+      ).rejects.toThrow(/Process\.exit called/);
+
       expect(consoleSpy).toHaveBeenCalled();
-      
+
       consoleSpy.mockRestore();
       exitSpy.mockRestore();
     });
@@ -256,21 +258,22 @@ describe('Analyze AI JSON Command', () => {
       const outputPath = '/root/ai-report.json'; // 通常書き込み権限がないパス
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const exitSpy = createProcessExitSpy();
-      
+
       // Act & Assert
-      await expect(command.execute({
-        path: relativePath,
-        format: 'ai-json',
-        outputAiJson: outputPath
-      })).rejects.toThrow(/Process\.exit called/);
-      
+      await expect(
+        command.execute({
+          path: relativePath,
+          format: 'ai-json',
+          outputAiJson: outputPath,
+        })
+      ).rejects.toThrow(/Process\.exit called/);
+
       expect(consoleSpy).toHaveBeenCalled();
       const errorMessage = consoleSpy.mock.calls.map(call => call.join('')).join('');
       expect(errorMessage).toContain('AI JSON生成に失敗しました');
-      
+
       consoleSpy.mockRestore();
       exitSpy.mockRestore();
     });
   });
 });
-

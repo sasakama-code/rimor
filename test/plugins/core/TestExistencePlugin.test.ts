@@ -1,12 +1,18 @@
 /**
  * TestExistencePlugin テスト
- * 
+ *
  * TDD RED段階: BasePluginを継承したTestExistencePluginのテスト
  * 既存のtestExistence.tsの機能を維持しつつ、新しいアーキテクチャに移行
  */
 
 import { TestExistencePlugin } from '../../../src/plugins/core/TestExistencePlugin';
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../src/core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../src/core/types';
 import { TestQualityIntegrator } from '../../../src/analyzers/coverage/TestQualityIntegrator';
 import { CoverageAnalyzer } from '../../../src/analyzers/coverage/CoverageAnalyzer';
 import * as fs from 'fs';
@@ -16,7 +22,9 @@ import * as path from 'path';
 jest.mock('../../../src/analyzers/coverage/TestQualityIntegrator');
 jest.mock('../../../src/analyzers/coverage/CoverageAnalyzer');
 
-const MockTestQualityIntegrator = TestQualityIntegrator as jest.MockedClass<typeof TestQualityIntegrator>;
+const MockTestQualityIntegrator = TestQualityIntegrator as jest.MockedClass<
+  typeof TestQualityIntegrator
+>;
 const MockCoverageAnalyzer = CoverageAnalyzer as jest.MockedClass<typeof CoverageAnalyzer>;
 
 describe('TestExistencePlugin', () => {
@@ -26,10 +34,10 @@ describe('TestExistencePlugin', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockQualityIntegrator = new MockTestQualityIntegrator() as jest.Mocked<TestQualityIntegrator>;
     mockCoverageAnalyzer = new MockCoverageAnalyzer() as jest.Mocked<CoverageAnalyzer>;
-    
+
     plugin = new TestExistencePlugin();
     (plugin as any).qualityIntegrator = mockQualityIntegrator;
     (plugin as any).coverageAnalyzer = mockCoverageAnalyzer;
@@ -57,9 +65,9 @@ describe('TestExistencePlugin', () => {
         projectPath: '/test/project',
         packageJson: {
           name: 'test-project',
-          version: '1.0.0'
+          version: '1.0.0',
         },
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -70,7 +78,7 @@ describe('TestExistencePlugin', () => {
     test('should detect missing test file', async () => {
       const testFile: TestFile = {
         path: '/test/project/src/component.test.ts',
-        content: ''
+        content: '',
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -80,14 +88,14 @@ describe('TestExistencePlugin', () => {
         patternId: 'missing-test-file',
         patternName: 'Missing Test File',
         severity: 'high',
-        confidence: 0.9
+        confidence: 0.9,
       });
     });
 
     test('should not detect issues when test file exists', async () => {
       const testFile: TestFile = {
         path: '/test/project/src/component.test.ts',
-        content: 'describe("Component", () => { test("exists", () => {}); });'
+        content: 'describe("Component", () => { test("exists", () => {}); });',
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -98,7 +106,7 @@ describe('TestExistencePlugin', () => {
     test('should detect test file without actual tests', async () => {
       const testFile: TestFile = {
         path: '/test/project/src/component.test.ts',
-        content: '// Empty test file\n'
+        content: '// Empty test file\n',
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -108,24 +116,26 @@ describe('TestExistencePlugin', () => {
         patternId: 'empty-test-file',
         patternName: 'Empty Test File',
         severity: 'medium',
-        confidence: 0.8
+        confidence: 0.8,
       });
     });
   });
 
   describe('evaluateQuality', () => {
     test('should return low score for missing test file', () => {
-      const patterns: DetectionResult[] = [{
-        patternId: 'missing-test-file',
-        patternName: 'Missing Test File',
-        severity: 'high',
-        confidence: 0.9,
-        location: {
-          file: '/test/project/src/component.ts',
-          line: 1,
-          column: 1
-        }
-      }];
+      const patterns: DetectionResult[] = [
+        {
+          patternId: 'missing-test-file',
+          patternName: 'Missing Test File',
+          severity: 'high',
+          confidence: 0.9,
+          location: {
+            file: '/test/project/src/component.ts',
+            line: 1,
+            column: 1,
+          },
+        },
+      ];
 
       // TestQualityIntegratorのモックを設定
       const expectedScore: QualityScore = {
@@ -133,13 +143,13 @@ describe('TestExistencePlugin', () => {
         dimensions: {
           completeness: 0,
           correctness: 0,
-          maintainability: 0
+          maintainability: 0,
         },
         breakdown: {
           completeness: 0,
-          correctness: 0
+          correctness: 0,
         },
-        confidence: 0.9
+        confidence: 0.9,
       };
       mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
 
@@ -159,13 +169,13 @@ describe('TestExistencePlugin', () => {
         dimensions: {
           completeness: 100,
           correctness: 100,
-          maintainability: 100
+          maintainability: 100,
         },
         breakdown: {
           completeness: 100,
-          correctness: 100
+          correctness: 100,
         },
-        confidence: 0.8
+        confidence: 0.8,
       };
       mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
 
@@ -177,17 +187,19 @@ describe('TestExistencePlugin', () => {
     });
 
     test('should return medium score for empty test file', () => {
-      const patterns: DetectionResult[] = [{
-        patternId: 'empty-test-file',
-        patternName: 'Empty Test File',
-        severity: 'medium',
-        confidence: 0.8,
-        location: {
-          file: '/test/project/src/component.test.ts',
-          line: 1,
-          column: 1
-        }
-      }];
+      const patterns: DetectionResult[] = [
+        {
+          patternId: 'empty-test-file',
+          patternName: 'Empty Test File',
+          severity: 'medium',
+          confidence: 0.8,
+          location: {
+            file: '/test/project/src/component.test.ts',
+            line: 1,
+            column: 1,
+          },
+        },
+      ];
 
       // TestQualityIntegratorのモックを設定
       const expectedScore: QualityScore = {
@@ -195,13 +207,13 @@ describe('TestExistencePlugin', () => {
         dimensions: {
           completeness: 50,
           correctness: 50,
-          maintainability: 50
+          maintainability: 50,
         },
         breakdown: {
           completeness: 50,
-          correctness: 50
+          correctness: 50,
         },
-        confidence: 0.8
+        confidence: 0.8,
       };
       mockQualityIntegrator.evaluateIntegratedQuality.mockReturnValue(expectedScore);
 
@@ -220,14 +232,14 @@ describe('TestExistencePlugin', () => {
         breakdown: {
           completeness: 0,
           correctness: 100,
-          maintainability: 80
+          maintainability: 80,
         },
         dimensions: {
           completeness: 0,
           correctness: 1.0,
-          maintainability: 0.8
+          maintainability: 0.8,
         },
-        confidence: 0.9
+        confidence: 0.9,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -238,7 +250,7 @@ describe('TestExistencePlugin', () => {
         type: 'add-test',
         category: 'test-creation',
         title: expect.stringContaining('Create missing test file'),
-        estimatedImpact: expect.any(Number)
+        estimatedImpact: expect.any(Number),
       });
     });
 
@@ -248,14 +260,14 @@ describe('TestExistencePlugin', () => {
         breakdown: {
           completeness: 50,
           correctness: 100,
-          maintainability: 80
+          maintainability: 80,
         },
         dimensions: {
           completeness: 0.5,
           correctness: 1.0,
-          maintainability: 0.8
+          maintainability: 0.8,
         },
-        confidence: 0.8
+        confidence: 0.8,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -266,7 +278,7 @@ describe('TestExistencePlugin', () => {
         type: 'improve-coverage',
         category: 'test-improvement',
         title: expect.stringContaining('Add test cases'),
-        estimatedImpact: expect.any(Number)
+        estimatedImpact: expect.any(Number),
       });
     });
 
@@ -276,14 +288,14 @@ describe('TestExistencePlugin', () => {
         breakdown: {
           completeness: 100,
           correctness: 100,
-          maintainability: 90
+          maintainability: 90,
         },
         dimensions: {
           completeness: 1.0,
           correctness: 1.0,
-          maintainability: 0.9
+          maintainability: 0.9,
         },
-        confidence: 1
+        confidence: 1,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);

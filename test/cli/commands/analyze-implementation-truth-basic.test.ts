@@ -10,7 +10,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
 
   beforeEach(() => {
     analyzeCommand = new AnalyzeCommand();
-    
+
     // console.logをモック
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
@@ -27,7 +27,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
         path: './test/fixtures',
         implementationTruth: true,
         verbose: false,
-        format: 'json'
+        format: 'json',
       };
 
       // 実際の実行はせず、オプションの構造のみテスト
@@ -40,7 +40,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         productionCode: true,
-        verbose: false
+        verbose: false,
       };
 
       expect(options.productionCode).toBe(true);
@@ -51,7 +51,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         aiOutput: true,
-        format: 'ai-json'
+        format: 'ai-json',
       };
 
       expect(options.aiOutput).toBe(true);
@@ -62,7 +62,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
       const options: AnalyzeOptions = {
         path: './src',
         implementationTruth: true,
-        testPath: './test'
+        testPath: './test',
       };
 
       expect(options.implementationTruth).toBe(true);
@@ -74,12 +74,11 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
     it('implementationTruthフラグでImplementation Truth分析が有効になる', () => {
       const options: AnalyzeOptions = {
         path: './src',
-        implementationTruth: true
+        implementationTruth: true,
       };
 
-      const shouldUseImplementationTruth = options.implementationTruth || 
-                                          options.productionCode || 
-                                          options.aiOutput;
+      const shouldUseImplementationTruth =
+        options.implementationTruth || options.productionCode || options.aiOutput;
 
       expect(shouldUseImplementationTruth).toBe(true);
     });
@@ -87,12 +86,11 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
     it('productionCodeフラグでImplementation Truth分析が有効になる', () => {
       const options: AnalyzeOptions = {
         path: './src',
-        productionCode: true
+        productionCode: true,
       };
 
-      const shouldUseImplementationTruth = options.implementationTruth || 
-                                          options.productionCode || 
-                                          options.aiOutput;
+      const shouldUseImplementationTruth =
+        options.implementationTruth || options.productionCode || options.aiOutput;
 
       expect(shouldUseImplementationTruth).toBe(true);
     });
@@ -100,12 +98,11 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
     it('aiOutputフラグでImplementation Truth分析が有効になる', () => {
       const options: AnalyzeOptions = {
         path: './src',
-        aiOutput: true
+        aiOutput: true,
       };
 
-      const shouldUseImplementationTruth = options.implementationTruth || 
-                                          options.productionCode || 
-                                          options.aiOutput;
+      const shouldUseImplementationTruth =
+        options.implementationTruth || options.productionCode || options.aiOutput;
 
       expect(shouldUseImplementationTruth).toBe(true);
     });
@@ -113,12 +110,12 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
     it('該当フラグがない場合は従来の分析が使用される', () => {
       const options: AnalyzeOptions = {
         path: './src',
-        format: 'json'
+        format: 'json',
       };
 
-      const shouldUseImplementationTruth = Boolean(options.implementationTruth || 
-                                                  options.productionCode || 
-                                                  options.aiOutput);
+      const shouldUseImplementationTruth = Boolean(
+        options.implementationTruth || options.productionCode || options.aiOutput
+      );
 
       expect(shouldUseImplementationTruth).toBe(false);
     });
@@ -129,18 +126,18 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
       const implementationTruthResult = {
         implementationTruth: { vulnerabilities: [] },
         intentRealizationResults: [],
-        summary: { 
+        summary: {
           productionFilesAnalyzed: 1,
           testFilesAnalyzed: 0,
           vulnerabilitiesDetected: 0,
           realizationScore: 100.0,
-          topRecommendations: []
+          topRecommendations: [],
         },
         totalGapsDetected: 0,
         highSeverityGaps: 0,
         executionTime: 100,
         overallScore: 100.0,
-        metadata: { executionTime: 100 }
+        metadata: { executionTime: 100 },
       };
 
       // convertImplementationTruthToAnalysisResultメソッドは内部的に呼ばれる
@@ -157,8 +154,8 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
           type: 'sql-injection',
           severity: 'high',
           description: 'SQLインジェクションの脆弱性',
-          location: { file: 'src/db.ts', line: 42, column: 10 }
-        }
+          location: { file: 'src/db.ts', line: 42, column: 10 },
+        },
       ];
 
       // Issue形式への変換を検証
@@ -169,7 +166,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
         message: vuln.description || '',
         file: vuln.location?.file || '',
         line: vuln.location?.line || 0,
-        column: vuln.location?.column || 0
+        column: vuln.location?.column || 0,
       }));
 
       expect(issues).toHaveLength(1);
@@ -189,10 +186,10 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
               type: 'missing-test',
               severity: 'medium',
               description: 'セキュリティテストが不足',
-              location: { line: 20, column: 5 }
-            }
-          ]
-        }
+              location: { line: 20, column: 5 },
+            },
+          ],
+        },
       ];
 
       // Issue形式への変換を検証
@@ -204,7 +201,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
           message: gap.description || '',
           file: intentResult.testFile || '',
           line: gap.location?.line || 0,
-          column: gap.location?.column || 0
+          column: gap.location?.column || 0,
         }))
       );
 
@@ -226,7 +223,7 @@ describe('AnalyzeCommand - Implementation Truth基本機能', () => {
         productionCode: true,
         aiOutput: true,
         verbose: true,
-        format: 'ai-json'
+        format: 'ai-json',
       };
 
       // 型チェックが通ることを確認

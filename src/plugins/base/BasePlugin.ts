@@ -11,7 +11,7 @@ import {
   CodeLocation,
   FixResult,
   Feedback,
-  Issue
+  Issue,
 } from '../../core/types';
 import { errorHandler, ErrorType } from '../../utils/errorHandler';
 import { LogMetadata, ErrorLogMetadata } from '../types/log-types';
@@ -32,7 +32,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     return {
       success: false,
       modifiedFiles: [],
-      errors: ['Auto-fix not implemented for this plugin']
+      errors: ['Auto-fix not implemented for this plugin'],
     };
   }
 
@@ -42,9 +42,9 @@ export abstract class BasePlugin implements ITestQualityPlugin {
 
   // ヘルパーメソッド: ファイル種別判定
   protected isTestFile(filePath: string): boolean {
-    return filePath.includes('.test.') || 
-           filePath.includes('.spec.') || 
-           filePath.includes('__tests__');
+    return (
+      filePath.includes('.test.') || filePath.includes('.spec.') || filePath.includes('__tests__')
+    );
   }
 
   // ヘルパーメソッド: ファイル情報抽出
@@ -53,14 +53,14 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       baseName: path.basename(filePath, path.extname(filePath)).replace(/\.(test|spec)$/, ''),
       extension: path.extname(filePath),
       directory: path.dirname(filePath),
-      isTestFile: this.isTestFile(filePath)
+      isTestFile: this.isTestFile(filePath),
     };
   }
 
   // ヘルパーメソッド: コード位置作成
   protected createCodeLocation(
-    file: string, 
-    startLine: number, 
+    file: string,
+    startLine: number,
     endLine?: number,
     startColumn?: number,
     endColumn?: number
@@ -70,7 +70,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       line: startLine,
       column: startColumn || 1,
       endLine: endLine ?? startLine,
-      endColumn
+      endColumn,
     };
   }
 
@@ -91,7 +91,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       confidence: Math.max(0, Math.min(1, confidence)), // 0-1の範囲に制限
       evidence,
       severity,
-      metadata
+      metadata,
     };
   }
 
@@ -99,7 +99,14 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected createImprovement(
     id: string,
     priority: 'critical' | 'high' | 'medium' | 'low',
-    type: 'add-test' | 'fix-assertion' | 'improve-coverage' | 'refactor' | 'documentation' | 'performance' | 'security',
+    type:
+      | 'add-test'
+      | 'fix-assertion'
+      | 'improve-coverage'
+      | 'refactor'
+      | 'documentation'
+      | 'performance'
+      | 'security',
     title: string,
     description: string,
     location: CodeLocation,
@@ -114,7 +121,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       description,
       location,
       estimatedImpact,
-      autoFixable
+      autoFixable,
     };
   }
 
@@ -125,21 +132,22 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     penaltyPerIssue: number = 5
   ): QualityScore {
     const totalIssues = patterns.length;
-    const overall = Math.max(0, Math.min(100, baseScore - (totalIssues * penaltyPerIssue)));
-    
+    const overall = Math.max(0, Math.min(100, baseScore - totalIssues * penaltyPerIssue));
+
     // 信頼度は検出されたパターンの平均信頼度
-    const avgConfidence = patterns.length > 0 
-      ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
-      : 1.0;
+    const avgConfidence =
+      patterns.length > 0
+        ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+        : 1.0;
 
     return {
       overall,
       dimensions: {
         completeness: 70,
         correctness: overall,
-        maintainability: 75
+        maintainability: 75,
       },
-      confidence: avgConfidence
+      confidence: avgConfidence,
     };
   }
 
@@ -147,14 +155,16 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected parseCodeContent(content: string) {
     const lines = content.split('\n');
     const nonEmptyLines = lines.filter(line => line.trim().length > 0);
-    
+
     // 簡易的なコメント行検出
     const commentLines = lines.filter(line => {
       const trimmed = line.trim();
-      return trimmed.startsWith('//') || 
-             trimmed.startsWith('/*') || 
-             trimmed.startsWith('*') ||
-             trimmed.endsWith('*/');
+      return (
+        trimmed.startsWith('//') ||
+        trimmed.startsWith('/*') ||
+        trimmed.startsWith('*') ||
+        trimmed.endsWith('*/')
+      );
     });
 
     return {
@@ -162,7 +172,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       totalLines: lines.length,
       nonEmptyLines: nonEmptyLines.length,
       commentLines: commentLines.length,
-      codeLines: nonEmptyLines.length - commentLines.length
+      codeLines: nonEmptyLines.length - commentLines.length,
     };
   }
 
@@ -176,7 +186,7 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       rootPath: process.cwd(),
       language: 'typescript',
       framework: 'unknown',
-      testFramework: 'jest'
+      testFramework: 'jest',
     };
 
     // isApplicableチェック
@@ -187,13 +197,16 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     // テストファイルオブジェクトを作成
     const testFile: TestFile = {
       path: filePath,
-      content: this.isTestFile(filePath) ? 
-        (fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '') : ''
+      content: this.isTestFile(filePath)
+        ? fs.existsSync(filePath)
+          ? fs.readFileSync(filePath, 'utf-8')
+          : ''
+        : '',
     };
 
     // パターン検出を実行
     const patterns = await this.detectPatterns(testFile);
-    
+
     // DetectionResultをIssueに変換
     return patterns.map(pattern => {
       const file = pattern.location?.file || filePath;
@@ -202,12 +215,13 @@ export abstract class BasePlugin implements ITestQualityPlugin {
       return {
         type: pattern.patternId || 'unknown',
         severity,
-        message: (pattern.metadata?.description || `Pattern detected: ${pattern.patternName}`) as string,
+        message: (pattern.metadata?.description ||
+          `Pattern detected: ${pattern.patternName}`) as string,
         filePath: file,
         file: file,
         line: pattern.location?.line || 1,
         column: pattern.location?.column,
-        category: 'pattern' as const
+        category: 'pattern' as const,
       } as Issue;
     });
   }
@@ -274,7 +288,10 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   }
 
   // ヘルパーメソッド: パターン検索
-  protected findPatternInCode(content: string, pattern: RegExp): Array<{
+  protected findPatternInCode(
+    content: string,
+    pattern: RegExp
+  ): Array<{
     match: string;
     line: number;
     column: number;
@@ -285,14 +302,14 @@ export abstract class BasePlugin implements ITestQualityPlugin {
     lines.forEach((line, lineIndex) => {
       let match;
       pattern.lastIndex = 0; // グローバル検索のリセット
-      
+
       while ((match = pattern.exec(line)) !== null) {
         matches.push({
           match: match[0],
           line: lineIndex + 1, // 1-based
-          column: match.index + 1 // 1-based
+          column: match.index + 1, // 1-based
         });
-        
+
         // 無限ループ防止
         if (!pattern.global) break;
       }
@@ -305,15 +322,15 @@ export abstract class BasePlugin implements ITestQualityPlugin {
   protected removeCommentsAndStrings(content: string): string {
     // 単行コメント除去
     let cleaned = content.replace(/\/\/.*$/gm, '');
-    
+
     // 複数行コメント除去
     cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
-    
+
     // 文字列リテラル除去
     cleaned = cleaned.replace(/"[^"\\]*(\\.[^"\\]*)*"/g, '""');
     cleaned = cleaned.replace(/'[^'\\]*(\\.[^'\\]*)*'/g, "''");
     cleaned = cleaned.replace(/`[^`\\]*(\\.[^`\\]*)*`/g, '``');
-    
+
     return cleaned;
   }
 }

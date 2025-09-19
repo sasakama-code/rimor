@@ -33,10 +33,7 @@ export function removeExcessiveWhitespace(text: string): string {
 export function processEscapedCharacters(text: string): string {
   // JSONで文字列として保存される際にエスケープされた文字を処理
   // \\n -> \n, \\t -> \t に変換
-  return text
-    .replace(/\\n/g, '\n')
-    .replace(/\\t/g, '\t')
-    .replace(/\\r/g, '\r');
+  return text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r');
 }
 
 /**
@@ -59,21 +56,21 @@ export function trimTrailingWhitespace(text: string): string {
  */
 export function sanitizeForAIReport(text: string): string {
   if (!text) return '';
-  
+
   let sanitized = text;
-  
+
   // 1. ANSIエスケープシーケンスを除去
   sanitized = stripAnsiCodes(sanitized);
-  
+
   // 2. エスケープされた文字を処理
   sanitized = processEscapedCharacters(sanitized);
-  
+
   // 3. 行末の余分な空白を除去
   sanitized = trimTrailingWhitespace(sanitized);
-  
+
   // 4. 余分な空白行を削減
   sanitized = removeExcessiveWhitespace(sanitized);
-  
+
   return sanitized;
 }
 
@@ -86,15 +83,15 @@ export function sanitizeObject<T>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (typeof obj === 'string') {
     return sanitizeForAIReport(obj) as T;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => sanitizeObject(item)) as T;
   }
-  
+
   if (typeof obj === 'object') {
     const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -102,7 +99,7 @@ export function sanitizeObject<T>(obj: T): T {
     }
     return sanitized as T;
   }
-  
+
   return obj;
 }
 

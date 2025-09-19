@@ -9,7 +9,7 @@ import {
   SecurityAuditResult,
   SecurityRule,
   SecurityAuditOptions,
-  ISecurityAuditor
+  ISecurityAuditor,
 } from '../../../src/core/interfaces/ISecurityAuditor';
 
 describe('ISecurityAuditor Interface', () => {
@@ -40,7 +40,7 @@ describe('ISecurityAuditor Interface', () => {
         file: 'src/api/user.ts',
         line: 42,
         message: 'SQL injection vulnerability detected',
-        recommendation: 'Use parameterized queries'
+        recommendation: 'Use parameterized queries',
       };
 
       expect(threat.type).toBe(ThreatType.INJECTION);
@@ -61,7 +61,7 @@ describe('ISecurityAuditor Interface', () => {
         message: 'XSS vulnerability in template rendering',
         recommendation: 'Sanitize user input',
         cweId: 'CWE-79',
-        owaspCategory: 'A03:2021'
+        owaspCategory: 'A03:2021',
       };
 
       expect(threatWithOptional.column).toBe(15);
@@ -71,7 +71,10 @@ describe('ISecurityAuditor Interface', () => {
 
     it('should support all severity levels', () => {
       const severityLevels: Array<'critical' | 'high' | 'medium' | 'low'> = [
-        'critical', 'high', 'medium', 'low'
+        'critical',
+        'high',
+        'medium',
+        'low',
       ];
 
       severityLevels.forEach(severity => {
@@ -81,7 +84,7 @@ describe('ISecurityAuditor Interface', () => {
           file: 'test.ts',
           line: 1,
           message: 'Test',
-          recommendation: 'Fix it'
+          recommendation: 'Fix it',
         };
 
         expect(threat.severity).toBe(severity);
@@ -98,10 +101,10 @@ describe('ISecurityAuditor Interface', () => {
           high: 0,
           medium: 0,
           low: 0,
-          total: 0
+          total: 0,
         },
         executionTime: 1000,
-        filesScanned: 50
+        filesScanned: 50,
       };
 
       expect(result.threats).toEqual([]);
@@ -117,7 +120,7 @@ describe('ISecurityAuditor Interface', () => {
         file: 'config.ts',
         line: 5,
         message: 'Hardcoded API key detected',
-        recommendation: 'Use environment variables'
+        recommendation: 'Use environment variables',
       };
 
       const result: SecurityAuditResult = {
@@ -127,10 +130,10 @@ describe('ISecurityAuditor Interface', () => {
           high: 1,
           medium: 0,
           low: 0,
-          total: 1
+          total: 1,
         },
         executionTime: 500,
-        filesScanned: 10
+        filesScanned: 10,
       };
 
       expect(result.threats).toHaveLength(1);
@@ -148,7 +151,7 @@ describe('ISecurityAuditor Interface', () => {
         pattern: 'console\\.log',
         severity: 'low',
         message: 'Console log detected',
-        recommendation: 'Remove console.log statements'
+        recommendation: 'Remove console.log statements',
       };
 
       expect(rule.id).toBe('custom-rule-001');
@@ -164,7 +167,7 @@ describe('ISecurityAuditor Interface', () => {
         pattern: /eval\s*\(/,
         severity: 'critical',
         message: 'eval() usage detected',
-        recommendation: 'Avoid using eval()'
+        recommendation: 'Avoid using eval()',
       };
 
       expect(rule.pattern).toBeInstanceOf(RegExp);
@@ -190,9 +193,9 @@ describe('ISecurityAuditor Interface', () => {
             pattern: 'test',
             severity: 'low',
             message: 'Test message',
-            recommendation: 'Test recommendation'
-          }
-        ]
+            recommendation: 'Test recommendation',
+          },
+        ],
       };
 
       expect(fullOptions.includeTests).toBe(true);
@@ -206,7 +209,10 @@ describe('ISecurityAuditor Interface', () => {
     class MockSecurityAuditor implements ISecurityAuditor {
       private customRules: SecurityRule[] = [];
 
-      async audit(targetPath: string, options?: SecurityAuditOptions): Promise<SecurityAuditResult> {
+      async audit(
+        targetPath: string,
+        options?: SecurityAuditOptions
+      ): Promise<SecurityAuditResult> {
         return {
           threats: [],
           summary: {
@@ -214,10 +220,10 @@ describe('ISecurityAuditor Interface', () => {
             high: 0,
             medium: 0,
             low: 0,
-            total: 0
+            total: 0,
           },
           executionTime: 100,
-          filesScanned: 1
+          filesScanned: 1,
         };
       }
 
@@ -232,7 +238,7 @@ describe('ISecurityAuditor Interface', () => {
 
     it('should implement required methods', () => {
       const auditor = new MockSecurityAuditor();
-      
+
       expect(auditor.audit).toBeDefined();
       expect(auditor.scanFile).toBeDefined();
       expect(typeof auditor.audit).toBe('function');
@@ -255,10 +261,10 @@ describe('ISecurityAuditor Interface', () => {
               high: 0,
               medium: 0,
               low: 0,
-              total: 0
+              total: 0,
             },
             executionTime: 0,
-            filesScanned: 0
+            filesScanned: 0,
           };
         }
 
@@ -275,7 +281,7 @@ describe('ISecurityAuditor Interface', () => {
       const auditor = new MockSecurityAuditor();
       const result = await auditor.audit('/path/to/project', {
         includeTests: false,
-        deepScan: true
+        deepScan: true,
       });
 
       expect(result).toBeDefined();
@@ -344,7 +350,7 @@ describe('ISecurityAuditor Interface', () => {
         file: 'test.ts',
         line: 10,
         message: 'Test threat',
-        recommendation: 'Fix it'
+        recommendation: 'Fix it',
       };
 
       const invalid = {
@@ -353,7 +359,7 @@ describe('ISecurityAuditor Interface', () => {
         file: 'test.ts',
         line: 10,
         message: 'Test threat',
-        recommendation: 'Fix it'
+        recommendation: 'Fix it',
       };
 
       expect(isSecurityThreat(valid)).toBe(true);
@@ -369,17 +375,17 @@ describe('ISecurityAuditor Interface', () => {
           high: 0,
           medium: 0,
           low: 0,
-          total: 0
+          total: 0,
         },
         executionTime: 100,
-        filesScanned: 10
+        filesScanned: 10,
       };
 
       const invalid = {
         threats: 'not an array',
         summary: {},
         executionTime: 100,
-        filesScanned: 10
+        filesScanned: 10,
       };
 
       expect(isSecurityAuditResult(valid)).toBe(true);
@@ -393,7 +399,7 @@ describe('ISecurityAuditor Interface', () => {
         pattern: 'pattern',
         severity: 'low',
         message: 'Message',
-        recommendation: 'Recommendation'
+        recommendation: 'Recommendation',
       };
 
       const invalid = {

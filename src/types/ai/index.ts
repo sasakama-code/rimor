@@ -1,6 +1,6 @@
 /**
  * AI出力関連の統一型定義
- * 
+ *
  * AI分析結果のフォーマットと出力に関する型を集約
  * SOLID原則とKISS原則に基づいた設計
  */
@@ -18,10 +18,10 @@ export type RiskLevel = CoreTypes.RiskLevel;
 /**
  * AIアクションタイプ
  */
-export type AIActionType = 
-  | 'ADD_ASSERTION' 
-  | 'SANITIZE_VARIABLE' 
-  | 'REFACTOR_COMPLEX_CODE' 
+export type AIActionType =
+  | 'ADD_ASSERTION'
+  | 'SANITIZE_VARIABLE'
+  | 'REFACTOR_COMPLEX_CODE'
   | 'ADD_MISSING_TEST'
   | 'FIX_SECURITY_ISSUE'
   | 'IMPROVE_PERFORMANCE';
@@ -35,7 +35,7 @@ export type FormattingStrategy = unknown;
 /**
  * AI分析のサマリー情報
  * SRP: サマリー情報の表現に特化
- * 
+ *
  * @example
  * ```typescript
  * const summary: AISummary = {
@@ -304,7 +304,7 @@ export interface AIOptimizedOutput {
   /** バージョン */
   version: string;
   /** フォーマット */
-  format: "ai-optimized";
+  format: 'ai-optimized';
   /** メタデータ */
   metadata: {
     projectType: string;
@@ -382,7 +382,8 @@ export interface AIOutputError extends Error {
  * 型ガード: AIOptimizedOutputかどうかを判定
  */
 export function isAIOptimizedOutput(obj: unknown): obj is AIOptimizedOutput {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'format' in obj &&
     'version' in obj &&
@@ -395,14 +396,16 @@ export function isAIOptimizedOutput(obj: unknown): obj is AIOptimizedOutput {
     (obj as any).metadata !== undefined &&
     (obj as any).context !== undefined &&
     (obj as any).qualityOverview !== undefined &&
-    Array.isArray((obj as any).files));
+    Array.isArray((obj as any).files)
+  );
 }
 
 /**
  * 型ガード: AIFormattedIssueかどうかを判定
  */
 export function isAIFormattedIssue(obj: unknown): obj is AIFormattedIssue {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'category' in obj &&
     'severity' in obj &&
@@ -411,7 +414,8 @@ export function isAIFormattedIssue(obj: unknown): obj is AIFormattedIssue {
     typeof (obj as any).category === 'string' &&
     typeof (obj as any).severity === 'string' &&
     typeof (obj as any).message === 'string' &&
-    ['high', 'medium', 'low'].includes((obj as any).impact));
+    ['high', 'medium', 'low'].includes((obj as any).impact)
+  );
 }
 
 /**
@@ -419,11 +423,11 @@ export function isAIFormattedIssue(obj: unknown): obj is AIFormattedIssue {
  */
 export function riskLevelToNumber(level: RiskLevel): number {
   const mapping: Record<RiskLevel, number> = {
-    'CRITICAL': 5,
-    'HIGH': 4,
-    'MEDIUM': 3,
-    'LOW': 2,
-    'MINIMAL': 1
+    CRITICAL: 5,
+    HIGH: 4,
+    MEDIUM: 3,
+    LOW: 2,
+    MINIMAL: 1,
   };
   return mapping[level] || 0;
 }

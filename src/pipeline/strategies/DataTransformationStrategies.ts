@@ -4,26 +4,27 @@
  * TDD Refactor Phase - 設計パターンの適用によるコード品質向上
  */
 
-import { 
-  TaintAnalysisResult, 
-  IntentAnalysisResult, 
-  GapAnalysisResult, 
-  NistEvaluationResult 
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+  NistEvaluationResult,
 } from '../../orchestrator/types';
 
 import {
   IDataTransformer,
   IntentExtractionInput,
   GapDetectionInput,
-  NistEvaluationInput
+  NistEvaluationInput,
 } from '../DataPipeline';
 
 /**
  * TaintAnalysisからIntentExtraction用データ変換戦略
  * 単一責任の原則：Taint結果の変換のみを担当
  */
-export class TaintToIntentTransformationStrategy implements IDataTransformer<TaintAnalysisResult, IntentExtractionInput> {
-  
+export class TaintToIntentTransformationStrategy
+  implements IDataTransformer<TaintAnalysisResult, IntentExtractionInput>
+{
   async transform(taintResult: TaintAnalysisResult): Promise<IntentExtractionInput> {
     // Defensive Programming: 入力検証
     this.validateInput(taintResult);
@@ -34,7 +35,7 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
     return {
       vulnerabilities: taintResult.vulnerabilities,
       securityContext,
-      analysisMetadata
+      analysisMetadata,
     };
   }
 
@@ -59,7 +60,7 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
     return {
       analysisType: 'taint-analysis',
       riskLevel: this.calculateOverallRiskLevel(taintResult),
-      analysisTimestamp: new Date().toISOString()
+      analysisTimestamp: new Date().toISOString(),
     };
   }
 
@@ -73,9 +74,9 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
       riskDistribution: {
         high: taintResult.summary.highSeverity,
         medium: taintResult.summary.mediumSeverity,
-        low: taintResult.summary.lowSeverity
+        low: taintResult.summary.lowSeverity,
       },
-      analysisDepth: 'comprehensive'
+      analysisDepth: 'comprehensive',
     };
   }
 
@@ -85,7 +86,7 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
    */
   private calculateOverallRiskLevel(taintResult: TaintAnalysisResult): string {
     const { highSeverity, mediumSeverity, lowSeverity } = taintResult.summary;
-    
+
     if (highSeverity > 0) return 'HIGH';
     if (mediumSeverity > 0) return 'MEDIUM';
     if (lowSeverity > 0) return 'LOW';
@@ -106,7 +107,10 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
     }
 
     if (!taintResult.summary) {
-      throw new TransformationError('必須フィールドが不足しています: summary', 'MISSING_REQUIRED_FIELD');
+      throw new TransformationError(
+        '必須フィールドが不足しています: summary',
+        'MISSING_REQUIRED_FIELD'
+      );
     }
   }
 }
@@ -115,11 +119,19 @@ export class TaintToIntentTransformationStrategy implements IDataTransformer<Tai
  * IntentAnalysisからGapDetection用データ変換戦略
  * 単一責任の原則：Intent結果の変換のみを担当
  */
-export class IntentToGapTransformationStrategy implements IDataTransformer<{intent: IntentAnalysisResult, taint: TaintAnalysisResult}, GapDetectionInput> {
-  
-  async transform(input: {intent: IntentAnalysisResult, taint: TaintAnalysisResult}): Promise<GapDetectionInput> {
+export class IntentToGapTransformationStrategy
+  implements
+    IDataTransformer<
+      { intent: IntentAnalysisResult; taint: TaintAnalysisResult },
+      GapDetectionInput
+    >
+{
+  async transform(input: {
+    intent: IntentAnalysisResult;
+    taint: TaintAnalysisResult;
+  }): Promise<GapDetectionInput> {
     const { intent: intentResult, taint: taintResult } = input;
-    
+
     // Defensive Programming: 入力検証
     this.validateInput(intentResult, taintResult);
 
@@ -129,11 +141,11 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
     return {
       testIntents: intentResult.testIntents,
       vulnerabilityContext,
-      riskProfile
+      riskProfile,
     };
   }
 
-  validate(input: {intent: IntentAnalysisResult, taint: TaintAnalysisResult}): boolean {
+  validate(input: { intent: IntentAnalysisResult; taint: TaintAnalysisResult }): boolean {
     try {
       this.validateInput(input.intent, input.taint);
       return true;
@@ -150,11 +162,14 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
    * 脆弱性コンテキストの構築
    * Open-Closed Principle: 新しい関連性判定アルゴリズムを簡単に追加可能
    */
-  private buildVulnerabilityContext(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult) {
+  private buildVulnerabilityContext(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ) {
     return {
       relatedVulnerabilities: this.findRelatedVulnerabilities(intentResult, taintResult),
       securityImplications: this.extractSecurityImplications(intentResult),
-      riskAssessment: this.assessCombinedRisk(intentResult, taintResult)
+      riskAssessment: this.assessCombinedRisk(intentResult, taintResult),
     };
   }
 
@@ -166,7 +181,7 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
     return {
       overallRiskLevel: this.calculateCombinedRiskLevel(intentResult, taintResult),
       testCoverage: this.calculateTestCoverage(intentResult, taintResult),
-      securityPosture: this.evaluateSecurityPosture(intentResult, taintResult)
+      securityPosture: this.evaluateSecurityPosture(intentResult, taintResult),
     };
   }
 
@@ -174,12 +189,16 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
    * 関連する脆弱性の特定
    * Strategy Pattern内でのアルゴリズムの封じ込め
    */
-  private findRelatedVulnerabilities(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult) {
+  private findRelatedVulnerabilities(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ) {
     return taintResult.vulnerabilities.filter(vuln =>
-      intentResult.testIntents.some(intent => 
-        intent.securityRequirements.some(req => 
-          req.toLowerCase().includes(vuln.type.toLowerCase()) ||
-          this.isSemanticMatch(req, vuln.type)
+      intentResult.testIntents.some(intent =>
+        intent.securityRequirements.some(
+          req =>
+            req.toLowerCase().includes(vuln.type.toLowerCase()) ||
+            this.isSemanticMatch(req, vuln.type)
         )
       )
     );
@@ -191,10 +210,10 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
    */
   private isSemanticMatch(requirement: string, vulnType: string): boolean {
     const semanticMap: Record<string, string[]> = {
-      'PATH_TRAVERSAL': ['ファイル', 'パス', 'ディレクトリ', 'アクセス制御'],
-      'SQL_INJECTION': ['データベース', 'クエリ', 'SQL'],
-      'XSS': ['入力検証', 'スクリプト', 'HTMLエスケープ'],
-      'COMMAND_INJECTION': ['コマンド', '実行', 'シェル']
+      PATH_TRAVERSAL: ['ファイル', 'パス', 'ディレクトリ', 'アクセス制御'],
+      SQL_INJECTION: ['データベース', 'クエリ', 'SQL'],
+      XSS: ['入力検証', 'スクリプト', 'HTMLエスケープ'],
+      COMMAND_INJECTION: ['コマンド', '実行', 'シェル'],
     };
 
     const keywords = semanticMap[vulnType] || [];
@@ -205,35 +224,50 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
     return intentResult.testIntents.flatMap(intent => intent.securityRequirements);
   }
 
-  private assessCombinedRisk(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): string {
+  private assessCombinedRisk(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): string {
     const intentRisk = intentResult.summary.highRiskTests > 0 ? 'HIGH' : 'LOW';
     const taintRisk = taintResult.summary.highSeverity > 0 ? 'HIGH' : 'LOW';
-    
+
     if (intentRisk === 'HIGH' || taintRisk === 'HIGH') return 'HIGH';
     return 'MEDIUM';
   }
 
-  private calculateCombinedRiskLevel(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): string {
+  private calculateCombinedRiskLevel(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): string {
     return this.assessCombinedRisk(intentResult, taintResult);
   }
 
-  private calculateTestCoverage(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): number {
+  private calculateTestCoverage(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): number {
     const totalVulns = taintResult.summary.totalVulnerabilities;
     const coveredVulns = this.findRelatedVulnerabilities(intentResult, taintResult).length;
-    
+
     if (totalVulns === 0) return 100;
     return Math.min(100, (coveredVulns / totalVulns) * 100);
   }
 
-  private evaluateSecurityPosture(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): string {
+  private evaluateSecurityPosture(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): string {
     const coverage = this.calculateTestCoverage(intentResult, taintResult);
-    
+
     if (coverage >= 80) return 'STRONG';
     if (coverage >= 60) return 'MODERATE';
     return 'WEAK';
   }
 
-  private validateInput(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): void {
+  private validateInput(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): void {
     if (!intentResult) {
       throw new TransformationError('IntentAnalysisResultが無効です', 'INVALID_INPUT');
     }
@@ -250,26 +284,43 @@ export class IntentToGapTransformationStrategy implements IDataTransformer<{inte
  * GapAnalysisからNistEvaluation用データ変換戦略
  * 単一責任の原則：Gap結果の変換のみを担当
  */
-export class GapToNistTransformationStrategy implements IDataTransformer<{gap: GapAnalysisResult, intent: IntentAnalysisResult, taint: TaintAnalysisResult}, NistEvaluationInput> {
-  
-  async transform(input: {gap: GapAnalysisResult, intent: IntentAnalysisResult, taint: TaintAnalysisResult}): Promise<NistEvaluationInput> {
+export class GapToNistTransformationStrategy
+  implements
+    IDataTransformer<
+      { gap: GapAnalysisResult; intent: IntentAnalysisResult; taint: TaintAnalysisResult },
+      NistEvaluationInput
+    >
+{
+  async transform(input: {
+    gap: GapAnalysisResult;
+    intent: IntentAnalysisResult;
+    taint: TaintAnalysisResult;
+  }): Promise<NistEvaluationInput> {
     const { gap: gapResult, intent: intentResult, taint: taintResult } = input;
-    
+
     // Defensive Programming: 入力検証
     this.validateInput(gapResult, intentResult, taintResult);
 
     const testContext = this.buildTestContext(intentResult, gapResult);
-    const vulnerabilityProfile = this.buildVulnerabilityProfile(taintResult, intentResult, gapResult);
+    const vulnerabilityProfile = this.buildVulnerabilityProfile(
+      taintResult,
+      intentResult,
+      gapResult
+    );
 
     return {
       securityGaps: gapResult.gaps,
       testContext,
       vulnerabilityProfile,
-      complianceFramework: 'NIST SP 800-30'
+      complianceFramework: 'NIST SP 800-30',
     };
   }
 
-  validate(input: {gap: GapAnalysisResult, intent: IntentAnalysisResult, taint: TaintAnalysisResult}): boolean {
+  validate(input: {
+    gap: GapAnalysisResult;
+    intent: IntentAnalysisResult;
+    taint: TaintAnalysisResult;
+  }): boolean {
     try {
       this.validateInput(input.gap, input.intent, input.taint);
       return true;
@@ -286,60 +337,77 @@ export class GapToNistTransformationStrategy implements IDataTransformer<{gap: G
     return {
       testIntents: intentResult.testIntents,
       intentRiskProfile: this.analyzeIntentRiskProfile(intentResult),
-      testingCompliance: this.assessTestingCompliance(intentResult, gapResult)
+      testingCompliance: this.assessTestingCompliance(intentResult, gapResult),
     };
   }
 
-  private buildVulnerabilityProfile(taintResult: TaintAnalysisResult, intentResult: IntentAnalysisResult, gapResult: GapAnalysisResult) {
+  private buildVulnerabilityProfile(
+    taintResult: TaintAnalysisResult,
+    intentResult: IntentAnalysisResult,
+    gapResult: GapAnalysisResult
+  ) {
     return {
       vulnerabilities: taintResult.vulnerabilities,
       threatLandscape: this.analyzeThreatLandscape(taintResult, gapResult),
-      attackSurface: this.calculateAttackSurface(taintResult, intentResult)
+      attackSurface: this.calculateAttackSurface(taintResult, intentResult),
     };
   }
 
   private analyzeIntentRiskProfile(intentResult: IntentAnalysisResult): string {
     const total = intentResult.summary.totalTests;
     const highRisk = intentResult.summary.highRiskTests;
-    
+
     if (total === 0) return 'UNKNOWN';
-    
+
     const riskRatio = highRisk / total;
     if (riskRatio >= 0.5) return 'HIGH_RISK_DOMINANT';
     if (riskRatio >= 0.2) return 'MIXED_RISK';
     return 'LOW_RISK_DOMINANT';
   }
 
-  private assessTestingCompliance(intentResult: IntentAnalysisResult, gapResult: GapAnalysisResult): string {
+  private assessTestingCompliance(
+    intentResult: IntentAnalysisResult,
+    gapResult: GapAnalysisResult
+  ): string {
     const criticalGaps = gapResult.summary.criticalGaps;
     const testCoverage = intentResult.summary.totalTests;
-    
+
     if (criticalGaps === 0 && testCoverage > 0) return 'COMPLIANT';
     if (criticalGaps <= 2) return 'PARTIALLY_COMPLIANT';
     return 'NON_COMPLIANT';
   }
 
-  private analyzeThreatLandscape(taintResult: TaintAnalysisResult, gapResult: GapAnalysisResult): string {
+  private analyzeThreatLandscape(
+    taintResult: TaintAnalysisResult,
+    gapResult: GapAnalysisResult
+  ): string {
     const totalVulns = taintResult.summary.totalVulnerabilities;
     const criticalGaps = gapResult.summary.criticalGaps;
-    
+
     if (totalVulns > 10 && criticalGaps > 3) return 'HIGH_THREAT';
     if (totalVulns > 5 || criticalGaps > 1) return 'MODERATE_THREAT';
     return 'LOW_THREAT';
   }
 
-  private calculateAttackSurface(taintResult: TaintAnalysisResult, intentResult: IntentAnalysisResult): string {
+  private calculateAttackSurface(
+    taintResult: TaintAnalysisResult,
+    intentResult: IntentAnalysisResult
+  ): string {
     const vulnTypes = new Set(taintResult.vulnerabilities.map(v => v.type)).size;
     const testTypes = new Set(intentResult.testIntents.map(t => t.riskLevel)).size;
-    
+
     const complexity = vulnTypes + testTypes;
-    
+
     if (complexity >= 8) return 'EXTENSIVE';
     if (complexity >= 4) return 'MODERATE';
     return 'LIMITED';
   }
 
-  private validateInput(gapResult: GapAnalysisResult, intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): void {
+  private validateInput(
+    gapResult: GapAnalysisResult,
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): void {
     if (!gapResult || !intentResult || !taintResult) {
       throw new TransformationError('入力パラメータが無効です', 'INVALID_INPUT');
     }
@@ -356,7 +424,11 @@ export class GapToNistTransformationStrategy implements IDataTransformer<{gap: G
 export class TransformationError extends Error {
   constructor(
     message: string,
-    public readonly code: 'INVALID_INPUT' | 'INVALID_STRUCTURE' | 'MISSING_REQUIRED_FIELD' | 'TRANSFORMATION_FAILED',
+    public readonly code:
+      | 'INVALID_INPUT'
+      | 'INVALID_STRUCTURE'
+      | 'MISSING_REQUIRED_FIELD'
+      | 'TRANSFORMATION_FAILED',
     public readonly cause?: Error
   ) {
     super(message);

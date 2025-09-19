@@ -1,7 +1,7 @@
 /**
  * Multilingual Keyword Extractor
  * v0.9.0 - 多言語対応キーワード抽出エンジン
- * 
+ *
  * KISS原則: 言語ごとに専用の処理を分離
  * DRY原則: 共通処理の抽象化
  */
@@ -33,14 +33,56 @@ export class MultilingualKeywordExtractor {
   constructor() {
     // 英語用トークナイザー初期化
     this.englishTokenizer = new natural.WordTokenizer();
-    
+
     // 英語ストップワード
     this.stopWords = new Set([
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
-      'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-      'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that',
-      'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they'
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'is',
+      'are',
+      'was',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'could',
+      'should',
+      'may',
+      'might',
+      'must',
+      'can',
+      'this',
+      'that',
+      'these',
+      'those',
+      'i',
+      'you',
+      'he',
+      'she',
+      'it',
+      'we',
+      'they',
     ]);
   }
 
@@ -56,11 +98,8 @@ export class MultilingualKeywordExtractor {
     if (!this.japaneseTokenizerPromise) {
       this.japaneseTokenizerPromise = new Promise((resolve, reject) => {
         // Kuromojiの辞書パスを設定
-        const dicPath = path.join(
-          __dirname, 
-          '../../node_modules/kuromoji/dict'
-        );
-        
+        const dicPath = path.join(__dirname, '../../node_modules/kuromoji/dict');
+
         kuromoji.builder({ dicPath }).build((err: unknown, tokenizer: unknown) => {
           if (err) {
             console.warn('Failed to initialize kuromoji:', err);
@@ -68,10 +107,11 @@ export class MultilingualKeywordExtractor {
             resolve({
               tokenize: (text: string) => {
                 // 簡易的な日本語分割（スペースと句読点で分割）
-                return text.split(/[\s、。！？]+/)
+                return text
+                  .split(/[\s、。！？]+/)
                   .filter(word => word.length > 0)
                   .map(word => ({ surface_form: word, pos: '名詞' }));
-              }
+              },
             });
           } else {
             this.japaneseTokenizer = tokenizer;
@@ -93,7 +133,7 @@ export class MultilingualKeywordExtractor {
     if (!text || text.trim().length === 0) {
       return {
         language: 'unknown',
-        confidence: 0
+        confidence: 0,
       };
     }
 
@@ -117,36 +157,36 @@ export class MultilingualKeywordExtractor {
       // 言語判定
       const japaneseRatio = japaneseChars / totalChars;
       const englishRatio = englishChars / totalChars;
-      
+
       if (japaneseRatio > 0.3) {
         // 30%以上が日本語文字
         return {
           language: 'jpn',
-          confidence: Math.min(0.95, 0.5 + japaneseRatio)
+          confidence: Math.min(0.95, 0.5 + japaneseRatio),
         };
       } else if (englishRatio > 0.5) {
         // 50%以上が英語文字
         return {
           language: 'eng',
-          confidence: Math.min(0.95, 0.5 + englishRatio * 0.5)
+          confidence: Math.min(0.95, 0.5 + englishRatio * 0.5),
         };
       } else if (japaneseChars > 0 && englishChars > 0) {
         // 混合
         return {
           language: japaneseRatio > englishRatio ? 'jpn' : 'eng',
-          confidence: 0.6
+          confidence: 0.6,
         };
       }
-      
+
       return {
         language: 'unknown',
-        confidence: 0
+        confidence: 0,
       };
     } catch (error) {
       console.warn('Language detection failed:', error);
       return {
         language: 'unknown',
-        confidence: 0
+        confidence: 0,
       };
     }
   }
@@ -160,23 +200,21 @@ export class MultilingualKeywordExtractor {
 
     // キャメルケースを分割
     const expandedText = text.replace(/([a-z])([A-Z])/g, '$1 $2');
-    
+
     // トークナイズ
     const tokens = this.englishTokenizer.tokenize(expandedText.toLowerCase());
-    
+
     // tokensがnullまたはundefinedの場合は空配列を返す
     if (!tokens) return [];
-    
+
     // キーワードフィルタリング
     const keywords = tokens
       .filter((token: string) => {
         // 2文字以上、ストップワードでない、英数字を含む
-        return token.length >= 2 && 
-               !this.stopWords.has(token) &&
-               /[a-z0-9]/i.test(token);
+        return token.length >= 2 && !this.stopWords.has(token) && /[a-z0-9]/i.test(token);
       })
       .map((token: string) => token.toLowerCase());
-    
+
     // 重複除去
     return Array.from(new Set(keywords));
   }
@@ -191,33 +229,41 @@ export class MultilingualKeywordExtractor {
     try {
       const tokenizer = await this.getJapaneseTokenizer();
       const tokens = tokenizer.tokenize(text);
-      
+
       // 名詞、動詞の語幹を抽出
       const keywords = tokens
-        .filter((token: {pos?: string; surface_form: string; basic_form?: string}) => {
+        .filter((token: { pos?: string; surface_form: string; basic_form?: string }) => {
           const pos = token.pos?.split(',')[0];
           const posDetail = token.pos?.split(',')[1];
-          
+
           // 助詞、助動詞、非自立語を除外
           if (pos === '助詞' || pos === '助動詞' || posDetail === '非自立') {
             return false;
           }
-          
+
           // 「する」などの汎用的な動詞を除外
-          if (token.surface_form === 'する' || token.surface_form === 'なる' || 
-              token.surface_form === 'ある' || token.surface_form === 'いる') {
+          if (
+            token.surface_form === 'する' ||
+            token.surface_form === 'なる' ||
+            token.surface_form === 'ある' ||
+            token.surface_form === 'いる'
+          ) {
             return false;
           }
-          
+
           // 名詞、動詞（自立語のみ）、形容詞を抽出
           return pos === '名詞' || (pos === '動詞' && posDetail !== '非自立') || pos === '形容詞';
         })
-        .map((token: {pos?: string; surface_form: string; basic_form?: string}) => {
+        .map((token: { pos?: string; surface_form: string; basic_form?: string }) => {
           // 動詞の場合は基本形を使用
           if (token.pos?.startsWith('動詞') && token.basic_form) {
             // 「する」などの汎用動詞の基本形も除外
-            if (token.basic_form === 'する' || token.basic_form === 'なる' ||
-                token.basic_form === 'ある' || token.basic_form === 'いる') {
+            if (
+              token.basic_form === 'する' ||
+              token.basic_form === 'なる' ||
+              token.basic_form === 'ある' ||
+              token.basic_form === 'いる'
+            ) {
               return null;
             }
             return token.basic_form;
@@ -229,15 +275,13 @@ export class MultilingualKeywordExtractor {
           // 1文字の単語、ひらがなのみの短い単語を除外
           return word.length > 1 || /[\u30A0-\u30FF\u4E00-\u9FAF]/.test(word);
         });
-      
+
       // 重複除去
       return Array.from(new Set(keywords));
     } catch (error) {
       console.warn('Japanese keyword extraction failed:', error);
       // フォールバック: 簡易的な抽出
-      return text
-        .split(/[\s、。！？]+/)
-        .filter(word => word.length > 1);
+      return text.split(/[\s、。！？]+/).filter(word => word.length > 1);
     }
   }
 
@@ -250,7 +294,7 @@ export class MultilingualKeywordExtractor {
     if (!text) {
       return {
         language: 'unknown',
-        keywords: []
+        keywords: [],
       };
     }
 
@@ -258,16 +302,16 @@ export class MultilingualKeywordExtractor {
     if (!/[a-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
       return {
         language: 'unknown',
-        keywords: []
+        keywords: [],
       };
     }
 
     try {
       // 言語検出
       const languageResult = await this.detectLanguage(text);
-      
+
       let keywords: string[] = [];
-      
+
       // 言語に応じた抽出処理
       if (languageResult.language === 'jpn') {
         keywords = await this.extractJapaneseKeywords(text);
@@ -277,24 +321,24 @@ export class MultilingualKeywordExtractor {
         // 混合または不明な場合は両方試す
         const englishKeywords = await this.extractEnglishKeywords(text);
         const japaneseKeywords = await this.extractJapaneseKeywords(text);
-        
+
         // 両方の結果をマージ
         keywords = [...englishKeywords, ...japaneseKeywords];
-        
+
         // 重複除去
         keywords = Array.from(new Set(keywords));
       }
-      
+
       return {
         language: languageResult.language,
         keywords,
-        confidence: languageResult.confidence
+        confidence: languageResult.confidence,
       };
     } catch (error) {
       console.error('Keyword extraction failed:', error);
       return {
         language: 'unknown',
-        keywords: []
+        keywords: [],
       };
     }
   }

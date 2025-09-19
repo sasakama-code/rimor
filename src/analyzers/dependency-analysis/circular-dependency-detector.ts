@@ -1,12 +1,12 @@
 /**
  * CircularDependencyDetector クラス
  * Issue #103: 循環検出ロジックの設計上の問題を修正
- * 
+ *
  * 責務:
  * - ファイルレベルの循環依存検出
  * - 相対インポートのみを対象とした分析
  * - フルパスを使用した同名ファイル衝突の回避
- * 
+ *
  * 設計原則:
  * - DRY: 共通ロジックをユーティリティメソッドに抽出
  * - SOLID: 単一責任原則に基づく設計
@@ -29,10 +29,32 @@ export interface CircularDependencyResult {
 export class CircularDependencyDetector {
   private readonly SUPPORTED_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
   private readonly BUILT_IN_MODULES = new Set([
-    'fs', 'path', 'http', 'https', 'crypto', 'os', 'util', 'stream',
-    'url', 'querystring', 'child_process', 'cluster', 'events',
-    'buffer', 'process', 'console', 'module', 'require', 'assert',
-    'net', 'tls', 'dns', 'readline', 'repl', 'vm', 'zlib'
+    'fs',
+    'path',
+    'http',
+    'https',
+    'crypto',
+    'os',
+    'util',
+    'stream',
+    'url',
+    'querystring',
+    'child_process',
+    'cluster',
+    'events',
+    'buffer',
+    'process',
+    'console',
+    'module',
+    'require',
+    'assert',
+    'net',
+    'tls',
+    'dns',
+    'readline',
+    'repl',
+    'vm',
+    'zlib',
   ]);
 
   /**
@@ -52,7 +74,7 @@ export class CircularDependencyDetector {
       currentPath.push(node);
 
       const dependencies = graph.get(node) || new Set<string>();
-      
+
       for (const dep of dependencies) {
         // 循環を発見した場合
         const cycleStartIndex = currentPath.indexOf(dep);
@@ -87,10 +109,10 @@ export class CircularDependencyDetector {
    */
   protected async buildFileDependencyGraph(projectPath: string): Promise<Map<string, Set<string>>> {
     const graph = new Map<string, Set<string>>();
-    
+
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**', '.git/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**', '.git/**'],
     });
 
     for (const file of sourceFiles) {
@@ -113,7 +135,11 @@ export class CircularDependencyDetector {
    * Issue #103: 相対インポートのみを対象とし、外部パッケージは除外
    * @private
    */
-  private extractRelativeImports(content: string, fromFilePath: string, projectPath: string): string[] {
+  private extractRelativeImports(
+    content: string,
+    fromFilePath: string,
+    projectPath: string
+  ): string[] {
     const imports = new Set<string>();
     const fromDir = path.dirname(fromFilePath);
 
@@ -161,7 +187,11 @@ export class CircularDependencyDetector {
    * 相対インポートパスを解決
    * @private
    */
-  private resolveRelativeImport(importPath: string, fromDir: string, projectPath: string): string | null {
+  private resolveRelativeImport(
+    importPath: string,
+    fromDir: string,
+    projectPath: string
+  ): string | null {
     // 相対パスでない場合は無視
     if (!this.isRelativeImport(importPath)) {
       return null;
@@ -188,15 +218,17 @@ export class CircularDependencyDetector {
       path.resolve(baseResolvedPath, 'index.js'),
       path.resolve(baseResolvedPath, 'index.jsx'),
       path.resolve(baseResolvedPath, 'index.mjs'),
-      path.resolve(baseResolvedPath, 'index.cjs')
+      path.resolve(baseResolvedPath, 'index.cjs'),
     ];
 
     for (const possiblePath of possiblePaths) {
       try {
         // プロジェクト内のファイルかつ存在する場合のみ
-        if (possiblePath.startsWith(projectPath) && 
-            fs.existsSync(possiblePath) && 
-            fs.statSync(possiblePath).isFile()) {
+        if (
+          possiblePath.startsWith(projectPath) &&
+          fs.existsSync(possiblePath) &&
+          fs.statSync(possiblePath).isFile()
+        ) {
           return possiblePath;
         }
       } catch (error) {
@@ -213,9 +245,9 @@ export class CircularDependencyDetector {
    * @private
    */
   private isRelativeImport(importPath: string): boolean {
-    return importPath.startsWith('./') || 
-           importPath.startsWith('../') || 
-           importPath.startsWith('/');
+    return (
+      importPath.startsWith('./') || importPath.startsWith('../') || importPath.startsWith('/')
+    );
   }
 
   /**
@@ -229,7 +261,7 @@ export class CircularDependencyDetector {
       // 循環を正規化（最小の要素から始まるように）
       const normalizedCycle = this.normalizeCycle(cycle);
       const key = JSON.stringify(normalizedCycle);
-      
+
       if (!uniqueCycles.has(key)) {
         uniqueCycles.set(key, normalizedCycle);
       }
@@ -249,7 +281,7 @@ export class CircularDependencyDetector {
 
     // 最後の重複要素を除去
     const cycleWithoutLast = cycle.slice(0, -1);
-    
+
     // 最小の要素のインデックスを見つける
     let minIndex = 0;
     for (let i = 1; i < cycleWithoutLast.length; i++) {
@@ -259,14 +291,11 @@ export class CircularDependencyDetector {
     }
 
     // 最小要素から始まるように回転
-    const rotated = [
-      ...cycleWithoutLast.slice(minIndex),
-      ...cycleWithoutLast.slice(0, minIndex)
-    ];
+    const rotated = [...cycleWithoutLast.slice(minIndex), ...cycleWithoutLast.slice(0, minIndex)];
 
     // 終端要素を追加して循環を完成
     rotated.push(rotated[0]);
-    
+
     return rotated;
   }
 
@@ -291,12 +320,12 @@ export class CircularDependencyDetector {
    */
   suggestRefactoring(cycle: string[]): string {
     const suggestions: string[] = [];
-    
+
     suggestions.push('Consider extracting common functionality into a separate module');
     suggestions.push('Use interface segregation to break dependencies');
     suggestions.push('Apply dependency inversion principle');
     suggestions.push('Consider using dependency injection');
-    
+
     if (cycle.length <= 3) {
       suggestions.push('This is a direct circular dependency - consider immediate refactoring');
     } else {
@@ -312,18 +341,16 @@ export class CircularDependencyDetector {
   async generateDetailedReport(projectPath: string): Promise<CircularDependencyResult> {
     const cycles = await this.detectCircularDependencies(projectPath);
     const graph = await this.buildFileDependencyGraph(projectPath);
-    
-    const severeCycles = cycles.filter(cycle => 
-      this.calculateSeverity(cycle) === 'high'
-    ).length;
+
+    const severeCycles = cycles.filter(cycle => this.calculateSeverity(cycle) === 'high').length;
 
     return {
       cycles,
       summary: {
         totalFiles: graph.size,
         totalCycles: cycles.length,
-        severeCycles
-      }
+        severeCycles,
+      },
     };
   }
 }

@@ -12,7 +12,7 @@ import {
   ActualTestAnalysis,
   IntentRiskLevel,
   GapType,
-  Severity
+  Severity,
 } from '../../src/intent-analysis/ITestIntentAnalyzer';
 
 describe('TestIntentReporter', () => {
@@ -36,10 +36,10 @@ describe('TestIntentReporter', () => {
               type: GapType.MISSING_EDGE_CASE,
               description: 'エッジケースのテストが不足しています',
               severity: Severity.MEDIUM,
-              suggestions: ['nullやundefinedの処理をテスト']
-            }
-          ]
-        })
+              suggestions: ['nullやundefinedの処理をテスト'],
+            },
+          ],
+        }),
       ];
 
       // Act
@@ -60,7 +60,7 @@ describe('TestIntentReporter', () => {
       const results: TestRealizationResult[] = [
         createMockResult({ riskLevel: IntentRiskLevel.CRITICAL }),
         createMockResult({ riskLevel: IntentRiskLevel.HIGH }),
-        createMockResult({ riskLevel: IntentRiskLevel.MEDIUM })
+        createMockResult({ riskLevel: IntentRiskLevel.MEDIUM }),
       ];
 
       // Act
@@ -82,16 +82,16 @@ describe('TestIntentReporter', () => {
               type: GapType.MISSING_ASSERTION,
               description: 'アサーションが存在しません',
               severity: Severity.CRITICAL,
-              suggestions: ['expect文を追加してください']
+              suggestions: ['expect文を追加してください'],
             },
             {
               type: GapType.MISSING_ERROR_CASE,
               description: 'エラーケースがテストされていません',
               severity: Severity.HIGH,
-              suggestions: ['エラーケースを追加してください']
-            }
-          ]
-        })
+              suggestions: ['エラーケースを追加してください'],
+            },
+          ],
+        }),
       ];
 
       // Act
@@ -110,7 +110,7 @@ describe('TestIntentReporter', () => {
       const results: TestRealizationResult[] = [
         createMockResult({ realizationScore: 90 }),
         createMockResult({ realizationScore: 70 }),
-        createMockResult({ realizationScore: 50 })
+        createMockResult({ realizationScore: 50 }),
       ];
 
       // Act
@@ -133,8 +133,8 @@ describe('TestIntentReporter', () => {
           file: 'test/example.test.ts',
           description: '加算関数のテスト',
           realizationScore: 85,
-          riskLevel: IntentRiskLevel.LOW
-        })
+          riskLevel: IntentRiskLevel.LOW,
+        }),
       ];
 
       // Act
@@ -152,7 +152,7 @@ describe('TestIntentReporter', () => {
       // Arrange
       const results: TestRealizationResult[] = [
         createMockResult({ riskLevel: IntentRiskLevel.CRITICAL }),
-        createMockResult({ riskLevel: IntentRiskLevel.LOW })
+        createMockResult({ riskLevel: IntentRiskLevel.LOW }),
       ];
 
       // Act
@@ -167,9 +167,7 @@ describe('TestIntentReporter', () => {
 
     it('進捗バーで実現度を視覚的に表示する', () => {
       // Arrange
-      const results: TestRealizationResult[] = [
-        createMockResult({ realizationScore: 75 })
-      ];
+      const results: TestRealizationResult[] = [createMockResult({ realizationScore: 75 })];
 
       // Act
       const html = reporter.generateHTMLReport(results);
@@ -186,7 +184,7 @@ describe('TestIntentReporter', () => {
       const results: TestRealizationResult[] = [
         createMockResult({ file: 'test1.test.ts', riskLevel: IntentRiskLevel.HIGH }),
         createMockResult({ file: 'test2.test.ts', riskLevel: IntentRiskLevel.LOW }),
-        createMockResult({ file: 'test3.test.ts', riskLevel: IntentRiskLevel.CRITICAL })
+        createMockResult({ file: 'test3.test.ts', riskLevel: IntentRiskLevel.CRITICAL }),
       ];
 
       // Act
@@ -214,8 +212,8 @@ function createMockResult(overrides: any = {}): TestRealizationResult {
       happyPath: true,
       errorCases: false,
       edgeCases: false,
-      boundaryValues: false
-    }
+      boundaryValues: false,
+    },
   };
 
   const defaultActual: ActualTestAnalysis = {
@@ -225,9 +223,9 @@ function createMockResult(overrides: any = {}): TestRealizationResult {
       happyPath: true,
       errorCases: false,
       edgeCases: false,
-      boundaryValues: false
+      boundaryValues: false,
     },
-    complexity: 1
+    complexity: 1,
   };
 
   return {
@@ -237,6 +235,6 @@ function createMockResult(overrides: any = {}): TestRealizationResult {
     realizationScore: overrides.realizationScore || 100,
     riskLevel: overrides.riskLevel || IntentRiskLevel.MINIMAL,
     file: overrides.file || 'test.test.ts',
-    description: overrides.description || 'テストの説明'
+    description: overrides.description || 'テストの説明',
   };
 }

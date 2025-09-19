@@ -1,7 +1,7 @@
 /**
  * UnifiedAnalysisResult v2.0 型定義テスト
  * Issue #52の要件に準拠
- * 
+ *
  * TDD Red Phase: 失敗するテストを最初に作成
  * SOLID原則: インターフェース分離の原則に従う
  */
@@ -13,7 +13,7 @@ import {
   AIActionableRisk,
   ReportDimension,
   ScoreBreakdown,
-  AIActionType
+  AIActionType,
 } from '../../../src/nist/types/unified-analysis-result';
 import { CoreTypes } from '../../../src/core/types/core-definitions';
 
@@ -52,7 +52,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
       const breakdown: ScoreBreakdown = {
         label: 'クリティカルリスク',
         calculation: '-5点 x 21件',
-        deduction: -105
+        deduction: -105,
       };
 
       expect(breakdown.label).toBeDefined();
@@ -73,9 +73,9 @@ describe('UnifiedAnalysisResult v2.0', () => {
           {
             label: 'アサーション不足',
             calculation: '-2点 x 5件',
-            deduction: -10
-          }
-        ]
+            deduction: -10,
+          },
+        ],
       };
 
       expect(dimension.name).toBeDefined();
@@ -99,8 +99,8 @@ describe('UnifiedAnalysisResult v2.0', () => {
             score: 68,
             weight: 0.4,
             impact: 27.2,
-            breakdown: []
-          }
+            breakdown: [],
+          },
         ],
         statistics: {
           totalFiles: 150,
@@ -110,9 +110,9 @@ describe('UnifiedAnalysisResult v2.0', () => {
             HIGH: 12,
             MEDIUM: 23,
             LOW: 45,
-            MINIMAL: 30
-          }
-        }
+            MINIMAL: 30,
+          },
+        },
       };
 
       expect(summary.overallScore).toBeDefined();
@@ -129,7 +129,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
         { score: 85, expectedGrade: 'B' },
         { score: 75, expectedGrade: 'C' },
         { score: 65, expectedGrade: 'D' },
-        { score: 50, expectedGrade: 'F' }
+        { score: 50, expectedGrade: 'F' },
       ];
 
       gradeTests.forEach(test => {
@@ -145,11 +145,11 @@ describe('UnifiedAnalysisResult v2.0', () => {
               HIGH: 0,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         };
-        
+
         expect(['A', 'B', 'C', 'D', 'F']).toContain(summary.overallGrade);
       });
     });
@@ -164,7 +164,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
         riskLevel: CoreTypes.RiskLevel.CRITICAL,
         title: 'SQLインジェクションの脆弱性',
         description: 'ユーザー入力が直接SQLクエリに使用されています',
-        contextSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`'
+        contextSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`',
       };
 
       expect(issue.filePath).toBeDefined();
@@ -187,13 +187,13 @@ describe('UnifiedAnalysisResult v2.0', () => {
         context: {
           codeSnippet: 'const query = `SELECT * FROM users WHERE id = ${userId}`',
           startLine: 42,
-          endLine: 43
+          endLine: 43,
         },
         suggestedAction: {
           type: AIActionType.SANITIZE_VARIABLE,
           description: 'パラメータ化クエリを使用してください',
-          example: 'const query = "SELECT * FROM users WHERE id = ?"; db.query(query, [userId]);'
-        }
+          example: 'const query = "SELECT * FROM users WHERE id = ?"; db.query(query, [userId]);',
+        },
       };
 
       expect(risk.riskId).toBeDefined();
@@ -222,15 +222,15 @@ describe('UnifiedAnalysisResult v2.0', () => {
               score: 82,
               weight: 0.3,
               impact: 24.6,
-              breakdown: []
+              breakdown: [],
             },
             {
               name: 'セキュリティリスク',
               score: 65,
               weight: 0.5,
               impact: 32.5,
-              breakdown: []
-            }
+              breakdown: [],
+            },
           ],
           statistics: {
             totalFiles: 100,
@@ -240,9 +240,9 @@ describe('UnifiedAnalysisResult v2.0', () => {
               HIGH: 8,
               MEDIUM: 15,
               LOW: 25,
-              MINIMAL: 20
-            }
-          }
+              MINIMAL: 20,
+            },
+          },
         },
         detailedIssues: [
           {
@@ -251,8 +251,8 @@ describe('UnifiedAnalysisResult v2.0', () => {
             endLine: 20,
             riskLevel: CoreTypes.RiskLevel.HIGH,
             title: '認証バイパスの可能性',
-            description: 'トークン検証が不完全です'
-          }
+            description: 'トークン検証が不完全です',
+          },
         ],
         aiKeyRisks: [
           {
@@ -264,15 +264,15 @@ describe('UnifiedAnalysisResult v2.0', () => {
             context: {
               codeSnippet: 'if (token) { return true; }',
               startLine: 15,
-              endLine: 15
+              endLine: 15,
             },
             suggestedAction: {
               type: AIActionType.ADD_ASSERTION,
               description: 'JWT検証ロジックを追加',
-              example: 'const payload = jwt.verify(token, secret);'
-            }
-          }
-        ]
+              example: 'const payload = jwt.verify(token, secret);',
+            },
+          },
+        ],
       };
 
       expect(result.schemaVersion).toBe('1.0');
@@ -286,7 +286,7 @@ describe('UnifiedAnalysisResult v2.0', () => {
         schemaVersion: '1.0',
         summary: {} as ExecutiveSummary,
         detailedIssues: [],
-        aiKeyRisks: []
+        aiKeyRisks: [],
       };
 
       expect(result.schemaVersion).toBe('1.0');
@@ -307,14 +307,16 @@ describe('UnifiedAnalysisResult v2.0', () => {
             HIGH: 5,
             MEDIUM: 10,
             LOW: 15,
-            MINIMAL: 8
-          }
-        }
+            MINIMAL: 8,
+          },
+        },
       };
 
-      const totalRisks = Object.values(summary.statistics.riskCounts)
-        .reduce((sum, count) => sum + count, 0);
-      
+      const totalRisks = Object.values(summary.statistics.riskCounts).reduce(
+        (sum, count) => sum + count,
+        0
+      );
+
       expect(totalRisks).toBe(40);
       expect(totalRisks).toBeLessThanOrEqual(summary.statistics.totalTests);
     });
@@ -328,18 +330,17 @@ describe('UnifiedAnalysisResult v2.0', () => {
         dimensions: [
           { name: 'テスト意図実現度', score: 80, weight: 0.3, impact: 24, breakdown: [] },
           { name: 'セキュリティリスク', score: 70, weight: 0.5, impact: 35, breakdown: [] },
-          { name: 'コード品質', score: 85, weight: 0.2, impact: 17, breakdown: [] }
+          { name: 'コード品質', score: 85, weight: 0.2, impact: 17, breakdown: [] },
         ],
         statistics: {
           totalFiles: 0,
           totalTests: 0,
-          riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, MINIMAL: 0 }
-        }
+          riskCounts: { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, MINIMAL: 0 },
+        },
       };
 
-      const totalWeight = summary.dimensions
-        .reduce((sum, dim) => sum + dim.weight, 0);
-      
+      const totalWeight = summary.dimensions.reduce((sum, dim) => sum + dim.weight, 0);
+
       expect(totalWeight).toBeCloseTo(1.0, 5);
     });
   });
@@ -349,14 +350,14 @@ describe('型の後方互換性', () => {
   it('既存のSeverity enumからRiskLevelへのマッピングが可能', () => {
     // 既存のSeverityタイプ（小文字）
     type OldSeverity = 'critical' | 'high' | 'medium' | 'low';
-    
+
     // マッピング関数のテスト
     const mapSeverityToRiskLevel = (severity: OldSeverity): CoreTypes.RiskLevel => {
       const mapping: Record<OldSeverity, CoreTypes.RiskLevel> = {
-        'critical': CoreTypes.RiskLevel.CRITICAL,
-        'high': CoreTypes.RiskLevel.HIGH,
-        'medium': CoreTypes.RiskLevel.MEDIUM,
-        'low': CoreTypes.RiskLevel.LOW
+        critical: CoreTypes.RiskLevel.CRITICAL,
+        high: CoreTypes.RiskLevel.HIGH,
+        medium: CoreTypes.RiskLevel.MEDIUM,
+        low: CoreTypes.RiskLevel.LOW,
       };
       return mapping[severity];
     };

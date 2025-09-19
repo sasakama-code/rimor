@@ -1,7 +1,7 @@
 /**
  * 制約ソルバー
  * Phase 3: arXiv:2504.18529v2の制約解決理論に基づく実装
- * 
+ *
  * 機能:
  * - 型制約の自動解決
  * - 汚染状態の推論
@@ -185,9 +185,7 @@ export class ConstraintSolver {
     }
 
     // 未解決の制約を特定
-    const unsolvedConstraints = this.rules.filter(rule => 
-      !this.isRuleSatisfied(rule)
-    );
+    const unsolvedConstraints = this.rules.filter(rule => !this.isRuleSatisfied(rule));
 
     // 成功の条件（より緩和された条件）：
     // 1. 致命的な違反がないこと（軽微な違反は許容）
@@ -197,17 +195,18 @@ export class ConstraintSolver {
     const hasNoConstraints = this.rules.length === 0;
     const hasInferenceActivity = inferenceSteps.length > 0;
     const hasPartialSolution = this.variables.size > 0; // 変数が存在すれば部分的解決とみなす
-    
+
     // より寛容な成功判定
-    const isSuccessful = !hasCriticalViolations && 
-                        (hasBasicSolution || hasNoConstraints || hasInferenceActivity || hasPartialSolution);
-    
+    const isSuccessful =
+      !hasCriticalViolations &&
+      (hasBasicSolution || hasNoConstraints || hasInferenceActivity || hasPartialSolution);
+
     return {
       success: isSuccessful,
       solution,
       unsolvedConstraints,
       violations,
-      inferenceSteps
+      inferenceSteps,
     };
   }
 
@@ -241,7 +240,7 @@ export class ConstraintSolver {
       if (varName && varName !== 'unknown' && !varName.includes('[param')) {
         const typeInfo = typeInfoMap.get(varName);
         const domain = this.getDomainForVariable(varName, typeInfo);
-        
+
         this.variables.set(varName, {
           name: varName,
           domain,
@@ -250,8 +249,8 @@ export class ConstraintSolver {
           location: {
             file: 'unknown',
             line: 0,
-            column: 0
-          }
+            column: 0,
+          },
         });
       }
     }
@@ -260,10 +259,7 @@ export class ConstraintSolver {
   /**
    * 変数のドメインを決定
    */
-  private getDomainForVariable(
-    varName: string,
-    typeInfo?: TypeBasedTaintInfo
-  ): TaintDomain[] {
+  private getDomainForVariable(varName: string, typeInfo?: TypeBasedTaintInfo): TaintDomain[] {
     // 型アノテーションがある場合は制限されたドメイン
     if (typeInfo?.typeAnnotation?.customTaintType === 'tainted') {
       return ['tainted'];
@@ -284,10 +280,7 @@ export class ConstraintSolver {
   /**
    * 変数の優先度を決定
    */
-  private getPriorityForVariable(
-    varName: string,
-    typeInfo?: TypeBasedTaintInfo
-  ): number {
+  private getPriorityForVariable(varName: string, typeInfo?: TypeBasedTaintInfo): number {
     // 型アノテーションがある変数は高優先度
     if (typeInfo?.typeAnnotation) {
       return 10;
@@ -317,9 +310,9 @@ export class ConstraintSolver {
         id: `source_${ruleId++}`,
         type: 'source',
         variables: [source.variableName],
-        condition: (values) => values.get(source.variableName) === 'tainted',
+        condition: values => values.get(source.variableName) === 'tainted',
         description: `Source変数 ${source.variableName} は tainted でなければならない`,
-        priority: 10
+        priority: 10,
       });
     }
 
@@ -330,10 +323,10 @@ export class ConstraintSolver {
           id: `assignment_${ruleId++}`,
           type: 'assignment',
           variables: [constraint.sourceVariable, constraint.targetVariable],
-          condition: (values) => {
+          condition: values => {
             const sourceValue = values.get(constraint.sourceVariable);
             const targetValue = values.get(constraint.targetVariable);
-            
+
             // 代入では汚染状態が伝播する
             if (sourceValue === 'tainted') {
               return targetValue === 'tainted';
@@ -344,7 +337,7 @@ export class ConstraintSolver {
             return true;
           },
           description: `代入: ${constraint.sourceVariable} → ${constraint.targetVariable}`,
-          priority: 8
+          priority: 8,
         });
       }
     }
@@ -356,10 +349,10 @@ export class ConstraintSolver {
           id: `parameter_${ruleId++}`,
           type: 'parameter',
           variables: [constraint.sourceVariable, constraint.targetVariable],
-          condition: (values) => {
+          condition: values => {
             const sourceValue = values.get(constraint.sourceVariable);
             const targetValue = values.get(constraint.targetVariable);
-            
+
             // パラメーター渡しでも汚染状態が伝播
             if (sourceValue === 'tainted') {
               return targetValue === 'tainted';
@@ -367,7 +360,7 @@ export class ConstraintSolver {
             return true;
           },
           description: `パラメーター: ${constraint.sourceVariable} → ${constraint.targetVariable}`,
-          priority: 7
+          priority: 7,
         });
       }
     }
@@ -375,15 +368,16 @@ export class ConstraintSolver {
     // 型アノテーション制約ルール
     for (const [varName, typeInfo] of typeInfoMap) {
       if (typeInfo.typeAnnotation?.customTaintType) {
-        const requiredValue = typeInfo.typeAnnotation.customTaintType === 'tainted' ? 'tainted' : 'untainted';
-        
+        const requiredValue =
+          typeInfo.typeAnnotation.customTaintType === 'tainted' ? 'tainted' : 'untainted';
+
         this.rules.push({
           id: `annotation_${ruleId++}`,
           type: 'assignment',
           variables: [varName],
-          condition: (values) => values.get(varName) === requiredValue,
+          condition: values => values.get(varName) === requiredValue,
           description: `型アノテーション: ${varName} は ${requiredValue} でなければならない`,
-          priority: 10
+          priority: 10,
         });
       }
     }
@@ -397,7 +391,7 @@ export class ConstraintSolver {
     for (const [varName, variable] of this.variables) {
       // Source変数は推論ステップで処理するため、ここでは設定しない
       const isSourceVariable = this.sources.some(s => s.variableName === varName);
-      
+
       if (!variable.value && !isSourceVariable) {
         // 単一ドメインの変数は初期値を設定
         if (variable.domain.length === 1) {
@@ -410,13 +404,16 @@ export class ConstraintSolver {
   /**
    * ルールを適用
    */
-  private async applyRule(rule: ConstraintRule, stepCounter: number): Promise<{
+  private async applyRule(
+    rule: ConstraintRule,
+    stepCounter: number
+  ): Promise<{
     changed: boolean;
     step?: InferenceStep;
     violation?: ConstraintViolation;
   }> {
     const currentValues = new Map<string, TaintDomain>();
-    
+
     // 現在の値を取得
     for (const varName of rule.variables) {
       const variable = this.variables.get(varName);
@@ -434,8 +431,8 @@ export class ConstraintSolver {
             rule,
             variables: rule.variables,
             description: `制約違反: ${rule.description}`,
-            severity: rule.priority >= 8 ? 'critical' : rule.priority >= 7 ? 'high' : 'medium'
-          }
+            severity: rule.priority >= 8 ? 'critical' : rule.priority >= 7 ? 'high' : 'medium',
+          },
         };
       }
       return { changed: false };
@@ -451,7 +448,7 @@ export class ConstraintSolver {
       if (inferredValue && variable.domain.includes(inferredValue)) {
         const oldValue = variable.value;
         variable.value = inferredValue;
-        
+
         return {
           changed: true,
           step: {
@@ -460,8 +457,8 @@ export class ConstraintSolver {
             variable: varName,
             oldValue,
             newValue: inferredValue,
-            reasoning: `${rule.description} により ${varName} = ${inferredValue} と推論`
-          }
+            reasoning: `${rule.description} により ${varName} = ${inferredValue} と推論`,
+          },
         };
       }
     }
@@ -480,7 +477,7 @@ export class ConstraintSolver {
     switch (rule.type) {
       case 'source':
         return 'tainted';
-        
+
       case 'assignment':
         // 代入元の値がある場合、それを継承
         for (const [varName, value] of currentValues) {
@@ -489,7 +486,7 @@ export class ConstraintSolver {
           }
         }
         break;
-        
+
       case 'parameter':
         // パラメーター元の値がある場合、それを継承
         for (const [varName, value] of currentValues) {
@@ -508,7 +505,7 @@ export class ConstraintSolver {
    */
   private isRuleSatisfied(rule: ConstraintRule): boolean {
     const currentValues = new Map<string, TaintDomain>();
-    
+
     for (const varName of rule.variables) {
       const variable = this.variables.get(varName);
       if (!variable?.value) {
@@ -567,7 +564,7 @@ export class ConstraintSolver {
       solvedVariables,
       taintedVariables,
       untaintedVariables,
-      unknownVariables
+      unknownVariables,
     };
   }
 }

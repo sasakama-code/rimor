@@ -4,20 +4,10 @@
  */
 
 // 共通型定義からインポート
-import {
-  TaintLevel,
-  TaintSource,
-  SecuritySink,
-  SanitizerType
-} from '../../types/common-types';
+import { TaintLevel, TaintSource, SecuritySink, SanitizerType } from '../../types/common-types';
 
 // 再エクスポート（後方互換性のため）
-export {
-  TaintLevel,
-  TaintSource,
-  SecuritySink,
-  SanitizerType
-};
+export { TaintLevel, TaintSource, SecuritySink, SanitizerType };
 
 /**
  * 汚染情報のメタデータ（flow-types.tsとの統一）
@@ -77,7 +67,7 @@ export class TaintLattice {
     [TaintLevel.POSSIBLY_TAINTED]: 2,
     [TaintLevel.TAINTED]: 3,
     [TaintLevel.HIGHLY_TAINTED]: 4,
-    [TaintLevel.SANITIZED]: 0 // sanitizedはuntaintedと同等
+    [TaintLevel.SANITIZED]: 0, // sanitizedはuntaintedと同等
   };
 
   /**
@@ -102,7 +92,7 @@ export class TaintLattice {
     const aOrder = this.getOrderSafely(a);
     const bOrder = this.getOrderSafely(b);
     const maxOrder = Math.max(aOrder, bOrder);
-    
+
     // 順序から対応するTaintLevelを取得
     for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
       if (order === maxOrder && level !== 'sanitized') {
@@ -119,7 +109,7 @@ export class TaintLattice {
     const aOrder = this.getOrderSafely(a);
     const bOrder = this.getOrderSafely(b);
     const minOrder = Math.min(aOrder, bOrder);
-    
+
     // 順序から対応するTaintLevelを取得
     for (const [level, order] of Object.entries(this.LEVEL_ORDER)) {
       if (order === minOrder && level !== 'sanitized') {
@@ -179,7 +169,7 @@ export class TaintLattice {
   ): TaintLevel {
     // 効果率の範囲チェック（防御的プログラミング）
     const clampedEffectiveness = Math.max(0.0, Math.min(1.0, effectiveness));
-    
+
     // サニタイザーの効果をモデル化
     switch (sanitizer) {
       case SanitizerType.HTML_ESCAPE:
@@ -195,27 +185,27 @@ export class TaintLattice {
           const newHeight = Math.max(0, currentHeight - 1);
           return this.getLevelByHeight(newHeight);
         }
-        
+
       case SanitizerType.INPUT_VALIDATION:
         // 検証により効果率に応じた段階的効果
         const currentHeight = this.height(currentLevel);
         const reduction = Math.ceil(clampedEffectiveness * 2); // 効果率に応じて1-2レベル下げる
         const newHeight = Math.max(0, currentHeight - reduction);
         return this.getLevelByHeight(newHeight);
-        
+
       case SanitizerType.TYPE_CONVERSION:
         // 型変換は部分的な効果（効果率考慮）
         const currentOrder = this.height(currentLevel);
         const effectiveReduction = clampedEffectiveness * 2; // 最大2レベル下げる
         const targetHeight = Math.max(0, currentOrder - effectiveReduction);
-        
+
         // 結果レベルを効果率に基づいて決定
         if (targetHeight <= 0) {
           return TaintLevel.UNTAINTED;
         } else {
           return this.getLevelByHeight(Math.floor(targetHeight));
         }
-          
+
       default:
         // 不明なサニタイザーは保守的に扱う（効果率無視）
         return currentLevel;
@@ -302,13 +292,10 @@ export class TaintedValue {
    */
   static combine(value1: TaintedValue, value2: TaintedValue): TaintedValue {
     const combinedLevel = TaintLattice.join(value1.taintLevel, value2.taintLevel);
-    const combinedSource = compareTaintLevels(value1.taintLevel, value2.taintLevel) >= 0 ? value1.source : value2.source;
-    
-    return new TaintedValue(
-      value1.value + value2.value,
-      combinedLevel,
-      combinedSource
-    );
+    const combinedSource =
+      compareTaintLevels(value1.taintLevel, value2.taintLevel) >= 0 ? value1.source : value2.source;
+
+    return new TaintedValue(value1.value + value2.value, combinedLevel, combinedSource);
   }
 }
 
@@ -326,7 +313,11 @@ export class Sanitizer {
    */
   sanitize(taintedValue: TaintedValue): TaintedValue {
     // 効果率を考慮した新しいapplySanitizerメソッドを使用
-    const newLevel = TaintLattice.applySanitizer(taintedValue.taintLevel, this.type, this.effectiveness);
+    const newLevel = TaintLattice.applySanitizer(
+      taintedValue.taintLevel,
+      this.type,
+      this.effectiveness
+    );
 
     // 実際のサニタイズ処理（簡略化）
     let sanitizedValue = taintedValue.value;
@@ -396,7 +387,7 @@ export class TaintAnalyzer {
       taintFlow.push({
         from: taintSources[0].name,
         to: 'escapeHtml',
-        level: TaintLevel.POSSIBLY_TAINTED
+        level: TaintLevel.POSSIBLY_TAINTED,
       });
     }
 
@@ -426,7 +417,7 @@ export class TaintAnalyzer {
         type: 'taint-violation',
         severity: 'critical',
         message: '汚染データの直接実行は危険です',
-        location
+        location,
       });
     }
 
@@ -450,7 +441,7 @@ export class TaintTypeInference {
 
     return {
       level: levelMatch ? levelMatch[1] : 'UNKNOWN',
-      source: sourceMatch ? sourceMatch[1] : 'UNKNOWN'
+      source: sourceMatch ? sourceMatch[1] : 'UNKNOWN',
     };
   }
 }

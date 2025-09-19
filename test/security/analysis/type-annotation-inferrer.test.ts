@@ -4,13 +4,16 @@
  * t_wadaのTDDアプローチに従う
  */
 
-import { 
+import {
   TypeAnnotationInferrer,
   InferredTypeAnnotation,
   TypeAnnotationSuggestion,
-  TypeAnnotationInferenceResult
+  TypeAnnotationInferenceResult,
 } from '../../../src/security/analysis/type-annotation-inferrer';
-import { TypeConstraint, TypeBasedTaintInfo } from '../../../src/security/analysis/type-based-flow-analyzer';
+import {
+  TypeConstraint,
+  TypeBasedTaintInfo,
+} from '../../../src/security/analysis/type-based-flow-analyzer';
 import { TaintSource } from '../../../src/security/analysis/ast-source-detector';
 import { TaintSink } from '../../../src/security/analysis/ast-sink-detector';
 
@@ -24,19 +27,21 @@ describe('TypeAnnotationInferrer', () => {
   describe('基本的な型アノテーション推論', () => {
     it('Source変数のtaintedアノテーションを推論できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const userInput = req.body.data;
@@ -46,12 +51,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(1);
-      
+
       const annotation = result.inferredAnnotations[0];
       expect(annotation.variableName).toBe('userInput');
       expect(annotation.inferredTaintType).toBe('tainted');
@@ -62,14 +72,16 @@ describe('TypeAnnotationInferrer', () => {
 
     it('代入制約による汚染伝播推論を実行できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'input',
-        apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'input',
+          apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [
         {
@@ -77,20 +89,20 @@ describe('TypeAnnotationInferrer', () => {
           sourceVariable: 'input',
           targetVariable: 'processed',
           location: { file: 'test.ts', line: 2, column: 1 },
-          description: '代入: input → processed'
+          description: '代入: input → processed',
         },
         {
           type: 'assignment',
           sourceVariable: 'processed',
           targetVariable: 'final',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: '代入: processed → final'
-        }
+          description: '代入: processed → final',
+        },
       ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const input = req.query.search;
@@ -102,12 +114,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(3);
-      
+
       // すべてtaintedと推論されることを確認
       for (const annotation of result.inferredAnnotations) {
         expect(annotation.inferredTaintType).toBe('tainted');
@@ -123,17 +140,19 @@ describe('TypeAnnotationInferrer', () => {
 
     it('型アノテーション付き変数の推論信頼度が向上することを確認できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'annotatedVar',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'annotatedVar',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('annotatedVar', {
         symbol: {} as any,
@@ -141,13 +160,13 @@ describe('TypeAnnotationInferrer', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'tainted'
+          customTaintType: 'tainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           /** @tainted */
@@ -158,12 +177,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(1);
-      
+
       const annotation = result.inferredAnnotations[0];
       expect(annotation.confidence).toBeGreaterThan(0.8); // 既存アノテーションで信頼度向上
       expect(annotation.reasoning).toContain('既存の型アノテーション（tainted）と一致');
@@ -173,19 +197,21 @@ describe('TypeAnnotationInferrer', () => {
   describe('提案生成機能', () => {
     it('アノテーションがない変数に追加提案を生成できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'unannotatedVar',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'unannotatedVar',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const unannotatedVar = req.body.data;
@@ -195,12 +221,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.suggestions).toHaveLength(1);
-      
+
       const suggestion = result.suggestions[0];
       expect(suggestion.type).toBe('add');
       expect(suggestion.targetVariable).toBe('unannotatedVar');
@@ -211,17 +242,19 @@ describe('TypeAnnotationInferrer', () => {
 
     it('既存アノテーションと異なる推論結果で修正提案を生成できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'conflictVar',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'conflictVar',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('conflictVar', {
         symbol: {} as any,
@@ -229,13 +262,13 @@ describe('TypeAnnotationInferrer', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'untainted'
+          customTaintType: 'untainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           /** @untainted */
@@ -246,12 +279,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.suggestions).toHaveLength(1);
-      
+
       const suggestion = result.suggestions[0];
       expect(suggestion.type).toBe('modify');
       expect(suggestion.targetVariable).toBe('conflictVar');
@@ -269,7 +307,7 @@ describe('TypeAnnotationInferrer', () => {
           location: { file: 'test.ts', line: 1, column: 1, length: 10 },
           variableName: 'highConfVar',
           apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-          confidence: 0.95
+          confidence: 0.95,
         },
         {
           type: 'network-input',
@@ -277,14 +315,14 @@ describe('TypeAnnotationInferrer', () => {
           location: { file: 'test.ts', line: 2, column: 1, length: 10 },
           variableName: 'mediumConfVar',
           apiCall: { functionName: 'fetch', objectName: '', arguments: [] },
-          confidence: 0.70
-        }
+          confidence: 0.7,
+        },
       ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const highConfVar = req.body.data;
@@ -295,16 +333,21 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.suggestions.length).toBeGreaterThanOrEqual(2);
-      
+
       // 高信頼度の提案が先頭にくることを確認
       const firstSuggestion = result.suggestions[0];
       expect(firstSuggestion.priority).toBe('high');
-      
+
       // 提案が優先度順にソートされていることを確認
       const priorities = result.suggestions.map(s => s.priority);
       expect(priorities.indexOf('high')).toBeLessThanOrEqual(priorities.indexOf('medium'));
@@ -321,7 +364,7 @@ describe('TypeAnnotationInferrer', () => {
           location: { file: 'test.ts', line: 1, column: 1, length: 10 },
           variableName: 'taintedVar1',
           apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-          confidence: 0.95
+          confidence: 0.95,
         },
         {
           type: 'user-input',
@@ -329,12 +372,12 @@ describe('TypeAnnotationInferrer', () => {
           location: { file: 'test.ts', line: 2, column: 1, length: 10 },
           variableName: 'taintedVar2',
           apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
-          confidence: 0.95
-        }
+          confidence: 0.95,
+        },
       ];
 
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       // 既存アノテーション付き変数を追加
       typeInfoMap.set('existingAnnotated', {
@@ -343,13 +386,13 @@ describe('TypeAnnotationInferrer', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'untainted'
+          customTaintType: 'untainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const taintedVar1 = req.body.data;
@@ -362,7 +405,12 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
@@ -375,19 +423,21 @@ describe('TypeAnnotationInferrer', () => {
 
     it('品質評価メトリクスを計算する', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const userInput = req.body.data;
@@ -397,33 +447,40 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.qualityMetrics.averageConfidence).toBeGreaterThan(0);
       expect(result.qualityMetrics.coverageRatio).toBeGreaterThan(0);
       expect(result.qualityMetrics.suggestionAcceptanceRate).toBeGreaterThanOrEqual(0);
-      
+
       // 高信頼度推論の場合、平均信頼度は高くなる
       expect(result.qualityMetrics.averageConfidence).toBeGreaterThan(0.7);
     });
 
     it('推論根拠の詳細説明を生成する', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const userInput = req.body.data;
@@ -433,33 +490,42 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(1);
-      
+
       const annotation = result.inferredAnnotations[0];
-      expect(annotation.reasoning).toContain('ユーザー入力やネットワークデータなど信頼できないソースから派生');
+      expect(annotation.reasoning).toContain(
+        'ユーザー入力やネットワークデータなど信頼できないソースから派生'
+      );
     });
   });
 
   describe('TypeScript型システム統合', () => {
     it('TypeScript形式の型アノテーションを生成できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req: any) {
           const userInput = req.body.data;
@@ -469,12 +535,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(1);
-      
+
       const annotation = result.inferredAnnotations[0];
       expect(annotation.typeScriptAnnotation).toBe('Tainted<string>');
       expect(annotation.jsDocAnnotation).toBe('@tainted');
@@ -482,19 +553,21 @@ describe('TypeAnnotationInferrer', () => {
 
     it('位置情報を正確に取得できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 2, column: 9, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 2, column: 9, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `function test(req: any) {
   const userInput = req.body.data;
   return userInput;
@@ -502,12 +575,17 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
 
       // Assert
       expect(result.inferredAnnotations).toHaveLength(1);
-      
+
       const annotation = result.inferredAnnotations[0];
       expect(annotation.location.file).toBe('test.ts');
       expect(annotation.location.line).toBe(2);
@@ -518,19 +596,21 @@ describe('TypeAnnotationInferrer', () => {
   describe('レポート生成機能', () => {
     it('推論結果の詳細レポートを生成できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
-      
+
       const sourceCode = `
         function test(req) {
           const userInput = req.body.data;
@@ -540,7 +620,12 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'test.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'test.ts'
       );
       const report = inferrer.generateInferenceReport(result);
 
@@ -566,7 +651,12 @@ describe('TypeAnnotationInferrer', () => {
 
       // Act
       const result = await inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, sourceCode, 'empty.ts'
+        typeConstraints,
+        typeInfoMap,
+        sources,
+        sinks,
+        sourceCode,
+        'empty.ts'
       );
 
       // Assert
@@ -585,9 +675,16 @@ describe('TypeAnnotationInferrer', () => {
       const invalidCode = 'invalid syntax here {{{';
 
       // Act & Assert
-      await expect(inferrer.inferTypeAnnotations(
-        typeConstraints, typeInfoMap, sources, sinks, invalidCode, 'invalid.ts'
-      )).resolves.toBeDefined(); // エラーで落ちずに結果を返す
+      await expect(
+        inferrer.inferTypeAnnotations(
+          typeConstraints,
+          typeInfoMap,
+          sources,
+          sinks,
+          invalidCode,
+          'invalid.ts'
+        )
+      ).resolves.toBeDefined(); // エラーで落ちずに結果を返す
     });
   });
 });

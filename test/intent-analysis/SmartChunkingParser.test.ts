@@ -1,12 +1,15 @@
 /**
  * SmartChunkingParser Tests
  * v0.9.0 Phase 2 - スマート・チャンキング・システムのテストスイート
- * 
+ *
  * TDD: RED phase - 失敗するテストから開始
  * t_wadaの推奨: まず失敗するテストを書き、実装を進める
  */
 
-import { SmartChunkingParser, ChunkingStrategy } from '../../src/intent-analysis/SmartChunkingParser';
+import {
+  SmartChunkingParser,
+  ChunkingStrategy,
+} from '../../src/intent-analysis/SmartChunkingParser';
 import { ASTNode } from '../../src/core/interfaces/IAnalysisEngine';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -19,9 +22,9 @@ describe('SmartChunkingParser', () => {
   beforeEach(async () => {
     parser = new SmartChunkingParser({
       chunkSize: 30000, // 30KB（32KB未満）
-      enableDebug: false
+      enableDebug: false,
     });
-    
+
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'smart-chunking-test-'));
   });
 
@@ -119,7 +122,7 @@ describe('SmartChunkingParser', () => {
           return z + 3;
         }
       `.repeat(500); // 大きなファイル
-      
+
       const testFile = path.join(tempDir, 'functions.js');
       await fs.writeFile(testFile, content);
 
@@ -152,7 +155,7 @@ describe('SmartChunkingParser', () => {
           }
         }
       `.repeat(500);
-      
+
       const testFile = path.join(tempDir, 'classes.js');
       await fs.writeFile(testFile, content);
 
@@ -255,7 +258,7 @@ describe('SmartChunkingParser', () => {
           }
         }
       `.repeat(500);
-      
+
       const testFile = path.join(tempDir, 'interface.ts');
       await fs.writeFile(testFile, content);
 

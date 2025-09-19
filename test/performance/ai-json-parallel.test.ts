@@ -1,7 +1,7 @@
 /**
  * AI JSON並列処理の改善テスト
  * Issue #58: 真の並列処理実装の検証
- * 
+ *
  * TDD原則に従い、並列処理の効果を検証
  * t_wada推奨: Red → Green → Refactor
  */
@@ -11,7 +11,7 @@ import { UnifiedAIFormatterOptimized } from '../../src/ai-output/unified-ai-form
 import {
   UnifiedAnalysisResult,
   RiskLevel,
-  AIActionType
+  AIActionType,
 } from '../../src/nist/types/unified-analysis-result';
 
 describe('AI JSON Parallel Processing Tests', () => {
@@ -27,17 +27,19 @@ describe('AI JSON Parallel Processing Tests', () => {
     it('並列処理が同期処理より高速であること', async () => {
       // Arrange: 大量のリスクデータ
       const largeResult = generateLargeUnifiedResult(5000);
-      
+
       // Act: 同期処理の時間を計測
       const syncStart = performance.now();
       const syncResult = parallelFormatter.formatAsAIJsonSync(largeResult);
       const syncTime = performance.now() - syncStart;
-      
+
       // Act: 並列処理の時間を計測
       const parallelStart = performance.now();
-      const parallelResult = await parallelFormatter.formatAsAIJson(largeResult, { mode: 'parallel' });
+      const parallelResult = await parallelFormatter.formatAsAIJson(largeResult, {
+        mode: 'parallel',
+      });
       const parallelTime = performance.now() - parallelStart;
-      
+
       // Assert: 並列処理の方が高速
       expect(parallelTime).toBeLessThan(syncTime);
       expect(syncResult).toEqual(parallelResult); // 結果は同じ
@@ -50,18 +52,18 @@ describe('AI JSON Parallel Processing Tests', () => {
       // Arrange
       const largeResult = generateLargeUnifiedResult(10000);
       const timings: { parallelism: number; time: number }[] = [];
-      
+
       // Act: 異なる並列度で処理
       for (const parallelism of [1, 2, 4, 8]) {
         const start = performance.now();
-        await parallelFormatter.formatAsAIJson(largeResult, { 
+        await parallelFormatter.formatAsAIJson(largeResult, {
           mode: 'parallel',
-          parallelism 
+          parallelism,
         });
         const time = performance.now() - start;
         timings.push({ parallelism, time });
       }
-      
+
       // Assert: 並列度が高いほど高速（ある程度まで）
       expect(timings[1].time).toBeLessThanOrEqual(timings[0].time); // 2 <= 1
       expect(timings[2].time).toBeLessThanOrEqual(timings[1].time); // 4 <= 2
@@ -72,22 +74,22 @@ describe('AI JSON Parallel Processing Tests', () => {
     it('大きなデータセットを効率的にチャンク処理できること', async () => {
       // Arrange
       const hugeResult = generateLargeUnifiedResult(50000);
-      
+
       // Act: 異なるバッチサイズで処理
       const smallBatchStart = performance.now();
-      await parallelFormatter.formatAsAIJson(hugeResult, { 
+      await parallelFormatter.formatAsAIJson(hugeResult, {
         mode: 'parallel',
-        batchSize: 50 
+        batchSize: 50,
       });
       const smallBatchTime = performance.now() - smallBatchStart;
-      
+
       const largeBatchStart = performance.now();
-      await parallelFormatter.formatAsAIJson(hugeResult, { 
+      await parallelFormatter.formatAsAIJson(hugeResult, {
         mode: 'parallel',
-        batchSize: 500 
+        batchSize: 500,
       });
       const largeBatchTime = performance.now() - largeBatchStart;
-      
+
       // Assert: バッチサイズによる差は大きくない（2倍以内）
       const timeDifference = Math.abs(smallBatchTime - largeBatchTime);
       expect(timeDifference).toBeLessThan(Math.max(smallBatchTime, largeBatchTime) * 2); // 2倍以内なら許容
@@ -97,14 +99,14 @@ describe('AI JSON Parallel Processing Tests', () => {
       // Arrange
       const initialMemory = process.memoryUsage().heapUsed;
       const hugeResult = generateLargeUnifiedResult(100000);
-      
+
       // Act: チャンク処理で実行
-      await parallelFormatter.formatAsAIJson(hugeResult, { 
+      await parallelFormatter.formatAsAIJson(hugeResult, {
         mode: 'parallel',
         batchSize: 1000,
-        parallelism: 4
+        parallelism: 4,
       });
-      
+
       // Assert: メモリ使用量が制限内
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = (finalMemory - initialMemory) / 1024 / 1024; // MB
@@ -117,20 +119,20 @@ describe('AI JSON Parallel Processing Tests', () => {
       // Arrange
       const progressCallbacks: number[] = [];
       const result = generateLargeUnifiedResult(5000);
-      
+
       // Act: プログレスコールバック付きで実行
       await parallelFormatter.formatAsAIJson(result, {
         mode: 'parallel',
         onProgress: (progress: number) => {
           progressCallbacks.push(progress);
-        }
+        },
       });
-      
+
       // Assert: プログレスが段階的に増加
       expect(progressCallbacks.length).toBeGreaterThan(3);
       expect(progressCallbacks[0]).toBe(0);
       expect(progressCallbacks[progressCallbacks.length - 1]).toBe(100);
-      
+
       // プログレスが後退しないこと
       for (let i = 1; i < progressCallbacks.length; i++) {
         expect(progressCallbacks[i]).toBeGreaterThanOrEqual(progressCallbacks[i - 1]);
@@ -142,21 +144,21 @@ describe('AI JSON Parallel Processing Tests', () => {
     it('新実装（並列処理）が旧実装（setImmediate）より高速であること', async () => {
       // Arrange
       const largeResult = generateLargeUnifiedResult(10000);
-      
+
       // Act: 旧実装（setImmediate使用）の時間を計測
       const oldStart = performance.now();
       await optimizedFormatter.formatAsAIJson(largeResult);
       const oldTime = performance.now() - oldStart;
-      
+
       // Act: 新実装（queueMicrotask使用）の時間を計測
       const newStart = performance.now();
       await parallelFormatter.formatAsAIJson(largeResult, { mode: 'parallel' });
       const newTime = performance.now() - newStart;
-      
+
       // Assert: 新実装の方が高速
       console.log(`旧実装: ${oldTime.toFixed(2)}ms, 新実装: ${newTime.toFixed(2)}ms`);
       console.log(`改善率: ${((1 - newTime / oldTime) * 100).toFixed(2)}%`);
-      
+
       // 結果は同じであること
       const oldResult = await optimizedFormatter.formatAsAIJson(largeResult);
       const newResult = await parallelFormatter.formatAsAIJson(largeResult);
@@ -168,21 +170,21 @@ describe('AI JSON Parallel Processing Tests', () => {
     it('並列処理中のエラーを適切にハンドリングすること', async () => {
       // Arrange: 不正なデータ
       const invalidResult = null as any;
-      
+
       // Act & Assert: エラーが適切にスローされる
-      await expect(
-        parallelFormatter.formatAsAIJson(invalidResult)
-      ).rejects.toThrow('Invalid UnifiedAnalysisResult');
+      await expect(parallelFormatter.formatAsAIJson(invalidResult)).rejects.toThrow(
+        'Invalid UnifiedAnalysisResult'
+      );
     });
 
     it('部分的なデータ欠損でも処理を継続できること', async () => {
       // Arrange: 一部のリスクにデータ欠損
       const result = generateLargeUnifiedResult(100);
       result.aiKeyRisks[50].context.codeSnippet = undefined as any;
-      
+
       // Act: 処理実行
       const output = await parallelFormatter.formatAsAIJson(result);
-      
+
       // Assert: 処理が完了し、結果が返される
       expect(output).toBeDefined();
       expect(output.keyRisks).toHaveLength(10);
@@ -203,13 +205,13 @@ function generateLargeUnifiedResult(riskCount: number): UnifiedAnalysisResult {
     context: {
       codeSnippet: `// Code snippet ${i}\nconst value = ${i};`,
       startLine: i * 10,
-      endLine: i * 10 + 5
+      endLine: i * 10 + 5,
     },
     suggestedAction: {
       type: AIActionType.ADD_ASSERTION,
       description: `Fix for risk ${i}`,
-      example: `assert(value !== null);`
-    }
+      example: `assert(value !== null);`,
+    },
   }));
 
   return {
@@ -226,11 +228,11 @@ function generateLargeUnifiedResult(riskCount: number): UnifiedAnalysisResult {
           [RiskLevel.HIGH]: Math.floor(riskCount / 3),
           [RiskLevel.MEDIUM]: Math.floor(riskCount / 3),
           [RiskLevel.LOW]: 0,
-          [RiskLevel.MINIMAL]: 0
-        }
-      }
+          [RiskLevel.MINIMAL]: 0,
+        },
+      },
     },
     detailedIssues: [],
-    aiKeyRisks: risks
+    aiKeyRisks: risks,
   };
 }

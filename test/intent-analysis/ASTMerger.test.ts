@@ -1,7 +1,7 @@
 /**
  * ASTMerger Tests
  * v0.9.0 Phase 2 - ASTマージャーのテストスイート
- * 
+ *
  * TDD: RED phase - 失敗するテストから開始
  * t_wadaの推奨: テストファーストで品質を保証
  */
@@ -15,7 +15,7 @@ describe('ASTMerger', () => {
   beforeEach(() => {
     merger = new ASTMerger({
       validateStructure: true,
-      preservePositions: true
+      preservePositions: true,
     });
   });
 
@@ -34,9 +34,9 @@ describe('ASTMerger', () => {
             text: 'const x = 1;',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 12 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -62,9 +62,9 @@ describe('ASTMerger', () => {
             text: 'const x = 1;',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 12 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -79,9 +79,9 @@ describe('ASTMerger', () => {
             text: 'const y = 2;',
             startPosition: { row: 1, column: 0 },
             endPosition: { row: 1, column: 12 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -115,9 +115,9 @@ describe('ASTMerger', () => {
             text: 'function a() {}',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 15 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -132,9 +132,9 @@ describe('ASTMerger', () => {
             text: 'function b() {}',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 15 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -154,7 +154,7 @@ describe('ASTMerger', () => {
         startPosition: { row: 0, column: 0 },
         endPosition: { row: 2, column: 10 },
         isNamed: true,
-        children: []
+        children: [],
       };
 
       const ast2: ASTNode = {
@@ -163,7 +163,7 @@ describe('ASTMerger', () => {
         startPosition: { row: 1, column: 0 },
         endPosition: { row: 3, column: 10 },
         isNamed: true,
-        children: []
+        children: [],
       };
 
       // Act
@@ -190,10 +190,10 @@ describe('ASTMerger', () => {
             text: 'function incomplete() {',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 23 },
-            isNamed: true
+            isNamed: true,
             // 閉じ括弧なし
-          }
-        ]
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -208,9 +208,9 @@ describe('ASTMerger', () => {
             text: '}',
             startPosition: { row: 1, column: 0 },
             endPosition: { row: 1, column: 1 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -221,7 +221,7 @@ describe('ASTMerger', () => {
       expect(result.metadata.errors).toContainEqual(
         expect.objectContaining({
           type: 'structure',
-          message: expect.stringContaining('Incomplete structure')
+          message: expect.stringContaining('Incomplete structure'),
         })
       );
     });
@@ -241,9 +241,9 @@ describe('ASTMerger', () => {
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 24 },
             isNamed: true,
-            children: []
-          }
-        ]
+            children: [],
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -259,9 +259,9 @@ describe('ASTMerger', () => {
             startPosition: { row: 1, column: 0 },
             endPosition: { row: 1, column: 24 },
             isNamed: true,
-            children: []
-          }
-        ]
+            children: [],
+          },
+        ],
       };
 
       // Act
@@ -289,9 +289,9 @@ describe('ASTMerger', () => {
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 5, column: 0 },
             isNamed: true,
-            children: []
-          }
-        ]
+            children: [],
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -307,9 +307,9 @@ describe('ASTMerger', () => {
             startPosition: { row: 5, column: 0 },
             endPosition: { row: 10, column: 0 },
             isNamed: true,
-            children: []
-          }
-        ]
+            children: [],
+          },
+        ],
       };
 
       // Act
@@ -335,9 +335,9 @@ describe('ASTMerger', () => {
             text: 'import { a } from "module"',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 26 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -352,9 +352,9 @@ describe('ASTMerger', () => {
             text: 'import { a } from "module"',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 26 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -382,8 +382,8 @@ describe('ASTMerger', () => {
           text: `const var${offset}_${i} = ${i};`,
           startPosition: { row: offset * 100 + i, column: 0 },
           endPosition: { row: offset * 100 + i, column: 20 },
-          isNamed: true
-        }))
+          isNamed: true,
+        })),
       });
 
       const asts = Array.from({ length: 10 }, (_, i) => createLargeAST(i));
@@ -416,9 +416,9 @@ describe('ASTMerger', () => {
             text: 'invalid syntax',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 14 },
-            isNamed: false
-          }
-        ]
+            isNamed: false,
+          },
+        ],
       };
 
       const ast2: ASTNode = {
@@ -433,9 +433,9 @@ describe('ASTMerger', () => {
             text: 'function valid() {}',
             startPosition: { row: 1, column: 0 },
             endPosition: { row: 1, column: 19 },
-            isNamed: true
-          }
-        ]
+            isNamed: true,
+          },
+        ],
       };
 
       // Act
@@ -456,7 +456,7 @@ describe('ASTMerger', () => {
         startPosition: { row: 0, column: 0 },
         endPosition: { row: 1, column: 0 },
         isNamed: true,
-        children: undefined
+        children: undefined,
       };
 
       // Act

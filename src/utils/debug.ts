@@ -9,7 +9,7 @@ export enum DebugLevel {
   WARN = 2,
   INFO = 3,
   VERBOSE = 4,
-  TRACE = 5
+  TRACE = 5,
 }
 
 export class DebugLogger {
@@ -30,7 +30,7 @@ export class DebugLogger {
     }
 
     const debugEnv = process.env.RIMOR_DEBUG?.toLowerCase();
-    
+
     switch (debugEnv) {
       case 'trace':
         this.debugLevel = DebugLevel.TRACE;
@@ -160,7 +160,7 @@ export class DebugLogger {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       const start = Date.now();
       this.verbose(`Starting: ${label}`);
-      
+
       try {
         const result = await fn();
         const duration = Date.now() - start;
@@ -183,7 +183,7 @@ export class DebugLogger {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       const start = Date.now();
       this.verbose(`Starting: ${label}`);
-      
+
       try {
         const result = fn();
         const duration = Date.now() - start;
@@ -241,7 +241,7 @@ export const debug = {
   measure: DebugLogger.measure.bind(DebugLogger),
   logIf: DebugLogger.logIf.bind(DebugLogger),
   getLevel: DebugLogger.getLevel.bind(DebugLogger),
-  setLevel: DebugLogger.setLevel.bind(DebugLogger)
+  setLevel: DebugLogger.setLevel.bind(DebugLogger),
 };
 
 // 自動初期化

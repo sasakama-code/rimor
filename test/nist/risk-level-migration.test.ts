@@ -1,14 +1,17 @@
 /**
  * RiskLevel Enum移行テスト
  * Issue #52: v0.8.0のSeverity enumからv0.9.0のRiskLevel enumへの移行
- * 
+ *
  * TDD Red Phase: 失敗するテストを最初に作成
  * DRY原則: 共通マッピングロジックの再利用
  */
 
 import { RiskLevel } from '../../src/nist/types/unified-analysis-result';
 import { RiskLevelMigrator } from '../../src/nist/utils/risk-level-migrator';
-import { Severity as OldSeverity, IntentRiskLevel as OldRiskLevel } from '../../src/intent-analysis/ITestIntentAnalyzer';
+import {
+  Severity as OldSeverity,
+  IntentRiskLevel as OldRiskLevel,
+} from '../../src/intent-analysis/ITestIntentAnalyzer';
 
 describe('RiskLevel Enum移行', () => {
   describe('RiskLevelMigrator', () => {
@@ -124,17 +127,12 @@ describe('RiskLevel Enum移行', () => {
           OldSeverity.CRITICAL,
           OldSeverity.HIGH,
           OldSeverity.MEDIUM,
-          OldSeverity.LOW
+          OldSeverity.LOW,
         ];
 
         const newValues = migrator.migrateSeverityBatch(oldValues);
 
-        expect(newValues).toEqual([
-          'CRITICAL',
-          'HIGH',
-          'MEDIUM',
-          'LOW'
-        ]);
+        expect(newValues).toEqual(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']);
       });
 
       it('複数の旧RiskLevel値を一括で移行する', () => {
@@ -143,18 +141,12 @@ describe('RiskLevel Enum移行', () => {
           OldRiskLevel.HIGH,
           OldRiskLevel.MEDIUM,
           OldRiskLevel.LOW,
-          OldRiskLevel.MINIMAL
+          OldRiskLevel.MINIMAL,
         ];
 
         const newValues = migrator.migrateOldRiskLevelBatch(oldValues);
 
-        expect(newValues).toEqual([
-          'CRITICAL',
-          'HIGH',
-          'MEDIUM',
-          'LOW',
-          'MINIMAL'
-        ]);
+        expect(newValues).toEqual(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL']);
       });
     });
 
@@ -194,7 +186,7 @@ describe('RiskLevel Enum移行', () => {
           OldSeverity.MEDIUM,
           OldSeverity.LOW,
           OldSeverity.LOW,
-          OldSeverity.LOW
+          OldSeverity.LOW,
         ];
 
         const result = migrator.migrateSeverityBatchWithStats(values);
@@ -205,7 +197,7 @@ describe('RiskLevel Enum移行', () => {
           HIGH: 1,
           MEDIUM: 1,
           LOW: 3,
-          MINIMAL: 0
+          MINIMAL: 0,
         });
       });
     });
@@ -215,7 +207,7 @@ describe('RiskLevel Enum移行', () => {
     it('severityToRiskLevel関数が正しく動作する', async () => {
       // 動的インポートを使用
       const { severityToRiskLevel } = await import('../../src/nist/utils/risk-level-helpers');
-      
+
       expect(severityToRiskLevel('critical')).toBe('CRITICAL');
       expect(severityToRiskLevel('high')).toBe('HIGH');
       expect(severityToRiskLevel('medium')).toBe('MEDIUM');
@@ -224,7 +216,7 @@ describe('RiskLevel Enum移行', () => {
 
     it('riskLevelToString関数が正しく動作する', async () => {
       const { riskLevelToString } = await import('../../src/nist/utils/risk-level-helpers');
-      
+
       expect(riskLevelToString(RiskLevel.CRITICAL)).toBe('CRITICAL');
       expect(riskLevelToString(RiskLevel.HIGH)).toBe('HIGH');
       expect(riskLevelToString(RiskLevel.MEDIUM)).toBe('MEDIUM');

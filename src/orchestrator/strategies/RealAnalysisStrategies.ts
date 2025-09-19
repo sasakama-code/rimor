@@ -16,7 +16,7 @@ import {
   IIntentExtractionStrategy,
   IGapDetectionStrategy,
   INistEvaluationStrategy,
-  AnalysisStrategies
+  AnalysisStrategies,
 } from '../interfaces';
 
 import {
@@ -24,7 +24,7 @@ import {
   IntentAnalysisResult,
   GapAnalysisResult,
   NistEvaluationResult,
-  OrchestratorConfig
+  OrchestratorConfig,
 } from '../types';
 
 /**
@@ -36,7 +36,7 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
 
   constructor(config?: any) {
     console.log('🔧 [RealTaintAnalysisStrategy] 初期化中...');
-    
+
     // TaintAnalysisSystemの設定に基づいて初期化
     const taintConfig = {
       inference: {
@@ -44,17 +44,17 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
         enableLocalOptimization: true,
         enableIncremental: true,
         maxSearchDepth: 10,
-        confidenceThreshold: 0.8
+        confidenceThreshold: 0.8,
       },
       library: {
         loadBuiltins: true,
         customLibraryPaths: [],
-        unknownMethodBehavior: 'conservative' as const
+        unknownMethodBehavior: 'conservative' as const,
       },
       compatibility: {
         exportJAIF: false,
         generateStubs: false,
-        gradualMigration: true
+        gradualMigration: true,
       },
       // AST解析を明示的に有効化
       ast: {
@@ -62,32 +62,40 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
         enableDataFlowTracking: true,
         enableScopeAnalysis: true,
         maxFlowDepth: 50,
-        typescriptOnly: false  // JSファイルも対象にする
-      }
+        typescriptOnly: false, // JSファイルも対象にする
+      },
     };
 
     console.log('🔧 [RealTaintAnalysisStrategy] TaintAnalysisSystem設定:', {
       enableASTAnalysis: taintConfig.ast.enableASTAnalysis,
       enableDataFlowTracking: taintConfig.ast.enableDataFlowTracking,
-      typescriptOnly: taintConfig.ast.typescriptOnly
+      typescriptOnly: taintConfig.ast.typescriptOnly,
     });
 
     this.taintSystem = new TaintAnalysisSystem(taintConfig);
     console.log('✅ [RealTaintAnalysisStrategy] 初期化完了');
   }
 
-  async analyze(targetPath: string, options?: { benchmarkMode?: boolean }): Promise<TaintAnalysisResult> {
+  async analyze(
+    targetPath: string,
+    options?: { benchmarkMode?: boolean }
+  ): Promise<TaintAnalysisResult> {
     try {
-      console.log(`🔍 [RealTaintAnalysisStrategy] 分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
-      
+      console.log(
+        `🔍 [RealTaintAnalysisStrategy] 分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
+      );
+
       // TaintAnalysisSystemを使用した実際の汚染分析（ベンチマークモード対応）
-      const analysisResult = await this.taintSystem.analyzeProject(targetPath, { benchmarkMode: options?.benchmarkMode });
-      
+      const analysisResult = await this.taintSystem.analyzeProject(targetPath, {
+        benchmarkMode: options?.benchmarkMode,
+      });
+
       // TaintAnalysisSystemの結果をTaintAnalysisResult形式に変換
       return this.convertToTaintAnalysisResult(analysisResult);
-
     } catch (error) {
-      throw new Error(`Taint分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Taint分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -101,28 +109,31 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
    */
   private convertToTaintAnalysisResult(systemResult: any): TaintAnalysisResult {
     // TaintAnalysisSystemの結果構造を標準形式に変換
-    const vulnerabilities = systemResult.detectedTaints?.map((taint: any) => ({
-      id: taint.id || `TAINT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: this.mapTaintTypeToVulnerabilityType(taint.type),
-      severity: this.mapTaintSeverityToSeverity(taint.severity),
-      source: {
-        file: taint.sourceLocation?.file || 'unknown',
-        line: taint.sourceLocation?.line || 0,
-        column: taint.sourceLocation?.column || 0
-      },
-      sink: {
-        file: taint.sinkLocation?.file || 'unknown',
-        line: taint.sinkLocation?.line || 0,
-        column: taint.sinkLocation?.column || 0
-      },
-      dataFlow: taint.dataFlowPath || ['unknown']
-    })) || [];
+    const vulnerabilities =
+      systemResult.detectedTaints?.map((taint: any) => ({
+        id: taint.id || `TAINT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: this.mapTaintTypeToVulnerabilityType(taint.type),
+        severity: this.mapTaintSeverityToSeverity(taint.severity),
+        source: {
+          file: taint.sourceLocation?.file || 'unknown',
+          line: taint.sourceLocation?.line || 0,
+          column: taint.sourceLocation?.column || 0,
+        },
+        sink: {
+          file: taint.sinkLocation?.file || 'unknown',
+          line: taint.sinkLocation?.line || 0,
+          column: taint.sinkLocation?.column || 0,
+        },
+        dataFlow: taint.dataFlowPath || ['unknown'],
+      })) || [];
 
     const summary = {
       totalVulnerabilities: vulnerabilities.length,
-      highSeverity: vulnerabilities.filter((v: any) => v.severity === 'HIGH' || v.severity === 'CRITICAL').length,
+      highSeverity: vulnerabilities.filter(
+        (v: any) => v.severity === 'HIGH' || v.severity === 'CRITICAL'
+      ).length,
       mediumSeverity: vulnerabilities.filter((v: any) => v.severity === 'MEDIUM').length,
-      lowSeverity: vulnerabilities.filter((v: any) => v.severity === 'LOW').length
+      lowSeverity: vulnerabilities.filter((v: any) => v.severity === 'LOW').length,
     };
 
     return { vulnerabilities, summary };
@@ -130,21 +141,26 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
 
   private mapTaintTypeToVulnerabilityType(taintType: string): string {
     const typeMap: Record<string, string> = {
-      'PATH_TAINT': 'PATH_TRAVERSAL',
-      'SQL_TAINT': 'SQL_INJECTION',
-      'XSS_TAINT': 'XSS',
-      'COMMAND_TAINT': 'COMMAND_INJECTION'
+      PATH_TAINT: 'PATH_TRAVERSAL',
+      SQL_TAINT: 'SQL_INJECTION',
+      XSS_TAINT: 'XSS',
+      COMMAND_TAINT: 'COMMAND_INJECTION',
     };
     return typeMap[taintType] || 'PATH_TRAVERSAL';
   }
 
   private mapTaintSeverityToSeverity(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     switch (severity?.toUpperCase()) {
-      case 'CRITICAL': return 'CRITICAL';
-      case 'HIGH': return 'HIGH';
-      case 'MEDIUM': return 'MEDIUM';
-      case 'LOW': return 'LOW';
-      default: return 'MEDIUM';
+      case 'CRITICAL':
+        return 'CRITICAL';
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MEDIUM';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return 'MEDIUM';
     }
   }
 }
@@ -160,14 +176,16 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
     this.intentMatcher = new IntentPatternMatcher();
   }
 
-  async extract(targetPath: string, taintResult: TaintAnalysisResult): Promise<IntentAnalysisResult> {
+  async extract(
+    targetPath: string,
+    taintResult: TaintAnalysisResult
+  ): Promise<IntentAnalysisResult> {
     try {
       // IntentPatternMatcherを使用した実際の意図抽出
       const intentAnalysis = await this.intentMatcher.analyzeProject(targetPath);
-      
+
       // 結果をIntentAnalysisResult形式に変換
       return this.convertProjectAnalysisToIntentResult(intentAnalysis, taintResult);
-
     } catch (error) {
       console.debug('Intent抽出エラー:', error);
       // エラー時はフォールバック
@@ -182,19 +200,28 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
   /**
    * IntentPatternMatcherの結果を標準形式に変換
    */
-  private convertProjectAnalysisToIntentResult(projectAnalysis: any, taintResult: TaintAnalysisResult): IntentAnalysisResult {
-    const testIntents = projectAnalysis.intents?.map((intent: any) => ({
-      testName: intent.testName || 'Unknown Test',
-      expectedBehavior: intent.expectedBehavior || intent.description || 'Unknown Behavior',
-      securityRequirements: this.enhanceSecurityRequirements(intent.securityRequirements || [], taintResult),
-      riskLevel: this.assessIntentRiskLevel(intent, taintResult)
-    })) || [];
+  private convertProjectAnalysisToIntentResult(
+    projectAnalysis: any,
+    taintResult: TaintAnalysisResult
+  ): IntentAnalysisResult {
+    const testIntents =
+      projectAnalysis.intents?.map((intent: any) => ({
+        testName: intent.testName || 'Unknown Test',
+        expectedBehavior: intent.expectedBehavior || intent.description || 'Unknown Behavior',
+        securityRequirements: this.enhanceSecurityRequirements(
+          intent.securityRequirements || [],
+          taintResult
+        ),
+        riskLevel: this.assessIntentRiskLevel(intent, taintResult),
+      })) || [];
 
     const summary = {
       totalTests: testIntents.length,
-      highRiskTests: testIntents.filter((t: any) => t.riskLevel === 'HIGH' || t.riskLevel === 'CRITICAL').length,
+      highRiskTests: testIntents.filter(
+        (t: any) => t.riskLevel === 'HIGH' || t.riskLevel === 'CRITICAL'
+      ).length,
       mediumRiskTests: testIntents.filter((t: any) => t.riskLevel === 'MEDIUM').length,
-      lowRiskTests: testIntents.filter((t: any) => t.riskLevel === 'LOW').length
+      lowRiskTests: testIntents.filter((t: any) => t.riskLevel === 'LOW').length,
     };
 
     return { testIntents, summary };
@@ -205,18 +232,20 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
    */
   private createFallbackIntentResult(taintResult: TaintAnalysisResult): IntentAnalysisResult {
     return {
-      testIntents: [{
-        testName: 'Default Security Test',
-        expectedBehavior: 'セキュリティ要件の基本検証',
-        securityRequirements: ['入力値検証', '基本的なセキュリティ対策'],
-        riskLevel: 'LOW'
-      }],
+      testIntents: [
+        {
+          testName: 'Default Security Test',
+          expectedBehavior: 'セキュリティ要件の基本検証',
+          securityRequirements: ['入力値検証', '基本的なセキュリティ対策'],
+          riskLevel: 'LOW',
+        },
+      ],
       summary: {
         totalTests: 1,
         highRiskTests: 0,
         mediumRiskTests: 0,
-        lowRiskTests: 1
-      }
+        lowRiskTests: 1,
+      },
     };
   }
 
@@ -224,9 +253,12 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
    * セキュリティ要件を強化
    * Taint分析結果と既存の要件を組み合わせ
    */
-  private enhanceSecurityRequirements(existingRequirements: string[], taintResult: TaintAnalysisResult): string[] {
+  private enhanceSecurityRequirements(
+    existingRequirements: string[],
+    taintResult: TaintAnalysisResult
+  ): string[] {
     const requirements: string[] = [...existingRequirements];
-    
+
     // Taint分析結果から関連するセキュリティ要件を追加
     for (const vuln of taintResult.vulnerabilities) {
       const vulnRequirement = this.getSecurityRequirementForVulnerability(vuln.type);
@@ -243,40 +275,42 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
     return requirements;
   }
 
-
   private getSecurityRequirementForVulnerability(vulnType: string): string {
     const requirementMap: Record<string, string> = {
-      'PATH_TRAVERSAL': 'パストラバーサル防止',
-      'SQL_INJECTION': 'SQLインジェクション防止',
-      'XSS': 'XSS防止',
-      'COMMAND_INJECTION': 'コマンドインジェクション防止'
+      PATH_TRAVERSAL: 'パストラバーサル防止',
+      SQL_INJECTION: 'SQLインジェクション防止',
+      XSS: 'XSS防止',
+      COMMAND_INJECTION: 'コマンドインジェクション防止',
     };
     return requirementMap[vulnType] || 'セキュリティ対策';
   }
 
-  private assessIntentRiskLevel(intent: any, taintResult: TaintAnalysisResult): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+  private assessIntentRiskLevel(
+    intent: any,
+    taintResult: TaintAnalysisResult
+  ): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     // セキュリティ関連キーワードによるリスク評価
     const intentText = `${intent.testName || ''} ${intent.description || ''}`.toLowerCase();
-    
+
     // 高リスクキーワード
     const highRiskKeywords = ['auth', 'login', 'password', 'token', 'admin', 'sql', 'injection'];
     const mediumRiskKeywords = ['validate', 'check', 'input', 'form', 'data'];
-    
+
     // Issue #119 対応: 統一キーワード検索を使用
     if (KeywordSearchUtils.containsAnyKeyword(intentText, highRiskKeywords)) {
       return 'HIGH';
     }
-    
+
     if (KeywordSearchUtils.containsAnyKeyword(intentText, mediumRiskKeywords)) {
       return 'MEDIUM';
     }
-    
+
     // 脆弱性との関連性をチェック
     if (taintResult.vulnerabilities.length > 0) {
       const maxSeverity = taintResult.vulnerabilities.reduce((max, vuln) => {
         return this.isHigherRisk(vuln.severity, max) ? vuln.severity : max;
       }, 'LOW');
-      
+
       return maxSeverity as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     }
 
@@ -301,20 +335,21 @@ export class RealGapDetectionStrategy implements IGapDetectionStrategy {
       enableSemanticAnalysis: true,
       riskThreshold: config?.riskThreshold || 'MEDIUM',
       includeRecommendations: true,
-      analysisDepth: config?.analysisDepth || 'detailed'
+      analysisDepth: config?.analysisDepth || 'detailed',
     });
   }
 
   async detect(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     try {
       // 実装したGapDetectorを直接使用
       return await this.gapDetector.analyzeGaps(intentResult, taintResult);
-
     } catch (error) {
-      throw new Error(`Gap検出に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Gap検出に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -341,9 +376,10 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
       const summary = this.calculateNistSummary(riskAssessments);
 
       return { riskAssessments, summary };
-
     } catch (error) {
-      throw new Error(`NIST評価に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `NIST評価に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -364,11 +400,10 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
           impactLevel: this.assessImpactLevel(gap),
           overallRisk: gap.riskLevel,
           nistScore: this.calculateNistScore(gap.riskLevel),
-          recommendations: gap.recommendations
+          recommendations: gap.recommendations,
         };
 
         assessments.push(riskAssessment);
-
       } catch (error) {
         console.warn(`ギャップ ${gap.testName} のNIST評価中にエラー:`, error);
       }
@@ -398,17 +433,18 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
 
   private calculateNistScore(riskLevel: string): number {
     const scoreMap: Record<string, number> = {
-      'CRITICAL': 90,
-      'HIGH': 75,
-      'MEDIUM': 50,
-      'LOW': 25
+      CRITICAL: 90,
+      HIGH: 75,
+      MEDIUM: 50,
+      LOW: 25,
     };
     return scoreMap[riskLevel.toUpperCase()] || 50;
   }
 
   private calculateNistSummary(assessments: any[]) {
     const scores = assessments.map(a => a.nistScore);
-    const overallScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 100;
+    const overallScore =
+      scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 100;
 
     return {
       overallScore,
@@ -417,7 +453,7 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
       criticalRisks: assessments.filter(a => a.overallRisk === 'CRITICAL').length,
       highRisks: assessments.filter(a => a.overallRisk === 'HIGH').length,
       mediumRisks: assessments.filter(a => a.overallRisk === 'MEDIUM').length,
-      lowRisks: assessments.filter(a => a.overallRisk === 'LOW').length
+      lowRisks: assessments.filter(a => a.overallRisk === 'LOW').length,
     };
   }
 
@@ -458,7 +494,7 @@ export class RealAnalysisStrategyFactory implements IAnalysisStrategyFactory {
       taintStrategy: this.createTaintAnalysisStrategy(),
       intentStrategy: this.createIntentExtractionStrategy(),
       gapStrategy: this.createGapDetectionStrategy(),
-      nistStrategy: this.createNistEvaluationStrategy()
+      nistStrategy: this.createNistEvaluationStrategy(),
     };
   }
 }

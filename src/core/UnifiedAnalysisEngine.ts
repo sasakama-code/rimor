@@ -1,13 +1,13 @@
-import { 
-  IPlugin, 
-  ITestQualityPlugin, 
-  Issue, 
+import {
+  IPlugin,
+  ITestQualityPlugin,
+  Issue,
   ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
   Improvement,
-  PluginResult
+  PluginResult,
 } from './types';
 import { UnifiedPluginManager } from './UnifiedPluginManager';
 import { findTestFiles } from './fileDiscovery';
@@ -24,10 +24,10 @@ import { ASTNode } from './interfaces/IAnalysisEngine';
 
 /**
  * UnifiedAnalysisEngine
- * 
+ *
  * analyzer.tsとanalyzerExtended.tsの機能を統合した統一分析エンジン
  * SOLID原則に準拠した設計
- * 
+ *
  * @version 0.9.0
  */
 
@@ -36,7 +36,7 @@ const DEFAULT_TIMEOUT_MS = 30000;
 const SCORE_THRESHOLD = {
   EXCELLENT: 90,
   GOOD: 70,
-  FAIR: 50
+  FAIR: 50,
 } as const;
 const MAX_DEPTH = 20;
 const LOW_QUALITY_CONFIDENCE_THRESHOLD = 0.5;
@@ -44,7 +44,7 @@ const PRIORITY_ORDER: Record<string, number> = {
   critical: 0,
   high: 1,
   medium: 2,
-  low: 3
+  low: 3,
 } as const;
 
 // analyzer.tsのAnalysisResult型
@@ -137,7 +137,7 @@ export class UnifiedAnalysisEngine {
     this.configuration = {
       timeout: DEFAULT_TIMEOUT_MS,
       skipPlugins: [],
-      parallelExecution: false
+      parallelExecution: false,
     };
   }
 
@@ -162,7 +162,8 @@ export class UnifiedAnalysisEngine {
     // 開放閉鎖原則に従い、新しいプラグインタイプを追加可能にする
     if (this.isValidPlugin(plugin)) {
       // ITestQualityPluginの場合はidを持つ
-      const pluginId = ('id' in plugin ? plugin.id : undefined) || plugin.name || `custom-${Date.now()}`;
+      const pluginId =
+        ('id' in plugin ? plugin.id : undefined) || plugin.name || `custom-${Date.now()}`;
       this.customPlugins.set(pluginId, plugin);
       debug.info(`Custom plugin registered: ${pluginId}`);
     } else {
@@ -177,10 +178,9 @@ export class UnifiedAnalysisEngine {
     if (!plugin || typeof plugin !== 'object') {
       return false;
     }
-    
+
     const p = plugin as Record<string, unknown>;
-    return (typeof p.analyze === 'function' || 
-            typeof p.detectPatterns === 'function');
+    return typeof p.analyze === 'function' || typeof p.detectPatterns === 'function';
   }
 
   /**
@@ -191,12 +191,12 @@ export class UnifiedAnalysisEngine {
     for await (const file of findTestFiles(targetPath)) {
       testFiles.push(file);
     }
-    
+
     // ファイルが見つからない場合は、targetPath自体を対象とする
     if (testFiles.length === 0) {
       testFiles.push(targetPath);
     }
-    
+
     return testFiles;
   }
 
@@ -210,7 +210,10 @@ export class UnifiedAnalysisEngine {
   /**
    * プラグインの安全な実行（Extract Method）
    */
-  private async runPluginSafely(plugin: IPlugin, file: string): Promise<{ issues: Issue[], error: { pluginName: string; error: string } | null }> {
+  private async runPluginSafely(
+    plugin: IPlugin,
+    file: string
+  ): Promise<{ issues: Issue[]; error: { pluginName: string; error: string } | null }> {
     try {
       const issues = await this.runWithTimeout(
         plugin.analyze(file),
@@ -227,10 +230,13 @@ export class UnifiedAnalysisEngine {
   /**
    * エラー情報の作成（Extract Method）
    */
-  private createErrorInfo(pluginName: string, error: unknown): { pluginName: string; error: string } {
+  private createErrorInfo(
+    pluginName: string,
+    error: unknown
+  ): { pluginName: string; error: string } {
     return {
       pluginName,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 
@@ -240,7 +246,7 @@ export class UnifiedAnalysisEngine {
   async analyze(targetPath: string): Promise<BasicAnalysisResult> {
     return debug.measureAsync('analyze', async () => {
       debug.info(`Starting basic analysis of: ${targetPath}`);
-      
+
       const startTime = Date.now();
       const allIssues: Issue[] = [];
       const errors: Array<{ pluginName: string; error: string }> = [];
@@ -260,12 +266,12 @@ export class UnifiedAnalysisEngine {
       }
 
       const executionTime = Date.now() - startTime;
-      
+
       return {
         totalFiles: fileCount,
         issues: allIssues,
         executionTime,
-        errors: errors // 常にerrorsプロパティを含める（空配列でも）
+        errors: errors, // 常にerrorsプロパティを含める（空配列でも）
       };
     });
   }
@@ -273,7 +279,9 @@ export class UnifiedAnalysisEngine {
   /**
    * ファイルに対してプラグインを実行（Extract Method）
    */
-  private async runPluginsForFile(file: string): Promise<{ issues: Issue[], errors: Array<{ pluginName: string; error: string }> }> {
+  private async runPluginsForFile(
+    file: string
+  ): Promise<{ issues: Issue[]; errors: Array<{ pluginName: string; error: string }> }> {
     const plugins = this.legacyPluginManager.getLegacyPlugins();
     const issues: Issue[] = [];
     const errors: Array<{ pluginName: string; error: string }> = [];
@@ -283,7 +291,7 @@ export class UnifiedAnalysisEngine {
       const promises = plugins
         .filter(plugin => this.shouldRunPlugin(plugin))
         .map(plugin => this.runPluginSafely(plugin, file));
-      
+
       const results = await Promise.all(promises);
       for (const result of results) {
         if (result.error) {
@@ -315,12 +323,17 @@ export class UnifiedAnalysisEngine {
    */
   async analyzeWithQuality(filePath: string): Promise<ExtendedAnalysisResult> {
     const startTime = Date.now();
-    
+
     // プロジェクトコンテキストの作成
     const projectContext: ProjectContext = {
       rootPath: path.dirname(filePath),
       testFramework: 'jest', // 仮の値
-      language: path.extname(filePath).slice(1) as 'javascript' | 'typescript' | 'python' | 'java' | 'other'
+      language: path.extname(filePath).slice(1) as
+        | 'javascript'
+        | 'typescript'
+        | 'python'
+        | 'java'
+        | 'other',
     };
 
     // テストファイル情報の作成
@@ -333,7 +346,7 @@ export class UnifiedAnalysisEngine {
     }
     const testFile: TestFile = {
       path: filePath,
-      content
+      content,
     };
 
     // 品質分析の実行
@@ -356,7 +369,7 @@ export class UnifiedAnalysisEngine {
       qualityAnalysis,
       aggregatedScore,
       recommendations,
-      executionTime
+      executionTime,
     };
   }
 
@@ -366,7 +379,7 @@ export class UnifiedAnalysisEngine {
   async analyzeBatch(filePaths: string[]): Promise<BatchAnalysisSummary> {
     const startTime = Date.now();
     const results: ExtendedAnalysisResult[] = [];
-    
+
     for (const filePath of filePaths) {
       try {
         const result = await this.analyzeWithQuality(filePath);
@@ -377,15 +390,14 @@ export class UnifiedAnalysisEngine {
     }
 
     const scores = results.map(r => r.aggregatedScore.overall);
-    const averageScore = scores.length > 0 
-      ? scores.reduce((sum, score) => sum + score, 0) / scores.length
-      : 0;
+    const averageScore =
+      scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
 
     const scoreDistribution = {
       excellent: scores.filter(s => s >= SCORE_THRESHOLD.EXCELLENT).length,
       good: scores.filter(s => s >= SCORE_THRESHOLD.GOOD && s < SCORE_THRESHOLD.EXCELLENT).length,
       fair: scores.filter(s => s >= SCORE_THRESHOLD.FAIR && s < SCORE_THRESHOLD.GOOD).length,
-      poor: scores.filter(s => s < SCORE_THRESHOLD.FAIR).length
+      poor: scores.filter(s => s < SCORE_THRESHOLD.FAIR).length,
     };
 
     const executionTime = Date.now() - startTime;
@@ -395,7 +407,7 @@ export class UnifiedAnalysisEngine {
       averageScore,
       scoreDistribution,
       files: results,
-      executionTime
+      executionTime,
     };
   }
 
@@ -405,12 +417,13 @@ export class UnifiedAnalysisEngine {
   async analyzeUnified(targetPath: string): Promise<UnifiedAnalysisResult> {
     const [basicAnalysis, qualityResults] = await Promise.all([
       this.analyze(targetPath),
-      this.analyzeAllWithQuality(targetPath)
+      this.analyzeAllWithQuality(targetPath),
     ]);
 
-    const combinedScore = qualityResults.length > 0
-      ? this.aggregateScores(qualityResults.flatMap(r => r.qualityAnalysis.pluginResults))
-      : undefined;
+    const combinedScore =
+      qualityResults.length > 0
+        ? this.aggregateScores(qualityResults.flatMap(r => r.qualityAnalysis.pluginResults))
+        : undefined;
 
     // qualityAnalysisを必ず返す
     const qualityAnalysis = qualityResults[0]?.qualityAnalysis || {
@@ -419,23 +432,23 @@ export class UnifiedAnalysisEngine {
         totalPlugins: 0,
         successfulPlugins: 0,
         failedPlugins: 0,
-        totalExecutionTime: 0
-      }
+        totalExecutionTime: 0,
+      },
     };
 
     // combinedScoreを必ず返す（デフォルト値を設定）
     const finalCombinedScore: QualityScore = combinedScore || {
       overall: 0,
       dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
-      confidence: 0
+      confidence: 0,
     };
 
     // allIssuesにエラー情報も含める
     const allIssues = [
       ...basicAnalysis.issues,
-      ...this.extractIssuesFromQualityResults(qualityResults)
+      ...this.extractIssuesFromQualityResults(qualityResults),
     ];
-    
+
     // エラーがあればissueとして追加
     if (basicAnalysis.errors && basicAnalysis.errors.length > 0) {
       for (const error of basicAnalysis.errors) {
@@ -447,7 +460,7 @@ export class UnifiedAnalysisEngine {
           file: targetPath,
           line: 0,
           column: 0,
-          category: 'structure'
+          category: 'structure',
         } as Issue);
       }
     }
@@ -456,7 +469,7 @@ export class UnifiedAnalysisEngine {
       basicAnalysis,
       qualityAnalysis,
       combinedScore: finalCombinedScore,
-      allIssues
+      allIssues,
     };
   }
 
@@ -483,7 +496,7 @@ export class UnifiedAnalysisEngine {
   configure(options: AnalysisOptions): void {
     this.configuration = {
       ...this.configuration,
-      ...options
+      ...options,
     };
   }
 
@@ -518,7 +531,7 @@ export class UnifiedAnalysisEngine {
   /**
    * 新しいImplementationTruth分析フロー
    * v0.9.0 - AIコーディング時代の品質保証エンジンへの進化
-   * 
+   *
    * プロダクションコード解析 → テスト意図抽出 → ギャップ分析の統合フロー
    */
   async analyzeWithImplementationTruth(
@@ -526,21 +539,22 @@ export class UnifiedAnalysisEngine {
     testCodePath?: string
   ): Promise<ImplementationTruthAnalysisResult> {
     const startTime = Date.now();
-    
+
     try {
       // 1. プロダクションコード解析でImplementationTruthを確立
       const productionAnalyzer = new ProductionCodeAnalyzer();
-      const implementationTruth = await productionAnalyzer.analyzeProductionCode(productionCodePath);
-      
+      const implementationTruth =
+        await productionAnalyzer.analyzeProductionCode(productionCodePath);
+
       // 2. テストファイルの収集
-      const testFiles = testCodePath 
+      const testFiles = testCodePath
         ? [testCodePath]
         : await this.collectTestFiles(productionCodePath);
-      
+
       // 3. 各テストファイルに対して意図実現度分析
       const intentExtractor = new TestIntentExtractor();
       const intentRealizationResults: IntentRealizationResult[] = [];
-      
+
       for (const testFile of testFiles) {
         try {
           // 簡易ASTノード作成（実際の実装では適切なパーサーを使用）
@@ -549,40 +563,45 @@ export class UnifiedAnalysisEngine {
             text: 'test',
             startPosition: { row: 0, column: 0 },
             endPosition: { row: 0, column: 4 },
-            children: []
+            children: [],
           };
-          
+
           const result = await intentExtractor.analyzeIntentRealization(
             testFile,
             dummyAst,
             implementationTruth
           );
-          
+
           intentRealizationResults.push(result);
-          
         } catch (error) {
           debug.warn(`Failed to analyze test file ${testFile}: ${error}`);
         }
       }
-      
+
       // 4. 総合評価の計算
       const overallScore = this.calculateOverallScore(intentRealizationResults);
-      const totalGapsDetected = intentRealizationResults.reduce((sum, result) => 
-        sum + result.gaps.length, 0);
-      const highSeverityGaps = intentRealizationResults.reduce((sum, result) => 
-        sum + result.gaps.filter(gap => gap.severity === 'critical' || gap.severity === 'high').length, 0);
-      
+      const totalGapsDetected = intentRealizationResults.reduce(
+        (sum, result) => sum + result.gaps.length,
+        0
+      );
+      const highSeverityGaps = intentRealizationResults.reduce(
+        (sum, result) =>
+          sum +
+          result.gaps.filter(gap => gap.severity === 'critical' || gap.severity === 'high').length,
+        0
+      );
+
       // 5. サマリーの生成
       const summary = {
         productionFilesAnalyzed: 1,
         testFilesAnalyzed: testFiles.length,
         vulnerabilitiesDetected: implementationTruth.vulnerabilities.length,
         realizationScore: overallScore,
-        topRecommendations: this.extractTopRecommendations(intentRealizationResults)
+        topRecommendations: this.extractTopRecommendations(intentRealizationResults),
       };
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       return {
         implementationTruth,
         intentRealizationResults,
@@ -590,9 +609,8 @@ export class UnifiedAnalysisEngine {
         totalGapsDetected,
         highSeverityGaps,
         executionTime,
-        summary
+        summary,
       };
-      
     } catch (error) {
       debug.error(`ImplementationTruth analysis failed: ${error}`);
       throw error;
@@ -604,7 +622,7 @@ export class UnifiedAnalysisEngine {
    */
   private calculateOverallScore(results: IntentRealizationResult[]): number {
     if (results.length === 0) return 0;
-    
+
     const totalScore = results.reduce((sum, result) => sum + result.realizationScore, 0);
     return totalScore / results.length;
   }
@@ -613,10 +631,10 @@ export class UnifiedAnalysisEngine {
    * トップレコメンデーションの抽出
    */
   private extractTopRecommendations(results: IntentRealizationResult[]): string[] {
-    const allRecommendations = results.flatMap(result => 
+    const allRecommendations = results.flatMap(result =>
       result.recommendations.map(rec => rec.description)
     );
-    
+
     // 上位3つの推奨事項を返す
     return allRecommendations.slice(0, 3);
   }
@@ -626,7 +644,7 @@ export class UnifiedAnalysisEngine {
       return {
         overall: 0,
         dimensions: { completeness: 0, correctness: 0, maintainability: 0 },
-        confidence: 0
+        confidence: 0,
       };
     }
 
@@ -634,16 +652,25 @@ export class UnifiedAnalysisEngine {
     const weights = scores.map(s => s.confidence || 1);
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
-    const overall = scores.reduce((sum, score, index) => 
-      sum + score.overall * weights[index], 0) / totalWeight;
+    const overall =
+      scores.reduce((sum, score, index) => sum + score.overall * weights[index], 0) / totalWeight;
 
     const dimensions = {
-      completeness: scores.reduce((sum, score, index) => 
-        sum + (score.dimensions?.completeness || 0) * weights[index], 0) / totalWeight,
-      correctness: scores.reduce((sum, score, index) => 
-        sum + (score.dimensions?.correctness || 0) * weights[index], 0) / totalWeight,
-      maintainability: scores.reduce((sum, score, index) => 
-        sum + (score.dimensions?.maintainability || 0) * weights[index], 0) / totalWeight
+      completeness:
+        scores.reduce(
+          (sum, score, index) => sum + (score.dimensions?.completeness || 0) * weights[index],
+          0
+        ) / totalWeight,
+      correctness:
+        scores.reduce(
+          (sum, score, index) => sum + (score.dimensions?.correctness || 0) * weights[index],
+          0
+        ) / totalWeight,
+      maintainability:
+        scores.reduce(
+          (sum, score, index) => sum + (score.dimensions?.maintainability || 0) * weights[index],
+          0
+        ) / totalWeight,
     };
 
     return {
@@ -652,9 +679,9 @@ export class UnifiedAnalysisEngine {
       breakdown: {
         completeness: dimensions.completeness,
         correctness: dimensions.correctness,
-        maintainability: dimensions.maintainability
+        maintainability: dimensions.maintainability,
       },
-      confidence: totalWeight / pluginResults.length
+      confidence: totalWeight / pluginResults.length,
     };
   }
 
@@ -667,7 +694,7 @@ export class UnifiedAnalysisEngine {
    */
   aggregateRecommendations(recommendations: Improvement[][]): Improvement[] {
     const uniqueRecommendations = new Map<string, Improvement>();
-    
+
     for (const group of recommendations) {
       for (const rec of group) {
         const key = rec.id || rec.title;
@@ -676,12 +703,11 @@ export class UnifiedAnalysisEngine {
         }
       }
     }
-    
-    return Array.from(uniqueRecommendations.values())
-      .sort((a, b) => {
-        // 優先度でソート
-        return (PRIORITY_ORDER[a.priority] || 999) - (PRIORITY_ORDER[b.priority] || 999);
-      });
+
+    return Array.from(uniqueRecommendations.values()).sort((a, b) => {
+      // 優先度でソート
+      return (PRIORITY_ORDER[a.priority] || 999) - (PRIORITY_ORDER[b.priority] || 999);
+    });
   }
 
   private extractIssuesFromQualityResults(results: ExtendedAnalysisResult[]): Issue[] {
@@ -701,13 +727,13 @@ export class UnifiedAnalysisEngine {
    */
   private extractIssuesFromPatterns(patterns: DetectionResult[]): Issue[] {
     const issues: Issue[] = [];
-    
+
     for (const pattern of patterns) {
       if (this.isLowQualityPattern(pattern)) {
         issues.push(this.createQualityIssue(pattern));
       }
     }
-    
+
     return issues;
   }
 
@@ -731,16 +757,16 @@ export class UnifiedAnalysisEngine {
       file: filePath,
       line: pattern.location?.line || 0,
       column: pattern.location?.column,
-      category: 'pattern'
+      category: 'pattern',
     } as Issue;
   }
 
   private async runWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<T>((_, reject) => 
+      new Promise<T>((_, reject) =>
         setTimeout(() => reject(new Error('Operation timed out')), timeout)
-      )
+      ),
     ]);
   }
 }

@@ -16,13 +16,13 @@ describe('ExternalProjectBenchmarkRunner', () => {
   beforeEach(async () => {
     // テスト用の一時ディレクトリを作成
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rimor-benchmark-test-'));
-    
+
     benchmarkRunner = new ExternalProjectBenchmarkRunner({
       outputDir: tempDir,
       cacheDir: path.join(tempDir, 'cache'),
       iterations: 1,
       parallel: false,
-      timeout: 60000
+      timeout: 60000,
     });
   });
 
@@ -44,7 +44,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         outputDir: tempDir,
         iterations: 3,
         parallel: true,
-        timeout: 120000
+        timeout: 120000,
       };
       const runner = new ExternalProjectBenchmarkRunner(config);
       expect(runner).toBeDefined();
@@ -86,7 +86,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         repositoryUrl: 'https://github.com/microsoft/TypeScript.git',
         expectedFileCount: 100,
         target5msPerFile: 5,
-        timeout: 60000
+        timeout: 60000,
       };
 
       const cloneResult = await benchmarkRunner.cloneProject(testProject);
@@ -101,7 +101,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         repositoryUrl: 'https://github.com/invalid/repo.git',
         expectedFileCount: 0,
         target5msPerFile: 5,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const cloneResult = await benchmarkRunner.cloneProject(invalidProject);
@@ -115,7 +115,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         repositoryUrl: 'https://github.com/microsoft/TypeScript.git',
         expectedFileCount: 100,
         target5msPerFile: 5,
-        timeout: 60000
+        timeout: 60000,
       };
 
       // 初回クローン
@@ -134,7 +134,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const metrics = await benchmarkRunner.collectPerformanceMetrics(mockProject);
@@ -147,7 +147,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const metrics = await benchmarkRunner.collectPerformanceMetrics(mockProject);
@@ -160,13 +160,13 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 20
+        fileCount: 20,
       };
 
       const parallelRunner = new ExternalProjectBenchmarkRunner({
         outputDir: tempDir,
         parallel: true,
-        workerCount: Math.min(4, os.cpus().length)
+        workerCount: Math.min(4, os.cpus().length),
       });
 
       const metrics = await parallelRunner.collectPerformanceMetrics(mockProject);
@@ -181,7 +181,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const accuracy = await benchmarkRunner.collectAccuracyMetrics(mockProject);
@@ -194,7 +194,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const accuracy = await benchmarkRunner.collectAccuracyMetrics(mockProject);
@@ -207,7 +207,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const accuracy = await benchmarkRunner.collectAccuracyMetrics(mockProject);
@@ -220,7 +220,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 10
+        fileCount: 10,
       };
 
       const accuracy = await benchmarkRunner.collectAccuracyMetrics(mockProject);
@@ -237,7 +237,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'mock-project',
         path: tempDir,
-        fileCount: 100
+        fileCount: 100,
       };
 
       const targetResult = await benchmarkRunner.verify5msPerFileTarget(mockProject);
@@ -251,7 +251,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
       const mockProject = {
         name: 'slow-project',
         path: tempDir,
-        fileCount: 100
+        fileCount: 100,
       };
 
       const targetResult = await benchmarkRunner.verify5msPerFileTarget(mockProject);
@@ -272,7 +272,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         const mockProject = {
           name: `scalability-test-${fileCount}`,
           path: tempDir,
-          fileCount
+          fileCount,
         };
 
         const metrics = await benchmarkRunner.collectPerformanceMetrics(mockProject);
@@ -292,7 +292,7 @@ describe('ExternalProjectBenchmarkRunner', () => {
         repositoryUrl: 'https://github.com/microsoft/TypeScript.git',
         expectedFileCount: 100,
         target5msPerFile: 5,
-        timeout: 60000
+        timeout: 60000,
       };
 
       const result = await benchmarkRunner.runSingleProjectBenchmark(testProject);
@@ -311,15 +311,15 @@ describe('ExternalProjectBenchmarkRunner', () => {
           repositoryUrl: 'https://github.com/microsoft/TypeScript.git',
           expectedFileCount: 50,
           target5msPerFile: 5,
-          timeout: 60000
+          timeout: 60000,
         },
         {
           name: 'project-2',
           repositoryUrl: 'https://github.com/ant-design/ant-design.git',
           expectedFileCount: 100,
           target5msPerFile: 5,
-          timeout: 60000
-        }
+          timeout: 60000,
+        },
       ];
 
       const results = await benchmarkRunner.runMultiProjectBenchmark(projects);
@@ -339,13 +339,13 @@ describe('ExternalProjectBenchmarkRunner', () => {
         repositoryUrl: 'https://github.com/timeout/test.git',
         expectedFileCount: 100,
         target5msPerFile: 5,
-        timeout: 1000 // 非常に短いタイムアウト
+        timeout: 1000, // 非常に短いタイムアウト
       };
 
       const runner = new ExternalProjectBenchmarkRunner({
         outputDir: tempDir,
         maxRetries: 3,
-        retryDelay: 100
+        retryDelay: 100,
       });
 
       const result = await runner.runSingleProjectBenchmark(unreliableProject);
@@ -360,15 +360,15 @@ describe('ExternalProjectBenchmarkRunner', () => {
           repositoryUrl: 'https://github.com/microsoft/TypeScript.git',
           expectedFileCount: 100,
           target5msPerFile: 5,
-          timeout: 60000
+          timeout: 60000,
         },
         {
           name: 'invalid-project',
           repositoryUrl: 'https://github.com/invalid/invalid.git',
           expectedFileCount: 100,
           target5msPerFile: 5,
-          timeout: 60000
-        }
+          timeout: 60000,
+        },
       ];
 
       const results = await benchmarkRunner.runMultiProjectBenchmark(mixedProjects);

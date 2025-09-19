@@ -15,7 +15,7 @@ import {
   ParameterTaintMetadata,
   ClassAnnotationMap,
   ClassAnnotationInfo,
-  MethodArguments
+  MethodArguments,
 } from './types';
 
 /**
@@ -32,23 +32,27 @@ export type TaintLevel = 'tainted' | 'untainted' | 'poly';
 
 /**
  * @Tainted - 攻撃者に影響される可能性のある値をマーク
- * 
+ *
  * 使用例:
  * ```typescript
  * @Tainted
  * userInput: string;
- * 
+ *
  * @Tainted('user-input')
  * requestData: unknown;
  * ```
  */
 export function Tainted(source?: string): CompositeDecorator {
-  return function (target: DecoratorTarget, propertyKey?: PropertyKey, descriptorOrIndex?: DecoratorDescriptor) {
+  return function (
+    target: DecoratorTarget,
+    propertyKey?: PropertyKey,
+    descriptorOrIndex?: DecoratorDescriptor
+  ) {
     const parameterIndex = typeof descriptorOrIndex === 'number' ? descriptorOrIndex : undefined;
     const metadata = {
       level: 'tainted' as TaintLevel,
       source: source || 'unknown',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (typeof parameterIndex === 'number') {
@@ -68,23 +72,27 @@ export function Tainted(source?: string): CompositeDecorator {
 
 /**
  * @Untainted - 安全で信頼できる値をマーク
- * 
+ *
  * 使用例:
  * ```typescript
  * @Untainted
  * sanitizedData: string;
- * 
+ *
  * @Untainted('validated')
  * validatedInput: string;
  * ```
  */
 export function Untainted(reason?: string): CompositeDecorator {
-  return function (target: DecoratorTarget, propertyKey?: PropertyKey, descriptorOrIndex?: DecoratorDescriptor) {
+  return function (
+    target: DecoratorTarget,
+    propertyKey?: PropertyKey,
+    descriptorOrIndex?: DecoratorDescriptor
+  ) {
     const parameterIndex = typeof descriptorOrIndex === 'number' ? descriptorOrIndex : undefined;
     const metadata = {
       level: 'untainted' as TaintLevel,
       reason: reason || 'safe',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (typeof parameterIndex === 'number') {
@@ -104,7 +112,7 @@ export function Untainted(reason?: string): CompositeDecorator {
 
 /**
  * @PolyTaint - メソッドの汚染挙動が引数に依存することをマーク
- * 
+ *
  * 使用例:
  * ```typescript
  * @PolyTaint
@@ -114,18 +122,20 @@ export function Untainted(reason?: string): CompositeDecorator {
  * }
  * ```
  */
-export function PolyTaint(
-  config?: {
-    parameterIndices?: number[];
-    propagationRule?: 'any' | 'all';
-  }
-): MethodDecorator {
-  return function (target: DecoratorTarget, propertyKey: PropertyKey, descriptor: PropertyDescriptor) {
+export function PolyTaint(config?: {
+  parameterIndices?: number[];
+  propagationRule?: 'any' | 'all';
+}): MethodDecorator {
+  return function (
+    target: DecoratorTarget,
+    propertyKey: PropertyKey,
+    descriptor: PropertyDescriptor
+  ) {
     const metadata = {
       level: 'poly' as TaintLevel,
       parameterIndices: config?.parameterIndices || [],
       propagationRule: config?.propagationRule || 'any',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     Reflect.defineMetadata(POLY_TAINT_METADATA_KEY, metadata, target, propertyKey);
@@ -143,7 +153,7 @@ export function PolyTaint(
 
 /**
  * @SuppressTaintWarning - 特定の警告を抑制
- * 
+ *
  * 使用例:
  * ```typescript
  * @SuppressTaintWarning('reviewed-safe')
@@ -153,11 +163,15 @@ export function PolyTaint(
  * ```
  */
 export function SuppressTaintWarning(reason: string): MethodDecorator & PropertyDecorator {
-  return function (target: DecoratorTarget, propertyKey: PropertyKey, descriptor?: PropertyDescriptor) {
+  return function (
+    target: DecoratorTarget,
+    propertyKey: PropertyKey,
+    descriptor?: PropertyDescriptor
+  ) {
     const metadata = {
       suppressed: true,
       reason,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     Reflect.defineMetadata(SUPPRESS_METADATA_KEY, metadata, target, propertyKey);
@@ -171,28 +185,40 @@ export class TaintAnnotationReader {
   /**
    * プロパティまたはメソッドの汚染情報を取得
    */
-  static getTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): TaintMetadata | undefined {
+  static getTaintMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): TaintMetadata | undefined {
     return Reflect.getMetadata(TAINT_METADATA_KEY, target, propertyKey);
   }
 
   /**
    * パラメータの汚染情報を取得
    */
-  static getParameterTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): ParameterTaintMetadata {
+  static getParameterTaintMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): ParameterTaintMetadata {
     return Reflect.getMetadata(TAINT_METADATA_KEY, target, propertyKey) || [];
   }
 
   /**
    * PolyTaint情報を取得
    */
-  static getPolyTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): PolyTaintMetadata | undefined {
+  static getPolyTaintMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): PolyTaintMetadata | undefined {
     return Reflect.getMetadata(POLY_TAINT_METADATA_KEY, target, propertyKey);
   }
 
   /**
    * 警告抑制情報を取得
    */
-  static getSuppressMetadata(target: DecoratorTarget, propertyKey: PropertyKey): SuppressTaintMetadata | undefined {
+  static getSuppressMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): SuppressTaintMetadata | undefined {
     return Reflect.getMetadata(SUPPRESS_METADATA_KEY, target, propertyKey);
   }
 
@@ -201,7 +227,7 @@ export class TaintAnnotationReader {
    */
   static collectClassAnnotations(target: DecoratorTarget): ClassAnnotationMap {
     const annotations: ClassAnnotationMap = new Map();
-    
+
     // クラス自体のアノテーション
     const classMetadata = Reflect.getMetadata(TAINT_METADATA_KEY, target);
     if (classMetadata) {
@@ -210,24 +236,24 @@ export class TaintAnnotationReader {
 
     // プロパティとメソッドのアノテーション
     const prototype = (target as { prototype?: Object }).prototype || target;
-    
+
     // prototypeのメソッドを収集
     const propertyNames = Object.getOwnPropertyNames(prototype);
     for (const propertyName of propertyNames) {
       const taintMetadata = this.getTaintMetadata(prototype, propertyName);
       const polyMetadata = this.getPolyTaintMetadata(prototype, propertyName);
       const suppressMetadata = this.getSuppressMetadata(prototype, propertyName);
-      
+
       if (taintMetadata || polyMetadata || suppressMetadata) {
         const annotationInfo: ClassAnnotationInfo = {
           taint: taintMetadata,
           poly: polyMetadata,
-          suppress: suppressMetadata
+          suppress: suppressMetadata,
         };
         annotations.set(propertyName, annotationInfo);
       }
     }
-    
+
     // インスタンスプロパティのアノテーションも収集
     // TypeScriptのクラスプロパティはコンストラクタで初期化されるため、
     // 一時的なインスタンスを作成してメタデータを確認
@@ -235,20 +261,26 @@ export class TaintAnnotationReader {
       const Constructor = target as new (...args: unknown[]) => unknown;
       const tempInstance = new Constructor();
       const instancePropertyNames = Object.getOwnPropertyNames(tempInstance);
-      
+
       for (const propertyName of instancePropertyNames) {
         // 既に収集済みの場合はスキップ
         if (annotations.has(propertyName)) continue;
-        
+
         const taintMetadata = this.getTaintMetadata(tempInstance as DecoratorTarget, propertyName);
-        const polyMetadata = this.getPolyTaintMetadata(tempInstance as DecoratorTarget, propertyName);
-        const suppressMetadata = this.getSuppressMetadata(tempInstance as DecoratorTarget, propertyName);
-        
+        const polyMetadata = this.getPolyTaintMetadata(
+          tempInstance as DecoratorTarget,
+          propertyName
+        );
+        const suppressMetadata = this.getSuppressMetadata(
+          tempInstance as DecoratorTarget,
+          propertyName
+        );
+
         if (taintMetadata || polyMetadata || suppressMetadata) {
           const annotationInfo: ClassAnnotationInfo = {
             taint: taintMetadata,
             poly: polyMetadata,
-            suppress: suppressMetadata
+            suppress: suppressMetadata,
           };
           annotations.set(propertyName, annotationInfo);
         }
@@ -276,7 +308,9 @@ export class TaintAnnotationValidator {
       // 矛盾するアノテーションのチェック（現在のメタデータ構造では直接的な競合は発生しないが、将来の拡張のため）
       if (annotation.taint && annotation.poly && propertyName !== '__class__') {
         // 同じプロパティに@Taintedと@PolyTaintが同時に付いている場合
-        errors.push(`Property ${propertyName} has conflicting @Tainted/@Untainted and @PolyTaint annotations`);
+        errors.push(
+          `Property ${propertyName} has conflicting @Tainted/@Untainted and @PolyTaint annotations`
+        );
       }
 
       // @PolyTaintがメソッド以外に付いていないかチェック
@@ -300,7 +334,7 @@ export const TaintAnnotations = {
   Tainted,
   Untainted,
   PolyTaint,
-  SuppressTaintWarning
+  SuppressTaintWarning,
 };
 
 // TaintLevelは既にexportされているため、重複エクスポートは不要

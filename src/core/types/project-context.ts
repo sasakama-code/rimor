@@ -19,22 +19,29 @@ export interface PackageJsonConfig {
   peerDependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
   engines?: Record<string, string>;
-  repository?: {
-    type: string;
-    url: string;
-    directory?: string;
-  } | string;
+  repository?:
+    | {
+        type: string;
+        url: string;
+        directory?: string;
+      }
+    | string;
   keywords?: string[];
-  author?: string | {
-    name: string;
-    email?: string;
-    url?: string;
-  };
-  contributors?: Array<string | {
-    name: string;
-    email?: string;
-    url?: string;
-  }>;
+  author?:
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      };
+  contributors?: Array<
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      }
+  >;
   license?: string;
   bugs?: {
     url?: string;
@@ -42,10 +49,12 @@ export interface PackageJsonConfig {
   };
   homepage?: string;
   private?: boolean;
-  workspaces?: string[] | {
-    packages?: string[];
-    nohoist?: string[];
-  };
+  workspaces?:
+    | string[]
+    | {
+        packages?: string[];
+        nohoist?: string[];
+      };
   resolutions?: Record<string, string>;
   overrides?: Record<string, string>;
   exports?: Record<string, unknown>;
@@ -88,7 +97,7 @@ export interface TSConfig {
     strictNullChecks?: boolean;
     strictPropertyInitialization?: boolean;
     useUnknownInCatchVariables?: boolean;
-    
+
     // Modules
     allowArbitraryExtensions?: boolean;
     allowImportingTsExtensions?: boolean;
@@ -107,7 +116,7 @@ export interface TSConfig {
     rootDirs?: string[];
     typeRoots?: string[];
     types?: string[];
-    
+
     // Emit
     declaration?: boolean;
     declarationDir?: string;
@@ -132,16 +141,16 @@ export interface TSConfig {
     sourceMap?: boolean;
     sourceRoot?: string;
     stripInternal?: boolean;
-    
+
     // JavaScript Support
     allowJs?: boolean;
     checkJs?: boolean;
     maxNodeModuleJsDepth?: number;
-    
+
     // Editor Support
     disableSizeLimit?: boolean;
     plugins?: Array<{ name: string; [key: string]: unknown }>;
-    
+
     // Interop Constraints
     allowSyntheticDefaultImports?: boolean;
     esModuleInterop?: boolean;
@@ -149,7 +158,7 @@ export interface TSConfig {
     isolatedModules?: boolean;
     preserveSymlinks?: boolean;
     verbatimModuleSyntax?: boolean;
-    
+
     // Language and Environment
     emitDecoratorMetadata?: boolean;
     experimentalDecorators?: boolean;
@@ -163,7 +172,7 @@ export interface TSConfig {
     reactNamespace?: string;
     target?: string;
     useDefineForClassFields?: boolean;
-    
+
     // Compiler Diagnostics
     diagnostics?: boolean;
     explainFiles?: boolean;
@@ -172,7 +181,7 @@ export interface TSConfig {
     listEmittedFiles?: boolean;
     listFiles?: boolean;
     traceResolution?: boolean;
-    
+
     // Projects
     composite?: boolean;
     disableReferencedProjectLoad?: boolean;
@@ -180,16 +189,16 @@ export interface TSConfig {
     disableSourceOfProjectReferenceRedirect?: boolean;
     incremental?: boolean;
     tsBuildInfoFile?: string;
-    
+
     // Output Formatting
     noErrorTruncation?: boolean;
     preserveWatchOutput?: boolean;
     pretty?: boolean;
-    
+
     // Completeness
     skipDefaultLibCheck?: boolean;
     skipLibCheck?: boolean;
-    
+
     [key: string]: unknown; // Allow additional options
   };
   include?: string[];
@@ -234,7 +243,6 @@ export interface ASTNode {
   };
   [key: string]: unknown; // Allow additional AST properties
 }
-
 
 // Project context with properly typed fields (no any)
 export interface ProjectContext {

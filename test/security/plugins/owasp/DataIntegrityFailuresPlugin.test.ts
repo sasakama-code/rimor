@@ -45,16 +45,14 @@ describe('DataIntegrityFailuresPlugin', () => {
 
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
-    expect(plugin.cweIds).toEqual([
-      'CWE-494', 'CWE-502', 'CWE-829'
-    ]);
+    expect(plugin.cweIds).toEqual(['CWE-494', 'CWE-502', 'CWE-829']);
   });
 
   describe('isApplicable', () => {
     // ステップ8: CI/CDまたはデプロイ関連の依存関係がある場合
     it('should return true when CI/CD or deployment tools are present', () => {
       const context: ProjectContext = {
-        dependencies: ['@actions/core', 'semantic-release']
+        dependencies: ['@actions/core', 'semantic-release'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -62,7 +60,7 @@ describe('DataIntegrityFailuresPlugin', () => {
     // ステップ9: シリアライゼーション関連の依存関係がある場合
     it('should return true when serialization libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['serialize-javascript', 'node-serialize']
+        dependencies: ['serialize-javascript', 'node-serialize'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -74,8 +72,8 @@ describe('DataIntegrityFailuresPlugin', () => {
         filePatterns: {
           source: ['src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -91,11 +89,13 @@ describe('DataIntegrityFailuresPlugin', () => {
             const signature = sign(package, privateKey);
             expect(verifySignature(package, signature, publicKey)).toBe(true);
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const signaturePattern = patterns.find(p => p.patternId && p.patternId.includes('signature-verification'));
+      const signaturePattern = patterns.find(
+        p => p.patternId && p.patternId.includes('signature-verification')
+      );
       expect(signaturePattern).toBeDefined();
     });
 
@@ -110,11 +110,13 @@ describe('DataIntegrityFailuresPlugin', () => {
               expect(() => deserialize(maliciousData)).toThrow();
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const deserializationPattern = patterns.find(p => p.patternId && p.patternId.includes('deserialization'));
+      const deserializationPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('deserialization')
+      );
       expect(deserializationPattern).toBeDefined();
     });
 
@@ -127,11 +129,13 @@ describe('DataIntegrityFailuresPlugin', () => {
             const result = deploy();
             expect(result.status).toBe('success');
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-integrity-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-integrity-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -140,9 +144,21 @@ describe('DataIntegrityFailuresPlugin', () => {
     // ステップ14: 高品質スコアの評価
     it('should return high score when integrity tests exist', () => {
       const patterns = [
-        { patternId: 'integrity-signature-verification', metadata: { hasTest: true, testType: 'signature-verification' }, confidence: 0.9 },
-        { patternId: 'integrity-deserialization', metadata: { hasTest: true, testType: 'deserialization' }, confidence: 0.9 },
-        { patternId: 'integrity-cicd', metadata: { hasTest: true, testType: 'cicd' }, confidence: 0.85 }
+        {
+          patternId: 'integrity-signature-verification',
+          metadata: { hasTest: true, testType: 'signature-verification' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'integrity-deserialization',
+          metadata: { hasTest: true, testType: 'deserialization' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'integrity-cicd',
+          metadata: { hasTest: true, testType: 'cicd' },
+          confidence: 0.85,
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -155,7 +171,11 @@ describe('DataIntegrityFailuresPlugin', () => {
     it('should return low score when integrity tests are missing', () => {
       const patterns = [
         { patternId: 'missing-integrity-signature', metadata: { hasTest: false }, confidence: 1 },
-        { patternId: 'missing-integrity-deserialization', metadata: { hasTest: false }, confidence: 1 }
+        {
+          patternId: 'missing-integrity-deserialization',
+          metadata: { hasTest: false },
+          confidence: 1,
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -179,8 +199,8 @@ describe('DataIntegrityFailuresPlugin', () => {
           suggestions: ['デシリアライゼーション保護を追加'],
           signatureVerificationImplemented: false,
           deserializationSecure: false,
-          cicdSecurityImplemented: false
-        }
+          cicdSecurityImplemented: false,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -198,7 +218,7 @@ describe('DataIntegrityFailuresPlugin', () => {
           it('should verify signature', () => {
             expect(verifySignature(data, sig)).toBe(true);
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -229,7 +249,7 @@ describe('DataIntegrityFailuresPlugin', () => {
     it('should generate integrity security test code', () => {
       const context: ProjectContext = {
         dependencies: ['@actions/core', 'serialize-javascript'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

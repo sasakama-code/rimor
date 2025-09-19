@@ -1,8 +1,8 @@
 /**
  * Type Coverage Check Tests
- * 
+ *
  * bc依存除去のための型カバレッジチェック機能のテスト
- * 
+ *
  * TDD原則に従いRED（失敗）フェーズから開始
  * Issue #94対応: bc依存除去リファクタリング
  */
@@ -18,12 +18,12 @@ describe('TypeCoverageCheck', () => {
   beforeEach(() => {
     // プロセス環境のバックアップ
     originalEnv = { ...process.env };
-    
+
     // ファイルシステムのモック
     mockFs = {
       existsSync: jest.fn(),
       readFileSync: jest.fn(),
-      writeFileSync: jest.fn()
+      writeFileSync: jest.fn(),
     };
 
     // プロセス環境のモック
@@ -31,11 +31,11 @@ describe('TypeCoverageCheck', () => {
       env: { ...originalEnv },
       exit: jest.fn(),
       stdout: {
-        write: jest.fn()
+        write: jest.fn(),
       },
       stderr: {
-        write: jest.fn()
-      }
+        write: jest.fn(),
+      },
     };
   });
 
@@ -55,9 +55,9 @@ describe('TypeCoverageCheck', () => {
 
       // 期待される動作（GREEN フェーズ後）
       // const result = typeCoverageCheck.checkTypeCoverage(97.5, 95);
-      // expect(result).toEqual({ 
-      //   status: 'success', 
-      //   message: '✅ 型カバレッジ: 97.5% (目標: 95%)' 
+      // expect(result).toEqual({
+      //   status: 'success',
+      //   message: '✅ 型カバレッジ: 97.5% (目標: 95%)'
       // });
     });
 
@@ -70,9 +70,9 @@ describe('TypeCoverageCheck', () => {
 
       // 期待される動作（GREEN フェーズ後）
       // const result = typeCoverageCheck.checkTypeCoverage(92.3, 95);
-      // expect(result).toEqual({ 
-      //   status: 'warning', 
-      //   message: '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)' 
+      // expect(result).toEqual({
+      //   status: 'warning',
+      //   message: '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)'
       // });
     });
 
@@ -85,9 +85,9 @@ describe('TypeCoverageCheck', () => {
 
       // 期待される動作（GREEN フェーズ後）
       // const result = typeCoverageCheck.checkTypeCoverage(95.0, 95);
-      // expect(result).toEqual({ 
-      //   status: 'success', 
-      //   message: '✅ 型カバレッジ: 95% (目標: 95%)' 
+      // expect(result).toEqual({
+      //   status: 'success',
+      //   message: '✅ 型カバレッジ: 95% (目標: 95%)'
       // });
     });
 
@@ -108,8 +108,8 @@ describe('TypeCoverageCheck', () => {
     test('有効なtype-coverage.jsonを解析できる', () => {
       const mockTypeCoverageData = {
         metrics: {
-          coverage: 97.5
-        }
+          coverage: 97.5,
+        },
       };
 
       // RED: この段階では未実装なので失敗予定
@@ -122,7 +122,7 @@ describe('TypeCoverageCheck', () => {
       // mockFs.existsSync.mockReturnValue(true);
       // mockFs.readFileSync.mockReturnValue(JSON.stringify(mockTypeCoverageData));
       // const result = typeCoverageCheck.parseTypeCoverageFile(
-      //   '.rimor/reports/type-coverage/type-coverage.json', 
+      //   '.rimor/reports/type-coverage/type-coverage.json',
       //   mockFs
       // );
       // expect(result).toEqual(97.5);
@@ -159,7 +159,7 @@ describe('TypeCoverageCheck', () => {
 
     test('metrics.coverageプロパティが存在しない場合', () => {
       const mockInvalidData = {
-        otherProperty: 'value'
+        otherProperty: 'value',
       };
 
       // RED: この段階では未実装なので失敗予定
@@ -200,7 +200,10 @@ describe('TypeCoverageCheck', () => {
       // RED: この段階では未実装なので失敗予定
       expect(() => {
         const typeCoverageCheck = require('../../scripts/type-coverage-check');
-        typeCoverageCheck.outputMessage('warning', '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)');
+        typeCoverageCheck.outputMessage(
+          'warning',
+          '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)'
+        );
       }).toThrow();
 
       // 期待される動作（GREEN フェーズ後）
@@ -226,18 +229,18 @@ describe('TypeCoverageCheck', () => {
       // mockFs.existsSync.mockReturnValue(true);
       // mockFs.readFileSync.mockReturnValue(JSON.stringify(mockTypeCoverageData));
       // mockProcess.env.GITHUB_OUTPUT = '/tmp/github_output';
-      
+
       // const result = typeCoverageCheck.main({
       //   typeCoverageFile: '.rimor/reports/type-coverage/type-coverage.json',
       //   threshold: 95,
       //   fs: mockFs,
       //   process: mockProcess
       // });
-      
-      // expect(result).toEqual({ 
-      //   success: true, 
+
+      // expect(result).toEqual({
+      //   success: true,
       //   coverage: 97.5,
-      //   message: '✅ 型カバレッジ: 97.5% (目標: 95%)' 
+      //   message: '✅ 型カバレッジ: 97.5% (目標: 95%)'
       // });
     });
 
@@ -255,18 +258,18 @@ describe('TypeCoverageCheck', () => {
       // mockFs.existsSync.mockReturnValue(true);
       // mockFs.readFileSync.mockReturnValue(JSON.stringify(mockTypeCoverageData));
       // mockProcess.env.GITHUB_OUTPUT = '/tmp/github_output';
-      
+
       // const result = typeCoverageCheck.main({
       //   typeCoverageFile: '.rimor/reports/type-coverage/type-coverage.json',
       //   threshold: 95,
       //   fs: mockFs,
       //   process: mockProcess
       // });
-      
-      // expect(result).toEqual({ 
-      //   success: false, 
+
+      // expect(result).toEqual({
+      //   success: false,
       //   coverage: 92.3,
-      //   message: '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)' 
+      //   message: '⚠️ 型カバレッジが目標を下回っています: 92.3% (目標: 95%)'
       // });
     });
   });

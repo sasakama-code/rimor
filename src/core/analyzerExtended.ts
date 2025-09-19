@@ -3,18 +3,12 @@
  * Migration guide: Replace AnalyzerExtended with UnifiedAnalysisEngine
  */
 
-import { 
-  UnifiedAnalysisEngine, 
+import {
+  UnifiedAnalysisEngine,
   ExtendedAnalysisResult as NewExtendedAnalysisResult,
-  BatchAnalysisSummary as NewBatchAnalysisSummary 
+  BatchAnalysisSummary as NewBatchAnalysisSummary,
 } from './UnifiedAnalysisEngine';
-import { 
-  ITestQualityPlugin, 
-  IPlugin, 
-  ProjectContext,
-  QualityScore,
-  Improvement
-} from './types';
+import { ITestQualityPlugin, IPlugin, ProjectContext, QualityScore, Improvement } from './types';
 import { AnalysisOptions } from './UnifiedPluginManager';
 
 /**
@@ -31,10 +25,10 @@ export interface BatchAnalysisSummary {
   totalFiles: number;
   averageScore: number;
   scoreDistribution: {
-    excellent: number;  // 90-100
-    good: number;       // 70-89
-    fair: number;       // 50-69
-    poor: number;       // 0-49
+    excellent: number; // 90-100
+    good: number; // 70-89
+    fair: number; // 50-69
+    poor: number; // 0-49
   };
   commonIssues: string[];
   totalRecommendations: number;
@@ -68,16 +62,16 @@ export class AnalyzerExtended {
 
   // 単一ファイルの品質分析
   async analyzeWithQuality(
-    filePath: string, 
-    context: ProjectContext, 
+    filePath: string,
+    context: ProjectContext,
     options: AnalysisOptions = {}
   ): Promise<ExtendedAnalysisResult> {
     this.engine.configure(options);
-    
+
     // UnifiedAnalysisEngineのanalyzeWithQualityメソッドを直接呼び出す
     // contextは現在使用されていないが、将来の拡張のために保持
     const result = await this.engine.analyzeWithQuality(filePath);
-    
+
     return result;
   }
 
@@ -89,19 +83,19 @@ export class AnalyzerExtended {
   ): Promise<{ summary: BatchAnalysisSummary; files: ExtendedAnalysisResult[] }> {
     this.engine.configure(options);
     const batchResult = await this.engine.analyzeBatch([directoryPath]);
-    
+
     // Convert to legacy format
     const summary: BatchAnalysisSummary = {
       totalFiles: batchResult.totalFiles,
       averageScore: batchResult.averageScore,
       scoreDistribution: batchResult.scoreDistribution,
       commonIssues: [],
-      totalRecommendations: 0
+      totalRecommendations: 0,
     };
-    
+
     return {
       summary,
-      files: batchResult.files
+      files: batchResult.files,
     };
   }
 
@@ -112,12 +106,12 @@ export class AnalyzerExtended {
     options: AnalysisOptions = {}
   ): Promise<ExtendedAnalysisResult[]> {
     this.engine.configure(options);
-    
+
     // 並列処理で各ファイルを分析
-    const analysisPromises = filePaths.map(filePath => 
+    const analysisPromises = filePaths.map(filePath =>
       this.analyzeWithQuality(filePath, context, options)
     );
-    
+
     return await Promise.all(analysisPromises);
   }
 
@@ -148,17 +142,18 @@ export class AnalyzerExtended {
     const totalFiles = results.length;
     const scores = results.map(r => r.aggregatedScore?.overall || 0);
     const averageScore = scores.reduce((sum, score) => sum + score, 0) / totalFiles;
-    
+
     const scoreDistribution = {
       excellent: scores.filter(s => s >= 90).length,
       good: scores.filter(s => s >= 70 && s < 90).length,
       fair: scores.filter(s => s >= 50 && s < 70).length,
-      poor: scores.filter(s => s < 50).length
+      poor: scores.filter(s => s < 50).length,
     };
 
     const commonIssues: string[] = [];
-    const totalRecommendations = results.reduce((sum, r) => 
-      sum + (r.recommendations?.length || 0), 0
+    const totalRecommendations = results.reduce(
+      (sum, r) => sum + (r.recommendations?.length || 0),
+      0
     );
 
     return {
@@ -166,7 +161,7 @@ export class AnalyzerExtended {
       averageScore,
       scoreDistribution,
       commonIssues,
-      totalRecommendations
+      totalRecommendations,
     };
   }
 }

@@ -15,7 +15,7 @@ const originalLog = console.log;
 // 全テスト環境で問題のあるエラーログを抑制
 console.error = (...args) => {
   const message = args.join(' ');
-  
+
   // セキュリティ機能による予期されるエラーログを抑制
   const suppressPatterns = [
     'Context integration failed:',
@@ -26,33 +26,35 @@ console.error = (...args) => {
     'セキュリティ警告:',
     '危険なプロパティ名を検出',
     'Error reading file',
-    'Error cleaning up annotations'
+    'Error cleaning up annotations',
   ];
-  
-  if (suppressPatterns.some(pattern => message.includes(pattern)) ||
-      (message.includes('[2025-') && message.includes('UNKNOWN:'))) {
+
+  if (
+    suppressPatterns.some(pattern => message.includes(pattern)) ||
+    (message.includes('[2025-') && message.includes('UNKNOWN:'))
+  ) {
     return;
   }
-  
+
   originalError.apply(console, args);
 };
 
 console.warn = (...args) => {
   const message = args.join(' ');
-  
+
   // 既知の警告を抑制
   const warnSuppressPatterns = [
     'プラグインサンドボックス',
     '重み設定の読み込み',
     '設定ディレクトリのパス',
     '設定ファイル警告:',
-    'セキュリティ警告（修正済み）:'
+    'セキュリティ警告（修正済み）:',
   ];
-  
+
   if (warnSuppressPatterns.some(pattern => message.includes(pattern))) {
     return;
   }
-  
+
   originalWarn.apply(console, args);
 };
 
@@ -61,13 +63,13 @@ if (process.env.CI === 'true') {
   console.log = (...args) => {
     // CI環境では不要なデバッグログのみを抑制
     const message = args.join(' ');
-    
+
     // 絵文字を含むログを抑制
     const emojiPattern = /[🛡️🔧📋🤖✏️📥⚙️🚀📝🌐📁✅📄🔍⚡🏗️]/;
     if (emojiPattern.test(message)) {
       return;
     }
-    
+
     // その他の抑制パターン
     const ciSuppressPatterns = [
       'フィードバック',
@@ -83,13 +85,15 @@ if (process.env.CI === 'true') {
       '検証中',
       '件検出',
       '包括検証',
-      'フレームワーク別'
+      'フレームワーク別',
     ];
-    
-    if (ciSuppressPatterns.some(pattern => {
-      const regex = new RegExp(pattern);
-      return regex.test(message);
-    })) {
+
+    if (
+      ciSuppressPatterns.some(pattern => {
+        const regex = new RegExp(pattern);
+        return regex.test(message);
+      })
+    ) {
       return;
     }
     originalLog.apply(console, args);
@@ -98,13 +102,13 @@ if (process.env.CI === 'true') {
   // ローカル環境でもテスト時は辞書ブートストラップ出力を抑制
   console.log = (...args) => {
     const message = args.join(' ');
-    
+
     // 絵文字を含むログを抑制
     const emojiPattern = /[🔧🤖✏️📥📋🚀🌐📁✅📄🔍⚡🏗️]/;
     if (emojiPattern.test(message)) {
       return;
     }
-    
+
     // その他の抑制パターン
     const localSuppressPatterns = [
       '辞書の初期化方法を選択してください',
@@ -117,13 +121,13 @@ if (process.env.CI === 'true') {
       '検証中',
       '件検出',
       '包括検証',
-      'フレームワーク別'
+      'フレームワーク別',
     ];
-    
+
     if (localSuppressPatterns.some(pattern => message.includes(pattern))) {
       return;
     }
-    
+
     originalLog.apply(console, args);
   };
 }
@@ -150,7 +154,9 @@ afterEach(() => {
 if (process.env.NODE_OPTIONS && !process.env.NODE_OPTIONS.includes('--max-old-space-size')) {
   // メモリ制限が設定されていない場合のみ警告
   if (process.env.CI !== 'true') {
-    console.warn('メモリ制限が設定されていません。NODE_OPTIONS="--max-old-space-size=6144" の設定を推奨します');
+    console.warn(
+      'メモリ制限が設定されていません。NODE_OPTIONS="--max-old-space-size=6144" の設定を推奨します'
+    );
   }
 }
 
@@ -167,7 +173,7 @@ if (process.env.CI === 'true') {
   const fs = require('fs/promises');
   const originalMkdir = fs.mkdir;
   const originalWriteFile = fs.writeFile;
-  
+
   // mkdir の IO 負荷軽減
   fs.mkdir = async (path, options) => {
     // test-feedback-data ディレクトリの作成をスキップ
@@ -176,7 +182,7 @@ if (process.env.CI === 'true') {
     }
     return originalMkdir.call(fs, path, options);
   };
-  
+
   // writeFile の IO 負荷軽減
   fs.writeFile = async (path, data, options) => {
     // test-feedback-data 配下のファイル書き込みをスキップ
@@ -199,7 +205,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // process.exit のモック
 const originalExit = process.exit;
-process.exit = jest.fn().mockImplementation((code) => {
+process.exit = jest.fn().mockImplementation(code => {
   // テスト環境ではプロセスを実際に終了させない
   console.log(`process.exit called with code: ${code}`);
   // 元の process.exit を呼び出さずに、例外をスローしてテストを終了

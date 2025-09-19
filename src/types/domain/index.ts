@@ -1,6 +1,6 @@
 /**
  * ドメイン関連の統一型定義
- * 
+ *
  * ドメイン駆動設計に基づく型定義を集約
  * SOLID原則に従った設計
  */
@@ -8,25 +8,25 @@
 /**
  * ドメイン分類
  */
-export type DomainCategory = 
-  | 'CORE'           // コアドメイン
-  | 'SUPPORTING'     // 支援ドメイン
-  | 'GENERIC'        // 汎用ドメイン
-  | 'EXTERNAL';      // 外部ドメイン
+export type DomainCategory =
+  | 'CORE' // コアドメイン
+  | 'SUPPORTING' // 支援ドメイン
+  | 'GENERIC' // 汎用ドメイン
+  | 'EXTERNAL'; // 外部ドメイン
 
 /**
  * ドメインレイヤー
  */
-export type DomainLayer = 
-  | 'PRESENTATION'   // プレゼンテーション層
-  | 'APPLICATION'    // アプリケーション層
-  | 'DOMAIN'         // ドメイン層
+export type DomainLayer =
+  | 'PRESENTATION' // プレゼンテーション層
+  | 'APPLICATION' // アプリケーション層
+  | 'DOMAIN' // ドメイン層
   | 'INFRASTRUCTURE'; // インフラストラクチャ層
 
 /**
  * ドメインパターン
  */
-export type DomainPattern = 
+export type DomainPattern =
   | 'ENTITY'
   | 'VALUE_OBJECT'
   | 'AGGREGATE'
@@ -250,7 +250,8 @@ export interface DomainAnalysisResult {
  * 型ガード: DomainContextかどうかを判定
  */
 export function isDomainContext(obj: unknown): obj is DomainContext {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'name' in obj &&
     'category' in obj &&
@@ -259,14 +260,16 @@ export function isDomainContext(obj: unknown): obj is DomainContext {
     typeof (obj as any).name === 'string' &&
     (obj as any).category !== undefined &&
     (obj as any).layer !== undefined &&
-    Array.isArray((obj as any).entities));
+    Array.isArray((obj as any).entities)
+  );
 }
 
 /**
  * 型ガード: DomainEntityかどうかを判定
  */
 export function isDomainEntity(obj: unknown): obj is DomainEntity {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'id' in obj &&
     'name' in obj &&
@@ -275,14 +278,16 @@ export function isDomainEntity(obj: unknown): obj is DomainEntity {
     typeof (obj as any).id === 'string' &&
     typeof (obj as any).name === 'string' &&
     (obj as any).type !== undefined &&
-    Array.isArray((obj as any).properties);
+    Array.isArray((obj as any).properties)
+  );
 }
 
 /**
  * 型ガード: DomainEventかどうかを判定
  */
 export function isDomainEvent(obj: unknown): obj is DomainEvent {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'name' in obj &&
     'timestamp' in obj &&
@@ -291,7 +296,8 @@ export function isDomainEvent(obj: unknown): obj is DomainEvent {
     typeof (obj as any).name === 'string' &&
     typeof (obj as any).timestamp === 'string' &&
     typeof (obj as any).aggregateId === 'string' &&
-    (obj as any).payload !== undefined;
+    (obj as any).payload !== undefined
+  );
 }
 
 /**
@@ -301,7 +307,7 @@ export function calculateDomainComplexity(model: DomainModel): number {
   const entityCount = model.aggregates.reduce((sum, agg) => sum + agg.entities.length, 0);
   const relationshipCount = model.relationships.length;
   const contextCount = model.contexts.length;
-  
+
   // 簡単な複雑度計算
   return entityCount * 2 + relationshipCount * 3 + contextCount;
 }

@@ -118,7 +118,7 @@ describe('Error Type Safety', () => {
         'String error',
         { message: 'Object error' },
         null,
-        undefined
+        undefined,
       ];
 
       testCases.forEach(testCase => {

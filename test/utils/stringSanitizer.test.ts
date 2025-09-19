@@ -5,7 +5,7 @@ import {
   trimTrailingWhitespace,
   sanitizeForAIReport,
   sanitizeObject,
-  sanitizeJsonString
+  sanitizeJsonString,
 } from '../../src/utils/stringSanitizer';
 
 describe('stringSanitizer', () => {
@@ -17,8 +17,9 @@ describe('stringSanitizer', () => {
     });
 
     it('複雑なANSIコードを除去する', () => {
-      const input = '\u001b[7m2\u001b[0m import { validate } from \u001b[91m\'class-validator\'\u001b[0m;';
-      const expected = '2 import { validate } from \'class-validator\';';
+      const input =
+        "\u001b[7m2\u001b[0m import { validate } from \u001b[91m'class-validator'\u001b[0m;";
+      const expected = "2 import { validate } from 'class-validator';";
       expect(stripAnsiCodes(input)).toBe(expected);
     });
 
@@ -98,9 +99,9 @@ Details:
 
     it('実際のJestエラーメッセージをサニタイズする', () => {
       const input = `\u001b[96mdocs/test.ts\u001b[0m:\u001b[93m2\u001b[0m:\u001b[93m26\u001b[0m - \u001b[91merror\u001b[0m\u001b[90m TS2307: \u001b[0mCannot find module 'class-validator'\\n\\n\u001b[7m2\u001b[0m import { validate } from 'class-validator';\\n\u001b[7m \u001b[0m \u001b[91m                         ~~~~~~~~~~~~~~~~~\u001b[0m`;
-      
+
       const result = sanitizeForAIReport(input);
-      
+
       // ANSIコードが除去されている
       expect(result).not.toContain('\u001b');
       // モジュール名が残っている
@@ -125,12 +126,12 @@ Details:
         stack: 'at test.ts:10    ',
         details: {
           message: 'Test\\nfailed',
-          code: '\u001b[96m100\u001b[0m'
-        }
+          code: '\u001b[96m100\u001b[0m',
+        },
       };
-      
+
       const result = sanitizeObject(input);
-      
+
       expect(result.error).toBe('Error');
       expect(result.stack).toBe('at test.ts:10');
       expect(result.details.message).toBe('Test\nfailed');
@@ -139,15 +140,11 @@ Details:
 
     it('配列内の要素もサニタイズする', () => {
       const input = {
-        errors: [
-          '\u001b[31mError 1\u001b[0m',
-          '\u001b[96mError 2\u001b[0m',
-          'Normal error'
-        ]
+        errors: ['\u001b[31mError 1\u001b[0m', '\u001b[96mError 2\u001b[0m', 'Normal error'],
       };
-      
+
       const result = sanitizeObject(input);
-      
+
       expect(result.errors).toEqual(['Error 1', 'Error 2', 'Normal error']);
     });
 
@@ -156,14 +153,14 @@ Details:
         level1: {
           level2: {
             level3: {
-              message: '\u001b[31mDeep error\u001b[0m'
-            }
-          }
-        }
+              message: '\u001b[31mDeep error\u001b[0m',
+            },
+          },
+        },
       };
-      
+
       const result = sanitizeObject(input);
-      
+
       expect(result.level1.level2.level3.message).toBe('Deep error');
     });
 
@@ -179,12 +176,12 @@ Details:
     it('JSON文字列をパースしてサニタイズする', () => {
       const input = JSON.stringify({
         error: '\u001b[31mError\u001b[0m',
-        details: 'Test\\nfailed'
+        details: 'Test\\nfailed',
       });
-      
+
       const result = sanitizeJsonString(input);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.error).toBe('Error');
       expect(parsed.details).toBe('Test\nfailed');
     });
@@ -192,7 +189,7 @@ Details:
     it('無効なJSONの場合は文字列としてサニタイズする', () => {
       const input = 'Not a valid JSON \u001b[31mstring\u001b[0m';
       const result = sanitizeJsonString(input);
-      
+
       expect(result).toBe('Not a valid JSON string');
     });
 
@@ -204,16 +201,16 @@ Details:
             errors: [
               {
                 message: '\u001b[96mCannot find module\u001b[0m',
-                stack: '  at test.ts:10\\n  at test.ts:20  '
-              }
-            ]
-          }
-        ]
+                stack: '  at test.ts:10\\n  at test.ts:20  ',
+              },
+            ],
+          },
+        ],
       });
-      
+
       const result = sanitizeJsonString(input);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.errorGroups[0].errors[0].message).toBe('Cannot find module');
       expect(parsed.errorGroups[0].errors[0].stack).toBe('  at test.ts:10\n  at test.ts:20');
     });

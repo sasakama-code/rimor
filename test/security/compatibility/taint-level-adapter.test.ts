@@ -1,10 +1,10 @@
 import { TaintLevelAdapter } from '../../../src/security/compatibility/taint-level-adapter';
 import { TaintLevel, TaintSource, TaintMetadata } from '../../../src/security/types/taint';
-import { 
+import {
   TaintQualifier,
   TypeConstructors,
   TypeGuards,
-  TaintedType
+  TaintedType,
 } from '../../../src/security/types/checker-framework-types';
 
 describe('TaintLevelAdapter', () => {
@@ -38,10 +38,7 @@ describe('TaintLevelAdapter', () => {
   describe('toQualifiedType', () => {
     it('クリーンな値をUntaintedTypeに変換する', () => {
       const value = 'clean data';
-      const qualified = TaintLevelAdapter.toQualifiedType(
-        value, 
-        TaintLevel.CLEAN
-      );
+      const qualified = TaintLevelAdapter.toQualifiedType(value, TaintLevel.CLEAN);
 
       expect(TypeGuards.isUntainted(qualified)).toBe(true);
       expect(qualified.__value).toBe(value);
@@ -89,14 +86,14 @@ describe('TaintLevelAdapter', () => {
     it('UntaintedTypeをCLEANレベルに変換する', () => {
       const untainted = TypeConstructors.untainted('clean');
       const level = TaintLevelAdapter.fromQualifiedType(untainted);
-      
+
       expect(level).toBe(TaintLevel.CLEAN);
     });
 
     it('TaintedTypeを適切なレベルに変換する', () => {
       const tainted = TypeConstructors.tainted('dirty', TaintSource.USER_INPUT);
       const level = TaintLevelAdapter.fromQualifiedType(tainted);
-      
+
       expect(level).toBe(TaintLevel.HIGHLY_TAINTED);
     });
 
@@ -157,7 +154,7 @@ describe('TaintLevelAdapter', () => {
       const items = [
         { value: 'clean', level: TaintLevel.CLEAN },
         { value: 'tainted', level: TaintLevel.DEFINITELY_TAINTED },
-        { value: 'critical', level: TaintLevel.HIGHLY_TAINTED }
+        { value: 'critical', level: TaintLevel.HIGHLY_TAINTED },
       ];
 
       const converted = TaintLevelAdapter.batchConvert(items);
@@ -178,11 +175,11 @@ describe('TaintLevelAdapter', () => {
         TaintLevel.POSSIBLY_TAINTED,
         TaintLevel.LIKELY_TAINTED,
         TaintLevel.DEFINITELY_TAINTED,
-        TaintLevel.HIGHLY_TAINTED
+        TaintLevel.HIGHLY_TAINTED,
       ];
 
       const qualifiers = levels.map(l => TaintLevelAdapter.toTaintQualifier(l));
-      
+
       // 最初の2つは@Untainted、残りは@Tainted
       expect(qualifiers.slice(0, 2).every(q => q === '@Untainted')).toBe(true);
       expect(qualifiers.slice(2).every(q => q === '@Tainted')).toBe(true);
@@ -194,7 +191,7 @@ describe('TaintLevelAdapter', () => {
 
       // 結合操作のシミュレート
       const joined = TaintLevelAdapter.join(value1, value2);
-      
+
       expect(TypeGuards.isTainted(joined)).toBe(true);
     });
 
@@ -204,7 +201,7 @@ describe('TaintLevelAdapter', () => {
 
       // 交わり操作のシミュレート
       const met = TaintLevelAdapter.meet(value1, value2);
-      
+
       expect(TypeGuards.isUntainted(met)).toBe(true);
     });
   });
@@ -213,14 +210,14 @@ describe('TaintLevelAdapter', () => {
   // describe('移行サポート機能', () => {
   //   it('警告メッセージを生成する', () => {
   //     const warnings = TaintLevelAdapter.getMigrationWarnings(TaintLevel.LIKELY_TAINTED);
-  //     
+  //
   //     expect(warnings).toContain('LIKELY_TAINTED');
   //     expect(warnings).toContain('二値システム');
   //   });
 
   //   it('移行の推奨事項を提供する', () => {
   //     const recommendations = TaintLevelAdapter.getMigrationRecommendations();
-  //     
+  //
   //     expect(recommendations).toBeDefined();
   //     expect(recommendations.length).toBeGreaterThan(0);
   //   });

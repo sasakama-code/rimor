@@ -52,17 +52,12 @@ export class BenchmarkTargets {
       target5msPerFile: 5,
       timeout: 300000, // 5分
       targetDirectory: 'src',
-      excludePatterns: [
-        'tests/**',
-        'built/**',
-        'lib/**',
-        '*.d.ts'
-      ],
+      excludePatterns: ['tests/**', 'built/**', 'lib/**', '*.d.ts'],
       specialConfig: {
         memoryLimit: 4096, // 4GB
         maxWorkers: 4,
-        enableCache: true
-      }
+        enableCache: true,
+      },
     },
     {
       name: 'Ant Design',
@@ -77,13 +72,13 @@ export class BenchmarkTargets {
         'demo/**',
         'docs/**',
         '*.test.ts',
-        '*.test.tsx'
+        '*.test.tsx',
       ],
       specialConfig: {
         memoryLimit: 3072, // 3GB
         maxWorkers: 4,
-        enableCache: true
-      }
+        enableCache: true,
+      },
     },
     {
       name: 'Visual Studio Code',
@@ -92,19 +87,13 @@ export class BenchmarkTargets {
       target5msPerFile: 5,
       timeout: 360000, // 6分
       targetDirectory: 'src',
-      excludePatterns: [
-        'test/**',
-        'tests/**',
-        'out/**',
-        'extensions/**',
-        '*.test.ts'
-      ],
+      excludePatterns: ['test/**', 'tests/**', 'out/**', 'extensions/**', '*.test.ts'],
       specialConfig: {
         memoryLimit: 6144, // 6GB
         maxWorkers: 6,
-        enableCache: true
-      }
-    }
+        enableCache: true,
+      },
+    },
   ];
 
   /**
@@ -119,18 +108,12 @@ export class BenchmarkTargets {
       target5msPerFile: 5,
       timeout: 180000, // 3分
       targetDirectory: 'packages/mui-material/src',
-      excludePatterns: [
-        'test/**',
-        '__tests__/**',
-        '*.test.ts',
-        '*.test.tsx',
-        'docs/**'
-      ],
+      excludePatterns: ['test/**', '__tests__/**', '*.test.ts', '*.test.tsx', 'docs/**'],
       specialConfig: {
         memoryLimit: 2048, // 2GB
         maxWorkers: 3,
-        enableCache: true
-      }
+        enableCache: true,
+      },
     },
     {
       name: 'Storybook',
@@ -139,18 +122,12 @@ export class BenchmarkTargets {
       target5msPerFile: 5,
       timeout: 300000, // 5分
       targetDirectory: 'code/lib',
-      excludePatterns: [
-        'test/**',
-        '*.test.ts',
-        '*.test.js',
-        'stories/**',
-        'docs/**'
-      ],
+      excludePatterns: ['test/**', '*.test.ts', '*.test.js', 'stories/**', 'docs/**'],
       specialConfig: {
         memoryLimit: 4096, // 4GB
         maxWorkers: 4,
-        enableCache: true
-      }
+        enableCache: true,
+      },
     },
     {
       name: 'Deno',
@@ -159,18 +136,13 @@ export class BenchmarkTargets {
       target5msPerFile: 5,
       timeout: 240000, // 4分
       targetDirectory: 'cli',
-      excludePatterns: [
-        'tests/**',
-        'test_util/**',
-        '*.test.ts',
-        'testdata/**'
-      ],
+      excludePatterns: ['tests/**', 'test_util/**', '*.test.ts', 'testdata/**'],
       specialConfig: {
         memoryLimit: 3072, // 3GB
         maxWorkers: 4,
-        enableCache: true
-      }
-    }
+        enableCache: true,
+      },
+    },
   ];
 
   /**
@@ -205,9 +177,7 @@ export class BenchmarkTargets {
    * プロジェクト名でプロジェクトを検索
    */
   static getProjectByName(name: string): BenchmarkProject | undefined {
-    return this.getAllProjects().find(project => 
-      project.name.toLowerCase() === name.toLowerCase()
-    );
+    return this.getAllProjects().find(project => project.name.toLowerCase() === name.toLowerCase());
   }
 
   /**
@@ -231,7 +201,10 @@ export class BenchmarkTargets {
   /**
    * システムリソースに基づく推奨プロジェクトを取得
    */
-  static getRecommendedProjects(availableMemoryGB: number, cpuCount: number): {
+  static getRecommendedProjects(
+    availableMemoryGB: number,
+    cpuCount: number
+  ): {
     recommended: BenchmarkProject[];
     warnings: string[];
   } {
@@ -292,7 +265,7 @@ export class BenchmarkTargets {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -305,45 +278,45 @@ export class BenchmarkTargets {
         target5msPerFile: {
           target: 5,
           tolerance: 0.5, // ±0.5ms
-          description: '中規模プロジェクトで5ms/file目標の達成'
+          description: '中規模プロジェクトで5ms/file目標の達成',
         },
         memoryEfficiency: {
           maxMemoryPerGB: 2, // 1GBプロジェクトあたり最大2GB
-          description: 'メモリ効率の維持'
+          description: 'メモリ効率の維持',
         },
         parallelScaling: {
           minEfficiency: 0.7, // 70%以上の並列効率
-          description: 'CPU数に応じた線形スケーリング'
-        }
+          description: 'CPU数に応じた線形スケーリング',
+        },
       },
       accuracy: {
         fileAnalysisSuccess: {
           target: 0.95, // 95%以上
-          description: 'ファイル解析成功率'
+          description: 'ファイル解析成功率',
         },
         taintTyperAccuracy: {
-          target: 0.90, // 90%以上
-          description: 'TaintTyper検出精度'
+          target: 0.9, // 90%以上
+          description: 'TaintTyper検出精度',
         },
         intentExtractionSuccess: {
           target: 0.85, // 85%以上
-          description: 'Intent抽出成功率'
-        }
+          description: 'Intent抽出成功率',
+        },
       },
       quality: {
         testCoverage: {
-          target: 0.90, // 90%以上
-          description: 'テストカバレッジ'
+          target: 0.9, // 90%以上
+          description: 'テストカバレッジ',
         },
         typeCoverage: {
           target: 1.0, // 100%（anyの使用禁止）
-          description: '型カバレッジ'
+          description: '型カバレッジ',
         },
         zeroErrorExecution: {
           target: true,
-          description: 'ゼロエラー実行の保証'
-        }
-      }
+          description: 'ゼロエラー実行の保証',
+        },
+      },
     };
   }
 }

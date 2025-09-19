@@ -13,9 +13,10 @@ import * as path from 'path';
  */
 export function createTestContainer(): Container {
   const testContainer = new Container();
-  
+
   // AnalysisEngine のモック
-  testContainer.bind(TYPES.AnalysisEngine)
+  testContainer
+    .bind(TYPES.AnalysisEngine)
     .to(() => ({
       analyze: jest.fn().mockResolvedValue({
         projectPath: '',
@@ -24,48 +25,51 @@ export function createTestContainer(): Container {
             file: 'test.ts',
             line: 1,
             message: 'テスト用のissue',
-            severity: 'medium'
-          }
+            severity: 'medium',
+          },
         ],
         totalFiles: 1,
         analysisTime: 100,
-        cacheHitRate: 0
-      })
+        cacheHitRate: 0,
+      }),
     }))
     .asSingleton();
-  
+
   // Reporter のモック
-  testContainer.bind(TYPES.Reporter)
+  testContainer
+    .bind(TYPES.Reporter)
     .to(() => ({
       generateAnalysisReport: jest.fn().mockResolvedValue({
         success: true,
         outputPath: 'test-report.html',
-        content: 'Test report content'
+        content: 'Test report content',
       }),
       generateCombinedReport: jest.fn().mockResolvedValue({
         success: true,
-        outputPath: 'test-report.html', 
-        content: 'Test report content'
+        outputPath: 'test-report.html',
+        content: 'Test report content',
       }),
-      printToConsole: jest.fn()
+      printToConsole: jest.fn(),
     }))
     .asSingleton();
-  
+
   // SecurityAuditor のモック
-  testContainer.bind(TYPES.SecurityAuditor)
+  testContainer
+    .bind(TYPES.SecurityAuditor)
     .to(() => ({
-      audit: jest.fn().mockResolvedValue(null)
+      audit: jest.fn().mockResolvedValue(null),
     }))
     .asSingleton();
-  
+
   // PluginManager のモック
-  testContainer.bind(TYPES.PluginManager)
+  testContainer
+    .bind(TYPES.PluginManager)
     .to(() => ({
       register: jest.fn(),
-      getAll: jest.fn().mockReturnValue([])
+      getAll: jest.fn().mockReturnValue([]),
     }))
     .asSingleton();
-  
+
   return testContainer;
 }
 
@@ -81,12 +85,18 @@ export function createMockCliSecurity(): CLISecurity {
       allSecurityIssues: [],
       sanitizedArgs: {
         path: null, // オリジナルのpathを使用
-        format: null // オリジナルのformatを使用
+        format: null, // オリジナルのformatを使用
       },
       path: { isValid: true, sanitizedValue: '', errors: [], warnings: [], securityIssues: [] },
       format: { isValid: true, sanitizedValue: '', errors: [], warnings: [], securityIssues: [] },
-      outputFile: { isValid: true, sanitizedValue: '', errors: [], warnings: [], securityIssues: [] }
-    })
+      outputFile: {
+        isValid: true,
+        sanitizedValue: '',
+        errors: [],
+        warnings: [],
+        securityIssues: [],
+      },
+    }),
   } as any;
 }
 
@@ -96,23 +106,27 @@ export function createMockCliSecurity(): CLISecurity {
 export function createTestProject(baseDir: string, projectName: string = 'test-project'): string {
   const projectDir = path.join(baseDir, projectName);
   fs.mkdirSync(projectDir, { recursive: true });
-  
+
   // package.json
   fs.writeFileSync(
     path.join(projectDir, 'package.json'),
-    JSON.stringify({
-      name: projectName,
-      version: '1.0.0',
-      devDependencies: {
-        jest: '^27.0.0'
-      }
-    }, null, 2)
+    JSON.stringify(
+      {
+        name: projectName,
+        version: '1.0.0',
+        devDependencies: {
+          jest: '^27.0.0',
+        },
+      },
+      null,
+      2
+    )
   );
-  
+
   // ソースファイル
   const srcDir = path.join(projectDir, 'src');
   fs.mkdirSync(srcDir, { recursive: true });
-  
+
   fs.writeFileSync(
     path.join(srcDir, 'index.ts'),
     `export function add(a: number, b: number): number {
@@ -123,11 +137,11 @@ export function multiply(a: number, b: number): number {
   return a * b;
 }`
   );
-  
+
   // テストファイル
   const testDir = path.join(projectDir, 'test');
   fs.mkdirSync(testDir, { recursive: true });
-  
+
   fs.writeFileSync(
     path.join(testDir, 'index.test.ts'),
     `import { add } from '../src/index';
@@ -139,7 +153,7 @@ describe('add', () => {
   });
 });`
   );
-  
+
   return projectDir;
 }
 

@@ -37,7 +37,7 @@ describe('InjectionPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['mysql', 'express', 'sequelize'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -47,7 +47,7 @@ describe('InjectionPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['child_process', 'exec-sh'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -57,7 +57,7 @@ describe('InjectionPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['react', 'lodash'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       expect(plugin.isApplicable(context)).toBe(false);
@@ -80,11 +80,11 @@ describe('SQL Injection Prevention', () => {
     const query = db.prepare('SELECT * FROM users WHERE id = ?');
     query.run(userId);
   });
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.length).toBeGreaterThan(0);
       expect(patterns.some(p => p.pattern === 'sql-injection-test')).toBe(true);
       expect(patterns.some(p => p.metadata?.hasTest)).toBe(true);
@@ -102,11 +102,11 @@ it('should prevent command injection', () => {
 it('should escape shell arguments', () => {
   const escaped = escapeShellArg('test; echo hack');
   expect(escaped).toBe("'test; echo hack'");
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.some(p => p.pattern === 'command-injection-test')).toBe(true);
     });
 
@@ -119,11 +119,11 @@ describe('User Service', () => {
     const user = createUser({ name: 'test' });
     expect(user).toBeDefined();
   });
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.some(p => p.patternId?.startsWith('missing-injection-'))).toBe(true);
       expect(patterns.some((p: any) => p.severity === 'critical')).toBe(true);
     });
@@ -139,7 +139,7 @@ describe('User Service', () => {
           location: { file: '', line: 1, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.95,
-          metadata: { hasTest: true }
+          metadata: { hasTest: true },
         },
         {
           patternId: 'injection-command-injection-test',
@@ -148,7 +148,7 @@ describe('User Service', () => {
           location: { file: '', line: 10, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.9,
-          metadata: { hasTest: true }
+          metadata: { hasTest: true },
         },
         {
           patternId: 'injection-input-validation-test',
@@ -157,12 +157,12 @@ describe('User Service', () => {
           location: { file: '', line: 20, column: 0 },
           confidence: 0.8,
           securityRelevance: 0.8,
-          metadata: { hasTest: true }
-        }
+          metadata: { hasTest: true },
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
-      
+
       expect(score.overall).toBeGreaterThan(0.7);
       expect(score.security).toBeGreaterThan(0.7);
       expect((score.details as InjectionQualityDetails)?.sqlInjectionCoverage).toBe(100);
@@ -178,12 +178,12 @@ describe('User Service', () => {
           location: { file: '', line: 0, column: 0 },
           confidence: 1.0,
           securityRelevance: 0.95,
-          metadata: { hasTest: false }
-        }
+          metadata: { hasTest: false },
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
-      
+
       expect(score.overall).toBeLessThan(0.5);
       expect(score.security).toBeLessThan(0.5);
       expect((score.details as InjectionQualityDetails)?.sqlInjectionCoverage).toBe(0);
@@ -206,12 +206,12 @@ describe('User Service', () => {
           suggestions: ['入力検証を追加'],
           sqlInjectionCoverage: 0,
           commandInjectionCoverage: 0,
-          inputValidationCoverage: 0
-        }
+          inputValidationCoverage: 0,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
-      
+
       expect(improvements.length).toBeGreaterThan(0);
       expect(improvements.some(i => i.id === 'add-sql-injection-tests')).toBe(true);
       expect(improvements.some(i => i.priority === 'critical')).toBe(true);
@@ -235,11 +235,11 @@ describe('Injection Security', () => {
     const input = validateInput(userInput);
     expect(input).toMatch(/^[a-zA-Z0-9]+$/);
   });
-});`
+});`,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
-      
+
       expect(result.category).toBe(OWASPCategory.A03_INJECTION);
       expect(result.coverage).toBeGreaterThan(0);
       expect(result.testPatterns.length).toBeGreaterThan(0);
@@ -258,7 +258,7 @@ function getUser(userId) {
 const sql = \`SELECT * FROM products WHERE name = '\${productName}'\`;`;
 
       const issues = plugin.detectVulnerabilityPatterns(content);
-      
+
       expect(issues.length).toBeGreaterThan(0);
       expect(issues.some((i: any) => i.type === 'sql-injection')).toBe(true);
       expect(issues.some((i: any) => i.severity === 'critical')).toBe(true);
@@ -273,7 +273,7 @@ const command = \`rm -rf \${userPath}\`;
 shell.exec(command);`;
 
       const issues = plugin.detectVulnerabilityPatterns(content);
-      
+
       expect(issues.some((i: any) => i.type === 'command-injection')).toBe(true);
     });
 
@@ -285,7 +285,7 @@ eval(code);
 new Function(userInput)();`;
 
       const issues = plugin.detectVulnerabilityPatterns(content);
-      
+
       expect(issues.some((i: any) => i.type === 'code-injection')).toBe(true);
     });
   });
@@ -295,11 +295,11 @@ new Function(userInput)();`;
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['mysql', 'express'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       const tests = plugin.generateSecurityTests(context);
-      
+
       expect(tests.length).toBeGreaterThan(0);
       expect(tests.some(t => t.includes('SQL'))).toBe(true);
       expect(tests.some(t => t.includes('sanitize'))).toBe(true);
@@ -309,11 +309,11 @@ new Function(userInput)();`;
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['mongodb', 'mongoose'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       const tests = plugin.generateSecurityTests(context);
-      
+
       expect(tests.some(t => t.includes('NoSQL'))).toBe(true);
     });
   });
@@ -341,7 +341,7 @@ describe('Enterprise Injection Security', () => {
     tryQuery(maliciousInput);
     expect(securityLog.attempts).toContain(maliciousInput);
   });
-});`
+});`,
       };
 
       expect(plugin.validateEnterpriseRequirements!(testFile)).toBe(true);

@@ -1,16 +1,16 @@
 /**
  * Checker Framework互換層
  * arXiv:2504.18529v2 Section 2 & 4の実装
- * 
+ *
  * Checker Frameworkとの互換性を提供し、
  * 既存のJavaアノテーションやツールとの相互運用を可能にする
  */
 
-import { 
-  TaintQualifier, 
-  TaintedType, 
+import {
+  TaintQualifier,
+  TaintedType,
   UntaintedType,
-  PolyTaintType 
+  PolyTaintType,
 } from '../types/checker-framework-types';
 import {
   MethodSignature,
@@ -21,7 +21,7 @@ import {
   PolyTaintInstantiationResult,
   QualifiedValue,
   AnnotatedTypeFactory,
-  CheckerVisitor
+  CheckerVisitor,
 } from './checker-framework-types';
 
 /**
@@ -53,57 +53,61 @@ interface CheckerFrameworkType {
 export class CheckerFrameworkCompatibility {
   private typeSystem: PluggableTypeSystem;
   private qualifierHierarchy: QualifierHierarchy;
-  
+
   constructor() {
     this.typeSystem = new PluggableTypeSystem();
     this.qualifierHierarchy = new QualifierHierarchy();
   }
-  
+
   getTypeSystem(): PluggableTypeSystem {
     return this.typeSystem;
   }
-  
+
   process(files: string[]): void {
     // 実装予定
   }
-  
+
   getQualifierHierarchy(): QualifierHierarchy {
     return this.qualifierHierarchy;
   }
-  
+
   getAnnotatedTypeFactory(): AnnotatedTypeFactory {
     // 実装予定
     return {
       getAnnotatedType: (tree: unknown) => ({
         baseType: 'Object',
         annotations: [],
-        isSubtypeOf: () => false
+        isSubtypeOf: () => false,
       }),
       createType: (baseType: string, annotations: string[]) => ({
         baseType,
         annotations,
-        isSubtypeOf: () => false
-      })
+        isSubtypeOf: () => false,
+      }),
     };
   }
-  
+
   createVisitor(): CheckerVisitor {
     // 実装予定
     return {
       visitMethodInvocation: (node: unknown) => {},
       visitAssignment: (node: unknown) => {},
-      visitReturn: (node: unknown) => {}
+      visitReturn: (node: unknown) => {},
     };
   }
-  
+
   parseAnnotationFile(data: string): ParsedAnnotationFile {
     const annotations = new Map<string, string>();
-    const lines = data.trim().split('\n').map(l => l.trim()).filter(l => l);
-    
+    const lines = data
+      .trim()
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l);
+
     let currentPackage = '';
     let currentClass = '';
     let currentMethod = '';
-    
+
     for (const line of lines) {
       if (line.endsWith(':')) {
         const parts = line.slice(0, -1).trim().split(' ');
@@ -120,7 +124,7 @@ export class CheckerFrameworkCompatibility {
         if (colonIdx > -1) {
           const key = line.substring(0, colonIdx).trim();
           const value = line.substring(colonIdx + 1).trim();
-          
+
           if (key.startsWith('parameter')) {
             const paramIdx = key.split(' ')[1];
             const fullKey = `${currentPackage}.${currentClass}.${currentMethod}.parameter.${paramIdx}`;
@@ -132,26 +136,28 @@ export class CheckerFrameworkCompatibility {
         }
       }
     }
-    
+
     return {
       annotations,
       getAnnotation: (className: string, methodName: string, type: string, idx?: number) => {
         // 'process(String)String' 形式のメソッド名から 'process' を抽出
         const simpleMethodName = methodName.split('(')[0];
-        
+
         // classNameにパッケージが含まれているかチェック
         let searchKey: string;
         if (className.includes('.')) {
           // classNameにパッケージが含まれている場合はそのまま使用
-          searchKey = idx !== undefined
-            ? `${className}.${simpleMethodName}.${type}.${idx}`
-            : `${className}.${simpleMethodName}.${type}`;
+          searchKey =
+            idx !== undefined
+              ? `${className}.${simpleMethodName}.${type}.${idx}`
+              : `${className}.${simpleMethodName}.${type}`;
         } else {
           // パッケージが含まれていない場合は、すべてのキーから検索
-          const pattern = idx !== undefined
-            ? `.${className}.${simpleMethodName}.${type}.${idx}`
-            : `.${className}.${simpleMethodName}.${type}`;
-          
+          const pattern =
+            idx !== undefined
+              ? `.${className}.${simpleMethodName}.${type}.${idx}`
+              : `.${className}.${simpleMethodName}.${type}`;
+
           for (const [key, value] of annotations) {
             if (key.endsWith(pattern)) {
               return value;
@@ -159,36 +165,36 @@ export class CheckerFrameworkCompatibility {
           }
           return '';
         }
-        
+
         return annotations.get(searchKey) || '';
-      }
+      },
     };
   }
-  
+
   toCheckerFrameworkType(internalType: QualifiedValue): CheckerFrameworkType {
     return {
       qualifier: internalType.__brand,
-      baseType: typeof internalType.__value === 'string' ? 'String' : 'Object'
+      baseType: typeof internalType.__value === 'string' ? 'String' : 'Object',
     };
   }
-  
+
   fromCheckerFrameworkType(cfType: CheckerFrameworkType): QualifiedValue {
     if (cfType.qualifier === '@Tainted') {
       return {
         __brand: '@Tainted',
         __value: '',
         __source: 'checker-framework',
-        __confidence: 1.0
+        __confidence: 1.0,
       } as TaintedType<unknown>;
     } else {
       return {
         __brand: '@Untainted',
         __value: '',
-        __reason: 'from-checker-framework'
+        __reason: 'from-checker-framework',
       } as UntaintedType<unknown>;
     }
   }
-  
+
   createMigrationPlan(config: LibraryConfig): MigrationPlan {
     // 実装予定
     return {
@@ -197,12 +203,12 @@ export class CheckerFrameworkCompatibility {
           name: 'Phase 1',
           description: 'Initial migration',
           files: [],
-          order: 1
-        }
+          order: 1,
+        },
       ],
       totalFiles: 0,
       estimatedHours: 80,
-      riskLevel: 'medium' as const
+      riskLevel: 'medium' as const,
     };
   }
 }
@@ -228,26 +234,26 @@ export class AnnotationReader {
   readFromSource(code: string): Map<string, string> {
     const annotations = new Map<string, string>();
     const lines = code.split('\n');
-    
+
     let currentClass = '';
     let currentMethod = '';
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // クラス名の検出
       const classMatch = line.match(/class\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[1];
       }
-      
+
       // フィールドアノテーション
       const fieldMatch = line.match(/\/\*\s*@(\w+)\s*\*\/\s+\w+\s+(\w+);?/);
       if (fieldMatch) {
         const [, annotation, fieldName] = fieldMatch;
         annotations.set(`${currentClass}.${fieldName}`, `@${annotation}`);
       }
-      
+
       // 行コメント形式のアノテーション
       if (line.startsWith('//') && lines[i + 1]) {
         const annotationMatch = line.match(/\/\/\s*@(\w+)/);
@@ -259,7 +265,7 @@ export class AnnotationReader {
           annotations.set(`${currentClass}.${varName}`, `@${annotation}`);
         }
       }
-      
+
       // メソッドアノテーション
       const methodMatch = line.match(/\/\*\s*@\s*@(\w+)\s*\*\/\s+\w+\s+(\w+)\s*\(/);
       if (methodMatch) {
@@ -267,7 +273,7 @@ export class AnnotationReader {
         currentMethod = methodName;
         annotations.set(`${currentClass}.${methodName}`, `@${annotation}`);
       }
-      
+
       // パラメータアノテーション
       const paramMatch = line.match(/\(\/\*\s*@(\w+)\s*\*\/\s+\w+\s+(\w+)/);
       if (paramMatch) {
@@ -275,32 +281,32 @@ export class AnnotationReader {
         annotations.set(`${currentClass}.${currentMethod}.${paramName}`, `@${annotation}`);
       }
     }
-    
+
     return annotations;
   }
-  
+
   readStubFile(content: string): StubFileData {
     const methods = new Map<string, string>();
     const lines = content.split('\n');
-    
+
     let currentPackage = '';
     let currentClass = '';
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       // パッケージ宣言
       const packageMatch = trimmed.match(/package\s+([\w.]+);?/);
       if (packageMatch) {
         currentPackage = packageMatch[1];
       }
-      
+
       // クラス宣言
       const classMatch = trimmed.match(/class\s+(\w+)/);
       if (classMatch) {
         currentClass = classMatch[1];
       }
-      
+
       // メソッド宣言とアノテーション
       const methodMatch = trimmed.match(/@(\w+)\s+\w+\s+(\w+)\s*\(/);
       if (methodMatch) {
@@ -309,11 +315,11 @@ export class AnnotationReader {
         methods.set(fullName, `@${annotation}`);
       }
     }
-    
+
     return {
       getMethodAnnotation: (className: string, methodName: string) => {
         return methods.get(`${className}.${methodName}`) || '';
-      }
+      },
     };
   }
 }
@@ -324,7 +330,7 @@ export class AnnotationReader {
 export class AnnotationWriter {
   toJAIF(annotations: Map<string, string>): string {
     const structure = new Map<string, Map<string, Map<string, string>>>();
-    
+
     // アノテーションを構造化
     for (const [key, annotation] of annotations) {
       const parts = key.split('.');
@@ -333,7 +339,7 @@ export class AnnotationWriter {
         const packageParts = [];
         const classParts = [];
         let foundUpperCase = false;
-        
+
         // 大文字で始まる部分をクラス名として識別
         for (let i = 0; i < parts.length; i++) {
           if (!foundUpperCase && parts[i][0] === parts[i][0].toUpperCase()) {
@@ -345,25 +351,25 @@ export class AnnotationWriter {
             packageParts.push(parts[i]);
           }
         }
-        
+
         const packageName = packageParts.join('.');
         const className = classParts[0] || '';
         const memberName = classParts.slice(1).join('.');
-        
+
         if (!structure.has(packageName)) {
           structure.set(packageName, new Map());
         }
         const packageMap = structure.get(packageName)!;
-        
+
         if (!packageMap.has(className)) {
           packageMap.set(className, new Map());
         }
         const classMap = packageMap.get(className)!;
-        
+
         classMap.set(memberName, annotation);
       }
     }
-    
+
     // JAIF形式に変換
     let jaif = '';
     for (const [packageName, classes] of structure) {
@@ -387,21 +393,21 @@ export class AnnotationWriter {
         }
       }
     }
-    
+
     return jaif;
   }
-  
+
   generateStub(classInfo: ClassInfo): string {
     let stub = classInfo.package ? `package ${classInfo.package};\n\n` : '';
     stub += `class ${classInfo.name} {\n`;
-    
+
     for (const method of classInfo.methods) {
       const params = method.parameters
         .map(p => `${p.annotation || ''} ${p.type}`.trim())
         .join(', ');
       stub += `  ${method.annotations?.[0] || ''} ${method.returnType} ${method.name}(${params});\n`;
     }
-    
+
     stub += '}\n';
     return stub;
   }
@@ -426,35 +432,35 @@ export class TypeChecker {
     }
     return false;
   }
-  
+
   checkMethodCall(methodSig: MethodSignature, args: string[]): MethodCallCheckResult {
     const errors: string[] = [];
-    
+
     for (let i = 0; i < methodSig.parameters.length; i++) {
       const expectedType = methodSig.parameters[i].type;
       const actualType = args[i];
-      
+
       if (!this.isAssignable(actualType, expectedType)) {
         errors.push(`Incompatible argument at position ${i}`);
       }
     }
-    
+
     return {
       safe: errors.length === 0,
-      violations: errors.length > 0 ? errors : undefined
+      violations: errors.length > 0 ? errors : undefined,
     };
   }
-  
+
   instantiatePolyTaint(polyMethod: MethodSignature, context: string): PolyTaintInstantiationResult {
     // @PolyTaint を文脈に応じて具体化
     const instantiate = (type: string) => {
       return type === '@PolyTaint' ? context : type;
     };
-    
+
     return {
       qualifier: instantiate('@PolyTaint'),
       confidence: 0.8,
-      reason: 'Instantiated from context'
+      reason: 'Instantiated from context',
     };
   }
 }
@@ -478,7 +484,7 @@ export class QualifierHierarchy {
     }
     return false;
   }
-  
+
   lub(a: string, b: string): string {
     // Least Upper Bound
     if (a === b) return a;
@@ -487,7 +493,7 @@ export class QualifierHierarchy {
     }
     return '@Tainted';
   }
-  
+
   glb(a: string, b: string): string {
     // Greatest Lower Bound
     if (a === b) return a;
@@ -496,7 +502,7 @@ export class QualifierHierarchy {
     }
     return '@Untainted';
   }
-  
+
   isPolymorphic(qualifier: string): boolean {
     // 実装予定
     return qualifier === '@PolyTaint';
@@ -518,37 +524,37 @@ export class FlowSensitiveTypeRefiner {
     const typeMap = new Map<string, Map<number, string>>();
     const branchTypes = new Map<string, Map<string, string>>();
     const lines = code.split('\n');
-    
+
     let currentVar = '';
     let currentType = '@Tainted'; // デフォルトは汚染
     let lineOffset = 0;
-    
+
     // 空行をスキップしてオフセットを調整
     while (lineOffset < lines.length && lines[lineOffset].trim() === '') {
       lineOffset++;
     }
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // 変数宣言と初期化
       const varDeclMatch = line.match(/(\w+)\s+(\w+)\s*=\s*(\w+)\(/);
       if (varDeclMatch) {
         const [, , varName, funcName] = varDeclMatch;
         currentVar = varName;
-        
+
         if (funcName === 'getUserInput') {
           currentType = '@Tainted';
         } else if (funcName === 'sanitize') {
           currentType = '@Untainted';
         }
-        
+
         if (!typeMap.has(varName)) {
           typeMap.set(varName, new Map());
         }
         typeMap.get(varName)!.set(i + 1 - lineOffset, currentType);
       }
-      
+
       // 再代入
       const reassignMatch = line.match(/(\w+)\s*=\s*(\w+)\(/);
       if (reassignMatch && !line.includes('String')) {
@@ -560,7 +566,7 @@ export class FlowSensitiveTypeRefiner {
           }
         }
       }
-      
+
       // 条件分岐
       if (line.includes('instanceof SafeString')) {
         const varMatch = line.match(/(\w+)\s+instanceof/);
@@ -574,12 +580,12 @@ export class FlowSensitiveTypeRefiner {
         }
       }
     }
-    
+
     return {
       getTypeAt: (varName: string, lineNum: number) => {
         const varTypes = typeMap.get(varName);
         if (!varTypes) return '';
-        
+
         // 指定行以前の最新の型を探す
         let latestType = '';
         for (const [line, type] of varTypes) {
@@ -592,7 +598,7 @@ export class FlowSensitiveTypeRefiner {
       getTypeInBranch: (varName: string, branch: string) => {
         const varBranches = branchTypes.get(varName);
         return varBranches?.get(branch) || '';
-      }
+      },
     };
   }
 }
@@ -626,7 +632,7 @@ export class StubFileGenerator {
     }
     return '';
   }
-  
+
   generateForLibrary(libraryName: string, config: LibraryConfig): string {
     // 簡易実装 - 実際の実装では config の情報を元にスタブを生成
     return `// Stub for library: ${libraryName}\n// Version: ${config.version || 'unknown'}`;

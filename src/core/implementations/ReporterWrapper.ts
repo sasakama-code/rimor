@@ -4,12 +4,7 @@
  * Phase 6: 既存コンポーネントとの共存
  */
 
-import { 
-  IReporter, 
-  ReportOptions, 
-  ReportResult, 
-  ReportFormat 
-} from '../interfaces/IReporter';
+import { IReporter, ReportOptions, ReportResult, ReportFormat } from '../interfaces/IReporter';
 import { AnalysisResult } from '../interfaces/IAnalysisEngine';
 import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
 
@@ -18,51 +13,50 @@ import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
  * 既存のReporterをinversifyなしで動作させる
  */
 export class ReporterWrapper implements IReporter {
-
   async generateAnalysisReport(
-    result: AnalysisResult, 
+    result: AnalysisResult,
     options: ReportOptions
   ): Promise<ReportResult> {
     try {
       const content = this.formatAnalysisReport(result, options);
-      
+
       if (options.outputPath) {
         await this.saveReport(content, options.outputPath);
       }
-      
+
       return {
         success: true,
         outputPath: options.outputPath,
-        content: content
+        content: content,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
 
   async generateSecurityReport(
-    result: SecurityAuditResult, 
+    result: SecurityAuditResult,
     options: ReportOptions
   ): Promise<ReportResult> {
     try {
       const content = this.formatSecurityReport(result, options);
-      
+
       if (options.outputPath) {
         await this.saveReport(content, options.outputPath);
       }
-      
+
       return {
         success: true,
         outputPath: options.outputPath,
-        content: content
+        content: content,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -70,7 +64,7 @@ export class ReporterWrapper implements IReporter {
   printToConsole(content: string): void {
     console.log(content);
   }
-  
+
   // 下位互換性のため保持
   async generateReport(analysisResults: any, options?: any): Promise<string> {
     // 基本的なレポート生成の実装
@@ -82,25 +76,25 @@ export class ReporterWrapper implements IReporter {
       return this.generateErrorReport(error);
     }
   }
-  
+
   async saveReport(report: string, outputPath: string): Promise<void> {
     const fs = await import('fs');
     const path = await import('path');
-    
+
     try {
       // ディレクトリの作成
       const dir = path.dirname(outputPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      
+
       // レポートファイルの書き込み
       fs.writeFileSync(outputPath, report, 'utf8');
     } catch (error) {
       throw new Error(`レポートの保存に失敗しました: ${error}`);
     }
   }
-  
+
   /**
    * 分析結果レポートのフォーマット
    */
@@ -108,13 +102,13 @@ export class ReporterWrapper implements IReporter {
     switch (options.format) {
       case ReportFormat.JSON:
         return JSON.stringify(result, null, 2);
-      
+
       case ReportFormat.MARKDOWN:
         return this.generateAnalysisMarkdownReport(result, options);
-      
+
       case ReportFormat.HTML:
         return this.generateAnalysisHtmlReport(result, options);
-      
+
       case ReportFormat.TEXT:
       default:
         return this.generateAnalysisTextReport(result, options);
@@ -128,13 +122,13 @@ export class ReporterWrapper implements IReporter {
     switch (options.format) {
       case ReportFormat.JSON:
         return JSON.stringify(result, null, 2);
-      
+
       case ReportFormat.MARKDOWN:
         return this.generateSecurityMarkdownReport(result, options);
-      
+
       case ReportFormat.HTML:
         return this.generateSecurityHtmlReport(result, options);
-      
+
       case ReportFormat.TEXT:
       default:
         return this.generateSecurityTextReport(result, options);
@@ -146,35 +140,35 @@ export class ReporterWrapper implements IReporter {
    */
   private formatReport(analysisResults: any, options?: any): string {
     const format = options?.format || 'text';
-    
+
     switch (format) {
       case 'json':
         return JSON.stringify(analysisResults, null, 2);
-      
+
       case 'markdown':
         return this.generateMarkdownReport(analysisResults);
-      
+
       case 'html':
         return this.generateHtmlReport(analysisResults);
-      
+
       case 'text':
       default:
         return this.generateTextReport(analysisResults);
     }
   }
-  
+
   /**
    * テキストレポート生成
    */
   private generateTextReport(results: any): string {
     let report = '分析レポート\n';
     report += '='.repeat(50) + '\n\n';
-    
+
     if (results.summary) {
       report += `総合スコア: ${results.summary.overallScore || 'N/A'}\n`;
       report += `検出された問題: ${results.summary.totalIssues || 0}件\n\n`;
     }
-    
+
     if (results.issues && Array.isArray(results.issues)) {
       report += '検出された問題:\n';
       results.issues.forEach((issue: any, index: number) => {
@@ -188,21 +182,21 @@ export class ReporterWrapper implements IReporter {
         report += '\n';
       });
     }
-    
+
     return report;
   }
-  
+
   /**
    * Markdownレポート生成
    */
   private generateMarkdownReport(results: any): string {
     let report = '# 分析レポート\n\n';
-    
+
     if (results.summary) {
       report += `**総合スコア:** ${results.summary.overallScore || 'N/A'}\n`;
       report += `**検出された問題:** ${results.summary.totalIssues || 0}件\n\n`;
     }
-    
+
     if (results.issues && Array.isArray(results.issues)) {
       report += '## 検出された問題\n\n';
       results.issues.forEach((issue: any, index: number) => {
@@ -216,10 +210,10 @@ export class ReporterWrapper implements IReporter {
         report += '\n';
       });
     }
-    
+
     return report;
   }
-  
+
   /**
    * HTMLレポート生成
    */
@@ -245,7 +239,7 @@ export class ReporterWrapper implements IReporter {
         <h1>分析レポート</h1>
     </div>
 `;
-    
+
     if (results.summary) {
       html += `
     <div class="summary">
@@ -255,7 +249,7 @@ export class ReporterWrapper implements IReporter {
     </div>
 `;
     }
-    
+
     if (results.issues && Array.isArray(results.issues)) {
       html += '<div class="issues"><h2>検出された問題</h2>';
       results.issues.forEach((issue: any, index: number) => {
@@ -270,14 +264,14 @@ export class ReporterWrapper implements IReporter {
       });
       html += '</div>';
     }
-    
+
     html += `
 </body>
 </html>`;
-    
+
     return html;
   }
-  
+
   /**
    * エラーレポート生成
    */
@@ -299,11 +293,11 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
   private generateAnalysisTextReport(result: AnalysisResult, options: ReportOptions): string {
     let report = '分析レポート\n';
     report += '='.repeat(50) + '\n\n';
-    
+
     report += `分析ファイル数: ${result.totalFiles}\n`;
     report += `検出された問題: ${result.issues.length}件\n`;
     report += `実行時間: ${result.executionTime}ms\n\n`;
-    
+
     if (result.issues && Array.isArray(result.issues)) {
       report += '検出された問題:\n';
       result.issues.forEach((issue: any, index: number) => {
@@ -317,7 +311,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
         report += '\n';
       });
     }
-    
+
     return report;
   }
 
@@ -327,17 +321,17 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
   private generateSecurityTextReport(result: SecurityAuditResult, options: ReportOptions): string {
     let report = 'セキュリティ監査レポート\n';
     report += '='.repeat(50) + '\n\n';
-    
+
     report += `スキャンファイル数: ${result.filesScanned}\n`;
     report += `実行時間: ${result.executionTime}ms\n`;
     report += `検出された脅威: ${result.summary.total}件\n\n`;
-    
+
     report += '重要度別サマリー:\n';
     report += `  Critical: ${result.summary.critical}件\n`;
     report += `  High: ${result.summary.high}件\n`;
     report += `  Medium: ${result.summary.medium}件\n`;
     report += `  Low: ${result.summary.low}件\n\n`;
-    
+
     if (result.threats && Array.isArray(result.threats)) {
       report += '検出された脅威:\n';
       result.threats.forEach((threat: any, index: number) => {
@@ -354,7 +348,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
         report += '\n';
       });
     }
-    
+
     return report;
   }
 
@@ -363,11 +357,11 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
    */
   private generateAnalysisMarkdownReport(result: AnalysisResult, options: ReportOptions): string {
     let report = '# 分析レポート\n\n';
-    
+
     report += `**分析ファイル数:** ${result.totalFiles}\n`;
     report += `**検出された問題:** ${result.issues.length}件\n`;
     report += `**実行時間:** ${result.executionTime}ms\n\n`;
-    
+
     if (result.issues && Array.isArray(result.issues)) {
       report += '## 検出された問題\n\n';
       result.issues.forEach((issue: any, index: number) => {
@@ -381,26 +375,29 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
         report += '\n';
       });
     }
-    
+
     return report;
   }
 
   /**
    * セキュリティ結果Markdownレポート生成
    */
-  private generateSecurityMarkdownReport(result: SecurityAuditResult, options: ReportOptions): string {
+  private generateSecurityMarkdownReport(
+    result: SecurityAuditResult,
+    options: ReportOptions
+  ): string {
     let report = '# セキュリティ監査レポート\n\n';
-    
+
     report += `**スキャンファイル数:** ${result.filesScanned}\n`;
     report += `**実行時間:** ${result.executionTime}ms\n`;
     report += `**検出された脅威:** ${result.summary.total}件\n\n`;
-    
+
     report += '## 重要度別サマリー\n\n';
     report += `- **Critical:** ${result.summary.critical}件\n`;
     report += `- **High:** ${result.summary.high}件\n`;
     report += `- **Medium:** ${result.summary.medium}件\n`;
     report += `- **Low:** ${result.summary.low}件\n\n`;
-    
+
     if (result.threats && Array.isArray(result.threats)) {
       report += '## 検出された脅威\n\n';
       result.threats.forEach((threat: any, index: number) => {
@@ -417,7 +414,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
         report += '\n';
       });
     }
-    
+
     return report;
   }
 

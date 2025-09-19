@@ -9,7 +9,7 @@ import {
   Issue,
   ExtendedIssue,
   IssueSeverity,
-  IssueCategory
+  IssueCategory,
 } from '../core/types';
 
 export interface UnifiedAIFormatterOptions {
@@ -53,7 +53,7 @@ export abstract class UnifiedAIFormatterBase {
       maxRisks: options.maxRisks || this.DEFAULT_MAX_RISKS,
       includeRecommendations: options.includeRecommendations !== false,
       includeContext: options.includeContext !== false,
-      reportPath: options.reportPath || this.DEFAULT_REPORT_PATH
+      reportPath: options.reportPath || this.DEFAULT_REPORT_PATH,
     };
   }
 
@@ -70,7 +70,7 @@ export abstract class UnifiedAIFormatterBase {
 
     issues.forEach(issue => {
       const riskKey = `${issue.category}-${issue.severity}`;
-      
+
       if (!riskMap.has(riskKey)) {
         riskMap.set(riskKey, this.createRiskAssessment(issue));
       } else {
@@ -83,7 +83,7 @@ export abstract class UnifiedAIFormatterBase {
     // Sort by risk level and likelihood
     return Array.from(riskMap.values())
       .sort((a, b) => {
-        const levelOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+        const levelOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
         const levelDiff = levelOrder[a.riskLevel] - levelOrder[b.riskLevel];
         if (levelDiff !== 0) return levelDiff;
         return b.likelihood - a.likelihood;
@@ -97,14 +97,14 @@ export abstract class UnifiedAIFormatterBase {
   protected createRiskAssessment(issue: Issue | ExtendedIssue): RiskAssessment {
     const riskLevel = this.mapSeverityToRiskLevel(issue.severity);
     const extIssue = issue as ExtendedIssue;
-    
+
     return {
       riskLevel,
       category: issue.category,
       description: issue.message,
       impact: this.assessImpact(issue),
       likelihood: this.assessLikelihood(issue),
-      mitigation: extIssue.suggestedFix || issue.suggestion
+      mitigation: extIssue.suggestedFix || issue.suggestion,
     };
   }
 
@@ -115,10 +115,10 @@ export abstract class UnifiedAIFormatterBase {
     switch (severity) {
       case 'critical':
         return 'CRITICAL';
-      case 'error':  // same as high
+      case 'error': // same as high
       case 'high':
         return 'HIGH';
-      case 'warning':  // same as medium
+      case 'warning': // same as medium
       case 'medium':
         return 'MEDIUM';
       case 'info':
@@ -133,28 +133,28 @@ export abstract class UnifiedAIFormatterBase {
    */
   protected assessImpact(issue: Issue): string {
     const impactMap: Record<IssueCategory, string> = {
-      'testing': 'Test-related issues affecting quality assurance',
-      'security': 'Security vulnerabilities',
-      'performance': 'Potential performance degradation',
-      'maintainability': 'Long-term maintenance difficulties',
-      'reliability': 'System reliability and stability issues',
-      'complexity': 'Increased cognitive load and maintenance cost',
-      'duplication': 'Code duplication leading to maintenance issues',
-      'style': 'Code style inconsistencies',
-      'documentation': 'Knowledge transfer difficulties',
-      'general': 'General quality issues',
+      testing: 'Test-related issues affecting quality assurance',
+      security: 'Security vulnerabilities',
+      performance: 'Potential performance degradation',
+      maintainability: 'Long-term maintenance difficulties',
+      reliability: 'System reliability and stability issues',
+      complexity: 'Increased cognitive load and maintenance cost',
+      duplication: 'Code duplication leading to maintenance issues',
+      style: 'Code style inconsistencies',
+      documentation: 'Knowledge transfer difficulties',
+      general: 'General quality issues',
       'test-quality': 'May lead to undetected bugs and production issues',
-      'coverage': 'Reduced confidence in code reliability',
-      'assertion': 'Tests may not properly validate functionality',
-      'pattern': 'Code maintainability and consistency issues',
-      'structure': 'Architectural degradation over time',
+      coverage: 'Reduced confidence in code reliability',
+      assertion: 'Tests may not properly validate functionality',
+      pattern: 'Code maintainability and consistency issues',
+      structure: 'Architectural degradation over time',
       'best-practice': 'Technical debt accumulation',
       'error-handling': 'Application crashes and poor user experience',
-      'validation': 'Invalid data processing and corruption',
+      validation: 'Invalid data processing and corruption',
       'code-quality': 'Code maintainability and readability issues',
       'test-coverage': 'Insufficient test coverage for critical paths',
       'file-system': 'File operation failures and data loss',
-      'syntax': 'Code compilation and runtime errors'
+      syntax: 'Code compilation and runtime errors',
     };
 
     return impactMap[issue.category as IssueCategory] || 'Potential quality issues';
@@ -165,13 +165,13 @@ export abstract class UnifiedAIFormatterBase {
    */
   protected assessLikelihood(issue: Issue): number {
     const severityWeight: Record<IssueSeverity, number> = {
-      'critical': 0.9,
-      'error': 0.7,     // same as high
-      'high': 0.7,
-      'warning': 0.5,   // same as medium
-      'medium': 0.5,
-      'low': 0.3,
-      'info': 0.1
+      critical: 0.9,
+      error: 0.7, // same as high
+      high: 0.7,
+      warning: 0.5, // same as medium
+      medium: 0.5,
+      low: 0.3,
+      info: 0.1,
     };
 
     return severityWeight[issue.severity] || 0.5;
@@ -202,17 +202,13 @@ export abstract class UnifiedAIFormatterBase {
     // Pattern issues recommendation
     const patternIssues = result.issues.filter(i => i.category === 'pattern');
     if (patternIssues.length > 5) {
-      recommendations.push(
-        'Establish and enforce coding standards to reduce pattern violations'
-      );
+      recommendations.push('Establish and enforce coding standards to reduce pattern violations');
     }
 
     // Quality score recommendation (check both score and qualityScore for backward compatibility)
     const overallScore = result.score?.overall ?? result.qualityScore;
     if (overallScore !== undefined && overallScore < 0.6) {
-      recommendations.push(
-        'Implement quality gates in CI/CD pipeline to maintain standards'
-      );
+      recommendations.push('Implement quality gates in CI/CD pipeline to maintain standards');
     }
 
     return recommendations;
@@ -239,7 +235,7 @@ export abstract class UnifiedAIFormatterBase {
       totalIssues: issues.length,
       criticalIssues: issues.filter(i => i.severity === 'critical').length,
       highIssues: issues.filter(i => i.severity === 'high').length,
-      overallRisk: this.calculateOverallRisk(issues)
+      overallRisk: this.calculateOverallRisk(issues),
     };
   }
 }

@@ -17,7 +17,7 @@ export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',
   TYPESCRIPT = 'typescript',
   TSX = 'tsx',
-  JSX = 'jsx'
+  JSX = 'jsx',
 }
 
 /**
@@ -95,19 +95,19 @@ export class TreeSitterParser {
     // ファイルの統計情報を取得
     const stats = await fs.stat(filePath);
     const cacheKey = filePath;
-    
+
     // キャッシュをチェック
     const cachedEntry = this.cache.get(cacheKey);
     if (cachedEntry && cachedEntry.timestamp === stats.mtimeMs) {
       this.cacheHits++;
       return cachedEntry.ast;
     }
-    
+
     // キャッシュミス - ファイルを読み込んで解析
     this.cacheMisses++;
     const content = await fs.readFile(filePath, 'utf-8');
     const contentHash = this.calculateHash(content);
-    
+
     // 既存のキャッシュエントリのハッシュをチェック
     if (cachedEntry && cachedEntry.contentHash === contentHash) {
       // 内容は同じだがタイムスタンプが異なる場合、タイムスタンプのみ更新
@@ -115,18 +115,18 @@ export class TreeSitterParser {
       this.cacheHits++;
       return cachedEntry.ast;
     }
-    
+
     // 新規パース
     const language = this.detectLanguage(filePath);
     const ast = this.parseContent(content, language);
-    
+
     // キャッシュに保存
     this.addToCache(cacheKey, {
       ast,
       contentHash,
-      timestamp: stats.mtimeMs
+      timestamp: stats.mtimeMs,
     });
-    
+
     return ast;
   }
 
@@ -150,7 +150,7 @@ export class TreeSitterParser {
         this.cache.delete(firstKey);
       }
     }
-    
+
     // 新しいエントリを追加（既存の場合は更新）
     this.cache.delete(key); // 順序を更新するため一旦削除
     this.cache.set(key, entry);
@@ -166,7 +166,7 @@ export class TreeSitterParser {
     return {
       hits: this.cacheHits,
       misses: this.cacheMisses,
-      hitRate
+      hitRate,
     };
   }
 
@@ -191,7 +191,7 @@ export class TreeSitterParser {
     } catch (error) {
       console.warn('Fallback parser also failed:', error);
     }
-    
+
     // 最終フォールバック: 空のASTを返す
     return {
       type: 'program',
@@ -199,7 +199,7 @@ export class TreeSitterParser {
       endPosition: { row: 0, column: 0 },
       children: [],
       text: content.substring(0, 100), // 最初の100文字だけ保持
-      isNamed: true // isNamedプロパティを必ず含める
+      isNamed: true, // isNamedプロパティを必ず含める
     };
   }
 
@@ -223,7 +223,7 @@ export class TreeSitterParser {
     const MAX_CONTENT_SIZE = 32767;
     let parseContent = content;
     let isTruncated = false;
-    
+
     if (content.length >= MAX_CONTENT_SIZE) {
       // 32KB以下に切り詰める（最後の完全な行まで）
       parseContent = content.substring(0, MAX_CONTENT_SIZE);
@@ -255,16 +255,16 @@ export class TreeSitterParser {
       }
       throw new Error(`Failed to parse content for language: ${language}`);
     }
-    
+
     // ルートノードにはフルテキストを含める（切り詰められた場合は部分的）
     const astNode = this.convertToASTNode(tree.rootNode, true);
-    
+
     // 切り詰められた場合はメタデータに記録
     if (isTruncated) {
       (astNode as any)._truncated = true;
       (astNode as any)._originalLength = content.length;
     }
-    
+
     return astNode;
   }
 
@@ -297,25 +297,32 @@ export class TreeSitterParser {
     }
 
     // 重要なノードタイプは常にテキストを含める
-    const importantTypes = ['identifier', 'call_expression', 'function_declaration', 
-                           'class_declaration', 'method_definition', 'arrow_function'];
-    const shouldIncludeText = includeText || 
-                             importantTypes.includes(node.type) || 
-                             node.namedChildCount === 0 ||
-                             node.text.length < 200; // 小さいノードはテキストを含める
+    const importantTypes = [
+      'identifier',
+      'call_expression',
+      'function_declaration',
+      'class_declaration',
+      'method_definition',
+      'arrow_function',
+    ];
+    const shouldIncludeText =
+      includeText ||
+      importantTypes.includes(node.type) ||
+      node.namedChildCount === 0 ||
+      node.text.length < 200; // 小さいノードはテキストを含める
 
     const astNode: ASTNode = {
       type: node.type,
       text: shouldIncludeText ? node.text : '',
       startPosition: {
         row: node.startPosition.row,
-        column: node.startPosition.column
+        column: node.startPosition.column,
       },
       endPosition: {
         row: node.endPosition.row,
-        column: node.endPosition.column
+        column: node.endPosition.column,
       },
-      isNamed: node.isNamed
+      isNamed: node.isNamed,
     };
 
     // 名前付き子ノードのみを処理（パフォーマンス最適化）
@@ -351,7 +358,7 @@ export class TreeSitterParser {
    */
   findNodes(ast: ASTNode, nodeType: string): ASTNode[] {
     const results: ASTNode[] = [];
-    
+
     // nodeTypeに基づくフォールバック検索も追加
     for (const node of this.traverseAST(ast)) {
       if (node.type === nodeType) {
@@ -378,15 +385,15 @@ export class TreeSitterParser {
       if (node.type === 'call_expression') {
         // 子ノードベースの検索
         if (node.children) {
-          const identifier = node.children.find(child => 
-            child.type === 'identifier' && testPatterns.has(child.text)
+          const identifier = node.children.find(
+            child => child.type === 'identifier' && testPatterns.has(child.text)
           );
           if (identifier) {
             results.push(node);
             continue;
           }
         }
-        
+
         // テキストベースの検索（フォールバック）
         if (node.text) {
           for (const pattern of testPatterns) {
@@ -409,7 +416,7 @@ export class TreeSitterParser {
   findAssertions(ast: ASTNode): ASTNode[] {
     const results: ASTNode[] = [];
     const seenAssertions = new Set<string>();
-    
+
     // 正規表現をプリコンパイル（パフォーマンス最適化）
     const expectPattern = /expect\([^)]*\)/;
     const assertPattern = /assert\.\w+\(/;
@@ -418,8 +425,10 @@ export class TreeSitterParser {
       // call_expressionノードまたはテキストにexpect/assertを含むノード
       if (node.text) {
         // より緩い条件でマッチング
-        if ((expectPattern.test(node.text) || assertPattern.test(node.text)) && 
-            !seenAssertions.has(node.text)) {
+        if (
+          (expectPattern.test(node.text) || assertPattern.test(node.text)) &&
+          !seenAssertions.has(node.text)
+        ) {
           seenAssertions.add(node.text);
           results.push(node);
         }

@@ -1,10 +1,10 @@
 /**
  * テストコンテナヘルパー
  * v0.9.0 - E2Eテストのコンテナ独立性確保
- * 
+ *
  * TDD Red→Green→Refactorサイクル
  * t_wada推奨のテスト駆動開発アプローチ
- * 
+ *
  * 設計原則:
  * - SOLID: 依存性逆転原則（DIコンテナ活用）
  * - KISS: シンプルなインターフェース
@@ -34,7 +34,7 @@ export interface TestContainerOptions {
 /**
  * テスト用の新規コンテナを作成
  * 各テストケースで独立したコンテナを使用するため
- * 
+ *
  * @param options テストコンテナ設定オプション
  * @returns 新規作成されたコンテナ
  */
@@ -42,73 +42,75 @@ export function createTestContainer(options: TestContainerOptions = {}): Contain
   const {
     registerDefaultPlugins = true,
     enableDebugLogging = false,
-    enablePerformanceMonitoring = false
+    enablePerformanceMonitoring = false,
   } = options;
 
   // 新規コンテナインスタンスを作成
   const container = new Container();
-  
+
   // Core service bindingsを動的にロード
-  const { 
+  const {
     AnalysisEngineImpl,
     SecurityAuditorImpl,
     StructuredReporterImpl,
-    PluginManagerImpl
+    PluginManagerImpl,
   } = require('../../src/core/implementations');
-  
+
   // Core service bindings
-  container.bind<IAnalysisEngine>(TYPES.AnalysisEngine)
-    .to(AnalysisEngineImpl)
-    .inSingletonScope();
-    
-  container.bind<ISecurityAuditor>(TYPES.SecurityAuditor)
+  container.bind<IAnalysisEngine>(TYPES.AnalysisEngine).to(AnalysisEngineImpl).inSingletonScope();
+
+  container
+    .bind<ISecurityAuditor>(TYPES.SecurityAuditor)
     .to(SecurityAuditorImpl)
     .inSingletonScope();
-    
-  container.bind<IReporter>(TYPES.Reporter)
-    .to(StructuredReporterImpl)
-    .inSingletonScope();
-    
-  container.bind<IPluginManager>(TYPES.PluginManager)
+
+  container.bind<IReporter>(TYPES.Reporter).to(StructuredReporterImpl).inSingletonScope();
+
+  container
+    .bind<IPluginManager>(TYPES.PluginManager)
     .to(PluginManagerImpl)
     .inSingletonScope()
     .onActivation((context, pluginManager) => {
       if (registerDefaultPlugins) {
         // デフォルトプラグインを登録
         const TestExistencePlugin = require('../../src/plugins/testExistence').TestExistencePlugin;
-        const AssertionExistsPlugin = require('../../src/plugins/assertionExists').AssertionExistsPlugin;
-        const LegacyPluginAdapter = require('../../src/core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
-        
+        const AssertionExistsPlugin =
+          require('../../src/plugins/assertionExists').AssertionExistsPlugin;
+        const LegacyPluginAdapter =
+          require('../../src/core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
+
         // レガシープラグインをアダプター経由で登録
         pluginManager.register(new LegacyPluginAdapter(new TestExistencePlugin()));
         pluginManager.register(new LegacyPluginAdapter(new AssertionExistsPlugin()));
       }
-      
+
       return pluginManager;
     });
-  
+
   // テスト環境設定
   container.bind<boolean>('EnableDebugLogging').toConstantValue(enableDebugLogging);
-  container.bind<boolean>('EnablePerformanceMonitoring').toConstantValue(enablePerformanceMonitoring);
-  
+  container
+    .bind<boolean>('EnablePerformanceMonitoring')
+    .toConstantValue(enablePerformanceMonitoring);
+
   return container;
 }
 
 /**
  * テストコンテナのクリーンアップ
  * メモリリークを防ぐため、適切にリソースを解放
- * 
+ *
  * @param container クリーンアップ対象のコンテナ
  */
 export function cleanupTestContainer(container: Container): void {
   if (!container) {
     return;
   }
-  
+
   try {
     // 全バインディングを解除
     container.unbindAll();
-    
+
     // コンテナが管理するシングルトンインスタンスをクリア
     // Inversifyの内部APIを使用（将来的に変更される可能性あり）
     const containerAny = container as any;
@@ -133,7 +135,7 @@ export function cleanupTestContainer(container: Container): void {
 /**
  * テスト用のモックプラグインマネージャーを取得
  * プラグインのテストで使用
- * 
+ *
  * @param container DIコンテナ
  * @returns モックプラグインマネージャー
  */
@@ -144,7 +146,7 @@ export function getMockPluginManager(container: Container): IPluginManager {
 /**
  * テスト用の分析エンジンを取得
  * 統合テストで使用
- * 
+ *
  * @param container DIコンテナ
  * @returns 分析エンジン
  */

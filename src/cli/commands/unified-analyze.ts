@@ -8,13 +8,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { UnifiedSecurityAnalysisOrchestrator } from '../../orchestrator/UnifiedSecurityAnalysisOrchestrator';
 import { OrchestratorConfig } from '../../orchestrator/types';
-import { UnifiedAnalyzeOptions, UnifiedAnalyzeResult, IUnifiedAnalyzeCommand } from './unified-analyze-types';
-import { 
-  TextReportFormatter, 
-  JsonReportFormatter, 
-  MarkdownReportFormatter, 
-  HtmlReportFormatter, 
-  IReportFormatter 
+import {
+  UnifiedAnalyzeOptions,
+  UnifiedAnalyzeResult,
+  IUnifiedAnalyzeCommand,
+} from './unified-analyze-types';
+import {
+  TextReportFormatter,
+  JsonReportFormatter,
+  MarkdownReportFormatter,
+  HtmlReportFormatter,
+  IReportFormatter,
 } from './formatters/ReportFormatter';
 
 export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
@@ -24,7 +28,7 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
   constructor(orchestrator?: UnifiedSecurityAnalysisOrchestrator) {
     // 依存関係注入（DIP: Dependency Inversion Principle）
     this.orchestrator = orchestrator || new UnifiedSecurityAnalysisOrchestrator();
-    
+
     // Strategy Pattern: フォーマッター戦略の初期化
     this.formatters = new Map<string, IReportFormatter>();
     this.formatters.set('text', new TextReportFormatter());
@@ -54,10 +58,10 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
     try {
       // 統合分析実行
       const analysisResult = await this.orchestrator.analyzeTestDirectory(options.path);
-      
+
       // 結果フォーマット
       const formattedResult = this.formatResult(analysisResult, options);
-      
+
       // ファイル出力（.rimorディレクトリに統一）
       if (options.output) {
         const outputPath = this.getOutputPath(options.output, options.format);
@@ -78,10 +82,9 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
         metadata: {
           executionTime: Date.now() - startTime,
           analyzedPath: options.path,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
-
     } catch (error) {
       // エラーハンドリング（Defensive Programming）
       console.error(`エラー: ${error instanceof Error ? error.message : String(error)}`);
@@ -122,8 +125,8 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
         metadata: {
           executionTime: 0, // 後でexecuteメソッドで上書きされる
           analyzedPath: options.path,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     }
 
@@ -136,7 +139,6 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
     return formatter.format(analysisResult, options);
   }
 
-
   /**
    * AI JSON レポート生成
    * AI向け最適化された構造化データ
@@ -148,23 +150,23 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
         overallGrade: analysisResult.unifiedReport.summary.overallGrade,
         overallScore: analysisResult.unifiedReport.overallRiskScore,
         totalIssues: analysisResult.unifiedReport.summary.totalIssues,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       security: {
         vulnerabilities: analysisResult.taintAnalysis.summary.totalVulnerabilities,
-        riskLevel: analysisResult.nistEvaluation.summary.riskLevel
+        riskLevel: analysisResult.nistEvaluation.summary.riskLevel,
       },
       quality: {
         testIntents: analysisResult.intentAnalysis.summary.totalTests,
         gaps: analysisResult.gapAnalysis.summary.totalGaps,
         // Issue #83: カバレッジ統合データを含める
-        coverageData: analysisResult.unifiedReport.qualityData || null
+        coverageData: analysisResult.unifiedReport.qualityData || null,
       },
       metadata: {
         analyzedPath: options.path,
         format: 'ai-json',
-        rimorVersion: '0.9.0'
-      }
+        rimorVersion: '0.9.0',
+      },
     };
 
     return JSON.stringify(aiOptimizedData, null, 2);
@@ -187,27 +189,27 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
    */
   private getOutputPath(outputFile: string, format?: string): string {
     const rimorDir = '.rimor';
-    
+
     // 絶対パスの場合はそのまま使用
     if (path.isAbsolute(outputFile)) {
       return outputFile;
     }
-    
+
     // 相対パスの場合は.rimorディレクトリ内に配置
     let fileName = outputFile;
-    
+
     // ファイル拡張子が指定されていない場合は、formatに基づいて追加
     if (!path.extname(fileName) && format) {
       const extensions: Record<string, string> = {
-        'json': '.json',
+        json: '.json',
         'ai-json': '.json',
-        'markdown': '.md',
-        'html': '.html',
-        'text': '.txt'
+        markdown: '.md',
+        html: '.html',
+        text: '.txt',
       };
       fileName += extensions[format] || '.txt';
     }
-    
+
     return path.join(rimorDir, fileName);
   }
 
@@ -221,7 +223,7 @@ export class UnifiedAnalyzeCommand implements IUnifiedAnalyzeCommand {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(outputPath, content, 'utf8');
   }
 }

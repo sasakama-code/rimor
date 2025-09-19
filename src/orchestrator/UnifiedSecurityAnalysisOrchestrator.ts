@@ -9,7 +9,7 @@ import {
   UnifiedAnalysisResult,
   UnifiedReport,
   OrchestratorConfig,
-  OrchestratorError
+  OrchestratorError,
 } from './types';
 import {
   IAnalysisStrategyFactory,
@@ -17,7 +17,7 @@ import {
   IIntentExtractionStrategy,
   IGapDetectionStrategy,
   INistEvaluationStrategy,
-  IInputValidator
+  IInputValidator,
 } from './interfaces';
 import { RealAnalysisStrategyFactory } from './strategies/RealAnalysisStrategies';
 import { InputValidator } from './validators/InputValidator';
@@ -41,13 +41,13 @@ export class UnifiedSecurityAnalysisOrchestrator {
   ) {
     // デフォルト設定を先に作成
     this.config = this.createDefaultConfig(config);
-    
+
     // 依存関係注入による設計（DIP: Dependency Inversion Principle）
     this.strategyFactory = strategyFactory || new RealAnalysisStrategyFactory(this.config);
     this.validator = validator || new InputValidator();
     this.unifiedPluginManager = unifiedPluginManager || new UnifiedPluginManager();
     this.testQualityIntegrator = testQualityIntegrator || new TestQualityIntegrator();
-    
+
     // 設定の検証
     this.validator.validateConfig(this.config);
   }
@@ -64,7 +64,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
       enableNistEvaluation: true,
       parallelExecution: false, // YAGNIのため並列処理は後で実装
       timeoutMs: 30000,
-      ...config
+      ...config,
     };
   }
 
@@ -72,18 +72,23 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * テストディレクトリの統合分析を実行
    * 単一責任の原則に従い、各ステップを個別メソッドに分離
    */
-  async analyzeTestDirectory(targetPath: string, options?: { benchmarkMode?: boolean }): Promise<UnifiedAnalysisResult> {
+  async analyzeTestDirectory(
+    targetPath: string,
+    options?: { benchmarkMode?: boolean }
+  ): Promise<UnifiedAnalysisResult> {
     // 入力値検証（責務を分離）
     this.validator.validatePath(targetPath);
 
     const startTime = Date.now();
 
     try {
-      console.log(`🚀 [UnifiedSecurityAnalysisOrchestrator] 統合分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
-      
+      console.log(
+        `🚀 [UnifiedSecurityAnalysisOrchestrator] 統合分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
+      );
+
       // 分析戦略の取得（Factory Pattern）
       const strategies = this.createAnalysisStrategies();
-      
+
       // 各分析ステップの実行（Strategy Pattern）
       const analysisResults = await this.executeAnalysisSequence(strategies, targetPath, options);
 
@@ -107,9 +112,8 @@ export class UnifiedSecurityAnalysisOrchestrator {
         intentAnalysis: analysisResults.intentResult,
         gapAnalysis: analysisResults.gapResult,
         nistEvaluation: analysisResults.nistResult,
-        unifiedReport
+        unifiedReport,
       };
-
     } catch (error) {
       // Defensive Programming: エラーハンドリング
       return this.handleAnalysisError(error);
@@ -130,7 +134,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
       taintStrategy: this.strategyFactory.createTaintAnalysisStrategy(),
       intentStrategy: this.strategyFactory.createIntentExtractionStrategy(),
       gapStrategy: this.strategyFactory.createGapDetectionStrategy(),
-      nistStrategy: this.strategyFactory.createNistEvaluationStrategy()
+      nistStrategy: this.strategyFactory.createNistEvaluationStrategy(),
     };
   }
 
@@ -144,13 +148,25 @@ export class UnifiedSecurityAnalysisOrchestrator {
     options?: { benchmarkMode?: boolean }
   ) {
     // 1. TaintTyper実行
-    const taintResult = await this.executeTaintAnalysis(strategies.taintStrategy, targetPath, options);
+    const taintResult = await this.executeTaintAnalysis(
+      strategies.taintStrategy,
+      targetPath,
+      options
+    );
 
     // 2. 意図抽出実行（TaintTyperの結果を活用）
-    const intentResult = await this.executeIntentExtraction(strategies.intentStrategy, targetPath, taintResult);
+    const intentResult = await this.executeIntentExtraction(
+      strategies.intentStrategy,
+      targetPath,
+      taintResult
+    );
 
     // 3. ギャップ検出
-    const gapResult = await this.executeGapDetection(strategies.gapStrategy, intentResult, taintResult);
+    const gapResult = await this.executeGapDetection(
+      strategies.gapStrategy,
+      intentResult,
+      taintResult
+    );
 
     // 4. NIST評価
     const nistResult = await this.executeNistEvaluation(strategies.nistStrategy, gapResult);
@@ -166,13 +182,13 @@ export class UnifiedSecurityAnalysisOrchestrator {
     try {
       // UnifiedPluginManagerから品質プラグインを取得
       const qualityPlugins = this.unifiedPluginManager.getQualityPlugins();
-      
+
       if (qualityPlugins.length === 0) {
         // 品質プラグインが登録されていない場合はデフォルト結果を返す
         return {
           qualityScore: 0,
           coverageData: null,
-          recommendations: ['品質プラグインが登録されていません']
+          recommendations: ['品質プラグインが登録されていません'],
         };
       }
 
@@ -185,46 +201,47 @@ export class UnifiedSecurityAnalysisOrchestrator {
           const mockContext = { path: targetPath, language: 'typescript' as const };
           if (plugin.isApplicable(mockContext)) {
             // テストファイルの検出パターンを実行
-            const mockTestFile = { 
-              path: targetPath, 
-              content: '', 
-              language: 'typescript' as const 
+            const mockTestFile = {
+              path: targetPath,
+              content: '',
+              language: 'typescript' as const,
             };
             const patterns = await plugin.detectPatterns(mockTestFile);
-            
+
             // 品質評価を実行
             const qualityScore = plugin.evaluateQuality(patterns);
-            
+
             qualityResults.push({
               pluginId: plugin.id,
               score: qualityScore.overall,
               patterns: patterns,
               qualityScore: qualityScore,
-              recommendations: plugin.suggestImprovements(qualityScore).map(imp => imp.description)
+              recommendations: plugin.suggestImprovements(qualityScore).map(imp => imp.description),
             });
           }
         } catch (error) {
           // 個別プラグインのエラーは警告として扱い、処理を継続
-          console.warn(`品質プラグイン実行エラー: ${error instanceof Error ? error.message : String(error)}`);
+          console.warn(
+            `品質プラグイン実行エラー: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
       // 統合品質スコアの計算
       const aggregatedScore = this.calculateAggregatedQualityScore(qualityResults);
-      
+
       return {
         qualityScore: aggregatedScore,
         coverageData: qualityResults,
-        recommendations: this.generateQualityRecommendations(qualityResults)
+        recommendations: this.generateQualityRecommendations(qualityResults),
       };
-
     } catch (error) {
       // Defensive Programming: エラー時もデフォルト結果を返す
       console.warn(`品質分析エラー: ${error instanceof Error ? error.message : String(error)}`);
       return {
         qualityScore: 0,
         coverageData: null,
-        recommendations: ['品質分析でエラーが発生しました']
+        recommendations: ['品質分析でエラーが発生しました'],
       };
     }
   }
@@ -250,7 +267,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
    */
   private generateQualityRecommendations(qualityResults: any[]): string[] {
     const recommendations: string[] = [];
-    
+
     qualityResults.forEach(result => {
       if (result.recommendations && Array.isArray(result.recommendations)) {
         recommendations.push(...result.recommendations);
@@ -294,15 +311,19 @@ export class UnifiedSecurityAnalysisOrchestrator {
           totalVulnerabilities: 0,
           highSeverity: 0,
           mediumSeverity: 0,
-          lowSeverity: 0
-        }
+          lowSeverity: 0,
+        },
       };
     }
-    
-    console.log(`🔍 [executeTaintAnalysis] TaintTyper実行中: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`);
+
+    console.log(
+      `🔍 [executeTaintAnalysis] TaintTyper実行中: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
+    );
     const result = await strategy.analyze(targetPath, options);
-    console.log(`✅ [executeTaintAnalysis] TaintTyper完了: 検出数=${result.vulnerabilities?.length || 0}`);
-    
+    console.log(
+      `✅ [executeTaintAnalysis] TaintTyper完了: 検出数=${result.vulnerabilities?.length || 0}`
+    );
+
     return result;
   }
 
@@ -322,11 +343,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
           totalTests: 0,
           highRiskTests: 0,
           mediumRiskTests: 0,
-          lowRiskTests: 0
-        }
+          lowRiskTests: 0,
+        },
       };
     }
-    
+
     return await strategy.extract(targetPath, taintResult);
   }
 
@@ -347,11 +368,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
           criticalGaps: 0,
           highGaps: 0,
           mediumGaps: 0,
-          lowGaps: 0
-        }
+          lowGaps: 0,
+        },
       };
     }
-    
+
     return await strategy.detect(intentResult, taintResult);
   }
 
@@ -359,10 +380,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * NIST評価実行
    * Strategy Patternによる実装の抽象化
    */
-  private async executeNistEvaluation(
-    strategy: INistEvaluationStrategy,
-    gapResult: any
-  ) {
+  private async executeNistEvaluation(strategy: INistEvaluationStrategy, gapResult: any) {
     if (!this.config.enableNistEvaluation) {
       return {
         riskAssessments: [],
@@ -373,11 +391,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
           criticalRisks: 0,
           highRisks: 0,
           mediumRisks: 0,
-          lowRisks: 0
-        }
+          lowRisks: 0,
+        },
       };
     }
-    
+
     return await strategy.evaluate(gapResult);
   }
 
@@ -396,14 +414,14 @@ export class UnifiedSecurityAnalysisOrchestrator {
   ): UnifiedReport {
     // 問題数の集計（DRY原則：集計ロジックの統一化）
     const issueCounts = this.calculateIssueCounts(taintResult, gapResult, nistResult);
-    
+
     // 総合グレードの算出
     const overallGrade = this.calculateOverallGrade(nistResult.summary.overallScore);
 
     return {
       summary: {
         ...issueCounts,
-        overallGrade
+        overallGrade,
       },
       taintSummary: taintResult.summary,
       intentSummary: intentResult.summary,
@@ -412,7 +430,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
       overallRiskScore: nistResult.summary.overallScore,
       // Issue #83: カバレッジ統合による品質データを追加
       qualityData: qualityResults || null,
-      metadata: this.createReportMetadata(targetPath, executionTime)
+      metadata: this.createReportMetadata(targetPath, executionTime),
     };
   }
 
@@ -420,17 +438,20 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * 問題数の集計
    * DRY原則：集計ロジックの一元化
    */
-  private calculateIssueCounts(
-    taintResult: any,
-    gapResult: any,
-    nistResult: any
-  ) {
+  private calculateIssueCounts(taintResult: any, gapResult: any, nistResult: any) {
     return {
       totalIssues: taintResult.summary.totalVulnerabilities + gapResult.summary.totalGaps,
       criticalIssues: gapResult.summary.criticalGaps + nistResult.summary.criticalRisks,
-      highIssues: taintResult.summary.highSeverity + gapResult.summary.highGaps + nistResult.summary.highRisks,
-      mediumIssues: taintResult.summary.mediumSeverity + gapResult.summary.mediumGaps + nistResult.summary.mediumRisks,
-      lowIssues: taintResult.summary.lowSeverity + gapResult.summary.lowGaps + nistResult.summary.lowRisks
+      highIssues:
+        taintResult.summary.highSeverity +
+        gapResult.summary.highGaps +
+        nistResult.summary.highRisks,
+      mediumIssues:
+        taintResult.summary.mediumSeverity +
+        gapResult.summary.mediumGaps +
+        nistResult.summary.mediumRisks,
+      lowIssues:
+        taintResult.summary.lowSeverity + gapResult.summary.lowGaps + nistResult.summary.lowRisks,
     };
   }
 
@@ -444,7 +465,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
       timestamp: new Date().toISOString(),
       rimorVersion: this.getRimorVersion(),
       analysisType: 'unified-security',
-      executionTime
+      executionTime,
     };
   }
 

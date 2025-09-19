@@ -10,27 +10,27 @@ import {
   IssueSeverity,
   Position,
   SeverityLevel,
-  
+
   // Plugin types
   IPlugin,
   ITestQualityPlugin,
   PluginType,
   DetectionResult,
-  
+
   // Project context types
   ProjectContext,
   TestFile,
   TestMethod,
-  
+
   // Quality score types
   QualityScore,
   QualityDimension,
-  
+
   // Analysis types
   AnalysisResult,
   ProjectAnalysisResult,
   TestAnalysisResult,
-  
+
   // Type guards
   isIssue,
   isIPlugin,
@@ -39,7 +39,7 @@ import {
   isAnalysisResult,
   isProjectContext,
   isTestFile,
-  isDetectionResult
+  isDetectionResult,
 } from '../../src/core/types';
 
 describe('Type Definitions', () => {
@@ -55,7 +55,7 @@ describe('Type Definitions', () => {
           column: 5,
           severity: 'high' as IssueSeverity,
           message: 'Test issue',
-          category: 'test-quality' as const
+          category: 'test-quality' as const,
         };
 
         // Act & Assert
@@ -69,7 +69,7 @@ describe('Type Definitions', () => {
           // lineが欠けている
           column: 5,
           severity: 'high',
-          message: 'Test issue'
+          message: 'Test issue',
         };
 
         // Act & Assert
@@ -87,7 +87,7 @@ describe('Type Definitions', () => {
         // Arrange
         const validPlugin: IPlugin = {
           name: 'TestPlugin',
-          analyze: jest.fn()
+          analyze: jest.fn(),
         };
 
         // Act & Assert
@@ -97,7 +97,7 @@ describe('Type Definitions', () => {
       it('analyzeメソッドがない場合はfalseと判定する', () => {
         // Arrange
         const invalidPlugin = {
-          name: 'TestPlugin'
+          name: 'TestPlugin',
           // analyzeメソッドがない
         };
 
@@ -117,7 +117,7 @@ describe('Type Definitions', () => {
           isApplicable: jest.fn(),
           detectPatterns: jest.fn(),
           evaluateQuality: jest.fn(),
-          suggestImprovements: jest.fn()
+          suggestImprovements: jest.fn(),
         };
 
         // Act & Assert
@@ -131,7 +131,7 @@ describe('Type Definitions', () => {
           name: 'Test Plugin',
           version: '1.0.0',
           type: 'core',
-          isApplicable: jest.fn()
+          isApplicable: jest.fn(),
           // detectPatterns, evaluateQuality, suggestImprovementsが欠けている
         };
 
@@ -146,13 +146,13 @@ describe('Type Definitions', () => {
         const validScore: QualityScore = {
           overall: 0.85,
           dimensions: {
-            completeness: 0.90,
+            completeness: 0.9,
             correctness: 0.85,
-            maintainability: 0.80,
+            maintainability: 0.8,
             performance: 0.85,
-            security: 0.90
+            security: 0.9,
           },
-          confidence: 0.95
+          confidence: 0.95,
         };
 
         // Act & Assert
@@ -164,9 +164,9 @@ describe('Type Definitions', () => {
         const invalidScore = {
           overall: 1.5, // 範囲外
           dimensions: {
-            completeness: 0.90
+            completeness: 0.9,
           },
-          confidence: 0.95
+          confidence: 0.95,
         };
 
         // Act & Assert
@@ -181,7 +181,7 @@ describe('Type Definitions', () => {
           framework: 'jest',
           language: 'typescript',
           testFiles: [],
-          sourceFiles: []
+          sourceFiles: [],
         };
 
         // Act & Assert
@@ -194,7 +194,7 @@ describe('Type Definitions', () => {
           projectRoot: '/path/to/project',
           language: 'invalid-language', // 無効な言語
           testFiles: [],
-          sourceFiles: []
+          sourceFiles: [],
         };
 
         // Act & Assert
@@ -231,7 +231,7 @@ describe('Type Definitions', () => {
         'correctness',
         'maintainability',
         'performance',
-        'security'
+        'security',
       ];
 
       // Act & Assert
@@ -241,7 +241,7 @@ describe('Type Definitions', () => {
           'correctness',
           'maintainability',
           'performance',
-          'security'
+          'security',
         ]).toContain(dimension);
       });
     });
@@ -253,7 +253,7 @@ describe('Type Definitions', () => {
         // Arrange
         const validTestFile: TestFile = {
           path: '/test/example.test.ts',
-          content: 'test content'
+          content: 'test content',
         };
 
         // Act & Assert
@@ -266,7 +266,7 @@ describe('Type Definitions', () => {
           path: '/test/example.test.ts',
           content: 'test content',
           framework: 'jest',
-          testCount: 5
+          testCount: 5,
         };
 
         // Act & Assert
@@ -283,8 +283,8 @@ describe('Type Definitions', () => {
           location: {
             file: 'test.ts',
             line: 10,
-            column: 5
-          }
+            column: 5,
+          },
         };
 
         // Act & Assert
@@ -299,9 +299,9 @@ describe('Type Definitions', () => {
           location: {
             file: 'test.ts',
             line: 10,
-            column: 5
+            column: 5,
           },
-          details: {}
+          details: {},
         };
 
         // Act & Assert
@@ -321,8 +321,8 @@ describe('Type Definitions', () => {
             filesWithIssues: 0,
             totalIssues: 0,
             totalErrors: 0,
-            totalWarnings: 0
-          }
+            totalWarnings: 0,
+          },
         };
 
         // Act & Assert
@@ -336,9 +336,9 @@ describe('Type Definitions', () => {
           timestamp: new Date(),
           results: [],
           summary: {
-            totalFiles: 10
+            totalFiles: 10,
             // filesWithIssues, totalIssuesが欠けている
-          }
+          },
         };
 
         // Act & Assert
@@ -362,7 +362,7 @@ describe('Type Definitions', () => {
       // Arrange
       const target = {
         name: 'TestPlugin',
-        analyze: jest.fn()
+        analyze: jest.fn(),
       };
       const proxy = new Proxy(target, {});
 
@@ -374,7 +374,7 @@ describe('Type Definitions', () => {
       // Arrange
       const frozen = Object.freeze({
         name: 'TestPlugin',
-        analyze: jest.fn()
+        analyze: jest.fn(),
       });
 
       // Act & Assert

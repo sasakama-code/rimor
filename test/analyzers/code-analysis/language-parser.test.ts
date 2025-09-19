@@ -47,9 +47,9 @@ describe('LanguageAnalyzer', () => {
         
         const arrowFunc = (x: number) => x * 2;
       `;
-      
+
       const functions = await analyzer.extractFunctionInfo(code, 'typescript');
-      
+
       expect(functions).toBeInstanceOf(Array);
       expect(functions.length).toBeGreaterThan(0);
       expect(functions[0]).toHaveProperty('name');
@@ -63,9 +63,9 @@ describe('LanguageAnalyzer', () => {
           return "data";
         }
       `;
-      
+
       const functions = await analyzer.extractFunctionInfo(code, 'typescript');
-      
+
       expect(functions.length).toBe(1);
       expect(functions[0].isAsync).toBe(true);
     });
@@ -86,9 +86,9 @@ describe('LanguageAnalyzer', () => {
           return <span>{props.value}</span>;
         };
       `;
-      
+
       const functions = await analyzer.extractFunctionInfo(code, 'typescriptreact');
-      
+
       expect(functions).toBeInstanceOf(Array);
       expect(functions.length).toBeGreaterThan(0);
       expect(functions.some(f => f.name === 'TestComponent')).toBe(true);
@@ -111,9 +111,9 @@ describe('LanguageAnalyzer', () => {
           return <span>{props.value}</span>;
         };
       `;
-      
+
       const functions = await analyzer.extractFunctionInfo(code, 'javascriptreact');
-      
+
       expect(functions).toBeInstanceOf(Array);
       expect(functions.length).toBeGreaterThan(0);
       expect(functions.some(f => f.name === 'TestComponent')).toBe(true);
@@ -136,9 +136,9 @@ describe('LanguageAnalyzer', () => {
           }
         }
       `;
-      
+
       const classes = analyzer.extractClassInfo(code, 'typescript');
-      
+
       expect(classes).toBeInstanceOf(Array);
       expect(classes.length).toBe(1);
       expect(classes[0]).toHaveProperty('name', 'TestClass');
@@ -151,9 +151,9 @@ describe('LanguageAnalyzer', () => {
         class BaseClass {}
         class DerivedClass extends BaseClass {}
       `;
-      
+
       const classes = analyzer.extractClassInfo(code, 'typescript');
-      
+
       expect(classes.length).toBe(2);
       expect(classes[1].extends).toBe('BaseClass');
     });
@@ -178,9 +178,9 @@ describe('LanguageAnalyzer', () => {
           }
         }
       `;
-      
+
       const classes = analyzer.extractClassInfo(code, 'typescriptreact');
-      
+
       expect(classes).toBeInstanceOf(Array);
       expect(classes.length).toBe(1);
       expect(classes[0]).toHaveProperty('name', 'TestComponent');
@@ -206,9 +206,9 @@ describe('LanguageAnalyzer', () => {
           }
         }
       `;
-      
+
       const classes = analyzer.extractClassInfo(code, 'javascriptreact');
-      
+
       expect(classes).toBeInstanceOf(Array);
       expect(classes.length).toBe(1);
       expect(classes[0]).toHaveProperty('name', 'TestComponent');
@@ -229,9 +229,9 @@ describe('LanguageAnalyzer', () => {
           permissions: string[];
         }
       `;
-      
+
       const interfaces = analyzer.extractInterfaceInfo(code, 'typescript');
-      
+
       expect(interfaces).toBeInstanceOf(Array);
       expect(interfaces.length).toBe(2);
       expect(interfaces[0]).toHaveProperty('name', 'User');
@@ -258,9 +258,9 @@ describe('LanguageAnalyzer', () => {
           secondary: string;
         }
       `;
-      
+
       const interfaces = analyzer.extractInterfaceInfo(code, 'typescriptreact');
-      
+
       expect(interfaces).toBeInstanceOf(Array);
       expect(interfaces.length).toBe(3);
       expect(interfaces.some(i => i.name === 'ComponentProps')).toBe(true);
@@ -276,9 +276,9 @@ describe('LanguageAnalyzer', () => {
         let mutable: number = 42;
         var oldStyle = true;
       `;
-      
+
       const variables = analyzer.extractVariableInfo(code, 'typescript');
-      
+
       expect(variables).toBeInstanceOf(Array);
       expect(variables.length).toBe(3);
       expect(variables[0]).toHaveProperty('name');
@@ -301,9 +301,9 @@ describe('LanguageAnalyzer', () => {
           return <div ref={componentRef}>{count}</div>;
         }
       `;
-      
+
       const variables = analyzer.extractVariableInfo(code, 'typescriptreact');
-      
+
       expect(variables).toBeInstanceOf(Array);
       expect(variables.length).toBeGreaterThan(0);
       expect(variables.some(v => v.name === 'initialState')).toBe(true);
@@ -325,9 +325,9 @@ describe('LanguageAnalyzer', () => {
           return <div ref={componentRef}>{count}</div>;
         }
       `;
-      
+
       const variables = analyzer.extractVariableInfo(code, 'javascriptreact');
-      
+
       expect(variables).toBeInstanceOf(Array);
       expect(variables.length).toBeGreaterThan(0);
       expect(variables.some(v => v.name === 'initialState')).toBe(true);
@@ -342,9 +342,9 @@ describe('LanguageAnalyzer', () => {
           let globalLet = 42;
           var globalVar = true;
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         expect(variables).toHaveLength(3);
         expect(variables.every(v => v.scope === 'global')).toBe(true);
         expect(variables.find(v => v.name === 'globalConst')?.scope).toBe('global');
@@ -360,9 +360,9 @@ describe('LanguageAnalyzer', () => {
             var funcVar = true;
           }
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         expect(variables).toHaveLength(3);
         expect(variables.every(v => v.scope === 'local')).toBe(true);
         expect(variables.find(v => v.name === 'funcConst')?.scope).toBe('local');
@@ -382,9 +382,9 @@ describe('LanguageAnalyzer', () => {
             }
           }
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         const privateVar = variables.find(v => v.name === 'classPrivate');
         const publicVar = variables.find(v => v.name === 'classPublic');
         const constructorConstVar = variables.find(v => v.name === 'constructorConst');
@@ -412,9 +412,9 @@ describe('LanguageAnalyzer', () => {
             }
           }
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         const globalVar = variables.find(v => v.name === 'globalVar');
         const outerVar = variables.find(v => v.name === 'outerVar');
         const innerVar = variables.find(v => v.name === 'innerVar');
@@ -435,9 +435,9 @@ describe('LanguageAnalyzer', () => {
           
           const simpleArrow = (x: number) => x * 2;
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         const arrowFuncVar = variables.find(v => v.name === 'arrowFunc');
         const simpleArrowVar = variables.find(v => v.name === 'simpleArrow');
         const arrowVar = variables.find(v => v.name === 'arrowVar');
@@ -457,9 +457,9 @@ describe('LanguageAnalyzer', () => {
             const [localA, localB] = [3, 4];
           }
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         const globalA = variables.find(v => v.name === 'globalA');
         const globalB = variables.find(v => v.name === 'globalB');
         const localA = variables.find(v => v.name === 'localA');
@@ -479,9 +479,9 @@ describe('LanguageAnalyzer', () => {
             const { localName, localEmail } = localUser;
           }
         `;
-        
+
         const variables = analyzer.extractVariableInfo(code, 'typescript');
-        
+
         const globalName = variables.find(v => v.name === 'globalName');
         const globalEmail = variables.find(v => v.name === 'globalEmail');
         const localName = variables.find(v => v.name === 'localName');
@@ -502,16 +502,16 @@ describe('LanguageAnalyzer', () => {
         import * as fs from 'fs';
         import defaultExport from './module';
       `;
-      
+
       const imports = analyzer.extractImports(code, 'typescript');
-      
+
       expect(imports).toBeInstanceOf(Array);
       expect(imports.length).toBe(3);
       expect(imports[0]).toHaveProperty('source', '@angular/core');
     });
   });
 
-  // Issue #109 - Enhanced export detection tests  
+  // Issue #109 - Enhanced export detection tests
   describe('extractExports (Issue #109)', () => {
     describe('Named exports', () => {
       it('should extract const/let/var exports', () => {
@@ -520,9 +520,9 @@ describe('LanguageAnalyzer', () => {
           export let variableValue = "test";
           export var oldStyleVar = true;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['CONSTANT_VALUE', 'variableValue', 'oldStyleVar']);
       });
 
@@ -531,9 +531,9 @@ describe('LanguageAnalyzer', () => {
           export function normalFunction() {}
           export async function asyncFunction() {}
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['normalFunction', 'asyncFunction']);
       });
 
@@ -542,9 +542,9 @@ describe('LanguageAnalyzer', () => {
           export class MyClass {}
           export abstract class AbstractClass {}
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['MyClass', 'AbstractClass']);
       });
 
@@ -554,9 +554,9 @@ describe('LanguageAnalyzer', () => {
           export interface MyInterface {}
           export enum MyEnum {}
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['MyType', 'MyInterface', 'MyEnum']);
       });
     });
@@ -567,9 +567,9 @@ describe('LanguageAnalyzer', () => {
           export default function namedFunction() {}
           export default class NamedClass {}
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('namedFunction');
         expect(exports).toContain('NamedClass');
       });
@@ -581,9 +581,9 @@ describe('LanguageAnalyzer', () => {
           export default 42;
           export default "anonymous";
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('default');
         expect(exports.filter(e => e === 'default')).toHaveLength(4);
       });
@@ -594,9 +594,9 @@ describe('LanguageAnalyzer', () => {
         const code = `
           export { foo, bar, baz };
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['foo', 'bar', 'baz']);
       });
 
@@ -605,9 +605,9 @@ describe('LanguageAnalyzer', () => {
           export { foo as bar, baz as qux };
           export { original as renamed, another };
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('bar');
         expect(exports).toContain('qux');
         expect(exports).toContain('renamed');
@@ -621,9 +621,9 @@ describe('LanguageAnalyzer', () => {
         const code = `
           export { normal, renamed as alias, another };
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['normal', 'alias', 'another']);
       });
     });
@@ -634,9 +634,9 @@ describe('LanguageAnalyzer', () => {
           export { foo, bar as baz } from './module';
           export { Component as MyComponent } from 'react';
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('foo');
         expect(exports).toContain('baz');
         expect(exports).toContain('MyComponent');
@@ -649,9 +649,9 @@ describe('LanguageAnalyzer', () => {
           export * from './module';
           export * as Utils from './utils';
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('Utils');
       });
     });
@@ -663,9 +663,9 @@ describe('LanguageAnalyzer', () => {
           exports.bar = function() {};
           module.exports.baz = 42;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'javascript');
-        
+
         expect(exports).toEqual(['foo', 'bar', 'baz']);
       });
 
@@ -674,9 +674,9 @@ describe('LanguageAnalyzer', () => {
           module.exports = { foo, bar, baz };
           exports = { qux, quux };
         `;
-        
+
         const exports = analyzer.extractExports(code, 'javascript');
-        
+
         expect(exports).toEqual(['foo', 'bar', 'baz', 'qux', 'quux']);
       });
 
@@ -689,9 +689,9 @@ describe('LanguageAnalyzer', () => {
             nested: { value: true }
           };
         `;
-        
+
         const exports = analyzer.extractExports(code, 'javascript');
-        
+
         expect(exports).toContain('method1');
         expect(exports).toContain('method2');
         expect(exports).toContain('constant');
@@ -704,9 +704,9 @@ describe('LanguageAnalyzer', () => {
           module.exports = class MyClass {};
           exports = MyExportedVariable;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'javascript');
-        
+
         expect(exports).toContain('MyFunction');
         expect(exports).toContain('MyClass');
         expect(exports).toContain('MyExportedVariable');
@@ -722,9 +722,9 @@ describe('LanguageAnalyzer', () => {
             qux
           } from './module';
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['foo', 'baz', 'qux']);
       });
 
@@ -735,9 +735,9 @@ describe('LanguageAnalyzer', () => {
           const normalString = "export const notAnExport = true;";
           export const realExport = 42;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['realExport']);
       });
 
@@ -747,9 +747,9 @@ describe('LanguageAnalyzer', () => {
           export function typedFunction(param: number): string { return ""; }
           export class TypedClass implements MyInterface {}
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toEqual(['typedConstant', 'typedFunction', 'TypedClass']);
       });
 
@@ -758,9 +758,9 @@ describe('LanguageAnalyzer', () => {
           export const { foo, bar: { nested } } = complexObject;
           export const [first, second] = arrayValue;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(exports).toContain('foo');
         expect(exports).toContain('nested');
         expect(exports).toContain('first');
@@ -776,9 +776,9 @@ describe('LanguageAnalyzer', () => {
           }
           export const ArrowComponent = (props) => <span>{props.value}</span>;
         `;
-        
+
         const exports = analyzer.extractExports(code, 'typescriptreact');
-        
+
         expect(exports).toEqual(['MyComponent', 'ArrowComponent']);
       });
 
@@ -788,10 +788,10 @@ describe('LanguageAnalyzer', () => {
           // Note: type and interface should not be recognized in JavaScript
           // export type MyType = string;  // This would be syntax error in JS
         `;
-        
+
         const jsExports = analyzer.extractExports(code, 'javascript');
         const tsExports = analyzer.extractExports(code, 'typescript');
-        
+
         expect(jsExports).toEqual(['value']);
         expect(tsExports).toEqual(['value']);
       });
@@ -814,9 +814,9 @@ describe('LanguageAnalyzer', () => {
           }
         }
       `;
-      
+
       const features = analyzer.parseLanguageSpecificFeatures(code, 'typescriptreact');
-      
+
       expect(features).toHaveProperty('language', 'typescriptreact');
       expect(features).toHaveProperty('hasAsync', true);
       expect(features).toHaveProperty('hasGenerics', true);
@@ -840,9 +840,9 @@ describe('LanguageAnalyzer', () => {
           );
         }
       `;
-      
+
       const features = analyzer.parseLanguageSpecificFeatures(code, 'javascriptreact');
-      
+
       expect(features).toHaveProperty('language', 'javascriptreact');
       expect(features).toHaveProperty('hasAsync', true);
       expect(features).toHaveProperty('hasGenerics', false);

@@ -1,14 +1,12 @@
 /**
  * 型ベースセキュリティ解析 - フロー感度のあるテスト解析
  * データフロー追跡とセキュリティ不変条件の検証
- * 
+ *
  * TypeScript Compiler APIを使用したAST解析による実装
  */
 
 import * as ts from 'typescript';
-import {
-  Position
-} from '../../core/types';
+import { Position } from '../../core/types';
 
 import {
   FlowGraph,
@@ -33,7 +31,7 @@ import {
   TaintSource,
   SecuritySink,
   SanitizerType,
-  TestMethodExtended as TestMethod
+  TestMethodExtended as TestMethod,
 } from '../types/flow-types';
 
 // 必要な型を再エクスポート（engine.tsから使用）
@@ -87,7 +85,7 @@ export class FlowSensitiveAnalyzer {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'entry',
       content: '',
-      location: { line: 1, column: 0 } as Position
+      location: { line: 1, column: 0 } as Position,
     });
 
     // ASTをトラバースしてフローノードを構築
@@ -105,7 +103,7 @@ export class FlowSensitiveAnalyzer {
       securitySinks: [],
       sanitizers: [],
       paths,
-      violations: []
+      violations: [],
     };
   }
 
@@ -115,34 +113,37 @@ export class FlowSensitiveAnalyzer {
   private traverseAST(node: ts.Node, previousNode: FlowNode): FlowNode {
     let currentNode = previousNode;
 
-    ts.forEachChild(node, (child) => {
+    ts.forEachChild(node, child => {
       switch (child.kind) {
         case ts.SyntaxKind.VariableStatement:
           currentNode = this.handleVariableStatement(child as ts.VariableStatement, currentNode);
           break;
-        
+
         case ts.SyntaxKind.ExpressionStatement:
-          currentNode = this.handleExpressionStatement(child as ts.ExpressionStatement, currentNode);
+          currentNode = this.handleExpressionStatement(
+            child as ts.ExpressionStatement,
+            currentNode
+          );
           break;
-        
+
         case ts.SyntaxKind.IfStatement:
           currentNode = this.handleIfStatement(child as ts.IfStatement, currentNode);
           break;
-        
+
         case ts.SyntaxKind.ForStatement:
         case ts.SyntaxKind.WhileStatement:
         case ts.SyntaxKind.DoStatement:
           currentNode = this.handleLoopStatement(child as ts.IterationStatement, currentNode);
           break;
-        
+
         case ts.SyntaxKind.CallExpression:
           currentNode = this.handleCallExpression(child as ts.CallExpression, currentNode);
           break;
-        
+
         case ts.SyntaxKind.ReturnStatement:
           currentNode = this.handleReturnStatement(child as ts.ReturnStatement, currentNode);
           break;
-        
+
         default:
           currentNode = this.traverseAST(child, currentNode);
       }
@@ -167,7 +168,7 @@ export class FlowSensitiveAnalyzer {
       content: stmt.getText(this.sourceFile!),
       location: this.getLocationFromNode(stmt),
       lhs: varName,
-      rhs: initializer
+      rhs: initializer,
     };
 
     const newNode = this.createFlowNode(`assign_${varName}`, statement);
@@ -185,9 +186,12 @@ export class FlowSensitiveAnalyzer {
   /**
    * 式文の処理
    */
-  private handleExpressionStatement(stmt: ts.ExpressionStatement, previousNode: FlowNode): FlowNode {
+  private handleExpressionStatement(
+    stmt: ts.ExpressionStatement,
+    previousNode: FlowNode
+  ): FlowNode {
     const expression = stmt.expression;
-    
+
     if (ts.isCallExpression(expression)) {
       return this.handleCallExpression(expression, previousNode);
     }
@@ -196,12 +200,12 @@ export class FlowSensitiveAnalyzer {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: stmt.getText(this.sourceFile!),
-      location: this.getLocationFromNode(stmt)
+      location: this.getLocationFromNode(stmt),
     };
 
     const newNode = this.createFlowNode(`expr_${this.nodeIdCounter}`, statement);
     this.connectNodes(previousNode, newNode);
-    
+
     return newNode;
   }
 
@@ -218,7 +222,7 @@ export class FlowSensitiveAnalyzer {
       content: expr.getText(this.sourceFile!),
       location: this.getLocationFromNode(expr),
       method: methodName,
-      arguments: args
+      arguments: args,
     };
 
     // アサーションの検出
@@ -252,12 +256,12 @@ export class FlowSensitiveAnalyzer {
    */
   private handleIfStatement(stmt: ts.IfStatement, previousNode: FlowNode): FlowNode {
     const condition = stmt.expression.getText(this.sourceFile!);
-    
+
     const branchNode = this.createFlowNode(`if_${condition}`, {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: `if (${condition})`,
-      location: this.getLocationFromNode(stmt)
+      location: this.getLocationFromNode(stmt),
     });
     this.connectNodes(previousNode, branchNode);
 
@@ -275,7 +279,7 @@ export class FlowSensitiveAnalyzer {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: 'merge',
-      location: this.getLocationFromNode(stmt)
+      location: this.getLocationFromNode(stmt),
     });
 
     this.connectNodes(thenExit, mergeNode);
@@ -291,12 +295,12 @@ export class FlowSensitiveAnalyzer {
    */
   private handleLoopStatement(stmt: ts.IterationStatement, previousNode: FlowNode): FlowNode {
     const loopType = ts.SyntaxKind[stmt.kind].toLowerCase().replace('statement', '');
-    
+
     const loopEntry = this.createFlowNode(`${loopType}_entry`, {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: stmt.getText(this.sourceFile!).substring(0, 50) + '...',
-      location: this.getLocationFromNode(stmt)
+      location: this.getLocationFromNode(stmt),
     });
     this.connectNodes(previousNode, loopEntry);
 
@@ -309,7 +313,7 @@ export class FlowSensitiveAnalyzer {
     }
 
     const loopExit = this.traverseAST(bodyNode, loopEntry);
-    
+
     // バックエッジ（ループ）
     this.connectNodes(loopExit, loopEntry);
 
@@ -318,7 +322,7 @@ export class FlowSensitiveAnalyzer {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: 'loop exit',
-      location: this.getLocationFromNode(stmt)
+      location: this.getLocationFromNode(stmt),
     });
     this.connectNodes(loopEntry, exitNode);
 
@@ -330,13 +334,13 @@ export class FlowSensitiveAnalyzer {
    */
   private handleReturnStatement(stmt: ts.ReturnStatement, previousNode: FlowNode): FlowNode {
     const returnValue = stmt.expression?.getText(this.sourceFile!) || 'void';
-    
+
     const returnNode = this.createFlowNode(`return`, {
       id: `stmt_${this.nodeIdCounter++}`,
       type: 'methodCall',
       content: stmt.getText(this.sourceFile!),
       location: this.getLocationFromNode(stmt),
-      returnValue
+      returnValue,
     });
     this.connectNodes(previousNode, returnNode);
 
@@ -355,7 +359,7 @@ export class FlowSensitiveAnalyzer {
       inputTaint: TaintLevel.UNTAINTED,
       outputTaint: TaintLevel.UNTAINTED,
       successors: [],
-      predecessors: []
+      predecessors: [],
     };
     this.flowNodes.set(nodeId, node);
     return node;
@@ -424,24 +428,36 @@ export class FlowSensitiveAnalyzer {
         if (!node) continue;
 
         // 汚染源
-        if (flowGraph.taintSources?.some(ts => 
-          ts.location.line === node.statement?.location?.line && 
-          ts.location.column === node.statement?.location?.column)) {
+        if (
+          flowGraph.taintSources?.some(
+            ts =>
+              ts.location.line === node.statement?.location?.line &&
+              ts.location.column === node.statement?.location?.column
+          )
+        ) {
           currentTaint = TaintLevel.DEFINITELY_TAINTED;
         }
 
         // サニタイザー
-        if (flowGraph.sanitizers?.some(s => 
-          s.location.line === node.statement?.location?.line &&
-          s.location.column === node.statement?.location?.column)) {
+        if (
+          flowGraph.sanitizers?.some(
+            s =>
+              s.location.line === node.statement?.location?.line &&
+              s.location.column === node.statement?.location?.column
+          )
+        ) {
           currentTaint = TaintLevel.UNTAINTED;
           passedSanitizer = true;
         }
 
         // シンク
-        if (flowGraph.securitySinks?.some(ss => 
-          ss.location.line === node.statement?.location?.line &&
-          ss.location.column === node.statement?.location?.column)) {
+        if (
+          flowGraph.securitySinks?.some(
+            ss =>
+              ss.location.line === node.statement?.location?.line &&
+              ss.location.column === node.statement?.location?.column
+          )
+        ) {
           path.reachesSecuritySink = true;
         }
       }
@@ -474,7 +490,7 @@ export class FlowSensitiveAnalyzer {
             severity: 'high',
             suggestedFix: 'Apply appropriate sanitization before using tainted data',
             message: 'Tainted data flows to security sink without sanitization',
-            location: sinkNode.statement?.location
+            location: sinkNode.statement?.location,
           });
         }
       });
@@ -499,7 +515,7 @@ export class FlowSensitiveAnalyzer {
           isFeasible: true,
           taintLevel: TaintLevel.UNTAINTED,
           passedThroughSanitizer: false,
-          reachesSecuritySink: false
+          reachesSecuritySink: false,
         });
         return;
       }
@@ -552,7 +568,7 @@ export class FlowSensitiveAnalyzer {
             type: loopType,
             bodyNodes,
             entryNode: node,
-            exitNode
+            exitNode,
           });
         }
       }
@@ -570,7 +586,7 @@ export class FlowSensitiveAnalyzer {
 
     const collect = (nodeId: string): void => {
       if (visited.has(nodeId) || nodeId === exitNode.id) return;
-      
+
       visited.add(nodeId);
       const node = this.flowNodes.get(nodeId);
       if (node) {
@@ -604,13 +620,12 @@ export class FlowSensitiveAnalyzer {
     return patterns.some(pattern => content.includes(pattern));
   }
 
-
   private createTaintMetadata(source: TaintSource, node: FlowNode): TaintMetadata {
     return {
       level: node.outputTaint || TaintLevel.UNTAINTED,
       sources: [source],
       sinks: [],
-      sanitizers: []
+      sanitizers: [],
     };
   }
 
@@ -619,7 +634,7 @@ export class FlowSensitiveAnalyzer {
       level: node.outputTaint || TaintLevel.UNTAINTED,
       sources: [TaintSource.USER_INPUT],
       sinks: [],
-      sanitizers: []
+      sanitizers: [],
     };
   }
 
@@ -639,10 +654,10 @@ export class FlowSensitiveAnalyzer {
         filePath: 'test.ts',
         content: code,
         signature: 'test',
-        location: { 
+        location: {
           start: { line: 1, column: 1 } as Position,
-          end: { line: 1, column: 1 } as Position
-        }
+          end: { line: 1, column: 1 } as Position,
+        },
       };
       return this.identifyTaintSourcesFromCode(mockMethod.content || '');
     }
@@ -657,7 +672,7 @@ export class FlowSensitiveAnalyzer {
       { regex: /req\.params/g, type: TaintSource.USER_INPUT },
       { regex: /process\.argv/g, type: TaintSource.USER_INPUT },
       { regex: /fetch\(/g, type: TaintSource.EXTERNAL_API },
-      { regex: /axios\./g, type: TaintSource.EXTERNAL_API }
+      { regex: /axios\./g, type: TaintSource.EXTERNAL_API },
     ];
 
     patterns.forEach(({ regex, type }) => {
@@ -667,7 +682,7 @@ export class FlowSensitiveAnalyzer {
           source: type,
           location: { line: 1, column: match.index || 0 } as Position,
           variable: match[0],
-          confidence: 0.9
+          confidence: 0.9,
         });
       });
     });
@@ -685,26 +700,37 @@ export class FlowSensitiveAnalyzer {
       filePath: 'test.ts',
       content: code,
       signature: 'test',
-      location: { 
+      location: {
         start: { line: 1, column: 1 } as Position,
-        end: { line: 1, column: 1 } as Position
-      }
+        end: { line: 1, column: 1 } as Position,
+      },
     };
 
     const flowGraph = this.trackSecurityDataFlow(mockMethod);
-    
+
     return {
       sources: [],
       sinks: [],
       sanitizers: [],
       flows: [],
-      violations: flowGraph.violations?.map(v => ({
-        source: { source: TaintSource.USER_INPUT, location: { line: 1, column: 1 } as Position, variable: 'unknown', confidence: 0.5 },
-        sink: { sink: SecuritySink.DATABASE_QUERY, location: { line: 1, column: 1 } as Position, variable: 'unknown', risk: 0.5 },
-        path: flowGraph.paths?.[0] || { id: '', nodes: [], edges: [], isFeasible: true },
-        message: v.message,
-        severity: v.severity
-      })) || []
+      violations:
+        flowGraph.violations?.map(v => ({
+          source: {
+            source: TaintSource.USER_INPUT,
+            location: { line: 1, column: 1 } as Position,
+            variable: 'unknown',
+            confidence: 0.5,
+          },
+          sink: {
+            sink: SecuritySink.DATABASE_QUERY,
+            location: { line: 1, column: 1 } as Position,
+            variable: 'unknown',
+            risk: 0.5,
+          },
+          path: flowGraph.paths?.[0] || { id: '', nodes: [], edges: [], isFeasible: true },
+          message: v.message,
+          severity: v.severity,
+        })) || [],
     };
   }
 
@@ -713,7 +739,7 @@ export class FlowSensitiveAnalyzer {
     const patterns = [
       { regex: /sanitize\(/g, type: SanitizerType.HTML_ESCAPE },
       { regex: /escape\(/g, type: SanitizerType.HTML_ESCAPE },
-      { regex: /validate\(/g, type: SanitizerType.INPUT_VALIDATION }
+      { regex: /validate\(/g, type: SanitizerType.INPUT_VALIDATION },
     ];
 
     patterns.forEach(({ regex, type }) => {
@@ -735,25 +761,25 @@ export class FlowSensitiveAnalyzer {
       filePath: 'test.ts',
       content: code,
       signature: 'test',
-      location: { 
+      location: {
         start: { line: 1, column: 1 } as Position,
-        end: { line: 1, column: 1 } as Position
-      }
+        end: { line: 1, column: 1 } as Position,
+      },
     };
 
     const flowGraph = this.trackSecurityDataFlow(mockMethod);
-    
-    const taintedPath = flowGraph.paths?.find(path => 
-      Array.from(flowGraph.nodes.values()).some(node => 
-        node.statement?.content?.includes(taintedVariable) &&
-        path.nodes.includes(node.id)
-      )
-    ) || undefined;
+
+    const taintedPath =
+      flowGraph.paths?.find(path =>
+        Array.from(flowGraph.nodes.values()).some(
+          node => node.statement?.content?.includes(taintedVariable) && path.nodes.includes(node.id)
+        )
+      ) || undefined;
 
     return {
       tainted: new Map<string, TaintLevel>(),
       propagationPaths: taintedPath ? [taintedPath] : [],
-      violations: []
+      violations: [],
     };
   }
 
@@ -775,30 +801,32 @@ export class FlowSensitiveAnalyzer {
       filePath: 'test.ts',
       content: code,
       signature: 'test',
-      location: { 
+      location: {
         start: { line: 1, column: 1 } as Position,
-        end: { line: 1, column: 1 } as Position
-      }
+        end: { line: 1, column: 1 } as Position,
+      },
     };
 
     const flowGraph = this.trackSecurityDataFlow(mockMethod);
-    
-    return (flowGraph.paths || []).map(path => 
-      path.nodes.map(nodeId => {
-        const node = this.flowNodes.get(nodeId);
-        return this.extractPathElement(node);
-      }).filter(elem => elem !== '')
+
+    return (flowGraph.paths || []).map(path =>
+      path.nodes
+        .map(nodeId => {
+          const node = this.flowNodes.get(nodeId);
+          return this.extractPathElement(node);
+        })
+        .filter(elem => elem !== '')
     );
   }
 
   private extractPathElement(node: FlowNode | undefined): string {
     if (!node) return '';
-    
+
     const content = node.statement?.content || '';
     if (content.includes('processA')) return 'processA';
     if (content.includes('processB')) return 'processB';
     if (content.includes('errorA')) return 'errorA';
-    
+
     return '';
   }
 
@@ -812,40 +840,42 @@ export class FlowSensitiveAnalyzer {
       filePath: 'test.ts',
       content: code,
       signature: 'test',
-      location: { 
+      location: {
         start: { line: 1, column: 1 } as Position,
-        end: { line: 1, column: 1 } as Position
-      }
+        end: { line: 1, column: 1 } as Position,
+      },
     };
 
     const flowGraph = this.trackSecurityDataFlow(mockMethod);
     const deadCode = this.findDeadCode(flowGraph);
-    
+
     const totalNodes = flowGraph.nodes.size;
     return {
-      reachableNodes: new Set(Array.from(flowGraph.nodes.keys()).slice(0, totalNodes - deadCode.length)),
+      reachableNodes: new Set(
+        Array.from(flowGraph.nodes.keys()).slice(0, totalNodes - deadCode.length)
+      ),
       unreachableNodes: new Set(deadCode.map(node => node.id)),
-      deadCode: deadCode
+      deadCode: deadCode,
     };
   }
 
   private findDeadCode(flowGraph: FlowGraph): FlowNode[] {
     const reachable = new Set<string>();
     const queue = [flowGraph.entryNode || 'entry'];
-    
+
     while (queue.length > 0) {
       const nodeId = queue.shift();
       if (!nodeId || reachable.has(nodeId)) continue;
-      
+
       reachable.add(nodeId);
       const node = this.flowNodes.get(nodeId);
       if (node) {
         queue.push(...node.successors);
       }
     }
-    
-    return Array.from(flowGraph.nodes.values()).filter(node => 
-      !reachable.has(node.id) && node.statement?.content?.includes('deadCode')
+
+    return Array.from(flowGraph.nodes.values()).filter(
+      node => !reachable.has(node.id) && node.statement?.content?.includes('deadCode')
     );
   }
 
@@ -859,28 +889,28 @@ export class FlowSensitiveAnalyzer {
       filePath: 'test.ts',
       content: code,
       signature: 'test',
-      location: { 
+      location: {
         start: { line: 1, column: 1 } as Position,
-        end: { line: 1, column: 1 } as Position
-      }
+        end: { line: 1, column: 1 } as Position,
+      },
     };
 
     const flowGraph = this.trackSecurityDataFlow(mockMethod);
     const cycles: string[][] = [];
-    
+
     // テスト用：特定のパターンを検出
     if (code.includes('processA') && code.includes('processB')) {
       cycles.push(['processA', 'processB']);
     }
-    
+
     return {
       hasCycles: cycles.length > 0,
-      cycles: cycles.map(cycle => ({ 
-        id: '', 
-        nodes: cycle, 
-        edges: [], 
-        isFeasible: true 
-      }))
+      cycles: cycles.map(cycle => ({
+        id: '',
+        nodes: cycle,
+        edges: [],
+        isFeasible: true,
+      })),
     };
   }
 
@@ -889,23 +919,23 @@ export class FlowSensitiveAnalyzer {
    */
   analyzeTypeFlow(code: string): TypeFlowAnalysisResult {
     const typeTransitions: TypeTransition[] = [];
-    
+
     // 簡易的な型遷移検出
     const typePattern = /:\s*(\w+)/g;
     const matches = [...code.matchAll(typePattern)];
-    
+
     for (let i = 0; i < matches.length - 1; i++) {
       typeTransitions.push({
         from: { variables: new Map(), constraints: [] },
         to: { variables: new Map(), constraints: [] },
-        edge: { from: matches[i][1], to: matches[i + 1][1] }
+        edge: { from: matches[i][1], to: matches[i + 1][1] },
       });
     }
-    
+
     return {
       typeStates: new Map<string, any>(),
       transitions: typeTransitions,
-      violations: []
+      violations: [],
     };
   }
 
@@ -914,16 +944,16 @@ export class FlowSensitiveAnalyzer {
    */
   detectTypeViolations(code: string): TypeViolation[] {
     const violations: TypeViolation[] = [];
-    
+
     if (code.includes(': any') && code.includes(': string')) {
       violations.push({
         location: { line: 1, column: 1 } as Position,
         expected: 'string',
         actual: 'any',
-        message: 'Unsafe type cast from any to string'
+        message: 'Unsafe type cast from any to string',
       });
     }
-    
+
     return violations;
   }
 
@@ -933,9 +963,9 @@ export class FlowSensitiveAnalyzer {
   private createTaintSourceInfo(node: FlowNode): TaintSourceInfo {
     return {
       source: TaintSource.USER_INPUT,
-      location: node.statement?.location || { line: 0, column: 0 } as Position,
+      location: node.statement?.location || ({ line: 0, column: 0 } as Position),
       variable: node.statement?.variables?.[0] || 'unknown',
-      confidence: 0.8
+      confidence: 0.8,
     };
   }
 
@@ -945,9 +975,9 @@ export class FlowSensitiveAnalyzer {
   private createSanitizerInfo(node: FlowNode): SanitizerInfo {
     return {
       type: SanitizerType.INPUT_VALIDATION,
-      location: node.statement?.location || { line: 0, column: 0 } as Position,
+      location: node.statement?.location || ({ line: 0, column: 0 } as Position),
       variable: node.statement?.variables?.[0] || 'unknown',
-      effectiveness: 0.9
+      effectiveness: 0.9,
     };
   }
 
@@ -957,9 +987,9 @@ export class FlowSensitiveAnalyzer {
   private createSecuritySinkInfo(node: FlowNode): SecuritySinkInfo {
     return {
       sink: SecuritySink.DATABASE_QUERY,
-      location: node.statement?.location || { line: 0, column: 0 } as Position,
+      location: node.statement?.location || ({ line: 0, column: 0 } as Position),
       variable: node.statement?.variables?.[0] || 'unknown',
-      risk: 0.7
+      risk: 0.7,
     };
   }
 
@@ -971,7 +1001,7 @@ export class FlowSensitiveAnalyzer {
       level: node.outputTaint || TaintLevel.UNTAINTED,
       sources: [TaintSource.USER_INPUT],
       sinks: [],
-      sanitizers: []
+      sanitizers: [],
     };
   }
 
@@ -992,4 +1022,3 @@ export class FlowSensitiveAnalyzer {
     return 'taint';
   }
 }
-

@@ -8,7 +8,7 @@
  */
 export interface SampleProject {
   name: string;
-  framework: "express" | "react" | "nestjs" | "nextjs" | "fastify";
+  framework: 'express' | 'react' | 'nestjs' | 'nextjs' | 'fastify';
   rootPath: string;
   testPaths: string[];
   expectedFindings: {

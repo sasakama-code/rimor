@@ -1,19 +1,12 @@
 /**
  * Annotation Generator
  * v0.9.0 - Phase 4: Context Engineering
- * 
+ *
  * 検出された問題に対応するインライン・アノテーションを生成
  */
 
 import { injectable } from 'inversify';
-import {
-  Issue,
-  Severity,
-  IssueType,
-  CodeLocation,
-  DataFlow,
-  AnnotationOptions
-} from './types';
+import { Issue, Severity, IssueType, CodeLocation, DataFlow, AnnotationOptions } from './types';
 import { SeverityLevel } from '../core/types';
 
 interface AnnotationLine {
@@ -82,13 +75,13 @@ export class AnnotationGenerator {
     lines.push('/**');
     lines.push(` * ${prefix} Security Analysis Report`);
     lines.push(` * `);
-    
+
     // 問題の詳細
     lines.push(` * Issue: ${issue.type}`);
     lines.push(` * Severity: ${issue.severity}`);
     lines.push(` * ID: ${issue.id}`);
     lines.push(` * `);
-    
+
     // メッセージ（複数行対応）
     const messageLines = issue.message.split('\n');
     messageLines.forEach(line => {
@@ -146,7 +139,7 @@ export class AnnotationGenerator {
       const annotation = this.generateAnnotation(issue, options);
       const annotationLine: AnnotationLine = {
         lineNumber: issue.location.startLine - 1, // 0-indexed
-        annotation
+        annotation,
       };
 
       annotationsByFile.get(file)!.push(annotationLine);
@@ -165,13 +158,13 @@ export class AnnotationGenerator {
    */
   generateAnnotationReport(issues: Issue[]): string {
     const lines: string[] = [];
-    
+
     lines.push('# Rimor Annotation Report');
     lines.push('');
     lines.push('## Summary');
     lines.push(`Total issues found: ${issues.length}`);
     lines.push('');
-    
+
     // ファイル別にグループ化
     const issuesByFile = new Map<string, Issue[]>();
     issues.forEach(issue => {
@@ -187,10 +180,10 @@ export class AnnotationGenerator {
     issuesByFile.forEach((fileIssues, file) => {
       lines.push(`## File: ${file}`);
       lines.push('');
-      
+
       // 行番号でソート
       fileIssues.sort((a, b) => (a.location?.startLine || 0) - (b.location?.startLine || 0));
-      
+
       fileIssues.forEach(issue => {
         lines.push(`### Line ${issue.location?.startLine || 0}: ${issue.type}`);
         lines.push('');
@@ -198,7 +191,7 @@ export class AnnotationGenerator {
         lines.push(this.generateAnnotation(issue, { format: 'inline' }));
         lines.push('```');
         lines.push('');
-        
+
         if (issue.recommendation) {
           lines.push(`**Recommendation**: ${issue.recommendation}`);
           lines.push('');
@@ -218,7 +211,7 @@ export class AnnotationGenerator {
       [Severity.HIGH]: 'HIGH',
       [Severity.MEDIUM]: 'MEDIUM',
       [Severity.LOW]: 'LOW',
-      [Severity.INFO]: 'INFO'
+      [Severity.INFO]: 'INFO',
     };
     return tags[severity as Severity] || 'UNKNOWN';
   }
@@ -240,7 +233,9 @@ export class AnnotationGenerator {
 
     // Source
     lines.push(` * Source: ${dataFlow.source.type}`);
-    lines.push(` *   Location: ${dataFlow.source.location.file}:${dataFlow.source.location.startLine}`);
+    lines.push(
+      ` *   Location: ${dataFlow.source.location.file}:${dataFlow.source.location.startLine}`
+    );
 
     // Path
     if (dataFlow.path && dataFlow.path.length > 0) {
@@ -263,36 +258,36 @@ export class AnnotationGenerator {
    */
   getCommentStyle(filePath: string): { inline: string; blockStart?: string; blockEnd?: string } {
     const ext = filePath.split('.').pop()?.toLowerCase() || '';
-    
+
     const styles: Record<string, { inline: string; blockStart?: string; blockEnd?: string }> = {
       // C系言語
-      'js': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'jsx': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'ts': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'tsx': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'java': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'c': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'cpp': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'cs': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'go': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'rust': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      'php': { inline: '//', blockStart: '/*', blockEnd: '*/' },
-      
+      js: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      jsx: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      ts: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      tsx: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      java: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      c: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      cpp: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      cs: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      go: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      rust: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+      php: { inline: '//', blockStart: '/*', blockEnd: '*/' },
+
       // スクリプト言語
-      'py': { inline: '#', blockStart: '"""', blockEnd: '"""' },
-      'rb': { inline: '#', blockStart: '=begin', blockEnd: '=end' },
-      'sh': { inline: '#' },
-      'bash': { inline: '#' },
-      
+      py: { inline: '#', blockStart: '"""', blockEnd: '"""' },
+      rb: { inline: '#', blockStart: '=begin', blockEnd: '=end' },
+      sh: { inline: '#' },
+      bash: { inline: '#' },
+
       // マークアップ
-      'html': { inline: '<!--', blockEnd: '-->' },
-      'xml': { inline: '<!--', blockEnd: '-->' },
-      'vue': { inline: '<!--', blockEnd: '-->' },
-      
+      html: { inline: '<!--', blockEnd: '-->' },
+      xml: { inline: '<!--', blockEnd: '-->' },
+      vue: { inline: '<!--', blockEnd: '-->' },
+
       // その他
-      'sql': { inline: '--', blockStart: '/*', blockEnd: '*/' },
-      'yaml': { inline: '#' },
-      'yml': { inline: '#' }
+      sql: { inline: '--', blockStart: '/*', blockEnd: '*/' },
+      yaml: { inline: '#' },
+      yml: { inline: '#' },
     };
 
     return styles[ext] || { inline: '//' };

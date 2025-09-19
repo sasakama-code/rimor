@@ -1,7 +1,7 @@
 /**
  * PluginManager v0.9.0
  * UnifiedPluginManagerへのエイリアス（後方互換性維持）
- * 
+ *
  * @deprecated UnifiedPluginManagerを直接使用してください
  */
 

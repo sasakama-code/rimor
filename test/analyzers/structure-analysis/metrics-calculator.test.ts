@@ -1,7 +1,7 @@
 /**
  * MetricsCalculator 実質的品質テスト
  * Issue #66: ビジネス価値を提供する実際のテスト
- * 
+ *
  * TDD RED段階: 失敗するテストを先に作成
  * SOLID原則: 単一責任のテスト
  * DRY原則: テストヘルパーの共通化
@@ -34,9 +34,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           return a + b;
         }
       `;
-      
+
       const complexity = calculator.calculateCyclomaticComplexity(simpleCode);
-      
+
       expect(complexity).toBe(1); // 分岐なしは複雑度1
       expect(complexity).toBeGreaterThan(0);
       expect(typeof complexity).toBe('number');
@@ -58,9 +58,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         }
       `;
-      
+
       const complexity = calculator.calculateCyclomaticComplexity(conditionalCode);
-      
+
       expect(complexity).toBe(4); // 1 + 3条件分岐
       expect(complexity).toBeGreaterThan(1);
       expect(complexity).toBeLessThan(10); // 適切な範囲内
@@ -93,9 +93,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         }
       `;
-      
+
       const complexity = calculator.calculateCyclomaticComplexity(complexCode);
-      
+
       expect(complexity).toBeGreaterThan(5); // 複数の制御フロー
       expect(complexity).toBeLessThan(20); // 過度に複雑ではない
       expect(Number.isInteger(complexity)).toBe(true);
@@ -110,9 +110,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           return isValid ? result : null;
         }
       `;
-      
+
       const complexity = calculator.calculateCyclomaticComplexity(operatorCode);
-      
+
       expect(complexity).toBeGreaterThan(4); // 複数の論理分岐
       expect(complexity).toEqual(expect.any(Number));
       // 各演算子が正しくカウントされているか
@@ -132,9 +132,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           return a + b;
         }
       `;
-      
+
       const depth = calculator.calculateNestingDepth(flatCode);
-      
+
       expect(depth).toBe(1); // 関数本体のみ
       expect(depth).toBeGreaterThan(0);
       expect(depth).toBeLessThan(3);
@@ -156,9 +156,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         }
       `;
-      
+
       const depth = calculator.calculateNestingDepth(nestedCode);
-      
+
       expect(depth).toBe(6); // 6レベルのネスト
       expect(depth).toBeGreaterThan(4);
       expect(depth).toBeLessThanOrEqual(10); // 過度に深くない
@@ -186,9 +186,9 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         }
       `;
-      
+
       const depth = calculator.calculateNestingDepth(complexStructure);
-      
+
       expect(depth).toBeGreaterThan(2);
       expect(depth).toBeLessThan(8);
       expect(Number.isInteger(depth)).toBe(true);
@@ -201,7 +201,7 @@ describe('MetricsCalculator - 実質的品質保証', () => {
       // テストプロジェクト構造を作成
       fs.mkdirSync(path.join(testProjectPath, 'src'), { recursive: true });
       fs.mkdirSync(path.join(testProjectPath, 'test'), { recursive: true });
-      
+
       // ソースファイル作成
       fs.writeFileSync(
         path.join(testProjectPath, 'src', 'index.ts'),
@@ -213,7 +213,7 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         `
       );
-      
+
       // テストファイル作成
       fs.writeFileSync(
         path.join(testProjectPath, 'test', 'index.test.ts'),
@@ -229,13 +229,13 @@ describe('MetricsCalculator - 実質的品質保証', () => {
 
     it('プロジェクト全体のメトリクスを正しく計算する', async () => {
       const metrics = await calculator.calculateProjectMetrics(testProjectPath);
-      
+
       expect(metrics).toBeDefined();
       expect(metrics.complexity).toBeDefined();
       expect(metrics.maintainability).toBeDefined();
       expect(metrics.testability).toBeDefined();
       expect(metrics.documentation).toBeDefined();
-      
+
       // 各メトリクスが妥当な範囲内か
       expect(metrics.complexity.averageCyclomaticComplexity).toBeGreaterThanOrEqual(0);
       expect(metrics.maintainability.maintainabilityIndex).toBeGreaterThanOrEqual(0);
@@ -264,20 +264,22 @@ describe('MetricsCalculator - 実質的品質保証', () => {
           }
         `
       );
-      
+
       const metrics = await calculator.calculateProjectMetrics(testProjectPath);
-      
+
       expect(metrics.complexity.averageCyclomaticComplexity).toBeGreaterThan(1);
-      expect(metrics.complexity.maxComplexity).toBeGreaterThanOrEqual(metrics.complexity.averageCyclomaticComplexity);
+      expect(metrics.complexity.maxComplexity).toBeGreaterThanOrEqual(
+        metrics.complexity.averageCyclomaticComplexity
+      );
       expect(metrics.testability.testCoverage).toBeGreaterThanOrEqual(0);
       expect(metrics.testability.testCoverage).toBeLessThanOrEqual(1);
     });
 
     it('エラーケースでも適切にハンドリングする', async () => {
       const invalidPath = '/non/existent/path';
-      
+
       const metrics = await calculator.calculateProjectMetrics(invalidPath);
-      
+
       // エラー時でも基本的な構造を返す
       expect(metrics).toBeDefined();
       expect(metrics.complexity).toBeDefined();
@@ -288,11 +290,11 @@ describe('MetricsCalculator - 実質的品質保証', () => {
   describe('パフォーマンスと効率性', () => {
     it('大きなファイルでも適切な時間内に処理を完了する', () => {
       const largeCode = Array(1000).fill('if (x) { y++; }').join('\n');
-      
+
       const startTime = Date.now();
       const complexity = calculator.calculateCyclomaticComplexity(largeCode);
       const endTime = Date.now();
-      
+
       expect(endTime - startTime).toBeLessThan(1000); // 1秒以内
       expect(complexity).toBeGreaterThan(1000); // 多くの分岐を正しくカウント
       expect(complexity).toBeLessThan(2000); // 妥当な範囲内
@@ -300,12 +302,12 @@ describe('MetricsCalculator - 実質的品質保証', () => {
 
     it('メモリ効率的に処理する', () => {
       const veryLargeCode = Array(10000).fill('function f() { return 1; }').join('\n');
-      
+
       // メモリ使用量が爆発しないことを確認
       const memBefore = process.memoryUsage().heapUsed;
       calculator.calculateNestingDepth(veryLargeCode);
       const memAfter = process.memoryUsage().heapUsed;
-      
+
       const memoryIncrease = memAfter - memBefore;
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // 50MB以内の増加
     });

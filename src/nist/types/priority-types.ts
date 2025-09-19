@@ -1,7 +1,7 @@
 /**
  * Priority Engine 型定義
  * リスク優先度計算のための型定義
- * 
+ *
  * SOLID原則: インターフェース分離の原則
  * DRY原則: 型定義の一元化
  */
@@ -15,7 +15,7 @@ export enum BusinessImpact {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
+  CRITICAL = 'CRITICAL',
 }
 
 /**
@@ -25,7 +25,7 @@ export enum TechnicalComplexity {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
-  VERY_HIGH = 'VERY_HIGH'
+  VERY_HIGH = 'VERY_HIGH',
 }
 
 /**

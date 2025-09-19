@@ -106,17 +106,19 @@ export interface MethodAnalysisContext {
 export function isTypeCheckWorkerMessage(value: unknown): value is TypeCheckWorkerMessage {
   if (typeof value !== 'object' || value === null) return false;
   const msg = value as Record<string, unknown>;
-  return typeof msg.id === 'string' &&
-         typeof msg.method === 'object' &&
-         Array.isArray(msg.dependencies);
+  return (
+    typeof msg.id === 'string' && typeof msg.method === 'object' && Array.isArray(msg.dependencies)
+  );
 }
 
 export function isTypeCheckWorkerResult(value: unknown): value is TypeCheckWorkerResult {
   if (typeof value !== 'object' || value === null) return false;
   const result = value as Record<string, unknown>;
-  return typeof result.id === 'string' &&
-         typeof result.success === 'boolean' &&
-         typeof result.executionTime === 'number';
+  return (
+    typeof result.id === 'string' &&
+    typeof result.success === 'boolean' &&
+    typeof result.executionTime === 'number'
+  );
 }
 
 export function isLocalAnalysisResult(value: unknown): value is LocalAnalysisResult {

@@ -20,16 +20,20 @@ describe('Command Routing Integration', () => {
   beforeEach(() => {
     // モックの初期化
     mockAnalyzeCommand = {
-      execute: jest.fn()
+      execute: jest.fn(),
     } as any;
-    
+
     mockUnifiedAnalyzeCommand = {
-      execute: jest.fn()
+      execute: jest.fn(),
     } as any;
 
     // モックコンストラクタの設定
-    (AnalyzeCommand as jest.MockedClass<typeof AnalyzeCommand>).mockImplementation(() => mockAnalyzeCommand);
-    (UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>).mockImplementation(() => mockUnifiedAnalyzeCommand);
+    (AnalyzeCommand as jest.MockedClass<typeof AnalyzeCommand>).mockImplementation(
+      () => mockAnalyzeCommand
+    );
+    (UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>).mockImplementation(
+      () => mockUnifiedAnalyzeCommand
+    );
 
     cli = new CLI();
   });
@@ -44,7 +48,7 @@ describe('Command Routing Integration', () => {
       // ARRANGE
       const testPath = './test-path';
       const mockArgv = ['node', 'rimor', 'analyze-legacy', testPath, '--verbose'];
-      
+
       // process.argvをモック
       const originalArgv = process.argv;
       process.argv = mockArgv;
@@ -62,7 +66,7 @@ describe('Command Routing Integration', () => {
         expect.objectContaining({
           path: testPath,
           verbose: true,
-          format: 'text'
+          format: 'text',
         })
       );
 
@@ -73,13 +77,16 @@ describe('Command Routing Integration', () => {
     it('analyze-legacy コマンドが全てのオプションを正しく処理する', async () => {
       // ARRANGE
       const mockArgv = [
-        'node', 'rimor', 'analyze-legacy', './src',
+        'node',
+        'rimor',
+        'analyze-legacy',
+        './src',
         '--format=json',
         '--output-json=report.json',
         '--include-details',
-        '--severity=critical,high'
+        '--severity=critical,high',
       ];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -97,7 +104,7 @@ describe('Command Routing Integration', () => {
           format: 'json',
           outputJson: 'report.json',
           includeDetails: true,
-          severity: ['critical', 'high']
+          severity: ['critical', 'high'],
         })
       );
 
@@ -111,7 +118,7 @@ describe('Command Routing Integration', () => {
       // ARRANGE
       const testPath = './test-path';
       const mockArgv = ['node', 'rimor', 'analyze', testPath, '--verbose'];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -128,7 +135,7 @@ describe('Command Routing Integration', () => {
         expect.objectContaining({
           path: testPath,
           verbose: true,
-          format: 'text'
+          format: 'text',
         })
       );
 
@@ -139,7 +146,7 @@ describe('Command Routing Integration', () => {
     it('デフォルトコマンド（引数なし）がUnifiedAnalyzeCommandを実行する', async () => {
       // ARRANGE - 引数なしの場合はデフォルトでanalyzeが実行される
       const mockArgv = ['node', 'rimor'];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -154,8 +161,8 @@ describe('Command Routing Integration', () => {
       expect(UnifiedAnalyzeCommand).toHaveBeenCalled();
       expect(mockUnifiedAnalyzeCommand.execute).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: '.',  // デフォルトパス
-          format: 'text'
+          path: '.', // デフォルトパス
+          format: 'text',
         })
       );
 
@@ -166,16 +173,19 @@ describe('Command Routing Integration', () => {
     it('analyze コマンドが統合分析オプションを正しく処理する', async () => {
       // ARRANGE
       const mockArgv = [
-        'node', 'rimor', 'analyze', './src',
+        'node',
+        'rimor',
+        'analyze',
+        './src',
         '--format=json',
         '--verbose',
         '--include-recommendations',
         '--enable-taint-analysis',
         '--enable-intent-extraction',
         '--enable-gap-detection',
-        '--enable-nist-evaluation'
+        '--enable-nist-evaluation',
       ];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -196,7 +206,7 @@ describe('Command Routing Integration', () => {
           enableTaintAnalysis: true,
           enableIntentExtraction: true,
           enableGapDetection: true,
-          enableNistEvaluation: true
+          enableNistEvaluation: true,
         })
       );
 
@@ -210,7 +220,7 @@ describe('Command Routing Integration', () => {
       // ARRANGE
       const testPath = './test-path';
       const mockArgv = ['node', 'rimor', 'unified-analyze', testPath, '--format=markdown'];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -226,7 +236,7 @@ describe('Command Routing Integration', () => {
       expect(mockUnifiedAnalyzeCommand.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           path: testPath,
-          format: 'markdown'
+          format: 'markdown',
         })
       );
 
@@ -240,19 +250,21 @@ describe('Command Routing Integration', () => {
       // ARRANGE & ACT - analyze コマンド
       const analyzeArgv = ['node', 'rimor', 'analyze', './src'];
       const originalArgv = process.argv;
-      
+
       process.argv = analyzeArgv;
       try {
         await cli.run();
       } catch (error) {
         // テスト環境でのyargsエラーは無視
       }
-      
-      const analyzeCallCount = (UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>).mock.calls.length;
-      
+
+      const analyzeCallCount = (
+        UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>
+      ).mock.calls.length;
+
       // Reset mocks
       jest.clearAllMocks();
-      
+
       // ACT - unified-analyze コマンド
       const unifiedArgv = ['node', 'rimor', 'unified-analyze', './src'];
       process.argv = unifiedArgv;
@@ -261,8 +273,10 @@ describe('Command Routing Integration', () => {
       } catch (error) {
         // テスト環境でのyargsエラーは無視
       }
-      
-      const unifiedCallCount = (UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>).mock.calls.length;
+
+      const unifiedCallCount = (
+        UnifiedAnalyzeCommand as jest.MockedClass<typeof UnifiedAnalyzeCommand>
+      ).mock.calls.length;
 
       // ASSERT - 両方のコマンドがUnifiedAnalyzeCommandを使用
       expect(analyzeCallCount).toBeGreaterThan(0);
@@ -276,7 +290,7 @@ describe('Command Routing Integration', () => {
       // ARRANGE & ACT - analyze-legacy コマンド
       const legacyArgv = ['node', 'rimor', 'analyze-legacy', './src'];
       const originalArgv = process.argv;
-      
+
       process.argv = legacyArgv;
       try {
         await cli.run();
@@ -297,15 +311,18 @@ describe('Command Routing Integration', () => {
     it('従来のanalyzeオプションが新しいanalyzeコマンドでも動作する', async () => {
       // ARRANGE - 従来のオプションを新しいanalyzeコマンドで使用
       const mockArgv = [
-        'node', 'rimor', 'analyze', './src',
+        'node',
+        'rimor',
+        'analyze',
+        './src',
         '--verbose',
         '--format=json',
         '--parallel',
         '--cache',
         '--include-details',
-        '--include-recommendations'
+        '--include-recommendations',
       ];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -324,7 +341,7 @@ describe('Command Routing Integration', () => {
           format: 'json',
           parallel: true,
           includeDetails: true,
-          includeRecommendations: true
+          includeRecommendations: true,
         })
       );
 
@@ -335,15 +352,18 @@ describe('Command Routing Integration', () => {
     it('統合分析特有のオプションが正しく処理される', async () => {
       // ARRANGE - 統合分析特有のオプション
       const mockArgv = [
-        'node', 'rimor', 'analyze', './src',
+        'node',
+        'rimor',
+        'analyze',
+        './src',
         '--enable-taint-analysis=false',
         '--enable-intent-extraction=true',
         '--enable-gap-detection=true',
         '--enable-nist-evaluation=false',
         '--timeout=60000',
-        '--parallel'
+        '--parallel',
       ];
-      
+
       const originalArgv = process.argv;
       process.argv = mockArgv;
 
@@ -363,7 +383,7 @@ describe('Command Routing Integration', () => {
           enableGapDetection: true,
           enableNistEvaluation: false,
           timeout: 60000,
-          parallel: true
+          parallel: true,
         })
       );
 

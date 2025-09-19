@@ -1,7 +1,7 @@
 /**
  * 統合レポートシステム型定義
  * v0.9.0 - Issue #64: レポートシステムの統合
- * 
+ *
  * SOLID原則: インターフェース分離原則
  * DRY原則: 共通型の一元管理
  * KISS原則: シンプルな型定義
@@ -12,10 +12,10 @@ import { UnifiedAnalysisResult } from '../../nist/types/unified-analysis-result'
 /**
  * レポート形式の種別
  */
-export type ReportFormat = 
-  | 'ai-json' 
-  | 'markdown' 
-  | 'html' 
+export type ReportFormat =
+  | 'ai-json'
+  | 'markdown'
+  | 'html'
   | 'executive-summary'
   | 'structured-json';
 
@@ -26,7 +26,10 @@ export type ReportFormat =
 export interface IFormattingStrategy {
   name: string;
   format(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): string | object;
-  formatAsync?(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object>;
+  formatAsync?(
+    result: UnifiedAnalysisResult,
+    options?: ReportGenerationOptions
+  ): Promise<string | object>;
 }
 
 /**
@@ -61,7 +64,10 @@ export interface ReportGenerationOptions {
  * 後方互換性のための抽象
  */
 export interface ILegacyAdapter {
-  format(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object>;
+  format(
+    result: UnifiedAnalysisResult,
+    options?: ReportGenerationOptions
+  ): Promise<string | object>;
   isDeprecated: boolean;
   deprecationMessage: string;
 }

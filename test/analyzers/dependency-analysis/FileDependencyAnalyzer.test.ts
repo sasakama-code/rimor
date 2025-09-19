@@ -29,7 +29,7 @@ describe('FileDependencyAnalyzer', () => {
         import './utils/helper';
         import Component from '../components/Component';
       `;
-      
+
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(mockContent);
 
@@ -53,7 +53,7 @@ describe('FileDependencyAnalyzer', () => {
         const { readFile } = require('fs');
         const utils = require('./utils');
       `;
-      
+
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(mockContent);
 
@@ -76,7 +76,7 @@ describe('FileDependencyAnalyzer', () => {
         export default class MyClass {}
         export { something } from './other';
       `;
-      
+
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(mockContent);
 
@@ -97,8 +97,9 @@ describe('FileDependencyAnalyzer', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
       // Act & Assert
-      await expect(analyzer.analyzeFileDependencies(mockFilePath))
-        .rejects.toThrow('File not found');
+      await expect(analyzer.analyzeFileDependencies(mockFilePath)).rejects.toThrow(
+        'File not found'
+      );
     });
   });
 
@@ -125,18 +126,20 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: 実際のプロジェクト構造を模擬
       const projectPath = '/test/project';
       const files = ['src/index.ts', 'src/utils/helper.ts'];
-      
+
       // src/index.ts の内容（src/utils/helperを相対インポート）
       const indexContent = `import { helper } from './utils/helper';`;
-      
+
       // src/utils/helper.ts の内容
       const helperContent = `export const helper = () => {};`;
-      
+
       // ファイルシステムをモック
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
-        return path === '/test/project/src/index.ts' || path === '/test/project/src/utils/helper.ts';
+        return (
+          path === '/test/project/src/index.ts' || path === '/test/project/src/utils/helper.ts'
+        );
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/test/project/src/index.ts') return indexContent;
         if (path === '/test/project/src/utils/helper.ts') return helperContent;
@@ -162,16 +165,16 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange
       const projectPath = '/test/project';
       const files = ['src/app.ts', 'src/service.ts'];
-      
+
       // 拡張子なしでインポート
       const appContent = `import { Service } from './service';`;
       const serviceContent = `export class Service {}`;
-      
+
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         // service.ts は存在するが、./service（拡張子なし）では見つからない問題を再現
         return path === '/test/project/src/app.ts' || path === '/test/project/src/service.ts';
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/test/project/src/app.ts') return appContent;
         if (path === '/test/project/src/service.ts') return serviceContent;
@@ -184,7 +187,7 @@ describe('FileDependencyAnalyzer', () => {
       // Assert: 拡張子判定の問題で依存関係が正しく構築されない
       const appDeps = graph.get('src/app.ts');
       const serviceDeps = graph.get('src/service.ts');
-      
+
       expect(appDeps).toBeDefined();
       expect(serviceDeps).toBeDefined();
       expect(serviceDeps?.dependedBy).toContain('src/app.ts'); // これが失敗する可能性がある
@@ -194,21 +197,21 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: CWDとprojectPathが異なるケース
       const projectPath = '/different/project/path';
       const files = ['src/main.ts', 'src/lib/utils.ts'];
-      
+
       const mainContent = `import { utils } from './lib/utils';`;
       const utilsContent = `export const utils = {};`;
-      
+
       // より詳細なモック設定でパス解決をサポート
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         // すべての必要なパスで true を返す
         const validPaths = [
           '/different/project/path/src/main.ts',
           '/different/project/path/src/lib/utils.ts',
-          '/different/project/path/src/lib/utils' // 拡張子なし
+          '/different/project/path/src/lib/utils', // 拡張子なし
         ];
         return validPaths.includes(path) || path.startsWith('/different/project/path/');
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/different/project/path/src/main.ts') return mainContent;
         if (path === '/different/project/path/src/lib/utils.ts') return utilsContent;
@@ -221,7 +224,7 @@ describe('FileDependencyAnalyzer', () => {
       // Assert: 修正後は依存関係が正しく構築される
       const mainDeps = graph.get('src/main.ts');
       const utilsDeps = graph.get('src/lib/utils.ts');
-      
+
       expect(mainDeps).toBeDefined();
       expect(utilsDeps).toBeDefined();
       expect(utilsDeps?.dependedBy).toContain('src/main.ts'); // 修正後は成功するはず
@@ -233,18 +236,15 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: ./components → ./components/index.ts の解決をテスト
       const projectPath = '/test/project';
       const files = ['src/app.ts', 'src/components/index.ts'];
-      
+
       const appContent = `import { Button } from './components';`;
       const indexContent = `export const Button = {};`;
-      
+
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
-        const validPaths = [
-          '/test/project/src/app.ts',
-          '/test/project/src/components/index.ts'
-        ];
+        const validPaths = ['/test/project/src/app.ts', '/test/project/src/components/index.ts'];
         return validPaths.includes(path);
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/test/project/src/app.ts') return appContent;
         if (path === '/test/project/src/components/index.ts') return indexContent;
@@ -257,7 +257,7 @@ describe('FileDependencyAnalyzer', () => {
       // Assert: index.ts ファイルへの依存関係が正しく構築される
       const appDeps = graph.get('src/app.ts');
       const componentsDeps = graph.get('src/components/index.ts');
-      
+
       expect(appDeps).toBeDefined();
       expect(componentsDeps).toBeDefined();
       expect(componentsDeps?.dependedBy).toContain('src/app.ts');
@@ -267,18 +267,18 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: 異なるCWDでも一貫した解決をテスト
       const projectPath = '/different/workspace/project';
       const files = ['lib/main.ts', 'lib/utils/helper.ts'];
-      
+
       const mainContent = `import { helper } from './utils/helper';`;
       const helperContent = `export const helper = {};`;
-      
+
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         const validPaths = [
           '/different/workspace/project/lib/main.ts',
-          '/different/workspace/project/lib/utils/helper.ts'
+          '/different/workspace/project/lib/utils/helper.ts',
         ];
         return validPaths.includes(path);
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/different/workspace/project/lib/main.ts') return mainContent;
         if (path === '/different/workspace/project/lib/utils/helper.ts') return helperContent;
@@ -291,7 +291,7 @@ describe('FileDependencyAnalyzer', () => {
       // Assert
       const mainDeps = graph.get('lib/main.ts');
       const helperDeps = graph.get('lib/utils/helper.ts');
-      
+
       expect(mainDeps).toBeDefined();
       expect(helperDeps).toBeDefined();
       expect(helperDeps?.dependedBy).toContain('lib/main.ts');
@@ -301,21 +301,21 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: 拡張子付きファイルが存在する場合の優先度をテスト
       const projectPath = '/test/project';
       const files = ['src/main.ts', 'src/module.ts', 'src/module/index.ts'];
-      
+
       const mainContent = `
         import { directModule } from './module';
         import { indexModule } from './module';
       `;
-      
+
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         const validPaths = [
           '/test/project/src/main.ts',
           '/test/project/src/module.ts',
-          '/test/project/src/module/index.ts'
+          '/test/project/src/module/index.ts',
         ];
         return validPaths.includes(path);
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/test/project/src/main.ts') return mainContent;
         if (path === '/test/project/src/module.ts') return 'export const directModule = {};';
@@ -329,7 +329,7 @@ describe('FileDependencyAnalyzer', () => {
       // Assert: 拡張子付きファイルが優先され、適切に解決される
       const mainDeps = graph.get('src/main.ts');
       const moduleDeps = graph.get('src/module.ts');
-      
+
       expect(mainDeps).toBeDefined();
       expect(moduleDeps).toBeDefined();
       expect(moduleDeps?.dependedBy).toContain('src/main.ts');
@@ -339,23 +339,23 @@ describe('FileDependencyAnalyzer', () => {
       // Arrange: モノレポの深い階層構造をテスト
       const projectPath = '/monorepo/packages/app';
       const files = ['src/components/Button.tsx', 'src/utils/index.ts', 'src/hooks/useButton.ts'];
-      
+
       const buttonContent = `
         import { logger } from '../utils';
         import { useButton } from '../hooks/useButton';
       `;
       const utilsIndexContent = `export const logger = {};`;
       const hookContent = `export const useButton = {};`;
-      
+
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         const validPaths = [
           '/monorepo/packages/app/src/components/Button.tsx',
           '/monorepo/packages/app/src/utils/index.ts',
-          '/monorepo/packages/app/src/hooks/useButton.ts'
+          '/monorepo/packages/app/src/hooks/useButton.ts',
         ];
         return validPaths.includes(path);
       });
-      
+
       (fs.readFileSync as jest.Mock).mockImplementation((path: string) => {
         if (path === '/monorepo/packages/app/src/components/Button.tsx') return buttonContent;
         if (path === '/monorepo/packages/app/src/utils/index.ts') return utilsIndexContent;
@@ -370,7 +370,7 @@ describe('FileDependencyAnalyzer', () => {
       const buttonDeps = graph.get('src/components/Button.tsx');
       const utilsDeps = graph.get('src/utils/index.ts');
       const hookDeps = graph.get('src/hooks/useButton.ts');
-      
+
       expect(buttonDeps).toBeDefined();
       expect(utilsDeps).toBeDefined();
       expect(hookDeps).toBeDefined();

@@ -1,7 +1,7 @@
 /**
  * Code Annotator
  * v0.9.0 - Phase 4: Context Engineering
- * 
+ *
  * ソースコードファイルにインライン・アノテーションを追加
  */
 
@@ -9,11 +9,7 @@ import { injectable, inject } from 'inversify';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { AnnotationGenerator } from './AnnotationGenerator';
-import {
-  StructuredAnalysisResult,
-  Issue,
-  AnnotationOptions
-} from './types';
+import { StructuredAnalysisResult, Issue, AnnotationOptions } from './types';
 
 interface FileAnnotation {
   filePath: string;
@@ -24,9 +20,7 @@ interface FileAnnotation {
 
 @injectable()
 export class CodeAnnotator {
-  constructor(
-    @inject(AnnotationGenerator) private annotationGenerator: AnnotationGenerator
-  ) {}
+  constructor(@inject(AnnotationGenerator) private annotationGenerator: AnnotationGenerator) {}
 
   /**
    * Issue #156対応: EOL検出・保持ユーティリティ
@@ -38,7 +32,7 @@ export class CodeAnnotator {
     if (typeof content !== 'string') {
       return '\n'; // デフォルト値で安全に処理
     }
-    
+
     // 空文字列の場合もデフォルト値を返す
     if (content.length === 0) {
       return '\n';
@@ -64,7 +58,7 @@ export class CodeAnnotator {
    * Issue #156対応: EOL保持対応のsplit/join操作
    * Martin Fowler リファクタリング: 引数検証とエラーハンドリング強化
    */
-  private splitPreservingEOL(content: string): { lines: string[], eol: string } {
+  private splitPreservingEOL(content: string): { lines: string[]; eol: string } {
     // Defensive Programming: 引数検証
     if (typeof content !== 'string') {
       return { lines: [], eol: '\n' };
@@ -72,11 +66,11 @@ export class CodeAnnotator {
 
     const eol = this.detectEOL(content);
     const lines = content.split(eol);
-    
+
     // 空の配列が返された場合の安全な処理
-    return { 
-      lines: lines.length > 0 ? lines : [''], 
-      eol 
+    return {
+      lines: lines.length > 0 ? lines : [''],
+      eol,
     };
   }
 
@@ -89,7 +83,7 @@ export class CodeAnnotator {
     if (!Array.isArray(lines)) {
       return '';
     }
-    
+
     if (typeof eol !== 'string') {
       eol = '\n'; // デフォルトEOLで安全に処理
     }
@@ -171,7 +165,7 @@ export class CodeAnnotator {
         filePath,
         originalContent,
         annotatedContent,
-        annotationCount
+        annotationCount,
       };
     } catch (error) {
       console.error(`Error reading file ${filePath}:`, error);
@@ -205,22 +199,19 @@ export class CodeAnnotator {
    */
   generateAnnotationSummary(annotations: FileAnnotation[]): string {
     const lines: string[] = [];
-    
+
     lines.push('# Annotation Summary');
     lines.push('');
     lines.push(`Total files annotated: ${annotations.length}`);
-    
-    const totalAnnotations = annotations.reduce(
-      (sum, ann) => sum + ann.annotationCount,
-      0
-    );
+
+    const totalAnnotations = annotations.reduce((sum, ann) => sum + ann.annotationCount, 0);
     lines.push(`Total annotations added: ${totalAnnotations}`);
     lines.push('');
-    
+
     if (annotations.length > 0) {
       lines.push('## Annotated Files:');
       lines.push('');
-      
+
       annotations.forEach(ann => {
         lines.push(`- ${ann.filePath}: ${ann.annotationCount} annotations`);
       });
@@ -234,24 +225,25 @@ export class CodeAnnotator {
    */
   generateDiffReport(annotations: FileAnnotation[]): string {
     const lines: string[] = [];
-    
+
     lines.push('# Annotation Diff Report');
     lines.push('');
-    
+
     annotations.forEach(ann => {
       lines.push(`## File: ${ann.filePath}`);
       lines.push('');
       lines.push(`Annotations added: ${ann.annotationCount}`);
       lines.push('');
-      
+
       // 簡易的な差分表示
       // Issue #156対応: EOL保持対応のsplit操作
       const { lines: originalLines } = this.splitPreservingEOL(ann.originalContent);
       const { lines: annotatedLines } = this.splitPreservingEOL(ann.annotatedContent);
-      
+
       let lineNumber = 1;
-      let i = 0, j = 0;
-      
+      let i = 0,
+        j = 0;
+
       while (i < originalLines.length || j < annotatedLines.length) {
         if (i >= originalLines.length) {
           // 新しい行（アノテーション）
@@ -272,7 +264,7 @@ export class CodeAnnotator {
         }
         lineNumber++;
       }
-      
+
       lines.push('');
     });
 
@@ -348,12 +340,9 @@ export class CodeAnnotator {
   /**
    * プレビューモードでアノテーションを表示
    */
-  previewAnnotations(
-    result: StructuredAnalysisResult,
-    options?: AnnotationOptions
-  ): string {
+  previewAnnotations(result: StructuredAnalysisResult, options?: AnnotationOptions): string {
     const lines: string[] = [];
-    
+
     lines.push('# Annotation Preview');
     lines.push('');
     lines.push('The following annotations would be added:');
@@ -392,15 +381,12 @@ export class CodeAnnotator {
   /**
    * アノテーションをクリーンアップ（削除）
    */
-  async cleanupAnnotations(
-    filePath: string,
-    prefix?: string
-  ): Promise<boolean> {
+  async cleanupAnnotations(filePath: string, prefix?: string): Promise<boolean> {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       // Issue #156対応: EOL保持対応のsplit操作
       const { lines, eol } = this.splitPreservingEOL(content);
-      
+
       const annotationPrefix = prefix || 'RIMOR';
       const cleanedLines = lines.filter(line => {
         // アノテーション行を検出して除外

@@ -1,17 +1,12 @@
 /**
  * Domain Clusterer
  * v0.9.0 - ドメインクラスタリングエンジン
- * 
+ *
  * KISS原則: シンプルなインターフェースで複雑な処理を隠蔽
  * SOLID原則: 単一責任の原則（クラスタリングのみに責任を持つ）
  */
 
-import {
-  DomainCluster,
-  ClusteringConfig,
-  TFIDFVector,
-  KeywordInfo
-} from './types';
+import { DomainCluster, ClusteringConfig, TFIDFVector, KeywordInfo } from './types';
 const { kmeans } = require('ml-kmeans');
 
 /**
@@ -46,10 +41,10 @@ export class DomainClusterer {
 
     // 各ドキュメントのTF-IDFベクトルを計算
     const vectors: TFIDFVector[] = [];
-    
+
     for (const [docId, terms] of documents) {
       const vector = new Map<string, number>();
-      
+
       if (terms.length === 0) {
         // 空のドキュメントは空のベクトル
         vectors.push({ documentId: docId, vector });
@@ -99,13 +94,15 @@ export class DomainClusterer {
           keywords.add(term);
         }
       }
-      return [{
-        id: 'cluster-1',
-        name: 'main',
-        keywords: Array.from(keywords),
-        confidence: 1.0,
-        files: vectors.map(v => v.documentId)
-      }];
+      return [
+        {
+          id: 'cluster-1',
+          name: 'main',
+          keywords: Array.from(keywords),
+          confidence: 1.0,
+          files: vectors.map(v => v.documentId),
+        },
+      ];
     }
 
     // 全ての用語を収集
@@ -126,7 +123,7 @@ export class DomainClusterer {
     const result = kmeans(dataMatrix, k, {
       initialization: 'kmeans++',
       maxIterations: 100,
-      tolerance: 0.001
+      tolerance: 0.001,
     });
 
     // クラスタごとにドメインを作成
@@ -140,10 +137,10 @@ export class DomainClusterer {
         clusterDocuments.set(clusterId, []);
         clusterTerms.set(clusterId, new Map());
       }
-      
+
       const docId = vectors[index].documentId;
       clusterDocuments.get(clusterId)!.push(docId);
-      
+
       // クラスタごとの用語頻度を集計
       const terms = clusterTerms.get(clusterId)!;
       for (const [term, score] of vectors[index].vector) {
@@ -154,7 +151,7 @@ export class DomainClusterer {
     // 各クラスタのドメインを生成
     for (const [clusterId, docs] of clusterDocuments) {
       const terms = clusterTerms.get(clusterId)!;
-      
+
       // 上位キーワードを選択
       const sortedTerms = Array.from(terms.entries())
         .sort((a, b) => b[1] - a[1])
@@ -170,7 +167,7 @@ export class DomainClusterer {
         keywords: sortedTerms,
         confidence: 0.7, // 暫定的な信頼度
         files: docs,
-        centroid: sortedTerms.slice(0, 3)
+        centroid: sortedTerms.slice(0, 3),
       });
     }
 
@@ -192,7 +189,7 @@ export class DomainClusterer {
       { pattern: /payment|transaction|billing|invoice/i, name: 'payment' },
       { pattern: /order|cart|checkout/i, name: 'order-management' },
       { pattern: /product|item|inventory|stock/i, name: 'product' },
-      { pattern: /test|spec|mock/i, name: 'testing' }
+      { pattern: /test|spec|mock/i, name: 'testing' },
     ];
 
     for (const { pattern, name } of patterns) {
@@ -218,7 +215,7 @@ export class DomainClusterer {
     // 信頼度の要因を計算
     const keywordCount = cluster.keywords.length;
     const fileCount = cluster.files?.length || 0;
-    
+
     // キーワード数による信頼度（3-8個が理想的）
     let keywordScore = 0;
     if (keywordCount >= 3 && keywordCount <= 8) {
@@ -252,8 +249,8 @@ export class DomainClusterer {
     }
 
     // 加重平均で最終的な信頼度を計算
-    const confidence = (keywordScore * 0.4 + fileScore * 0.4 + cohesionScore * 0.2);
-    
+    const confidence = keywordScore * 0.4 + fileScore * 0.4 + cohesionScore * 0.2;
+
     // 0-1の範囲に正規化
     return Math.max(0, Math.min(1, confidence));
   }
@@ -292,8 +289,8 @@ export class DomainClusterer {
     let optimalK = 2;
 
     for (let i = 1; i < inertias.length - 1; i++) {
-      const changeRate = Math.abs(inertias[i - 1] - inertias[i]) - 
-                        Math.abs(inertias[i] - inertias[i + 1]);
+      const changeRate =
+        Math.abs(inertias[i - 1] - inertias[i]) - Math.abs(inertias[i] - inertias[i + 1]);
       if (changeRate > maxChangeRate) {
         maxChangeRate = changeRate;
         optimalK = i + 1;
@@ -313,7 +310,7 @@ export class DomainClusterer {
   ): DomainCluster[] {
     // キーワードからドキュメントベクトルを構築
     const documents = new Map<string, string[]>();
-    
+
     // ファイルごとにキーワードを集約
     const fileKeywords = new Map<string, Set<string>>();
     for (const [keyword, info] of keywords) {
@@ -335,10 +332,10 @@ export class DomainClusterer {
 
     // TF-IDFベクトルを計算
     const vectors = this.calculateTFIDF(documents);
-    
+
     // クラスタリング実行
     const clusters = this.performKMeansClustering(vectors, config.k);
-    
+
     // 信頼度を計算して更新
     for (const cluster of clusters) {
       cluster.confidence = this.calculateClusterConfidence(cluster);

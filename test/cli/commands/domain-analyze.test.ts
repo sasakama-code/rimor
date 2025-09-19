@@ -1,7 +1,7 @@
 /**
  * domain-analyze Command Test Suite
  * v0.9.0 - 統計的ドメイン分析CLIコマンドのテスト
- * 
+ *
  * TDD: RED段階 - 失敗するテストから開始
  */
 
@@ -21,16 +21,22 @@ jest.mock('fs/promises', () => ({
   readFile: jest.fn(),
   writeFile: jest.fn(),
   access: jest.fn(),
-  rm: jest.fn()
+  rm: jest.fn(),
 }));
 jest.mock('inquirer', () => ({
-  prompt: jest.fn()
+  prompt: jest.fn(),
 }));
 
 const mockedFS = fs as any;
-const MockedStatisticalDomainAnalyzer = StatisticalDomainAnalyzer as jest.MockedClass<typeof StatisticalDomainAnalyzer>;
-const MockedInteractiveDomainValidator = InteractiveDomainValidator as jest.MockedClass<typeof InteractiveDomainValidator>;
-const MockedIntegrityHashGenerator = IntegrityHashGenerator as jest.MockedClass<typeof IntegrityHashGenerator>;
+const MockedStatisticalDomainAnalyzer = StatisticalDomainAnalyzer as jest.MockedClass<
+  typeof StatisticalDomainAnalyzer
+>;
+const MockedInteractiveDomainValidator = InteractiveDomainValidator as jest.MockedClass<
+  typeof InteractiveDomainValidator
+>;
+const MockedIntegrityHashGenerator = IntegrityHashGenerator as jest.MockedClass<
+  typeof IntegrityHashGenerator
+>;
 
 describe('DomainAnalyzeCommand', () => {
   let command: DomainAnalyzeCommand;
@@ -40,37 +46,46 @@ describe('DomainAnalyzeCommand', () => {
   let mockValidate: jest.Mock;
   let mockSaveWithIntegrity: jest.Mock;
   let mockLoadAndVerify: jest.Mock;
-  
+
   beforeEach(() => {
     // モック関数を作成
     mockAnalyze = jest.fn();
     mockValidate = jest.fn();
     mockSaveWithIntegrity = jest.fn();
     mockLoadAndVerify = jest.fn();
-    
+
     // モッククラスのインスタンスを返すように設定
-    MockedStatisticalDomainAnalyzer.mockImplementation(() => ({
-      analyze: mockAnalyze,
-      collectSourceFiles: jest.fn(),
-      extractTokensFromFile: jest.fn(),
-      getConfig: jest.fn()
-    } as any));
-    
-    MockedInteractiveDomainValidator.mockImplementation(() => ({
-      validate: mockValidate,
-      formatClusterDisplay: jest.fn(),
-      getConfidenceColor: jest.fn(),
-      isValidDomainName: jest.fn(),
-      isValidKeywords: jest.fn()
-    } as any));
-    
-    MockedIntegrityHashGenerator.mockImplementation(() => ({
-      saveWithIntegrity: mockSaveWithIntegrity,
-      loadAndVerify: mockLoadAndVerify,
-      generateHash: jest.fn(),
-      verifyHash: jest.fn()
-    } as any));
-    
+    MockedStatisticalDomainAnalyzer.mockImplementation(
+      () =>
+        ({
+          analyze: mockAnalyze,
+          collectSourceFiles: jest.fn(),
+          extractTokensFromFile: jest.fn(),
+          getConfig: jest.fn(),
+        }) as any
+    );
+
+    MockedInteractiveDomainValidator.mockImplementation(
+      () =>
+        ({
+          validate: mockValidate,
+          formatClusterDisplay: jest.fn(),
+          getConfidenceColor: jest.fn(),
+          isValidDomainName: jest.fn(),
+          isValidKeywords: jest.fn(),
+        }) as any
+    );
+
+    MockedIntegrityHashGenerator.mockImplementation(
+      () =>
+        ({
+          saveWithIntegrity: mockSaveWithIntegrity,
+          loadAndVerify: mockLoadAndVerify,
+          generateHash: jest.fn(),
+          verifyHash: jest.fn(),
+        }) as any
+    );
+
     command = new DomainAnalyzeCommand();
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -102,39 +117,39 @@ describe('DomainAnalyzeCommand', () => {
           name: 'User Management',
           keywords: ['user', 'auth', 'login'],
           confidence: 0.85,
-          files: ['src/auth.ts', 'src/user.ts']
+          files: ['src/auth.ts', 'src/user.ts'],
         },
         {
           id: 'domain-2',
           name: 'Payment Processing',
           keywords: ['payment', 'transaction'],
           confidence: 0.72,
-          files: ['src/payment.ts']
-        }
+          files: ['src/payment.ts'],
+        },
       ],
       keywords: new Map([
         ['user', { keyword: 'user', frequency: 10, files: ['src/auth.ts'] }],
-        ['payment', { keyword: 'payment', frequency: 5, files: ['src/payment.ts'] }]
+        ['payment', { keyword: 'payment', frequency: 5, files: ['src/payment.ts'] }],
       ]),
       timestamp: new Date('2024-01-01T00:00:00Z'),
       metadata: {
         totalFiles: 10,
         totalTokens: 1000,
-        executionTime: 100
-      }
+        executionTime: 100,
+      },
     };
 
     const mockValidationResult = {
       approvedDomains: [mockDomainAnalysisResult.domains[0]],
       modifiedDomains: [],
       rejectedDomains: [mockDomainAnalysisResult.domains[1]],
-      validated: true
+      validated: true,
     };
 
     const mockIntegrityHash = {
       hash: 'abc123def456',
       timestamp: new Date('2024-01-01T00:00:00Z'),
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     it('デフォルトパスでドメイン分析を実行できる', async () => {
@@ -185,8 +200,8 @@ describe('DomainAnalyzeCommand', () => {
 
       // JSON出力を確認（consoleLogSpyが呼ばれたことをチェック）
       const calls = consoleLogSpy.mock.calls.map(call => call[0]);
-      const jsonOutput = calls.find(output => 
-        typeof output === 'string' && output.includes('{') && output.includes('}')
+      const jsonOutput = calls.find(
+        output => typeof output === 'string' && output.includes('{') && output.includes('}')
       );
       expect(jsonOutput).toBeDefined();
     });
@@ -224,15 +239,15 @@ describe('DomainAnalyzeCommand', () => {
         project: {
           name: 'test-project',
           path: '/path/to/project',
-          analyzed: new Date('2024-01-01T00:00:00Z')
+          analyzed: new Date('2024-01-01T00:00:00Z'),
         },
         domains: mockDomainAnalysisResult.domains,
-        integrity: mockIntegrityHash
+        integrity: mockIntegrityHash,
       };
 
       mockLoadAndVerify.mockResolvedValue({
         valid: true,
-        definition: existingDefinition
+        definition: existingDefinition,
       });
 
       await command.execute({ verify: true });
@@ -245,7 +260,7 @@ describe('DomainAnalyzeCommand', () => {
       mockLoadAndVerify.mockResolvedValue({
         valid: false,
         definition: null,
-        error: 'ファイルが改ざんされている可能性があります'
+        error: 'ファイルが改ざんされている可能性があります',
       });
 
       await command.execute({ verify: true });
@@ -267,13 +282,13 @@ describe('DomainAnalyzeCommand', () => {
       mockAnalyze.mockResolvedValue({
         domains: [],
         keywords: new Map(),
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       mockValidate.mockResolvedValue({
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: true
+        validated: true,
       });
       mockSaveWithIntegrity.mockRejectedValue(new Error('保存エラー'));
 
@@ -296,13 +311,13 @@ describe('DomainAnalyzeCommand', () => {
       mockAnalyze.mockResolvedValue({
         domains: [],
         keywords: new Map(),
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       mockValidate.mockResolvedValue({
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: true
+        validated: true,
       });
       mockSaveWithIntegrity.mockResolvedValue(undefined);
 
@@ -318,13 +333,13 @@ describe('DomainAnalyzeCommand', () => {
       mockAnalyze.mockResolvedValue({
         domains: [],
         keywords: new Map(),
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       mockValidate.mockResolvedValue({
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: true
+        validated: true,
       });
       mockSaveWithIntegrity.mockResolvedValue(undefined);
 
@@ -340,13 +355,13 @@ describe('DomainAnalyzeCommand', () => {
       mockAnalyze.mockResolvedValue({
         domains: [],
         keywords: new Map(),
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       mockValidate.mockResolvedValue({
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: true
+        validated: true,
       });
       mockSaveWithIntegrity.mockResolvedValue(undefined);
 
@@ -366,13 +381,13 @@ describe('DomainAnalyzeCommand', () => {
       mockAnalyze.mockResolvedValue({
         domains: [],
         keywords: new Map(),
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       mockValidate.mockResolvedValue({
         approvedDomains: [],
         modifiedDomains: [],
         rejectedDomains: [],
-        validated: true
+        validated: true,
       });
       mockSaveWithIntegrity.mockResolvedValue(undefined);
 

@@ -1,6 +1,6 @@
 /**
  * 統一された分析結果型定義
- * 
+ *
  * SOLID原則に従い、インターフェース分離原則（ISP）と
  * 単一責任原則（SRP）を適用した設計
  */
@@ -10,9 +10,9 @@ import type { Issue } from '../../core/types/core-definitions';
 /**
  * 分析結果の基本インターフェース
  * すべての分析結果型の基底となる最小限の構造
- * 
+ *
  * KISS原則: シンプルで必要最小限のフィールドのみ
- * 
+ *
  * @example
  * ```typescript
  * const result: BaseAnalysisResult = {
@@ -25,10 +25,10 @@ import type { Issue } from '../../core/types/core-definitions';
 export interface BaseAnalysisResult {
   /** 分析されたファイル数 */
   totalFiles: number;
-  
+
   /** 検出された問題のリスト */
   issues: Issue[];
-  
+
   /** 実行時間（ミリ秒） */
   executionTime: number;
 }
@@ -109,14 +109,14 @@ export interface FileAnalysisResult extends BaseAnalysisResult {
 /**
  * 統一された分析結果型
  * すべてのオプショナル機能を含む包括的な型
- * 
+ *
  * DRY原則: 既存の型を組み合わせて重複を避ける
  */
-export interface AnalysisResult extends 
-  BaseAnalysisResult,
-  AnalysisResultWithMetadata,
-  AnalysisResultWithPlugins,
-  AnalysisResultWithParallelStats {
+export interface AnalysisResult
+  extends BaseAnalysisResult,
+    AnalysisResultWithMetadata,
+    AnalysisResultWithPlugins,
+    AnalysisResultWithParallelStats {
   /** ファイル別の詳細結果（オプション） */
   files?: Array<{
     path: string;
@@ -129,43 +129,53 @@ export interface AnalysisResult extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isAnalysisResult(obj: unknown): obj is AnalysisResult {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'totalFiles' in obj &&
     'issues' in obj &&
     'executionTime' in obj &&
     typeof (obj as any).totalFiles === 'number' &&
     Array.isArray((obj as any).issues) &&
-    typeof (obj as any).executionTime === 'number');
+    typeof (obj as any).executionTime === 'number'
+  );
 }
 
 /**
  * 型ガード: プラグインメタデータを持つかどうかを判定
  */
 export function hasPluginMetadata(obj: unknown): obj is AnalysisResultWithPlugins {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
-    (!('pluginsExecuted' in obj) || (obj as any).pluginsExecuted === undefined || Array.isArray((obj as any).pluginsExecuted)) &&
-    (!('pluginResults' in obj) || (obj as any).pluginResults === undefined || typeof (obj as any).pluginResults === 'object'));
+    (!('pluginsExecuted' in obj) ||
+      (obj as any).pluginsExecuted === undefined ||
+      Array.isArray((obj as any).pluginsExecuted)) &&
+    (!('pluginResults' in obj) ||
+      (obj as any).pluginResults === undefined ||
+      typeof (obj as any).pluginResults === 'object')
+  );
 }
 
 /**
  * 型ガード: 並列処理統計を持つかどうかを判定
  */
 export function hasParallelStats(obj: unknown): obj is AnalysisResultWithParallelStats {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'parallelStats' in obj &&
     (obj as any).parallelStats !== null &&
     typeof (obj as any).parallelStats === 'object' &&
     typeof (obj as any).parallelStats.batchCount === 'number' &&
-    typeof (obj as any).parallelStats.threadsUsed === 'number');
+    typeof (obj as any).parallelStats.threadsUsed === 'number'
+  );
 }
 
 /**
  * 後方互換性のための型エイリアス
  * 既存のコードベースからの段階的移行をサポート
- * 
+ *
  * @deprecated これらのエイリアスは将来のバージョンで削除予定
  */
 export type CoreAnalysisResult = BaseAnalysisResult;
@@ -186,7 +196,7 @@ export function createAnalysisResult(
   return {
     totalFiles,
     issues,
-    executionTime
+    executionTime,
   };
 }
 
@@ -202,17 +212,15 @@ export function mergeAnalysisResults(results: AnalysisResult[]): AnalysisResult 
   const totalFiles = results.reduce((sum, r) => sum + r.totalFiles, 0);
   const issues = results.flatMap(r => r.issues);
   const executionTime = results.reduce((sum, r) => sum + r.executionTime, 0);
-  
+
   // プラグイン情報をマージ
-  const allPlugins = results
-    .filter(r => r.pluginsExecuted)
-    .flatMap(r => r.pluginsExecuted!);
+  const allPlugins = results.filter(r => r.pluginsExecuted).flatMap(r => r.pluginsExecuted!);
   const uniquePlugins = [...new Set(allPlugins)];
 
   return {
     totalFiles,
     issues,
     executionTime,
-    pluginsExecuted: uniquePlugins.length > 0 ? uniquePlugins : undefined
+    pluginsExecuted: uniquePlugins.length > 0 ? uniquePlugins : undefined,
   };
 }

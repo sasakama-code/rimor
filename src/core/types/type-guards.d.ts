@@ -19,7 +19,10 @@ export declare const isProjectContext: typeof isValidProjectContext;
 export declare function isValidDetectionResult(value: unknown): value is DetectionResult;
 export declare function isValidQualityScore(value: unknown): value is QualityScore;
 export declare function isValidImprovement(value: unknown): value is Improvement;
-export declare function isValidArray<T>(value: unknown, itemValidator: (item: unknown) => item is T): value is T[];
+export declare function isValidArray<T>(
+  value: unknown,
+  itemValidator: (item: unknown) => item is T
+): value is T[];
 export declare function isValidIssueArray(value: unknown): value is Issue[];
 export declare function isValidDetectionResultArray(value: unknown): value is DetectionResult[];
 export declare function isValidImprovementArray(value: unknown): value is Improvement[];

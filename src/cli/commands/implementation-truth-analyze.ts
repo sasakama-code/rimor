@@ -1,7 +1,7 @@
 /**
  * Implementation Truth Analyze Command
  * v0.9.0 - AIコーディング時代の品質保証エンジン専用CLIコマンド実装
- * 
+ *
  * SOLID原則: 単一責任の原則に従ったコマンド実装
  * DRY原則: 既存のCLIコマンドパターンの継承
  * Defensive Programming: 入力値検証と例外処理の徹底
@@ -15,7 +15,7 @@ import {
   ImplementationTruthAnalyzeOptions,
   ImplementationTruthAnalyzeResult,
   IImplementationTruthAnalyzeCommand,
-  ReportSaveResult
+  ReportSaveResult,
 } from './implementation-truth-analyze-types';
 
 /**
@@ -38,7 +38,9 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
    * Implementation Truth分析コマンドの実行
    * 単一責任の原則に従い、コマンド実行の責務のみを担う
    */
-  async execute(options: ImplementationTruthAnalyzeOptions): Promise<ImplementationTruthAnalyzeResult> {
+  async execute(
+    options: ImplementationTruthAnalyzeOptions
+  ): Promise<ImplementationTruthAnalyzeResult> {
     const startTime = Date.now();
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -47,7 +49,9 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
     try {
       this.validateOptions(options);
     } catch (error) {
-      errors.push(`オプション検証エラー: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `オプション検証エラー: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw new Error(`コマンド実行失敗: ${errors.join(', ')}`);
     }
 
@@ -71,14 +75,16 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
       if (options.verbose) {
         console.log('🔧 プロダクションコード解析中...');
       }
-      
+
       const analysisResult = await this.analysisEngine.analyzeWithImplementationTruth(
         options.productionPath,
         options.testPath
       );
 
       if (options.verbose) {
-        console.log(`✅ 分析完了: ${analysisResult.summary.vulnerabilitiesDetected}個の脆弱性, ${analysisResult.totalGapsDetected}個のギャップを検出`);
+        console.log(
+          `✅ 分析完了: ${analysisResult.summary.vulnerabilitiesDetected}個の脆弱性, ${analysisResult.totalGapsDetected}個のギャップを検出`
+        );
       }
 
       // 2. レポート生成
@@ -87,9 +93,9 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
       }
 
       // 重要度フィルタリング
-      const filteredResult = options.minSeverity ? 
-        this.filterBySeverity(analysisResult, options.minSeverity) : 
-        analysisResult;
+      const filteredResult = options.minSeverity
+        ? this.filterBySeverity(analysisResult, options.minSeverity)
+        : analysisResult;
 
       this.reportEngine.setFormat(options.format || 'ai-json');
       const formattedReport = await this.reportEngine.generate(filteredResult, {
@@ -98,7 +104,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
         optimizeForAI: options.optimizeForAI,
         includeMetadata: options.includeMetadata,
         includeCodeExamples: options.includeCodeExamples,
-        includeTechnicalDetails: options.includeTechnicalDetails
+        includeTechnicalDetails: options.includeTechnicalDetails,
       });
 
       if (options.verbose) {
@@ -137,12 +143,11 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
           analyzedTestPath: options.testPath,
           timestamp: new Date().toISOString(),
           usedFormat: options.format || 'ai-json',
-          outputPath
+          outputPath,
         },
         errors: errors.length > 0 ? errors : undefined,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
-
     } catch (error) {
       // エラーハンドリング（Defensive Programming）
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -201,13 +206,17 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
     // 詳細レベルの検証
     const validDetailLevels = ['summary', 'detailed', 'comprehensive'];
     if (options.detailLevel && !validDetailLevels.includes(options.detailLevel)) {
-      throw new Error(`無効な詳細レベル: ${options.detailLevel}。有効なレベル: ${validDetailLevels.join(', ')}`);
+      throw new Error(
+        `無効な詳細レベル: ${options.detailLevel}。有効なレベル: ${validDetailLevels.join(', ')}`
+      );
     }
 
     // 最小重要度の検証
     const validSeverities = ['low', 'medium', 'high', 'critical'];
     if (options.minSeverity && !validSeverities.includes(options.minSeverity)) {
-      throw new Error(`無効な重要度: ${options.minSeverity}。有効な重要度: ${validSeverities.join(', ')}`);
+      throw new Error(
+        `無効な重要度: ${options.minSeverity}。有効な重要度: ${validSeverities.join(', ')}`
+      );
     }
   }
 
@@ -227,7 +236,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
   private filterBySeverity(result: any, minSeverity: string): any {
     const severityOrder = ['low', 'medium', 'high', 'critical'];
     const minIndex = severityOrder.indexOf(minSeverity);
-    
+
     if (minIndex === -1) {
       return result; // 無効な重要度の場合はフィルタしない
     }
@@ -246,34 +255,39 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
       gaps: intentResult.gaps.filter((gap: any) => {
         const gapIndex = severityOrder.indexOf(gap.severity);
         return gapIndex >= minIndex;
-      })
+      }),
     }));
 
     return {
       ...result,
       implementationTruth: {
         ...result.implementationTruth,
-        vulnerabilities: filteredVulnerabilities
+        vulnerabilities: filteredVulnerabilities,
       },
       intentRealizationResults: filteredIntentResults,
       totalGapsDetected: filteredIntentResults.reduce(
-        (total: number, r: any) => total + r.gaps.length, 0
+        (total: number, r: any) => total + r.gaps.length,
+        0
       ),
       highSeverityGaps: filteredIntentResults.reduce(
-        (total: number, r: any) => total + r.gaps.filter(
-          (g: any) => g.severity === 'critical' || g.severity === 'high'
-        ).length, 0
-      )
+        (total: number, r: any) =>
+          total +
+          r.gaps.filter((g: any) => g.severity === 'critical' || g.severity === 'high').length,
+        0
+      ),
     };
   }
 
   /**
    * レポート保存
    */
-  private async saveReport(report: any, options: ImplementationTruthAnalyzeOptions): Promise<ReportSaveResult> {
+  private async saveReport(
+    report: any,
+    options: ImplementationTruthAnalyzeOptions
+  ): Promise<ReportSaveResult> {
     try {
       let outputPath: string;
-      
+
       if (options.output) {
         outputPath = path.resolve(options.output);
       } else {
@@ -281,7 +295,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const extension = this.getFileExtension(options.format || 'ai-json');
         const fileName = `implementation-truth-analysis-${timestamp}.${extension}`;
-        
+
         if (options.saveToRimor !== false) {
           outputPath = path.resolve('.rimor', fileName);
         } else {
@@ -299,20 +313,19 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
 
       // ファイル書き込み
       await fs.promises.writeFile(outputPath, content, 'utf-8');
-      
+
       // ファイルサイズ取得
       const stats = await fs.promises.stat(outputPath);
-      
+
       return {
         success: true,
         filePath: outputPath,
-        fileSize: stats.size
+        fileSize: stats.size,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -343,13 +356,16 @@ export class ImplementationTruthCliParser {
   /**
    * CLI引数をパース
    */
-  static parseArgs(args: string[]): { productionPath: string; options: ImplementationTruthAnalyzeOptions } {
+  static parseArgs(args: string[]): {
+    productionPath: string;
+    options: ImplementationTruthAnalyzeOptions;
+  } {
     const options: Partial<ImplementationTruthAnalyzeOptions> = {};
     let productionPath = '';
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      
+
       switch (arg) {
         case '--production-path':
         case '-p':
@@ -412,8 +428,8 @@ export class ImplementationTruthCliParser {
       productionPath,
       options: {
         productionPath,
-        ...options
-      } as ImplementationTruthAnalyzeOptions
+        ...options,
+      } as ImplementationTruthAnalyzeOptions,
     };
   }
 

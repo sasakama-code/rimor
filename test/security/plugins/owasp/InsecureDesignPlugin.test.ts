@@ -46,15 +46,41 @@ describe('InsecureDesignPlugin', () => {
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
     expect(plugin.cweIds).toEqual([
-      'CWE-73', 'CWE-183', 'CWE-209', 'CWE-213',
-      'CWE-235', 'CWE-256', 'CWE-257', 'CWE-266',
-      'CWE-269', 'CWE-280', 'CWE-311', 'CWE-312',
-      'CWE-313', 'CWE-316', 'CWE-419', 'CWE-430',
-      'CWE-434', 'CWE-444', 'CWE-451', 'CWE-488',
-      'CWE-489', 'CWE-540', 'CWE-548', 'CWE-552',
-      'CWE-566', 'CWE-601', 'CWE-639', 'CWE-651',
-      'CWE-668', 'CWE-706', 'CWE-862', 'CWE-863',
-      'CWE-913', 'CWE-922', 'CWE-1275'
+      'CWE-73',
+      'CWE-183',
+      'CWE-209',
+      'CWE-213',
+      'CWE-235',
+      'CWE-256',
+      'CWE-257',
+      'CWE-266',
+      'CWE-269',
+      'CWE-280',
+      'CWE-311',
+      'CWE-312',
+      'CWE-313',
+      'CWE-316',
+      'CWE-419',
+      'CWE-430',
+      'CWE-434',
+      'CWE-444',
+      'CWE-451',
+      'CWE-488',
+      'CWE-489',
+      'CWE-540',
+      'CWE-548',
+      'CWE-552',
+      'CWE-566',
+      'CWE-601',
+      'CWE-639',
+      'CWE-651',
+      'CWE-668',
+      'CWE-706',
+      'CWE-862',
+      'CWE-863',
+      'CWE-913',
+      'CWE-922',
+      'CWE-1275',
     ]);
   });
 
@@ -65,8 +91,8 @@ describe('InsecureDesignPlugin', () => {
         filePatterns: {
           source: ['src/design/pattern.js', 'src/architecture/module.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -77,8 +103,8 @@ describe('InsecureDesignPlugin', () => {
         filePatterns: {
           source: ['src/index.js', 'src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -86,7 +112,7 @@ describe('InsecureDesignPlugin', () => {
     // ステップ10: 設計関連の依存関係がある場合
     it('should return true when design-related dependencies are present', () => {
       const context: ProjectContext = {
-        dependencies: ['@nestjs/core', 'swagger', 'joi']
+        dependencies: ['@nestjs/core', 'swagger', 'joi'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -106,11 +132,13 @@ describe('InsecureDesignPlugin', () => {
               });
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const threatModelingPattern = patterns.find(p => p.patternId && p.patternId.includes('threat-modeling'));
+      const threatModelingPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('threat-modeling')
+      );
       expect(threatModelingPattern).toBeDefined();
       expect(threatModelingPattern?.confidence).toBeGreaterThan(0.8);
     });
@@ -124,11 +152,13 @@ describe('InsecureDesignPlugin', () => {
             const order = createOrder({ items: [], total: 0 });
             expect(() => processOrder(order)).toThrow('Invalid order');
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const businessLogicPattern = patterns.find(p => p.patternId && p.patternId.includes('business-logic'));
+      const businessLogicPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('business-logic')
+      );
       expect(businessLogicPattern).toBeDefined();
     });
 
@@ -140,11 +170,13 @@ describe('InsecureDesignPlugin', () => {
           it('should add two numbers', () => {
             expect(add(1, 2)).toBe(3);
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-design-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-design-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -156,7 +188,7 @@ describe('InsecureDesignPlugin', () => {
         { patternId: 'design-threat-modeling', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'design-business-logic', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'design-rate-limiting', metadata: { hasTest: true }, confidence: 0.9 },
-        { patternId: 'design-defense-in-depth', metadata: { hasTest: true }, confidence: 0.9 }
+        { patternId: 'design-defense-in-depth', metadata: { hasTest: true }, confidence: 0.9 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -170,7 +202,7 @@ describe('InsecureDesignPlugin', () => {
       const patterns = [
         { patternId: 'design-threat-modeling', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'design-vulnerability', metadata: { vulnerability: true }, confidence: 0.95 },
-        { patternId: 'missing-design-business-logic', confidence: 0.95 }
+        { patternId: 'missing-design-business-logic', confidence: 0.95 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -192,8 +224,8 @@ describe('InsecureDesignPlugin', () => {
           weaknesses: ['脅威モデリングカバレッジ不足'],
           suggestions: ['ビジネスロジックテストを追加'],
           threatModelingCoverage: 0,
-          businessLogicTestCoverage: 0
-        }
+          businessLogicTestCoverage: 0,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -215,7 +247,7 @@ describe('InsecureDesignPlugin', () => {
               expect(securityLayer.validate()).toBe(true);
             });
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -268,7 +300,7 @@ describe('InsecureDesignPlugin', () => {
     it('should generate security test code', () => {
       const context: ProjectContext = {
         dependencies: ['express', '@nestjs/core'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);
@@ -290,7 +322,7 @@ describe('InsecureDesignPlugin', () => {
             it('should follow saga pattern for distributed transactions', () => {});
             it('should implement zero trust security', () => {});
           });
-        `
+        `,
       };
 
       // validateEnterpriseRequirementsメソッドが存在する場合のテスト

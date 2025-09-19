@@ -1,21 +1,16 @@
 /**
  * PluginManagerExtended v0.9.0
  * UnifiedPluginManagerへのエイリアス（後方互換性維持）
- * 
+ *
  * @deprecated UnifiedPluginManagerを直接使用してください
  */
 
-import { 
-  UnifiedPluginManager, 
-  QualityAnalysisResult, 
-  AnalysisOptions 
+import {
+  UnifiedPluginManager,
+  QualityAnalysisResult,
+  AnalysisOptions,
 } from './UnifiedPluginManager';
-import { 
-  IPlugin, 
-  ITestQualityPlugin, 
-  ProjectContext, 
-  TestFile 
-} from './types';
+import { IPlugin, ITestQualityPlugin, ProjectContext, TestFile } from './types';
 
 // 後方互換性のための再エクスポート
 export { QualityAnalysisResult, AnalysisOptions } from './UnifiedPluginManager';

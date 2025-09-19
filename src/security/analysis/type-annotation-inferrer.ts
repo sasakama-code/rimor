@@ -2,7 +2,7 @@
  * 型アノテーション自動推論エンジン
  * Phase 3: 制約ソルバーを活用した自動型アノテーション推論
  * arXiv:2504.18529v2の型推論理論に基づく
- * 
+ *
  * 機能:
  * - 制約ソルバーの結果から型アノテーションを自動推論
  * - JSDoc形式の型アノテーション生成
@@ -11,11 +11,7 @@
  */
 
 import * as ts from 'typescript';
-import { 
-  ConstraintSolver, 
-  ConstraintSolutionResult, 
-  TaintDomain 
-} from './constraint-solver';
+import { ConstraintSolver, ConstraintSolutionResult, TaintDomain } from './constraint-solver';
 import { TypeConstraint, TypeBasedTaintInfo } from './type-based-flow-analyzer';
 import { TaintSource } from './ast-source-detector';
 import { TaintSink } from './ast-sink-detector';
@@ -126,17 +122,12 @@ export class TypeAnnotationInferrer {
     fileName: string
   ): Promise<TypeAnnotationInferenceResult> {
     this.typeInfoMap = typeInfoMap;
-    
+
     // Sources情報をTypeInfoMapに統合
     this.integrateSources(sources);
-    
+
     // TypeScript ソースファイルを作成
-    this.sourceFile = ts.createSourceFile(
-      fileName,
-      sourceCode,
-      ts.ScriptTarget.ES2020,
-      true
-    );
+    this.sourceFile = ts.createSourceFile(fileName, sourceCode, ts.ScriptTarget.ES2020, true);
 
     // 制約ソルバーを初期化して実行
     await this.constraintSolver.initialize(typeConstraints, this.typeInfoMap, sources, sinks);
@@ -158,7 +149,7 @@ export class TypeAnnotationInferrer {
       inferredAnnotations,
       suggestions,
       statistics,
-      qualityMetrics
+      qualityMetrics,
     };
   }
 
@@ -188,9 +179,9 @@ export class TypeAnnotationInferrer {
         reasoning,
         location,
         jsDocAnnotation: this.generateJSDocAnnotation(inferredValue),
-        typeScriptAnnotation: this.generateTypeScriptAnnotation(inferredValue)
+        typeScriptAnnotation: this.generateTypeScriptAnnotation(inferredValue),
       });
-      
+
       processedVariables.add(variableName);
     }
 
@@ -201,7 +192,7 @@ export class TypeAnnotationInferrer {
         if (!processedVariables.has(varName)) {
           let inferredValue: TaintDomain = 'unknown';
           let shouldInfer = false;
-          
+
           // Source情報がある場合は tainted と推論
           if (typeInfo.sourceInfo) {
             inferredValue = 'tainted';
@@ -225,12 +216,12 @@ export class TypeAnnotationInferrer {
               reasoning,
               location,
               jsDocAnnotation: this.generateJSDocAnnotation(inferredValue),
-              typeScriptAnnotation: this.generateTypeScriptAnnotation(inferredValue)
+              typeScriptAnnotation: this.generateTypeScriptAnnotation(inferredValue),
             });
           }
         }
       }
-      
+
       // 外部Sourcesからの推論も追加処理（TypeInfoMapにない場合もある）
       // 特に、JSDocアノテーション付きパラメーターなど
       // これは将来の拡張で利用
@@ -261,7 +252,7 @@ export class TypeAnnotationInferrer {
       const relatedSteps = this.solutionResult.inferenceSteps.filter(
         step => step.variable === variableName
       );
-      
+
       if (relatedSteps.length > 0) {
         baseConfidence += Math.min(relatedSteps.length * 0.02, 0.1);
       }
@@ -297,7 +288,9 @@ export class TypeAnnotationInferrer {
     // 既存の型情報との関係
     const existingTypeInfo = this.typeInfoMap.get(variableName);
     if (existingTypeInfo?.typeAnnotation) {
-      reasoning.push(`既存の型アノテーション（${existingTypeInfo.typeAnnotation.customTaintType}）と一致`);
+      reasoning.push(
+        `既存の型アノテーション（${existingTypeInfo.typeAnnotation.customTaintType}）と一致`
+      );
     }
 
     // 一般的な推論パターン
@@ -328,33 +321,35 @@ export class TypeAnnotationInferrer {
     let variableLocation: InferredTypeAnnotation['location'] = {
       file: this.sourceFile.fileName,
       line: 0,
-      column: 0
+      column: 0,
     };
 
     const findVariable = (node: ts.Node): void => {
-      if (ts.isVariableDeclaration(node) && 
-          node.name && 
-          ts.isIdentifier(node.name) && 
-          node.name.text === variableName) {
-        
+      if (
+        ts.isVariableDeclaration(node) &&
+        node.name &&
+        ts.isIdentifier(node.name) &&
+        node.name.text === variableName
+      ) {
         const start = this.sourceFile!.getLineAndCharacterOfPosition(node.getStart());
         variableLocation = {
           file: this.sourceFile!.fileName,
           line: start.line + 1,
-          column: start.character + 1
+          column: start.character + 1,
         };
       }
 
-      if (ts.isParameter(node) && 
-          node.name && 
-          ts.isIdentifier(node.name) && 
-          node.name.text === variableName) {
-        
+      if (
+        ts.isParameter(node) &&
+        node.name &&
+        ts.isIdentifier(node.name) &&
+        node.name.text === variableName
+      ) {
         const start = this.sourceFile!.getLineAndCharacterOfPosition(node.getStart());
         variableLocation = {
           file: this.sourceFile!.fileName,
           line: start.line + 1,
-          column: start.character + 1
+          column: start.character + 1,
         };
       }
 
@@ -408,7 +403,7 @@ export class TypeAnnotationInferrer {
 
     for (const annotation of inferredAnnotations) {
       const existingTypeInfo = this.typeInfoMap.get(annotation.variableName);
-      
+
       // 既存のアノテーションがない場合は追加提案
       if (!existingTypeInfo?.typeAnnotation) {
         suggestions.push({
@@ -417,8 +412,9 @@ export class TypeAnnotationInferrer {
           targetVariable: annotation.variableName,
           suggestedAnnotation: annotation.jsDocAnnotation,
           reason: `推論結果に基づく型アノテーション追加（信頼度: ${(annotation.confidence * 100).toFixed(1)}%）`,
-          priority: annotation.confidence > 0.85 ? 'high' : annotation.confidence > 0.7 ? 'medium' : 'low',
-          autoApplicable: annotation.confidence > 0.85
+          priority:
+            annotation.confidence > 0.85 ? 'high' : annotation.confidence > 0.7 ? 'medium' : 'low',
+          autoApplicable: annotation.confidence > 0.85,
         });
       }
       // 既存のアノテーションと異なる場合は修正提案
@@ -431,7 +427,7 @@ export class TypeAnnotationInferrer {
           suggestedAnnotation: annotation.jsDocAnnotation,
           reason: `制約解析結果との不一致を修正（${existingTypeInfo.typeAnnotation.customTaintType} → ${annotation.inferredTaintType}）`,
           priority: annotation.confidence > 0.9 ? 'high' : 'medium',
-          autoApplicable: false // 修正は慎重に
+          autoApplicable: false, // 修正は慎重に
         });
       }
     }
@@ -449,19 +445,22 @@ export class TypeAnnotationInferrer {
     inferredAnnotations: InferredTypeAnnotation[]
   ): TypeAnnotationInferenceResult['statistics'] {
     const totalVariables = this.typeInfoMap.size;
-    const annotatedVariables = Array.from(this.typeInfoMap.values())
-      .filter(info => info.typeAnnotation).length;
-    
+    const annotatedVariables = Array.from(this.typeInfoMap.values()).filter(
+      info => info.typeAnnotation
+    ).length;
+
     const inferredVariables = inferredAnnotations.length;
-    const taintedVariables = inferredAnnotations.filter(a => a.inferredTaintType === 'tainted').length;
-    const untaintedVariables = inferredAnnotations.filter(a => 
-      a.inferredTaintType === 'untainted' || a.inferredTaintType === 'sanitized'
+    const taintedVariables = inferredAnnotations.filter(
+      a => a.inferredTaintType === 'tainted'
+    ).length;
+    const untaintedVariables = inferredAnnotations.filter(
+      a => a.inferredTaintType === 'untainted' || a.inferredTaintType === 'sanitized'
     ).length;
     const unknownVariables = totalVariables - inferredVariables;
 
     const highConfidenceInferences = inferredAnnotations.filter(a => a.confidence > 0.8).length;
-    const mediumConfidenceInferences = inferredAnnotations.filter(a => 
-      a.confidence > 0.6 && a.confidence <= 0.8
+    const mediumConfidenceInferences = inferredAnnotations.filter(
+      a => a.confidence > 0.6 && a.confidence <= 0.8
     ).length;
     const lowConfidenceInferences = inferredAnnotations.filter(a => a.confidence <= 0.6).length;
 
@@ -474,7 +473,7 @@ export class TypeAnnotationInferrer {
       unknownVariables,
       highConfidenceInferences,
       mediumConfidenceInferences,
-      lowConfidenceInferences
+      lowConfidenceInferences,
     };
   }
 
@@ -485,23 +484,24 @@ export class TypeAnnotationInferrer {
     inferredAnnotations: InferredTypeAnnotation[],
     suggestions: TypeAnnotationSuggestion[]
   ): TypeAnnotationInferenceResult['qualityMetrics'] {
-    const averageConfidence = inferredAnnotations.length > 0
-      ? inferredAnnotations.reduce((sum, a) => sum + a.confidence, 0) / inferredAnnotations.length
-      : 0;
+    const averageConfidence =
+      inferredAnnotations.length > 0
+        ? inferredAnnotations.reduce((sum, a) => sum + a.confidence, 0) / inferredAnnotations.length
+        : 0;
 
-    const coverageRatio = this.typeInfoMap.size > 0
-      ? inferredAnnotations.length / this.typeInfoMap.size
-      : 0;
+    const coverageRatio =
+      this.typeInfoMap.size > 0 ? inferredAnnotations.length / this.typeInfoMap.size : 0;
 
     // 自動適用可能な提案の割合を受け入れ率の近似として使用
-    const suggestionAcceptanceRate = suggestions.length > 0
-      ? suggestions.filter(s => s.autoApplicable).length / suggestions.length
-      : 0;
+    const suggestionAcceptanceRate =
+      suggestions.length > 0
+        ? suggestions.filter(s => s.autoApplicable).length / suggestions.length
+        : 0;
 
     return {
       averageConfidence,
       coverageRatio,
-      suggestionAcceptanceRate
+      suggestionAcceptanceRate,
     };
   }
 
@@ -529,7 +529,7 @@ export class TypeAnnotationInferrer {
         // 変数宣言またはパラメーターの前にJSDocコメントを追加
         const indent = line.match(/^(\s*)/)?.[1] || '';
         const jsDocComment = `${indent}/** ${suggestion.suggestedAnnotation} */`;
-        
+
         // JSDocコメントを挿入
         if (suggestion.type === 'add') {
           lines.splice(lineIndex, 0, jsDocComment);
@@ -545,9 +545,9 @@ export class TypeAnnotationInferrer {
    */
   generateInferenceReport(result: TypeAnnotationInferenceResult): string {
     const report = [];
-    
+
     report.push('# 型アノテーション推論レポート\n');
-    
+
     // 統計情報
     report.push('## 統計情報');
     report.push(`- 総変数数: ${result.statistics.totalVariables}`);
@@ -561,14 +561,18 @@ export class TypeAnnotationInferrer {
     report.push('## 品質評価');
     report.push(`- 平均信頼度: ${(result.qualityMetrics.averageConfidence * 100).toFixed(1)}%`);
     report.push(`- カバレッジ率: ${(result.qualityMetrics.coverageRatio * 100).toFixed(1)}%`);
-    report.push(`- 自動適用率: ${(result.qualityMetrics.suggestionAcceptanceRate * 100).toFixed(1)}%`);
+    report.push(
+      `- 自動適用率: ${(result.qualityMetrics.suggestionAcceptanceRate * 100).toFixed(1)}%`
+    );
     report.push('');
 
     // 高信頼度推論
     report.push('## 高信頼度推論結果');
     const highConfidenceAnnotations = result.inferredAnnotations.filter(a => a.confidence > 0.8);
     for (const annotation of highConfidenceAnnotations) {
-      report.push(`- \`${annotation.variableName}\`: ${annotation.jsDocAnnotation} (信頼度: ${(annotation.confidence * 100).toFixed(1)}%)`);
+      report.push(
+        `- \`${annotation.variableName}\`: ${annotation.jsDocAnnotation} (信頼度: ${(annotation.confidence * 100).toFixed(1)}%)`
+      );
     }
     report.push('');
 
@@ -576,7 +580,9 @@ export class TypeAnnotationInferrer {
     report.push('## 推奨アクション');
     const highPrioritySuggestions = result.suggestions.filter(s => s.priority === 'high');
     for (const suggestion of highPrioritySuggestions) {
-      report.push(`- [${suggestion.priority.toUpperCase()}] ${suggestion.targetVariable}: ${suggestion.reason}`);
+      report.push(
+        `- [${suggestion.priority.toUpperCase()}] ${suggestion.targetVariable}: ${suggestion.reason}`
+      );
     }
 
     return report.join('\n');
@@ -588,7 +594,7 @@ export class TypeAnnotationInferrer {
   private integrateSources(sources: TaintSource[]): void {
     for (const source of sources) {
       const existingTypeInfo = this.typeInfoMap.get(source.variableName);
-      
+
       if (existingTypeInfo) {
         // 既存の型情報にSource情報を追加
         existingTypeInfo.sourceInfo = source;
@@ -598,7 +604,7 @@ export class TypeAnnotationInferrer {
           symbol: {} as any, // ダミーシンボル
           taintStatus: 'tainted',
           sourceInfo: source,
-          typeConstraints: []
+          typeConstraints: [],
         });
       }
     }

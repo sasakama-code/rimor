@@ -94,7 +94,7 @@ describe('GradeCalculator', () => {
 
     test('should handle empty score array', () => {
       const distribution = gradeCalculator.calculateGradeDistribution([]);
-      
+
       expect(distribution.A).toBe(0);
       expect(distribution.B).toBe(0);
       expect(distribution.C).toBe(0);
@@ -119,11 +119,11 @@ describe('GradeCalculator', () => {
       const distribution = { A: 1, B: 2, C: 3, D: 2, F: 2 }; // Total: 10
       const percentages = gradeCalculator.calculateGradePercentages(distribution);
 
-      expect(percentages.A).toBe(10.0);  // 1/10 * 100
-      expect(percentages.B).toBe(20.0);  // 2/10 * 100
-      expect(percentages.C).toBe(30.0);  // 3/10 * 100
-      expect(percentages.D).toBe(20.0);  // 2/10 * 100
-      expect(percentages.F).toBe(20.0);  // 2/10 * 100
+      expect(percentages.A).toBe(10.0); // 1/10 * 100
+      expect(percentages.B).toBe(20.0); // 2/10 * 100
+      expect(percentages.C).toBe(30.0); // 3/10 * 100
+      expect(percentages.D).toBe(20.0); // 2/10 * 100
+      expect(percentages.F).toBe(20.0); // 2/10 * 100
     });
 
     test('should handle zero total distribution', () => {
@@ -152,10 +152,10 @@ describe('GradeCalculator', () => {
 
   describe('calculateImprovementNeeded', () => {
     test('should calculate points needed to reach target grade', () => {
-      expect(gradeCalculator.calculateImprovementNeeded(85, 'A')).toBe(5);  // 90 - 85
-      expect(gradeCalculator.calculateImprovementNeeded(75, 'B')).toBe(5);  // 80 - 75
-      expect(gradeCalculator.calculateImprovementNeeded(65, 'C')).toBe(5);  // 70 - 65
-      expect(gradeCalculator.calculateImprovementNeeded(55, 'D')).toBe(5);  // 60 - 55
+      expect(gradeCalculator.calculateImprovementNeeded(85, 'A')).toBe(5); // 90 - 85
+      expect(gradeCalculator.calculateImprovementNeeded(75, 'B')).toBe(5); // 80 - 75
+      expect(gradeCalculator.calculateImprovementNeeded(65, 'C')).toBe(5); // 70 - 65
+      expect(gradeCalculator.calculateImprovementNeeded(55, 'D')).toBe(5); // 60 - 55
     });
 
     test('should return 0 if already at or above target grade', () => {
@@ -192,9 +192,9 @@ describe('GradeCalculator', () => {
     });
 
     test('should handle edge cases for large improvements/degradations', () => {
-      expect(gradeCalculator.compareGrades('F', 'A')).toBe(2);  // F→A: 大幅改善
+      expect(gradeCalculator.compareGrades('F', 'A')).toBe(2); // F→A: 大幅改善
       expect(gradeCalculator.compareGrades('A', 'F')).toBe(-2); // A→F: 大幅悪化
-      expect(gradeCalculator.compareGrades('F', 'B')).toBe(2);  // F→B: 大幅改善
+      expect(gradeCalculator.compareGrades('F', 'B')).toBe(2); // F→B: 大幅改善
       expect(gradeCalculator.compareGrades('B', 'F')).toBe(-2); // B→F: 大幅悪化
     });
   });

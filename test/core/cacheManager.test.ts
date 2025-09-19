@@ -25,7 +25,7 @@ describe('CacheManager', () => {
       cacheDirectory: testCacheDir,
       maxEntries: 100,
       maxSizeBytes: 50 * 1024 * 1024,
-      ttlMs: 3600000
+      ttlMs: 3600000,
     });
   });
 
@@ -43,7 +43,7 @@ describe('CacheManager', () => {
       const validJson = '{"key": "value", "number": 123}';
       // privateメソッドのテストのため、型アサーションを使用
       const result = (cacheManager as any).safeJsonParse(validJson);
-      
+
       // unknown型として扱われることを確認
       expect(result).toBeDefined();
       expect(typeof result).toBe('object');
@@ -77,17 +77,20 @@ describe('CacheManager', () => {
     it('should validate correct cache data structure', () => {
       const validData = {
         entries: [
-          ['key1', {
-            filePath: '/path/to/file.ts',
-            fileHash: 'hash123',
-            fileSize: 1024,
-            lastModified: Date.now(),
-            pluginResults: {},
-            cachedAt: Date.now()
-          }]
-        ]
+          [
+            'key1',
+            {
+              filePath: '/path/to/file.ts',
+              fileHash: 'hash123',
+              fileSize: 1024,
+              lastModified: Date.now(),
+              pluginResults: {},
+              cachedAt: Date.now(),
+            },
+          ],
+        ],
       };
-      
+
       const result = (cacheManager as any).validateCacheData(validData);
       expect(result).toBe(true);
     });
@@ -118,9 +121,9 @@ describe('CacheManager', () => {
         fileSize: 1024,
         lastModified: Date.now(),
         pluginResults: {},
-        cachedAt: Date.now()
+        cachedAt: Date.now(),
       };
-      
+
       const result = (cacheManager as any).validateCacheEntry('validKey', validEntry);
       expect(result).toBe(true);
     });
@@ -128,10 +131,10 @@ describe('CacheManager', () => {
     it('should reject entry with missing required fields', () => {
       const invalidEntry = {
         filePath: '/path/to/file.ts',
-        fileHash: 'hash123'
+        fileHash: 'hash123',
         // Missing other required fields
       };
-      
+
       const result = (cacheManager as any).validateCacheEntry('key', invalidEntry);
       expect(result).toBe(false);
     });
@@ -143,9 +146,9 @@ describe('CacheManager', () => {
         fileSize: 1024,
         lastModified: Date.now(),
         pluginResults: {},
-        cachedAt: Date.now()
+        cachedAt: Date.now(),
       };
-      
+
       const result = (cacheManager as any).validateCacheEntry('key', invalidEntry);
       expect(result).toBe(false);
     });
@@ -162,11 +165,11 @@ describe('CacheManager', () => {
       const obj = {
         level1: {
           level2: {
-            level3: 'value'
-          }
-        }
+            level3: 'value',
+          },
+        },
       };
-      
+
       const depth = (cacheManager as any).getObjectDepth(obj);
       expect(depth).toBe(3);
     });
@@ -186,7 +189,7 @@ describe('CacheManager', () => {
         current.next = {};
         current = current.next;
       }
-      
+
       const depth = (cacheManager as any).getObjectDepth(deepObj);
       expect(depth).toBeLessThanOrEqual(10);
     });

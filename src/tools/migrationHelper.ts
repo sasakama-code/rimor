@@ -41,16 +41,15 @@ export interface CompatibilityResult {
 }
 
 export class MigrationHelper {
-  
   /**
    * レガシープラグインかどうかを判定
    */
   isLegacyPlugin(pluginCode: string): boolean {
     // レガシープラグインの特徴
     const legacyPatterns = [
-      /async\s+analyze\s*\([^)]*\)/,  // analyzeメソッドの存在（引数含む）
-      /\.name\s*=/,           // nameプロパティ
-      /severity\s*:\s*['"](?:error|warning|info|high|medium|low)['"]/  // 旧形式のseverity
+      /async\s+analyze\s*\([^)]*\)/, // analyzeメソッドの存在（引数含む）
+      /\.name\s*=/, // nameプロパティ
+      /severity\s*:\s*['"](?:error|warning|info|high|medium|low)['"]/, // 旧形式のseverity
     ];
 
     // 新プラグインの特徴
@@ -59,7 +58,7 @@ export class MigrationHelper {
       /extends\s+BasePlugin/,
       /detectPatterns\s*\(/,
       /evaluateQuality\s*\(/,
-      /suggestImprovements\s*\(/
+      /suggestImprovements\s*\(/,
     ];
 
     const legacyScore = legacyPatterns.filter(pattern => pattern.test(pluginCode)).length;
@@ -74,13 +73,13 @@ export class MigrationHelper {
    */
   async findPluginFiles(directory: string): Promise<string[]> {
     const pluginFiles: string[] = [];
-    
+
     try {
       const files = await fs.readdir(directory, { withFileTypes: true });
-      
+
       for (const file of files) {
         const fullPath = path.join(directory, file.name);
-        
+
         if (file.isDirectory()) {
           // 再帰的に検索
           const subFiles = await this.findPluginFiles(fullPath);
@@ -109,7 +108,7 @@ export class MigrationHelper {
       /name\s*[:=]\s*['"][^'"]+['"]/,
       /async\s+analyze\s*\(/,
       /detectPatterns\s*\(/,
-      /module\.exports\s*=.*analyze/
+      /module\.exports\s*=.*analyze/,
     ];
 
     return pluginIndicators.some(pattern => pattern.test(code));
@@ -129,23 +128,23 @@ export class MigrationHelper {
       'Implement suggestImprovements method',
       'Update return types and error handling',
       'Add metadata and confidence scoring',
-      'Test with new plugin manager'
+      'Test with new plugin manager',
     ];
 
     const complexity = this.estimateComplexity(pluginCode);
-    
+
     const breakingChanges = [
       'analyze() method replaced with detectPatterns()',
       'Return type changed from Issue[] to DetectionResult[]',
       'New quality evaluation methods required',
-      'Plugin registration method changed'
+      'Plugin registration method changed',
     ];
 
     const compatibilityNotes = [
       'Use LegacyPluginAdapter for gradual migration',
       'Existing functionality can be preserved in detectPatterns()',
       'Quality scoring can start with simple implementations',
-      'Backward compatibility maintained through adapter pattern'
+      'Backward compatibility maintained through adapter pattern',
     ];
 
     return {
@@ -153,7 +152,7 @@ export class MigrationHelper {
       migrationSteps,
       estimatedComplexity: complexity,
       breakingChanges,
-      compatibilityNotes
+      compatibilityNotes,
     };
   }
 
@@ -163,26 +162,28 @@ export class MigrationHelper {
   private estimateComplexity(pluginCode: string): 'low' | 'medium' | 'high' {
     const complexityIndicators = {
       low: [
-        /async\s+analyze.*\{[\s\S]*?\}/m,  // 単純なanalyzeメソッド
-        /return\s*\[\]/,                   // 空の配列を返す
+        /async\s+analyze.*\{[\s\S]*?\}/m, // 単純なanalyzeメソッド
+        /return\s*\[\]/, // 空の配列を返す
       ],
       medium: [
-        /private\s+\w+/,                   // プライベートメソッド
-        /this\.\w+\(/,                     // インスタンスメソッド呼び出し
-        /if\s*\(/,                         // 条件分岐
-        /for\s*\(/,                        // ループ
+        /private\s+\w+/, // プライベートメソッド
+        /this\.\w+\(/, // インスタンスメソッド呼び出し
+        /if\s*\(/, // 条件分岐
+        /for\s*\(/, // ループ
       ],
       high: [
-        /class\s+\w+\s+extends/,           // 継承
-        /interface\s+\w+/,                 // インターフェース定義
-        /async.*await.*async/,             // 複数の非同期処理
-        /try\s*\{[\s\S]*catch/,           // エラーハンドリング
-        /regex\s*=|new\s+RegExp/,         // 正規表現使用
-      ]
+        /class\s+\w+\s+extends/, // 継承
+        /interface\s+\w+/, // インターフェース定義
+        /async.*await.*async/, // 複数の非同期処理
+        /try\s*\{[\s\S]*catch/, // エラーハンドリング
+        /regex\s*=|new\s+RegExp/, // 正規表現使用
+      ],
     };
 
     const highScore = complexityIndicators.high.filter(pattern => pattern.test(pluginCode)).length;
-    const mediumScore = complexityIndicators.medium.filter(pattern => pattern.test(pluginCode)).length;
+    const mediumScore = complexityIndicators.medium.filter(pattern =>
+      pattern.test(pluginCode)
+    ).length;
 
     if (highScore >= 2) return 'high';
     if (mediumScore >= 3 || highScore >= 1) return 'medium';
@@ -384,7 +385,7 @@ If migration encounters critical issues:
     // クラス宣言の変換
     transformedCode = transformedCode.replace(
       /export\s+class\s+(\w+)\s*{/,
-      'import { BasePlugin } from \'../base/BasePlugin\';\nimport { ITestQualityPlugin, TestFile, DetectionResult, QualityScore, Improvement, ProjectContext } from \'../../core/types\';\n\nexport class $1 extends BasePlugin implements ITestQualityPlugin {'
+      "import { BasePlugin } from '../base/BasePlugin';\nimport { ITestQualityPlugin, TestFile, DetectionResult, QualityScore, Improvement, ProjectContext } from '../../core/types';\n\nexport class $1 extends BasePlugin implements ITestQualityPlugin {"
     );
 
     // nameプロパティをid/nameプロパティに変換
@@ -447,7 +448,12 @@ If migration encounters critical issues:
     });
 
     // 必須メソッドのチェック
-    const requiredMethods = ['isApplicable', 'detectPatterns', 'evaluateQuality', 'suggestImprovements'];
+    const requiredMethods = [
+      'isApplicable',
+      'detectPatterns',
+      'evaluateQuality',
+      'suggestImprovements',
+    ];
     requiredMethods.forEach(method => {
       if (!new RegExp(`${method}\\s*\\(`).test(pluginCode)) {
         errors.push(`Plugin missing required method: ${method}`);
@@ -466,7 +472,7 @@ If migration encounters critical issues:
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -476,7 +482,7 @@ If migration encounters critical issues:
   async generateMigrationReport(directory: string): Promise<MigrationReport> {
     const pluginFiles = await this.findPluginFiles(directory);
     const pluginDetails: MigrationReport['pluginDetails'] = [];
-    
+
     let legacyCount = 0;
     let modernCount = 0;
     let complexPlugins = 0;
@@ -486,15 +492,17 @@ If migration encounters critical issues:
         const content = await fs.readFile(filePath, 'utf-8');
         const isLegacy = this.isLegacyPlugin(content);
         const complexity = isLegacy ? this.estimateComplexity(content) : 'n/a';
-        
+
         const nameMatch = content.match(/(?:name|id)\s*[:=]\s*['"]([^'"]+)['"]/);
-        const pluginName = nameMatch ? nameMatch[1] : path.basename(filePath, path.extname(filePath));
+        const pluginName = nameMatch
+          ? nameMatch[1]
+          : path.basename(filePath, path.extname(filePath));
 
         pluginDetails.push({
           name: pluginName,
           type: isLegacy ? 'legacy' : 'modern',
           complexity,
-          filePath
+          filePath,
         });
 
         if (isLegacy) {
@@ -520,9 +528,9 @@ If migration encounters critical issues:
       migrationEstimate: {
         totalEffort,
         estimatedHours,
-        complexPlugins
+        complexPlugins,
       },
-      pluginDetails
+      pluginDetails,
     };
   }
 
@@ -563,18 +571,22 @@ If migration encounters critical issues:
 
 ## Plugin Details
 
-${report.pluginDetails.map(plugin => 
-  `- **${plugin.name}** (${plugin.type}) - Complexity: ${plugin.complexity}`
-).join('\n')}
+${report.pluginDetails
+  .map(plugin => `- **${plugin.name}** (${plugin.type}) - Complexity: ${plugin.complexity}`)
+  .join('\n')}
 
 ## Next Steps
 
-${report.legacyPlugins > 0 ? `
+${
+  report.legacyPlugins > 0
+    ? `
 1. Review migration plans for ${report.legacyPlugins} legacy plugins
 2. Start with low-complexity plugins for easier wins
 3. Use LegacyPluginAdapter for gradual migration
 4. Test thoroughly after each plugin migration
-` : '✅ All plugins are already using the modern interface!'}
+`
+    : '✅ All plugins are already using the modern interface!'
+}
 
 ---
 *Generated on ${new Date().toISOString().split('T')[0]}*
@@ -584,7 +596,10 @@ ${report.legacyPlugins > 0 ? `
   /**
    * API互換性をチェック
    */
-  checkCompatibility(legacyInterface: Record<string, string>, newInterface: Record<string, string>): CompatibilityResult {
+  checkCompatibility(
+    legacyInterface: Record<string, string>,
+    newInterface: Record<string, string>
+  ): CompatibilityResult {
     const breakingChanges: string[] = [];
     const newRequirements: string[] = [];
     const suggestions: string[] = [];
@@ -609,7 +624,7 @@ ${report.legacyPlugins > 0 ? `
       isCompatible,
       breakingChanges,
       newRequirements,
-      suggestions
+      suggestions,
     };
   }
 
@@ -620,7 +635,7 @@ ${report.legacyPlugins > 0 ? `
     const solutions: string[] = [
       'Use LegacyPluginAdapter for gradual migration',
       'Implement ITestQualityPlugin interface',
-      'Update method signatures to match new interface'
+      'Update method signatures to match new interface',
     ];
 
     if (breakingChanges.some(change => change.includes('analyze'))) {

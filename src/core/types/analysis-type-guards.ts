@@ -17,7 +17,7 @@ import {
   DependencyInfo,
   DependencyVulnerability,
   OutdatedDependency,
-  CircularDependency
+  CircularDependency,
 } from './analysis-types';
 import { SeverityLevel } from './base-types';
 
@@ -39,16 +39,14 @@ function isStringArray(value: unknown): value is string[] {
  * TaintLevel型ガード
  */
 function isTaintLevel(value: unknown): value is TaintLevel {
-  return typeof value === 'string' && 
-    ['critical', 'high', 'medium', 'low', 'info'].includes(value);
+  return typeof value === 'string' && ['critical', 'high', 'medium', 'low', 'info'].includes(value);
 }
 
 /**
  * SeverityLevel型ガード
  */
 function isSeverityLevel(value: unknown): value is SeverityLevel {
-  return typeof value === 'string' &&
-    ['info', 'low', 'medium', 'high', 'critical'].includes(value);
+  return typeof value === 'string' && ['info', 'low', 'medium', 'high', 'critical'].includes(value);
 }
 
 /**
@@ -122,9 +120,14 @@ export function isTaintSummary(value: unknown): value is TaintSummary {
   if (!isObject(value)) return false;
 
   const requiredNumbers = [
-    'totalFlows', 'criticalFlows', 'highFlows',
-    'mediumFlows', 'lowFlows', 'sourcesCount',
-    'sinksCount', 'sanitizersCount'
+    'totalFlows',
+    'criticalFlows',
+    'highFlows',
+    'mediumFlows',
+    'lowFlows',
+    'sourcesCount',
+    'sinksCount',
+    'sanitizersCount',
   ];
 
   for (const field of requiredNumbers) {
@@ -220,7 +223,7 @@ export function isDependencyInfo(value: unknown): value is DependencyInfo {
 
   if (typeof value.name !== 'string') return false;
   if (typeof value.version !== 'string') return false;
-  
+
   const validTypes = ['production', 'development', 'peer', 'optional'];
   if (typeof value.type !== 'string' || !validTypes.includes(value.type)) return false;
 

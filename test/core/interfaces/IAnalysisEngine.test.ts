@@ -7,7 +7,7 @@ import {
   ASTNode,
   AnalysisResult,
   AnalysisOptions,
-  IAnalysisEngine
+  IAnalysisEngine,
 } from '../../../src/core/interfaces/IAnalysisEngine';
 import { Issue } from '../../../src/core/types';
 
@@ -20,7 +20,7 @@ describe('IAnalysisEngine Interface', () => {
         startPosition: { row: 0, column: 0 },
         endPosition: { row: 0, column: 18 },
         children: [],
-        isNamed: true
+        isNamed: true,
       };
 
       expect(validNode.type).toBe('function_declaration');
@@ -35,7 +35,7 @@ describe('IAnalysisEngine Interface', () => {
         type: 'identifier',
         text: 'test',
         startPosition: { row: 0, column: 0 },
-        endPosition: { row: 0, column: 4 }
+        endPosition: { row: 0, column: 4 },
       };
 
       expect(minimalNode.children).toBeUndefined();
@@ -53,9 +53,9 @@ describe('IAnalysisEngine Interface', () => {
             type: 'statement',
             text: 'return',
             startPosition: { row: 0, column: 1 },
-            endPosition: { row: 0, column: 2 }
-          }
-        ]
+            endPosition: { row: 0, column: 2 },
+          },
+        ],
       };
 
       expect(parentNode.children).toHaveLength(1);
@@ -68,7 +68,7 @@ describe('IAnalysisEngine Interface', () => {
       const result: AnalysisResult = {
         totalFiles: 10,
         issues: [],
-        executionTime: 1000
+        executionTime: 1000,
       };
 
       expect(result.totalFiles).toBe(10);
@@ -85,8 +85,8 @@ describe('IAnalysisEngine Interface', () => {
             line: 10,
             column: 5,
             message: 'Test issue',
-            severity: 'medium'
-          } as Issue
+            severity: 'medium',
+          } as Issue,
         ],
         executionTime: 500,
         pluginsExecuted: ['plugin1', 'plugin2'],
@@ -94,8 +94,8 @@ describe('IAnalysisEngine Interface', () => {
           parallelProcessed: true,
           cacheUtilized: true,
           filesFromCache: 3,
-          filesAnalyzed: 2
-        }
+          filesAnalyzed: 2,
+        },
       };
 
       expect(resultWithMetadata.pluginsExecuted).toHaveLength(2);
@@ -116,7 +116,7 @@ describe('IAnalysisEngine Interface', () => {
         cache: true,
         concurrency: 4,
         excludePatterns: ['node_modules/**', 'dist/**'],
-        includePatterns: ['src/**/*.ts']
+        includePatterns: ['src/**/*.ts'],
       };
 
       expect(fullOptions.parallel).toBe(true);
@@ -133,7 +133,7 @@ describe('IAnalysisEngine Interface', () => {
         return {
           totalFiles: 1,
           issues: [],
-          executionTime: 100
+          executionTime: 100,
         };
       }
 
@@ -142,7 +142,7 @@ describe('IAnalysisEngine Interface', () => {
           type: 'program',
           text: '',
           startPosition: { row: 0, column: 0 },
-          endPosition: { row: 0, column: 0 }
+          endPosition: { row: 0, column: 0 },
         };
       }
 
@@ -153,7 +153,7 @@ describe('IAnalysisEngine Interface', () => {
 
     it('should implement required methods', () => {
       const engine = new MockAnalysisEngine();
-      
+
       expect(engine.analyze).toBeDefined();
       expect(engine.generateAST).toBeDefined();
       expect(engine.clearCache).toBeDefined();
@@ -165,7 +165,7 @@ describe('IAnalysisEngine Interface', () => {
           return {
             totalFiles: 0,
             issues: [],
-            executionTime: 0
+            executionTime: 0,
           };
         }
 
@@ -174,7 +174,7 @@ describe('IAnalysisEngine Interface', () => {
             type: 'empty',
             text: '',
             startPosition: { row: 0, column: 0 },
-            endPosition: { row: 0, column: 0 }
+            endPosition: { row: 0, column: 0 },
           };
         }
       }
@@ -216,7 +216,7 @@ describe('IAnalysisEngine Interface', () => {
         type: 'test',
         text: 'test',
         startPosition: { row: 0, column: 0 },
-        endPosition: { row: 0, column: 4 }
+        endPosition: { row: 0, column: 4 },
       };
 
       const invalidNode = {
@@ -234,13 +234,13 @@ describe('IAnalysisEngine Interface', () => {
       const validResult: AnalysisResult = {
         totalFiles: 5,
         issues: [],
-        executionTime: 100
+        executionTime: 100,
       };
 
       const invalidResult = {
         totalFiles: '5', // wrong type
         issues: [],
-        executionTime: 100
+        executionTime: 100,
       };
 
       expect(isAnalysisResult(validResult)).toBe(true);

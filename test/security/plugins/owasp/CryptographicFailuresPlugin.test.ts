@@ -47,9 +47,18 @@ describe('CryptographicFailuresPlugin', () => {
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
     expect(plugin.cweIds).toEqual([
-      'CWE-259', 'CWE-261', 'CWE-296', 'CWE-310',
-      'CWE-319', 'CWE-321', 'CWE-322', 'CWE-323',
-      'CWE-324', 'CWE-325', 'CWE-326', 'CWE-327'
+      'CWE-259',
+      'CWE-261',
+      'CWE-296',
+      'CWE-310',
+      'CWE-319',
+      'CWE-321',
+      'CWE-322',
+      'CWE-323',
+      'CWE-324',
+      'CWE-325',
+      'CWE-326',
+      'CWE-327',
     ]);
   });
 
@@ -57,7 +66,7 @@ describe('CryptographicFailuresPlugin', () => {
     // ステップ8: 暗号化ライブラリがある場合
     it('should return true when crypto libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['bcrypt', 'jsonwebtoken', 'express']
+        dependencies: ['bcrypt', 'jsonwebtoken', 'express'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -65,7 +74,7 @@ describe('CryptographicFailuresPlugin', () => {
     // ステップ9: 暗号化ライブラリがない場合
     it('should return false when no crypto libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['express', 'lodash', 'axios']
+        dependencies: ['express', 'lodash', 'axios'],
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -77,8 +86,8 @@ describe('CryptographicFailuresPlugin', () => {
         filePatterns: {
           source: ['src/crypto/encryption.js', 'src/security/hash.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -96,13 +105,15 @@ describe('CryptographicFailuresPlugin', () => {
               expect(encrypted).toBeDefined();
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
       expect(patterns.length).toBeGreaterThan(0);
-      
-      const encryptionPattern = patterns.find(p => p.patternId && p.patternId.includes('crypto-encryption'));
+
+      const encryptionPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('crypto-encryption')
+      );
       expect(encryptionPattern).toBeDefined();
       expect(encryptionPattern?.confidence).toBeGreaterThan(0.7);
     });
@@ -115,11 +126,13 @@ describe('CryptographicFailuresPlugin', () => {
           const crypto = require('crypto');
           const hash = crypto.createHash('md5');
           hash.update(password);
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const weakCryptoPattern = patterns.find(p => p.patternId && p.patternId.startsWith('weak-crypto-'));
+      const weakCryptoPattern = patterns.find(
+        p => p.patternId && p.patternId.startsWith('weak-crypto-')
+      );
       expect(weakCryptoPattern).toBeDefined();
       expect(weakCryptoPattern?.metadata?.algorithm).toBe('md5');
     });
@@ -132,7 +145,7 @@ describe('CryptographicFailuresPlugin', () => {
         { patternId: 'crypto-encryption-algorithm', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'crypto-key-management', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'crypto-password-hashing', metadata: { hasTest: true }, confidence: 0.9 },
-        { patternId: 'crypto-tls', metadata: { hasTest: true }, confidence: 0.9 }
+        { patternId: 'crypto-tls', metadata: { hasTest: true }, confidence: 0.9 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -146,12 +159,14 @@ describe('CryptographicFailuresPlugin', () => {
       const patterns = [
         { patternId: 'crypto-encryption-algorithm', metadata: { hasTest: true }, confidence: 0.9 },
         { patternId: 'weak-crypto-md5', metadata: { algorithm: 'md5' }, confidence: 0.95 },
-        { patternId: 'weak-crypto-des', metadata: { algorithm: 'des' }, confidence: 0.95 }
+        { patternId: 'weak-crypto-des', metadata: { algorithm: 'des' }, confidence: 0.95 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
       expect(score.overall).toBeLessThan(0.5);
-      expect((score.details as CryptographicFailuresQualityDetails)?.weakAlgorithmsDetected).toBe(2);
+      expect((score.details as CryptographicFailuresQualityDetails)?.weakAlgorithmsDetected).toBe(
+        2
+      );
     });
   });
 
@@ -168,8 +183,8 @@ describe('CryptographicFailuresPlugin', () => {
           strengths: [],
           weaknesses: ['暗号化テスト不足'],
           suggestions: ['暗号化テストを追加'],
-          testCoverage: 30
-        }
+          testCoverage: 30,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -190,7 +205,7 @@ describe('CryptographicFailuresPlugin', () => {
               const cipher = crypto.createCipher('aes-256-gcm', key);
             });
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -235,7 +250,7 @@ describe('CryptographicFailuresPlugin', () => {
     it('should generate security test code', () => {
       const context: ProjectContext = {
         dependencies: ['bcrypt', 'jsonwebtoken'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

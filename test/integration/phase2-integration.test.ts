@@ -29,7 +29,7 @@ describe('Phase 2 Integration Tests', () => {
     it('DomainInferenceEngineのテストファイルを分析できる', async () => {
       const testFilePath = path.join(__dirname, '../intent-analysis/DomainInferenceEngine.test.ts');
       const ast = await parser.parseFile(testFilePath);
-      
+
       // テスト意図の抽出
       const intent = await extractor.extractIntent(testFilePath, ast);
       const actual = await extractor.analyzeActualTest(testFilePath, ast);
@@ -43,7 +43,7 @@ describe('Phase 2 Integration Tests', () => {
     it('型情報を使用した高度な分析ができる', async () => {
       // TypeScriptAnalyzerの初期化
       await tsAnalyzer.initialize(path.join(__dirname, '../../tsconfig.json'));
-      
+
       // PaymentService関連のテストを分析
       const testCode = `
         import { PaymentService } from '../src/services/PaymentService';
@@ -59,11 +59,11 @@ describe('Phase 2 Integration Tests', () => {
       `;
 
       const ast = parser.parseContent(testCode, SupportedLanguage.TYPESCRIPT);
-      
+
       // 型情報のモック（実際のTypeScript APIは時間がかかるため）
       const typeInfo = new Map([
         ['service', { typeName: 'PaymentService', isPrimitive: false }],
-        ['payment', { typeName: 'Payment', isPrimitive: false }]
+        ['payment', { typeName: 'Payment', isPrimitive: false }],
       ]);
 
       // 高度な評価
@@ -91,7 +91,7 @@ describe('Phase 2 Integration Tests', () => {
       `;
 
       const ast = parser.parseContent(testCode, SupportedLanguage.TYPESCRIPT);
-      
+
       // 仮想的な呼び出しグラフ
       const callGraph = [
         {
@@ -104,18 +104,14 @@ describe('Phase 2 Integration Tests', () => {
               filePath: '/src/utils/TaxRates.ts',
               line: 5,
               calls: [],
-              calledBy: []
-            }
+              calledBy: [],
+            },
           ],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
 
-      const result = await (extractor as any).analyzeWithBusinessContext(
-        'test.ts',
-        ast,
-        callGraph
-      );
+      const result = await (extractor as any).analyzeWithBusinessContext('test.ts', ast, callGraph);
 
       expect(result.businessLogicCoverage.coveredFunctions).toContain('calculateTax');
     });
@@ -127,7 +123,7 @@ describe('Phase 2 Integration Tests', () => {
       const testFiles = [
         '../intent-analysis/DomainInferenceEngine.test.ts',
         '../intent-analysis/BusinessLogicMapper.test.ts',
-        '../intent-analysis/TestIntentExtractor.test.ts'
+        '../intent-analysis/TestIntentExtractor.test.ts',
       ];
 
       const results = [];
@@ -157,15 +153,15 @@ describe('Phase 2 Integration Tests', () => {
       const domainInference = await domainEngine.inferDomainFromType(userType);
       expect(domainInference.domain).toBe('user-management');
 
-      // 2. ビジネスロジックマッピング  
+      // 2. ビジネスロジックマッピング
       const mockCallGraph = [
         {
           name: 'createUser',
           filePath: '/src/services/UserService.ts',
           line: 20,
           calls: [],
-          calledBy: []
-        }
+          calledBy: [],
+        },
       ];
       const mapping = await businessMapper.mapTestToBusinessLogic(
         'test.ts',
@@ -197,7 +193,7 @@ describe('Phase 2 Integration Tests', () => {
         expect.objectContaining({
           type: 'security',
           priority: 'critical',
-          description: expect.stringContaining('無効な認証情報')
+          description: expect.stringContaining('無効な認証情報'),
         })
       );
     });

@@ -2,13 +2,13 @@
  * Analysis result types
  */
 
-import { 
-  SeverityLevel, 
-  CodeLocation, 
-  Evidence, 
+import {
+  SeverityLevel,
+  CodeLocation,
+  Evidence,
   BaseMetadata,
   ConfidenceInfo,
-  Issue
+  Issue,
 } from './base-types';
 import { QualityDetails, QualityScore } from './quality-score';
 import { ProjectContext } from './project-context';
@@ -31,41 +31,41 @@ export interface AnalysisOptions {
   // File patterns
   includePatterns?: string[];
   excludePatterns?: string[];
-  
+
   // Analysis depth
   maxDepth?: number;
   followSymlinks?: boolean;
-  
+
   // Performance options
   parallel?: boolean;
   maxConcurrency?: number;
   timeout?: number;
-  
+
   // Caching
   useCache?: boolean;
   cacheDir?: string;
   cacheTTL?: number;
-  
+
   // Output options
   verbose?: boolean;
   quiet?: boolean;
   format?: 'json' | 'text' | 'html' | 'markdown';
   outputFile?: string;
-  
+
   // Plugin options
   enabledPlugins?: string[];
   disabledPlugins?: string[];
   pluginConfig?: Record<string, unknown>;
-  
+
   // Security options
   enableSecurityChecks?: boolean;
   securityLevel?: 'low' | 'medium' | 'high' | 'paranoid';
-  
+
   // Quality thresholds
   minQualityScore?: number;
   maxIssues?: number;
   failOnWarnings?: boolean;
-  
+
   // Custom options
   customOptions?: Record<string, unknown>;
 }
@@ -75,26 +75,26 @@ export interface AnalysisResult {
   // File information
   filePath: string;
   relativePath?: string;
-  
+
   // Results
   issues: Issue[];
   detectionResults?: DetectionResult[];
-  
+
   // Metrics
   metrics?: FileMetrics;
-  
+
   // Quality assessment (compatible with legacy code)
   score?: QualityScore;
   qualityScore?: number;
   qualityDetails?: QualityDetails;
-  
+
   // Context
   context?: ProjectContext;
-  
+
   // Performance data
   analysisTime?: number;
   pluginTimings?: Record<string, number>;
-  
+
   // Metadata
   timestamp?: Date;
   analyzerId?: string;
@@ -121,8 +121,6 @@ export interface FileMetrics {
   maintainabilityIndex?: number;
 }
 
-
-
 // Aggregated analysis results
 export interface AggregatedAnalysisResult {
   // Summary
@@ -130,33 +128,36 @@ export interface AggregatedAnalysisResult {
   analyzedFiles: number;
   skippedFiles: number;
   failedFiles: number;
-  
+
   // Issues
   totalIssues: number;
   issuesBySeverity: Record<SeverityLevel, number>;
   issuesByType: Record<string, number>;
   issuesByFile: Record<string, Issue[]>;
-  
+
   // Quality
   overallQualityScore?: number;
   averageQualityScore?: number;
   qualityDistribution?: Record<string, number>;
-  
+
   // Performance
   totalAnalysisTime: number;
   averageFileTime: number;
   slowestFiles?: Array<{ file: string; time: number }>;
-  
+
   // Plugin performance
-  pluginPerformance?: Record<string, {
-    totalTime: number;
-    averageTime: number;
-    filesProcessed: number;
-  }>;
-  
+  pluginPerformance?: Record<
+    string,
+    {
+      totalTime: number;
+      averageTime: number;
+      filesProcessed: number;
+    }
+  >;
+
   // File results
   fileResults: AnalysisResult[];
-  
+
   // Metadata
   startTime: Date;
   endTime: Date;
@@ -175,23 +176,23 @@ export interface AnalysisContext {
   file: string;
   content?: string;
   ast?: unknown; // Will be properly typed when AST types are defined
-  
+
   // Project context
   projectRoot: string;
   projectType?: string;
   framework?: string;
-  
+
   // Dependencies
   dependencies?: Map<string, string>;
   devDependencies?: Map<string, string>;
-  
+
   // Previous results (for incremental analysis)
   previousResults?: AnalysisResult;
   previousMetrics?: FileMetrics;
-  
+
   // Shared data between plugins
   sharedData?: Map<string, unknown>;
-  
+
   // Options
   options: AnalysisOptions;
 }
@@ -219,19 +220,19 @@ export interface AnalysisSession {
 export function isAnalysisResult(value: unknown): value is AnalysisResult {
   if (value === null || value === undefined || typeof value !== 'object') return false;
   const result = value as any;
-  
+
   // Check required fields
   if (typeof result.projectRoot !== 'string') return false;
   // timestamp can be Date or string
   if (!(result.timestamp instanceof Date) && typeof result.timestamp !== 'string') return false;
   if (!Array.isArray(result.results)) return false;
-  
+
   // Check summary
   if (!result.summary || typeof result.summary !== 'object') return false;
   const summary = result.summary;
   if (typeof summary.totalFiles !== 'number') return false;
   if (typeof summary.filesWithIssues !== 'number') return false;
   if (typeof summary.totalIssues !== 'number') return false;
-  
+
   return true;
 }

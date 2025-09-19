@@ -1,7 +1,7 @@
 /**
  * Production Code Analyzer
  * プロダクションコードの実装の真実を確立する解析エンジン
- * 
+ *
  * v0.9.0 - AIコーディング時代の品質保証エンジンへの進化
  * SOLID原則: 単一責任の原則（プロダクションコード解析のみ）
  * DRY原則: 既存のTaintTyperエンジンとの共通処理の再利用
@@ -28,7 +28,7 @@ import {
   MethodParameter,
   DataPath,
   DataTransformation,
-  TaintPropagation
+  TaintPropagation,
 } from '../types/implementation-truth';
 import { TaintLevel, TaintSource } from '../types/common-types';
 import { SecurityIssue } from '../security/types';
@@ -47,7 +47,7 @@ export class ProductionCodeAnalyzer {
     this.securityEngine = new TypeBasedSecurityEngine({
       strictness: 'moderate',
       enableCache: true,
-      parallelism: 2
+      parallelism: 2,
     });
   }
 
@@ -76,16 +76,16 @@ export class ProductionCodeAnalyzer {
 
       // メソッドの振る舞い分析
       const methods = await this.analyzeMethodBehaviors(sourceFile);
-      
+
       // データフローの分析
       const dataFlows = await this.analyzeDataFlows(sourceFile);
-      
+
       // 依存関係の分析
       const dependencies = await this.analyzeDependencies(sourceFile);
-      
+
       // セキュリティプロファイルの作成
       const securityProfile = await this.createSecurityProfile(sourceFile);
-      
+
       // 構造情報の分析
       const complexity = this.calculateComplexityMetrics(sourceFile);
       const coverage = await this.generateCoverageMap(sourceFile);
@@ -104,29 +104,28 @@ export class ProductionCodeAnalyzer {
           methods,
           dataFlows,
           dependencies,
-          securityProfile
+          securityProfile,
         },
         vulnerabilities,
         structure: {
           complexity,
           coverage,
-          criticalPaths
+          criticalPaths,
         },
         metadata: {
           engineVersion: '0.9.0',
           analysisTime,
           confidence,
-          warnings: []
-        }
+          warnings: [],
+        },
       };
 
       debug.info(`プロダクションコード解析完了: ${filePath} (${analysisTime}ms)`);
       return implementationTruth;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       debug.error(`プロダクションコード解析エラー: ${errorMessage}`);
-      
+
       // エラー時のフォールバック
       return this.createErrorImplementationTruth(filePath, errorMessage, Date.now() - startTime);
     }
@@ -137,7 +136,7 @@ export class ProductionCodeAnalyzer {
    */
   private async createTypeScriptProgram(filePath: string): Promise<ts.Program> {
     const configPath = await this.findTsConfig(path.dirname(filePath));
-    
+
     if (configPath) {
       // tsconfig.jsonがある場合はそれを使用
       const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -155,7 +154,7 @@ export class ProductionCodeAnalyzer {
         strict: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        forceConsistentCasingInFileNames: true
+        forceConsistentCasingInFileNames: true,
       });
     }
   }
@@ -165,7 +164,7 @@ export class ProductionCodeAnalyzer {
    */
   private async findTsConfig(dir: string): Promise<string | null> {
     const configPath = path.join(dir, 'tsconfig.json');
-    
+
     try {
       await fs.access(configPath);
       return configPath;
@@ -186,7 +185,7 @@ export class ProductionCodeAnalyzer {
    */
   private async analyzeMethodBehaviors(sourceFile: ts.SourceFile): Promise<MethodBehavior[]> {
     const methods: MethodBehavior[] = [];
-    
+
     const visit = (node: ts.Node) => {
       if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
         const method = this.analyzeMethod(node, sourceFile);
@@ -209,7 +208,7 @@ export class ProductionCodeAnalyzer {
     sourceFile: ts.SourceFile
   ): MethodBehavior | null {
     const name = node.name?.getText(sourceFile) || 'anonymous';
-    
+
     if (!this.typeChecker) {
       return null;
     }
@@ -231,11 +230,12 @@ export class ProductionCodeAnalyzer {
         dataFlow,
         sideEffects,
         exceptionHandling,
-        securityProfile
+        securityProfile,
       };
-
     } catch (error) {
-      debug.warn(`メソッド分析エラー: ${name} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      debug.warn(
+        `メソッド分析エラー: ${name} - ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       return null;
     }
   }
@@ -251,15 +251,14 @@ export class ProductionCodeAnalyzer {
       const name = param.name.getText(sourceFile);
       const type = this.getTypeInfo(param);
       const isOptional = !!param.questionToken || !!param.initializer;
-      const defaultValue = param.initializer ? 
-        param.initializer.getText(sourceFile) : undefined;
-      
+      const defaultValue = param.initializer ? param.initializer.getText(sourceFile) : undefined;
+
       return {
         name,
         type,
         isOptional,
         defaultValue,
-        taintLevel: this.inferParameterTaintLevel(param, sourceFile)
+        taintLevel: this.inferParameterTaintLevel(param, sourceFile),
       };
     });
   }
@@ -285,7 +284,7 @@ export class ProductionCodeAnalyzer {
     return {
       name: 'unknown',
       isArray: false,
-      isNullable: false
+      isNullable: false,
     };
   }
 
@@ -297,7 +296,7 @@ export class ProductionCodeAnalyzer {
     sourceFile: ts.SourceFile
   ): string[] {
     const methodCalls: string[] = [];
-    
+
     const visit = (child: ts.Node) => {
       if (ts.isCallExpression(child)) {
         const methodName = this.getMethodNameFromCallExpression(child, sourceFile);
@@ -336,7 +335,7 @@ export class ProductionCodeAnalyzer {
         dataType: this.getTypeInfo(param),
         taintLevel: this.inferParameterTaintLevel(param, sourceFile),
         isValidated: false,
-        isSanitized: false
+        isSanitized: false,
       });
     });
 
@@ -344,7 +343,7 @@ export class ProductionCodeAnalyzer {
       inputPaths,
       outputPaths,
       transformations,
-      taintPropagation
+      taintPropagation,
     };
   }
 
@@ -356,7 +355,7 @@ export class ProductionCodeAnalyzer {
     sourceFile: ts.SourceFile
   ): SideEffect[] {
     const sideEffects: SideEffect[] = [];
-    
+
     const visit = (child: ts.Node) => {
       // ファイル操作の検出
       if (ts.isCallExpression(child)) {
@@ -386,26 +385,26 @@ export class ProductionCodeAnalyzer {
     sourceFile: ts.SourceFile
   ): ExceptionInfo[] {
     const exceptions: ExceptionInfo[] = [];
-    
+
     const visit = (child: ts.Node) => {
       if (ts.isTryStatement(child)) {
         exceptions.push({
           exceptionType: 'try_catch',
           handlingMethod: 'try_catch',
           recoverability: 'recoverable',
-          securityRisk: 'low'
+          securityRisk: 'low',
         });
       }
-      
+
       if (ts.isThrowStatement(child)) {
         exceptions.push({
           exceptionType: 'thrown_exception',
           handlingMethod: 'throws',
           recoverability: 'non_recoverable',
-          securityRisk: 'medium'
+          securityRisk: 'medium',
         });
       }
-      
+
       ts.forEachChild(child, visit);
     };
 
@@ -431,7 +430,7 @@ export class ProductionCodeAnalyzer {
       hasOutputSanitization: false,
       vulnerabilities: [],
       accessesSensitiveData: false,
-      hasSecurityLogging: false
+      hasSecurityLogging: false,
     };
   }
 
@@ -448,7 +447,7 @@ export class ProductionCodeAnalyzer {
    */
   private async analyzeDependencies(sourceFile: ts.SourceFile): Promise<Dependency[]> {
     const dependencies: Dependency[] = [];
-    
+
     const visit = (node: ts.Node) => {
       if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
         const moduleName = node.moduleSpecifier.text;
@@ -457,7 +456,7 @@ export class ProductionCodeAnalyzer {
           type: 'import',
           depth: 1,
           isCircular: false,
-          securityRiskLevel: this.assessModuleSecurityRisk(moduleName)
+          securityRiskLevel: this.assessModuleSecurityRisk(moduleName),
         });
       }
       ts.forEachChild(node, visit);
@@ -476,7 +475,7 @@ export class ProductionCodeAnalyzer {
       vulnerabilities: [],
       securityMeasures: [],
       sensitiveDataHandling: [],
-      auditResults: []
+      auditResults: [],
     };
   }
 
@@ -488,31 +487,39 @@ export class ProductionCodeAnalyzer {
     let nestingDepth = 0;
     let maxNesting = 0;
     let currentNesting = 0;
-    
+
     const visit = (node: ts.Node) => {
       // 循環的複雑度の計算
-      if (ts.isIfStatement(node) || ts.isForStatement(node) || 
-          ts.isWhileStatement(node) || ts.isSwitchStatement(node)) {
+      if (
+        ts.isIfStatement(node) ||
+        ts.isForStatement(node) ||
+        ts.isWhileStatement(node) ||
+        ts.isSwitchStatement(node)
+      ) {
         cyclomaticComplexity++;
         currentNesting++;
         maxNesting = Math.max(maxNesting, currentNesting);
       }
-      
-      ts.forEachChild(node, (child) => {
+
+      ts.forEachChild(node, child => {
         visit(child);
       });
-      
-      if (ts.isIfStatement(node) || ts.isForStatement(node) || 
-          ts.isWhileStatement(node) || ts.isSwitchStatement(node)) {
+
+      if (
+        ts.isIfStatement(node) ||
+        ts.isForStatement(node) ||
+        ts.isWhileStatement(node) ||
+        ts.isSwitchStatement(node)
+      ) {
         currentNesting--;
       }
     };
 
     visit(sourceFile);
-    
+
     const sourceCode = sourceFile.getFullText();
     const lines = sourceCode.split('\n');
-    
+
     return {
       cyclomaticComplexity,
       cognitiveComplexity: cyclomaticComplexity * 1.2, // 簡易計算
@@ -520,7 +527,7 @@ export class ProductionCodeAnalyzer {
       fanIn: 0, // 実装簡略化
       fanOut: 0, // 実装簡略化
       linesOfCode: lines.length,
-      duplicationRate: 0 // 実装簡略化
+      duplicationRate: 0, // 実装簡略化
     };
   }
 
@@ -529,16 +536,16 @@ export class ProductionCodeAnalyzer {
    */
   private async generateCoverageMap(sourceFile: ts.SourceFile): Promise<CoverageMap> {
     const lines = sourceFile.getFullText().split('\n');
-    
+
     return {
       lineCoverage: lines.map((_, index) => ({
         line: index + 1,
         isCovered: false,
-        executionCount: 0
+        executionCount: 0,
       })),
       branchCoverage: [],
       functionCoverage: [],
-      conditionCoverage: []
+      conditionCoverage: [],
     };
   }
 
@@ -562,13 +569,12 @@ export class ProductionCodeAnalyzer {
         metadata: {
           framework: 'typescript',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
-      
+
       const result = await this.securityEngine.analyzeAtCompileTime([testCase]);
       return result.issues;
-      
     } catch (error) {
       debug.warn(`脆弱性検出エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return [];
@@ -588,8 +594,9 @@ export class ProductionCodeAnalyzer {
     return {
       name: typeNode.getText(),
       isArray: ts.isArrayTypeNode(typeNode),
-      isNullable: typeNode.kind === ts.SyntaxKind.NullKeyword ||
-                  typeNode.kind === ts.SyntaxKind.UndefinedKeyword
+      isNullable:
+        typeNode.kind === ts.SyntaxKind.NullKeyword ||
+        typeNode.kind === ts.SyntaxKind.UndefinedKeyword,
     };
   }
 
@@ -598,32 +605,42 @@ export class ProductionCodeAnalyzer {
     return {
       name: typeString,
       isArray: typeString.includes('[]'),
-      isNullable: typeString.includes('null') || typeString.includes('undefined')
+      isNullable: typeString.includes('null') || typeString.includes('undefined'),
     };
   }
 
-  private inferParameterTaintLevel(param: ts.ParameterDeclaration, sourceFile: ts.SourceFile): TaintLevel {
+  private inferParameterTaintLevel(
+    param: ts.ParameterDeclaration,
+    sourceFile: ts.SourceFile
+  ): TaintLevel {
     const paramName = param.name.getText(sourceFile).toLowerCase();
-    
+
     // 簡易的な推論
-    if (paramName.includes('user') || paramName.includes('input') || paramName.includes('request')) {
+    if (
+      paramName.includes('user') ||
+      paramName.includes('input') ||
+      paramName.includes('request')
+    ) {
       return TaintLevel.TAINTED;
     }
-    
+
     return TaintLevel.UNTAINTED;
   }
 
-  private getMethodNameFromCallExpression(callExpr: ts.CallExpression, sourceFile: ts.SourceFile): string | null {
+  private getMethodNameFromCallExpression(
+    callExpr: ts.CallExpression,
+    sourceFile: ts.SourceFile
+  ): string | null {
     const expression = callExpr.expression;
-    
+
     if (ts.isIdentifier(expression)) {
       return expression.getText(sourceFile);
     }
-    
+
     if (ts.isPropertyAccessExpression(expression)) {
       return expression.name.getText(sourceFile);
     }
-    
+
     return null;
   }
 
@@ -631,37 +648,37 @@ export class ProductionCodeAnalyzer {
     const fileOpsPattern = /write|create|delete|mkdir|rmdir/i;
     const dbOpsPattern = /query|execute|insert|update|delete|create|drop/i;
     const networkOpsPattern = /fetch|request|post|get|put|delete|send/i;
-    
+
     if (fileOpsPattern.test(methodName)) {
       return {
         type: 'file_write',
         description: `File operation: ${methodName}`,
         affectedResources: ['filesystem'],
         isPersistent: true,
-        securityImplications: []
+        securityImplications: [],
       };
     }
-    
+
     if (dbOpsPattern.test(methodName)) {
       return {
         type: 'database_write',
         description: `Database operation: ${methodName}`,
         affectedResources: ['database'],
         isPersistent: true,
-        securityImplications: []
+        securityImplications: [],
       };
     }
-    
+
     if (networkOpsPattern.test(methodName)) {
       return {
         type: 'network_call',
         description: `Network operation: ${methodName}`,
         affectedResources: ['network'],
         isPersistent: false,
-        securityImplications: []
+        securityImplications: [],
       };
     }
-    
+
     return null;
   }
 
@@ -669,15 +686,15 @@ export class ProductionCodeAnalyzer {
     // セキュリティリスクの高いモジュールの例
     const highRiskModules = ['eval', 'vm', 'child_process'];
     const mediumRiskModules = ['fs', 'path', 'os', 'crypto'];
-    
+
     if (highRiskModules.some(risk => moduleName.includes(risk))) {
       return 'high';
     }
-    
+
     if (mediumRiskModules.some(risk => moduleName.includes(risk))) {
       return 'medium';
     }
-    
+
     return 'low';
   }
 
@@ -688,11 +705,11 @@ export class ProductionCodeAnalyzer {
   ): number {
     // 解析の信頼度計算
     let confidence = 0.5; // 基準値
-    
+
     if (methods.length > 0) confidence += 0.2;
     if (dependencies.length > 0) confidence += 0.2;
     if (this.typeChecker) confidence += 0.1;
-    
+
     return Math.min(confidence, 1.0);
   }
 
@@ -713,8 +730,8 @@ export class ProductionCodeAnalyzer {
           vulnerabilities: [],
           securityMeasures: [],
           sensitiveDataHandling: [],
-          auditResults: []
-        }
+          auditResults: [],
+        },
       },
       vulnerabilities: [],
       structure: {
@@ -725,22 +742,22 @@ export class ProductionCodeAnalyzer {
           fanIn: 0,
           fanOut: 0,
           linesOfCode: 0,
-          duplicationRate: 0
+          duplicationRate: 0,
         },
         coverage: {
           lineCoverage: [],
           branchCoverage: [],
           functionCoverage: [],
-          conditionCoverage: []
+          conditionCoverage: [],
         },
-        criticalPaths: []
+        criticalPaths: [],
       },
       metadata: {
         engineVersion: '0.9.0',
         analysisTime,
         confidence: 0.0,
-        warnings: [errorMessage]
-      }
+        warnings: [errorMessage],
+      },
     };
   }
 }
@@ -753,22 +770,22 @@ export interface ProductionAnalysisOptions {
    * セキュリティ解析を有効にするか
    */
   enableSecurityAnalysis?: boolean;
-  
+
   /**
    * データフロー解析を有効にするか
    */
   enableDataFlowAnalysis?: boolean;
-  
+
   /**
    * 複雑度解析を有効にするか
    */
   enableComplexityAnalysis?: boolean;
-  
+
   /**
    * 解析タイムアウト（ミリ秒）
    */
   timeout?: number;
-  
+
   /**
    * 除外パターン
    */

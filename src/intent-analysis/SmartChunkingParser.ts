@@ -1,7 +1,7 @@
 /**
  * Smart Chunking Parser
  * v0.9.0 Phase 2 - スマート・チャンキング・システム
- * 
+ *
  * KISS原則: シンプルなチャンキングロジック
  * YAGNI原則: 必要最小限の機能から開始
  * Defensive Programming: 堅牢なエラーハンドリング
@@ -20,9 +20,9 @@ import * as path from 'path';
  * チャンキング戦略
  */
 export enum ChunkingStrategy {
-  SINGLE = 'single',      // 単一チャンク（小さいファイル）
-  MULTIPLE = 'multiple',  // 複数チャンク（大きいファイル）
-  STREAMING = 'streaming' // ストリーミング（将来拡張）
+  SINGLE = 'single', // 単一チャンク（小さいファイル）
+  MULTIPLE = 'multiple', // 複数チャンク（大きいファイル）
+  STREAMING = 'streaming', // ストリーミング（将来拡張）
 }
 
 /**
@@ -61,7 +61,7 @@ export interface ChunkParseResult {
  * チャンキングパーサー設定
  */
 export interface SmartChunkingConfig {
-  chunkSize?: number;     // デフォルト: 30000 (30KB)
+  chunkSize?: number; // デフォルト: 30000 (30KB)
   enableDebug?: boolean;
   enableCache?: boolean;
 }
@@ -102,9 +102,9 @@ export class SmartChunkingParser {
     this.config = {
       chunkSize: config?.chunkSize ?? 30000,
       enableDebug: config?.enableDebug ?? false,
-      enableCache: config?.enableCache ?? true
+      enableCache: config?.enableCache ?? true,
     };
-    
+
     this.parsers = new Map();
     this.cache = new Map();
     this.initializeParsers();
@@ -138,7 +138,7 @@ export class SmartChunkingParser {
    */
   async parseFile(filePath: string): Promise<ChunkParseResult> {
     const startTime = Date.now();
-    
+
     // キャッシュチェック
     if (this.config.enableCache) {
       const cached = await this.checkCache(filePath);
@@ -149,8 +149,8 @@ export class SmartChunkingParser {
           metadata: {
             ...cached.metadata,
             cacheHit: true,
-            parseTime: 1
-          }
+            parseTime: 1,
+          },
         };
       }
     }
@@ -158,15 +158,14 @@ export class SmartChunkingParser {
     // ファイル読み込み
     const content = await fs.readFile(filePath, 'utf-8');
     const fileSize = Buffer.byteLength(content, 'utf-8');
-    
+
     // 言語検出
     const language = this.detectLanguage(filePath);
-    
+
     // チャンキング戦略の決定
-    const strategy = fileSize <= this.config.chunkSize 
-      ? ChunkingStrategy.SINGLE 
-      : ChunkingStrategy.MULTIPLE;
-    
+    const strategy =
+      fileSize <= this.config.chunkSize ? ChunkingStrategy.SINGLE : ChunkingStrategy.MULTIPLE;
+
     // チャンク作成
     this.currentChunks = this.createChunks(content, strategy);
     this.currentChunkIndex = 0;
@@ -193,12 +192,12 @@ export class SmartChunkingParser {
       }
 
       ast = this.convertToASTNode(tree.rootNode);
-      
+
       // 構文エラーをチェック
       if (tree.rootNode.hasError) {
         errors.push({
           chunk: this.currentChunkIndex,
-          message: 'Syntax error detected in parse tree'
+          message: 'Syntax error detected in parse tree',
         });
         partialParse = true;
       }
@@ -206,10 +205,10 @@ export class SmartChunkingParser {
       // エラーハンドリング
       errors.push({
         chunk: this.currentChunkIndex,
-        message: error.message
+        message: error.message,
       });
       partialParse = true;
-      
+
       // 部分的なASTを作成
       ast = {
         type: 'program',
@@ -217,7 +216,7 @@ export class SmartChunkingParser {
         startPosition: { row: 0, column: 0 },
         endPosition: { row: 0, column: 0 },
         isNamed: true,
-        children: []
+        children: [],
       };
     }
 
@@ -236,7 +235,7 @@ export class SmartChunkingParser {
       partialParse,
       parseTime: Date.now() - startTime,
       cacheHit: false,
-      language: language === SupportedLanguage.TYPESCRIPT ? 'typescript' : 'javascript'
+      language: language === SupportedLanguage.TYPESCRIPT ? 'typescript' : 'javascript',
     };
 
     const result = { ast, metadata };
@@ -288,12 +287,14 @@ export class SmartChunkingParser {
    */
   private createChunks(content: string, strategy: ChunkingStrategy): ChunkInfo[] {
     if (strategy === ChunkingStrategy.SINGLE) {
-      return [{
-        index: 0,
-        start: 0,
-        end: content.length,
-        content
-      }];
+      return [
+        {
+          index: 0,
+          start: 0,
+          end: content.length,
+          content,
+        },
+      ];
     }
 
     const chunks: ChunkInfo[] = [];
@@ -303,7 +304,7 @@ export class SmartChunkingParser {
 
     while (start < content.length) {
       let end = Math.min(start + chunkSize, content.length);
-      
+
       // 構文的に意味のある境界を探す
       if (end < content.length) {
         const boundary = this.findSyntaxBoundary(content, start, end);
@@ -316,7 +317,7 @@ export class SmartChunkingParser {
         index,
         start,
         end,
-        content: content.substring(start, end)
+        content: content.substring(start, end),
       });
 
       start = end;
@@ -333,7 +334,7 @@ export class SmartChunkingParser {
   private findSyntaxBoundary(content: string, start: number, end: number): number {
     // 関数またはクラスの終了を探す
     const searchStart = Math.max(start, end - 1000); // 最後の1KB内で探す
-    
+
     // 閉じ括弧の後の改行を探す
     for (let i = end - 1; i >= searchStart; i--) {
       if (content[i] === '}' && i + 1 < content.length && content[i + 1] === '\n') {
@@ -361,31 +362,26 @@ export class SmartChunkingParser {
     const traverse = (node: ASTNode) => {
       // tree-sitterのJavaScript/TypeScriptパーサーのノードタイプ
       const functionTypes = [
-        'function_declaration', 
+        'function_declaration',
         'function_expression',
         'arrow_function',
         'method_definition',
         'function',
         'arrow_function_expression',
         'generator_function_declaration',
-        'async_function_declaration'
+        'async_function_declaration',
       ];
-      
-      const classTypes = [
-        'class_declaration',
-        'class_expression', 
-        'class',
-        'class_body'
-      ];
-      
+
+      const classTypes = ['class_declaration', 'class_expression', 'class', 'class_body'];
+
       if (functionTypes.includes(node.type)) {
         functions++;
       }
-      
+
       if (classTypes.includes(node.type)) {
         classes++;
       }
-      
+
       // ノードのテキストにも基づいて検出
       if (node.text) {
         if (node.text.includes('function') || node.text.includes('=>')) {
@@ -395,7 +391,7 @@ export class SmartChunkingParser {
           classes = Math.max(classes, 1);
         }
       }
-      
+
       if (node.children) {
         for (const child of node.children) {
           traverse(child);
@@ -404,7 +400,7 @@ export class SmartChunkingParser {
     };
 
     traverse(ast);
-    
+
     // テキストベースのフォールバック検出
     if (functions === 0 && ast.text) {
       // function キーワードまたはアロー関数を検出
@@ -416,7 +412,7 @@ export class SmartChunkingParser {
         functions = arrowMatches.length;
       }
     }
-    
+
     if (classes === 0 && ast.text) {
       // class キーワードを検出
       const classMatches = ast.text.match(/class\s+\w+/g);
@@ -424,7 +420,7 @@ export class SmartChunkingParser {
         classes = classMatches.length;
       }
     }
-    
+
     return { functions, classes };
   }
 
@@ -437,13 +433,13 @@ export class SmartChunkingParser {
       text: node.text,
       startPosition: {
         row: node.startPosition.row,
-        column: node.startPosition.column
+        column: node.startPosition.column,
       },
       endPosition: {
         row: node.endPosition.row,
-        column: node.endPosition.column
+        column: node.endPosition.column,
       },
-      isNamed: node.isNamed
+      isNamed: node.isNamed,
     };
 
     if (node.namedChildCount > 0) {
@@ -499,8 +495,8 @@ export class SmartChunkingParser {
       ast: cached.ast,
       metadata: {
         ...cached.metadata,
-        parseTime: 1
-      }
+        parseTime: 1,
+      },
     };
   }
 
@@ -508,18 +504,18 @@ export class SmartChunkingParser {
    * キャッシュに保存
    */
   private async saveToCache(
-    filePath: string, 
-    result: ChunkParseResult, 
+    filePath: string,
+    result: ChunkParseResult,
     content: string
   ): Promise<void> {
     const crypto = await import('crypto');
     const contentHash = crypto.createHash('md5').update(content).digest('hex');
-    
+
     this.cache.set(filePath, {
       ast: result.ast,
       metadata: result.metadata,
       contentHash,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 

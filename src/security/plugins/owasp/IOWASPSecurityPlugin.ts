@@ -11,7 +11,7 @@ import {
   QualityScore,
   Improvement,
   SecurityIssue,
-  TestMethod
+  TestMethod,
 } from '../../../core/types';
 
 /**
@@ -27,7 +27,7 @@ export enum OWASPCategory {
   A07_IDENTIFICATION_AUTH_FAILURES = 'A07:2021',
   A08_DATA_INTEGRITY_FAILURES = 'A08:2021',
   A09_SECURITY_LOGGING_FAILURES = 'A09:2021',
-  A10_SSRF = 'A10:2021'
+  A10_SSRF = 'A10:2021',
 }
 
 /**
@@ -50,27 +50,27 @@ export interface IOWASPSecurityPlugin extends ITestQualityPlugin {
    * OWASPカテゴリ
    */
   owaspCategory: OWASPCategory;
-  
+
   /**
    * CWE（Common Weakness Enumeration）IDのリスト
    */
   cweIds: string[];
-  
+
   /**
    * セキュリティテストパターンの検証
    */
   validateSecurityTests(testFile: TestFile): Promise<OWASPTestResult>;
-  
+
   /**
    * 脆弱性パターンの検出
    */
   detectVulnerabilityPatterns(content: string): SecurityIssue[];
-  
+
   /**
    * 推奨されるセキュリティテストの生成
    */
   generateSecurityTests(context: ProjectContext): string[];
-  
+
   /**
    * エンタープライズ要件の検証
    */
@@ -88,18 +88,18 @@ export class OWASPUtils {
     const lowerContent = content.toLowerCase();
     return keywords.some(keyword => lowerContent.includes(keyword.toLowerCase()));
   }
-  
+
   /**
    * テストカバレッジの計算
    */
   static calculateTestCoverage(foundTests: string[], requiredTests: string[]): number {
     if (requiredTests.length === 0) return 100;
-    const covered = foundTests.filter(test => 
+    const covered = foundTests.filter(test =>
       requiredTests.some(required => test.includes(required))
     ).length;
     return Math.round((covered / requiredTests.length) * 100);
   }
-  
+
   /**
    * セキュリティスコアの計算
    */
@@ -109,10 +109,10 @@ export class OWASPUtils {
     maxIssues: number = 10
   ): number {
     const coverageScore = testCoverage / 100;
-    const issueScore = Math.max(0, 1 - (issueCount / maxIssues));
-    return (coverageScore * 0.7 + issueScore * 0.3);
+    const issueScore = Math.max(0, 1 - issueCount / maxIssues);
+    return coverageScore * 0.7 + issueScore * 0.3;
   }
-  
+
   /**
    * CWE IDのフォーマット
    */
@@ -132,7 +132,7 @@ export abstract class OWASPBasePlugin implements IOWASPSecurityPlugin {
   abstract readonly type: 'security';
   abstract readonly owaspCategory: OWASPCategory;
   abstract readonly cweIds: string[];
-  
+
   abstract isApplicable(context: ProjectContext): boolean;
   abstract detectPatterns(testFile: TestFile): Promise<DetectionResult[]>;
   abstract evaluateQuality(patterns: DetectionResult[]): QualityScore;

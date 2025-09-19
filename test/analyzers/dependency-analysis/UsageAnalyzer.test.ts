@@ -10,7 +10,7 @@ import {
   createTestFile,
   createPackageJson,
   createTypeScriptProject,
-  cleanupTempProject
+  cleanupTempProject,
 } from '../../helpers/integration-test-utils';
 
 describe('UsageAnalyzer Integration Tests', () => {
@@ -31,14 +31,17 @@ describe('UsageAnalyzer Integration Tests', () => {
     it('should find all imported packages in TypeScript files', async () => {
       // package.jsonを作成
       createPackageJson(projectDir, {
-        'express': '^4.18.0',
-        'lodash': '^4.17.21',
-        'axios': '^1.0.0',
-        'moment': '^2.29.0'
+        express: '^4.18.0',
+        lodash: '^4.17.21',
+        axios: '^1.0.0',
+        moment: '^2.29.0',
       });
 
       // TypeScriptファイルを作成
-      createTestFile(projectDir, 'src/index.ts', `
+      createTestFile(
+        projectDir,
+        'src/index.ts',
+        `
 import express from 'express';
 import { Router } from 'express';
 import * as path from 'path';
@@ -46,9 +49,13 @@ import lodash from 'lodash';
 
 const app = express();
 const router = Router();
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/utils.ts', `
+      createTestFile(
+        projectDir,
+        'src/utils.ts',
+        `
 import axios from 'axios';
 const fs = require('fs');
 const moment = require('moment');
@@ -56,20 +63,24 @@ const moment = require('moment');
 export async function fetchData(url: string) {
   return axios.get(url);
 }
-      `);
+      `
+      );
 
       const result = await analyzer.findUsedPackages(projectDir);
-      
+
       expect(result).toContain('express');
       expect(result).toContain('lodash');
       expect(result).toContain('axios');
       expect(result).toContain('moment');
       expect(result).not.toContain('path'); // Built-in module
-      expect(result).not.toContain('fs');    // Built-in module
+      expect(result).not.toContain('fs'); // Built-in module
     });
 
     it('should handle scoped packages correctly', async () => {
-      createTestFile(projectDir, 'src/app.ts', `
+      createTestFile(
+        projectDir,
+        'src/app.ts',
+        `
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as Sentry from '@sentry/node';
@@ -82,10 +93,11 @@ const parser = require('@babel/parser');
 export class AppComponent {
   constructor(private http: HttpClient) {}
 }
-      `);
+      `
+      );
 
       const result = await analyzer.findUsedPackages(projectDir);
-      
+
       expect(result).toContain('@angular/core');
       expect(result).toContain('@angular/common');
       expect(result).toContain('@sentry/node');
@@ -93,7 +105,10 @@ export class AppComponent {
     });
 
     it('should correctly handle Node.js built-in modules with subpaths and node: prefix (Issue #101)', async () => {
-      createTestFile(projectDir, 'src/builtins.ts', `
+      createTestFile(
+        projectDir,
+        'src/builtins.ts',
+        `
 import { promises as fs } from 'fs';
 import { readFile } from 'fs/promises';
 import path from 'node:path';
@@ -104,45 +119,54 @@ import express from 'express';
 export function processFiles() {
   return { fs, readFile, path, crypto, randomBytes, express };
 }
-      `);
+      `
+      );
 
       const result = await analyzer.findUsedPackages(projectDir);
-      
+
       // Issue #101: これらは組み込みモジュールなので結果に含まれるべきではない
       expect(result).not.toContain('fs'); // fs subpath
       expect(result).not.toContain('path'); // node: prefix
       expect(result).not.toContain('crypto'); // node: prefix & subpath
-      
+
       // 外部パッケージは含まれるべき
       expect(result).toContain('express');
     });
 
     it('should handle dynamic imports', async () => {
-      createTestFile(projectDir, 'src/lazy.ts', `
+      createTestFile(
+        projectDir,
+        'src/lazy.ts',
+        `
 async function loadModule() {
   const { default: chalk } = await import('chalk');
   const ora = await import('ora');
   return import('commander').then(m => m.Command);
 }
-      `);
+      `
+      );
 
       const result = await analyzer.findUsedPackages(projectDir);
-      
+
       expect(result).toContain('chalk');
       expect(result).toContain('ora');
       expect(result).toContain('commander');
     });
 
     it('should ignore relative imports', async () => {
-      createTestFile(projectDir, 'src/components.ts', `
+      createTestFile(
+        projectDir,
+        'src/components.ts',
+        `
 import { helper } from './utils';
 import Component from '../components/Button';
 import { config } from '../../config';
 import express from 'express';
-      `);
+      `
+      );
 
       const result = await analyzer.findUsedPackages(projectDir);
-      
+
       expect(result).toContain('express');
       expect(result).not.toContain('./utils');
       expect(result).not.toContain('../components/Button');
@@ -152,7 +176,10 @@ import express from 'express';
 
   describe('analyzeUsageFrequency', () => {
     it('should correctly handle built-in modules in frequency analysis (Issue #101)', async () => {
-      createTestFile(projectDir, 'src/freq-test.ts', `
+      createTestFile(
+        projectDir,
+        'src/freq-test.ts',
+        `
 import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'node:path';  
@@ -164,50 +191,67 @@ import express2 from 'express';
 const data1 = readFile('file1.txt');
 const data2 = writeFile('file2.txt', 'content');
 const hasher = crypto.createHash('sha256');
-      `);
+      `
+      );
 
       const result = await analyzer.analyzeUsageFrequency(projectDir);
-      
+
       // Issue #101: 組み込みモジュールは頻度にカウントされるべきではない
       expect(result.get('fs')).toBeUndefined();
-      expect(result.get('path')).toBeUndefined(); 
+      expect(result.get('path')).toBeUndefined();
       expect(result.get('crypto')).toBeUndefined();
-      
+
       // 外部パッケージは正しくカウントされるべき
       expect(result.get('express')).toBe(2);
     });
 
     it('should count usage frequency of each package', async () => {
-      createTestFile(projectDir, 'src/file1.ts', `
+      createTestFile(
+        projectDir,
+        'src/file1.ts',
+        `
 import express from 'express';
 import lodash from 'lodash';
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/file2.ts', `
+      createTestFile(
+        projectDir,
+        'src/file2.ts',
+        `
 import express from 'express';
 import axios from 'axios';
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/file3.ts', `
+      createTestFile(
+        projectDir,
+        'src/file3.ts',
+        `
 import express from 'express';
-      `);
+      `
+      );
 
       const result = await analyzer.analyzeUsageFrequency(projectDir);
-      
+
       expect(result.get('express')).toBe(3);
       expect(result.get('lodash')).toBe(1);
       expect(result.get('axios')).toBe(1);
     });
 
     it('should handle mixed import styles', async () => {
-      createTestFile(projectDir, 'src/mixed.ts', `
+      createTestFile(
+        projectDir,
+        'src/mixed.ts',
+        `
 import react from 'react';
 const react2 = require('react');
 import('react').then(m => console.log(m));
-      `);
+      `
+      );
 
       const result = await analyzer.analyzeUsageFrequency(projectDir);
-      
+
       // 現在の実装では全てのimportスタイルを検出しないかもしれないため、少なくとも1つは検出されることを確認
       expect(result.get('react')).toBeGreaterThanOrEqual(1);
     });
@@ -220,20 +264,27 @@ import('react').then(m => console.log(m));
       createTestFile(projectDir, 'src/utils.ts', `import lodash from 'lodash';`);
 
       const result = await analyzer.findImportLocations(projectDir, 'express');
-      
+
       expect(result).toHaveLength(2);
-      expect(result).toContainEqual(expect.objectContaining({
-        file: path.join(projectDir, 'src/app.ts'),
-        line: 1
-      }));
-      expect(result).toContainEqual(expect.objectContaining({
-        file: path.join(projectDir, 'src/server.ts'),
-        line: 1
-      }));
+      expect(result).toContainEqual(
+        expect.objectContaining({
+          file: path.join(projectDir, 'src/app.ts'),
+          line: 1,
+        })
+      );
+      expect(result).toContainEqual(
+        expect.objectContaining({
+          file: path.join(projectDir, 'src/server.ts'),
+          line: 1,
+        })
+      );
     });
 
     it('should handle multiple imports in the same file', async () => {
-      createTestFile(projectDir, 'src/complex.ts', `
+      createTestFile(
+        projectDir,
+        'src/complex.ts',
+        `
 import express from 'express';
 import path from 'path';
 
@@ -244,10 +295,11 @@ const router = require('express').Router();
 function test() {
   const app = require('express')();
 }
-`);
+`
+      );
 
       const result = await analyzer.findImportLocations(projectDir, 'express');
-      
+
       expect(result).toHaveLength(3);
       expect(result[0].line).toBe(2);
       expect(result[1].line).toBe(7);
@@ -259,12 +311,20 @@ function test() {
     it('should calculate the depth of import chains', async () => {
       // 深い階層構造を作成
       createTestFile(projectDir, 'src/index.ts', `import { AuthService } from './services/auth';`);
-      createTestFile(projectDir, 'src/services/auth.ts', `import { helper } from '../utils/helpers';`);
+      createTestFile(
+        projectDir,
+        'src/services/auth.ts',
+        `import { helper } from '../utils/helpers';`
+      );
       createTestFile(projectDir, 'src/utils/helpers.ts', `import lodash from 'lodash';`);
-      createTestFile(projectDir, 'src/components/deep/nested/component.ts', `import react from 'react';`);
+      createTestFile(
+        projectDir,
+        'src/components/deep/nested/component.ts',
+        `import react from 'react';`
+      );
 
       const result = await analyzer.analyzeImportDepth(projectDir);
-      
+
       expect(result.maxDepth).toBeGreaterThanOrEqual(3);
       expect(result.averageDepth).toBeGreaterThan(0);
       expect(result.deepImports).toBeDefined();
@@ -275,32 +335,40 @@ function test() {
   describe('categorizeUsage', () => {
     it('should correctly identify unused dependencies from package.json (Issue #102)', async () => {
       // package.jsonを作成（複数の依存関係を宣言）
-      createPackageJson(projectDir, {
-        'express': '^4.18.0',
-        'lodash': '^4.17.21',
-        'unused-dependency': '^1.0.0',
-        'another-unused': '^2.0.0'
-      }, {
-        'typescript': '^4.8.0',
-        'jest': '^29.0.0',
-        'unused-dev-dependency': '^1.5.0'
-      });
+      createPackageJson(
+        projectDir,
+        {
+          express: '^4.18.0',
+          lodash: '^4.17.21',
+          'unused-dependency': '^1.0.0',
+          'another-unused': '^2.0.0',
+        },
+        {
+          typescript: '^4.8.0',
+          jest: '^29.0.0',
+          'unused-dev-dependency': '^1.5.0',
+        }
+      );
 
       // 一部の依存関係のみ使用
-      createTestFile(projectDir, 'src/app.ts', `
+      createTestFile(
+        projectDir,
+        'src/app.ts',
+        `
 import express from 'express';
 import lodash from 'lodash';
-      `);
+      `
+      );
 
       const result = await analyzer.categorizeUsage(projectDir);
-      
+
       // Issue #102: 宣言されているが未使用の依存関係が正しく検出されるべき
       expect(result.unused).toContain('unused-dependency');
       expect(result.unused).toContain('another-unused');
       expect(result.unused).toContain('typescript');
       expect(result.unused).toContain('jest');
       expect(result.unused).toContain('unused-dev-dependency');
-      
+
       // 使用されている依存関係はunusedに含まれるべきではない
       expect(result.unused).not.toContain('express');
       expect(result.unused).not.toContain('lodash');
@@ -309,10 +377,10 @@ import lodash from 'lodash';
     it('should categorize packages by their usage patterns', async () => {
       // package.jsonを作成
       createPackageJson(projectDir, {
-        'express': '^4.18.0',
-        'lodash': '^4.17.21',
+        express: '^4.18.0',
+        lodash: '^4.17.21',
         'test-lib': '^1.0.0',
-        'unused-lib': '^1.0.0'
+        'unused-lib': '^1.0.0',
       });
 
       // expressを多数のファイルで使用
@@ -332,7 +400,7 @@ import lodash from 'lodash';
       // unused-libは使用しない
 
       const result = await analyzer.categorizeUsage(projectDir);
-      
+
       expect(result.core).toContain('express');
       expect(result.core).toContain('lodash');
       expect(result.peripheral).toContain('test-lib');
@@ -344,7 +412,7 @@ import lodash from 'lodash';
       createTestFile(projectDir, 'src/index.ts', `import express from 'express';`);
 
       const result = await analyzer.categorizeUsage(projectDir);
-      
+
       // package.jsonがない場合、unusedは空になる
       expect(result.unused).toEqual([]);
       // usage=1なのでperipheralに分類される
@@ -355,28 +423,40 @@ import lodash from 'lodash';
   describe('generateUsageReport', () => {
     it('should generate a comprehensive usage report', async () => {
       createPackageJson(projectDir, {
-        'express': '^4.18.0',
-        'lodash': '^4.17.21',
-        'axios': '^1.0.0'
+        express: '^4.18.0',
+        lodash: '^4.17.21',
+        axios: '^1.0.0',
       });
 
-      createTestFile(projectDir, 'src/server.ts', `
+      createTestFile(
+        projectDir,
+        'src/server.ts',
+        `
 import express from 'express';
 import lodash from 'lodash';
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/client.ts', `
+      createTestFile(
+        projectDir,
+        'src/client.ts',
+        `
 import axios from 'axios';
 import express from 'express';
-      `);
+      `
+      );
 
-      createTestFile(projectDir, 'src/utils.ts', `
+      createTestFile(
+        projectDir,
+        'src/utils.ts',
+        `
 import lodash from 'lodash';
 import express from 'express';
-      `);
+      `
+      );
 
       const report = await analyzer.generateUsageReport(projectDir);
-      
+
       expect(report.summary.totalPackages).toBe(3);
       expect(report.frequency).toBeDefined();
       expect(report.frequency.get('express')).toBe(3);

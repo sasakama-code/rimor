@@ -1,7 +1,7 @@
 /**
  * FileDependencyAnalyzer
  * Issue #65: ファイルレベルの依存関係分析
- * 
+ *
  * SOLID原則: 単一責任（ファイル依存関係のみ）
  * DRY原則: インポート解析ロジックの共通化
  * KISS原則: シンプルな正規表現ベースの解析
@@ -16,10 +16,30 @@ import * as path from 'path';
  */
 export class FileDependencyAnalyzer {
   private readonly BUILTIN_MODULES = [
-    'fs', 'path', 'os', 'crypto', 'http', 'https', 'url', 'util',
-    'stream', 'events', 'buffer', 'child_process', 'cluster',
-    'dgram', 'dns', 'net', 'readline', 'repl', 'tls', 'tty',
-    'v8', 'vm', 'worker_threads', 'zlib'
+    'fs',
+    'path',
+    'os',
+    'crypto',
+    'http',
+    'https',
+    'url',
+    'util',
+    'stream',
+    'events',
+    'buffer',
+    'child_process',
+    'cluster',
+    'dgram',
+    'dns',
+    'net',
+    'readline',
+    'repl',
+    'tls',
+    'tty',
+    'v8',
+    'vm',
+    'worker_threads',
+    'zlib',
   ];
 
   /**
@@ -48,7 +68,7 @@ export class FileDependencyAnalyzer {
       exports,
       dependsOn: imports.filter(imp => this.getImportType(imp) === 'relative'),
       dependedBy: [],
-      packageImports
+      packageImports,
     };
   }
 
@@ -59,7 +79,8 @@ export class FileDependencyAnalyzer {
     const imports: string[] = [];
 
     // ES6 import文
-    const es6ImportRegex = /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+    const es6ImportRegex =
+      /import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
     let match;
     while ((match = es6ImportRegex.exec(content)) !== null) {
       imports.push(match[1]);
@@ -138,7 +159,10 @@ export class FileDependencyAnalyzer {
    * ファイル間の依存関係グラフを構築（修正版）
    * Issue #116: 相対キーと絶対解決の不一致を解決
    */
-  async buildDependencyGraph(projectPath: string, files: string[]): Promise<Map<string, FileDependency>> {
+  async buildDependencyGraph(
+    projectPath: string,
+    files: string[]
+  ): Promise<Map<string, FileDependency>> {
     const graph = new Map<string, FileDependency>();
 
     // 各ファイルの依存関係を分析
@@ -152,7 +176,7 @@ export class FileDependencyAnalyzer {
           exports: deps.exports,
           dependsOn: deps.imports.filter(imp => this.getImportType(imp) === 'relative'),
           dependedBy: [],
-          absPath: filePath // Issue #116: 絶対パスを保持
+          absPath: filePath, // Issue #116: 絶対パスを保持
         });
       }
     }
@@ -160,11 +184,11 @@ export class FileDependencyAnalyzer {
     // dependedByを計算（修正版）
     for (const [file, deps] of graph.entries()) {
       const currentFilePath = path.join(projectPath, file);
-      
+
       for (const importPath of deps.imports) {
         // Issue #116: projectPath基準で解決し、相対キーに正規化
         const resolvedAbsPath = this.resolveImportPath(currentFilePath, importPath, projectPath);
-        
+
         if (resolvedAbsPath) {
           const relativeKey = this.normalizeToRelativeKey(resolvedAbsPath, projectPath);
           const importedFile = graph.get(relativeKey);
@@ -189,10 +213,14 @@ export class FileDependencyAnalyzer {
 
   /**
    * Extract Method: projectPath基準でファイル探索
-   * Issue #116: CWD/projectPath不整合を解決  
+   * Issue #116: CWD/projectPath不整合を解決
    * Issue #117: path.resolve()による絶対パス化でCWD依存問題を解決
    */
-  private resolveWithProjectBase(importPath: string, fromFile: string, projectPath: string): string | null {
+  private resolveWithProjectBase(
+    importPath: string,
+    fromFile: string,
+    projectPath: string
+  ): string | null {
     if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
       return null; // 相対パスのみ処理
     }
@@ -200,7 +228,7 @@ export class FileDependencyAnalyzer {
     // Issue #117: 常に絶対パス化（CWD非依存）
     const fromDir = path.dirname(fromFile);
     let resolved = path.resolve(fromDir, importPath);
-    
+
     return this.findFileWithExtensions(resolved, projectPath);
   }
 
@@ -211,7 +239,7 @@ export class FileDependencyAnalyzer {
    */
   private findFileWithExtensions(basePath: string, projectPath: string): string | null {
     const extensions = ['.ts', '.tsx', '.js', '.jsx'];
-    
+
     // 拡張子付きで優先探索（Issue #116: キー一致のため）
     for (const ext of extensions) {
       const withExt = basePath + ext;
@@ -219,7 +247,7 @@ export class FileDependencyAnalyzer {
         return withExt;
       }
     }
-    
+
     // Issue #117: index.*ファイルの自動解決対応
     for (const ext of extensions) {
       const indexFile = path.join(basePath, 'index' + ext);
@@ -227,12 +255,12 @@ export class FileDependencyAnalyzer {
         return indexFile;
       }
     }
-    
+
     // 拡張子なしで存在チェック（フォールバック）
     if (fs.existsSync(basePath)) {
       return basePath;
     }
-    
+
     return null;
   }
 
@@ -240,7 +268,11 @@ export class FileDependencyAnalyzer {
    * 相対インポートパスを解決（修正版）
    * Issue #116: projectPath基準の一貫した解決
    */
-  private resolveImportPath(currentFile: string, importPath: string, projectPath: string): string | null {
+  private resolveImportPath(
+    currentFile: string,
+    importPath: string,
+    projectPath: string
+  ): string | null {
     const resolved = this.resolveWithProjectBase(importPath, currentFile, projectPath);
     return resolved;
   }

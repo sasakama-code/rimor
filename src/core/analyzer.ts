@@ -23,27 +23,27 @@ export interface AnalysisResult {
  */
 export class Analyzer {
   private engine: UnifiedAnalysisEngine;
-  
+
   constructor() {
     this.engine = new UnifiedAnalysisEngine();
   }
-  
+
   registerPlugin(plugin: IPlugin): void {
     this.engine.registerPlugin(plugin);
   }
-  
+
   async analyze(targetPath: string): Promise<AnalysisResult> {
     const result = await this.engine.analyze(targetPath);
-    
+
     // Convert BasicAnalysisResult to legacy AnalysisResult format
     return {
       totalFiles: result.totalFiles,
       issues: result.issues,
-      executionTime: result.executionTime
+      executionTime: result.executionTime,
     };
   }
-  
-  private async* findAllFiles(dir: string): AsyncGenerator<string> {
+
+  private async *findAllFiles(dir: string): AsyncGenerator<string> {
     // Legacy method kept for compatibility
     // Delegates to findTestFiles from fileDiscovery
     const { findTestFiles } = await import('./fileDiscovery');

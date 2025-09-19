@@ -1,7 +1,7 @@
 /**
  * 詳細メトリクス収集システム
  * Phase 2: 高精度パフォーマンス測定とリアルタイム監視
- * 
+ *
  * SOLID原則に基づく設計:
  * - Single Responsibility: メトリクス収集に特化
  * - Open/Closed: 新しいメトリクスタイプの追加に開放
@@ -30,7 +30,7 @@ import {
   StatisticalSummary,
   CPUSpike,
   Hotspot,
-  ExecutionPhase
+  ExecutionPhase,
 } from './types';
 
 /**
@@ -51,10 +51,10 @@ class CPUMetricsCollector {
       const currentUsage = process.cpuUsage(this.startUsage);
       const totalUsage = currentUsage.user + currentUsage.system;
       const cpuPercent = (totalUsage / (this.samplingInterval * 1000)) * 100;
-      
+
       this.samples.push({
         timestamp: Date.now(),
-        value: Math.min(100, Math.max(0, cpuPercent))
+        value: Math.min(100, Math.max(0, cpuPercent)),
       });
     }, this.samplingInterval);
   }
@@ -76,7 +76,7 @@ class CPUMetricsCollector {
       peakUsage: statistics.max,
       samples: [...this.samples],
       statistics,
-      spikes
+      spikes,
     };
   }
 
@@ -88,14 +88,15 @@ class CPUMetricsCollector {
     const sorted = [...values].sort((a, b) => a - b);
     const sum = values.reduce((a, b) => a + b, 0);
     const mean = sum / values.length;
-    
+
     const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
-    
-    const median = sorted.length % 2 === 0 
-      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-      : sorted[Math.floor(sorted.length / 2)];
-    
+
+    const median =
+      sorted.length % 2 === 0
+        ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+        : sorted[Math.floor(sorted.length / 2)];
+
     const percentile95Index = Math.floor(sorted.length * 0.95);
     const percentile95 = sorted[percentile95Index] || 0;
 
@@ -105,7 +106,7 @@ class CPUMetricsCollector {
       standardDeviation,
       percentile95,
       min: sorted[0] || 0,
-      max: sorted[sorted.length - 1] || 0
+      max: sorted[sorted.length - 1] || 0,
     };
   }
 
@@ -118,16 +119,17 @@ class CPUMetricsCollector {
       const prev = this.samples[i - 1];
       const next = this.samples[i + 1];
 
-      if (current.value > threshold && 
-          current.value > prev.value * 1.5 && 
-          current.value > next.value * 1.5) {
-        
+      if (
+        current.value > threshold &&
+        current.value > prev.value * 1.5 &&
+        current.value > next.value * 1.5
+      ) {
         const severity = this.determineSeverity(current.value);
         spikes.push({
           timestamp: current.timestamp,
           peakValue: current.value,
           duration: this.samplingInterval, // 簡易実装
-          severity
+          severity,
         });
       }
     }
@@ -158,7 +160,10 @@ class MemoryMetricsCollector {
   private gcTotalTime = 0;
   private sampleIntervalId?: NodeJS.Timeout;
 
-  constructor(private samplingInterval: number, private leakThreshold: number) {
+  constructor(
+    private samplingInterval: number,
+    private leakThreshold: number
+  ) {
     this.initialMemoryUsage = process.memoryUsage();
   }
 
@@ -166,9 +171,9 @@ class MemoryMetricsCollector {
     this.sampleIntervalId = setInterval(() => {
       this.memorySnapshots.push({
         timestamp: Date.now(),
-        usage: process.memoryUsage()
+        usage: process.memoryUsage(),
       });
-      
+
       // GC統計の更新（v8 API使用）
       try {
         const gcStats = v8.getHeapStatistics();
@@ -194,19 +199,19 @@ class MemoryMetricsCollector {
           used: current.heapUsed,
           total: current.heapTotal,
           peak: current.heapUsed,
-          allocatedDelta: 0
+          allocatedDelta: 0,
         },
         leakSuspicion: {
           detected: false,
           growthRate: 0,
-          confidence: 0
+          confidence: 0,
         },
         gc: {
           collections: 0,
           totalTime: 0,
           averageTime: 0,
-          impactPercentage: 0
-        }
+          impactPercentage: 0,
+        },
       };
     }
 
@@ -221,15 +226,15 @@ class MemoryMetricsCollector {
         used: latest.usage.heapUsed,
         total: latest.usage.heapTotal,
         peak,
-        allocatedDelta
+        allocatedDelta,
       },
       leakSuspicion: leakDetection,
       gc: {
         collections: this.gcCount,
         totalTime: this.gcTotalTime,
         averageTime: this.gcCount > 0 ? this.gcTotalTime / this.gcCount : 0,
-        impactPercentage: this.calculateGCImpact()
-      }
+        impactPercentage: this.calculateGCImpact(),
+      },
     };
   }
 
@@ -241,7 +246,7 @@ class MemoryMetricsCollector {
     // 線形回帰による成長率の計算
     const points = this.memorySnapshots.map((snapshot, index) => ({
       x: index,
-      y: snapshot.usage.heapUsed
+      y: snapshot.usage.heapUsed,
     }));
 
     const n = points.length;
@@ -261,10 +266,11 @@ class MemoryMetricsCollector {
 
   private calculateGCImpact(): number {
     if (this.memorySnapshots.length === 0) return 0;
-    
-    const totalTime = this.memorySnapshots[this.memorySnapshots.length - 1].timestamp - 
-                     this.memorySnapshots[0].timestamp;
-    
+
+    const totalTime =
+      this.memorySnapshots[this.memorySnapshots.length - 1].timestamp -
+      this.memorySnapshots[0].timestamp;
+
     return totalTime > 0 ? (this.gcTotalTime / totalTime) * 100 : 0;
   }
 
@@ -287,7 +293,7 @@ class IOMetricsCollector {
     requests: 0,
     bytesReceived: 0,
     bytesSent: 0,
-    totalLatency: 0
+    totalLatency: 0,
   };
 
   // ファイルI/O操作の記録（フック関数で実装）
@@ -321,10 +327,11 @@ class IOMetricsCollector {
         requests: this.networkStats.requests,
         bytesReceived: this.networkStats.bytesReceived,
         bytesSent: this.networkStats.bytesSent,
-        averageLatency: this.networkStats.requests > 0 
-          ? this.networkStats.totalLatency / this.networkStats.requests 
-          : 0
-      }
+        averageLatency:
+          this.networkStats.requests > 0
+            ? this.networkStats.totalLatency / this.networkStats.requests
+            : 0,
+      },
     };
   }
 
@@ -336,7 +343,7 @@ class IOMetricsCollector {
       requests: 0,
       bytesReceived: 0,
       bytesSent: 0,
-      totalLatency: 0
+      totalLatency: 0,
     };
   }
 }
@@ -357,7 +364,7 @@ export class MetricsCollector extends EventEmitter {
 
   constructor(config: MetricsCollectorConfig = {}) {
     super();
-    
+
     // デフォルト設定の適用（Defensive Programming）
     this.config = {
       enableCpuProfiling: config.enableCpuProfiling ?? true,
@@ -367,7 +374,7 @@ export class MetricsCollector extends EventEmitter {
       maxSamples: config.maxSamples ?? 10000,
       memoryLeakThreshold: config.memoryLeakThreshold ?? 1024 * 1024 * 10, // 10MB
       hotspotThreshold: config.hotspotThreshold ?? 0.05, // 5%
-      outputDir: config.outputDir ?? './.rimor/metrics'
+      outputDir: config.outputDir ?? './.rimor/metrics',
     };
 
     this.initializeCollectors();
@@ -376,7 +383,7 @@ export class MetricsCollector extends EventEmitter {
   private initializeCollectors(): void {
     this.cpuCollector = new CPUMetricsCollector(this.config.samplingInterval);
     this.memoryCollector = new MemoryMetricsCollector(
-      this.config.samplingInterval, 
+      this.config.samplingInterval,
       this.config.memoryLeakThreshold
     );
     this.ioCollector = new IOMetricsCollector();
@@ -394,7 +401,7 @@ export class MetricsCollector extends EventEmitter {
       id: sessionId,
       startTime: Date.now(),
       status: 'active',
-      config: this.config
+      config: this.config,
     };
 
     this.sessions.set(sessionId, session);
@@ -410,7 +417,7 @@ export class MetricsCollector extends EventEmitter {
     }
 
     this.emit('session_started', { sessionId, timestamp: Date.now() });
-    
+
     return sessionId;
   }
 
@@ -423,7 +430,7 @@ export class MetricsCollector extends EventEmitter {
       return {
         success: false,
         warnings: [],
-        error: `Session ${sessionId} not found`
+        error: `Session ${sessionId} not found`,
       };
     }
 
@@ -445,15 +452,14 @@ export class MetricsCollector extends EventEmitter {
       return {
         success: true,
         metrics,
-        warnings
+        warnings,
       };
-
     } catch (error) {
       session.status = 'error';
       return {
         success: false,
         warnings: [],
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -477,7 +483,7 @@ export class MetricsCollector extends EventEmitter {
       threading: threadingMetrics,
       hotspots,
       memoryHotspots,
-      timeline
+      timeline,
     };
   }
 
@@ -495,7 +501,7 @@ export class MetricsCollector extends EventEmitter {
       activeWorkers,
       queuedTasks,
       efficiency,
-      scalabilityScore
+      scalabilityScore,
     };
   }
 
@@ -504,14 +510,15 @@ export class MetricsCollector extends EventEmitter {
    */
   private detectHotspots(cpuMetrics: CPUMetrics): Hotspot[] {
     const hotspots: Hotspot[] = [];
-    
+
     // CPU使用率が閾値を超える時点を特定
     const threshold = this.config.hotspotThreshold * 100;
     const highUsageSamples = cpuMetrics.samples.filter(sample => sample.value > threshold);
 
     if (highUsageSamples.length > 0) {
       const totalHighUsageTime = highUsageSamples.length * this.config.samplingInterval;
-      const percentage = (totalHighUsageTime / (cpuMetrics.samples.length * this.config.samplingInterval)) * 100;
+      const percentage =
+        (totalHighUsageTime / (cpuMetrics.samples.length * this.config.samplingInterval)) * 100;
 
       hotspots.push({
         functionName: 'high_cpu_usage', // 実際の実装では関数名を特定
@@ -521,8 +528,8 @@ export class MetricsCollector extends EventEmitter {
         optimizationSuggestions: [
           'CPU集約的な処理の最適化を検討',
           '並列処理による負荷分散',
-          'キャッシュの活用'
-        ]
+          'キャッシュの活用',
+        ],
       });
     }
 
@@ -544,8 +551,8 @@ export class MetricsCollector extends EventEmitter {
         optimizationSuggestions: [
           'メモリリークの原因特定',
           '不要なオブジェクト参照の削除',
-          'WeakMapやWeakSetの活用'
-        ]
+          'WeakMapやWeakSetの活用',
+        ],
       });
     }
 
@@ -563,7 +570,7 @@ export class MetricsCollector extends EventEmitter {
     return {
       phases,
       totalDuration,
-      criticalPath
+      criticalPath,
     };
   }
 
@@ -591,7 +598,7 @@ export class MetricsCollector extends EventEmitter {
         type: 'cpu_threshold_exceeded',
         severity: 'high',
         message: `CPU使用率が閾値(${cpuThreshold}%)を超過しました: ${metrics.cpu.averageUsage.toFixed(1)}%`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -601,7 +608,7 @@ export class MetricsCollector extends EventEmitter {
         type: 'memory_growth_warning',
         severity: 'medium',
         message: `メモリリークの可能性があります (成長率: ${(metrics.memory.leakSuspicion.growthRate / 1024).toFixed(1)} KB/s)`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -612,7 +619,7 @@ export class MetricsCollector extends EventEmitter {
         severity: 'medium',
         message: `${metrics.hotspots.length}個のパフォーマンスホットスポットが検出されました`,
         timestamp: Date.now(),
-        metadata: { hotspotCount: metrics.hotspots.length }
+        metadata: { hotspotCount: metrics.hotspots.length },
       });
     }
 
@@ -636,15 +643,19 @@ export class MetricsCollector extends EventEmitter {
   /**
    * 実行フェーズの開始マーク
    */
-  async markPhaseStart(sessionId: string, phaseName: string, dependencies?: string[]): Promise<void> {
+  async markPhaseStart(
+    sessionId: string,
+    phaseName: string,
+    dependencies?: string[]
+  ): Promise<void> {
     const phases = this.executionPhases.get(sessionId) || [];
-    
+
     const phase: ExecutionPhase = {
       name: phaseName,
       startTime: Date.now(),
       endTime: 0,
       duration: 0,
-      dependencies
+      dependencies,
     };
 
     phases.push(phase);
@@ -657,7 +668,7 @@ export class MetricsCollector extends EventEmitter {
   async markPhaseEnd(sessionId: string, phaseName: string): Promise<void> {
     const phases = this.executionPhases.get(sessionId) || [];
     const phase = phases.find(p => p.name === phaseName && p.endTime === 0);
-    
+
     if (phase) {
       phase.endTime = Date.now();
       phase.duration = phase.endTime - phase.startTime;

@@ -1,9 +1,9 @@
 /**
  * Coverage Comment Function Tests
- * 
+ *
  * GitHub Actions用カバレッジコメント機能の
  * 冪等性と閾値チェック機能のテスト
- * 
+ *
  * TDD原則に従いRED（失敗）フェーズから開始
  */
 
@@ -13,15 +13,15 @@ describe('CoverageCommentScript', () => {
       lines: { pct: 96.5 },
       statements: { pct: 97.2 },
       functions: { pct: 99.1 },
-      branches: { pct: 87.3 }
-    }
+      branches: { pct: 87.3 },
+    },
   };
 
   const expectedThresholds = {
     lines: 95,
     statements: 95,
     functions: 98,
-    branches: 85
+    branches: 85,
   };
 
   describe('冪等性テスト', () => {

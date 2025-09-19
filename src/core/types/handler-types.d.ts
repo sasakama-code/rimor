@@ -18,11 +18,11 @@ export type ErrorHandler = (error: Error, context?: ErrorContext) => void;
  * エラーコンテキスト
  */
 export interface ErrorContext {
-    file?: string;
-    line?: number;
-    column?: number;
-    method?: string;
-    stack?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  method?: string;
+  stack?: string;
 }
 /**
  * コールバック関数の基本型
@@ -36,9 +36,9 @@ export type AsyncCallback<T = void, E = Error> = (error: E | null, result?: T) =
  * イベントリスナー
  */
 export interface EventListener<T = unknown> {
-    eventName: string;
-    handler: (data: T) => void;
-    once?: boolean;
+  eventName: string;
+  handler: (data: T) => void;
+  once?: boolean;
 }
 /**
  * Handlebarsヘルパー関数の型
@@ -48,16 +48,16 @@ export type HandlebarsHelper = (...args: unknown[]) => unknown;
  * Handlebarsブロックヘルパー
  */
 export interface HandlebarsBlockHelper {
-    (this: unknown, context: unknown, options: HandlebarsOptions): string;
+  (this: unknown, context: unknown, options: HandlebarsOptions): string;
 }
 /**
  * Handlebarsオプション
  */
 export interface HandlebarsOptions {
-    fn: (context: unknown) => string;
-    inverse: (context: unknown) => string;
-    hash: Record<string, unknown>;
-    data?: Record<string, unknown>;
+  fn: (context: unknown) => string;
+  inverse: (context: unknown) => string;
+  hash: Record<string, unknown>;
+  data?: Record<string, unknown>;
 }
 /**
  * 配列操作用ヘルパー
@@ -66,7 +66,10 @@ export type ArrayHelper<T> = (array: T[], ...args: unknown[]) => T[] | T | undef
 /**
  * オブジェクト操作用ヘルパー
  */
-export type ObjectHelper<T = unknown> = (obj: Record<string, T>, ...args: unknown[]) => T | undefined;
+export type ObjectHelper<T = unknown> = (
+  obj: Record<string, T>,
+  ...args: unknown[]
+) => T | undefined;
 /**
  * 文字列操作用ヘルパー
  */
@@ -118,14 +121,17 @@ export type FormatterFunction<T> = (value: T, format?: string) => string;
 /**
  * ミドルウェア関数
  */
-export type MiddlewareFunction<T = unknown, R = unknown> = (context: T, next: () => Promise<R>) => Promise<R>;
+export type MiddlewareFunction<T = unknown, R = unknown> = (
+  context: T,
+  next: () => Promise<R>
+) => Promise<R>;
 /**
  * インターセプター関数
  */
 export interface InterceptorFunction<T = unknown, R = unknown> {
-    before?: (context: T) => T | Promise<T>;
-    after?: (result: R, context: T) => R | Promise<R>;
-    error?: (error: Error, context: T) => void | Promise<void>;
+  before?: (context: T) => T | Promise<T>;
+  after?: (result: R, context: T) => R | Promise<R>;
+  error?: (error: Error, context: T) => void | Promise<void>;
 }
 /**
  * トランスフォーマー関数

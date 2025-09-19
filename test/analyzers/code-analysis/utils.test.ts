@@ -30,7 +30,7 @@ describe('CodeContextUtils', () => {
           return x > 0 ? 'positive' : 'negative';
         }
       `;
-      
+
       const complexity = utils.calculateComplexityScore(complexCode);
       expect(complexity).toBeGreaterThan(0);
       expect(typeof complexity).toBe('number');
@@ -54,11 +54,12 @@ describe('CodeContextUtils', () => {
           }
         }
       `;
-      
+
       const simpleCode = 'function simple() { return "simple"; }';
-      
-      expect(utils.calculateComplexityScore(nestedCode))
-        .toBeGreaterThan(utils.calculateComplexityScore(simpleCode));
+
+      expect(utils.calculateComplexityScore(nestedCode)).toBeGreaterThan(
+        utils.calculateComplexityScore(simpleCode)
+      );
     });
   });
 
@@ -75,19 +76,19 @@ describe('CodeContextUtils', () => {
           return 0;
         }
       `;
-      
+
       const metrics = utils.calculateQualityMetrics(code, 'javascript');
-      
+
       expect(metrics).toHaveProperty('linesOfCode');
       expect(metrics).toHaveProperty('commentRatio');
       expect(metrics).toHaveProperty('complexity');
       expect(metrics).toHaveProperty('maintainabilityIndex');
-      
+
       expect(typeof metrics.linesOfCode).toBe('number');
       expect(typeof metrics.commentRatio).toBe('number');
       expect(typeof metrics.complexity).toBe('number');
       expect(typeof metrics.maintainabilityIndex).toBe('number');
-      
+
       expect(metrics.linesOfCode).toBeGreaterThan(0);
       expect(metrics.commentRatio).toBeGreaterThan(0);
     });
@@ -130,20 +131,20 @@ describe('CodeContextUtils', () => {
         export const myConstant = 42;
       `;
       const simpleCode = 'const x = 42;';
-      
+
       const importantScore = utils.calculateImportanceScore(exportCode, 'test.ts', 0);
       const simpleScore = utils.calculateImportanceScore(simpleCode, 'test.ts', 0);
-      
+
       expect(importantScore).toBeGreaterThan(simpleScore);
     });
 
     it('ファイル名で重要度が調整される', () => {
       const code = 'const x = 42;';
-      
+
       const indexScore = utils.calculateImportanceScore(code, 'index.ts', 0);
       const utilScore = utils.calculateImportanceScore(code, 'util.ts', 0);
       const regularScore = utils.calculateImportanceScore(code, 'regular.ts', 0);
-      
+
       expect(indexScore).toBeGreaterThan(regularScore);
       expect(utilScore).toBeGreaterThan(regularScore);
     });
@@ -155,20 +156,21 @@ describe('CodeContextUtils', () => {
         'const shortLine = true;',
         'function calculate(x) {',
         '  return x * 2;',
-        '}'
+        '}',
       ].join('\n');
-      
+
       const score = utils.calculateReadabilityScore(goodCode);
       expect(score).toBeGreaterThan(0.5);
     });
 
     it('長すぎる行は低いスコアになる', () => {
-      const longLineCode = 'const veryLongLineOfCodeThatExceedsTheRecommendedMaximumLineLengthAndShouldBeAvoidedForBetterReadability = true;';
+      const longLineCode =
+        'const veryLongLineOfCodeThatExceedsTheRecommendedMaximumLineLengthAndShouldBeAvoidedForBetterReadability = true;';
       const shortLineCode = 'const short = true;';
-      
+
       const longScore = utils.calculateReadabilityScore(longLineCode);
       const shortScore = utils.calculateReadabilityScore(shortLineCode);
-      
+
       expect(shortScore).toBeGreaterThanOrEqual(longScore);
     });
   });
@@ -177,10 +179,10 @@ describe('CodeContextUtils', () => {
     it('eval()の使用でリスクスコアが上がる', () => {
       const riskyCode = 'eval("dangerous code");';
       const safeCode = 'const safe = "safe code";';
-      
+
       const riskyScore = utils.calculateSecurityRiskScore(riskyCode);
       const safeScore = utils.calculateSecurityRiskScore(safeCode);
-      
+
       expect(riskyScore).toBeGreaterThan(safeScore);
       expect(riskyScore).toBeGreaterThan(0);
     });
@@ -192,10 +194,10 @@ describe('CodeContextUtils', () => {
         const password = "hardcoded";
       `;
       const singleRiskCode = 'eval("dangerous");';
-      
+
       const multiScore = utils.calculateSecurityRiskScore(multiRiskCode);
       const singleScore = utils.calculateSecurityRiskScore(singleRiskCode);
-      
+
       expect(multiScore).toBeGreaterThan(singleScore);
     });
   });
@@ -209,7 +211,7 @@ describe('CodeContextUtils', () => {
           }
         }
       `;
-      
+
       const issues = utils.detectPerformanceIssues(nestedLoopCode);
       expect(issues.length).toBeGreaterThan(0);
       expect(issues.some(issue => issue.includes('ネストしたループ'))).toBe(true);
@@ -218,7 +220,7 @@ describe('CodeContextUtils', () => {
     it('同期ファイル操作を検出する', () => {
       const syncCode = 'const data = fs.readFileSync("file.txt");';
       const issues = utils.detectPerformanceIssues(syncCode);
-      
+
       expect(issues.some(issue => issue.includes('同期的なファイル操作'))).toBe(true);
     });
   });
@@ -227,14 +229,14 @@ describe('CodeContextUtils', () => {
     it('varの使用を検出する', () => {
       const varCode = 'var x = 42;';
       const violations = utils.detectBestPracticeViolations(varCode, 'javascript');
-      
+
       expect(violations.some(v => v.includes('var'))).toBe(true);
     });
 
     it('==の使用を検出する', () => {
       const loosEqualityCode = 'if (x == y) { return true; }';
       const violations = utils.detectBestPracticeViolations(loosEqualityCode, 'javascript');
-      
+
       expect(violations.some(v => v.includes('厳密等価演算子'))).toBe(true);
     });
   });
@@ -247,17 +249,17 @@ describe('CodeContextUtils', () => {
         '',
         'function test() {',
         '  return x;',
-        '}'
+        '}',
       ].join('\n');
-      
+
       const analysis = utils.analyzeFileSize(code);
-      
+
       expect(analysis).toHaveProperty('bytes');
       expect(analysis).toHaveProperty('lines');
       expect(analysis).toHaveProperty('codeLines');
       expect(analysis).toHaveProperty('commentLines');
       expect(analysis).toHaveProperty('emptyLines');
-      
+
       expect(analysis.lines).toBe(6);
       expect(analysis.commentLines).toBe(1);
       expect(analysis.emptyLines).toBe(1);
@@ -271,11 +273,11 @@ describe('CodeContextUtils', () => {
       const files = [
         { path: 'a.ts', imports: ['b.ts', 'c.ts'] },
         { path: 'b.ts', imports: ['c.ts'] },
-        { path: 'c.ts', imports: [] }
+        { path: 'c.ts', imports: [] },
       ];
-      
+
       const graph = utils.buildDependencyGraph(files);
-      
+
       expect(graph.size).toBe(3);
       expect(graph.get('a.ts')).toEqual(['b.ts', 'c.ts']);
       expect(graph.get('b.ts')).toEqual(['c.ts']);

@@ -4,7 +4,11 @@
  * t_wadaのTDDアプローチに従う
  */
 
-import { DataFlowAnalyzer, DataFlowAnalysisResult, DataFlowPath } from '../../../src/security/analysis/data-flow-analyzer';
+import {
+  DataFlowAnalyzer,
+  DataFlowAnalysisResult,
+  DataFlowPath,
+} from '../../../src/security/analysis/data-flow-analyzer';
 
 describe('DataFlowAnalyzer', () => {
   let analyzer: DataFlowAnalyzer;
@@ -31,7 +35,7 @@ describe('DataFlowAnalyzer', () => {
       expect(result.sources).toHaveLength(1);
       expect(result.sinks).toHaveLength(2); // eval, res.send
       expect(result.paths).toHaveLength(2); // userInput -> eval, userInput -> res.send
-      
+
       const criticalPath = result.paths.find(p => p.riskLevel === 'CRITICAL');
       expect(criticalPath).toBeDefined();
       expect(criticalPath?.source.type).toBe('user-input');
@@ -56,7 +60,7 @@ describe('DataFlowAnalyzer', () => {
       expect(result.paths).toHaveLength(1);
       expect(result.paths[0].source.type).toBe('user-input');
       expect(result.paths[0].sink.type).toBe('sql-injection');
-      
+
       // データフローパスに代入ステップが含まれることを確認
       const assignmentStep = result.paths[0].path.find(step => step.type === 'assignment');
       expect(assignmentStep).toBeDefined();
@@ -83,7 +87,7 @@ describe('DataFlowAnalyzer', () => {
       expect(result.paths).toHaveLength(1);
       expect(result.paths[0].source.type).toBe('user-input');
       expect(result.paths[0].sink.type).toBe('command-injection');
-      
+
       // パラメーター渡しのステップが含まれることを確認
       const parameterStep = result.paths[0].path.find(step => step.type === 'parameter-passing');
       expect(parameterStep).toBeDefined();
@@ -106,7 +110,7 @@ describe('DataFlowAnalyzer', () => {
       expect(result.paths).toHaveLength(1);
       expect(result.paths[0].source.type).toBe('user-input');
       expect(result.paths[0].sink.type).toBe('path-traversal');
-      
+
       // プロパティアクセスのステップが含まれることを確認
       const propertyStep = result.paths[0].path.find(step => step.type === 'property-access');
       expect(propertyStep).toBeDefined();
@@ -134,7 +138,7 @@ describe('DataFlowAnalyzer', () => {
       expect(result.sources).toHaveLength(2);
       expect(result.sinks).toHaveLength(3);
       expect(result.paths.length).toBeGreaterThanOrEqual(4); // 各Sourceから複数のSinkへのパス
-      
+
       // 様々なリスクレベルのパスが含まれることを確認
       const riskLevels = result.paths.map(p => p.riskLevel);
       expect(riskLevels).toContain('CRITICAL');
@@ -165,8 +169,8 @@ describe('DataFlowAnalyzer', () => {
 
       // Assert
       expect(result.sources).toHaveLength(2); // user-input, environment
-      expect(result.sinks).toHaveLength(3);   // db.query, fs.readFileSync, exec
-      
+      expect(result.sinks).toHaveLength(3); // db.query, fs.readFileSync, exec
+
       const sinkTypes = result.sinks.map(s => s.type);
       expect(sinkTypes).toContain('sql-injection');
       expect(sinkTypes).toContain('path-traversal');
@@ -355,11 +359,11 @@ describe('DataFlowAnalyzer', () => {
 
       // Assert
       expect(result.paths).toHaveLength(1);
-      
+
       const path = result.paths[0];
       expect(path.source.location.line).toBe(2);
       expect(path.sink.location.line).toBe(4);
-      
+
       // データフローステップの位置情報も確認
       if (path.path.length > 0) {
         expect(path.path[0].location.line).toBe(3); // Assignment step
@@ -393,10 +397,13 @@ describe('DataFlowAnalyzer', () => {
       expect(result.summary.totalPaths).toBeGreaterThanOrEqual(3);
       expect(result.summary.criticalPaths).toBeGreaterThanOrEqual(1);
       expect(result.summary.highRiskPaths).toBeGreaterThanOrEqual(1);
-      
+
       // サマリーの整合性確認
-      const total = result.summary.criticalPaths + result.summary.highRiskPaths + 
-                    result.summary.mediumRiskPaths + result.summary.lowRiskPaths;
+      const total =
+        result.summary.criticalPaths +
+        result.summary.highRiskPaths +
+        result.summary.mediumRiskPaths +
+        result.summary.lowRiskPaths;
       expect(total).toBe(result.summary.totalPaths);
     });
   });

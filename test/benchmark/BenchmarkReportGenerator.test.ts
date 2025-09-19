@@ -1,12 +1,12 @@
 /**
  * BenchmarkReportGeneratorのテストスイート
  * Phase 4: レポート生成・可視化機能
- * 
+ *
  * TDD手法（t_wada準拠）:
  * 1. Red: 失敗するテストを作成
  * 2. Green: 最小限の実装
  * 3. Refactor: コード改善
- * 
+ *
  * SOLID原則適用:
  * - Single Responsibility: レポート生成に特化
  * - Open/Closed: 新しいフォーマットの追加に開放的
@@ -16,7 +16,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BenchmarkReportGenerator } from '../../src/benchmark/reporters/BenchmarkReportGenerator';
-import { BenchmarkResult, BaselineIntegratedResult } from '../../src/benchmark/ExternalProjectBenchmarkRunner';
+import {
+  BenchmarkResult,
+  BaselineIntegratedResult,
+} from '../../src/benchmark/ExternalProjectBenchmarkRunner';
 import { BaselineComparison } from '../../src/benchmark/BaselineManager';
 
 // テスト用ディレクトリ設定
@@ -28,12 +31,12 @@ describe('BenchmarkReportGenerator', () => {
   beforeEach(async () => {
     // テスト用レポートディレクトリの準備
     await fs.mkdir(TEST_REPORT_DIR, { recursive: true });
-    
+
     reportGenerator = new BenchmarkReportGenerator({
       outputDir: TEST_REPORT_DIR,
       templateDir: path.join(__dirname, '../../src/benchmark/templates'),
       enableCharts: true,
-      includeRawData: true
+      includeRawData: true,
     });
   });
 
@@ -59,28 +62,31 @@ describe('BenchmarkReportGenerator', () => {
     it('基本的なMarkdownレポートを生成できる', async () => {
       // Arrange: モックベンチマーク結果
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act: Markdownレポート生成
       const reportPath = await reportGenerator.generateMarkdownReport(mockResults);
-      
+
       // Assert: レポートファイルが生成される
       expect(reportPath).toBeDefined();
       expect(reportPath).toContain('.md');
-      
-      const reportExists = await fs.access(reportPath).then(() => true).catch(() => false);
+
+      const reportExists = await fs
+        .access(reportPath)
+        .then(() => true)
+        .catch(() => false);
       expect(reportExists).toBe(true);
     });
 
     it('ベースライン比較付きMarkdownレポートを生成できる', async () => {
       // Arrange: モック統合結果（比較データ付き）
       const mockIntegratedResult = createMockIntegratedResult(true); // 比較データ含む
-      
+
       // Act: 統合レポート生成
       const reportPath = await reportGenerator.generateMarkdownReport(
         mockIntegratedResult.results,
         mockIntegratedResult.comparison
       );
-      
+
       // Assert: 比較情報が含まれたレポート
       const reportContent = await fs.readFile(reportPath, 'utf-8');
       expect(reportContent).toContain('## ベースライン比較結果');
@@ -91,11 +97,11 @@ describe('BenchmarkReportGenerator', () => {
     it('5ms/file目標達成率をMarkdownレポートに含む', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const reportPath = await reportGenerator.generateMarkdownReport(mockResults);
       const reportContent = await fs.readFile(reportPath, 'utf-8');
-      
+
       // Assert: 5ms目標関連の情報が含まれる
       expect(reportContent).toContain('5ms/file');
       expect(reportContent).toContain('目標達成率');
@@ -105,11 +111,11 @@ describe('BenchmarkReportGenerator', () => {
     it('推奨事項をMarkdownレポートに含む', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const reportPath = await reportGenerator.generateMarkdownReport(mockResults);
       const reportContent = await fs.readFile(reportPath, 'utf-8');
-      
+
       // Assert: 推奨事項セクションが存在
       expect(reportContent).toContain('## 推奨事項');
       expect(reportContent).toMatch(/\d+\./); // 番号付きリスト
@@ -125,17 +131,17 @@ describe('BenchmarkReportGenerator', () => {
     it('基本的なHTMLレポートを生成できる', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const reportPath = await reportGenerator.generateHTMLReport(mockResults, {
         includeCharts: true,
         theme: 'light',
-        interactive: true
+        interactive: true,
       });
-      
+
       // Assert
       expect(reportPath).toContain('.html');
-      
+
       const reportContent = await fs.readFile(reportPath, 'utf-8');
       expect(reportContent).toContain('<html>');
       expect(reportContent).toContain('</html>');
@@ -145,12 +151,12 @@ describe('BenchmarkReportGenerator', () => {
     it('Chart.jsグラフがHTMLレポートに含まれる', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const reportPath = await reportGenerator.generateHTMLReport(mockResults, {
-        includeCharts: true
+        includeCharts: true,
       });
-      
+
       // Assert
       const reportContent = await fs.readFile(reportPath, 'utf-8');
       expect(reportContent).toContain('Chart.js');
@@ -162,14 +168,14 @@ describe('BenchmarkReportGenerator', () => {
     it('インタラクティブ機能付きHTMLレポートを生成できる', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const reportPath = await reportGenerator.generateHTMLReport(mockResults, {
         interactive: true,
         includeSearch: true,
-        includeFilter: true
+        includeFilter: true,
       });
-      
+
       // Assert
       const reportContent = await fs.readFile(reportPath, 'utf-8');
       expect(reportContent).toContain('onclick'); // インタラクティブ要素
@@ -187,22 +193,22 @@ describe('BenchmarkReportGenerator', () => {
     it('基本的なCSVエクスポートができる', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act
       const csvPath = await reportGenerator.generateCSVExport(mockResults);
-      
+
       // Assert
       expect(csvPath).toContain('.csv');
-      
+
       const csvContent = await fs.readFile(csvPath, 'utf-8');
       const lines = csvContent.split('\\n');
-      
+
       // ヘッダー行の確認
       expect(lines[0]).toContain('プロジェクト名');
       expect(lines[0]).toContain('実行時間(ms/file)');
       expect(lines[0]).toContain('5ms目標達成');
       expect(lines[0]).toContain('精度');
-      
+
       // データ行の確認
       expect(lines.length).toBeGreaterThan(1); // ヘッダー + データ
       expect(lines[1]).toMatch(/,/); // CSV形式
@@ -211,13 +217,13 @@ describe('BenchmarkReportGenerator', () => {
     it('ベースライン比較データを含むCSVエクスポート', async () => {
       // Arrange
       const mockIntegratedResult = createMockIntegratedResult(true);
-      
+
       // Act
-      const csvPath = await reportGenerator.generateCSVExport(
-        mockIntegratedResult.results,
-        { includeComparison: true, comparison: mockIntegratedResult.comparison }
-      );
-      
+      const csvPath = await reportGenerator.generateCSVExport(mockIntegratedResult.results, {
+        includeComparison: true,
+        comparison: mockIntegratedResult.comparison,
+      });
+
       // Assert
       const csvContent = await fs.readFile(csvPath, 'utf-8');
       expect(csvContent).toContain('改善率');
@@ -235,20 +241,20 @@ describe('BenchmarkReportGenerator', () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
       const mockIntegratedResult = createMockIntegratedResult(true);
-      
+
       // Act
       const dashboardPath = await reportGenerator.generateDashboard([mockIntegratedResult], {
         includeHistoricalData: true,
         includeTrendAnalysis: true,
-        includeRecommendations: true
+        includeRecommendations: true,
       });
-      
+
       // Assert
       expect(dashboardPath).toContain('dashboard');
       expect(dashboardPath).toContain('.html');
-      
+
       const dashboardContent = await fs.readFile(dashboardPath, 'utf-8');
-      
+
       // ダッシュボード要素の確認
       expect(dashboardContent).toContain('パフォーマンス概要');
       expect(dashboardContent).toContain('傾向分析');
@@ -260,14 +266,14 @@ describe('BenchmarkReportGenerator', () => {
       // Arrange: 複数の統合結果（時系列データ）
       const historicalData = [
         createMockIntegratedResult(false), // 1週間前
-        createMockIntegratedResult(true),  // 現在
+        createMockIntegratedResult(true), // 現在
       ];
-      
+
       // Act
       const dashboardPath = await reportGenerator.generateDashboard(historicalData, {
-        includeTrendAnalysis: true
+        includeTrendAnalysis: true,
       });
-      
+
       // Assert
       const dashboardContent = await fs.readFile(dashboardPath, 'utf-8');
       expect(dashboardContent).toContain('type: "line"'); // 時系列グラフ
@@ -279,7 +285,7 @@ describe('BenchmarkReportGenerator', () => {
     it('空の結果配列に対して適切にエラーハンドリングする', async () => {
       // Arrange: 空の結果
       const emptyResults: BenchmarkResult[] = [];
-      
+
       // Act & Assert: エラーをthrowしない（デフォルト値で対応）
       await expect(reportGenerator.generateMarkdownReport(emptyResults)).resolves.toBeDefined();
     });
@@ -288,15 +294,18 @@ describe('BenchmarkReportGenerator', () => {
       // Arrange: 存在しないディレクトリ
       const nonExistentDir = path.join(TEST_REPORT_DIR, 'deep', 'nested', 'path');
       const defensiveGenerator = new BenchmarkReportGenerator({
-        outputDir: nonExistentDir
+        outputDir: nonExistentDir,
       });
-      
+
       // Act
       const mockResults = createMockBenchmarkResults();
       const reportPath = await defensiveGenerator.generateMarkdownReport(mockResults);
-      
+
       // Assert: ディレクトリが自動作成される
-      const dirExists = await fs.access(path.dirname(reportPath)).then(() => true).catch(() => false);
+      const dirExists = await fs
+        .access(path.dirname(reportPath))
+        .then(() => true)
+        .catch(() => false);
       expect(dirExists).toBe(true);
     });
 
@@ -311,9 +320,9 @@ describe('BenchmarkReportGenerator', () => {
           timestamp: new Date().toISOString(),
           error: 'Simulated error',
           // その他のプロパティは不完全
-        } as any
+        } as any,
       ];
-      
+
       // Act & Assert: エラーをthrowせず、有効なデータでレポート生成
       await expect(reportGenerator.generateMarkdownReport(mixedResults)).resolves.toBeDefined();
     });
@@ -326,15 +335,15 @@ describe('BenchmarkReportGenerator', () => {
         outputDir: TEST_REPORT_DIR,
         customTemplates: {
           markdown: 'custom-markdown-template.hbs',
-          html: 'custom-html-template.hbs'
-        }
+          html: 'custom-html-template.hbs',
+        },
       });
-      
+
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act: カスタムテンプレートでレポート生成
       const reportPath = await customGenerator.generateMarkdownReport(mockResults);
-      
+
       // Assert: カスタムテンプレートが使用される
       expect(reportPath).toBeDefined();
     });
@@ -342,29 +351,41 @@ describe('BenchmarkReportGenerator', () => {
     it('複数フォーマットの一括生成ができる', async () => {
       // Arrange
       const mockResults = createMockBenchmarkResults();
-      
+
       // Act: 複数フォーマット一括生成
       const allReports = await reportGenerator.generateAllFormats(mockResults, {
         markdown: true,
         html: true,
         csv: true,
-        dashboard: true
+        dashboard: true,
       });
-      
+
       // Assert: 各フォーマットのファイルが生成される
       expect(allReports.markdown).toBeDefined();
       expect(allReports.html).toBeDefined();
       expect(allReports.csv).toBeDefined();
       expect(allReports.dashboard).toBeDefined();
-      
+
       // ファイル存在確認
       const files = await Promise.all([
-        fs.access(allReports.markdown!).then(() => true).catch(() => false),
-        fs.access(allReports.html!).then(() => true).catch(() => false),
-        fs.access(allReports.csv!).then(() => true).catch(() => false),
-        fs.access(allReports.dashboard!).then(() => true).catch(() => false)
+        fs
+          .access(allReports.markdown!)
+          .then(() => true)
+          .catch(() => false),
+        fs
+          .access(allReports.html!)
+          .then(() => true)
+          .catch(() => false),
+        fs
+          .access(allReports.csv!)
+          .then(() => true)
+          .catch(() => false),
+        fs
+          .access(allReports.dashboard!)
+          .then(() => true)
+          .catch(() => false),
       ]);
-      
+
       expect(files.every(exists => exists)).toBe(true);
     });
   });
@@ -381,7 +402,7 @@ function createMockBenchmarkResults(): BenchmarkResult[] {
     createMockBenchmarkResult('Ant Design', 3.8, 0.89, true),
     createMockBenchmarkResult('VS Code', 4.2, 0.85, true),
     createMockBenchmarkResult('Material UI', 2.9, 0.92, true),
-    createMockBenchmarkResult('Storybook', 3.5, 0.88, true)
+    createMockBenchmarkResult('Storybook', 3.5, 0.88, true),
   ];
 }
 
@@ -391,10 +412,10 @@ function createMockBenchmarkResults(): BenchmarkResult[] {
 function createMockIntegratedResult(includeComparison: boolean): BaselineIntegratedResult {
   const results = createMockBenchmarkResults();
   const baselineId = 'baseline-' + Date.now();
-  
+
   let comparison: BaselineComparison | undefined;
   let usedBaselineId: string | undefined;
-  
+
   if (includeComparison) {
     usedBaselineId = 'baseline-previous';
     comparison = {
@@ -403,35 +424,35 @@ function createMockIntegratedResult(includeComparison: boolean): BaselineIntegra
       overallImprovement: 15.3, // 15.3%改善
       projectComparisons: results.map((result, index) => ({
         projectName: result.projectName,
-        performanceImprovement: 10 + (index * 5), // 10%, 15%, 20%など
-        accuracyImprovement: 2 + (index * 1), // 2%, 3%, 4%など
+        performanceImprovement: 10 + index * 5, // 10%, 15%, 20%など
+        accuracyImprovement: 2 + index * 1, // 2%, 3%, 4%など
         target5msStatus: 'maintained' as const,
         baselineMetrics: {
           timePerFile: result.performance.timePerFile + 0.5,
-          accuracy: result.accuracy.taintTyperSuccessRate - 0.02
+          accuracy: result.accuracy.taintTyperSuccessRate - 0.02,
         },
         currentMetrics: {
           timePerFile: result.performance.timePerFile,
-          accuracy: result.accuracy.taintTyperSuccessRate
-        }
+          accuracy: result.accuracy.taintTyperSuccessRate,
+        },
       })),
       target5msImprovements: {
         improved: ['Material UI'],
         maintained: ['TypeScript', 'Ant Design', 'VS Code', 'Storybook'],
-        degraded: []
+        degraded: [],
       },
       recommendations: [
         '優秀な性能です。現在の最適化戦略を継続してください。',
-        'Material UIで大幅な改善が見られました。この手法を他のプロジェクトにも適用を検討してください。'
-      ]
+        'Material UIで大幅な改善が見られました。この手法を他のプロジェクトにも適用を検討してください。',
+      ],
     };
   }
-  
+
   return {
     results,
     comparison,
     baselineId,
-    usedBaselineId
+    usedBaselineId,
   };
 }
 
@@ -455,12 +476,12 @@ function createMockBenchmarkResult(
       memoryUsage: {
         heapUsed: 150 * 1024 * 1024, // 150MB
         heapTotal: 200 * 1024 * 1024, // 200MB
-        external: 20 * 1024 * 1024,  // 20MB
-        rss: 250 * 1024 * 1024        // 250MB
+        external: 20 * 1024 * 1024, // 20MB
+        rss: 250 * 1024 * 1024, // 250MB
       },
-      throughput: 1000 / (timePerFile * 1000 / 1000), // files/second
+      throughput: 1000 / ((timePerFile * 1000) / 1000), // files/second
       cpuUsage: 45.2,
-      parallelEfficiency: 0.85
+      parallelEfficiency: 0.85,
     },
     accuracy: {
       taintTyperSuccessRate: accuracyRate,
@@ -469,20 +490,20 @@ function createMockBenchmarkResult(
       errorRate: 1 - accuracyRate,
       totalErrors: Math.floor((1 - accuracyRate) * 100),
       successfulFiles: Math.floor(accuracyRate * 1000),
-      failedFiles: Math.floor((1 - accuracyRate) * 1000)
+      failedFiles: Math.floor((1 - accuracyRate) * 1000),
     },
     target5ms: {
       achieved: target5msAchieved,
       actualTimePerFile: timePerFile,
       targetTimePerFile: 5.0,
-      deviationPercent: ((timePerFile - 5.0) / 5.0) * 100
+      deviationPercent: ((timePerFile - 5.0) / 5.0) * 100,
     },
     systemInfo: {
       platform: 'darwin',
       arch: 'x64',
       cpus: 8,
       totalMemory: 16 * 1024 * 1024 * 1024, // 16GB
-      nodeVersion: 'v18.17.0'
-    }
+      nodeVersion: 'v18.17.0',
+    },
   };
 }

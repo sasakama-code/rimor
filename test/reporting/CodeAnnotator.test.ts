@@ -1,7 +1,7 @@
 /**
  * CodeAnnotator Tests
  * v0.8.0 - Phase 4: Context Engineering
- * 
+ *
  * コードアノテーション機能のテスト
  */
 
@@ -12,7 +12,7 @@ import {
   Issue,
   Severity,
   IssueType,
-  AnnotationOptions
+  AnnotationOptions,
 } from '../../src/reporting/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -71,7 +71,7 @@ export function setupRoutes(app: express.Application) {
     // Line 29
     console.log('Test'); // Line 30 - Test quality issue
   });
-}`
+}`,
 };
 
 describe('CodeAnnotator', () => {
@@ -82,13 +82,13 @@ describe('CodeAnnotator', () => {
   beforeEach(() => {
     generator = new AnnotationGenerator();
     annotator = new CodeAnnotator(generator);
-    
+
     // テスト用一時ディレクトリ（固定値にして予測可能にする）
     tempDir = '/tmp/rimor-test';
-    
+
     // fsモックのリセット
     jest.clearAllMocks();
-    
+
     // デフォルトのモック設定
     mockFs.readFile.mockImplementation((filePath: any) => {
       const normalizedPath = typeof filePath === 'string' ? filePath : filePath.toString();
@@ -111,7 +111,7 @@ describe('CodeAnnotator', () => {
         version: '0.8.0',
         timestamp: new Date().toISOString(),
         analyzedPath: tempDir,
-        duration: 1000
+        duration: 1000,
       },
       summary: {
         totalFiles: 2,
@@ -121,13 +121,13 @@ describe('CodeAnnotator', () => {
           high: 1,
           medium: 1,
           low: 0,
-          info: 0
+          info: 0,
         },
         issueByType: {
-          'SQL_INJECTION': 1,
-          'XSS': 1,
-          'TEST_QUALITY': 1
-        }
+          SQL_INJECTION: 1,
+          XSS: 1,
+          TEST_QUALITY: 1,
+        },
       },
       issues: [
         {
@@ -138,9 +138,9 @@ describe('CodeAnnotator', () => {
           location: {
             file: path.join(tempDir, 'db.ts'),
             startLine: 10,
-            endLine: 10
+            endLine: 10,
           },
-          message: 'SQL Injection vulnerability'
+          message: 'SQL Injection vulnerability',
         },
         {
           id: '2',
@@ -150,9 +150,9 @@ describe('CodeAnnotator', () => {
           location: {
             file: path.join(tempDir, 'api.ts'),
             startLine: 20,
-            endLine: 20
+            endLine: 20,
           },
-          message: 'XSS vulnerability'
+          message: 'XSS vulnerability',
         },
         {
           id: '3',
@@ -162,18 +162,16 @@ describe('CodeAnnotator', () => {
           location: {
             file: path.join(tempDir, 'api.ts'),
             startLine: 30,
-            endLine: 30
+            endLine: 30,
           },
-          message: 'Test quality issue'
-        }
+          message: 'Test quality issue',
+        },
       ],
       metrics: {
         testCoverage: { overall: 80, byModule: {} },
-        codeQuality: {}
-      }
+        codeQuality: {},
+      },
     };
-
-
 
     it('should annotate multiple files with issues', async () => {
       // モックが正しく設定されていることを確認
@@ -185,18 +183,18 @@ describe('CodeAnnotator', () => {
         }
         return Promise.reject(new Error('File not found'));
       });
-      
+
       const annotations = await annotator.annotateFiles(mockResult);
-      
+
       expect(annotations).toHaveLength(2); // 2つのファイル
-      
+
       // db.tsのアノテーション
       const dbAnnotation = annotations.find(a => a.filePath.endsWith('db.ts'));
       expect(dbAnnotation).toBeDefined();
       expect(dbAnnotation!.annotationCount).toBe(1);
       expect(dbAnnotation!.annotatedContent).toContain('// RIMOR-CRITICAL:');
       expect(dbAnnotation!.annotatedContent).toContain('SQL Injection vulnerability');
-      
+
       // api.tsのアノテーション
       const apiAnnotation = annotations.find(a => a.filePath.endsWith('api.ts'));
       expect(apiAnnotation).toBeDefined();
@@ -209,10 +207,10 @@ describe('CodeAnnotator', () => {
 
     it('should preserve indentation when adding annotations', async () => {
       const annotations = await annotator.annotateFiles(mockResult);
-      
+
       const dbAnnotation = annotations.find(a => a.filePath.endsWith('db.ts'));
       const lines = dbAnnotation!.annotatedContent.split('\n');
-      
+
       // アノテーションが正しいインデントで挿入されていることを確認
       const annotationLine = lines.find(line => line.includes('RIMOR-CRITICAL'));
       expect(annotationLine).toMatch(/^    \/\/ RIMOR-CRITICAL:/); // 4スペースのインデント
@@ -231,9 +229,9 @@ describe('CodeAnnotator', () => {
         }
         return Promise.reject(new Error('File not found'));
       });
-      
+
       const annotations = await annotator.annotateFiles(mockResult);
-      
+
       // エラーが発生したファイルはスキップされる
       expect(annotations).toHaveLength(1); // api.tsのみ
     });
@@ -248,13 +246,13 @@ describe('CodeAnnotator', () => {
         }
         return Promise.reject(new Error('File not found'));
       });
-      
+
       const options: AnnotationOptions = {
-        format: 'block'
+        format: 'block',
       };
-      
+
       const annotations = await annotator.annotateFiles(mockResult, options);
-      
+
       const dbAnnotation = annotations.find(a => a.filePath.endsWith('db.ts'));
       expect(dbAnnotation!.annotatedContent).toContain('/*');
       expect(dbAnnotation!.annotatedContent).toContain(' * RIMOR Security Analysis Report');
@@ -268,14 +266,14 @@ describe('CodeAnnotator', () => {
         filePath: path.join(tempDir, 'db.ts'),
         originalContent: 'original db content',
         annotatedContent: 'annotated db content',
-        annotationCount: 1
+        annotationCount: 1,
       },
       {
         filePath: path.join(tempDir, 'api.ts'),
         originalContent: 'original api content',
         annotatedContent: 'annotated api content',
-        annotationCount: 2
-      }
+        annotationCount: 2,
+      },
     ];
 
     beforeEach(() => {
@@ -286,11 +284,11 @@ describe('CodeAnnotator', () => {
 
     it('should save annotated files to original location when overwrite is true', async () => {
       const options: AnnotationOptions = {
-        overwrite: true
+        overwrite: true,
       };
-      
+
       await annotator.saveAnnotatedFiles(mockAnnotations, undefined, options);
-      
+
       expect(mockFs.writeFile).toHaveBeenCalledTimes(2);
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         path.join(tempDir, 'db.ts'),
@@ -306,29 +304,29 @@ describe('CodeAnnotator', () => {
 
     it('should save to output directory when specified', async () => {
       const outputDir = path.join(tempDir, 'annotated');
-      
+
       await annotator.saveAnnotatedFiles(mockAnnotations, outputDir);
-      
+
       expect(mockFs.mkdir).toHaveBeenCalled();
       expect(mockFs.writeFile).toHaveBeenCalledTimes(2);
-      
+
       // 実際の書き込み内容を確認
       const calls = mockFs.writeFile.mock.calls;
-      
+
       // ファイルが正しく書き込まれたことを確認
       expect(calls).toHaveLength(2);
-      
+
       // 各呼び出しが正しいコンテンツを持っているか確認
       const dbCall = calls.find(call => call[1] === 'annotated db content');
       const apiCall = calls.find(call => call[1] === 'annotated api content');
-      
+
       expect(dbCall).toBeDefined();
       expect(apiCall).toBeDefined();
     });
 
     it('should create .annotated suffix when no output directory specified', async () => {
       await annotator.saveAnnotatedFiles(mockAnnotations);
-      
+
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         path.join(tempDir, 'db.annotated.ts'),
         'annotated db content',
@@ -349,18 +347,18 @@ describe('CodeAnnotator', () => {
           filePath: '/project/src/db.ts',
           originalContent: 'content1',
           annotatedContent: 'annotated1',
-          annotationCount: 3
+          annotationCount: 3,
         },
         {
           filePath: '/project/src/api.ts',
           originalContent: 'content2',
           annotatedContent: 'annotated2',
-          annotationCount: 2
-        }
+          annotationCount: 2,
+        },
       ];
-      
+
       const summary = annotator.generateAnnotationSummary(annotations);
-      
+
       expect(summary).toContain('# Annotation Summary');
       expect(summary).toContain('Total files annotated: 2');
       expect(summary).toContain('Total annotations added: 5');
@@ -370,7 +368,7 @@ describe('CodeAnnotator', () => {
 
     it('should handle empty annotations array', () => {
       const summary = annotator.generateAnnotationSummary([]);
-      
+
       expect(summary).toContain('Total files annotated: 0');
       expect(summary).toContain('Total annotations added: 0');
       expect(summary).not.toContain('## Annotated Files:');
@@ -383,7 +381,7 @@ describe('CodeAnnotator', () => {
         version: '0.8.0',
         timestamp: new Date().toISOString(),
         analyzedPath: '/project',
-        duration: 1000
+        duration: 1000,
       },
       summary: {
         totalFiles: 1,
@@ -393,9 +391,9 @@ describe('CodeAnnotator', () => {
           high: 1,
           medium: 0,
           low: 0,
-          info: 0
+          info: 0,
         },
-        issueByType: {}
+        issueByType: {},
       },
       issues: [
         {
@@ -406,9 +404,9 @@ describe('CodeAnnotator', () => {
           location: {
             file: '/project/db.ts',
             startLine: 10,
-            endLine: 10
+            endLine: 10,
           },
-          message: 'SQL Injection'
+          message: 'SQL Injection',
         },
         {
           id: '2',
@@ -418,20 +416,20 @@ describe('CodeAnnotator', () => {
           location: {
             file: '/project/db.ts',
             startLine: 20,
-            endLine: 20
+            endLine: 20,
           },
-          message: 'XSS vulnerability'
-        }
+          message: 'XSS vulnerability',
+        },
       ],
       metrics: {
         testCoverage: { overall: 80, byModule: {} },
-        codeQuality: {}
-      }
+        codeQuality: {},
+      },
     };
 
     it('should generate preview of annotations', () => {
       const preview = annotator.previewAnnotations(mockResult);
-      
+
       expect(preview).toContain('# Annotation Preview');
       expect(preview).toContain('The following annotations would be added:');
       expect(preview).toContain('## /project/db.ts');
@@ -445,11 +443,11 @@ describe('CodeAnnotator', () => {
 
     it('should show block format in preview when specified', () => {
       const options: AnnotationOptions = {
-        format: 'block'
+        format: 'block',
       };
-      
+
       const preview = annotator.previewAnnotations(mockResult, options);
-      
+
       expect(preview).toContain('/*');
       expect(preview).toContain(' * RIMOR Security Analysis Report');
       expect(preview).toContain(' */');
@@ -480,10 +478,10 @@ export function test() {
 
     it('should remove all RIMOR annotations', async () => {
       const result = await annotator.cleanupAnnotations('/test/file.ts');
-      
+
       expect(result).toBe(true);
       expect(mockFs.writeFile).toHaveBeenCalled();
-      
+
       const writtenContent = mockFs.writeFile.mock.calls[0][1] as string;
       expect(writtenContent).not.toContain('RIMOR');
       expect(writtenContent).toContain('const html = userInput;');
@@ -498,9 +496,9 @@ const data = input;
 // RIMOR-HIGH: Default annotation
 const other = value;
 `);
-      
+
       await annotator.cleanupAnnotations('/test/file.ts', 'SECURITY');
-      
+
       const writtenContent = mockFs.writeFile.mock.calls[0][1] as string;
       expect(writtenContent).not.toContain('SECURITY-HIGH');
       expect(writtenContent).toContain('RIMOR-HIGH'); // 他のプレフィックスは残る
@@ -512,18 +510,18 @@ export function clean() {
   return 'no annotations here';
 }
 `);
-      
+
       const result = await annotator.cleanupAnnotations('/test/file.ts');
-      
+
       expect(result).toBe(false);
       expect(mockFs.writeFile).not.toHaveBeenCalled();
     });
 
     it('should handle file read errors', async () => {
       mockFs.readFile.mockRejectedValue(new Error('File not found'));
-      
+
       const result = await annotator.cleanupAnnotations('/test/missing.ts');
-      
+
       expect(result).toBe(false);
       expect(mockFs.writeFile).not.toHaveBeenCalled();
     });
@@ -536,7 +534,7 @@ export function clean() {
         version: '0.9.0',
         timestamp: new Date().toISOString(),
         analyzedPath: '/project',
-        duration: 1000
+        duration: 1000,
       },
       summary: {
         totalFiles: 1,
@@ -546,11 +544,11 @@ export function clean() {
           high: 0,
           medium: 0,
           low: 0,
-          info: 0
+          info: 0,
         },
         issueByType: {
-          'SQL_INJECTION': 1
-        }
+          SQL_INJECTION: 1,
+        },
       },
       issues: [
         {
@@ -561,15 +559,15 @@ export function clean() {
           location: {
             file: '/project/test.ts',
             startLine: 5,
-            endLine: 5
+            endLine: 5,
           },
-          message: 'SQL Injection vulnerability'
-        }
+          message: 'SQL Injection vulnerability',
+        },
       ],
       metrics: {
         testCoverage: { overall: 80, byModule: {} },
-        codeQuality: {}
-      }
+        codeQuality: {},
+      },
     };
 
     beforeEach(() => {
@@ -579,22 +577,22 @@ export function clean() {
     it('should preserve CRLF line endings when processing Windows files', async () => {
       // TDD Red段階: CRLF形式ファイルのEOL保持テスト
       const crlfContent = 'line1\r\nline2\r\nline3\r\nline4\r\nline5\r\nline6';
-      
+
       mockFs.readFile.mockResolvedValue(crlfContent);
-      
+
       const annotation = await annotator.annotateFile(
         '/project/test.ts',
         mockResultWithLocation.issues,
         undefined
       );
-      
+
       expect(annotation).toBeDefined();
       expect(annotation!.annotatedContent).toContain('\r\n');
       // アノテーション追加後もCRLF形式が保持されることを確認
       const lines = annotation!.annotatedContent.split(/\r\n|\n|\r/);
       const crlfCount = (annotation!.annotatedContent.match(/\r\n/g) || []).length;
       const lfOnlyCount = (annotation!.annotatedContent.match(/[^\r]\n/g) || []).length;
-      
+
       // CRLF形式が保持されている（LFのみに変換されていない）
       expect(crlfCount).toBeGreaterThan(0);
       expect(lfOnlyCount).toBe(0);
@@ -603,15 +601,15 @@ export function clean() {
     it('should preserve LF line endings when processing Unix files', async () => {
       // TDD Red段階: LF形式ファイルのEOL保持テスト
       const lfContent = 'line1\nline2\nline3\nline4\nline5\nline6';
-      
+
       mockFs.readFile.mockResolvedValue(lfContent);
-      
+
       const annotation = await annotator.annotateFile(
         '/project/test.ts',
         mockResultWithLocation.issues,
         undefined
       );
-      
+
       expect(annotation).toBeDefined();
       expect(annotation!.annotatedContent).not.toContain('\r\n');
       // アノテーション追加後もLF形式が保持されることを確認
@@ -622,21 +620,21 @@ export function clean() {
     it('should preserve mixed line endings when processing files with inconsistent EOL', async () => {
       // TDD Red段階: Mixed EOL形式ファイルの処理テスト
       const mixedContent = 'line1\r\nline2\nline3\r\nline4\nline5\r\nline6';
-      
+
       mockFs.readFile.mockResolvedValue(mixedContent);
-      
+
       const annotation = await annotator.annotateFile(
         '/project/test.ts',
         mockResultWithLocation.issues,
         undefined
       );
-      
+
       expect(annotation).toBeDefined();
       // 元のファイルと同じEOLパターンが保持されることを確認
       // ここでは主要なEOL形式（この場合はCRLF）が使用されることを期待
       const originalCrlfCount = (mixedContent.match(/\r\n/g) || []).length;
       const annotatedCrlfCount = (annotation!.annotatedContent.match(/\r\n/g) || []).length;
-      
+
       // アノテーション追加により、主要なEOL形式で統一されることを確認
       expect(annotatedCrlfCount).toBeGreaterThanOrEqual(originalCrlfCount);
     });
@@ -648,12 +646,12 @@ export function clean() {
           filePath: '/project/crlf-test.ts',
           originalContent: 'original line1\r\noriginal line2\r\noriginal line3',
           annotatedContent: '// annotation\r\noriginal line1\r\noriginal line2\r\noriginal line3',
-          annotationCount: 1
-        }
+          annotationCount: 1,
+        },
       ];
 
       const diffReport = annotator.generateDiffReport(annotations);
-      
+
       // 差分レポート生成時の適切な処理確認
       expect(diffReport).toBeDefined();
       // レポート生成では標準的なLF形式を使用するが、内部処理でEOLユーティリティが正常動作することを確認
@@ -667,7 +665,7 @@ export function clean() {
     it('should preserve EOL in previewAnnotations method', () => {
       // TDD Red段階: previewAnnotations内でのEOL保持テスト
       const preview = annotator.previewAnnotations(mockResultWithLocation);
-      
+
       expect(preview).toBeDefined();
       // プレビュー生成時のEOL処理が適切であることを確認
       const lines = preview.split('\n');
@@ -677,15 +675,15 @@ export function clean() {
     it('should preserve EOL in cleanupAnnotations method', async () => {
       // TDD Red段階: cleanupAnnotations内でのEOL保持テスト
       const crlfContentWithAnnotation = `line1\r\n// RIMOR-HIGH: Security issue\r\nline2\r\nline3`;
-      
+
       mockFs.readFile.mockResolvedValue(crlfContentWithAnnotation);
       mockFs.writeFile.mockResolvedValue(undefined);
-      
+
       const result = await annotator.cleanupAnnotations('/project/test.ts');
-      
+
       expect(result).toBe(true);
       expect(mockFs.writeFile).toHaveBeenCalled();
-      
+
       const writtenContent = mockFs.writeFile.mock.calls[0][1] as string;
       // クリーンアップ後もCRLF形式が保持されることを確認
       expect(writtenContent).toContain('\r\n');

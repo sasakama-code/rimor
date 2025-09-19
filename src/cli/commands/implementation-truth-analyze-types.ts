@@ -1,12 +1,15 @@
 /**
  * Implementation Truth Analyze Command Types
  * v0.9.0 - AIコーディング時代の品質保証エンジン専用CLIコマンド型定義
- * 
+ *
  * SOLID原則: インターフェース分離の原則に従った型定義の分離
  */
 
 import { ImplementationTruthAnalysisResult } from '../../core/UnifiedAnalysisEngine';
-import { ImplementationTruthReport, ImplementationTruthReportFormat } from '../../reporting/core/ImplementationTruthReportEngine';
+import {
+  ImplementationTruthReport,
+  ImplementationTruthReportFormat,
+} from '../../reporting/core/ImplementationTruthReportEngine';
 
 /**
  * Implementation Truth分析コマンドのオプション

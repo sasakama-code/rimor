@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "declaration": true,
-    
+
     // Issue #147対応: PII露出リスク完全解消
     "sourceMap": true,
     "inlineSourceMap": false,
@@ -28,9 +28,5 @@
     "../../src/reporting/core/types.ts",
     "../../src/nist/types/unified-analysis-result.ts"
   ],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "node_modules"
-  ]
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "node_modules"]
 }

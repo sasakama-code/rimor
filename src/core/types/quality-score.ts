@@ -11,22 +11,22 @@ export { QualityDimension } from './base-types';
 export interface QualityScore {
   // Overall score
   overall: number; // 0.0-1.0
-  
+
   // Dimensional scores
   dimensions: Partial<Record<QualityDimension, number>>; // 0.0-1.0 each
-  
+
   // Additional custom dimensions
   customDimensions?: Record<string, number>;
-  
+
   // Security-specific score
   security?: number; // 0.0-1.0
-  
+
   // Coverage metrics
   coverage?: number; // 0.0-1.0
-  
+
   // Additional metrics
   maintainability?: number; // 0.0-1.0
-  
+
   // Breakdown of scores
   breakdown?: {
     completeness?: number;
@@ -35,19 +35,19 @@ export interface QualityScore {
     maintainability?: number;
     correctness?: number;
   };
-  
+
   // Confidence in the score
   confidence: number; // 0.0-1.0
-  
+
   // Detailed breakdown
   details?: QualityDetails;
-  
+
   // Historical comparison
   trend?: QualityTrend;
-  
+
   // Benchmarks
   benchmarks?: QualityBenchmarks;
-  
+
   // Metadata
   metadata?: BaseMetadata;
 }
@@ -58,22 +58,22 @@ export interface QualityDetails {
   strengths: string[];
   weaknesses: string[];
   suggestions: string[];
-  
+
   // Risk assessment
   risks?: string[];
   opportunities?: string[];
-  
+
   // Specific issues
   criticalIssues?: string[];
   warnings?: string[];
   info?: string[];
-  
+
   // Metrics breakdown
   metrics?: QualityMetrics;
-  
+
   // Evidence
   evidence?: QualityEvidence[];
-  
+
   // Security-specific metrics
   validationCoverage?: number; // 0.0-1.0
   sanitizerCoverage?: number; // 0.0-1.0
@@ -89,27 +89,27 @@ export interface QualityMetrics {
   assertionDensity?: number;
   testComplexity?: number;
   testMaintainability?: number;
-  
+
   // Code metrics
   codeComplexity?: number;
   duplicateCode?: number;
   codeSmells?: number;
   technicalDebt?: number;
-  
+
   // Documentation metrics
   documentationCoverage?: number;
   commentDensity?: number;
-  
+
   // Security metrics
   securityScore?: number;
   vulnerabilities?: number;
   securityHotspots?: number;
-  
+
   // Performance metrics
   performanceScore?: number;
   slowTests?: number;
   memoryLeaks?: number;
-  
+
   // Custom metrics
   customMetrics?: Record<string, number>;
 }
@@ -193,19 +193,19 @@ export interface QualityReport {
   id: string;
   projectId?: string;
   projectName?: string;
-  
+
   // Timing
   timestamp: Date;
   analysisTime: number;
-  
+
   // Scores
   overallScore: QualityScore;
   fileScores?: Map<string, QualityScore>;
   moduleScores?: Map<string, QualityScore>;
-  
+
   // Grade
   grade: QualityGrade;
-  
+
   // Summary
   summary: {
     totalFiles: number;
@@ -215,7 +215,7 @@ export interface QualityReport {
     lowQualityFiles: number;
     criticalIssues: number;
   };
-  
+
   // Top issues
   topIssues?: Array<{
     type: string;
@@ -223,17 +223,17 @@ export interface QualityReport {
     severity: string;
     impact: number;
   }>;
-  
+
   // Recommendations
   recommendations: QualityRecommendation[];
-  
+
   // Comparison
   comparison?: {
     previous?: QualityScore;
     baseline?: QualityScore;
     target?: QualityScore;
   };
-  
+
   // Metadata
   metadata?: BaseMetadata;
 }
@@ -257,31 +257,31 @@ export interface QualityRecommendation {
 export interface QualityConfig {
   // Weights for dimensions
   dimensionWeights?: Partial<Record<QualityDimension, number>>;
-  
+
   // Thresholds
   thresholds?: {
     minimum?: number;
     target?: number;
     excellent?: number;
   };
-  
+
   // Grading scale
   gradingScale?: Array<{
     grade: string;
     minScore: number;
     maxScore: number;
   }>;
-  
+
   // Rules
   rules?: QualityRule[];
-  
+
   // Custom dimensions
   customDimensions?: Array<{
     name: string;
     weight: number;
     description: string;
   }>;
-  
+
   // Options
   options?: {
     includeHistory?: boolean;
@@ -308,20 +308,26 @@ export interface QualityRule {
 export function isQualityScore(value: unknown): value is QualityScore {
   if (!value || typeof value !== 'object') return false;
   const score = value as any;
-  
+
   // Check required fields
   if (typeof score.overall !== 'number' || score.overall < 0 || score.overall > 1) {
     return false;
   }
-  
+
   if (typeof score.confidence !== 'number' || score.confidence < 0 || score.confidence > 1) {
     return false;
   }
-  
+
   // Check dimensions if present
   if (score.dimensions) {
     if (typeof score.dimensions !== 'object') return false;
-    const validDimensions = ['completeness', 'correctness', 'maintainability', 'performance', 'security'];
+    const validDimensions = [
+      'completeness',
+      'correctness',
+      'maintainability',
+      'performance',
+      'security',
+    ];
     for (const [key, value] of Object.entries(score.dimensions)) {
       if (!validDimensions.includes(key)) return false;
       if (typeof value !== 'number' || (value as number) < 0 || (value as number) > 1) {
@@ -329,6 +335,6 @@ export function isQualityScore(value: unknown): value is QualityScore {
       }
     }
   }
-  
+
   return true;
 }

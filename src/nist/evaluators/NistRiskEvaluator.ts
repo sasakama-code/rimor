@@ -1,7 +1,7 @@
 /**
  * NIST SP 800-30準拠リスク評価器
  * 脅威、脆弱性、影響を総合的に評価
- * 
+ *
  * SOLID原則: 単一責任の原則
  * Defensive Programming: 入力検証とエラーハンドリング
  */
@@ -22,7 +22,7 @@ import {
   CapabilityLevel,
   LikelihoodLevel,
   ImpactLevel,
-  SeverityLevel
+  SeverityLevel,
 } from '../types/nist-types';
 
 /**
@@ -52,7 +52,7 @@ export class NistRiskEvaluator {
       const scores = {
         capability: this.levelToScore(threatSource.capability),
         intent: this.levelToScore(threatSource.intent),
-        targeting: this.targetingToScore(threatSource.targeting)
+        targeting: this.targetingToScore(threatSource.targeting),
       };
 
       const averageScore = (scores.capability + scores.intent + scores.targeting) / 3;
@@ -73,12 +73,12 @@ export class NistRiskEvaluator {
 
     // 環境脅威は意図を持たないため、能力のみで評価
     const likelihood = this.capabilityToLikelihood(threatSource.capability);
-    
+
     return {
       threatSourceId: threatSource.id,
       likelihood,
       scope: this.getEnvironmentalScope(threatSource.capability),
-      recoveryTime: this.getRecoveryTime(threatSource.capability)
+      recoveryTime: this.getRecoveryTime(threatSource.capability),
     };
   }
 
@@ -104,7 +104,7 @@ export class NistRiskEvaluator {
       eventId: threatEvent.id,
       overallLikelihood: threatEvent.likelihood,
       overallImpact: threatEvent.impact,
-      contributingSources: threatEvent.threatSources
+      contributingSources: threatEvent.threatSources,
     };
   }
 
@@ -128,7 +128,7 @@ export class NistRiskEvaluator {
 
     const exploitScore = this.levelToScore(vulnerability.exploitability);
     const detectScore = this.detectabilityToScore(vulnerability.detectability);
-    
+
     // 悪用可能性 = (悪用容易性 + 検出困難性) / 2
     return (exploitScore + (1 - detectScore)) / 2;
   }
@@ -166,7 +166,7 @@ export class NistRiskEvaluator {
     if (threatScore >= 0.8 && vulnScore >= 0.67 && impactScore >= 0.8) {
       return CoreTypes.RiskLevel.CRITICAL;
     }
-    
+
     // 特別なケース: すべてLOW以下の場合はMINIMAL
     if (threatScore <= 0.4 && vulnScore <= 0.33 && impactScore <= 0.4) {
       return CoreTypes.RiskLevel.MINIMAL;
@@ -185,10 +185,10 @@ export class NistRiskEvaluator {
 
     // 脅威評価
     const threatLikelihood = this.assessOverallThreatLikelihood(assessment.threatEvents);
-    
+
     // 脆弱性評価
     const vulnerabilitySeverity = this.assessCombinedVulnerabilities(assessment.vulnerabilities);
-    
+
     // 影響評価
     const impactLevel = this.assessOverallImpact(assessment.threatEvents);
 
@@ -196,13 +196,16 @@ export class NistRiskEvaluator {
     const matrix: NISTRiskMatrix = {
       threatLikelihood,
       vulnerabilitySeverity,
-      impactLevel
+      impactLevel,
     };
 
     const inherentRisk = this.applyRiskMatrix(matrix);
-    
+
     // コントロール有効性を考慮
-    const mitigatedRisk = this.applyControlEffectiveness(inherentRisk, assessment.controlEffectiveness);
+    const mitigatedRisk = this.applyControlEffectiveness(
+      inherentRisk,
+      assessment.controlEffectiveness
+    );
 
     // 推奨事項生成
     const recommendations = this.generateRecommendations(inherentRisk);
@@ -213,7 +216,7 @@ export class NistRiskEvaluator {
       mitigatedRiskLevel: mitigatedRisk,
       overallRiskLevel: mitigatedRisk,
       recommendations,
-      riskScore: this.riskLevelToScore(inherentRisk)
+      riskScore: this.riskLevelToScore(inherentRisk),
     };
   }
 
@@ -222,11 +225,11 @@ export class NistRiskEvaluator {
    */
   getRiskPriority(riskLevel: string): number {
     const priorities: Record<string, number> = {
-      'CRITICAL': 5,
-      'HIGH': 4,
-      'MEDIUM': 3,
-      'LOW': 2,
-      'MINIMAL': 1
+      CRITICAL: 5,
+      HIGH: 4,
+      MEDIUM: 3,
+      LOW: 2,
+      MINIMAL: 1,
     };
     return priorities[riskLevel] || 0;
   }
@@ -255,7 +258,7 @@ export class NistRiskEvaluator {
         timeline: '直ちに（24時間以内）',
         expectedBenefit: 'システムへの深刻な被害を防止',
         complexity: 'HIGH',
-        estimatedCost: 'HIGH'
+        estimatedCost: 'HIGH',
       });
       recommendations.push({
         priority: 'CRITICAL',
@@ -263,7 +266,7 @@ export class NistRiskEvaluator {
         timeline: '48時間以内',
         expectedBenefit: '再発防止と脆弱性の完全な修正',
         complexity: 'HIGH',
-        estimatedCost: 'MEDIUM'
+        estimatedCost: 'MEDIUM',
       });
     } else if (riskLevel === 'HIGH' || riskLevel === CoreTypes.RiskLevel.HIGH) {
       recommendations.push({
@@ -272,7 +275,7 @@ export class NistRiskEvaluator {
         timeline: '1週間以内',
         expectedBenefit: 'リスクの部分的な軽減',
         complexity: 'MEDIUM',
-        estimatedCost: 'MEDIUM'
+        estimatedCost: 'MEDIUM',
       });
     } else if (riskLevel === 'MEDIUM' || riskLevel === CoreTypes.RiskLevel.MEDIUM) {
       recommendations.push({
@@ -281,7 +284,7 @@ export class NistRiskEvaluator {
         timeline: '2週間以内',
         expectedBenefit: 'リスクの早期発見と対応',
         complexity: 'LOW',
-        estimatedCost: 'LOW'
+        estimatedCost: 'LOW',
       });
     } else if (riskLevel === 'LOW' || riskLevel === CoreTypes.RiskLevel.LOW) {
       recommendations.push({
@@ -290,7 +293,7 @@ export class NistRiskEvaluator {
         timeline: '1ヶ月以内',
         expectedBenefit: 'リスクの計画的な解消',
         complexity: 'LOW',
-        estimatedCost: 'LOW'
+        estimatedCost: 'LOW',
       });
     } else {
       recommendations.push({
@@ -299,7 +302,7 @@ export class NistRiskEvaluator {
         timeline: '3ヶ月以内',
         expectedBenefit: 'リスクの継続的な監視',
         complexity: 'LOW',
-        estimatedCost: 'LOW'
+        estimatedCost: 'LOW',
       });
     }
 
@@ -310,44 +313,44 @@ export class NistRiskEvaluator {
 
   private levelToScore(level: string): number {
     const scores: Record<string, number> = {
-      'VERY_LOW': 0.2,
-      'LOW': 0.4,
-      'MODERATE': 0.6,
-      'HIGH': 0.8,
-      'VERY_HIGH': 1.0
+      VERY_LOW: 0.2,
+      LOW: 0.4,
+      MODERATE: 0.6,
+      HIGH: 0.8,
+      VERY_HIGH: 1.0,
     };
     return scores[level] || 0.5;
   }
 
   private severityToScore(severity: string): number {
     const scores: Record<string, number> = {
-      'VERY_LOW': 0.17,
-      'LOW': 0.33,
-      'MODERATE': 0.5,
-      'HIGH': 0.67,
-      'VERY_HIGH': 0.83,
-      'CRITICAL': 1.0
+      VERY_LOW: 0.17,
+      LOW: 0.33,
+      MODERATE: 0.5,
+      HIGH: 0.67,
+      VERY_HIGH: 0.83,
+      CRITICAL: 1.0,
     };
     return scores[severity] || 0.5;
   }
 
   private targetingToScore(targeting: string): number {
     const scores: Record<string, number> = {
-      'NONE': 0,
-      'OPPORTUNISTIC': 0.33,
-      'FOCUSED': 0.67,
-      'SPECIFIC': 1.0
+      NONE: 0,
+      OPPORTUNISTIC: 0.33,
+      FOCUSED: 0.67,
+      SPECIFIC: 1.0,
     };
     return scores[targeting] || 0;
   }
 
   private detectabilityToScore(detectability: string): number {
     const scores: Record<string, number> = {
-      'VERY_EASY': 1.0,
-      'EASY': 0.8,
-      'MODERATE': 0.6,
-      'HARD': 0.4,
-      'VERY_HARD': 0.2
+      VERY_EASY: 1.0,
+      EASY: 0.8,
+      MODERATE: 0.6,
+      HARD: 0.4,
+      VERY_HARD: 0.2,
     };
     return scores[detectability] || 0.5;
   }
@@ -370,11 +373,11 @@ export class NistRiskEvaluator {
 
   private riskLevelToScore(riskLevel: RiskLevel | string): number {
     const scores: Record<string, number> = {
-      'CRITICAL': 100,
-      'HIGH': 80,
-      'MEDIUM': 60,
-      'LOW': 40,
-      'MINIMAL': 20
+      CRITICAL: 100,
+      HIGH: 80,
+      MEDIUM: 60,
+      LOW: 40,
+      MINIMAL: 20,
     };
     return scores[riskLevel.toString()] || 50;
   }
@@ -382,33 +385,33 @@ export class NistRiskEvaluator {
   private capabilityToLikelihood(capability: CapabilityLevel): LikelihoodLevel {
     // 環境脅威の場合、能力が高いほど可能性は低い（稀な事象）
     const mapping: Record<CapabilityLevel, LikelihoodLevel> = {
-      'VERY_HIGH': 'LOW',
-      'HIGH': 'LOW',
-      'MODERATE': 'MODERATE',
-      'LOW': 'MODERATE',
-      'VERY_LOW': 'HIGH'
+      VERY_HIGH: 'LOW',
+      HIGH: 'LOW',
+      MODERATE: 'MODERATE',
+      LOW: 'MODERATE',
+      VERY_LOW: 'HIGH',
     };
     return mapping[capability] || 'MODERATE';
   }
 
   private getEnvironmentalScope(capability: CapabilityLevel): 'LIMITED' | 'MODERATE' | 'EXTENSIVE' {
     const mapping: Record<CapabilityLevel, 'LIMITED' | 'MODERATE' | 'EXTENSIVE'> = {
-      'VERY_HIGH': 'EXTENSIVE',
-      'HIGH': 'EXTENSIVE',
-      'MODERATE': 'MODERATE',
-      'LOW': 'LIMITED',
-      'VERY_LOW': 'LIMITED'
+      VERY_HIGH: 'EXTENSIVE',
+      HIGH: 'EXTENSIVE',
+      MODERATE: 'MODERATE',
+      LOW: 'LIMITED',
+      VERY_LOW: 'LIMITED',
     };
     return mapping[capability] || 'MODERATE';
   }
 
   private getRecoveryTime(capability: CapabilityLevel): 'HOURS' | 'DAYS' | 'WEEKS' | 'MONTHS' {
     const mapping: Record<CapabilityLevel, 'HOURS' | 'DAYS' | 'WEEKS' | 'MONTHS'> = {
-      'VERY_HIGH': 'MONTHS',
-      'HIGH': 'WEEKS',
-      'MODERATE': 'DAYS',
-      'LOW': 'DAYS',
-      'VERY_LOW': 'HOURS'
+      VERY_HIGH: 'MONTHS',
+      HIGH: 'WEEKS',
+      MODERATE: 'DAYS',
+      LOW: 'DAYS',
+      VERY_LOW: 'HOURS',
     };
     return mapping[capability] || 'DAYS';
   }
@@ -425,7 +428,7 @@ export class NistRiskEvaluator {
 
   private assessOverallThreatLikelihood(events: ThreatEvent[]): LikelihoodLevel {
     if (events.length === 0) return 'VERY_LOW';
-    
+
     // 最も高い可能性を返す
     const likelihoods = events.map(e => e.likelihood);
     const scores = likelihoods.map(l => this.levelToScore(l));
@@ -435,7 +438,7 @@ export class NistRiskEvaluator {
 
   private assessOverallImpact(events: ThreatEvent[]): ImpactLevel {
     if (events.length === 0) return 'VERY_LOW';
-    
+
     // 最も高い影響を返す
     const impacts = events.map(e => e.impact);
     const scores = impacts.map(i => this.levelToScore(i));

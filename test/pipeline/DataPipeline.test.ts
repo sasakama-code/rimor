@@ -4,8 +4,18 @@
  * Phase 4: データパイプラインの実装
  */
 
-import { DataPipeline, IDataTransformer, IDataValidator, IRetryStrategy } from '../../src/pipeline/DataPipeline';
-import { TaintAnalysisResult, IntentAnalysisResult, GapAnalysisResult, NistEvaluationResult } from '../../src/orchestrator/types';
+import {
+  DataPipeline,
+  IDataTransformer,
+  IDataValidator,
+  IRetryStrategy,
+} from '../../src/pipeline/DataPipeline';
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+  NistEvaluationResult,
+} from '../../src/orchestrator/types';
 
 describe('DataPipeline', () => {
   let pipeline: DataPipeline;
@@ -16,7 +26,7 @@ describe('DataPipeline', () => {
 
   beforeEach(() => {
     pipeline = new DataPipeline();
-    
+
     // モックデータの準備
     mockTaintResult = {
       vulnerabilities: [
@@ -26,15 +36,15 @@ describe('DataPipeline', () => {
           severity: 'HIGH' as const,
           source: { file: 'test.ts', line: 10, column: 5 },
           sink: { file: 'test.ts', line: 15, column: 10 },
-          dataFlow: ['input', 'filesystem']
-        }
+          dataFlow: ['input', 'filesystem'],
+        },
       ],
       summary: {
         totalVulnerabilities: 1,
         highSeverity: 1,
         mediumSeverity: 0,
-        lowSeverity: 0
-      }
+        lowSeverity: 0,
+      },
     };
 
     mockIntentResult = {
@@ -43,15 +53,15 @@ describe('DataPipeline', () => {
           testName: 'ファイルアクセステスト',
           expectedBehavior: 'ファイルアクセス制御のテスト',
           securityRequirements: ['パストラバーサル対策'],
-          riskLevel: 'HIGH'
-        }
+          riskLevel: 'HIGH',
+        },
       ],
       summary: {
         totalTests: 1,
         highRiskTests: 1,
         mediumRiskTests: 0,
-        lowRiskTests: 0
-      }
+        lowRiskTests: 0,
+      },
     };
 
     mockGapResult = {
@@ -61,16 +71,16 @@ describe('DataPipeline', () => {
           intention: 'ファイルアクセス制御',
           actualImplementation: 'セキュリティチェック不足',
           riskLevel: 'CRITICAL',
-          recommendations: ['セキュリティ検証の追加']
-        }
+          recommendations: ['セキュリティ検証の追加'],
+        },
       ],
       summary: {
         totalGaps: 1,
         criticalGaps: 1,
         highGaps: 0,
         mediumGaps: 0,
-        lowGaps: 0
-      }
+        lowGaps: 0,
+      },
     };
 
     mockNistResult = {
@@ -82,8 +92,8 @@ describe('DataPipeline', () => {
           impactLevel: 'HIGH',
           overallRisk: 'HIGH',
           nistScore: 75,
-          recommendations: ['アクセス制御の強化']
-        }
+          recommendations: ['アクセス制御の強化'],
+        },
       ],
       summary: {
         overallScore: 75,
@@ -92,8 +102,8 @@ describe('DataPipeline', () => {
         criticalRisks: 0,
         highRisks: 1,
         mediumRisks: 0,
-        lowRisks: 0
-      }
+        lowRisks: 0,
+      },
     };
   });
 
@@ -111,7 +121,10 @@ describe('DataPipeline', () => {
 
     it('IntentExtractionResultからGapDetectionへのデータ変換ができる', async () => {
       // Act
-      const transformedData = await pipeline.transformIntentToGap(mockIntentResult, mockTaintResult);
+      const transformedData = await pipeline.transformIntentToGap(
+        mockIntentResult,
+        mockTaintResult
+      );
 
       // Assert
       expect(transformedData).toBeDefined();
@@ -122,7 +135,11 @@ describe('DataPipeline', () => {
 
     it('GapDetectionResultからNistEvaluationへのデータ変換ができる', async () => {
       // Act
-      const transformedData = await pipeline.transformGapToNist(mockGapResult, mockIntentResult, mockTaintResult);
+      const transformedData = await pipeline.transformGapToNist(
+        mockGapResult,
+        mockIntentResult,
+        mockTaintResult
+      );
 
       // Assert
       expect(transformedData).toBeDefined();
@@ -139,35 +156,35 @@ describe('DataPipeline', () => {
       const invalidTaintResult = null as any;
 
       // Act & Assert
-      await expect(pipeline.transformTaintToIntent(invalidTaintResult))
-        .rejects
-        .toThrow('TaintAnalysisResultが無効です');
+      await expect(pipeline.transformTaintToIntent(invalidTaintResult)).rejects.toThrow(
+        'TaintAnalysisResultが無効です'
+      );
     });
 
     it('データ構造が不整合な場合、エラーが発生する', async () => {
       // Arrange
       const incompleteTaintResult = {
         vulnerabilities: null,
-        summary: mockTaintResult.summary
+        summary: mockTaintResult.summary,
       } as any;
 
       // Act & Assert
-      await expect(pipeline.transformTaintToIntent(incompleteTaintResult))
-        .rejects
-        .toThrow('データ構造に不整合があります');
+      await expect(pipeline.transformTaintToIntent(incompleteTaintResult)).rejects.toThrow(
+        'データ構造に不整合があります'
+      );
     });
 
     it('必須フィールドが不足している場合、エラーが発生する', async () => {
       // Arrange
       const incompleteIntentResult = {
-        testIntents: mockIntentResult.testIntents
+        testIntents: mockIntentResult.testIntents,
         // summaryが不足
       } as any;
 
       // Act & Assert
-      await expect(pipeline.transformIntentToGap(incompleteIntentResult, mockTaintResult))
-        .rejects
-        .toThrow('必須フィールドが不足しています');
+      await expect(
+        pipeline.transformIntentToGap(incompleteIntentResult, mockTaintResult)
+      ).rejects.toThrow('必須フィールドが不足しています');
     });
   });
 
@@ -176,13 +193,13 @@ describe('DataPipeline', () => {
       // Arrange
       const corruptedData = {
         vulnerabilities: 'invalid_data',
-        summary: mockTaintResult.summary
+        summary: mockTaintResult.summary,
       } as any;
 
       // Act & Assert
-      await expect(pipeline.transformTaintToIntent(corruptedData))
-        .rejects
-        .toThrow('データ構造に不整合があります');
+      await expect(pipeline.transformTaintToIntent(corruptedData)).rejects.toThrow(
+        'データ構造に不整合があります'
+      );
     });
 
     it('リトライ機能が正常に動作する', async () => {
@@ -191,13 +208,14 @@ describe('DataPipeline', () => {
       const retryStrategy = {
         maxRetries: 3,
         retryDelay: 100,
-        shouldRetry: (error: Error) => error.message.includes('一時的')
+        shouldRetry: (error: Error) => error.message.includes('一時的'),
       };
 
       pipeline.setRetryStrategy(retryStrategy);
 
       // モック変換関数（最初の2回は失敗、3回目は成功）
-      const mockTransformer = jest.fn()
+      const mockTransformer = jest
+        .fn()
         .mockRejectedValueOnce(new Error('一時的なエラー'))
         .mockRejectedValueOnce(new Error('一時的なエラー'))
         .mockResolvedValueOnce({ success: true });
@@ -215,18 +233,17 @@ describe('DataPipeline', () => {
       const retryStrategy = {
         maxRetries: 2,
         retryDelay: 50,
-        shouldRetry: () => true
+        shouldRetry: () => true,
       };
 
       pipeline.setRetryStrategy(retryStrategy);
 
-      const mockTransformer = jest.fn()
-        .mockRejectedValue(new Error('永続的なエラー'));
+      const mockTransformer = jest.fn().mockRejectedValue(new Error('永続的なエラー'));
 
       // Act & Assert
-      await expect(pipeline.executeWithRetry(mockTransformer, mockTaintResult))
-        .rejects
-        .toThrow('最大リトライ回数に達しました: 永続的なエラー');
+      await expect(pipeline.executeWithRetry(mockTransformer, mockTaintResult)).rejects.toThrow(
+        '最大リトライ回数に達しました: 永続的なエラー'
+      );
     });
   });
 
@@ -240,14 +257,14 @@ describe('DataPipeline', () => {
           severity: 'HIGH' as const,
           source: { file: `test${i}.ts`, line: 10, column: 5 },
           sink: { file: `test${i}.ts`, line: 15, column: 10 },
-          dataFlow: ['input', 'filesystem']
+          dataFlow: ['input', 'filesystem'],
         })),
         summary: {
           totalVulnerabilities: 1000,
           highSeverity: 1000,
           mediumSeverity: 0,
-          lowSeverity: 0
-        }
+          lowSeverity: 0,
+        },
       };
 
       // Act
@@ -264,7 +281,7 @@ describe('DataPipeline', () => {
       // Arrange & Act
       // メモリ使用量の測定（Node.js環境では process.memoryUsage() を使用）
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < 100; i++) {
         await pipeline.transformTaintToIntent(mockTaintResult);
       }
@@ -284,7 +301,7 @@ describe('DataPipeline', () => {
       const customTransformer: IDataTransformer<TaintAnalysisResult, any> = {
         transform: jest.fn().mockResolvedValue({ customField: 'test' }),
         validate: jest.fn().mockReturnValue(true),
-        getName: jest.fn().mockReturnValue('CustomTransformer')
+        getName: jest.fn().mockReturnValue('CustomTransformer'),
       };
 
       // Act
@@ -299,7 +316,7 @@ describe('DataPipeline', () => {
       // Arrange
       const customValidator: IDataValidator<TaintAnalysisResult> = {
         validate: jest.fn().mockReturnValue(true),
-        getValidationRules: jest.fn().mockReturnValue(['rule1', 'rule2'])
+        getValidationRules: jest.fn().mockReturnValue(['rule1', 'rule2']),
       };
 
       // Act
@@ -316,7 +333,7 @@ describe('DataPipeline', () => {
         enableParallelProcessing: true,
         batchSize: 50,
         timeoutMs: 30000,
-        enableCaching: true
+        enableCaching: true,
       };
 
       // Act
@@ -336,13 +353,17 @@ describe('DataPipeline', () => {
       // Act
       const intentData = await pipeline.transformTaintToIntent(mockTaintResult);
       const gapData = await pipeline.transformIntentToGap(mockIntentResult, mockTaintResult);
-      const nistData = await pipeline.transformGapToNist(mockGapResult, mockIntentResult, mockTaintResult);
+      const nistData = await pipeline.transformGapToNist(
+        mockGapResult,
+        mockIntentResult,
+        mockTaintResult
+      );
 
       // Assert
       expect(intentData).toBeDefined();
       expect(gapData).toBeDefined();
       expect(nistData).toBeDefined();
-      
+
       // データの連続性確認
       expect(intentData.vulnerabilities).toHaveLength(1);
       expect(gapData.vulnerabilityContext).toBeDefined();
@@ -352,7 +373,7 @@ describe('DataPipeline', () => {
     it('エラーが発生した場合も適切にクリーンアップされる', async () => {
       // Arrange
       const invalidData = null as any;
-      
+
       // Act & Assert
       await expect(async () => {
         await pipeline.transformTaintToIntent(invalidData);

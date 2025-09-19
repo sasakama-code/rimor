@@ -16,20 +16,18 @@ import { UnifiedPluginManager } from '../UnifiedPluginManager';
  */
 @injectable()
 export class AnalysisEngine implements IAnalysisEngine {
-  constructor(
-    @inject(TYPES.UnifiedAnalysisEngine) private engine: UnifiedAnalysisEngine
-  ) {
+  constructor(@inject(TYPES.UnifiedAnalysisEngine) private engine: UnifiedAnalysisEngine) {
     // UnifiedAnalysisEngineはDIコンテナから注入される
   }
-  
+
   async analyze(targetPath: string, options?: AnalysisOptions): Promise<AnalysisResult> {
     return this.engine.analyze(targetPath, options);
   }
-  
+
   async generateAST(filePath: string): Promise<any> {
     return this.engine.generateAST(filePath);
   }
-  
+
   async clearCache(): Promise<void> {
     return this.engine.clearCache();
   }

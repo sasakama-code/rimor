@@ -1,7 +1,7 @@
 /**
  * 高精度パフォーマンスプロファイラー
  * Phase 2: 詳細プロファイリングとリアルタイム監視システム
- * 
+ *
  * SOLID原則に基づく設計:
  * - Single Responsibility: 各分析機能を専用クラスに分離
  * - Open/Closed: 新しい分析タイプの追加に開放
@@ -38,7 +38,7 @@ import {
   FunctionProfile,
   CallPath,
   MemoryLeakDetection,
-  ExecutionTimeline
+  ExecutionTimeline,
 } from './types';
 
 /**
@@ -47,7 +47,8 @@ import {
  */
 class CPUAnalysisEngine {
   private samples: { timestamp: number; stackTrace: string[]; cpuUsage: number }[] = [];
-  private functionTimes: Map<string, { totalTime: number; callCount: number; samples: number[] }> = new Map();
+  private functionTimes: Map<string, { totalTime: number; callCount: number; samples: number[] }> =
+    new Map();
   private samplingInterval: number;
 
   constructor(samplingInterval: number) {
@@ -59,11 +60,11 @@ class CPUAnalysisEngine {
     const sampleId = setInterval(() => {
       const stackTrace = this.captureStackTrace();
       const cpuUsage = this.getCurrentCPUUsage();
-      
+
       this.samples.push({
         timestamp: Date.now(),
         stackTrace,
-        cpuUsage
+        cpuUsage,
       });
 
       // 関数時間の記録
@@ -76,7 +77,6 @@ class CPUAnalysisEngine {
         funcData.callCount++;
         funcData.samples.push(cpuUsage);
       });
-
     }, this.samplingInterval);
 
     // サンプリングIDを保存（停止時に使用）
@@ -98,7 +98,7 @@ class CPUAnalysisEngine {
       functionProfiles,
       hotspots,
       totalSamples: this.samples.length,
-      samplingRate: 1000 / this.samplingInterval // Hz
+      samplingRate: 1000 / this.samplingInterval, // Hz
     };
   }
 
@@ -130,9 +130,10 @@ class CPUAnalysisEngine {
     const profiles: FunctionProfile[] = [];
 
     this.functionTimes.forEach((data, functionName) => {
-      const averageTime = data.samples.length > 0 
-        ? data.samples.reduce((sum, sample) => sum + sample, 0) / data.samples.length 
-        : 0;
+      const averageTime =
+        data.samples.length > 0
+          ? data.samples.reduce((sum, sample) => sum + sample, 0) / data.samples.length
+          : 0;
 
       const totalSamplingTime = this.samples.length * this.samplingInterval;
       const percentage = totalSamplingTime > 0 ? (data.totalTime / totalSamplingTime) * 100 : 0;
@@ -142,7 +143,7 @@ class CPUAnalysisEngine {
         totalTime: data.totalTime,
         averageTime,
         callCount: data.callCount,
-        percentage
+        percentage,
       });
     });
 
@@ -158,13 +159,13 @@ class CPUAnalysisEngine {
         executionTime: profile.totalTime,
         percentage: profile.percentage,
         callCount: profile.callCount,
-        optimizationSuggestions: this.generateOptimizationSuggestions(profile)
+        optimizationSuggestions: this.generateOptimizationSuggestions(profile),
       }));
   }
 
   private generateOptimizationSuggestions(profile: FunctionProfile): string[] {
     const suggestions: string[] = [];
-    
+
     if (profile.percentage > 20) {
       suggestions.push('関数の処理内容を見直し、最適化を検討');
     }
@@ -189,7 +190,13 @@ class CPUAnalysisEngine {
  */
 class MemoryAnalysisEngine {
   private memorySnapshots: { timestamp: number; usage: NodeJS.MemoryUsage }[] = [];
-  private gcEvents: { timestamp: number; pauseTime: number; beforeSize: number; afterSize: number; type: string }[] = [];
+  private gcEvents: {
+    timestamp: number;
+    pauseTime: number;
+    beforeSize: number;
+    afterSize: number;
+    type: string;
+  }[] = [];
   private samplingInterval: number;
   private leakThreshold: number;
 
@@ -203,7 +210,7 @@ class MemoryAnalysisEngine {
       const memoryUsage = process.memoryUsage();
       this.memorySnapshots.push({
         timestamp: Date.now(),
-        usage: memoryUsage
+        usage: memoryUsage,
       });
     }, this.samplingInterval);
 
@@ -223,20 +230,22 @@ class MemoryAnalysisEngine {
   generateAnalysis(): MemoryAnalysis {
     const usageOverTime = this.memorySnapshots.map(snapshot => ({
       timestamp: snapshot.timestamp,
-      value: snapshot.usage.heapUsed
+      value: snapshot.usage.heapUsed,
     }));
 
     const leakDetection = this.analyzeMemoryLeak();
     const usagePatterns = this.analyzeUsagePatterns();
     const peakUsage = Math.max(...this.memorySnapshots.map(s => s.usage.heapUsed));
-    const averageUsage = this.memorySnapshots.reduce((sum, s) => sum + s.usage.heapUsed, 0) / this.memorySnapshots.length;
+    const averageUsage =
+      this.memorySnapshots.reduce((sum, s) => sum + s.usage.heapUsed, 0) /
+      this.memorySnapshots.length;
 
     return {
       usageOverTime,
       leakDetection,
       usagePatterns,
       peakUsage,
-      averageUsage
+      averageUsage,
     };
   }
 
@@ -246,14 +255,14 @@ class MemoryAnalysisEngine {
         suspected: false,
         leakRate: 0,
         suspiciousAllocations: [],
-        confidence: 0
+        confidence: 0,
       };
     }
 
     // 線形回帰による成長率計算
     const points = this.memorySnapshots.map((snapshot, index) => ({
       x: index,
-      y: snapshot.usage.heapUsed
+      y: snapshot.usage.heapUsed,
     }));
 
     const n = points.length;
@@ -272,7 +281,7 @@ class MemoryAnalysisEngine {
       suspected,
       leakRate,
       suspiciousAllocations: [], // 実際の実装では詳細な割り当て情報を含む
-      confidence
+      confidence,
     };
   }
 
@@ -292,27 +301,29 @@ class MemoryAnalysisEngine {
       steady: { detected: steady, variance: stdDev },
       spiky: { detected: spiky, spikeCount: this.detectSpikes(values).length },
       increasing: { detected: increasing, growthRate: this.calculateTrend(values) },
-      decreasing: { detected: decreasing, reductionRate: Math.abs(this.calculateTrend(values)) }
+      decreasing: { detected: decreasing, reductionRate: Math.abs(this.calculateTrend(values)) },
     };
   }
 
   private detectSpikes(values: number[]): number[] {
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const stdDev = Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
+    const stdDev = Math.sqrt(
+      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length
+    );
     const threshold = mean + stdDev * 2; // 2標準偏差以上をスパイクとする
 
-    return values.map((val, index) => val > threshold ? index : -1).filter(i => i >= 0);
+    return values.map((val, index) => (val > threshold ? index : -1)).filter(i => i >= 0);
   }
 
   private calculateTrend(values: number[]): number {
     if (values.length < 2) return 0;
-    
+
     const firstHalf = values.slice(0, Math.floor(values.length / 2));
     const secondHalf = values.slice(Math.ceil(values.length / 2));
-    
+
     const firstAvg = firstHalf.reduce((sum, val) => sum + val, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((sum, val) => sum + val, 0) / secondHalf.length;
-    
+
     return secondAvg - firstAvg;
   }
 
@@ -322,7 +333,7 @@ class MemoryAnalysisEngine {
     try {
       const v8 = require('v8');
       const initialStats = v8.getHeapStatistics();
-      
+
       setInterval(() => {
         const currentStats = v8.getHeapStatistics();
         // GCイベントの検出と記録（簡易実装）
@@ -332,7 +343,7 @@ class MemoryAnalysisEngine {
             pauseTime: 10, // 仮の値
             beforeSize: initialStats.used_heap_size,
             afterSize: currentStats.used_heap_size,
-            type: 'minor'
+            type: 'minor',
           });
         }
       }, this.samplingInterval * 10);
@@ -380,7 +391,7 @@ class HotspotDetectionEngine {
           executionTime: totalTime,
           percentage: 0, // 全体に対する割合は後で計算
           callCount: times.length,
-          optimizationSuggestions: this.generateSuggestions(averageTime, maxTime)
+          optimizationSuggestions: this.generateSuggestions(averageTime, maxTime),
         });
       }
     });
@@ -388,20 +399,20 @@ class HotspotDetectionEngine {
     return {
       hotspots: hotspots.sort((a, b) => b.executionTime - a.executionTime),
       memoryHotspots,
-      totalHotspots: hotspots.length
+      totalHotspots: hotspots.length,
     };
   }
 
   private generateSuggestions(avgTime: number, maxTime: number): string[] {
     const suggestions: string[] = [];
-    
+
     if (avgTime > 100) {
       suggestions.push('処理時間が長いため、アルゴリズムの見直しを検討');
     }
     if (maxTime > avgTime * 3) {
       suggestions.push('実行時間のばらつきが大きいため、条件分岐の最適化を検討');
     }
-    
+
     return suggestions;
   }
 
@@ -424,7 +435,7 @@ export class PerformanceProfiler extends EventEmitter {
 
   constructor(config: ProfilerConfiguration) {
     super();
-    
+
     this.config = {
       samplingInterval: config.samplingInterval,
       enableCallStackAnalysis: config.enableCallStackAnalysis ?? true,
@@ -434,7 +445,7 @@ export class PerformanceProfiler extends EventEmitter {
       maxSamples: config.maxSamples ?? 10000,
       memoryLeakThreshold: config.memoryLeakThreshold ?? 1024 * 1024 * 10, // 10MB
       hotspotThreshold: config.hotspotThreshold ?? 0.05, // 5%
-      outputDir: config.outputDir ?? './.rimor/profiler'
+      outputDir: config.outputDir ?? './.rimor/profiler',
     };
 
     this.initializeEngines();
@@ -443,7 +454,7 @@ export class PerformanceProfiler extends EventEmitter {
   private initializeEngines(): void {
     this.cpuEngine = new CPUAnalysisEngine(this.config.samplingInterval);
     this.memoryEngine = new MemoryAnalysisEngine(
-      this.config.samplingInterval, 
+      this.config.samplingInterval,
       this.config.memoryLeakThreshold
     );
     this.hotspotEngine = new HotspotDetectionEngine(this.config.hotspotThreshold * 1000);
@@ -462,7 +473,7 @@ export class PerformanceProfiler extends EventEmitter {
       startTime: Date.now(),
       status: 'active',
       config: this.config,
-      sampleCount: 0
+      sampleCount: 0,
     };
 
     this.sessions.set(sessionId, session);
@@ -476,7 +487,7 @@ export class PerformanceProfiler extends EventEmitter {
     }
 
     this.emit('profiling_started', { sessionId, timestamp: Date.now() });
-    
+
     return sessionId;
   }
 
@@ -488,7 +499,7 @@ export class PerformanceProfiler extends EventEmitter {
     if (!session) {
       return {
         success: false,
-        error: `Profiling session ${sessionId} not found`
+        error: `Profiling session ${sessionId} not found`,
       };
     }
 
@@ -508,14 +519,13 @@ export class PerformanceProfiler extends EventEmitter {
 
       return {
         success: true,
-        profilingData
+        profilingData,
       };
-
     } catch (error) {
       session.status = 'error';
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -563,7 +573,7 @@ export class PerformanceProfiler extends EventEmitter {
     const callStackAnalysis: CallStackAnalysis = {
       callPaths: [],
       deepestPath: { functions: [], depth: 0, totalTime: 0, percentage: 0 },
-      mostExpensivePath: { functions: [], depth: 0, totalTime: 0, percentage: 0 }
+      mostExpensivePath: { functions: [], depth: 0, totalTime: 0, percentage: 0 },
     };
 
     const garbageCollectionAnalysis: GarbageCollectionAnalysis = {
@@ -571,43 +581,47 @@ export class PerformanceProfiler extends EventEmitter {
       totalPauseTime: 0,
       averagePauseTime: 0,
       impactOnPerformance: 0,
-      efficiency: 1.0
+      efficiency: 1.0,
     };
 
     const ioAnalysis: IOAnalysis = {
       bottlenecks: [],
       totalWaitTime: 0,
       waitTime: 0,
-      efficiency: 1.0
+      efficiency: 1.0,
     };
 
     const parallelismAnalysis: ParallelismAnalysis = {
       parallelizationOpportunities: [],
       currentParallelism: 1,
       estimatedSpeedup: 1.0,
-      efficiency: 1.0
+      efficiency: 1.0,
     };
 
     const executionFlowAnalysis: ExecutionFlowAnalysis = {
       callGraph: { nodes: [], edges: [] },
       criticalPath: [],
-      bottleneckNodes: []
+      bottleneckNodes: [],
     };
 
     const asyncAnalysis: AsyncAnalysis = {
       promiseChains: [],
       concurrentOperations: [],
       waitingTime: 0,
-      efficiency: 1.0
+      efficiency: 1.0,
     };
 
     const executionTimeline: ExecutionTimeline = {
       phases: [],
       totalDuration: session.endTime ? session.endTime - session.startTime : 0,
-      criticalPath: []
+      criticalPath: [],
     };
 
-    const recommendations = this.generateRecommendations(cpuAnalysis, memoryAnalysis, hotspotAnalysis);
+    const recommendations = this.generateRecommendations(
+      cpuAnalysis,
+      memoryAnalysis,
+      hotspotAnalysis
+    );
 
     return {
       sessionInfo: session,
@@ -621,7 +635,7 @@ export class PerformanceProfiler extends EventEmitter {
       asyncAnalysis,
       hotspotAnalysis,
       executionTimeline,
-      recommendations
+      recommendations,
     };
   }
 
@@ -629,25 +643,31 @@ export class PerformanceProfiler extends EventEmitter {
    * 推奨事項の生成
    */
   private generateRecommendations(
-    cpuAnalysis: CPUAnalysis, 
-    memoryAnalysis: MemoryAnalysis, 
+    cpuAnalysis: CPUAnalysis,
+    memoryAnalysis: MemoryAnalysis,
     hotspotAnalysis: HotspotAnalysis
   ): string[] {
     const recommendations: string[] = [];
 
     // CPU関連の推奨事項
     if (hotspotAnalysis.hotspots.length > 0) {
-      recommendations.push(`${hotspotAnalysis.hotspots.length}個のCPUホットスポットが検出されました。最適化を検討してください。`);
+      recommendations.push(
+        `${hotspotAnalysis.hotspots.length}個のCPUホットスポットが検出されました。最適化を検討してください。`
+      );
     }
 
     // メモリ関連の推奨事項
     if (memoryAnalysis.leakDetection.suspected) {
-      recommendations.push('メモリリークの可能性があります。メモリ使用量を監視し、不要な参照を削除してください。');
+      recommendations.push(
+        'メモリリークの可能性があります。メモリ使用量を監視し、不要な参照を削除してください。'
+      );
     }
 
     // 全般的な推奨事項
     if (cpuAnalysis.functionProfiles.length > 100) {
-      recommendations.push('多数の関数が実行されています。プロファイル結果を基に最適化対象を絞り込むことを推奨します。');
+      recommendations.push(
+        '多数の関数が実行されています。プロファイル結果を基に最適化対象を絞り込むことを推奨します。'
+      );
     }
 
     return recommendations;
@@ -656,7 +676,10 @@ export class PerformanceProfiler extends EventEmitter {
   /**
    * HTMLレポートの生成
    */
-  async generateHTMLReport(sessionId: string, options: HTMLReportOptions = {}): Promise<HTMLReportResult> {
+  async generateHTMLReport(
+    sessionId: string,
+    options: HTMLReportOptions = {}
+  ): Promise<HTMLReportResult> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -674,7 +697,7 @@ export class PerformanceProfiler extends EventEmitter {
     return {
       filePath,
       size: stats.size,
-      generatedAt: Date.now()
+      generatedAt: Date.now(),
     };
   }
 
@@ -688,11 +711,11 @@ export class PerformanceProfiler extends EventEmitter {
     }
 
     const profilingData = await this.collectProfilingData(session);
-    
+
     return {
       data: profilingData,
       size: JSON.stringify(profilingData).length,
-      generatedAt: Date.now()
+      generatedAt: Date.now(),
     };
   }
 
@@ -711,7 +734,7 @@ export class PerformanceProfiler extends EventEmitter {
     return {
       svgData,
       totalSamples: cpuAnalysis.totalSamples,
-      generatedAt: Date.now()
+      generatedAt: Date.now(),
     };
   }
 
@@ -732,7 +755,7 @@ export class PerformanceProfiler extends EventEmitter {
       currentCpuUsage: (cpuUsage.user + cpuUsage.system) / 1000,
       currentMemoryUsage: memoryUsage.heapUsed,
       activeHotspots: hotspots,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -751,18 +774,23 @@ export class PerformanceProfiler extends EventEmitter {
     const realtimeMetrics = await this.getRealtimeMetrics(sessionId);
 
     // CPU使用率アラート
-    if (this.alertThresholds.cpuUsage && realtimeMetrics.currentCpuUsage > this.alertThresholds.cpuUsage) {
+    if (
+      this.alertThresholds.cpuUsage &&
+      realtimeMetrics.currentCpuUsage > this.alertThresholds.cpuUsage
+    ) {
       alerts.push({
         type: 'high_cpu',
         severity: 'high',
         message: `CPU使用率が閾値(${this.alertThresholds.cpuUsage}%)を超えています`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
     // 関数実行時間アラート
-    const slowFunctions = realtimeMetrics.activeHotspots.filter(h => 
-      this.alertThresholds.functionExecutionTime && h.executionTime > this.alertThresholds.functionExecutionTime
+    const slowFunctions = realtimeMetrics.activeHotspots.filter(
+      h =>
+        this.alertThresholds.functionExecutionTime &&
+        h.executionTime > this.alertThresholds.functionExecutionTime
     );
 
     slowFunctions.forEach(func => {
@@ -771,7 +799,7 @@ export class PerformanceProfiler extends EventEmitter {
         severity: 'medium',
         message: `関数${func.functionName}の実行時間が閾値を超えています`,
         timestamp: Date.now(),
-        location: func.functionName
+        location: func.functionName,
       });
     });
 
@@ -819,14 +847,18 @@ export class PerformanceProfiler extends EventEmitter {
         ${options.includeCharts ? '<div class="chart">[Memory Usage Chart Placeholder]</div>' : ''}
     </div>
     
-    ${options.includeRecommendations ? `
+    ${
+      options.includeRecommendations
+        ? `
     <div class="section">
         <h2>Recommendations</h2>
         <ul>
             <li>継続的な監視を推奨します</li>
             <li>ホットスポットの最適化を検討してください</li>
         </ul>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
 </body>
 </html>`;
   }
@@ -838,16 +870,21 @@ export class PerformanceProfiler extends EventEmitter {
     // 簡易的なフレームグラフSVGの生成
     const width = 1000;
     const height = 400;
-    
+
     return `
 <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <rect width="${width}" height="${height}" fill="#ffffff"/>
   <text x="10" y="30" font-family="Arial" font-size="16" fill="#000000">Flame Graph - ${cpuAnalysis.totalSamples} samples</text>
   <!-- 実際の実装では関数プロファイルに基づいて矩形を描画 -->
-  ${cpuAnalysis.functionProfiles.slice(0, 10).map((profile, index) => `
+  ${cpuAnalysis.functionProfiles
+    .slice(0, 10)
+    .map(
+      (profile, index) => `
     <rect x="10" y="${50 + index * 30}" width="${profile.percentage * 8}" height="25" fill="#ff6b6b"/>
     <text x="15" y="${68 + index * 30}" font-family="Arial" font-size="12" fill="#000000">${profile.functionName} (${profile.percentage.toFixed(1)}%)</text>
-  `).join('')}
+  `
+    )
+    .join('')}
 </svg>`;
   }
 

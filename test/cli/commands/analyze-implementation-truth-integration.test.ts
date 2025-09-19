@@ -39,7 +39,7 @@ describe('AnalyzeCommand - Implementation Truth統合テスト', () => {
       // Arrange: テスト用ファイルを作成
       const srcDir = path.join(tempDir, 'src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'sample.ts');
       const testCode = `
 export class Sample {
@@ -56,7 +56,7 @@ export class Sample {
         path: srcDir,
         implementationTruth: true,
         verbose: false,
-        format: 'json'
+        format: 'json',
       };
 
       await expect(analyzeCommand.execute(options)).resolves.not.toThrow();
@@ -71,7 +71,7 @@ export class Sample {
       const options: AnalyzeOptions = {
         path: nonExistentPath,
         implementationTruth: true,
-        format: 'json'
+        format: 'json',
       };
 
       await expect(analyzeCommand.execute(options)).rejects.toThrow();
@@ -85,7 +85,7 @@ export class Sample {
       const outputDir = path.join(tempDir, 'json-output');
       fs.mkdirSync(srcDir, { recursive: true });
       fs.mkdirSync(outputDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'user.ts');
       const testCode = `
 export interface User {
@@ -110,17 +110,17 @@ export function createUser(name: string): User {
         path: srcDir,
         implementationTruth: true,
         outputJson: outputFile,
-        verbose: false
+        verbose: false,
       };
 
       await analyzeCommand.execute(options);
 
       // Assert: 出力ファイルが作成され、有効なJSONであることを確認
       expect(fs.existsSync(outputFile)).toBe(true);
-      
+
       const fileContent = fs.readFileSync(outputFile, 'utf8');
       const jsonResult = JSON.parse(fileContent);
-      
+
       // Implementation Truth分析の特徴的な構造を検証
       expect(jsonResult).toHaveProperty('metadata');
       if (jsonResult.metadata && jsonResult.metadata.analysisMode === 'implementation-truth') {
@@ -135,7 +135,7 @@ export function createUser(name: string): User {
       // Arrange: テスト用ファイルを作成
       const srcDir = path.join(tempDir, 'verbose-test-src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'service.ts');
       const testCode = `
 export class Service {
@@ -152,7 +152,7 @@ export class Service {
         path: srcDir,
         implementationTruth: true,
         verbose: true,
-        format: 'json'
+        format: 'json',
       };
 
       await analyzeCommand.execute(options);
@@ -206,7 +206,7 @@ describe('MathUtils', () => {
         implementationTruth: true,
         testPath: testDir,
         verbose: false,
-        format: 'json'
+        format: 'json',
       };
 
       // Assert: エラーが発生しないことを確認
@@ -219,7 +219,7 @@ describe('MathUtils', () => {
       // Arrange: テスト用ファイルを作成
       const srcDir = path.join(tempDir, 'ai-json-src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const testFile = path.join(srcDir, 'api.ts');
       const testCode = `
 export class APIHandler {
@@ -237,7 +237,7 @@ export class APIHandler {
         path: srcDir,
         aiOutput: true,
         format: 'ai-json',
-        verbose: false
+        verbose: false,
       };
 
       // Assert: エラーが発生しないことを確認
@@ -250,7 +250,7 @@ export class APIHandler {
       // Arrange: 不正なTypeScriptファイルを作成
       const srcDir = path.join(tempDir, 'error-test-src');
       fs.mkdirSync(srcDir, { recursive: true });
-      
+
       const invalidFile = path.join(srcDir, 'invalid.ts');
       const invalidCode = `
 export class InvalidSyntax {
@@ -267,12 +267,12 @@ export class InvalidSyntax {
         path: srcDir,
         implementationTruth: true,
         verbose: false,
-        format: 'json'
+        format: 'json',
       };
 
       // Implementation Truth分析がフォールバックして正常終了することを期待
       await expect(analyzeCommand.execute(options)).resolves.not.toThrow();
-      
+
       // 警告メッセージが出力されることを確認
       expect(console.warn).toHaveBeenCalled();
     });
@@ -309,17 +309,17 @@ export class Module${i} {
 
       // Act: パフォーマンス測定
       const startTime = Date.now();
-      
+
       const analyzeCommand = new AnalyzeCommand();
       const options: AnalyzeOptions = {
         path: srcDir,
         implementationTruth: true,
         verbose: false,
-        format: 'json'
+        format: 'json',
       };
 
       await analyzeCommand.execute(options);
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
 

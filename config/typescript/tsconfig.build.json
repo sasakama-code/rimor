@@ -6,15 +6,13 @@
     "composite": false,
     "incremental": true,
     "tsBuildInfoFile": "../../dist/.tsbuildinfo",
-    
+
     // Issue #147対応: PII露出リスク完全解消
     "inlineSourceMap": false,
     "inlineSources": false,
     "sourceRoot": "."
   },
-  "include": [
-    "../../src/**/*"
-  ],
+  "include": ["../../src/**/*"],
   "exclude": [
     "node_modules",
     "dist",

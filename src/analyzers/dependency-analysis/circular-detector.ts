@@ -1,7 +1,7 @@
 /**
  * CircularDependencyDetector
  * Issue #65: 循環依存検出専用モジュール
- * 
+ *
  * SOLID原則: 単一責任（循環依存検出のみ）
  * DRY原則: グラフ走査アルゴリズムの再利用
  * KISS原則: シンプルなDFSベースの検出
@@ -25,14 +25,8 @@ export class CircularDependencyDetector {
 
     for (const node of graph.keys()) {
       if (!visited.has(node)) {
-        const cyclesFromNode = this.dfs(
-          node,
-          graph,
-          visited,
-          recursionStack,
-          []
-        );
-        
+        const cyclesFromNode = this.dfs(node, graph, visited, recursionStack, []);
+
         for (const cycle of cyclesFromNode) {
           const cycleKey = this.getCycleKey(cycle);
           if (!detectedCycles.has(cycleKey)) {
@@ -41,11 +35,11 @@ export class CircularDependencyDetector {
             cycles.push({
               files: cycle,
               severity: severity as 'error' | 'warning' | 'info',
-              suggestion: this.suggestRefactoring({ 
-                files: cycle, 
+              suggestion: this.suggestRefactoring({
+                files: cycle,
                 severity: severity as 'error' | 'warning' | 'info',
-                suggestion: ''
-              })
+                suggestion: '',
+              }),
             });
           }
         }
@@ -90,13 +84,7 @@ export class CircularDependencyDetector {
 
     for (const neighbor of neighbors) {
       if (!visited.has(neighbor)) {
-        const nestedCycles = this.dfs(
-          neighbor,
-          graph,
-          visited,
-          recursionStack,
-          [...path]
-        );
+        const nestedCycles = this.dfs(neighbor, graph, visited, recursionStack, [...path]);
         cycles.push(...nestedCycles);
       } else if (recursionStack.has(neighbor)) {
         // 循環を検出
@@ -125,7 +113,7 @@ export class CircularDependencyDetector {
    */
   calculateSeverity(cycle: string[]): 'error' | 'warning' | 'info' {
     const length = cycle.length - 1; // 最後の要素は最初の要素の繰り返し
-    
+
     if (length <= 2) {
       return 'error'; // 2ファイル間の直接的な循環
     } else if (length <= 4) {
@@ -176,12 +164,12 @@ export class CircularDependencyDetector {
     // 循環に含まれるファイルを追加
     for (const file of cycle.files) {
       affectedFiles.add(file);
-      
+
       // このファイルをインポートしている他のファイルを検索
       for (const dep of allDependencies) {
         if (dep.imports.includes(file)) {
           affectedFiles.add(dep.file);
-          
+
           if (dep.file.includes('.test.') || dep.file.includes('.spec.')) {
             testFiles.add(dep.file);
           }
@@ -200,7 +188,7 @@ export class CircularDependencyDetector {
     return {
       affectedFiles: Array.from(affectedFiles),
       testFiles: Array.from(testFiles),
-      severity
+      severity,
     };
   }
 }

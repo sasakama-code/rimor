@@ -1,7 +1,7 @@
 /**
  * ローカル推論最適化エンジン
  * arXiv:2504.18529v2 Section 6.2の実装
- * 
+ *
  * メソッド内のローカル変数に対する型推論を最適化し、
  * キャッシュとインクリメンタル解析により高速化を実現
  */
@@ -57,61 +57,56 @@ export interface CacheHitStatistics {
  */
 export class LocalInferenceOptimizer {
   private cache: InferenceCache;
-  
+
   constructor() {
     this.cache = new InferenceCache();
   }
-  
+
   /**
    * ローカル変数の解析
    */
   async analyzeLocalVariables(
-    methodCode: string, 
+    methodCode: string,
     methodName: string
   ): Promise<LocalVariableAnalysisResult> {
-    const sourceFile = ts.createSourceFile(
-      'temp.ts',
-      methodCode,
-      ts.ScriptTarget.Latest,
-      true
-    );
-    
+    const sourceFile = ts.createSourceFile('temp.ts', methodCode, ts.ScriptTarget.Latest, true);
+
     // 構文エラーをチェック
     const diagnostics = (sourceFile as any).parseDiagnostics;
     if (diagnostics && diagnostics.length > 0) {
-      const errorMessages = diagnostics.map((d: any) => 
-        ts.flattenDiagnosticMessageText(d.messageText, '\n')
-      ).join('; ');
+      const errorMessages = diagnostics
+        .map((d: any) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
+        .join('; ');
       throw new Error(`Syntax error in source file: ${errorMessages}`);
     }
-    
+
     const result: LocalVariableAnalysisResult = {
       localVariables: [],
       inferredTypes: new Map(),
       scopeInfo: new Map(),
       escapingVariables: [],
       optimizationApplied: false,
-      redundantChecksSkipped: 0
+      redundantChecksSkipped: 0,
     };
-    
+
     // メソッドを見つける
     const methodNode = this.findMethod(sourceFile, methodName);
     if (!methodNode) {
       return result;
     }
-    
+
     // ローカル変数を収集
     this.collectLocalVariables(methodNode, result);
-    
+
     // 型推論を実行
     this.inferLocalTypes(methodNode, result);
-    
+
     // 最適化を適用
     this.applyOptimizations(result);
-    
+
     return result;
   }
-  
+
   /**
    * 推論の最適化
    */
@@ -121,16 +116,20 @@ export class LocalInferenceOptimizer {
     const warnings: string[] = [];
     let localVarsOptimized = 0;
     let cacheHits = 0;
-    
+
     // 簡易実装：循環依存の検出
-    if (code.includes('methodA') && code.includes('methodB') && 
-        code.includes('return methodB()') && code.includes('return methodA()')) {
+    if (
+      code.includes('methodA') &&
+      code.includes('methodB') &&
+      code.includes('return methodB()') &&
+      code.includes('return methodA()')
+    ) {
       warnings.push('Circular dependency detected');
       // 循環依存があってもデフォルトの型を設定
       typeMap.set('methodA', '@Tainted');
       typeMap.set('methodB', '@Tainted');
     }
-    
+
     // クラスとメソッドの解析
     const classMatch = code.match(/class\s+(\w+)/);
     if (classMatch) {
@@ -149,7 +148,7 @@ export class LocalInferenceOptimizer {
         }
       }
     }
-    
+
     // デフォルトの型割り当て
     if (code.includes('userInput')) {
       typeMap.set('userInput', '@Tainted');
@@ -157,25 +156,25 @@ export class LocalInferenceOptimizer {
     if (code.includes('result') && code.includes('sanitize')) {
       typeMap.set('result', '@Untainted');
     }
-    
+
     // キャッシュヒットのシミュレーション
     if (code.includes('validate') || code.includes('transform')) {
       cacheHits = 1;
     }
-    
+
     const inferenceTimeMs = Date.now() - startTime;
-    
+
     return {
       typeMap,
       optimizationMetrics: {
         localVariablesOptimized: localVarsOptimized,
         cacheHits,
-        inferenceTimeMs
+        inferenceTimeMs,
       },
-      warnings
+      warnings,
     };
   }
-  
+
   /**
    * バッチ解析
    */
@@ -185,26 +184,26 @@ export class LocalInferenceOptimizer {
     totalTime: number;
   }> {
     const startTime = Date.now();
-    
+
     // 簡易実装：並列化のシミュレーション
     const batchSize = methods.length;
     const parallelizationUsed = batchSize > 1;
-    
+
     // 実際の解析はスキップ（最小限の実装）
     await new Promise(resolve => setTimeout(resolve, 10));
-    
+
     const totalTime = Date.now() - startTime;
-    
+
     return {
       batchSize,
       parallelizationUsed,
-      totalTime
+      totalTime,
     };
   }
-  
+
   private findMethod(sourceFile: ts.SourceFile, methodName: string): ts.Node | null {
     let methodNode: ts.Node | null = null;
-    
+
     const visit = (node: ts.Node) => {
       if (ts.isFunctionDeclaration(node) && node.name?.getText() === methodName) {
         methodNode = node;
@@ -213,11 +212,11 @@ export class LocalInferenceOptimizer {
       }
       ts.forEachChild(node, visit);
     };
-    
+
     visit(sourceFile);
     return methodNode;
   }
-  
+
   private collectLocalVariables(node: ts.Node, result: LocalVariableAnalysisResult): void {
     const visit = (n: ts.Node, scope: string = 'function') => {
       if (ts.isVariableDeclaration(n) && n.name) {
@@ -242,20 +241,20 @@ export class LocalInferenceOptimizer {
       // その他の子ノードを現在のスコープで処理
       ts.forEachChild(n, child => visit(child, scope));
     };
-    
+
     visit(node);
   }
-  
+
   private inferLocalTypes(node: ts.Node, result: LocalVariableAnalysisResult): void {
     // 簡易実装：パターンマッチングによる型推論
     const code = node.getText();
-    
+
     // 各変数の初期化式を解析
     const visit = (n: ts.Node) => {
       if (ts.isVariableDeclaration(n) && n.name && n.initializer) {
         const varName = n.name.getText();
         const initText = n.initializer.getText();
-        
+
         // サニタイザーの呼び出しをチェック
         if (initText.includes('sanitize(') || initText.includes('validate(')) {
           result.inferredTypes.set(varName, '@Untainted');
@@ -290,9 +289,9 @@ export class LocalInferenceOptimizer {
       }
       ts.forEachChild(n, visit);
     };
-    
+
     visit(node);
-    
+
     // パラメータの処理
     if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
       const params = node.parameters;
@@ -304,13 +303,13 @@ export class LocalInferenceOptimizer {
       });
     }
   }
-  
+
   private applyOptimizations(result: LocalVariableAnalysisResult): void {
     // 最適化フラグを設定
     if (result.localVariables.length > 0) {
       result.optimizationApplied = true;
     }
-    
+
     // 冗長チェックの検出
     const varCount = result.localVariables.length;
     if (varCount > 3) {
@@ -327,14 +326,14 @@ export class InferenceCache {
   private accessOrder: string[];
   private maxSize: number;
   private stats: { hits: number; misses: number };
-  
+
   constructor(options?: { maxSize?: number }) {
     this.cache = new Map();
     this.accessOrder = [];
     this.maxSize = options?.maxSize || 100;
     this.stats = { hits: 0, misses: 0 };
   }
-  
+
   put(key: string, value: Map<string, TaintQualifier>): void {
     // LRU eviction
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
@@ -343,11 +342,11 @@ export class InferenceCache {
         this.cache.delete(lru);
       }
     }
-    
+
     this.cache.set(key, value);
     this.updateAccessOrder(key);
   }
-  
+
   get(key: string): Map<string, TaintQualifier> | undefined {
     const value = this.cache.get(key);
     if (value) {
@@ -358,11 +357,11 @@ export class InferenceCache {
     }
     return value;
   }
-  
+
   has(key: string): boolean {
     return this.cache.has(key);
   }
-  
+
   invalidate(key: string): void {
     this.cache.delete(key);
     const index = this.accessOrder.indexOf(key);
@@ -370,16 +369,16 @@ export class InferenceCache {
       this.accessOrder.splice(index, 1);
     }
   }
-  
+
   getStatistics(): CacheHitStatistics {
     const total = this.stats.hits + this.stats.misses;
     return {
       hits: this.stats.hits,
       misses: this.stats.misses,
-      hitRate: total > 0 ? this.stats.hits / total : 0
+      hitRate: total > 0 ? this.stats.hits / total : 0,
     };
   }
-  
+
   private updateAccessOrder(key: string): void {
     const index = this.accessOrder.indexOf(key);
     if (index > -1) {
@@ -399,11 +398,11 @@ export class IncrementalInferenceEngine {
   private analysisCache: Map<string, AnalysisCache> = new Map();
   private methodHashes: Map<string, string> = new Map();
   private changeDetector: ChangeDetector;
-  
+
   constructor() {
     this.changeDetector = new ChangeDetector();
   }
-  
+
   async analyzeAll(code: { [methodName: string]: string }): Promise<void> {
     // 初回解析
     for (const [methodName, methodCode] of Object.entries(code)) {
@@ -411,17 +410,17 @@ export class IncrementalInferenceEngine {
       this.previousAnalysis.set(methodName, methodCode);
       this.methodHashes.set(methodName, hash);
       this.buildDependencies(methodName, methodCode);
-      
+
       // 解析結果をキャッシュ
       const analysisResult = await this.performAnalysis(methodName, methodCode);
       this.analysisCache.set(methodName, {
         hash,
         result: analysisResult,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   }
-  
+
   async incrementalAnalyze(code: { [methodName: string]: string }): Promise<{
     analyzedMethods: string[];
     skippedMethods: string[];
@@ -433,26 +432,26 @@ export class IncrementalInferenceEngine {
     const changedMethods: ChangeInfo[] = [];
     let cacheHits = 0;
     const startTime = Date.now();
-    
+
     // 変更検出の最適化: ハッシュベースの比較
     for (const [methodName, methodCode] of Object.entries(code)) {
       const newHash = this.computeHash(methodCode);
       const oldHash = this.methodHashes.get(methodName);
-      
+
       if (oldHash !== newHash) {
         // 変更の詳細を解析
         const changeInfo = this.changeDetector.detectChanges(
           this.previousAnalysis.get(methodName) || '',
           methodCode
         );
-        
+
         changedMethods.push({
           methodName,
           newHash,
           changeType: changeInfo.type,
-          affectedLines: changeInfo.affectedLines
+          affectedLines: changeInfo.affectedLines,
         });
-        
+
         this.previousAnalysis.set(methodName, methodCode);
         this.methodHashes.set(methodName, newHash);
       } else {
@@ -464,10 +463,10 @@ export class IncrementalInferenceEngine {
         }
       }
     }
-    
+
     // 影響範囲の精密計算
     const toAnalyze = this.calculateImpactedMethods(changedMethods);
-    
+
     // 並列解析の実行
     const analysisPromises = Array.from(toAnalyze).map(async method => {
       const methodCode = code[method];
@@ -477,26 +476,26 @@ export class IncrementalInferenceEngine {
         analyzedMethods.push(method);
       }
     });
-    
+
     await Promise.all(analysisPromises);
-    
+
     const endTime = Date.now();
     const fullAnalysisTime = Object.keys(code).length * 50; // 推定フル解析時間
     const actualTime = endTime - startTime;
     const performanceGain = fullAnalysisTime / actualTime;
-    
+
     return {
       analyzedMethods,
       skippedMethods: skippedMethods.filter(m => !toAnalyze.has(m)),
       cacheHits,
-      performanceGain
+      performanceGain,
     };
   }
-  
+
   private buildDependencies(methodName: string, code: string): void {
     // 高度な依存関係解析
     const deps = new Set<string>();
-    
+
     // メソッド呼び出しパターンの検出
     const methodCallPattern = /\b(\w+)\s*\(/g;
     let match;
@@ -507,7 +506,7 @@ export class IncrementalInferenceEngine {
         deps.add(calledMethod);
       }
     }
-    
+
     // インポートの検出
     const importPattern = /import\s+.*?from\s+['"](.*?)['"]|require\s*\(['"](.*?)['"]/g;
     while ((match = importPattern.exec(code)) !== null) {
@@ -516,10 +515,10 @@ export class IncrementalInferenceEngine {
         deps.add(`import:${importPath}`);
       }
     }
-    
+
     this.dependencyGraph.set(methodName, deps);
   }
-  
+
   private collectDependents(methodName: string, result: Set<string>): void {
     // 逆依存グラフを構築して依存メソッドを収集
     for (const [method, deps] of this.dependencyGraph.entries()) {
@@ -529,49 +528,49 @@ export class IncrementalInferenceEngine {
       }
     }
   }
-  
+
   private computeHash(code: string): string {
     // 簡易ハッシュ実装（実際はcrypto.createHash使用推奨）
     let hash = 0;
     for (let i = 0; i < code.length; i++) {
       const char = code.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString(16);
   }
-  
+
   private async performAnalysis(methodName: string, code: string): Promise<any> {
     // 実際の解析処理のシミュレーション
     await new Promise(resolve => setTimeout(resolve, 5));
     return {
       methodName,
       taintInfo: new Map(),
-      analysisTime: 5
+      analysisTime: 5,
     };
   }
-  
+
   private isCacheValid(cache: AnalysisCache): boolean {
     // キャッシュの有効期限チェック（1時間）
     const maxAge = 60 * 60 * 1000;
     return Date.now() - cache.timestamp < maxAge;
   }
-  
+
   private updateCache(methodName: string, result: any): void {
     const hash = this.methodHashes.get(methodName) || '';
     this.analysisCache.set(methodName, {
       hash,
       result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
-  
+
   private calculateImpactedMethods(changes: ChangeInfo[]): Set<string> {
     const impacted = new Set<string>();
-    
+
     for (const change of changes) {
       impacted.add(change.methodName);
-      
+
       // 変更タイプに基づく影響範囲の計算
       if (change.changeType === 'signature') {
         // シグネチャ変更は全依存に影響
@@ -582,10 +581,10 @@ export class IncrementalInferenceEngine {
         directDependents.forEach(dep => impacted.add(dep));
       }
     }
-    
+
     return impacted;
   }
-  
+
   private getDirectDependents(methodName: string): Set<string> {
     const dependents = new Set<string>();
     for (const [method, deps] of this.dependencyGraph.entries()) {
@@ -595,9 +594,18 @@ export class IncrementalInferenceEngine {
     }
     return dependents;
   }
-  
+
   private isBuiltinFunction(name: string): boolean {
-    const builtins = ['console', 'setTimeout', 'Promise', 'Array', 'Object', 'String', 'Number', 'Boolean'];
+    const builtins = [
+      'console',
+      'setTimeout',
+      'Promise',
+      'Array',
+      'Object',
+      'String',
+      'Number',
+      'Boolean',
+    ];
     return builtins.includes(name);
   }
 }
@@ -611,7 +619,7 @@ class ChangeDetector {
     const oldLines = oldCode.split('\n');
     const newLines = newCode.split('\n');
     const affectedLines: number[] = [];
-    
+
     // 簡易diff実装
     const maxLen = Math.max(oldLines.length, newLines.length);
     for (let i = 0; i < maxLen; i++) {
@@ -619,19 +627,19 @@ class ChangeDetector {
         affectedLines.push(i + 1);
       }
     }
-    
+
     // 変更タイプの判定
     let changeType: ChangeType = 'body';
     if (this.hasSignatureChange(oldCode, newCode)) {
       changeType = 'signature';
     }
-    
+
     return {
       type: changeType,
-      affectedLines
+      affectedLines,
     };
   }
-  
+
   private hasSignatureChange(oldCode: string, newCode: string): boolean {
     // 関数シグネチャの抽出
     const sigPattern = /(?:function|async\s+function|\w+)\s*\([^)]*\)/;

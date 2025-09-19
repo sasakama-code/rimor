@@ -1,7 +1,7 @@
 /**
  * AST Merger
  * v0.9.0 Phase 2 - AST統合システム
- * 
+ *
  * KISS原則: シンプルなマージロジック
  * YAGNI原則: 必要最小限の機能から開始
  * DRY原則: 共通ロジックの再利用
@@ -15,10 +15,10 @@ import { ASTNode } from '../core/interfaces/IAnalysisEngine';
  * マージ戦略
  */
 export enum MergeStrategy {
-  SINGLE = 'single',           // 単一AST（マージ不要）
-  SEQUENTIAL = 'sequential',   // 順次マージ
+  SINGLE = 'single', // 単一AST（マージ不要）
+  SEQUENTIAL = 'sequential', // 順次マージ
   HIERARCHICAL = 'hierarchical', // 階層的マージ
-  INTELLIGENT = 'intelligent'  // インテリジェントマージ（重複削除等）
+  INTELLIGENT = 'intelligent', // インテリジェントマージ（重複削除等）
 }
 
 /**
@@ -79,7 +79,7 @@ export class ASTMerger {
       validateStructure: config?.validateStructure ?? true,
       preservePositions: config?.preservePositions ?? true,
       mergeStrategy: config?.mergeStrategy ?? MergeStrategy.SEQUENTIAL,
-      removeduplicates: config?.removeduplicates ?? false
+      removeduplicates: config?.removeduplicates ?? false,
     };
   }
 
@@ -99,12 +99,12 @@ export class ASTMerger {
     if (asts.length === 1) {
       const normalized = this.normalizeAST(asts[0]);
       const warnings: string[] = [];
-      
+
       // 空の子配列の警告チェック
       if (asts[0].children === undefined) {
         warnings.push('Empty children array normalized');
       }
-      
+
       return {
         ast: normalized,
         metadata: this.createMetadata(
@@ -114,7 +114,7 @@ export class ASTMerger {
           [],
           warnings,
           Date.now() - startTime
-        )
+        ),
       };
     }
 
@@ -154,13 +154,13 @@ export class ASTMerger {
       startPosition: { row: 0, column: 0 },
       endPosition: { row: 0, column: 0 },
       isNamed: true,
-      children: []
+      children: [],
     };
 
     // 各ASTの子ノードをマージ
     for (let i = 0; i < asts.length; i++) {
       const ast = this.normalizeAST(asts[i]);
-      
+
       // オーバーラップチェック
       if (i > 0 && this.hasPositionOverlap(asts[i - 1], ast)) {
         hasOverlap = true;
@@ -175,7 +175,7 @@ export class ASTMerger {
             : child;
           mergedAST.children!.push(adjustedChild);
         }
-        
+
         // 次のチャンクの開始行を更新
         currentRow = this.getMaxRow(ast) + 1;
       }
@@ -204,7 +204,7 @@ export class ASTMerger {
         0,
         hasOverlap,
         this.config.preservePositions
-      )
+      ),
     };
   }
 
@@ -243,11 +243,11 @@ export class ASTMerger {
    */
   private normalizeAST(ast: ASTNode): ASTNode {
     const normalized = { ...ast };
-    
+
     if (!normalized.children) {
       normalized.children = [];
     }
-    
+
     return normalized;
   }
 
@@ -256,24 +256,22 @@ export class ASTMerger {
    */
   private adjustPosition(node: ASTNode, rowOffset: number): ASTNode {
     const adjusted = { ...node };
-    
+
     adjusted.startPosition = {
       row: node.startPosition.row + rowOffset,
-      column: node.startPosition.column
+      column: node.startPosition.column,
     };
-    
+
     adjusted.endPosition = {
       row: node.endPosition.row + rowOffset,
-      column: node.endPosition.column
+      column: node.endPosition.column,
     };
-    
+
     // 子ノードも再帰的に調整
     if (node.children) {
-      adjusted.children = node.children.map(child => 
-        this.adjustPosition(child, rowOffset)
-      );
+      adjusted.children = node.children.map(child => this.adjustPosition(child, rowOffset));
     }
-    
+
     return adjusted;
   }
 
@@ -289,13 +287,13 @@ export class ASTMerger {
    */
   private getMaxRow(ast: ASTNode): number {
     let maxRow = ast.endPosition.row;
-    
+
     if (ast.children) {
       for (const child of ast.children) {
         maxRow = Math.max(maxRow, this.getMaxRow(child));
       }
     }
-    
+
     return maxRow;
   }
 
@@ -304,29 +302,28 @@ export class ASTMerger {
    */
   private validateStructure(ast: ASTNode): MergeError[] {
     const errors: MergeError[] = [];
-    
+
     // 不完全な構造のチェック
     if (ast.children) {
       for (const child of ast.children) {
-        if (child.type === 'function_declaration' && 
-            child.text && !child.text.includes('}')) {
+        if (child.type === 'function_declaration' && child.text && !child.text.includes('}')) {
           errors.push({
             type: 'structure',
             message: 'Incomplete structure: function declaration missing closing brace',
-            location: child.startPosition
+            location: child.startPosition,
           });
         }
-        
+
         if (child.type === 'ERROR') {
           errors.push({
             type: 'structure',
             message: 'Syntax error node detected',
-            location: child.startPosition
+            location: child.startPosition,
           });
         }
       }
     }
-    
+
     return errors;
   }
 
@@ -354,7 +351,7 @@ export class ASTMerger {
 
     return {
       ast: { ...ast, children: uniqueChildren },
-      duplicatesRemoved
+      duplicatesRemoved,
     };
   }
 
@@ -374,14 +371,16 @@ export class ASTMerger {
     const nodeCount = this.countNodes(ast);
     const errorNodes = this.countErrorNodes(ast);
     const hasErrors = errorNodes > 0;
-    
+
     // 空の子配列の警告
     if (ast.children && ast.children.length === 0) {
       warnings.push('Empty children array normalized');
     }
-    
+
     // 構造エラーがない場合、ERRORノードがあっても回復可能
-    const structureErrors = errors.filter(e => e.type === 'structure' && e.message.includes('Incomplete'));
+    const structureErrors = errors.filter(
+      e => e.type === 'structure' && e.message.includes('Incomplete')
+    );
     const recoverable = hasErrors && structureErrors.length === 0;
 
     return {
@@ -396,7 +395,7 @@ export class ASTMerger {
       hasErrors,
       errorNodes,
       recoverable,
-      mergeTime
+      mergeTime,
     };
   }
 
@@ -405,13 +404,13 @@ export class ASTMerger {
    */
   private countNodes(ast: ASTNode): number {
     let count = 1;
-    
+
     if (ast.children) {
       for (const child of ast.children) {
         count += this.countNodes(child);
       }
     }
-    
+
     return count;
   }
 
@@ -420,13 +419,13 @@ export class ASTMerger {
    */
   private countErrorNodes(ast: ASTNode): number {
     let count = ast.type === 'ERROR' ? 1 : 0;
-    
+
     if (ast.children) {
       for (const child of ast.children) {
         count += this.countErrorNodes(child);
       }
     }
-    
+
     return count;
   }
 }

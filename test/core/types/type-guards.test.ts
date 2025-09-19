@@ -7,7 +7,7 @@ import {
   isValidIssue,
   isValidDetectionResult,
   isValidQualityScore,
-  isValidImprovement
+  isValidImprovement,
 } from '../../../src/core/types/type-guards';
 
 describe('Type Guards', () => {
@@ -17,13 +17,13 @@ describe('Type Guards', () => {
         name: 'test-project',
         version: '1.0.0',
         dependencies: {
-          'typescript': '^5.0.0'
+          typescript: '^5.0.0',
         },
         devDependencies: {
-          'jest': '^29.0.0'
-        }
+          jest: '^29.0.0',
+        },
       };
-      
+
       expect(isValidPackageJson(validPackageJson)).toBe(true);
     });
 
@@ -38,9 +38,9 @@ describe('Type Guards', () => {
     it('should accept optional dependencies', () => {
       const minimalPackageJson = {
         name: 'test-project',
-        version: '1.0.0'
+        version: '1.0.0',
       };
-      
+
       expect(isValidPackageJson(minimalPackageJson)).toBe(true);
     });
   });
@@ -51,9 +51,9 @@ describe('Type Guards', () => {
         type: 'FunctionDeclaration',
         startPosition: { line: 1, column: 0 },
         endPosition: { line: 5, column: 1 },
-        children: []
+        children: [],
       };
-      
+
       expect(isValidASTNode(validASTNode)).toBe(true);
     });
 
@@ -62,19 +62,21 @@ describe('Type Guards', () => {
       expect(isValidASTNode(undefined)).toBe(false);
       expect(isValidASTNode({})).toBe(false);
       expect(isValidASTNode({ type: 'Function' })).toBe(false); // missing positions
-      expect(isValidASTNode({ 
-        type: 'Function',
-        startPosition: { line: 1, column: 0 }
-      })).toBe(false); // missing endPosition
+      expect(
+        isValidASTNode({
+          type: 'Function',
+          startPosition: { line: 1, column: 0 },
+        })
+      ).toBe(false); // missing endPosition
     });
 
     it('should accept nodes without children', () => {
       const leafNode = {
         type: 'Identifier',
         startPosition: { line: 1, column: 0 },
-        endPosition: { line: 1, column: 5 }
+        endPosition: { line: 1, column: 5 },
       };
-      
+
       expect(isValidASTNode(leafNode)).toBe(true);
     });
   });
@@ -88,10 +90,10 @@ describe('Type Guards', () => {
         filePatterns: {
           test: ['**/*.test.ts'],
           source: ['src/**/*.ts'],
-          ignore: ['node_modules/**']
-        }
+          ignore: ['node_modules/**'],
+        },
       };
-      
+
       expect(isValidProjectContext(validContext)).toBe(true);
     });
 
@@ -108,9 +110,9 @@ describe('Type Guards', () => {
 
     it('should validate language enum values', () => {
       const invalidLanguage = {
-        language: 'invalid-language'
+        language: 'invalid-language',
       };
-      
+
       expect(isValidProjectContext(invalidLanguage)).toBe(false);
     });
   });
@@ -125,10 +127,10 @@ describe('Type Guards', () => {
         hasTests: true,
         metadata: {
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
-      
+
       expect(isValidTestFile(validTestFile)).toBe(true);
     });
 
@@ -143,9 +145,9 @@ describe('Type Guards', () => {
     it('should accept minimal TestFile', () => {
       const minimalTestFile = {
         path: '/test.ts',
-        content: ''
+        content: '',
       };
-      
+
       expect(isValidTestFile(minimalTestFile)).toBe(true);
     });
   });
@@ -163,9 +165,9 @@ describe('Type Guards', () => {
         file: '/src/test.ts',
         recommendation: 'Fix the error',
         codeSnippet: 'const x = 1;',
-        plugin: 'test-plugin'
+        plugin: 'test-plugin',
       };
-      
+
       expect(isValidIssue(validIssue)).toBe(true);
     });
 
@@ -174,19 +176,21 @@ describe('Type Guards', () => {
       expect(isValidIssue(undefined)).toBe(false);
       expect(isValidIssue({})).toBe(false);
       expect(isValidIssue({ type: 'error' })).toBe(false); // missing severity and message
-      expect(isValidIssue({ 
-        type: 'error',
-        severity: 'high' 
-      })).toBe(false); // missing message
+      expect(
+        isValidIssue({
+          type: 'error',
+          severity: 'high',
+        })
+      ).toBe(false); // missing message
     });
 
     it('should accept minimal Issue', () => {
       const minimalIssue = {
         type: 'warning',
         severity: 'low' as const,
-        message: 'Simple warning'
+        message: 'Simple warning',
       };
-      
+
       expect(isValidIssue(minimalIssue)).toBe(true);
     });
   });
@@ -199,7 +203,7 @@ describe('Type Guards', () => {
         location: {
           file: '/test.ts',
           line: 10,
-          column: 5
+          column: 5,
         },
         confidence: 0.95,
         evidence: [
@@ -209,16 +213,16 @@ describe('Type Guards', () => {
             location: {
               file: '/test.ts',
               line: 10,
-              column: 5
+              column: 5,
             },
-            code: 'const x = 1;'
-          }
+            code: 'const x = 1;',
+          },
         ],
         severity: 'high' as const,
         securityRelevance: 0.8,
-        metadata: { custom: 'data' }
+        metadata: { custom: 'data' },
       };
-      
+
       expect(isValidDetectionResult(validResult)).toBe(true);
     });
 
@@ -233,7 +237,7 @@ describe('Type Guards', () => {
       const invalidConfidence1 = { confidence: -0.1 };
       const invalidConfidence2 = { confidence: 1.1 };
       const validConfidence = { confidence: 0.5 };
-      
+
       expect(isValidDetectionResult(invalidConfidence1)).toBe(false);
       expect(isValidDetectionResult(invalidConfidence2)).toBe(false);
       expect(isValidDetectionResult(validConfidence)).toBe(true);
@@ -249,16 +253,16 @@ describe('Type Guards', () => {
           correctness: 0.8,
           maintainability: 0.85,
           performance: 0.9,
-          security: 0.8
+          security: 0.8,
         },
         confidence: 0.95,
         details: {
           strengths: ['Good coverage'],
           weaknesses: ['Missing edge cases'],
-          suggestions: ['Add more tests']
-        }
+          suggestions: ['Add more tests'],
+        },
       };
-      
+
       expect(isValidQualityScore(validScore)).toBe(true);
     });
 
@@ -270,22 +274,22 @@ describe('Type Guards', () => {
     });
 
     it('should validate score ranges', () => {
-      const invalidScore1 = { 
+      const invalidScore1 = {
         overall: -0.1,
         dimensions: {},
-        confidence: 0.5
+        confidence: 0.5,
       };
-      const invalidScore2 = { 
+      const invalidScore2 = {
         overall: 1.1,
         dimensions: {},
-        confidence: 0.5
+        confidence: 0.5,
       };
-      const validScore = { 
+      const validScore = {
         overall: 0.75,
         dimensions: {},
-        confidence: 0.9
+        confidence: 0.9,
       };
-      
+
       expect(isValidQualityScore(invalidScore1)).toBe(false);
       expect(isValidQualityScore(invalidScore2)).toBe(false);
       expect(isValidQualityScore(validScore)).toBe(true);
@@ -303,14 +307,14 @@ describe('Type Guards', () => {
         location: {
           file: '/test.ts',
           line: 10,
-          column: 5
+          column: 5,
         },
         suggestedCode: 'it("should handle edge case", () => {});',
         estimatedImpact: 0.2,
         effort: 'low' as const,
-        autoFixable: true
+        autoFixable: true,
       };
-      
+
       expect(isValidImprovement(validImprovement)).toBe(true);
     });
 
@@ -327,9 +331,9 @@ describe('Type Guards', () => {
         type: 'refactor' as const,
         priority: 'medium' as const,
         title: 'Refactor test',
-        description: 'Improve test structure'
+        description: 'Improve test structure',
       };
-      
+
       expect(isValidImprovement(minimalImprovement)).toBe(true);
     });
   });

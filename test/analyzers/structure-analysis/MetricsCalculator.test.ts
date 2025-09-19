@@ -5,12 +5,12 @@
  */
 
 import { MetricsCalculator } from '../../../src/analyzers/structure-analysis/metrics-calculator';
-import { 
+import {
   ProjectMetrics,
   ComplexityMetrics,
   MaintainabilityMetrics,
   TestabilityMetrics,
-  DocumentationMetrics
+  DocumentationMetrics,
 } from '../../../src/analyzers/types';
 import * as fs from 'fs';
 import * as glob from 'glob';
@@ -34,7 +34,7 @@ describe('MetricsCalculator', () => {
       const mockFiles = [
         '/project/src/index.ts',
         '/project/src/utils.ts',
-        '/project/test/index.test.ts'
+        '/project/test/index.test.ts',
       ];
 
       (mockGlob.sync as any).mockReturnValue(mockFiles);
@@ -138,7 +138,7 @@ describe('MetricsCalculator', () => {
       const files = new Map([
         ['file1.ts', 'function getData() { return fetch("/api/data"); }'],
         ['file2.ts', 'function getData() { return fetch("/api/data"); }'],
-        ['file3.ts', 'function getUser() { return fetch("/api/user"); }']
+        ['file3.ts', 'function getUser() { return fetch("/api/user"); }'],
       ]);
 
       // Act
@@ -157,12 +157,9 @@ describe('MetricsCalculator', () => {
       const sourceFiles = [
         '/project/src/user.ts',
         '/project/src/order.ts',
-        '/project/src/product.ts'
+        '/project/src/product.ts',
       ];
-      const testFiles = [
-        '/project/test/user.test.ts',
-        '/project/test/order.test.ts'
-      ];
+      const testFiles = ['/project/test/user.test.ts', '/project/test/order.test.ts'];
 
       // Act
       const testability = calculator.calculateTestability(sourceFiles, testFiles);
@@ -250,27 +247,27 @@ describe('MetricsCalculator', () => {
           maxComplexity: 10,
           complexFiles: [],
           totalFunctions: 11,
-          averageFunctionLength: 15
+          averageFunctionLength: 15,
         },
         maintainability: {
           maintainabilityIndex: 75,
           duplicatedCodePercentage: 5.2,
           averageFileSize: 150,
           largeFiles: [],
-          longFunctions: []
+          longFunctions: [],
         },
         testability: {
           testCoverage: 0.75,
           testableClasses: 8,
           untestableClasses: 2,
-          mockability: 0.8
+          mockability: 0.8,
         },
         documentation: {
           documentedFunctions: 6,
           documentedClasses: 4,
           documentationCoverage: 0.6,
-          readmeQuality: 0.8
-        }
+          readmeQuality: 0.8,
+        },
       };
 
       // Act

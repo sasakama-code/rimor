@@ -1,13 +1,13 @@
-import { 
-  IPlugin, 
-  ITestQualityPlugin, 
-  Issue, 
-  ProjectContext, 
+import {
+  IPlugin,
+  ITestQualityPlugin,
+  Issue,
+  ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
   Improvement,
-  PluginResult
+  PluginResult,
 } from './types';
 import { TestMethod } from './types/project-context';
 import { errorHandler, ErrorType } from '../utils/errorHandler';
@@ -167,12 +167,14 @@ export class UnifiedPluginManager {
    * 後方互換性のためのエイリアス
    * テストから使用される
    */
-  async run(filePath: string): Promise<{ issues: Issue[]; errors?: Array<{ pluginName: string; error: string }> }> {
+  async run(
+    filePath: string
+  ): Promise<{ issues: Issue[]; errors?: Array<{ pluginName: string; error: string }> }> {
     const issues = await this.runLegacyPlugins(filePath);
     const errors: Array<{ pluginName: string; error: string }> = [];
-    
+
     // エラーハンドリング（必要に応じて追加）
-    
+
     return { issues, errors: errors.length > 0 ? errors : undefined };
   }
 
@@ -208,7 +210,7 @@ export class UnifiedPluginManager {
     // 各プラグインを実行
     for (const plugin of applicablePlugins) {
       const pluginStartTime = Date.now();
-      
+
       try {
         // タイムアウト設定付きで実行
         const patterns = await this.executeWithTimeout(
@@ -226,30 +228,30 @@ export class UnifiedPluginManager {
           detectionResults: patterns,
           qualityScore: quality,
           improvements,
-          executionTime: Date.now() - pluginStartTime
+          executionTime: Date.now() - pluginStartTime,
         });
 
         successfulPlugins++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        
+
         results.push({
           pluginId: plugin.id,
           pluginName: plugin.name,
           detectionResults: [],
-          qualityScore: { 
-            overall: 0, 
-            dimensions: {}, 
+          qualityScore: {
+            overall: 0,
+            dimensions: {},
             confidence: 0.5,
             details: {
               strengths: [],
               weaknesses: [],
-              suggestions: []
-            }
+              suggestions: [],
+            },
           },
           improvements: [],
           executionTime: Date.now() - pluginStartTime,
-          error: errorMessage
+          error: errorMessage,
         });
 
         failedPlugins++;
@@ -262,8 +264,8 @@ export class UnifiedPluginManager {
         totalPlugins: applicablePlugins.length,
         successfulPlugins,
         failedPlugins,
-        totalExecutionTime: Date.now() - startTime
-      }
+        totalExecutionTime: Date.now() - startTime,
+      },
     };
   }
 
@@ -294,13 +296,13 @@ export class UnifiedPluginManager {
       content: fileContent,
       framework: context.testFramework,
       testMethods: this.extractTestCases(fileContent),
-      testCount: this.extractTestCases(fileContent).length
+      testCount: this.extractTestCases(fileContent).length,
     };
 
     // 並列実行
     const [legacyIssues, qualityResults] = await Promise.all([
       this.runLegacyPlugins(filePath),
-      this.runQualityAnalysis(testFile, context, options)
+      this.runQualityAnalysis(testFile, context, options),
     ]);
 
     // 統合スコアの計算（オプション）
@@ -309,7 +311,7 @@ export class UnifiedPluginManager {
     return {
       legacyIssues,
       qualityResults,
-      combinedScore
+      combinedScore,
     };
   }
 
@@ -333,8 +335,8 @@ export class UnifiedPluginManager {
    */
   private async readFile(filePath: string): Promise<string> {
     try {
-      const absolutePath = path.isAbsolute(filePath) 
-        ? filePath 
+      const absolutePath = path.isAbsolute(filePath)
+        ? filePath
         : path.join(this.projectRoot, filePath);
       return await fs.promises.readFile(absolutePath, 'utf-8');
     } catch (error) {
@@ -349,11 +351,11 @@ export class UnifiedPluginManager {
     const importRegex = /import\s+(?:.*\s+from\s+)?['"]([^'"]+)['"]/g;
     const imports: string[] = [];
     let match;
-    
+
     while ((match = importRegex.exec(content)) !== null) {
       imports.push(match[1]);
     }
-    
+
     return imports;
   }
 
@@ -365,22 +367,22 @@ export class UnifiedPluginManager {
     const testCases: TestMethod[] = [];
     let match;
     let lineNumber = 1;
-    
+
     while ((match = testRegex.exec(content)) !== null) {
       // 簡易的な行番号計算
       const beforeMatch = content.substring(0, match.index);
       lineNumber = beforeMatch.split('\n').length;
-      
+
       testCases.push({
         name: match[2],
         type: match[1] === 'describe' ? 'suite' : 'test',
         location: {
           start: { line: lineNumber, column: 0 },
-          end: { line: lineNumber, column: match[0].length }
-        }
+          end: { line: lineNumber, column: match[0].length },
+        },
       });
     }
-    
+
     return testCases;
   }
 
@@ -393,16 +395,17 @@ export class UnifiedPluginManager {
   ): number {
     // レガシーIssueによる減点
     const legacyPenalty = legacyIssues.length * 5;
-    
+
     // 品質スコアの平均
     const qualityScores = qualityResults.pluginResults
       .filter(r => !r.error)
       .map(r => r.qualityScore.overall || 0);
-    
-    const avgQualityScore = qualityScores.length > 0
-      ? qualityScores.reduce((a, b) => (a || 0) + (b || 0), 0) / qualityScores.length
-      : 50;
-    
+
+    const avgQualityScore =
+      qualityScores.length > 0
+        ? qualityScores.reduce((a, b) => (a || 0) + (b || 0), 0) / qualityScores.length
+        : 50;
+
     // 統合スコア（0-100の範囲に正規化）
     return Math.max(0, Math.min(100, avgQualityScore - legacyPenalty));
   }

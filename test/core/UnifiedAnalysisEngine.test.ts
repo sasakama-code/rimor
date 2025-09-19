@@ -6,7 +6,7 @@ import * as fs from 'fs';
 /**
  * UnifiedAnalysisEngine テストスイート
  * t_wadaのTDDメソッドに従って実装
- * 
+ *
  * テスト対象:
  * 1. 既存analyzer.tsの機能が保持される
  * 2. 既存analyzerExtended.tsの機能が保持される
@@ -32,7 +32,7 @@ describe('UnifiedAnalysisEngine', () => {
     it('レガシープラグイン（IPlugin）を登録できる', () => {
       const mockPlugin: IPlugin = {
         name: 'TestPlugin',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       expect(() => engine.registerPlugin(mockPlugin)).not.toThrow();
@@ -41,11 +41,11 @@ describe('UnifiedAnalysisEngine', () => {
     it('複数のレガシープラグインを登録できる', () => {
       const plugin1: IPlugin = {
         name: 'Plugin1',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
       const plugin2: IPlugin = {
         name: 'Plugin2',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       expect(() => {
@@ -65,18 +65,18 @@ describe('UnifiedAnalysisEngine', () => {
         line: 1,
         column: 1,
         severity: 'high',
-        category: 'test-quality' as const
+        category: 'test-quality' as const,
       };
 
       const mockPlugin: IPlugin = {
         name: 'TestPlugin',
-        analyze: jest.fn().mockResolvedValue([mockIssue])
+        analyze: jest.fn().mockResolvedValue([mockIssue]),
       };
 
       engine.registerPlugin(mockPlugin);
-      
+
       const result = await engine.analyze(testPath);
-      
+
       expect(result).toBeDefined();
       expect(result.totalFiles).toBeGreaterThanOrEqual(0);
       expect(result.issues).toBeDefined();
@@ -86,7 +86,7 @@ describe('UnifiedAnalysisEngine', () => {
     it('分析結果に実行時間が含まれる', async () => {
       const testPath = './test/fixtures';
       const result = await engine.analyze(testPath);
-      
+
       expect(result.executionTime).toBeDefined();
       expect(typeof result.executionTime).toBe('number');
       expect(result.executionTime).toBeGreaterThanOrEqual(0);
@@ -106,9 +106,9 @@ describe('UnifiedAnalysisEngine', () => {
           overall: 80,
           dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
-          confidence: 0.9
+          confidence: 0.9,
         }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
 
       expect(() => engine.registerQualityPlugin(mockQualityPlugin)).not.toThrow();
@@ -122,29 +122,33 @@ describe('UnifiedAnalysisEngine', () => {
         version: '1.0.0',
         type: 'core',
         isApplicable: jest.fn().mockReturnValue(true),
-        detectPatterns: jest.fn().mockResolvedValue([{
-          type: 'pattern',
-          name: 'test-pattern',
-          location: { file: '/test/file.ts', line: 1, column: 1 },
-          confidence: 0.9
-        }]),
+        detectPatterns: jest.fn().mockResolvedValue([
+          {
+            type: 'pattern',
+            name: 'test-pattern',
+            location: { file: '/test/file.ts', line: 1, column: 1 },
+            confidence: 0.9,
+          },
+        ]),
         evaluateQuality: jest.fn().mockReturnValue({
           overall: 85,
           breakdown: { completeness: 90, correctness: 85, maintainability: 80 },
-          confidence: 0.95
+          confidence: 0.95,
         }),
-        suggestImprovements: jest.fn().mockReturnValue([{
-          type: 'suggestion',
-          priority: 'high',
-          description: 'Improve test coverage',
-          impact: 10
-        }])
+        suggestImprovements: jest.fn().mockReturnValue([
+          {
+            type: 'suggestion',
+            priority: 'high',
+            description: 'Improve test coverage',
+            impact: 10,
+          },
+        ]),
       };
 
       engine.registerQualityPlugin(mockQualityPlugin);
-      
+
       const result = await engine.analyzeWithQuality(testPath);
-      
+
       expect(result).toBeDefined();
       expect(result.filePath).toBe(testPath);
       expect(result.qualityAnalysis).toBeDefined();
@@ -158,7 +162,7 @@ describe('UnifiedAnalysisEngine', () => {
 
     it('バッチ分析を実行できる', async () => {
       const testPaths = ['./test/fixtures', './test/integration', './test/performance'];
-      
+
       const mockQualityPlugin: ITestQualityPlugin = {
         id: 'quality-plugin',
         name: 'QualityPlugin',
@@ -169,15 +173,15 @@ describe('UnifiedAnalysisEngine', () => {
         evaluateQuality: jest.fn().mockReturnValue({
           overall: 75,
           breakdown: { completeness: 75, correctness: 75, maintainability: 75 },
-          confidence: 0.85
+          confidence: 0.85,
         }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
 
       engine.registerQualityPlugin(mockQualityPlugin);
-      
+
       const result = await engine.analyzeBatch(testPaths);
-      
+
       expect(result).toBeDefined();
       expect(result.totalFiles).toBe(testPaths.length);
       expect(result.averageScore).toBeGreaterThanOrEqual(0);
@@ -194,14 +198,16 @@ describe('UnifiedAnalysisEngine', () => {
     it('レガシープラグインと品質プラグインを同時に使用できる', async () => {
       const mockLegacyPlugin: IPlugin = {
         name: 'LegacyPlugin',
-        analyze: jest.fn().mockResolvedValue([{
-          type: 'error',
-          message: 'Legacy issue',
-          file: '/test/file.ts',
-          line: 1,
-          column: 1,
-          severity: 'high'
-        }])
+        analyze: jest.fn().mockResolvedValue([
+          {
+            type: 'error',
+            message: 'Legacy issue',
+            file: '/test/file.ts',
+            line: 1,
+            column: 1,
+            severity: 'high',
+          },
+        ]),
       };
 
       const mockQualityPlugin: ITestQualityPlugin = {
@@ -215,16 +221,16 @@ describe('UnifiedAnalysisEngine', () => {
           overall: 80,
           dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
-          confidence: 0.9
+          confidence: 0.9,
         }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
 
       engine.registerPlugin(mockLegacyPlugin);
       engine.registerQualityPlugin(mockQualityPlugin);
 
       const result = await engine.analyzeUnified('./test/fixtures');
-      
+
       expect(result).toBeDefined();
       expect(result.basicAnalysis).toBeDefined();
       expect(result.qualityAnalysis).toBeDefined();
@@ -235,15 +241,15 @@ describe('UnifiedAnalysisEngine', () => {
 
     it('プラグインマネージャーの統合機能が動作する', () => {
       expect(engine.getPluginCount()).toBe(0);
-      
+
       const mockPlugin: IPlugin = {
         name: 'TestPlugin',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
-      
+
       engine.registerPlugin(mockPlugin);
       expect(engine.getPluginCount()).toBe(1);
-      
+
       const mockQualityPlugin: ITestQualityPlugin = {
         id: 'quality-plugin',
         name: 'QualityPlugin',
@@ -255,11 +261,11 @@ describe('UnifiedAnalysisEngine', () => {
           overall: 80,
           dimensions: { completeness: 80, correctness: 80, maintainability: 80 },
           breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
-          confidence: 0.9
+          confidence: 0.9,
         }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
-      
+
       engine.registerQualityPlugin(mockQualityPlugin);
       expect(engine.getPluginCount()).toBe(2);
     });
@@ -268,11 +274,11 @@ describe('UnifiedAnalysisEngine', () => {
       const options = {
         timeout: 5000,
         skipPlugins: ['skip-plugin-id'],
-        parallelExecution: true
+        parallelExecution: true,
       };
 
       engine.configure(options);
-      
+
       const config = engine.getConfiguration();
       expect(config.timeout).toBe(5000);
       expect(config.skipPlugins).toContain('skip-plugin-id');
@@ -282,13 +288,13 @@ describe('UnifiedAnalysisEngine', () => {
     it('エラーハンドリングが適切に動作する', async () => {
       const errorPlugin: IPlugin = {
         name: 'ErrorPlugin',
-        analyze: jest.fn().mockRejectedValue(new Error('Plugin error'))
+        analyze: jest.fn().mockRejectedValue(new Error('Plugin error')),
       };
 
       engine.registerPlugin(errorPlugin);
-      
+
       const result = await engine.analyze('./test/fixtures');
-      
+
       // エラーが発生してもクラッシュしない
       expect(result).toBeDefined();
       expect(result.errors).toBeDefined();
@@ -302,32 +308,31 @@ describe('UnifiedAnalysisEngine', () => {
     it('単一責任原則: 分析エンジンは分析のみを責務とする', () => {
       // エンジンが分析以外の責務を持たないことを確認
       const engineMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(engine));
-      const analysisMethods = engineMethods.filter(method => 
-        method.includes('analyze') || 
-        method.includes('register') || 
-        method.includes('configure') ||
-        method.includes('get') ||
-        method.includes('aggregate') ||
-        method.includes('collect') ||
-        method.includes('extract') ||
-        method.includes('run') ||
-        method.includes('should') ||  // shouldRunPlugin
-        method.includes('is') ||       // isLowQualityPattern
-        method.includes('create') ||   // createQualityIssue
-        method.includes('calculate') || // calculateOverallScore
-        method === 'constructor'
+      const analysisMethods = engineMethods.filter(
+        method =>
+          method.includes('analyze') ||
+          method.includes('register') ||
+          method.includes('configure') ||
+          method.includes('get') ||
+          method.includes('aggregate') ||
+          method.includes('collect') ||
+          method.includes('extract') ||
+          method.includes('run') ||
+          method.includes('should') || // shouldRunPlugin
+          method.includes('is') || // isLowQualityPattern
+          method.includes('create') || // createQualityIssue
+          method.includes('calculate') || // calculateOverallScore
+          method === 'constructor'
       );
-      
+
       // 分析関連以外のメソッドが存在しないことを確認
-      const nonAnalysisMethods = engineMethods.filter(method => 
-        !analysisMethods.includes(method)
-      );
-      
+      const nonAnalysisMethods = engineMethods.filter(method => !analysisMethods.includes(method));
+
       // デバッグ用：どのメソッドが分析以外と判定されたか
       if (nonAnalysisMethods.length > 0) {
         console.log('Non-analysis methods found:', nonAnalysisMethods);
       }
-      
+
       expect(nonAnalysisMethods.length).toBe(0);
     });
 
@@ -340,8 +345,10 @@ describe('UnifiedAnalysisEngine', () => {
         type: 'custom' as any,
         isApplicable: jest.fn().mockReturnValue(true),
         detectPatterns: jest.fn().mockResolvedValue([]),
-        evaluateQuality: jest.fn().mockReturnValue({ overall: 80, dimensions: {}, confidence: 0.8 }),
-        suggestImprovements: jest.fn().mockReturnValue([])
+        evaluateQuality: jest
+          .fn()
+          .mockReturnValue({ overall: 80, dimensions: {}, confidence: 0.8 }),
+        suggestImprovements: jest.fn().mockReturnValue([]),
       };
 
       // 新しいプラグインタイプを登録できることを確認
@@ -352,17 +359,17 @@ describe('UnifiedAnalysisEngine', () => {
       // IPluginを実装した異なるプラグイン
       const plugin1: IPlugin = {
         name: 'Plugin1',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
-      
+
       const plugin2: IPlugin = {
         name: 'Plugin2',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       engine.registerPlugin(plugin1);
       engine.registerPlugin(plugin2);
-      
+
       // 両方のプラグインが同じように動作することを確認
       const result = await engine.analyze('./test/fixtures');
       expect(result).toBeDefined();
@@ -372,7 +379,7 @@ describe('UnifiedAnalysisEngine', () => {
       // エンジンが必要最小限のインターフェースのみを要求することを確認
       const minimalPlugin: IPlugin = {
         name: 'MinimalPlugin',
-        analyze: jest.fn().mockResolvedValue([])
+        analyze: jest.fn().mockResolvedValue([]),
       };
 
       // 最小限の実装でも動作することを確認
@@ -383,7 +390,7 @@ describe('UnifiedAnalysisEngine', () => {
       // エンジンがインターフェースに依存していることを確認
       const mockPlugin: IPlugin = {
         name: 'MockPlugin',
-        analyze: jest.fn()
+        analyze: jest.fn(),
       };
 
       // モックでも正常に動作することを確認
@@ -396,23 +403,23 @@ describe('UnifiedAnalysisEngine', () => {
       // 異なる名前のプラグインを作成（同じ名前だと重複登録されない可能性がある）
       const slowPlugin1: IPlugin = {
         name: 'SlowPlugin1',
-        analyze: jest.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(() => resolve([]), 50))
-        )
+        analyze: jest
+          .fn()
+          .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 50))),
       };
-      
+
       const slowPlugin2: IPlugin = {
         name: 'SlowPlugin2',
-        analyze: jest.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(() => resolve([]), 50))
-        )
+        analyze: jest
+          .fn()
+          .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 50))),
       };
-      
+
       const slowPlugin3: IPlugin = {
         name: 'SlowPlugin3',
-        analyze: jest.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(() => resolve([]), 50))
-        )
+        analyze: jest
+          .fn()
+          .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 50))),
       };
 
       engine.registerPlugin(slowPlugin1);
@@ -434,7 +441,7 @@ describe('UnifiedAnalysisEngine', () => {
       // パラレル実行の方が速いことを確認
       // 並列実行の効果を検証（少なくとも20%高速化を期待）
       expect(parallelTime).toBeLessThan(sequentialTime * 0.8);
-      
+
       // 各プラグインが呼ばれたことを確認
       expect(slowPlugin1.analyze).toHaveBeenCalled();
       expect(slowPlugin2.analyze).toHaveBeenCalled();

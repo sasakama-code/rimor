@@ -150,7 +150,7 @@ export interface WeightConfig {
   plugins: {
     [pluginId: string]: number;
   };
-  
+
   // ディメンション重み
   dimensions: {
     completeness: number;
@@ -159,7 +159,7 @@ export interface WeightConfig {
     performance: number;
     security: number;
   };
-  
+
   // ファイルタイプ別重み
   fileTypes?: {
     [pattern: string]: number; // 例: "*.critical.test.ts": 2.0
@@ -174,8 +174,8 @@ export const DEFAULT_WEIGHTS: WeightConfig = {
     correctness: 1.5,
     maintainability: 0.8,
     performance: 0.5,
-    security: 1.2
-  }
+    security: 1.2,
+  },
 };
 
 // 改善提案
@@ -205,21 +205,21 @@ export interface QualityReport {
       F: number;
     };
   };
-  
+
   highlights: {
     topFiles: FileScore[];
     bottomFiles: FileScore[];
     mostImproved: FileScore[];
     mostDegraded: FileScore[];
   };
-  
+
   recommendations: Improvement[];
-  
+
   trends: {
     overall: ScoreTrend;
     byDimension: Record<string, ScoreTrend>;
   };
-  
+
   projectScore: ProjectScore;
 }
 
@@ -253,38 +253,32 @@ export interface ScoreCache {
 // グレード判定の基準
 export const GRADE_THRESHOLDS = {
   A: 90,
-  B: 80, 
+  B: 80,
   C: 70,
   D: 60,
-  F: 0
+  F: 0,
 } as const;
 
 // ディメンションタイプ
-export type DimensionType = 'completeness' | 'correctness' | 'maintainability' | 'performance' | 'security';
+export type DimensionType =
+  | 'completeness'
+  | 'correctness'
+  | 'maintainability'
+  | 'performance'
+  | 'security';
 export type GradeType = 'A' | 'B' | 'C' | 'D' | 'F';
 
 // スコア計算メソッドインターフェース
 export interface IScoreCalculator {
   // ファイル単位のスコア算出
-  calculateFileScore(
-    file: string,
-    pluginResults: PluginResult[]
-  ): FileScore;
-  
+  calculateFileScore(file: string, pluginResults: PluginResult[]): FileScore;
+
   // ディレクトリ単位のスコア算出
-  calculateDirectoryScore(
-    directory: string,
-    fileScores: FileScore[]
-  ): DirectoryScore;
-  
+  calculateDirectoryScore(directory: string, fileScores: FileScore[]): DirectoryScore;
+
   // プロジェクト全体のスコア算出
-  calculateProjectScore(
-    directoryScores: DirectoryScore[]
-  ): ProjectScore;
-  
+  calculateProjectScore(directoryScores: DirectoryScore[]): ProjectScore;
+
   // カスタム集約ロジック
-  aggregateScores(
-    scores: QualityScore[],
-    weights?: WeightConfig
-  ): AggregatedScore;
+  aggregateScores(scores: QualityScore[], weights?: WeightConfig): AggregatedScore;
 }

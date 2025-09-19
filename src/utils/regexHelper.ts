@@ -14,7 +14,7 @@ export class RegexHelper {
     pattern.lastIndex = 0;
     return pattern.test(text);
   }
-  
+
   /**
    * 正規表現のlastIndexをリセットしてからマッチを実行
    * @param pattern 正規表現パターン
@@ -25,7 +25,7 @@ export class RegexHelper {
     pattern.lastIndex = 0;
     return text.match(pattern);
   }
-  
+
   /**
    * 正規表現のlastIndexをリセットしてからexecを実行
    * @param pattern 正規表現パターン
@@ -36,7 +36,7 @@ export class RegexHelper {
     pattern.lastIndex = 0;
     return pattern.exec(text);
   }
-  
+
   /**
    * 複数の正規表現パターンをテストし、マッチした数を返す
    * @param patterns 正規表現パターンの配列
@@ -52,7 +52,7 @@ export class RegexHelper {
     }
     return count;
   }
-  
+
   /**
    * 複数の正規表現パターンをテストし、いずれかがマッチするかを返す
    * @param patterns 正規表現パターンの配列
@@ -67,7 +67,7 @@ export class RegexHelper {
     }
     return false;
   }
-  
+
   /**
    * 複数の正規表現パターンをテストし、すべてがマッチするかを返す
    * @param patterns 正規表現パターンの配列
@@ -82,7 +82,7 @@ export class RegexHelper {
     }
     return true;
   }
-  
+
   /**
    * 正規表現パターンでマッチしたすべての結果を配列で返す
    * @param pattern 正規表現パターン（グローバルフラグ必須）
@@ -91,20 +91,20 @@ export class RegexHelper {
    */
   static findAllMatches(pattern: RegExp, text: string): string[] {
     if (!pattern.global) {
-      throw new Error("");
+      throw new Error('');
     }
-    
+
     pattern.lastIndex = 0;
     const matches: string[] = [];
     let match: RegExpExecArray | null;
-    
+
     while ((match = pattern.exec(text)) !== null) {
       matches.push(match[0]);
     }
-    
+
     return matches;
   }
-  
+
   /**
    * デバッグ用: 正規表現の状態を表示
    * @param pattern 正規表現パターン
@@ -117,7 +117,7 @@ export class RegexHelper {
       lastIndex: pattern.lastIndex,
       global: pattern.global,
       ignoreCase: pattern.ignoreCase,
-      multiline: pattern.multiline
+      multiline: pattern.multiline,
     });
   }
 }

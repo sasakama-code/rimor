@@ -30,7 +30,7 @@ import {
   SecurityImprovement,
   TypeBasedSecurityConfig,
   TypeBasedSecurityAnalysis,
-  ModularAnalysis
+  ModularAnalysis,
 } from '../../../src/security/types/index';
 
 describe('エクスポートのテスト', () => {
@@ -40,14 +40,14 @@ describe('エクスポートのテスト', () => {
     expect(TaintSource.USER_INPUT).toBe('user-input');
     expect(SecuritySink.DATABASE_QUERY).toBe('database-query');
     expect(SanitizerType.HTML_ESCAPE).toBe('html-escape');
-    
+
     // クラスのインスタンス化を確認
     expect(TaintLattice.join).toBeDefined();
   });
 
   it('security.tsからの型が正しくエクスポートされていること', () => {
     expect(SecurityType.USER_INPUT).toBe('user-input');
-    
+
     // インターフェースの型チェック
     const testCase: TestCase = {
       name: 'test',
@@ -56,8 +56,8 @@ describe('エクスポートのテスト', () => {
       metadata: {
         framework: 'jest',
         language: 'typescript',
-        lastModified: new Date()
-      }
+        lastModified: new Date(),
+      },
     };
     expect(testCase.name).toBe('test');
   });
@@ -86,7 +86,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
           parameters: [],
           returnType: 'void',
           annotations: ['@SecurityTest'],
-          isAsync: true
+          isAsync: true,
         },
         location: {
           start: { line: 10, column: 0 },
@@ -94,8 +94,8 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
           startLine: 10,
           endLine: 20,
           startColumn: 0,
-          endColumn: 50
-        }
+          endColumn: 50,
+        },
       };
 
       expect(testMethod.name).toBe('testAuthentication');
@@ -114,13 +114,13 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
             name: 'userInput',
             type: 'string',
             source: 'user-input',
-            annotations: ['@Tainted']
-          }
+            annotations: ['@Tainted'],
+          },
         ],
         returnType: 'boolean',
         annotations: ['@SecurityCritical'],
         visibility: 'public',
-        isAsync: false
+        isAsync: false,
       };
 
       expect(signature.name).toBe('validateInput');
@@ -135,7 +135,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         { name: 'input', type: 'string', source: 'user-input' },
         { name: 'data', type: 'object', source: 'database' },
         { name: 'response', type: 'any', source: 'api' },
-        { name: 'config', type: 'Config', source: 'constant' }
+        { name: 'config', type: 'Config', source: 'constant' },
       ];
 
       expect(parameters[0].source).toBe('user-input');
@@ -158,23 +158,23 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
             location: {
               file: 'test.ts',
               line: 42,
-              column: 10
-            }
-          }
+              column: 10,
+            },
+          },
         ],
         metrics: {
           securityCoverage: {
             authentication: 0.8,
             inputValidation: 0.9,
             apiSecurity: 0.7,
-            overall: 0.8
+            overall: 0.8,
           },
           taintFlowDetection: 0.95,
           sanitizerCoverage: 0.85,
-          invariantCompliance: 0.9
+          invariantCompliance: 0.9,
         },
         suggestions: [],
-        analysisTime: 150
+        analysisTime: 150,
       };
 
       expect(result.methodName).toBe('testUserInput');
@@ -197,7 +197,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
             parameters: [],
             returnType: 'void',
             annotations: [],
-            isAsync: false
+            isAsync: false,
           },
           location: {
             start: { line: 10, column: 0 },
@@ -205,10 +205,10 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
             startLine: 10,
             endLine: 20,
             startColumn: 0,
-            endColumn: 50
-          }
+            endColumn: 50,
+          },
         },
-        details: 'アサーションを追加しました'
+        details: 'アサーションを追加しました',
       };
 
       expect(methodChange.type).toBe('modified');
@@ -229,7 +229,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         analyzed: 10,
         cached: 25,
         totalTime: 500,
-        results: []
+        results: [],
       };
 
       expect(result.analyzed).toBe(10);
@@ -243,12 +243,8 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       const result: TaintAnalysisResult = {
         lattice: new SecurityLattice(),
         violations: [],
-        taintPaths: [
-          { from: 'userInput', to: 'database', level: TaintLevel.DEFINITELY_TAINTED }
-        ],
-        criticalFlows: [
-          { source: 'userInput', sink: 'eval', risk: 'critical' }
-        ]
+        taintPaths: [{ from: 'userInput', to: 'database', level: TaintLevel.DEFINITELY_TAINTED }],
+        criticalFlows: [{ source: 'userInput', sink: 'eval', risk: 'critical' }],
       };
 
       expect(result.lattice).toBeDefined();
@@ -271,11 +267,11 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
             location: {
               file: 'auth.test.ts',
               line: 50,
-              column: 0
-            }
-          }
+              column: 0,
+            },
+          },
         ],
-        resolvedIssues: ['OLD-001', 'OLD-002']
+        resolvedIssues: ['OLD-001', 'OLD-002'],
       };
 
       expect(update.updatedMethods).toHaveLength(2);
@@ -296,15 +292,15 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         location: {
           file: 'render.ts',
           line: 100,
-          column: 10
+          column: 10,
         },
         suggestedCode: 'const safe = escapeHtml(userInput);',
         impact: 'high',
         estimatedImpact: {
           securityImprovement: 0.3,
-          implementationMinutes: 5
+          implementationMinutes: 5,
         },
-        automatable: true
+        automatable: true,
       };
 
       expect(improvement.priority).toBe('high');
@@ -318,7 +314,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         'add-sanitizer',
         'add-validation',
         'add-assertion',
-        'fix-flow'
+        'fix-flow',
       ];
       improvementTypes.forEach(type => {
         expect(typeof type).toBe('string');
@@ -336,7 +332,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         customSanitizers: ['customEscape', 'customValidate'],
         customSinks: ['customExec', 'customEval'],
         excludePatterns: ['*.spec.ts', '*.mock.ts'],
-        debug: true
+        debug: true,
       };
 
       expect(config.strictness).toBe('strict');
@@ -349,7 +345,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       const strictnessLevels: TypeBasedSecurityConfig['strictness'][] = [
         'strict',
         'moderate',
-        'lenient'
+        'lenient',
       ];
       strictnessLevels.forEach(level => {
         expect(typeof level).toBe('string');
@@ -364,7 +360,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
         inferTaintLevels: jest.fn(),
         inferSecurityTypes: jest.fn(),
         verifyInvariants: jest.fn(),
-        analyzeAtCompileTime: jest.fn()
+        analyzeAtCompileTime: jest.fn(),
       };
 
       expect(mockAnalysis.inferTaintLevels).toBeDefined();
@@ -380,7 +376,7 @@ describe('index.ts独自のインターフェース定義のテスト', () => {
       const mockAnalysis: ModularAnalysis = {
         analyzeMethod: jest.fn(),
         incrementalAnalyze: jest.fn(),
-        analyzeInParallel: jest.fn()
+        analyzeInParallel: jest.fn(),
       };
 
       expect(mockAnalysis.analyzeMethod).toBeDefined();

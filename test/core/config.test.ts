@@ -16,7 +16,7 @@ import {
   RimorConfig,
   registerPlugin,
   getAvailablePlugins,
-  createDefaultConfig
+  createDefaultConfig,
 } from '../../src/core/config';
 
 // モックの設定
@@ -52,12 +52,12 @@ describe('Configuration Management', () => {
       const customConfig: RimorConfig = {
         excludePatterns: ['node_modules/**'],
         plugins: {
-          testExistence: { enabled: true }
+          testExistence: { enabled: true },
         },
         output: {
           format: 'json',
-          verbose: true
-        }
+          verbose: true,
+        },
       };
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(customConfig));
@@ -91,12 +91,12 @@ describe('Configuration Management', () => {
       // Arrange
       const validConfig: RimorConfig = {
         plugins: {
-          testPlugin: { enabled: true }
+          testPlugin: { enabled: true },
         },
         output: {
           format: 'text',
-          verbose: false
-        }
+          verbose: false,
+        },
       };
 
       // Act
@@ -112,8 +112,8 @@ describe('Configuration Management', () => {
         plugins: {},
         output: {
           format: 'invalid',
-          verbose: false
-        }
+          verbose: false,
+        },
       };
 
       // Act
@@ -128,8 +128,8 @@ describe('Configuration Management', () => {
       const invalidConfig: any = {
         output: {
           format: 'text',
-          verbose: false
-        }
+          verbose: false,
+        },
       };
 
       // Act
@@ -145,18 +145,18 @@ describe('Configuration Management', () => {
       // Arrange
       const baseConfig: RimorConfig = {
         plugins: {
-          plugin1: { enabled: true }
+          plugin1: { enabled: true },
         },
         output: {
           format: 'text',
-          verbose: false
-        }
+          verbose: false,
+        },
       };
       const userConfig: Partial<RimorConfig> = {
         output: {
           format: 'json',
-          verbose: true
-        }
+          verbose: true,
+        },
       };
 
       // Act
@@ -172,23 +172,23 @@ describe('Configuration Management', () => {
       // Arrange
       const baseConfig: RimorConfig = {
         plugins: {
-          plugin1: { enabled: true, priority: 1 }
+          plugin1: { enabled: true, priority: 1 },
         },
         output: {
           format: 'text',
           verbose: false,
-          reportDir: '.rimor/reports'
-        }
+          reportDir: '.rimor/reports',
+        },
       };
       const userConfig: Partial<RimorConfig> = {
         plugins: {
           plugin1: { enabled: false },
-          plugin2: { enabled: true }
+          plugin2: { enabled: true },
         },
         output: {
           format: 'text',
-          verbose: true
-        }
+          verbose: true,
+        },
       };
 
       // Act
@@ -209,12 +209,12 @@ describe('Configuration Management', () => {
       // Arrange
       const config: RimorConfig = {
         plugins: {
-          testPlugin: { enabled: true }
+          testPlugin: { enabled: true },
         },
         output: {
           format: 'json',
-          verbose: true
-        }
+          verbose: true,
+        },
       };
       const filePath = '.rimor.json';
 
@@ -222,10 +222,7 @@ describe('Configuration Management', () => {
       saveConfig(config, filePath);
 
       // Assert
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        filePath,
-        JSON.stringify(config, null, 2)
-      );
+      expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, JSON.stringify(config, null, 2));
     });
 
     it('保存時のエラーを適切に処理する', () => {
@@ -247,7 +244,7 @@ describe('Configuration Management', () => {
         name: 'newPlugin',
         displayName: 'New Plugin',
         description: 'A new plugin',
-        defaultConfig: { enabled: false }
+        defaultConfig: { enabled: false },
       };
 
       // Act
@@ -310,8 +307,8 @@ describe('Configuration Management', () => {
         output: {
           format: 'text',
           verbose: false,
-          reportDir: '../../../etc/passwd'
-        }
+          reportDir: '../../../etc/passwd',
+        },
       };
 
       // Act

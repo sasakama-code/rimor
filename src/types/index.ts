@@ -1,6 +1,6 @@
 /**
  * 統一型定義のエントリーポイント
- * 
+ *
  * すべての型定義モジュールを再エクスポート
  * 後方互換性を維持しながら新しい構造へ移行
  */
@@ -19,7 +19,7 @@ export type {
   InterfaceAnalysisResult,
   ParallelAnalysisResult,
   CliAnalysisResult,
-  SecurityAnalysisResult
+  SecurityAnalysisResult,
 } from './analysis';
 
 // セキュリティ関連
@@ -42,7 +42,7 @@ export type {
   SecurityTaintResult,
   AnnotationTaintResult,
   FlowTaintResult,
-  TaintResult
+  TaintResult,
 } from './security';
 
 // テスト関連
@@ -66,7 +66,7 @@ export type {
   SecurityTestCase,
   ValidationTestCase,
   UnitTestCase,
-  IntegrationTestCase
+  IntegrationTestCase,
 } from './testing';
 
 // AI関連
@@ -92,7 +92,7 @@ export type {
   FileAnalysisSection,
   IssueSection,
   TaskSection,
-  FormatterOptions
+  FormatterOptions,
 } from './ai';
 
 // ドメイン関連
@@ -112,7 +112,7 @@ export type {
   DomainPattern,
   // 後方互換性エイリアス
   DomainAnalysis,
-  DomainTerminology
+  DomainTerminology,
 } from './domain';
 
 // プラグイン関連
@@ -138,7 +138,7 @@ export type {
   // 後方互換性エイリアス
   Plugin,
   AnalyzerPlugin,
-  SecurityPlugin
+  SecurityPlugin,
 } from './plugins';
 
 // ワーカー関連
@@ -159,7 +159,7 @@ export type {
   // 後方互換性エイリアス
   Task,
   Worker,
-  PoolStats
+  PoolStats,
 } from './workers';
 
 // 共通型
@@ -181,7 +181,7 @@ export type {
   // 後方互換性エイリアス
   Pattern,
   Dependency,
-  Import
+  Import,
 } from './shared';
 
 /**
@@ -201,11 +201,9 @@ export const MIGRATION_STATUS = {
     'DomainContext',
     'IPlugin',
     'WorkerTask',
-    'DesignPattern'
+    'DesignPattern',
   ],
-  deprecated: [
-    'unified-types.ts'
-  ],
+  deprecated: ['unified-types.ts'],
   version: TYPES_VERSION,
-  date: new Date().toISOString()
+  date: new Date().toISOString(),
 };

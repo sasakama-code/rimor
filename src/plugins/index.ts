@@ -1,6 +1,6 @@
 /**
  * プラグインシステム統一エクスポート
- * 
+ *
  * 全てのプラグインを一箇所からインポートできるようにする
  * SOLID原則に従い、整理されたディレクトリ構造を反映
  */
@@ -22,7 +22,10 @@ export { SecurityTestPatternPlugin } from './security/SecurityTestPatternPlugin'
 
 // Legacy exports (deprecated - 後方互換性のため維持)
 export { TestExistencePlugin as TestExistencePluginLegacy } from './testExistence';
-export { AssertionExistsPlugin, AssertionExistencePlugin as AssertionExistsPluginLegacy } from './assertionExists';
+export {
+  AssertionExistsPlugin,
+  AssertionExistencePlugin as AssertionExistsPluginLegacy,
+} from './assertionExists';
 
 // Plugin type definitions
 export type PluginType = 'core' | 'framework' | 'pattern' | 'domain' | 'security';
@@ -34,17 +37,16 @@ export const PLUGIN_REGISTRY = {
     'AssertionExistencePlugin',
     'AssertionQualityPlugin',
     'TestCompletenessPlugin',
-    'TestStructurePlugin'
+    'TestStructurePlugin',
   ],
-  security: [
-    'TaintAnalysisPlugin',
-    'SecurityTestPatternPlugin'
-  ]
+  security: ['TaintAnalysisPlugin', 'SecurityTestPatternPlugin'],
 } as const;
 
 // Plugin factory helper
 export function createPlugin(pluginName: string, config?: Record<string, unknown>) {
   // 動的にプラグインをインポート・作成するヘルパー
   // 実際の使用時は各プラグインを直接インポートして使用することを推奨
-  throw new Error(`Please import and instantiate ${pluginName} directly instead of using the factory.`);
+  throw new Error(
+    `Please import and instantiate ${pluginName} directly instead of using the factory.`
+  );
 }

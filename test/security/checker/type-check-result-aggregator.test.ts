@@ -4,10 +4,16 @@
  * TDD Red-Green-Refactor サイクル実践
  */
 
-import { TypeCheckResultAggregator, MethodTypeCheckResult } from '../../../src/security/checker/parallel-type-checker';
+import {
+  TypeCheckResultAggregator,
+  MethodTypeCheckResult,
+} from '../../../src/security/checker/parallel-type-checker';
 import { TestMethod } from '../../../src/core/types';
 import { SecurityIssue } from '../../../src/security/types/flow-types';
-import { TypeQualifierError, TaintQualifier } from '../../../src/security/types/checker-framework-types';
+import {
+  TypeQualifierError,
+  TaintQualifier,
+} from '../../../src/security/types/checker-framework-types';
 
 describe('TypeCheckResultAggregator', () => {
   describe('aggregate', () => {
@@ -25,7 +31,7 @@ describe('TypeCheckResultAggregator', () => {
           parameters: [],
           returnType: 'void',
           annotations: [],
-          isAsync: false
+          isAsync: false,
         },
         location: {
           start: { line: 1, column: 0 },
@@ -33,8 +39,8 @@ describe('TypeCheckResultAggregator', () => {
           startLine: 1,
           endLine: 1,
           startColumn: 0,
-          endColumn: 10
-        }
+          endColumn: 10,
+        },
       };
 
       const mockSecurityIssue: SecurityIssue = {
@@ -45,8 +51,8 @@ describe('TypeCheckResultAggregator', () => {
         location: {
           file: 'test.ts',
           line: 1,
-          column: 0
-        }
+          column: 0,
+        },
       };
 
       mockResults = [
@@ -55,16 +61,32 @@ describe('TypeCheckResultAggregator', () => {
           typeCheckResult: {
             success: false,
             errors: [new TypeQualifierError('Test error', '@Tainted', '@Untainted')],
-            warnings: [{ message: 'Test warning' }]
+            warnings: [{ message: 'Test warning' }],
           },
           inferredTypes: new Map([
-            ['variable1', { __brand: '@Tainted', __value: 'variable1', __source: 'inferred', __confidence: 1.0 } as any],
+            [
+              'variable1',
+              {
+                __brand: '@Tainted',
+                __value: 'variable1',
+                __source: 'inferred',
+                __confidence: 1.0,
+              } as any,
+            ],
             ['variable2', { __brand: '@Untainted', __value: 'variable2' } as any],
-            ['variable3', { __brand: '@Tainted', __value: 'variable3', __source: 'inferred', __confidence: 0.8 } as any]
+            [
+              'variable3',
+              {
+                __brand: '@Tainted',
+                __value: 'variable3',
+                __source: 'inferred',
+                __confidence: 0.8,
+              } as any,
+            ],
           ]),
           securityIssues: [mockSecurityIssue],
-          executionTime: 100
-        }
+          executionTime: 100,
+        },
       ];
     });
 
@@ -83,7 +105,7 @@ describe('TypeCheckResultAggregator', () => {
 
       // typeStatisticsが存在し、適切な値を持つことを検証
       expect(result.typeStatistics).toBeDefined();
-      
+
       // Map オブジェクトの場合の検証（現在の実装）
       if (result.typeStatistics instanceof Map) {
         expect(result.typeStatistics.get('@Tainted' as TaintQualifier)).toBe(2);
@@ -100,7 +122,7 @@ describe('TypeCheckResultAggregator', () => {
 
       // Issue #154 の核心: JSON シリアライゼーション検証
       expect(() => JSON.stringify(result)).not.toThrow();
-      
+
       const jsonString = JSON.stringify(result);
       const parsedResult = JSON.parse(jsonString);
 
@@ -160,8 +182,8 @@ describe('TypeCheckResultAggregator', () => {
           ['var1', { __brand: '@Tainted', __value: 'var1' } as any],
           ['var2', { __brand: '@Tainted', __value: 'var2' } as any],
           ['var3', { __brand: '@Tainted', __value: 'var3' } as any],
-          ['var4', { __brand: '@Untainted', __value: 'var4' } as any]
-        ])
+          ['var4', { __brand: '@Untainted', __value: 'var4' } as any],
+        ]),
       };
 
       const result = TypeCheckResultAggregator.aggregate([duplicateResult]);
@@ -177,7 +199,7 @@ describe('TypeCheckResultAggregator', () => {
     describe('JSON互換性の詳細検証 (Refactor)', () => {
       it('深いネストでもJSONシリアライゼーションが正しく動作する', () => {
         const result = TypeCheckResultAggregator.aggregate(mockResults);
-        
+
         // 深いネストでの検証
         const nestedData = {
           analysis: {
@@ -185,16 +207,16 @@ describe('TypeCheckResultAggregator', () => {
               results: result,
               meta: {
                 version: '1.0',
-                timestamp: new Date().toISOString()
-              }
-            }
-          }
+                timestamp: new Date().toISOString(),
+              },
+            },
+          },
         };
-        
+
         expect(() => JSON.stringify(nestedData)).not.toThrow();
         const serialized = JSON.stringify(nestedData);
         const deserialized = JSON.parse(serialized);
-        
+
         // 深いネストでもtypeStatisticsが保持されることを確認
         expect(deserialized.analysis.security.results.typeStatistics).toBeDefined();
         expect(deserialized.analysis.security.results.typeStatistics['@Tainted']).toBe(2);
@@ -203,15 +225,15 @@ describe('TypeCheckResultAggregator', () => {
 
       it('CLIでの典型的なJSON出力パターンを検証', () => {
         const result = TypeCheckResultAggregator.aggregate(mockResults);
-        
+
         // CLIでの典型的な出力構造をシミュレート
         const cliOutput = {
           command: 'rimor analyze',
           status: 'completed',
           data: result,
-          format: 'json'
+          format: 'json',
         };
-        
+
         const jsonOutput = JSON.stringify(cliOutput, null, 2);
         expect(jsonOutput).toContain('"@Tainted": 2');
         expect(jsonOutput).toContain('"@Untainted": 1');
@@ -220,7 +242,7 @@ describe('TypeCheckResultAggregator', () => {
 
       it('API レスポンスでのシリアライゼーションパターンを検証', () => {
         const result = TypeCheckResultAggregator.aggregate(mockResults);
-        
+
         // API レスポンス形式をシミュレート
         const apiResponse = {
           success: true,
@@ -228,15 +250,15 @@ describe('TypeCheckResultAggregator', () => {
             aggregation: result,
             metadata: {
               processingTime: 150,
-              methodsAnalyzed: 1
-            }
+              methodsAnalyzed: 1,
+            },
           },
-          timestamp: '2025-09-11T12:00:00Z'
+          timestamp: '2025-09-11T12:00:00Z',
         };
-        
+
         const responseJson = JSON.stringify(apiResponse);
         const parsedResponse = JSON.parse(responseJson);
-        
+
         expect(parsedResponse.data.aggregation.typeStatistics).toBeDefined();
         expect(Object.keys(parsedResponse.data.aggregation.typeStatistics)).toEqual(
           expect.arrayContaining(['@Tainted', '@Untainted'])
@@ -245,7 +267,7 @@ describe('TypeCheckResultAggregator', () => {
 
       it('レポート生成でのシリアライゼーション完全性を検証', () => {
         const result = TypeCheckResultAggregator.aggregate(mockResults);
-        
+
         // レポート生成でのデータ構造をシミュレート
         const reportData = {
           title: 'Security Analysis Report',
@@ -253,18 +275,18 @@ describe('TypeCheckResultAggregator', () => {
           sections: [
             {
               name: 'Type Statistics',
-              data: result.typeStatistics
-            }
-          ]
+              data: result.typeStatistics,
+            },
+          ],
         };
-        
+
         const serialized = JSON.stringify(reportData, null, 2);
         const deserialized = JSON.parse(serialized);
-        
+
         // レポートデータの完全性検証
         expect(deserialized.summary.typeStatistics).toEqual(result.typeStatistics);
         expect(deserialized.sections[0].data).toEqual(result.typeStatistics);
-        
+
         // 実際の統計値が正しく保持されることを確認
         expect(deserialized.summary.typeStatistics['@Tainted']).toBe(2);
         expect(deserialized.summary.typeStatistics['@Untainted']).toBe(1);
@@ -279,13 +301,13 @@ describe('TypeCheckResultAggregator', () => {
           inferredTypes: new Map([
             ['var1', { __brand: '@Unknown' as TaintQualifier, __value: 'var1' } as any],
             ['var2', { __brand: null as any, __value: 'var2' } as any],
-            ['var3', { __brand: '@Tainted', __value: 'var3' } as any]
-          ])
+            ['var3', { __brand: '@Tainted', __value: 'var3' } as any],
+          ]),
         };
 
         expect(() => TypeCheckResultAggregator.aggregate([malformedResult])).not.toThrow();
         const result = TypeCheckResultAggregator.aggregate([malformedResult]);
-        
+
         // 不正なデータでもJSONシリアライゼーションが成功することを確認
         expect(() => JSON.stringify(result)).not.toThrow();
       });
@@ -298,24 +320,24 @@ describe('TypeCheckResultAggregator', () => {
           for (let j = 0; j < 50; j++) {
             largeInferredTypes.set(`var_${i}_${j}`, {
               __brand: j % 2 === 0 ? '@Tainted' : '@Untainted',
-              __value: `var_${i}_${j}`
+              __value: `var_${i}_${j}`,
             } as any);
           }
-          
+
           largeResults.push({
             ...mockResults[0],
             method: { ...mockResults[0].method, name: `method_${i}` },
-            inferredTypes: largeInferredTypes
+            inferredTypes: largeInferredTypes,
           });
         }
-        
+
         const startTime = Date.now();
         const result = TypeCheckResultAggregator.aggregate(largeResults);
         const processingTime = Date.now() - startTime;
-        
+
         // パフォーマンス検証（100ms以内で処理完了）
         expect(processingTime).toBeLessThan(100);
-        
+
         // 大量データでもJSONシリアライゼーションが成功
         expect(() => JSON.stringify(result)).not.toThrow();
         expect(result.typeStatistics['@Tainted']).toBe(2500); // 100 * 25

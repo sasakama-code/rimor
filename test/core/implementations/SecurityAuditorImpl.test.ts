@@ -2,7 +2,7 @@ import { SecurityAuditor } from '../../../src/core/implementations/SecurityAudit
 import {
   SecurityAuditOptions,
   SecurityAuditResult,
-  ThreatType
+  ThreatType,
 } from '../../../src/core/interfaces/ISecurityAuditor';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -42,9 +42,9 @@ describe('SecurityAuditor', () => {
 
     it('空のディレクトリを監査できる', async () => {
       fs.mkdirSync(testDir, { recursive: true });
-      
+
       const result = await auditor.audit(testDir);
-      
+
       expect(result.summary.total).toBe(0);
       expect(result.summary.critical).toBe(0);
       expect(result.summary.high).toBe(0);
@@ -153,7 +153,7 @@ describe('SecurityAuditor', () => {
       createTestFile(path.join(testDir, 'test.md'), 'API Key: secret789012');
 
       const options: SecurityAuditOptions = {
-        includeTests: false
+        includeTests: false,
       };
 
       const result = await auditor.audit(testDir, options);
@@ -163,10 +163,13 @@ describe('SecurityAuditor', () => {
 
     it('特定のディレクトリを除外できる', async () => {
       createTestFile(path.join(testDir, 'src/app.js'), 'const api_key = "secret123456789";');
-      createTestFile(path.join(testDir, 'node_modules/lib.js'), 'const api_key = "secret987654321";');
+      createTestFile(
+        path.join(testDir, 'node_modules/lib.js'),
+        'const api_key = "secret987654321";'
+      );
 
       const options: SecurityAuditOptions = {
-        includeTests: false
+        includeTests: false,
       };
 
       const result = await auditor.audit(testDir, options);
@@ -181,7 +184,7 @@ describe('SecurityAuditor', () => {
       createTestFile(path.join(testDir, 'custom.js'), content);
 
       const options: SecurityAuditOptions = {
-        deepScan: true
+        deepScan: true,
       };
 
       const result = await auditor.audit(testDir, options);
@@ -264,11 +267,11 @@ describe('SecurityAuditor', () => {
     it('読み取り権限のないファイルを適切に処理する', async () => {
       const restrictedFile = path.join(testDir, 'restricted.js');
       createTestFile(restrictedFile, 'const secret = "test";');
-      
+
       // 読み取り権限を削除（Unixシステムのみ）
       if (process.platform !== 'win32') {
         fs.chmodSync(restrictedFile, 0o000);
-        
+
         try {
           await auditor.audit(testDir);
           // CI環境では権限操作が効かない場合があるため、エラーが発生しない可能性もある

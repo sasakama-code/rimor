@@ -1,4 +1,11 @@
-import { ITestQualityPlugin, DetectionResult, QualityScore, Improvement, ProjectContext, TestFile } from '../src/core/types';
+import {
+  ITestQualityPlugin,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+  ProjectContext,
+  TestFile,
+} from '../src/core/types';
 
 describe('ITestQualityPlugin interface', () => {
   // モックプラグインの実装
@@ -13,24 +20,28 @@ describe('ITestQualityPlugin interface', () => {
     }
 
     async detectPatterns(_testFile: TestFile): Promise<DetectionResult[]> {
-      return [{
-        patternId: 'test-pattern',
-        patternName: 'Test Pattern',
-        location: {
-          file: 'test.ts',
-          line: 1,
-          column: 1,
-          endLine: 1
+      return [
+        {
+          patternId: 'test-pattern',
+          patternName: 'Test Pattern',
+          location: {
+            file: 'test.ts',
+            line: 1,
+            column: 1,
+            endLine: 1,
+          },
+          confidence: 0.9,
+          evidence: [
+            {
+              type: 'code',
+              description: 'Test evidence',
+              location: { file: 'test.ts', line: 1, column: 1 },
+              code: 'expect(true).toBe(true);',
+              confidence: 0.9,
+            },
+          ],
         },
-        confidence: 0.9,
-        evidence: [{
-          type: 'code',
-          description: 'Test evidence',
-          location: { file: 'test.ts', line: 1, column: 1 },
-          code: 'expect(true).toBe(true);',
-          confidence: 0.9
-        }]
-      }];
+      ];
     }
 
     evaluateQuality(patterns: DetectionResult[]): QualityScore {
@@ -40,29 +51,31 @@ describe('ITestQualityPlugin interface', () => {
         breakdown: {
           completeness: 80,
           correctness: 80,
-          maintainability: 80
+          maintainability: 80,
         },
         confidence: 0.8,
-        metadata: { explanation: 'Good quality test with room for improvement' }
+        metadata: { explanation: 'Good quality test with room for improvement' },
       };
     }
 
     suggestImprovements(_evaluation: QualityScore): Improvement[] {
-      return [{
-        id: 'improvement-1',
-        priority: 'medium',
-        type: 'add',
-        title: 'Add more assertions',
-        description: 'Consider adding more comprehensive assertions',
-        location: {
-          file: 'test.ts',
-          line: 1,
-          column: 1,
-          endLine: 1
+      return [
+        {
+          id: 'improvement-1',
+          priority: 'medium',
+          type: 'add',
+          title: 'Add more assertions',
+          description: 'Consider adding more comprehensive assertions',
+          location: {
+            file: 'test.ts',
+            line: 1,
+            column: 1,
+            endLine: 1,
+          },
+          estimatedImpact: 0.1,
+          automatable: false,
         },
-        estimatedImpact: 0.1,
-        automatable: false
-      }];
+      ];
     }
   }
 
@@ -79,8 +92,8 @@ describe('ITestQualityPlugin interface', () => {
       filePatterns: {
         test: ['**/*.test.ts'],
         source: ['**/*.ts'],
-        ignore: ['**/node_modules/**']
-      }
+        ignore: ['**/node_modules/**'],
+      },
     };
     mockTestFile = {
       path: '/test/project/test.ts',
@@ -88,8 +101,8 @@ describe('ITestQualityPlugin interface', () => {
       metadata: {
         framework: 'jest',
         language: 'typescript',
-        lastModified: new Date()
-      }
+        lastModified: new Date(),
+      },
     };
   });
 
@@ -108,7 +121,7 @@ describe('ITestQualityPlugin interface', () => {
   it('should implement detectPatterns method', async () => {
     const patterns = await mockPlugin.detectPatterns(mockTestFile);
     expect(Array.isArray(patterns)).toBe(true);
-    
+
     if (patterns.length > 0) {
       const pattern = patterns[0];
       expect(pattern.patternId).toBeDefined();
@@ -121,18 +134,20 @@ describe('ITestQualityPlugin interface', () => {
   });
 
   it('should implement evaluateQuality method', () => {
-    const mockPatterns: DetectionResult[] = [{
-      patternId: 'test-pattern',
-      patternName: 'Test Pattern',
-      location: {
-        file: 'test.ts',
-        line: 1,
-        column: 1,
-        endLine: 1
+    const mockPatterns: DetectionResult[] = [
+      {
+        patternId: 'test-pattern',
+        patternName: 'Test Pattern',
+        location: {
+          file: 'test.ts',
+          line: 1,
+          column: 1,
+          endLine: 1,
+        },
+        confidence: 0.9,
+        evidence: [],
       },
-      confidence: 0.9,
-      evidence: []
-    }];
+    ];
 
     const quality = mockPlugin.evaluateQuality(mockPatterns);
     expect(quality.overall).toBeGreaterThanOrEqual(0);
@@ -149,12 +164,12 @@ describe('ITestQualityPlugin interface', () => {
       dimensions: {},
       breakdown: { completeness: 80, correctness: 80, maintainability: 80 },
       confidence: 0.8,
-      metadata: { explanation: 'Test quality' }
+      metadata: { explanation: 'Test quality' },
     };
 
     const improvements = mockPlugin.suggestImprovements(mockQuality);
     expect(Array.isArray(improvements)).toBe(true);
-    
+
     if (improvements.length > 0) {
       const improvement = improvements[0];
       expect(improvement.id).toBeDefined();
@@ -178,19 +193,21 @@ describe('DetectionResult type', () => {
         file: 'test.ts',
         line: 1,
         column: 1,
-        endLine: 2
+        endLine: 2,
       },
       confidence: 0.95,
-      evidence: [{
-        type: 'code',
-        description: 'Code evidence',
-        location: { file: 'test.ts', line: 1, column: 1 },
-        code: 'test code',
-        confidence: 0.9
-      }],
+      evidence: [
+        {
+          type: 'code',
+          description: 'Code evidence',
+          location: { file: 'test.ts', line: 1, column: 1 },
+          code: 'test code',
+          confidence: 0.9,
+        },
+      ],
       metadata: {
-        customProperty: 'value'
-      }
+        customProperty: 'value',
+      },
     };
 
     expect(result.patternId).toBe('test-id');
@@ -207,10 +224,10 @@ describe('QualityScore type', () => {
       breakdown: {
         completeness: 90,
         correctness: 85,
-        maintainability: 80
+        maintainability: 80,
       },
       confidence: 0.9,
-      metadata: { explanation: 'High quality test with minor improvements needed' }
+      metadata: { explanation: 'High quality test with minor improvements needed' },
     };
 
     expect(score.overall).toBe(85);

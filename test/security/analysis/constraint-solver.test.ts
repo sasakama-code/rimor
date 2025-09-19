@@ -4,14 +4,17 @@
  * t_wadaのTDDアプローチに従う
  */
 
-import { 
-  ConstraintSolver, 
-  ConstraintSolutionResult, 
+import {
+  ConstraintSolver,
+  ConstraintSolutionResult,
   TaintDomain,
   ConstraintVariable,
-  ConstraintRule
+  ConstraintRule,
 } from '../../../src/security/analysis/constraint-solver';
-import { TypeConstraint, TypeBasedTaintInfo } from '../../../src/security/analysis/type-based-flow-analyzer';
+import {
+  TypeConstraint,
+  TypeBasedTaintInfo,
+} from '../../../src/security/analysis/type-based-flow-analyzer';
 import { TaintSource } from '../../../src/security/analysis/ast-source-detector';
 import { TaintSink } from '../../../src/security/analysis/ast-sink-detector';
 
@@ -25,14 +28,16 @@ describe('ConstraintSolver', () => {
   describe('基本的な制約解決', () => {
     it('単純なSource制約を解決できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [];
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
@@ -50,22 +55,26 @@ describe('ConstraintSolver', () => {
 
     it('代入制約による汚染伝播を解決できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'input',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'input',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
-      const typeConstraints: TypeConstraint[] = [{
-        type: 'assignment',
-        sourceVariable: 'input',
-        targetVariable: 'processed',
-        location: { file: 'test.ts', line: 2, column: 1 },
-        description: '代入: input → processed'
-      }];
+      const typeConstraints: TypeConstraint[] = [
+        {
+          type: 'assignment',
+          sourceVariable: 'input',
+          targetVariable: 'processed',
+          location: { file: 'test.ts', line: 2, column: 1 },
+          description: '代入: input → processed',
+        },
+      ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
@@ -83,14 +92,16 @@ describe('ConstraintSolver', () => {
 
     it('チェーン代入による多段階汚染伝播を解決できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'original',
-        apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'original',
+          apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [
         {
@@ -98,22 +109,22 @@ describe('ConstraintSolver', () => {
           sourceVariable: 'original',
           targetVariable: 'step1',
           location: { file: 'test.ts', line: 2, column: 1 },
-          description: '代入: original → step1'
+          description: '代入: original → step1',
         },
         {
           type: 'assignment',
           sourceVariable: 'step1',
           targetVariable: 'step2',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: '代入: step1 → step2'
+          description: '代入: step1 → step2',
         },
         {
           type: 'assignment',
           sourceVariable: 'step2',
           targetVariable: 'final',
           location: { file: 'test.ts', line: 4, column: 1 },
-          description: '代入: step2 → final'
-        }
+          description: '代入: step2 → final',
+        },
       ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
@@ -129,7 +140,7 @@ describe('ConstraintSolver', () => {
       expect(result.solution.get('step1')).toBe('tainted');
       expect(result.solution.get('step2')).toBe('tainted');
       expect(result.solution.get('final')).toBe('tainted');
-      
+
       // 推論ステップが正しく記録されることを確認
       expect(result.inferenceSteps.length).toBeGreaterThanOrEqual(3);
     });
@@ -140,7 +151,7 @@ describe('ConstraintSolver', () => {
       // Arrange
       const sources: TaintSource[] = [];
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('explicitTainted', {
         symbol: {} as any,
@@ -148,9 +159,9 @@ describe('ConstraintSolver', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'tainted'
+          customTaintType: 'tainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
@@ -168,7 +179,7 @@ describe('ConstraintSolver', () => {
       // Arrange
       const sources: TaintSource[] = [];
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('explicitUntainted', {
         symbol: {} as any,
@@ -176,9 +187,9 @@ describe('ConstraintSolver', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'untainted'
+          customTaintType: 'untainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
@@ -194,23 +205,27 @@ describe('ConstraintSolver', () => {
 
     it('型アノテーション制約違反を検出できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'taintedSource',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'taintedSource',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
-      const typeConstraints: TypeConstraint[] = [{
-        type: 'assignment',
-        sourceVariable: 'taintedSource',
-        targetVariable: 'shouldBeUntainted',
-        location: { file: 'test.ts', line: 2, column: 1 },
-        description: '代入: taintedSource → shouldBeUntainted'
-      }];
-      
+      const typeConstraints: TypeConstraint[] = [
+        {
+          type: 'assignment',
+          sourceVariable: 'taintedSource',
+          targetVariable: 'shouldBeUntainted',
+          location: { file: 'test.ts', line: 2, column: 1 },
+          description: '代入: taintedSource → shouldBeUntainted',
+        },
+      ];
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('shouldBeUntainted', {
         symbol: {} as any,
@@ -218,9 +233,9 @@ describe('ConstraintSolver', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'untainted'
+          customTaintType: 'untainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
@@ -232,10 +247,8 @@ describe('ConstraintSolver', () => {
       // Assert
       expect(result.success).toBe(false);
       expect(result.violations.length).toBeGreaterThan(0);
-      
-      const violation = result.violations.find(v => 
-        v.description.includes('shouldBeUntainted')
-      );
+
+      const violation = result.violations.find(v => v.description.includes('shouldBeUntainted'));
       expect(violation).toBeDefined();
       expect(violation?.severity).toBe('critical');
     });
@@ -244,22 +257,26 @@ describe('ConstraintSolver', () => {
   describe('パラメーター制約', () => {
     it('関数パラメーター制約による汚染伝播を解決できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
-      const typeConstraints: TypeConstraint[] = [{
-        type: 'parameter',
-        sourceVariable: 'userInput',
-        targetVariable: 'processedData',
-        location: { file: 'test.ts', line: 2, column: 1 },
-        description: 'パラメーター: userInput → processedData'
-      }];
+      const typeConstraints: TypeConstraint[] = [
+        {
+          type: 'parameter',
+          sourceVariable: 'userInput',
+          targetVariable: 'processedData',
+          location: { file: 'test.ts', line: 2, column: 1 },
+          description: 'パラメーター: userInput → processedData',
+        },
+      ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
@@ -272,11 +289,9 @@ describe('ConstraintSolver', () => {
       expect(result.success).toBe(true);
       expect(result.solution.get('userInput')).toBe('tainted');
       expect(result.solution.get('processedData')).toBe('tainted');
-      
+
       // パラメーター制約による推論ステップが記録されることを確認
-      const parameterStep = result.inferenceSteps.find(step => 
-        step.rule.type === 'parameter'
-      );
+      const parameterStep = result.inferenceSteps.find(step => step.rule.type === 'parameter');
       expect(parameterStep).toBeDefined();
     });
 
@@ -289,7 +304,7 @@ describe('ConstraintSolver', () => {
           location: { file: 'test.ts', line: 1, column: 1, length: 10 },
           variableName: 'input1',
           apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-          confidence: 0.95
+          confidence: 0.95,
         },
         {
           type: 'user-input',
@@ -297,8 +312,8 @@ describe('ConstraintSolver', () => {
           location: { file: 'test.ts', line: 2, column: 1, length: 10 },
           variableName: 'input2',
           apiCall: { functionName: 'req.query', objectName: 'req', arguments: [] },
-          confidence: 0.95
-        }
+          confidence: 0.95,
+        },
       ];
 
       const typeConstraints: TypeConstraint[] = [
@@ -307,15 +322,15 @@ describe('ConstraintSolver', () => {
           sourceVariable: 'input1',
           targetVariable: 'param1',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: 'パラメーター: input1 → param1'
+          description: 'パラメーター: input1 → param1',
         },
         {
           type: 'parameter',
           sourceVariable: 'input2',
           targetVariable: 'param2',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: 'パラメーター: input2 → param2'
-        }
+          description: 'パラメーター: input2 → param2',
+        },
       ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
@@ -337,14 +352,16 @@ describe('ConstraintSolver', () => {
   describe('複合制約解決', () => {
     it('代入・パラメーター・型アノテーションの複合制約を解決できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'userInput',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'userInput',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [
         {
@@ -352,15 +369,15 @@ describe('ConstraintSolver', () => {
           sourceVariable: 'userInput',
           targetVariable: 'temp',
           location: { file: 'test.ts', line: 2, column: 1 },
-          description: '代入: userInput → temp'
+          description: '代入: userInput → temp',
         },
         {
           type: 'parameter',
           sourceVariable: 'temp',
           targetVariable: 'processed',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: 'パラメーター: temp → processed'
-        }
+          description: 'パラメーター: temp → processed',
+        },
       ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
@@ -370,9 +387,9 @@ describe('ConstraintSolver', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'tainted'
+          customTaintType: 'tainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
@@ -386,21 +403,23 @@ describe('ConstraintSolver', () => {
       expect(result.solution.get('userInput')).toBe('tainted');
       expect(result.solution.get('temp')).toBe('tainted');
       expect(result.solution.get('processed')).toBe('tainted');
-      
+
       // 複数の推論ステップが記録されることを確認
       expect(result.inferenceSteps.length).toBeGreaterThanOrEqual(2);
     });
 
     it('循環制約を適切に処理できる', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'input',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'input',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
       const typeConstraints: TypeConstraint[] = [
         {
@@ -408,22 +427,22 @@ describe('ConstraintSolver', () => {
           sourceVariable: 'input',
           targetVariable: 'var1',
           location: { file: 'test.ts', line: 2, column: 1 },
-          description: '代入: input → var1'
+          description: '代入: input → var1',
         },
         {
           type: 'assignment',
           sourceVariable: 'var1',
           targetVariable: 'var2',
           location: { file: 'test.ts', line: 3, column: 1 },
-          description: '代入: var1 → var2'
+          description: '代入: var1 → var2',
         },
         {
           type: 'assignment',
           sourceVariable: 'var2',
           targetVariable: 'var1',
           location: { file: 'test.ts', line: 4, column: 1 },
-          description: '代入: var2 → var1 (循環)'
-        }
+          description: '代入: var2 → var1 (循環)',
+        },
       ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
@@ -444,22 +463,26 @@ describe('ConstraintSolver', () => {
   describe('解決サマリーと統計', () => {
     it('解決サマリーを正確に計算する', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'taintedVar',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'taintedVar',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
-      const typeConstraints: TypeConstraint[] = [{
-        type: 'assignment',
-        sourceVariable: 'taintedVar',
-        targetVariable: 'anotherTainted',
-        location: { file: 'test.ts', line: 2, column: 1 },
-        description: '代入: taintedVar → anotherTainted'
-      }];
+      const typeConstraints: TypeConstraint[] = [
+        {
+          type: 'assignment',
+          sourceVariable: 'taintedVar',
+          targetVariable: 'anotherTainted',
+          location: { file: 'test.ts', line: 2, column: 1 },
+          description: '代入: taintedVar → anotherTainted',
+        },
+      ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('untaintedVar', {
@@ -468,9 +491,9 @@ describe('ConstraintSolver', () => {
         typeAnnotation: {
           isTaintedAnnotation: false,
           isUntaintedAnnotation: false,
-          customTaintType: 'untainted'
+          customTaintType: 'untainted',
         },
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];
@@ -489,22 +512,26 @@ describe('ConstraintSolver', () => {
 
     it('推論ステップの詳細を記録する', async () => {
       // Arrange
-      const sources: TaintSource[] = [{
-        type: 'user-input',
-        category: 'http-request',
-        location: { file: 'test.ts', line: 1, column: 1, length: 10 },
-        variableName: 'source',
-        apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
-        confidence: 0.95
-      }];
+      const sources: TaintSource[] = [
+        {
+          type: 'user-input',
+          category: 'http-request',
+          location: { file: 'test.ts', line: 1, column: 1, length: 10 },
+          variableName: 'source',
+          apiCall: { functionName: 'req.body', objectName: 'req', arguments: [] },
+          confidence: 0.95,
+        },
+      ];
 
-      const typeConstraints: TypeConstraint[] = [{
-        type: 'assignment',
-        sourceVariable: 'source',
-        targetVariable: 'target',
-        location: { file: 'test.ts', line: 2, column: 1 },
-        description: '代入: source → target'
-      }];
+      const typeConstraints: TypeConstraint[] = [
+        {
+          type: 'assignment',
+          sourceVariable: 'source',
+          targetVariable: 'target',
+          location: { file: 'test.ts', line: 2, column: 1 },
+          description: '代入: source → target',
+        },
+      ];
 
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       const sinks: TaintSink[] = [];
@@ -515,7 +542,7 @@ describe('ConstraintSolver', () => {
 
       // Assert
       expect(result.inferenceSteps.length).toBeGreaterThan(0);
-      
+
       const step = result.inferenceSteps[0];
       expect(step.step).toBe(1);
       expect(step.variable).toBeDefined();
@@ -530,12 +557,12 @@ describe('ConstraintSolver', () => {
       // Arrange - 解決不可能な制約を作成
       const sources: TaintSource[] = [];
       const typeConstraints: TypeConstraint[] = [];
-      
+
       const typeInfoMap = new Map<string, TypeBasedTaintInfo>();
       typeInfoMap.set('conflictVar', {
         symbol: {} as any,
         taintStatus: 'unknown',
-        typeConstraints: []
+        typeConstraints: [],
       });
 
       const sinks: TaintSink[] = [];

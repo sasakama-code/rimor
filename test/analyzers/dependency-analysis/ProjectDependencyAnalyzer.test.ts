@@ -25,13 +25,13 @@ describe('ProjectDependencyAnalyzer', () => {
       // Arrange
       const mockPackageJson = {
         dependencies: {
-          'express': '^4.18.0',
-          'lodash': '~4.17.21'
+          express: '^4.18.0',
+          lodash: '~4.17.21',
         },
         devDependencies: {
-          'jest': '^29.0.0',
-          'typescript': '^5.0.0'
-        }
+          jest: '^29.0.0',
+          typescript: '^5.0.0',
+        },
       };
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -53,16 +53,17 @@ describe('ProjectDependencyAnalyzer', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
       // Act & Assert
-      await expect(analyzer.analyzeDependencies(mockProjectPath))
-        .rejects.toThrow('package.json not found');
+      await expect(analyzer.analyzeDependencies(mockProjectPath)).rejects.toThrow(
+        'package.json not found'
+      );
     });
 
     it('脆弱性のある依存関係を検出する', async () => {
       // Arrange
       const mockPackageJson = {
         dependencies: {
-          'vulnerable-package': '1.0.0'
-        }
+          'vulnerable-package': '1.0.0',
+        },
       };
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -84,7 +85,7 @@ describe('ProjectDependencyAnalyzer', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readdirSync as jest.Mock).mockReturnValue(mockNodeModules);
       (fs.statSync as jest.Mock).mockReturnValue({
-        isDirectory: () => true
+        isDirectory: () => true,
       });
 
       // Act

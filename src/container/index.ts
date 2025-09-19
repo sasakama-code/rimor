@@ -24,27 +24,29 @@ const isDevelopment = process.env.NODE_ENV === 'development' || !isProduction;
  */
 function initializeContainer(): Container {
   console.log('🔧 Initializing DI Container...');
-  
+
   try {
     // Clear existing bindings
     container.unbindAll();
     console.log('🗑️  Existing bindings cleared');
-    
+
     // Core service bindings
     console.log('📋 About to bind core services...');
     bindCoreServices();
     console.log('✅ Core services bound successfully');
-    
+
     // Environment-specific bindings
     if (isDevelopment) {
       bindDevelopmentServices();
     } else {
       bindProductionServices();
     }
-    
-    console.log(`✅ DI Container initialized. Environment: ${isDevelopment ? 'development' : 'production'}`);
+
+    console.log(
+      `✅ DI Container initialized. Environment: ${isDevelopment ? 'development' : 'production'}`
+    );
     console.log(`📋 Container ready`);
-    
+
     return container;
   } catch (error) {
     console.error('❌ Error during DI container initialization:', error);
@@ -57,71 +59,68 @@ function initializeContainer(): Container {
  */
 function bindCoreServices(): void {
   console.log('🔌 Binding core services...');
-  
+
   try {
     // Lazy load to avoid circular dependencies
     console.log('📦 Loading implementation classes...');
-    const { 
+    const {
       AnalysisEngine,
       SecurityAuditor,
       StructuredReporter,
-      PluginManager
+      PluginManager,
     } = require('../core/implementations');
-    
+
     const { UnifiedAnalysisEngine } = require('../core/engine');
     console.log('📦 Loaded implementation classes successfully');
-    
+
     // Issue #81対応: UnifiedPluginManagerを最初に登録
     console.log('🎯 Binding UnifiedPluginManager...');
-    container.bind<UnifiedPluginManager>(TYPES.UnifiedPluginManager)
+    container
+      .bind<UnifiedPluginManager>(TYPES.UnifiedPluginManager)
       .to(UnifiedPluginManager)
       .inSingletonScope()
       .onActivation((context, unifiedPluginManager) => {
         console.log('🎯 Initializing UnifiedPluginManager with quality plugins');
         try {
           // TestExistencePluginを品質プラグインとして登録
-          const TestExistencePlugin = require('../plugins/core/TestExistencePlugin').TestExistencePlugin;
-          
+          const TestExistencePlugin =
+            require('../plugins/core/TestExistencePlugin').TestExistencePlugin;
+
           // 品質プラグインとして直接登録（カバレッジ統合機能を有効化）
           unifiedPluginManager.registerQuality(new TestExistencePlugin());
-          
-          console.log(`✅ UnifiedPluginManager initialized with ${unifiedPluginManager.getQualityPlugins().length} quality plugins`);
+
+          console.log(
+            `✅ UnifiedPluginManager initialized with ${unifiedPluginManager.getQualityPlugins().length} quality plugins`
+          );
         } catch (pluginError) {
           console.error('❌ Error initializing UnifiedPluginManager plugins:', pluginError);
         }
-        
+
         return unifiedPluginManager;
       });
     console.log('✅ UnifiedPluginManager bound successfully');
 
     // UnifiedAnalysisEngineを登録
     console.log('⚡ Binding UnifiedAnalysisEngine...');
-    container.bind<any>(TYPES.UnifiedAnalysisEngine)
-      .to(UnifiedAnalysisEngine)
-      .inSingletonScope();
+    container.bind<any>(TYPES.UnifiedAnalysisEngine).to(UnifiedAnalysisEngine).inSingletonScope();
     console.log('✅ UnifiedAnalysisEngine bound successfully');
-    
+
     // Core service bindings
     console.log('🎛️  Binding AnalysisEngine...');
-    container.bind<IAnalysisEngine>(TYPES.AnalysisEngine)
-      .to(AnalysisEngine)
-      .inSingletonScope();
+    container.bind<IAnalysisEngine>(TYPES.AnalysisEngine).to(AnalysisEngine).inSingletonScope();
     console.log('✅ AnalysisEngine bound successfully');
-    
+
     console.log('🔐 Binding SecurityAuditor...');
-    container.bind<ISecurityAuditor>(TYPES.SecurityAuditor)
-      .to(SecurityAuditor)
-      .inSingletonScope();
+    container.bind<ISecurityAuditor>(TYPES.SecurityAuditor).to(SecurityAuditor).inSingletonScope();
     console.log('✅ SecurityAuditor bound successfully');
-    
+
     console.log('📋 Binding Reporter...');
-    container.bind<IReporter>(TYPES.Reporter)
-      .to(StructuredReporter)
-      .inSingletonScope();
+    container.bind<IReporter>(TYPES.Reporter).to(StructuredReporter).inSingletonScope();
     console.log('✅ Reporter bound successfully');
-    
+
     console.log('🔌 Binding PluginManager...');
-    container.bind<IPluginManager>(TYPES.PluginManager)
+    container
+      .bind<IPluginManager>(TYPES.PluginManager)
       .to(PluginManager)
       .inSingletonScope()
       .onActivation((context, pluginManager) => {
@@ -129,20 +128,22 @@ function bindCoreServices(): void {
         try {
           // レガシープラグインを登録
           const AssertionExistsPlugin = require('../plugins/assertionExists').AssertionExistsPlugin;
-          const LegacyPluginAdapter = require('../core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
-          
+          const LegacyPluginAdapter =
+            require('../core/implementations/LegacyPluginAdapter').LegacyPluginAdapter;
+
           // レガシーAssertionExistsPluginを登録
           pluginManager.register(new LegacyPluginAdapter(new AssertionExistsPlugin()));
-          
-          console.log(`✅ PluginManager initialized with ${pluginManager.getPlugins().length} plugins`);
+
+          console.log(
+            `✅ PluginManager initialized with ${pluginManager.getPlugins().length} plugins`
+          );
         } catch (pluginError) {
           console.error('❌ Error initializing PluginManager plugins:', pluginError);
         }
-        
+
         return pluginManager;
       });
     console.log('✅ PluginManager bound successfully');
-    
   } catch (error) {
     console.error('❌ Error in bindCoreServices:', error);
     throw error;

@@ -4,7 +4,12 @@
  * t_wadaのTDDアプローチに従う
  */
 
-import { TypeBasedFlowAnalyzer, TypeBasedAnalysisResult, TypeBasedDataFlowPath, TypeConstraint } from '../../../src/security/analysis/type-based-flow-analyzer';
+import {
+  TypeBasedFlowAnalyzer,
+  TypeBasedAnalysisResult,
+  TypeBasedDataFlowPath,
+  TypeConstraint,
+} from '../../../src/security/analysis/type-based-flow-analyzer';
 
 describe('TypeBasedFlowAnalyzer', () => {
   let analyzer: TypeBasedFlowAnalyzer;
@@ -32,7 +37,7 @@ describe('TypeBasedFlowAnalyzer', () => {
       expect(result.paths).toHaveLength(1);
       expect(result.constraints.length).toBeGreaterThan(0);
       expect(result.typeInfoMap.size).toBeGreaterThan(0);
-      
+
       const path = result.paths[0];
       expect(path.source.type).toBe('user-input');
       expect(path.sink.type).toBe('code-injection');
@@ -55,10 +60,10 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.constraints.length).toBeGreaterThanOrEqual(3);
-      
+
       const assignmentConstraints = result.constraints.filter(c => c.type === 'assignment');
       const parameterConstraints = result.constraints.filter(c => c.type === 'parameter');
-      
+
       expect(assignmentConstraints.length).toBeGreaterThanOrEqual(2);
       expect(parameterConstraints.length).toBeGreaterThanOrEqual(1);
     });
@@ -81,7 +86,7 @@ describe('TypeBasedFlowAnalyzer', () => {
       expect(result.typeInfoMap.size).toBeGreaterThan(0);
       expect(result.typeInfoMap.has('userdata')).toBe(true);
       expect(result.typeInfoMap.has('safeData')).toBe(true);
-      
+
       // シンボル情報が正しく記録されていることを確認
       const userdataInfo = result.typeInfoMap.get('userdata');
       expect(userdataInfo?.symbol).toBeDefined();
@@ -150,7 +155,7 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.summary.constraintViolations).toBeGreaterThan(0);
-      
+
       const path = result.paths.find(p => p.typeValidation.violatedConstraints.length > 0);
       expect(path).toBeDefined();
       expect(path?.typeValidation.isTypeSafe).toBe(false);
@@ -175,10 +180,10 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.paths).toHaveLength(1);
-      
+
       const path = result.paths[0];
       expect(path.typeConstraintPath.length).toBeGreaterThan(0);
-      
+
       // 異なる種類の制約が含まれることを確認
       const constraintTypes = path.typeConstraintPath.map(c => c.type);
       expect(constraintTypes).toContain('assignment');
@@ -206,10 +211,8 @@ describe('TypeBasedFlowAnalyzer', () => {
       // Assert
       const propertyConstraints = result.constraints.filter(c => c.type === 'property-access');
       expect(propertyConstraints.length).toBeGreaterThan(0);
-      
-      const propertyConstraint = propertyConstraints.find(c => 
-        c.description.includes('userInput')
-      );
+
+      const propertyConstraint = propertyConstraints.find(c => c.description.includes('userInput'));
       expect(propertyConstraint).toBeDefined();
     });
 
@@ -233,9 +236,9 @@ describe('TypeBasedFlowAnalyzer', () => {
       // Assert
       const parameterConstraints = result.constraints.filter(c => c.type === 'parameter');
       expect(parameterConstraints.length).toBeGreaterThan(0);
-      
+
       // パラメーターインデックスが正確に記録されることを確認
-      const dangerousParamConstraint = parameterConstraints.find(c => 
+      const dangerousParamConstraint = parameterConstraints.find(c =>
         c.description.includes('0番目の引数')
       );
       expect(dangerousParamConstraint).toBeDefined();
@@ -269,18 +272,19 @@ describe('TypeBasedFlowAnalyzer', () => {
       // Act - 各分析に独立したアナライザーインスタンスを使用
       const annotatedAnalyzer = new TypeBasedFlowAnalyzer();
       const unannotatedAnalyzer = new TypeBasedFlowAnalyzer();
-      
+
       const [annotatedResult, unannotatedResult] = await Promise.all([
         annotatedAnalyzer.analyzeTypeBasedFlow(annotatedCode, 'annotated.ts'),
-        unannotatedAnalyzer.analyzeTypeBasedFlow(unannotatedCode, 'unannotated.ts')
+        unannotatedAnalyzer.analyzeTypeBasedFlow(unannotatedCode, 'unannotated.ts'),
       ]);
 
       // Assert
       if (annotatedResult.paths.length > 0 && unannotatedResult.paths.length > 0) {
-        expect(annotatedResult.paths[0].typeBasedConfidence)
-          .toBeGreaterThan(unannotatedResult.paths[0].typeBasedConfidence);
+        expect(annotatedResult.paths[0].typeBasedConfidence).toBeGreaterThan(
+          unannotatedResult.paths[0].typeBasedConfidence
+        );
       }
-      
+
       expect(annotatedResult.summary.typeAnnotatedPaths).toBeGreaterThan(0);
       expect(unannotatedResult.summary.typeAnnotatedPaths).toBe(0);
     });
@@ -308,13 +312,14 @@ describe('TypeBasedFlowAnalyzer', () => {
       // Act
       const [shortResult, longResult] = await Promise.all([
         analyzer.analyzeTypeBasedFlow(shortPathCode, 'short.ts'),
-        analyzer.analyzeTypeBasedFlow(longPathCode, 'long.ts')
+        analyzer.analyzeTypeBasedFlow(longPathCode, 'long.ts'),
       ]);
 
       // Assert
       if (shortResult.paths.length > 0 && longResult.paths.length > 0) {
-        expect(shortResult.paths[0].typeBasedConfidence)
-          .toBeGreaterThan(longResult.paths[0].typeBasedConfidence);
+        expect(shortResult.paths[0].typeBasedConfidence).toBeGreaterThan(
+          longResult.paths[0].typeBasedConfidence
+        );
       }
     });
   });
@@ -342,7 +347,7 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.summary.typeSafePaths).toBeGreaterThan(0);
-      
+
       if (result.paths.length > 0) {
         const safePath = result.paths.find(p => p.typeValidation.isTypeSafe);
         expect(safePath).toBeDefined();
@@ -368,7 +373,7 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.summary.constraintViolations).toBeGreaterThan(0);
-      
+
       if (result.paths.length > 0) {
         const violatingPath = result.paths.find(p => !p.typeValidation.isTypeSafe);
         expect(violatingPath).toBeDefined();
@@ -410,10 +415,10 @@ describe('TypeBasedFlowAnalyzer', () => {
       // Assert
       expect(result.constraints.length).toBeGreaterThan(0);
       expect(result.typeInfoMap.size).toBeGreaterThan(0);
-      
+
       // インターフェース型のプロパティアクセスが制約として記録されることを確認
-      const propertyConstraints = result.constraints.filter(c => 
-        c.type === 'property-access' && c.description.includes('body')
+      const propertyConstraints = result.constraints.filter(
+        c => c.type === 'property-access' && c.description.includes('body')
       );
       expect(propertyConstraints.length).toBeGreaterThan(0);
     });
@@ -438,7 +443,7 @@ describe('TypeBasedFlowAnalyzer', () => {
 
       // Assert
       expect(result.constraints.length).toBeGreaterThan(0);
-      
+
       // ジェネリック型制約が適切に処理されることを確認
       const parameterConstraints = result.constraints.filter(c => c.type === 'parameter');
       expect(parameterConstraints.length).toBeGreaterThan(0);
@@ -456,8 +461,7 @@ describe('TypeBasedFlowAnalyzer', () => {
       `;
 
       // Act & Assert
-      await expect(analyzer.analyzeTypeBasedFlow(invalidCode, 'invalid.ts'))
-        .resolves.toBeDefined(); // エラーで落ちずに結果を返す
+      await expect(analyzer.analyzeTypeBasedFlow(invalidCode, 'invalid.ts')).resolves.toBeDefined(); // エラーで落ちずに結果を返す
     });
 
     it('空のソースコードでも正常に処理する', async () => {
@@ -525,10 +529,11 @@ describe('TypeBasedFlowAnalyzer', () => {
       expect(result.summary.totalPaths).toBeGreaterThan(0);
       expect(result.summary.typeAnnotatedPaths).toBeGreaterThan(0);
       expect(result.summary.constraintViolations).toBeGreaterThan(0);
-      
+
       // サマリーの整合性確認
-      expect(result.summary.typeSafePaths + (result.summary.totalPaths - result.summary.typeSafePaths))
-        .toBe(result.summary.totalPaths);
+      expect(
+        result.summary.typeSafePaths + (result.summary.totalPaths - result.summary.typeSafePaths)
+      ).toBe(result.summary.totalPaths);
     });
   });
 });

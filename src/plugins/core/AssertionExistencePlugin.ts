@@ -1,19 +1,19 @@
 /**
  * AssertionExistencePlugin
- * 
+ *
  * テストファイル内のアサーションの存在と品質を確認するプラグイン
  * BasePluginを継承し、ITestQualityPluginインターフェースを実装
  */
 
 import * as fs from 'fs';
 import { BasePlugin } from '../base/BasePlugin';
-import { 
-  ProjectContext, 
-  TestFile, 
-  DetectionResult, 
-  QualityScore, 
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
   Improvement,
-  Issue 
+  Issue,
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
@@ -51,12 +51,12 @@ export class AssertionExistencePlugin extends BasePlugin {
         location: {
           file: testFile.path,
           line: assertionInfo.testLine || 1,
-          column: 1
+          column: 1,
         },
         metadata: {
           description: `Test has no assertions in ${PathSecurity.toRelativeOrMasked(testFile.path)}`,
-          category: 'assertion-quality'
-        }
+          category: 'assertion-quality',
+        },
       });
     } else if (assertionInfo.hasWeakAssertions) {
       results.push({
@@ -67,12 +67,12 @@ export class AssertionExistencePlugin extends BasePlugin {
         location: {
           file: testFile.path,
           line: assertionInfo.weakAssertionLine || 1,
-          column: 1
+          column: 1,
         },
         metadata: {
           description: `Test contains only weak assertions in ${PathSecurity.toRelativeOrMasked(testFile.path)}`,
-          category: 'assertion-quality'
-        }
+          category: 'assertion-quality',
+        },
       });
     } else {
       // ファイル全体にアサーションがある場合のみ、個別のテストブロックをチェック
@@ -87,12 +87,12 @@ export class AssertionExistencePlugin extends BasePlugin {
             location: {
               file: testFile.path,
               line: block.line,
-              column: 1
+              column: 1,
             },
             metadata: {
               description: `Test block '${block.name}' has no assertions`,
-              category: 'assertion-quality'
-            }
+              category: 'assertion-quality',
+            },
           });
         }
       });
@@ -122,14 +122,16 @@ export class AssertionExistencePlugin extends BasePlugin {
       dimensions: {
         completeness,
         correctness,
-        maintainability: 80
+        maintainability: 80,
       },
       breakdown: {
         correctness,
-        completeness
+        completeness,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 1,
     };
   }
 
@@ -148,10 +150,10 @@ export class AssertionExistencePlugin extends BasePlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.4,
-        autoFixable: false
+        autoFixable: false,
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
@@ -164,10 +166,10 @@ export class AssertionExistencePlugin extends BasePlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.2,
-        autoFixable: false
+        autoFixable: false,
       });
     }
 
@@ -188,14 +190,16 @@ export class AssertionExistencePlugin extends BasePlugin {
       const hasAssertions = this.detectAssertions(content);
 
       if (!hasAssertions) {
-        return [{
-          id: `assertion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          type: 'missing-assertion',
-          severity: 'medium' as const,
-          message: "アサーション（expect文など）が見つかりません",
-          filePath: filePath,
-          category: 'assertion' as const
-        }];
+        return [
+          {
+            id: `assertion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: 'missing-assertion',
+            severity: 'medium' as const,
+            message: 'アサーション（expect文など）が見つかりません',
+            filePath: filePath,
+            category: 'assertion' as const,
+          },
+        ];
       }
 
       return [];
@@ -216,7 +220,7 @@ export class AssertionExistencePlugin extends BasePlugin {
   } {
     const cleanContent = this.removeCommentsAndStrings(content);
     const lines = cleanContent.split('\n');
-    
+
     let hasNoAssertions = !this.detectAssertions(cleanContent);
     let hasWeakAssertions = false;
     let testLine: number | undefined;
@@ -229,7 +233,7 @@ export class AssertionExistencePlugin extends BasePlugin {
       /expect\([^)]+\)\.toBeDefined\(\)/,
       /expect\([^)]+\)\.toBeUndefined\(\)/,
       /assert\.ok\(/,
-      /assert\(/
+      /assert\(/,
     ];
 
     lines.forEach((line, index) => {
@@ -255,12 +259,10 @@ export class AssertionExistencePlugin extends BasePlugin {
       /expect\([^)]+\)\.toContain\(/,
       /expect\([^)]+\)\.toHaveBeenCalled/,
       /assert\.equal\(/,
-      /assert\.deepEqual\(/
+      /assert\.deepEqual\(/,
     ];
 
-    const hasStrongAssertions = strongPatterns.some(pattern => 
-      pattern.test(cleanContent)
-    );
+    const hasStrongAssertions = strongPatterns.some(pattern => pattern.test(cleanContent));
 
     if (hasStrongAssertions) {
       hasWeakAssertions = false;
@@ -270,7 +272,7 @@ export class AssertionExistencePlugin extends BasePlugin {
       hasNoAssertions,
       hasWeakAssertions: hasWeakAssertions && !hasNoAssertions,
       testLine,
-      weakAssertionLine
+      weakAssertionLine,
     };
   }
 
@@ -284,9 +286,9 @@ export class AssertionExistencePlugin extends BasePlugin {
   }> {
     const blocks: Array<{ name: string; content: string; line: number }> = [];
     const lines = content.split('\n');
-    
+
     const testPattern = /\b(test|it)\s*\(\s*['"`]([^'"`]+)['"`]/;
-    
+
     for (let i = 0; i < lines.length; i++) {
       const match = lines[i].match(testPattern);
       if (match) {
@@ -295,7 +297,7 @@ export class AssertionExistencePlugin extends BasePlugin {
         blocks.push({
           name,
           content: blockContent,
-          line: i + 1
+          line: i + 1,
         });
       }
     }
@@ -313,7 +315,7 @@ export class AssertionExistencePlugin extends BasePlugin {
 
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const char of line) {
         if (char === '{') {
           braceCount++;

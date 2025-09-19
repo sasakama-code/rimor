@@ -4,7 +4,12 @@
  */
 
 import { MarkdownFormatter } from '../../../src/reporting/formatters/MarkdownFormatter';
-import { UnifiedAnalysisResult, RiskLevel, ExecutiveSummary, AIActionableRisk } from '../../../src/nist/types/unified-analysis-result';
+import {
+  UnifiedAnalysisResult,
+  RiskLevel,
+  ExecutiveSummary,
+  AIActionableRisk,
+} from '../../../src/nist/types/unified-analysis-result';
 
 describe('MarkdownFormatter', () => {
   let formatter: MarkdownFormatter;
@@ -29,16 +34,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 2,
               MEDIUM: 3,
               LOW: 4,
-              MINIMAL: 5
-            }
-          }
+              MINIMAL: 5,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult);
-      
+
       expect(typeof result).toBe('string');
       expect(result).toContain('# 分析レポート');
       expect(result).toContain('## サマリー');
@@ -63,16 +68,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 2,
               MEDIUM: 3,
               LOW: 4,
-              MINIMAL: 5
-            }
-          }
+              MINIMAL: 5,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult) as string;
-      
+
       expect(result).toContain('### リスク統計');
       expect(result).toContain('- CRITICAL: 1件');
       expect(result).toContain('- HIGH: 2件');
@@ -84,14 +89,15 @@ describe('MarkdownFormatter', () => {
 
   describe('Markdownエスケープ機能（セキュリティ対策）', () => {
     test('危険なMarkdown文字を適切にエスケープする', () => {
-      const dangerousText = '*Bold* _Italic_ `Code` # Header [Link](url) ![Image](url) <script>alert()</script> | Table |';
+      const dangerousText =
+        '*Bold* _Italic_ `Code` # Header [Link](url) ![Image](url) <script>alert()</script> | Table |';
       const mockRisk: AIActionableRisk = {
         id: 'test-risk',
         title: dangerousText,
         problem: dangerousText,
         riskLevel: 'HIGH' as RiskLevel,
         filePath: 'test.ts',
-        suggestedAction: dangerousText
+        suggestedAction: dangerousText,
       };
 
       const mockResult: UnifiedAnalysisResult = {
@@ -108,16 +114,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 1,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [mockRisk],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult) as string;
-      
+
       // 危険な文字がエスケープされていることを確認（メイン見出しのチェックは除外）
       expect(result).not.toContain('*Bold*');
       expect(result).not.toContain('_Italic_');
@@ -126,7 +132,7 @@ describe('MarkdownFormatter', () => {
       expect(result).not.toContain('![Image](url)');
       expect(result).not.toContain('<script>');
       expect(result).not.toContain('| Table |');
-      
+
       // エスケープされた文字が含まれることを確認
       expect(result).toContain('\\*Bold\\*');
       expect(result).toContain('\\_Italic\\_');
@@ -146,9 +152,9 @@ describe('MarkdownFormatter', () => {
         riskLevel: 'CRITICAL' as RiskLevel,
         filePath: 'test.ts',
         context: {
-          codeSnippet: 'const data = `template with ${injection}`;'
+          codeSnippet: 'const data = `template with ${injection}`;',
         },
-        suggestedAction: 'Fix the injection'
+        suggestedAction: 'Fix the injection',
       };
 
       const mockResult: UnifiedAnalysisResult = {
@@ -165,16 +171,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 0,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [mockRisk],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult) as string;
-      
+
       // コードブロックが適切に生成され、コードブロック内のトリプルバックティックがエスケープされることを確認
       expect(result).toContain('```typescript');
       // コードスニペット内では個別のバックティックはエスケープされない（コードブロック内なので安全）
@@ -189,7 +195,7 @@ describe('MarkdownFormatter', () => {
         problem: 'Dangerous path detected',
         riskLevel: 'HIGH' as RiskLevel,
         filePath: dangerousPath,
-        suggestedAction: 'Fix the path'
+        suggestedAction: 'Fix the path',
       };
 
       const mockResult: UnifiedAnalysisResult = {
@@ -206,18 +212,20 @@ describe('MarkdownFormatter', () => {
               HIGH: 1,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [mockRisk],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult) as string;
-      
+
       // ファイルパスが適切にエスケープされていることを確認
-      expect(result).toContain('**ファイル**: src/components/\\[dynamic\\]\\_component\\*.ts\\#hash');
+      expect(result).toContain(
+        '**ファイル**: src/components/\\[dynamic\\]\\_component\\*.ts\\#hash'
+      );
     });
 
     test('null・undefinedテキストを安全に処理する', () => {
@@ -227,7 +235,7 @@ describe('MarkdownFormatter', () => {
         problem: undefined as any,
         riskLevel: 'LOW' as RiskLevel,
         filePath: '',
-        suggestedAction: null as any
+        suggestedAction: null as any,
       };
 
       const mockResult: UnifiedAnalysisResult = {
@@ -244,16 +252,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 0,
               MEDIUM: 0,
               LOW: 1,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: [mockRisk],
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult) as string;
-      
+
       // nullやundefinedが適切に処理されることを確認（エラーが発生しない）
       expect(typeof result).toBe('string');
       expect(result).toContain('## 主要なリスク');
@@ -286,7 +294,7 @@ describe('MarkdownFormatter', () => {
         problem: `Problem ${i} with _dangerous_ formatting`,
         riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'][i % 5] as RiskLevel,
         filePath: `file${i}.ts`,
-        suggestedAction: `Fix issue ${i}`
+        suggestedAction: `Fix issue ${i}`,
       }));
 
       const mockResult: UnifiedAnalysisResult = {
@@ -303,24 +311,24 @@ describe('MarkdownFormatter', () => {
               HIGH: 20,
               MEDIUM: 20,
               LOW: 20,
-              MINIMAL: 20
-            }
-          }
+              MINIMAL: 20,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: risks,
-        metadata: {}
+        metadata: {},
       };
 
       const startTime = Date.now();
       const result = formatter.format(mockResult) as string;
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       // 100ms以内で完了することを期待
       expect(duration).toBeLessThan(100);
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(1000);
-      
+
       // maxRisksオプションで制限されることを確認（デフォルト10件）
       const riskSections = result.match(/### \d+\./g) || [];
       expect(riskSections.length).toBeLessThanOrEqual(10);
@@ -333,7 +341,7 @@ describe('MarkdownFormatter', () => {
         problem: `Problem ${i}`,
         riskLevel: 'HIGH' as RiskLevel,
         filePath: `file${i}.ts`,
-        suggestedAction: `Fix ${i}`
+        suggestedAction: `Fix ${i}`,
       }));
 
       const mockResult: UnifiedAnalysisResult = {
@@ -350,16 +358,16 @@ describe('MarkdownFormatter', () => {
               HIGH: 20,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
-          }
+              MINIMAL: 0,
+            },
+          },
         } as ExecutiveSummary,
         aiKeyRisks: risks,
-        metadata: {}
+        metadata: {},
       };
 
       const result = formatter.format(mockResult, { maxRisks: 5 }) as string;
-      
+
       // maxRisks: 5で制限されることを確認
       const riskSections = result.match(/### \d+\./g) || [];
       expect(riskSections.length).toBe(5);

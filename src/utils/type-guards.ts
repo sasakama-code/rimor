@@ -76,10 +76,7 @@ export function isNumberArray(value: unknown): value is number[] {
 /**
  * オブジェクトに特定のプロパティが存在するかチェック
  */
-export function hasProperty<K extends string>(
-  obj: unknown,
-  key: K
-): obj is Record<K, unknown> {
+export function hasProperty<K extends string>(obj: unknown, key: K): obj is Record<K, unknown> {
   return isObject(obj) && key in obj;
 }
 
@@ -96,11 +93,7 @@ export function hasProperties<K extends string>(
 /**
  * 安全にプロパティにアクセス
  */
-export function getProperty<T>(
-  obj: unknown,
-  path: string,
-  defaultValue?: T
-): T | undefined {
+export function getProperty<T>(obj: unknown, path: string, defaultValue?: T): T | undefined {
   if (!isObject(obj)) {
     return defaultValue;
   }
@@ -203,9 +196,7 @@ export function safeCast<T>(
   errorMessage?: string
 ): T {
   if (!guard(value)) {
-    throw new TypeError(
-      errorMessage || `Value does not match expected type`
-    );
+    throw new TypeError(errorMessage || `Value does not match expected type`);
   }
   return value;
 }
@@ -215,7 +206,7 @@ export function safeCast<T>(
  */
 export function logType(value: unknown, label?: string): void {
   const prefix = label ? `[${label}] ` : '';
-  
+
   if (isNullOrUndefined(value)) {
     console.log(`${prefix}Type: ${value}`);
   } else if (isArray(value)) {

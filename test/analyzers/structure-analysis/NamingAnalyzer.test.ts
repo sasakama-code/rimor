@@ -28,7 +28,7 @@ describe('NamingAnalyzer', () => {
       const mockFiles = [
         '/project/src/UserController.ts',
         '/project/src/utils/stringHelper.ts',
-        '/project/src/models/user-model.ts'
+        '/project/src/models/user-model.ts',
       ];
 
       (mockGlob.sync as unknown as jest.Mock).mockReturnValue(mockFiles);
@@ -53,12 +53,7 @@ describe('NamingAnalyzer', () => {
   describe('analyzeFileNaming', () => {
     it('ファイル名の命名パターンを検出する', () => {
       // Arrange
-      const files = [
-        'UserController.ts',
-        'userService.ts',
-        'string-helper.ts',
-        'API_CONSTANTS.ts'
-      ];
+      const files = ['UserController.ts', 'userService.ts', 'string-helper.ts', 'API_CONSTANTS.ts'];
 
       // Act
       const result = analyzer.analyzeFileNaming(files);
@@ -73,7 +68,7 @@ describe('NamingAnalyzer', () => {
         'UserController.ts',
         'OrderService.ts',
         'ProductModel.ts',
-        'AuthMiddleware.ts'
+        'AuthMiddleware.ts',
       ];
 
       // Act
@@ -89,7 +84,7 @@ describe('NamingAnalyzer', () => {
         'userController.ts',
         'orderService.ts',
         'productModel.ts',
-        'authMiddleware.ts'
+        'authMiddleware.ts',
       ];
 
       // Act
@@ -105,7 +100,7 @@ describe('NamingAnalyzer', () => {
         'user-controller.ts',
         'order-service.ts',
         'product-model.ts',
-        'auth-middleware.ts'
+        'auth-middleware.ts',
       ];
 
       // Act
@@ -190,7 +185,7 @@ describe('NamingAnalyzer', () => {
         PascalCase: ['UserController'],
         snake_case: ['user_id'],
         'kebab-case': [],
-        SCREAMING_SNAKE_CASE: ['MAX_LIMIT']
+        SCREAMING_SNAKE_CASE: ['MAX_LIMIT'],
       };
 
       // Act
@@ -207,7 +202,7 @@ describe('NamingAnalyzer', () => {
         PascalCase: ['UserController', 'UserService'],
         snake_case: [],
         'kebab-case': [],
-        SCREAMING_SNAKE_CASE: []
+        SCREAMING_SNAKE_CASE: [],
       };
 
       // Act
@@ -226,32 +221,32 @@ describe('NamingAnalyzer', () => {
           pattern: 'PascalCase',
           confidence: 0.8,
           examples: ['UserController.ts', 'OrderService.ts'],
-          violations: []
+          violations: [],
         },
         directories: {
           pattern: 'kebab-case',
           confidence: 0.7,
           examples: ['src', 'test'],
-          violations: []
+          violations: [],
         },
         variables: {
           pattern: 'camelCase',
           confidence: 0.85,
           examples: ['userName', 'userAge'],
-          violations: []
+          violations: [],
         },
         functions: {
           pattern: 'camelCase',
           confidence: 0.85,
           examples: ['getUserData', 'setUserEmail'],
-          violations: []
+          violations: [],
         },
         classes: {
           pattern: 'PascalCase',
           confidence: 0.9,
           examples: ['UserController', 'OrderService'],
-          violations: []
-        }
+          violations: [],
+        },
       };
 
       // Act

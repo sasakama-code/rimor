@@ -2,7 +2,7 @@
  * MarkdownFormatter
  * v0.9.0 - Issue #64: レポートシステムの統合
  * REFACTOR段階: BaseFormatterを継承
- * 
+ *
  * SOLID原則: 単一責任（Markdown形式の生成のみ）
  * DRY原則: 共通ロジックをBaseFormatterに委譲
  * KISS原則: シンプルなMarkdown生成
@@ -26,11 +26,11 @@ export class MarkdownFormatter extends BaseFormatter {
     if (!text || typeof text !== 'string') {
       return '';
     }
-    
+
     const escapeMap: Record<string, string> = {
       '\\': '\\\\',
       '*': '\\*',
-      '_': '\\_',
+      _: '\\_',
       '`': '\\`',
       '#': '\\#',
       '[': '\\[',
@@ -40,9 +40,9 @@ export class MarkdownFormatter extends BaseFormatter {
       '!': '\\!',
       '<': '&lt;',
       '>': '&gt;',
-      '|': '\\|'
+      '|': '\\|',
     };
-    
+
     return text.replace(/[\\*_`#\[\]()!<>|]/g, char => escapeMap[char] || char);
   }
 
@@ -63,12 +63,12 @@ export class MarkdownFormatter extends BaseFormatter {
     // サマリー
     markdown.push('## サマリー');
     markdown.push('');
-    
+
     if (result.summary) {
       // Issue #130対応: Defensive Programming適用
       const summary = result.summary;
       const stats = summary.statistics ?? {};
-      
+
       markdown.push(`- **総合スコア**: ${summary.overallScore ?? 'N/A'}/100`);
       markdown.push(`- **グレード**: ${summary.overallGrade ?? 'N/A'}`);
       markdown.push(`- **ファイル数**: ${(stats as any).totalFiles ?? 0}`);
@@ -104,7 +104,7 @@ export class MarkdownFormatter extends BaseFormatter {
         markdown.push('');
         markdown.push(`**ファイル**: ${this.escapeMarkdown(risk.filePath || '')}`);
         markdown.push('');
-        
+
         if (risk.problem) {
           markdown.push(`**問題**: ${this.escapeMarkdown(risk.problem)}`);
           markdown.push('');
@@ -121,10 +121,11 @@ export class MarkdownFormatter extends BaseFormatter {
 
         if (risk.suggestedAction) {
           // suggestedActionが文字列の場合とオブジェクトの場合の両方に対応
-          const action = typeof risk.suggestedAction === 'string' 
-            ? risk.suggestedAction 
-            : risk.suggestedAction.description;
-          
+          const action =
+            typeof risk.suggestedAction === 'string'
+              ? risk.suggestedAction
+              : risk.suggestedAction.description;
+
           markdown.push(`**推奨アクション**: ${this.escapeMarkdown(action || '')}`);
           markdown.push('');
         }
@@ -140,18 +141,20 @@ export class MarkdownFormatter extends BaseFormatter {
       markdown.push('');
 
       // dimensionsが配列の場合とオブジェクトの場合の両方に対応
-      const dimensions = Array.isArray(result.summary.dimensions) 
+      const dimensions = Array.isArray(result.summary.dimensions)
         ? result.summary.dimensions
-        : Object.entries(result.summary.dimensions as Record<string, { score?: number; grade?: string }>).map(([name, data]) => ({
+        : Object.entries(
+            result.summary.dimensions as Record<string, { score?: number; grade?: string }>
+          ).map(([name, data]) => ({
             name,
-            ...data
+            ...data,
           }));
 
       dimensions.forEach((dimension: any) => {
         const name = dimension.name || Object.keys(dimension)[0];
         const score = dimension.score;
         const grade = dimension.grade;
-        
+
         if (name && score !== undefined) {
           const safeName = this.escapeMarkdown(name);
           const safeGrade = this.escapeMarkdown(grade || 'N/A');
@@ -168,5 +171,4 @@ export class MarkdownFormatter extends BaseFormatter {
 
     return markdown.join('\n');
   }
-
 }

@@ -1,6 +1,6 @@
 /**
  * 統一されたセキュリティ分析型定義
- * 
+ *
  * SOLID原則とDefensive Programmingのバランスを取った設計
  * Taint分析、セキュリティ違反検出、改善提案を統合
  */
@@ -74,7 +74,7 @@ export interface SecurityViolation {
 /**
  * セキュリティ違反の種類
  */
-export type ViolationType = 
+export type ViolationType =
   | 'TAINT_FLOW'
   | 'ACCESS_CONTROL'
   | 'INJECTION'
@@ -105,7 +105,7 @@ export interface SecurityImprovement {
 /**
  * 改善提案のカテゴリ
  */
-export type ImprovementCategory = 
+export type ImprovementCategory =
   | 'INPUT_VALIDATION'
   | 'OUTPUT_ENCODING'
   | 'ACCESS_CONTROL'
@@ -197,12 +197,12 @@ export interface TaintAnalysisWithMetrics {
  * 統一されたTaint分析結果型
  * DRY原則: 既存のインターフェースを組み合わせて定義
  */
-export interface TaintAnalysisResult extends
-  BaseTaintAnalysisResult,
-  TaintAnalysisWithAnnotations,
-  TaintAnalysisWithViolations,
-  TaintAnalysisWithImprovements,
-  TaintAnalysisWithMetrics {
+export interface TaintAnalysisResult
+  extends BaseTaintAnalysisResult,
+    TaintAnalysisWithAnnotations,
+    TaintAnalysisWithViolations,
+    TaintAnalysisWithImprovements,
+    TaintAnalysisWithMetrics {
   /** 分析のメタデータ（オプション） */
   metadata?: {
     /** 分析エンジンのバージョン */
@@ -219,7 +219,8 @@ export interface TaintAnalysisResult extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTaintAnalysisResult(obj: unknown): obj is TaintAnalysisResult {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'flows' in obj &&
     'summary' in obj &&
@@ -228,33 +229,38 @@ export function isTaintAnalysisResult(obj: unknown): obj is TaintAnalysisResult 
     (obj as any).summary !== null &&
     typeof (obj as any).summary === 'object' &&
     typeof (obj as any).summary.totalFlows === 'number' &&
-    Array.isArray((obj as any).recommendations);
+    Array.isArray((obj as any).recommendations)
+  );
 }
 
 /**
  * 型ガード: セキュリティ違反を含むかどうかを判定
  */
 export function hasSecurityViolations(obj: unknown): obj is TaintAnalysisWithViolations {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'violations' in obj &&
     Array.isArray((obj as any).violations) &&
-    (obj as any).violations.every((v: any) => 
-      v.type && v.severity && v.source && v.sink && v.description
-    );
+    (obj as any).violations.every(
+      (v: any) => v.type && v.severity && v.source && v.sink && v.description
+    )
+  );
 }
 
 /**
  * 型ガード: アノテーションを含むかどうかを判定
  */
 export function hasAnnotations(obj: unknown): obj is TaintAnalysisWithAnnotations {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'annotations' in obj &&
     (obj as any).annotations !== null &&
     typeof (obj as any).annotations === 'object' &&
     Array.isArray((obj as any).annotations.taintedProperties) &&
-    Array.isArray((obj as any).annotations.untaintedProperties);
+    Array.isArray((obj as any).annotations.untaintedProperties)
+  );
 }
 
 /**
@@ -270,7 +276,7 @@ export function createTaintAnalysisResult(
     criticalFlows: flows.filter(f => f.severity === 'CRITICAL').length,
     highRiskFlows: flows.filter(f => f.severity === 'HIGH').length,
     mediumRiskFlows: flows.filter(f => f.severity === 'MEDIUM').length,
-    lowRiskFlows: flows.filter(f => f.severity === 'LOW').length
+    lowRiskFlows: flows.filter(f => f.severity === 'LOW').length,
   };
 
   return {
@@ -283,8 +289,8 @@ export function createTaintAnalysisResult(
       analysisTime: 0,
       filesAnalyzed: 0,
       methodsAnalyzed: 0,
-      coverage: 0
-    }
+      coverage: 0,
+    },
   };
 }
 
@@ -302,11 +308,11 @@ export function mergeTaintAnalysisResults(results: TaintAnalysisResult[]): Taint
   const mergedImprovements = results.flatMap(r => r.improvements || []);
 
   const result = createTaintAnalysisResult(mergedFlows, mergedRecommendations);
-  
+
   if (mergedViolations.length > 0) {
     result.violations = mergedViolations;
   }
-  
+
   if (mergedImprovements.length > 0) {
     result.improvements = mergedImprovements;
   }
@@ -318,7 +324,7 @@ export function mergeTaintAnalysisResults(results: TaintAnalysisResult[]): Taint
       taintedProperties: [...new Set(allAnnotations.flatMap(a => a.taintedProperties))],
       untaintedProperties: [...new Set(allAnnotations.flatMap(a => a.untaintedProperties))],
       polyTaintMethods: [...new Set(allAnnotations.flatMap(a => a.polyTaintMethods))],
-      suppressedMethods: [...new Set(allAnnotations.flatMap(a => a.suppressedMethods))]
+      suppressedMethods: [...new Set(allAnnotations.flatMap(a => a.suppressedMethods))],
     };
   }
 

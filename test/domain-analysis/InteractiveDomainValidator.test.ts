@@ -1,7 +1,7 @@
 /**
  * InteractiveDomainValidator Test Suite
  * v0.9.0 - 対話型ドメイン検証のテスト
- * 
+ *
  * TDD: RED段階 - 失敗するテストから開始
  */
 
@@ -10,7 +10,7 @@ import { DomainCluster, UserValidationResult } from '../../src/domain-analysis/t
 
 // inquirerのモック化
 jest.mock('inquirer', () => ({
-  prompt: jest.fn()
+  prompt: jest.fn(),
 }));
 
 const inquirer = require('inquirer');
@@ -18,7 +18,7 @@ const mockedPrompt = inquirer.prompt as jest.Mock;
 
 describe('InteractiveDomainValidator', () => {
   let validator: InteractiveDomainValidator;
-  
+
   beforeEach(() => {
     validator = new InteractiveDomainValidator();
     jest.clearAllMocks();
@@ -43,29 +43,32 @@ describe('InteractiveDomainValidator', () => {
         name: 'User Management',
         keywords: ['user', 'auth', 'login', 'password'],
         confidence: 0.85,
-        files: ['src/auth.ts', 'src/user.ts']
+        files: ['src/auth.ts', 'src/user.ts'],
       },
       {
         id: 'cluster-2',
         name: 'Payment Processing',
         keywords: ['payment', 'transaction', 'billing'],
         confidence: 0.72,
-        files: ['src/payment.ts', 'src/billing.ts']
-      }
+        files: ['src/payment.ts', 'src/billing.ts'],
+      },
     ];
 
     it('全てのドメインを承認できる', async () => {
       // ユーザーが全て承認する場合のモック
-      mockedPrompt.mockResolvedValueOnce({
-        action: 'approve'
-      }).mockResolvedValueOnce({
-        action: 'approve'
-      }).mockResolvedValueOnce({
-        continue: false
-      });
+      mockedPrompt
+        .mockResolvedValueOnce({
+          action: 'approve',
+        })
+        .mockResolvedValueOnce({
+          action: 'approve',
+        })
+        .mockResolvedValueOnce({
+          continue: false,
+        });
 
       const result = await validator.validate(sampleClusters);
-      
+
       expect(result.validated).toBe(true);
       expect(result.approvedDomains).toHaveLength(2);
       expect(result.modifiedDomains).toHaveLength(0);
@@ -76,21 +79,21 @@ describe('InteractiveDomainValidator', () => {
       // 最初のドメインを修正する場合のモック
       mockedPrompt
         .mockResolvedValueOnce({
-          action: 'modify'
+          action: 'modify',
         })
         .mockResolvedValueOnce({
           newName: 'Authentication & Authorization',
-          newKeywords: 'auth, login, security, jwt, oauth'
+          newKeywords: 'auth, login, security, jwt, oauth',
         })
         .mockResolvedValueOnce({
-          action: 'approve'
+          action: 'approve',
         })
         .mockResolvedValueOnce({
-          continue: false
+          continue: false,
         });
 
       const result = await validator.validate(sampleClusters);
-      
+
       expect(result.validated).toBe(true);
       expect(result.approvedDomains).toHaveLength(1);
       expect(result.modifiedDomains).toHaveLength(1);
@@ -104,17 +107,17 @@ describe('InteractiveDomainValidator', () => {
       // 2番目のドメインを拒否する場合のモック
       mockedPrompt
         .mockResolvedValueOnce({
-          action: 'approve'
+          action: 'approve',
         })
         .mockResolvedValueOnce({
-          action: 'reject'
+          action: 'reject',
         })
         .mockResolvedValueOnce({
-          continue: false
+          continue: false,
         });
 
       const result = await validator.validate(sampleClusters);
-      
+
       expect(result.validated).toBe(true);
       expect(result.approvedDomains).toHaveLength(1);
       expect(result.modifiedDomains).toHaveLength(0);
@@ -124,7 +127,7 @@ describe('InteractiveDomainValidator', () => {
 
     it('空のクラスタリストを処理できる', async () => {
       const result = await validator.validate([]);
-      
+
       expect(result.validated).toBe(true);
       expect(result.approvedDomains).toHaveLength(0);
       expect(result.modifiedDomains).toHaveLength(0);
@@ -135,24 +138,24 @@ describe('InteractiveDomainValidator', () => {
       // 既存ドメインを承認後、新しいドメインを追加
       mockedPrompt
         .mockResolvedValueOnce({
-          action: 'approve'
+          action: 'approve',
         })
         .mockResolvedValueOnce({
-          action: 'approve'
+          action: 'approve',
         })
         .mockResolvedValueOnce({
-          continue: true
+          continue: true,
         })
         .mockResolvedValueOnce({
           name: 'Logging & Monitoring',
-          keywords: 'log, monitor, metrics, trace, debug'
+          keywords: 'log, monitor, metrics, trace, debug',
         })
         .mockResolvedValueOnce({
-          continue: false
+          continue: false,
         });
 
       const result = await validator.validate(sampleClusters);
-      
+
       expect(result.validated).toBe(true);
       expect(result.approvedDomains).toHaveLength(3);
       const newDomain = result.approvedDomains.find(d => d.name === 'Logging & Monitoring');
@@ -165,7 +168,7 @@ describe('InteractiveDomainValidator', () => {
     it('不正な入力を処理できる', async () => {
       // null/undefinedを渡した場合
       const result = await validator.validate(null as any);
-      
+
       expect(result.validated).toBe(false);
       expect(result.approvedDomains).toHaveLength(0);
       expect(result.modifiedDomains).toHaveLength(0);
@@ -181,10 +184,10 @@ describe('InteractiveDomainValidator', () => {
           name: 'Test',
           keywords: ['test'],
           confidence: 0.5,
-          files: []
-        }
+          files: [],
+        },
       ]);
-      
+
       expect(result.validated).toBe(false);
     });
   });
@@ -196,11 +199,11 @@ describe('InteractiveDomainValidator', () => {
         name: 'Test Domain',
         keywords: ['test', 'spec', 'unit'],
         confidence: 0.95,
-        files: ['test/a.ts', 'test/b.ts', 'test/c.ts']
+        files: ['test/a.ts', 'test/b.ts', 'test/c.ts'],
       };
 
       const formatted = validator.formatClusterDisplay(cluster);
-      
+
       expect(formatted).toContain('Test Domain');
       expect(formatted).toContain('95%');
       expect(formatted).toContain('test, spec, unit');
@@ -226,7 +229,9 @@ describe('InteractiveDomainValidator', () => {
       expect(validator.isValidKeywords(['user', 'auth'])).toBe(true);
       expect(validator.isValidKeywords([])).toBe(false);
       expect(validator.isValidKeywords([''])).toBe(false);
-      expect(validator.isValidKeywords(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'])).toBe(false); // 多すぎる
+      expect(
+        validator.isValidKeywords(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'])
+      ).toBe(false); // 多すぎる
     });
   });
 
@@ -238,7 +243,7 @@ describe('InteractiveDomainValidator', () => {
 
     it('必要最小限のオプションのみを提供する', () => {
       const config = {
-        skipConfirmation: true
+        skipConfirmation: true,
       };
       const validatorWithConfig = new InteractiveDomainValidator(config);
       expect(validatorWithConfig).toBeDefined();
@@ -252,7 +257,7 @@ describe('InteractiveDomainValidator', () => {
         name: 'Test',
         keywords: ['test'],
         confidence: NaN,
-        files: []
+        files: [],
       };
 
       const formatted = validator.formatClusterDisplay(cluster);
@@ -265,7 +270,7 @@ describe('InteractiveDomainValidator', () => {
         name: 'Test',
         keywords: ['test'],
         confidence: 0.5,
-        files: []
+        files: [],
       };
       cluster.self = cluster; // 循環参照
 

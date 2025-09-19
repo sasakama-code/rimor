@@ -1,25 +1,21 @@
 /**
  * Implementation Truth Report Engine
  * v0.9.0 - AIコーディング時代の品質保証エンジン専用レポートエンジン
- * 
+ *
  * SOLID原則: 単一責任（Implementation Truth分析結果の専用レポート）
  * 戦略パターンを使用して様々な形式のレポート生成
  */
 
 import { ImplementationTruthAnalysisResult } from '../../core/UnifiedAnalysisEngine';
-import { 
-  ImplementationTruthAIFormatter, 
-  AIImplementationTruthOutput 
+import {
+  ImplementationTruthAIFormatter,
+  AIImplementationTruthOutput,
 } from '../../ai-output/implementation-truth-ai-formatter';
 
 /**
  * レポート形式の種類
  */
-export type ImplementationTruthReportFormat = 
-  | 'ai-json'
-  | 'markdown'
-  | 'html'
-  | 'summary';
+export type ImplementationTruthReportFormat = 'ai-json' | 'markdown' | 'html' | 'summary';
 
 /**
  * レポート生成オプション
@@ -91,8 +87,14 @@ export interface ImplementationTruthReport {
  */
 export interface IImplementationTruthFormattingStrategy {
   name: string;
-  format(result: ImplementationTruthAnalysisResult, options?: ImplementationTruthReportOptions): string | object;
-  formatAsync?(result: ImplementationTruthAnalysisResult, options?: ImplementationTruthReportOptions): Promise<string | object>;
+  format(
+    result: ImplementationTruthAnalysisResult,
+    options?: ImplementationTruthReportOptions
+  ): string | object;
+  formatAsync?(
+    result: ImplementationTruthAnalysisResult,
+    options?: ImplementationTruthReportOptions
+  ): Promise<string | object>;
 }
 
 /**
@@ -102,7 +104,10 @@ export class AIJsonFormattingStrategy implements IImplementationTruthFormattingS
   name = 'ai-json';
   private formatter = new ImplementationTruthAIFormatter();
 
-  format(result: ImplementationTruthAnalysisResult, options?: ImplementationTruthReportOptions): AIImplementationTruthOutput {
+  format(
+    result: ImplementationTruthAnalysisResult,
+    options?: ImplementationTruthReportOptions
+  ): AIImplementationTruthOutput {
     return this.formatter.format(result);
   }
 }
@@ -113,12 +118,18 @@ export class AIJsonFormattingStrategy implements IImplementationTruthFormattingS
 export class MarkdownFormattingStrategy implements IImplementationTruthFormattingStrategy {
   name = 'markdown';
 
-  format(result: ImplementationTruthAnalysisResult, options?: ImplementationTruthReportOptions): string {
+  format(
+    result: ImplementationTruthAnalysisResult,
+    options?: ImplementationTruthReportOptions
+  ): string {
     const aiOutput = new ImplementationTruthAIFormatter().format(result);
     return this.convertToMarkdown(aiOutput, options);
   }
 
-  private convertToMarkdown(aiOutput: AIImplementationTruthOutput, options?: ImplementationTruthReportOptions): string {
+  private convertToMarkdown(
+    aiOutput: AIImplementationTruthOutput,
+    options?: ImplementationTruthReportOptions
+  ): string {
     const sections: string[] = [];
 
     // ヘッダー
@@ -128,7 +139,9 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
 
     // エグゼクティブサマリー
     sections.push('## Executive Summary\n');
-    sections.push(`**Overall Score:** ${aiOutput.executiveSummary.overallScore} (Grade: ${aiOutput.executiveSummary.grade})\n`);
+    sections.push(
+      `**Overall Score:** ${aiOutput.executiveSummary.overallScore} (Grade: ${aiOutput.executiveSummary.grade})\n`
+    );
     sections.push(`**Critical Issues:** ${aiOutput.executiveSummary.criticalIssues}\n`);
     sections.push(`**Total Gaps:** ${aiOutput.executiveSummary.totalGaps}\n`);
     sections.push(`**Realization Score:** ${aiOutput.executiveSummary.realizationScore}%\n\n`);
@@ -158,8 +171,12 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
 
     // 意図実現度分析
     sections.push('## Intent Realization Analysis\n');
-    sections.push(`**Test Files Analyzed:** ${aiOutput.intentRealizationAnalysis.totalTestFiles}\n`);
-    sections.push(`**Average Realization Score:** ${aiOutput.intentRealizationAnalysis.averageRealizationScore.toFixed(1)}%\n\n`);
+    sections.push(
+      `**Test Files Analyzed:** ${aiOutput.intentRealizationAnalysis.totalTestFiles}\n`
+    );
+    sections.push(
+      `**Average Realization Score:** ${aiOutput.intentRealizationAnalysis.averageRealizationScore.toFixed(1)}%\n\n`
+    );
 
     // ギャップ分析
     sections.push('### Gap Analysis\n');
@@ -170,14 +187,16 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
     sections.push('\n');
 
     sections.push('#### By Severity\n');
-    Object.entries(aiOutput.intentRealizationAnalysis.gapsBySeverity).forEach(([severity, count]) => {
-      sections.push(`- ${severity}: ${count}\n`);
-    });
+    Object.entries(aiOutput.intentRealizationAnalysis.gapsBySeverity).forEach(
+      ([severity, count]) => {
+        sections.push(`- ${severity}: ${count}\n`);
+      }
+    );
     sections.push('\n');
 
     // AIアクションアイテム
     sections.push('## AI Action Items\n');
-    
+
     if (aiOutput.aiActionItems.immediate.length > 0) {
       sections.push('### Immediate Actions (Critical/High Priority)\n');
       aiOutput.aiActionItems.immediate.forEach((item, index) => {
@@ -200,7 +219,7 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
     if (options?.includeCodeExamples) {
       // コード生成指示
       sections.push('## Code Generation Guidance\n');
-      
+
       if (aiOutput.codeGenerationGuidance.missingTests.length > 0) {
         sections.push('### Missing Tests\n');
         aiOutput.codeGenerationGuidance.missingTests.slice(0, 5).forEach((test, index) => {
@@ -219,20 +238,36 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
       // 技術的詳細
       sections.push('## Technical Details\n');
       sections.push(`**Execution Time:** ${aiOutput.technicalDetails.executionTime}ms\n`);
-      sections.push(`**Files Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.filesAnalyzed}\n`);
-      sections.push(`**Methods Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.methodsAnalyzed}\n`);
-      sections.push(`**Test Cases Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.testCasesAnalyzed}\n\n`);
+      sections.push(
+        `**Files Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.filesAnalyzed}\n`
+      );
+      sections.push(
+        `**Methods Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.methodsAnalyzed}\n`
+      );
+      sections.push(
+        `**Test Cases Analyzed:** ${aiOutput.technicalDetails.analysisStatistics.testCasesAnalyzed}\n\n`
+      );
 
       sections.push('### Quality Metrics\n');
-      sections.push(`- **Coverage Score:** ${aiOutput.technicalDetails.qualityMetrics.coverageScore.toFixed(1)}%\n`);
-      sections.push(`- **Test Quality Score:** ${aiOutput.technicalDetails.qualityMetrics.testQualityScore.toFixed(1)}%\n`);
-      sections.push(`- **Security Score:** ${aiOutput.technicalDetails.qualityMetrics.securityScore.toFixed(1)}%\n`);
-      sections.push(`- **Maintainability Score:** ${aiOutput.technicalDetails.qualityMetrics.maintainabilityScore.toFixed(1)}%\n\n`);
+      sections.push(
+        `- **Coverage Score:** ${aiOutput.technicalDetails.qualityMetrics.coverageScore.toFixed(1)}%\n`
+      );
+      sections.push(
+        `- **Test Quality Score:** ${aiOutput.technicalDetails.qualityMetrics.testQualityScore.toFixed(1)}%\n`
+      );
+      sections.push(
+        `- **Security Score:** ${aiOutput.technicalDetails.qualityMetrics.securityScore.toFixed(1)}%\n`
+      );
+      sections.push(
+        `- **Maintainability Score:** ${aiOutput.technicalDetails.qualityMetrics.maintainabilityScore.toFixed(1)}%\n\n`
+      );
     }
 
     // フッター
     sections.push('---\n');
-    sections.push(`*Generated by Rimor AI Quality Assurance Engine v${aiOutput.metadata.version}*\n`);
+    sections.push(
+      `*Generated by Rimor AI Quality Assurance Engine v${aiOutput.metadata.version}*\n`
+    );
 
     return sections.join('');
   }
@@ -244,12 +279,18 @@ export class MarkdownFormattingStrategy implements IImplementationTruthFormattin
 export class HtmlFormattingStrategy implements IImplementationTruthFormattingStrategy {
   name = 'html';
 
-  format(result: ImplementationTruthAnalysisResult, options?: ImplementationTruthReportOptions): string {
+  format(
+    result: ImplementationTruthAnalysisResult,
+    options?: ImplementationTruthReportOptions
+  ): string {
     const aiOutput = new ImplementationTruthAIFormatter().format(result);
     return this.convertToHtml(aiOutput, options);
   }
 
-  private convertToHtml(aiOutput: AIImplementationTruthOutput, options?: ImplementationTruthReportOptions): string {
+  private convertToHtml(
+    aiOutput: AIImplementationTruthOutput,
+    options?: ImplementationTruthReportOptions
+  ): string {
     const styles = `
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
@@ -408,7 +449,7 @@ export class ImplementationTruthReportEngine {
     try {
       // 戦略に応じたフォーマット処理
       let content: string | object;
-      
+
       if (this.strategy.formatAsync) {
         content = await this.strategy.formatAsync(result, options);
       } else {
@@ -421,14 +462,16 @@ export class ImplementationTruthReportEngine {
         format: options?.format || 'ai-json',
         content,
         timestamp: new Date().toISOString(),
-        metadata: options?.includeMetadata !== false ? {
-          generatedBy: 'ImplementationTruthReportEngine',
-          version: '0.9.0',
-          processingTime,
-          analysisId: result.implementationTruth.filePath
-        } : undefined
+        metadata:
+          options?.includeMetadata !== false
+            ? {
+                generatedBy: 'ImplementationTruthReportEngine',
+                version: '0.9.0',
+                processingTime,
+                analysisId: result.implementationTruth.filePath,
+              }
+            : undefined,
       };
-
     } catch (error) {
       throw new Error(`Report generation failed: ${error}`);
     }
@@ -443,13 +486,13 @@ export class ImplementationTruthReportEngine {
     options?: ImplementationTruthReportOptions
   ): Promise<ImplementationTruthReport[]> {
     const reports: ImplementationTruthReport[] = [];
-    
+
     for (const format of formats) {
       this.setFormat(format);
       const report = await this.generate(result, { ...options, format });
       reports.push(report);
     }
-    
+
     return reports;
   }
 }

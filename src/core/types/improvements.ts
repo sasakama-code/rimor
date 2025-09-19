@@ -2,37 +2,32 @@
  * Improvement and suggestion types
  */
 
-import { 
-  ImprovementType, 
-  ImprovementPriority, 
-  CodeLocation,
-  BaseMetadata 
-} from './base-types';
+import { ImprovementType, ImprovementPriority, CodeLocation, BaseMetadata } from './base-types';
 
 // Improvement suggestion
 export interface Improvement {
   // Identification
   id: string;
-  
+
   // Classification
   type: ImprovementType;
   priority: ImprovementPriority;
   category?: string;
-  
+
   // Description
   title: string;
   description: string;
   rationale?: string;
-  
+
   // Location
   location?: CodeLocation;
   affectedFiles?: string[];
-  
+
   // Implementation
   suggestedCode?: string;
   codeSnippet?: string;
   diff?: string;
-  
+
   // Impact assessment
   estimatedImpact?: number; // 0.0-1.0
   impact?: number | { scoreImprovement: number; effortMinutes: number }; // 後方互換性のため
@@ -41,29 +36,29 @@ export interface Improvement {
     after: number;
     dimensions: Partial<Record<string, number>>;
   };
-  
+
   // Effort estimation
   effort?: 'trivial' | 'low' | 'medium' | 'high' | 'very-high';
   estimatedTime?: string; // e.g., "2 hours", "1 day"
   complexity?: number; // 1-10
-  
+
   // Automation
   autoFixable?: boolean;
   automatable?: boolean; // エイリアスとして追加
   automationLevel?: 'none' | 'partial' | 'full';
   requiresReview?: boolean;
-  
+
   // Dependencies
   dependencies?: string[]; // IDs of other improvements that should be done first
   conflicts?: string[]; // IDs of improvements that conflict with this one
-  
+
   // Additional context
   examples?: CodeExample[];
   references?: Reference[];
   tags?: string[];
   suggestions?: string[];
   codeExample?: string;
-  
+
   // Metadata
   metadata?: BaseMetadata;
 }
@@ -93,27 +88,27 @@ export interface ImprovementPlan {
   id: string;
   name: string;
   description?: string;
-  
+
   // Improvements
   improvements: Improvement[];
-  
+
   // Grouping
   phases?: ImprovementPhase[];
   categories?: Map<string, Improvement[]>;
-  
+
   // Prioritization
   priorityOrder: string[]; // Improvement IDs in priority order
   criticalPath?: string[]; // IDs of improvements on the critical path
-  
+
   // Estimates
   totalEffort?: string;
   totalImpact?: number;
   estimatedDuration?: string;
-  
+
   // Execution strategy
   strategy?: 'sequential' | 'parallel' | 'mixed';
   maxParallel?: number;
-  
+
   // Progress tracking
   status?: 'draft' | 'approved' | 'in-progress' | 'completed' | 'cancelled';
   progress?: {
@@ -123,7 +118,7 @@ export interface ImprovementPlan {
     pending: number;
     percentage: number;
   };
-  
+
   // Metadata
   createdAt?: Date;
   updatedAt?: Date;
@@ -147,36 +142,36 @@ export interface ImprovementPhase {
 export interface ImprovementExecutionResult {
   improvementId: string;
   success: boolean;
-  
+
   // Changes made
   modifiedFiles?: string[];
   additions?: number;
   deletions?: number;
   diff?: string;
-  
+
   // Quality impact
   qualityBefore?: number;
   qualityAfter?: number;
   actualImpact?: number;
-  
+
   // Execution details
   executionTime?: number;
   executedAt?: Date;
   executedBy?: string;
   method?: 'manual' | 'automated' | 'assisted';
-  
+
   // Issues encountered
   errors?: string[];
   warnings?: string[];
   rollbackRequired?: boolean;
   rollbackPerformed?: boolean;
-  
+
   // Review
   reviewed?: boolean;
   reviewedBy?: string;
   reviewComments?: string;
   approved?: boolean;
-  
+
   // Metadata
   metadata?: Record<string, unknown>;
 }
@@ -189,36 +184,45 @@ export interface ImprovementAnalytics {
   successRate: number;
   averageImpact: number;
   averageExecutionTime: number;
-  
+
   // By type
-  byType: Record<ImprovementType, {
-    count: number;
-    completed: number;
-    averageImpact: number;
-    successRate: number;
-  }>;
-  
+  byType: Record<
+    ImprovementType,
+    {
+      count: number;
+      completed: number;
+      averageImpact: number;
+      successRate: number;
+    }
+  >;
+
   // By priority
-  byPriority: Record<ImprovementPriority, {
-    count: number;
-    completed: number;
-    averageTime: number;
-  }>;
-  
+  byPriority: Record<
+    ImprovementPriority,
+    {
+      count: number;
+      completed: number;
+      averageTime: number;
+    }
+  >;
+
   // By effort
-  byEffort: Record<string, {
-    count: number;
-    completed: number;
-    totalTime: number;
-  }>;
-  
+  byEffort: Record<
+    string,
+    {
+      count: number;
+      completed: number;
+      totalTime: number;
+    }
+  >;
+
   // Trends
   trends: {
     improvementsPerDay: number;
     qualityTrend: 'improving' | 'stable' | 'declining';
     velocityTrend: 'accelerating' | 'stable' | 'decelerating';
   };
-  
+
   // Top improvements
   topImprovements: Array<{
     id: string;
@@ -226,11 +230,11 @@ export interface ImprovementAnalytics {
     impact: number;
     effort: string;
   }>;
-  
+
   // Bottlenecks
   bottlenecks?: string[];
   blockers?: string[];
-  
+
   // Forecast
   estimatedCompletion?: Date;
   projectedQuality?: number;

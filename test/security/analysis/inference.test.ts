@@ -6,7 +6,7 @@ import {
   AuthTestCoverage,
   TaintLevel,
   SecurityTestMetrics,
-  TestMethod
+  TestMethod,
 } from '../../../src/security/types';
 import { TaintQualifier, SecurityType } from '../../../src/core/types';
 
@@ -29,15 +29,15 @@ describe('SignatureBasedInference', () => {
         name: 'updateUserProfile',
         parameters: [
           { name: 'userId', type: 'string' },
-          { name: 'profileData', type: 'UserProfile' }
+          { name: 'profileData', type: 'UserProfile' },
         ],
         returnType: 'Promise<void>',
         annotations: ['@Authenticated'],
-        isAsync: true
+        isAsync: true,
       };
 
       const requirements = inference.inferRequirements(signature);
-      
+
       const authReq = requirements.find(r => r.type === 'auth-test');
       expect(authReq).toBeDefined();
     });
@@ -47,15 +47,15 @@ describe('SignatureBasedInference', () => {
         name: 'processUserInput',
         parameters: [
           { name: 'userInput', type: 'string' }, // taint情報は別途管理
-          { name: 'options', type: 'ProcessOptions' }
+          { name: 'options', type: 'ProcessOptions' },
         ],
         returnType: 'ProcessResult',
         annotations: [],
-        isAsync: false
+        isAsync: false,
       };
 
       const requirements = inference.inferRequirements(signature);
-      
+
       const inputReq = requirements.find(r => r.type === 'input-validation');
       expect(inputReq).toBeDefined();
     });
@@ -65,15 +65,15 @@ describe('SignatureBasedInference', () => {
         name: 'handleApiRequest',
         parameters: [
           { name: 'request', type: 'ApiRequest' },
-          { name: 'response', type: 'ApiResponse' }
+          { name: 'response', type: 'ApiResponse' },
         ],
         returnType: 'Promise<void>',
         annotations: ['@ApiEndpoint', '@RateLimit'],
-        isAsync: true
+        isAsync: true,
       };
 
       const requirements = inference.inferRequirements(signature);
-      
+
       const apiRequirements = requirements.filter(r => r.type === 'api-security');
       expect(apiRequirements).toHaveLength(1);
       expect(apiRequirements[0].checks).toBeDefined();
@@ -117,7 +117,7 @@ describe('SignatureBasedInference', () => {
   //       return;
   //     }
   //     const result = inference.inferTypes(method);
-      
+
   //     expect(result).toBeDefined();
   //     expect(result.inferredTypes).toBeDefined();
   //     expect(result.confidence).toBeGreaterThan(0);
@@ -159,7 +159,7 @@ describe('SignatureBasedInference', () => {
   //       return;
   //     }
   //     const result = inference.inferTypes(method);
-      
+
   //     expect(result.taintAnalysis).toBeDefined();
   //     expect(result.taintAnalysis?.outputTaint).toBe(TaintLevel.UNTAINTED);
   //   });
@@ -214,7 +214,7 @@ describe('SignatureBasedInference', () => {
   //       return;
   //     }
   //     const coverage = inference.evaluateAuthCoverage(methods);
-      
+
   //     expect(coverage.totalCoverage).toBeGreaterThan(0);
   //     expect(coverage.missingScenarios).toBeDefined();
   //   });
@@ -269,7 +269,7 @@ describe('SignatureBasedInference', () => {
   //       return;
   //     }
   //     const metrics = inference.computeMetrics(tests);
-      
+
   //     expect(metrics.coverageByType).toBeDefined();
   //     expect(metrics.totalTests).toBe(2);
   //     expect(metrics.securityScore).toBeGreaterThan(0);
@@ -283,15 +283,15 @@ describe('SignatureBasedInference', () => {
         parameters: [
           { name: 'userId', type: 'string' },
           { name: 'paymentData', type: 'PaymentData' }, // taint情報は別途管理
-          { name: 'session', type: 'UserSession' }
+          { name: 'session', type: 'UserSession' },
         ],
         returnType: 'Promise<PaymentResult>',
         annotations: ['@Authenticated', '@Authorized("payment")', '@Transactional'],
-        isAsync: true
+        isAsync: true,
       };
 
       const requirements = inference.inferRequirements(signature);
-      
+
       const types = requirements.map(r => r.type);
       expect(types.some(t => t === 'auth-test')).toBe(true);
       expect(types.some(t => t === 'api-security')).toBe(true);
@@ -304,15 +304,15 @@ describe('SignatureBasedInference', () => {
         name: 'deleteUser',
         parameters: [
           { name: 'userId', type: 'string' },
-          { name: 'adminToken', type: 'AdminToken' }
+          { name: 'adminToken', type: 'AdminToken' },
         ],
         returnType: 'Promise<void>',
         annotations: ['@RequiresAdmin'],
-        isAsync: true
+        isAsync: true,
       };
 
       const requirements = inference.inferRequirements(adminSignature);
-      
+
       const authReq = requirements.find(r => r.type === 'auth-test');
       expect(authReq).toBeDefined();
       expect(authReq?.severity).toBe('critical');
@@ -327,11 +327,11 @@ describe('SignatureBasedInference', () => {
         name: `method${i}`,
         parameters: [
           { name: 'param1', type: 'string' },
-          { name: 'param2', type: 'number' }
+          { name: 'param2', type: 'number' },
         ],
         annotations: [],
         isAsync: false,
-        returnType: 'void'
+        returnType: 'void',
       }));
 
       const startTime = Date.now();

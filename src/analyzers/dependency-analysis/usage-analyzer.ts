@@ -23,9 +23,9 @@ export interface ImportDepthAnalysis {
 }
 
 export interface UsageCategory {
-  core: string[];        // 頻繁に使用される中核的な依存関係
-  peripheral: string[];  // たまに使用される周辺的な依存関係
-  unused: string[];      // 使用されていない依存関係
+  core: string[]; // 頻繁に使用される中核的な依存関係
+  peripheral: string[]; // たまに使用される周辺的な依存関係
+  unused: string[]; // 使用されていない依存関係
 }
 
 export interface UsageReport {
@@ -41,14 +41,36 @@ export interface UsageReport {
 
 export class UsageAnalyzer {
   private readonly BUILT_IN_MODULES = new Set([
-    'fs', 'path', 'http', 'https', 'crypto', 'os', 'util', 'stream',
-    'url', 'querystring', 'child_process', 'cluster', 'events',
-    'buffer', 'process', 'console', 'module', 'require', 'assert',
-    'net', 'tls', 'dns', 'readline', 'repl', 'vm', 'zlib'
+    'fs',
+    'path',
+    'http',
+    'https',
+    'crypto',
+    'os',
+    'util',
+    'stream',
+    'url',
+    'querystring',
+    'child_process',
+    'cluster',
+    'events',
+    'buffer',
+    'process',
+    'console',
+    'module',
+    'require',
+    'assert',
+    'net',
+    'tls',
+    'dns',
+    'readline',
+    'repl',
+    'vm',
+    'zlib',
   ]);
 
   private readonly SUPPORTED_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
-  
+
   /**
    * プロジェクト内で使用されているパッケージを検出
    */
@@ -56,7 +78,7 @@ export class UsageAnalyzer {
     const usedPackages = new Set<string>();
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
     });
 
     for (const file of sourceFiles) {
@@ -64,7 +86,7 @@ export class UsageAnalyzer {
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
         const imports = this.extractImports(content);
-        
+
         imports.forEach(imp => {
           const packageName = this.getExternalPackageName(imp);
           if (packageName) {
@@ -86,7 +108,7 @@ export class UsageAnalyzer {
     const frequency = new Map<string, number>();
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
     });
 
     for (const file of sourceFiles) {
@@ -94,7 +116,7 @@ export class UsageAnalyzer {
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
         const imports = this.extractImportsWithDuplicates(content);
-        
+
         imports.forEach(imp => {
           const packageName = this.getExternalPackageName(imp);
           if (packageName) {
@@ -116,7 +138,7 @@ export class UsageAnalyzer {
     const locations: ImportLocation[] = [];
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
     });
 
     for (const file of sourceFiles) {
@@ -124,14 +146,14 @@ export class UsageAnalyzer {
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
         const lines = content.split('\n');
-        
+
         lines.forEach((line, index) => {
           const imports = this.extractImportsFromLine(line);
           imports.forEach(imp => {
             if (!this.isRelativeImport(imp) && this.getPackageName(imp) === packageName) {
               locations.push({
                 file: filePath,
-                line: index + 1
+                line: index + 1,
               });
             }
           });
@@ -144,7 +166,6 @@ export class UsageAnalyzer {
     return locations;
   }
 
-
   /**
    * インポートの深さを分析
    */
@@ -153,30 +174,28 @@ export class UsageAnalyzer {
     const deepImports: Array<{ file: string; depth: number }> = [];
     const sourceFiles = glob.sync('**/*.{js,jsx,ts,tsx,mjs,cjs}', {
       cwd: projectPath,
-      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
     });
 
     for (const file of sourceFiles) {
       const depth = file.split('/').length;
       depths.push(depth);
-      
+
       if (depth > 3) {
         deepImports.push({
           file: path.join(projectPath, file),
-          depth
+          depth,
         });
       }
     }
 
     const maxDepth = Math.max(...depths, 0);
-    const averageDepth = depths.length > 0 
-      ? depths.reduce((a, b) => a + b, 0) / depths.length 
-      : 0;
+    const averageDepth = depths.length > 0 ? depths.reduce((a, b) => a + b, 0) / depths.length : 0;
 
     return {
       maxDepth,
       averageDepth,
-      deepImports: deepImports.slice(0, 10) // 最も深い10個のみ返す
+      deepImports: deepImports.slice(0, 10), // 最も深い10個のみ返す
     };
   }
 
@@ -187,7 +206,7 @@ export class UsageAnalyzer {
   async categorizeUsage(projectPath: string): Promise<UsageCategory> {
     const frequency = await this.analyzeUsageFrequency(projectPath);
     const packageJsonPath = path.join(projectPath, 'package.json');
-    
+
     // package.jsonから宣言された依存関係を取得
     let allDependencies: string[] = [];
     if (fs.existsSync(packageJsonPath)) {
@@ -195,13 +214,13 @@ export class UsageAnalyzer {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
         allDependencies = [
           ...Object.keys(packageJson.dependencies || {}),
-          ...Object.keys(packageJson.devDependencies || {})
+          ...Object.keys(packageJson.devDependencies || {}),
         ];
       } catch (error) {
         // package.json読み込みエラーは無視（Defensive Programming）
       }
     }
-    
+
     const core: string[] = [];
     const peripheral: string[] = [];
     const unused: string[] = [];
@@ -239,18 +258,19 @@ export class UsageAnalyzer {
   async generateUsageReport(projectPath: string): Promise<UsageReport> {
     const frequency = await this.analyzeUsageFrequency(projectPath);
     const categories = await this.categorizeUsage(projectPath);
-    
-    const totalPackages = categories.core.length + 
-                         categories.peripheral.length + 
-                         categories.unused.length;
+
+    const totalPackages =
+      categories.core.length + categories.peripheral.length + categories.unused.length;
     const usedPackages = categories.core.length + categories.peripheral.length;
 
     const recommendations: string[] = [];
-    
+
     if (categories.unused.length > 0) {
-      recommendations.push(`Remove ${categories.unused.length} unused dependencies to reduce bundle size`);
+      recommendations.push(
+        `Remove ${categories.unused.length} unused dependencies to reduce bundle size`
+      );
     }
-    
+
     if (categories.peripheral.length > categories.core.length) {
       recommendations.push('Consider consolidating peripheral dependencies');
     }
@@ -259,14 +279,13 @@ export class UsageAnalyzer {
       summary: {
         totalPackages,
         usedPackages,
-        unusedPackages: categories.unused.length
+        unusedPackages: categories.unused.length,
       },
       frequency,
       categories,
-      recommendations
+      recommendations,
     };
   }
-
 
   /**
    * コードからimport/requireを抽出（重複を許可しない）
@@ -274,20 +293,20 @@ export class UsageAnalyzer {
    */
   private extractImports(content: string): Set<string> {
     const imports = new Set<string>();
-    
+
     // ES6 imports
     const importRegex = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"]/g;
     let match;
     while ((match = importRegex.exec(content)) !== null) {
       imports.add(match[1]);
     }
-    
+
     // CommonJS requires
     const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = requireRegex.exec(content)) !== null) {
       imports.add(match[1]);
     }
-    
+
     // Dynamic imports
     const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = dynamicImportRegex.exec(content)) !== null) {
@@ -303,20 +322,20 @@ export class UsageAnalyzer {
    */
   private extractImportsWithDuplicates(content: string): string[] {
     const imports: string[] = [];
-    
+
     // ES6 imports
     const importRegex = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"]/g;
     let match;
     while ((match = importRegex.exec(content)) !== null) {
       imports.push(match[1]);
     }
-    
+
     // CommonJS requires
     const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = requireRegex.exec(content)) !== null) {
       imports.push(match[1]);
     }
-    
+
     // Dynamic imports
     const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
     while ((match = dynamicImportRegex.exec(content)) !== null) {
@@ -332,13 +351,13 @@ export class UsageAnalyzer {
    */
   private extractImportsFromLine(line: string): Set<string> {
     const imports = new Set<string>();
-    
+
     // ES6 imports
     const importMatch = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"]/g.exec(line);
     if (importMatch) {
       imports.add(importMatch[1]);
     }
-    
+
     // CommonJS requires
     const requireMatch = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g.exec(line);
     if (requireMatch) {
@@ -353,9 +372,9 @@ export class UsageAnalyzer {
    * @private
    */
   private isRelativeImport(importPath: string): boolean {
-    return importPath.startsWith('./') || 
-           importPath.startsWith('../') || 
-           importPath.startsWith('/');
+    return (
+      importPath.startsWith('./') || importPath.startsWith('../') || importPath.startsWith('/')
+    );
   }
 
   /**
@@ -367,7 +386,7 @@ export class UsageAnalyzer {
     if (this.isRelativeImport(importPath)) {
       return false;
     }
-    
+
     const packageName = this.getPackageName(importPath);
     return !this.BUILT_IN_MODULES.has(packageName);
   }
@@ -389,16 +408,14 @@ export class UsageAnalyzer {
    */
   private getPackageName(importPath: string): string {
     // Issue #101: node:プレフィックス除去
-    const normalizedPath = importPath.startsWith('node:') 
-      ? importPath.slice(5) 
-      : importPath;
+    const normalizedPath = importPath.startsWith('node:') ? importPath.slice(5) : importPath;
 
     // スコープ付きパッケージの場合
     if (normalizedPath.startsWith('@')) {
       const parts = normalizedPath.split('/');
       return parts.slice(0, 2).join('/');
     }
-    
+
     // Issue #101: 組み込みモジュールのサブパス対応（fs/promises など）
     const baseName = normalizedPath.split('/')[0];
     return baseName;

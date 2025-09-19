@@ -1,7 +1,7 @@
 /**
  * RiskLevel ヘルパー関数
  * グローバルに利用可能なユーティリティ関数群
- * 
+ *
  * KISS原則: シンプルで使いやすいAPI
  * DRY原則: 共通処理の一元化
  */
@@ -86,10 +86,10 @@ export function isRiskAboveThreshold(riskLevel: RiskLevel, threshold: RiskLevel)
 export function getRiskColor(riskLevel: RiskLevel): string {
   const colors: Record<RiskLevel, string> = {
     [CoreTypes.RiskLevel.CRITICAL]: '#FF0000', // 赤
-    [CoreTypes.RiskLevel.HIGH]: '#FF8800',     // オレンジ
-    [CoreTypes.RiskLevel.MEDIUM]: '#FFCC00',   // 黄色
-    [CoreTypes.RiskLevel.LOW]: '#88CC00',      // 黄緑
-    [CoreTypes.RiskLevel.MINIMAL]: '#00CC00'   // 緑
+    [CoreTypes.RiskLevel.HIGH]: '#FF8800', // オレンジ
+    [CoreTypes.RiskLevel.MEDIUM]: '#FFCC00', // 黄色
+    [CoreTypes.RiskLevel.LOW]: '#88CC00', // 黄緑
+    [CoreTypes.RiskLevel.MINIMAL]: '#00CC00', // 緑
   };
   return colors[riskLevel];
 }
@@ -105,7 +105,7 @@ export function getRiskIcon(riskLevel: RiskLevel): string {
     [CoreTypes.RiskLevel.HIGH]: '🟠',
     [CoreTypes.RiskLevel.MEDIUM]: '🟡',
     [CoreTypes.RiskLevel.LOW]: '🟢',
-    [CoreTypes.RiskLevel.MINIMAL]: '⚪'
+    [CoreTypes.RiskLevel.MINIMAL]: '⚪',
   };
   return icons[riskLevel];
 }
@@ -121,7 +121,7 @@ export function getRiskLevelJapanese(riskLevel: RiskLevel): string {
     [CoreTypes.RiskLevel.HIGH]: '高',
     [CoreTypes.RiskLevel.MEDIUM]: '中',
     [CoreTypes.RiskLevel.LOW]: '低',
-    [CoreTypes.RiskLevel.MINIMAL]: '最小'
+    [CoreTypes.RiskLevel.MINIMAL]: '最小',
   };
   return japanese[riskLevel];
 }
@@ -146,11 +146,11 @@ export function scoreToGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
  */
 export function getGradeRecommendation(grade: 'A' | 'B' | 'C' | 'D' | 'F'): string {
   const recommendations: Record<string, string> = {
-    'A': '優秀な品質です。現状を維持してください。',
-    'B': '良好な品質ですが、いくつかの改善点があります。',
-    'C': '平均的な品質です。重要な改善が必要です。',
-    'D': '品質に問題があります。早急な対応が必要です。',
-    'F': '深刻な品質問題があります。即座の対応が必要です。'
+    A: '優秀な品質です。現状を維持してください。',
+    B: '良好な品質ですが、いくつかの改善点があります。',
+    C: '平均的な品質です。重要な改善が必要です。',
+    D: '品質に問題があります。早急な対応が必要です。',
+    F: '深刻な品質問題があります。即座の対応が必要です。',
   };
   return recommendations[grade];
 }

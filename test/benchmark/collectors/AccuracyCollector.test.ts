@@ -23,7 +23,7 @@ describe('AccuracyCollector', () => {
       enableIntentExtraction: true,
       enableGapDetection: true,
       confidenceThreshold: 0.8,
-      sampleSize: 100
+      sampleSize: 100,
     });
     testFixtures = new TestFixtures(tempDir);
     await testFixtures.setup();
@@ -48,14 +48,14 @@ describe('AccuracyCollector', () => {
 
     it('複数の解析タイプを同時に測定できること', async () => {
       const sessionId = await collector.startAccuracyMeasurement('multi-analysis-test');
-      
+
       // 各種解析の実行をシミュレート
       await collector.recordTaintAnalysisResult(sessionId, {
         file: 'test.ts',
         expected: true,
         actual: true,
         confidence: 0.95,
-        analysisTime: 100
+        analysisTime: 100,
       });
 
       await collector.recordIntentExtractionResult(sessionId, {
@@ -64,7 +64,7 @@ describe('AccuracyCollector', () => {
         extractedIntent: 'should validate user input',
         similarity: 1.0,
         confidence: 0.9,
-        analysisTime: 150
+        analysisTime: 150,
       });
 
       const result = await collector.endAccuracyMeasurement(sessionId);
@@ -79,7 +79,7 @@ describe('AccuracyCollector', () => {
 
       // 既知の結果を持つテストケース
       const testCases = await testFixtures.getTaintAnalysisTestCases();
-      
+
       for (const testCase of testCases) {
         await collector.recordTaintAnalysisResult(sessionId, {
           file: testCase.file,
@@ -87,7 +87,7 @@ describe('AccuracyCollector', () => {
           actual: testCase.actualVulnerable,
           confidence: testCase.confidence,
           analysisTime: testCase.analysisTime,
-          vulnerabilityType: testCase.vulnerabilityType
+          vulnerabilityType: testCase.vulnerabilityType,
         });
       }
 
@@ -109,7 +109,7 @@ describe('AccuracyCollector', () => {
 
       // 各種脆弱性タイプのテストケース
       const vulnerabilityTypes = ['sql-injection', 'xss', 'path-traversal', 'command-injection'];
-      
+
       for (const vulnType of vulnerabilityTypes) {
         const testCases = await testFixtures.getTaintTestCasesByType(vulnType);
         for (const testCase of testCases) {
@@ -119,7 +119,7 @@ describe('AccuracyCollector', () => {
             actual: testCase.actual,
             confidence: testCase.confidence,
             analysisTime: testCase.analysisTime,
-            vulnerabilityType: vulnType
+            vulnerabilityType: vulnType,
           });
         }
       }
@@ -139,7 +139,7 @@ describe('AccuracyCollector', () => {
 
       // 異なる信頼度レベルのテストケース
       const confidenceLevels = [0.5, 0.7, 0.8, 0.9, 0.95];
-      
+
       for (const confidence of confidenceLevels) {
         await collector.recordTaintAnalysisResult(sessionId, {
           file: `test-${confidence}.ts`,
@@ -147,7 +147,7 @@ describe('AccuracyCollector', () => {
           actual: confidence > 0.75, // 75%以上の信頼度で正解とする
           confidence,
           analysisTime: 100,
-          vulnerabilityType: 'sql-injection'
+          vulnerabilityType: 'sql-injection',
         });
       }
 
@@ -166,7 +166,7 @@ describe('AccuracyCollector', () => {
       const sessionId = await collector.startAccuracyMeasurement('intent-basic-test');
 
       const intentTestCases = await testFixtures.getIntentExtractionTestCases();
-      
+
       for (const testCase of intentTestCases) {
         await collector.recordIntentExtractionResult(sessionId, {
           file: testCase.file,
@@ -174,7 +174,7 @@ describe('AccuracyCollector', () => {
           extractedIntent: testCase.extractedIntent,
           similarity: testCase.similarity,
           confidence: testCase.confidence,
-          analysisTime: testCase.analysisTime
+          analysisTime: testCase.analysisTime,
         });
       }
 
@@ -192,7 +192,7 @@ describe('AccuracyCollector', () => {
       const sessionId = await collector.startAccuracyMeasurement('intent-category-test');
 
       const categories = ['validation', 'authentication', 'authorization', 'business-logic'];
-      
+
       for (const category of categories) {
         const testCases = await testFixtures.getIntentTestCasesByCategory(category);
         for (const testCase of testCases) {
@@ -203,7 +203,7 @@ describe('AccuracyCollector', () => {
             similarity: testCase.similarity,
             confidence: testCase.confidence,
             analysisTime: testCase.analysisTime,
-            category: category
+            category: category,
           });
         }
       }
@@ -221,7 +221,7 @@ describe('AccuracyCollector', () => {
       const sessionId = await collector.startAccuracyMeasurement('intent-framework-test');
 
       const frameworks = ['jest', 'mocha', 'jasmine', 'vitest'];
-      
+
       for (const framework of frameworks) {
         const testCases = await testFixtures.getIntentTestCasesByFramework(framework);
         for (const testCase of testCases) {
@@ -232,7 +232,7 @@ describe('AccuracyCollector', () => {
             similarity: testCase.similarity,
             confidence: testCase.confidence,
             analysisTime: testCase.analysisTime,
-            framework: framework
+            framework: framework,
           });
         }
       }
@@ -254,7 +254,7 @@ describe('AccuracyCollector', () => {
       const sessionId = await collector.startAccuracyMeasurement('gap-basic-test');
 
       const gapTestCases = await testFixtures.getGapDetectionTestCases();
-      
+
       for (const testCase of testCases) {
         await collector.recordGapDetectionResult(sessionId, {
           productionFile: testCase.productionFile,
@@ -262,7 +262,7 @@ describe('AccuracyCollector', () => {
           expectedGaps: testCase.expectedGaps,
           detectedGaps: testCase.detectedGaps,
           confidence: testCase.confidence,
-          analysisTime: testCase.analysisTime
+          analysisTime: testCase.analysisTime,
         });
       }
 
@@ -278,8 +278,13 @@ describe('AccuracyCollector', () => {
     it('ギャップタイプ別の検出精度を測定すること', async () => {
       const sessionId = await collector.startAccuracyMeasurement('gap-type-test');
 
-      const gapTypes = ['missing-edge-cases', 'incomplete-validation', 'missing-error-handling', 'business-logic-gaps'];
-      
+      const gapTypes = [
+        'missing-edge-cases',
+        'incomplete-validation',
+        'missing-error-handling',
+        'business-logic-gaps',
+      ];
+
       for (const gapType of gapTypes) {
         const testCases = await testFixtures.getGapTestCasesByType(gapType);
         for (const testCase of testCases) {
@@ -290,7 +295,7 @@ describe('AccuracyCollector', () => {
             detectedGaps: testCase.detectedGaps,
             confidence: testCase.confidence,
             analysisTime: testCase.analysisTime,
-            gapType: gapType
+            gapType: gapType,
           });
         }
       }
@@ -316,7 +321,7 @@ describe('AccuracyCollector', () => {
         actual: true,
         confidence: 0.9,
         analysisTime: 100,
-        vulnerabilityType: 'sql-injection'
+        vulnerabilityType: 'sql-injection',
       });
 
       await collector.recordIntentExtractionResult(sessionId, {
@@ -325,7 +330,7 @@ describe('AccuracyCollector', () => {
         extractedIntent: 'should prevent SQL injection',
         similarity: 1.0,
         confidence: 0.85,
-        analysisTime: 150
+        analysisTime: 150,
       });
 
       await collector.recordGapDetectionResult(sessionId, {
@@ -334,7 +339,7 @@ describe('AccuracyCollector', () => {
         expectedGaps: 0,
         detectedGaps: 0,
         confidence: 0.8,
-        analysisTime: 200
+        analysisTime: 200,
       });
 
       const result = await collector.endAccuracyMeasurement(sessionId);
@@ -356,7 +361,7 @@ describe('AccuracyCollector', () => {
         actual: true,
         confidence: 0.95,
         analysisTime: 100,
-        vulnerabilityType: 'xss'
+        vulnerabilityType: 'xss',
       });
 
       // 低信頼度の結果
@@ -366,14 +371,15 @@ describe('AccuracyCollector', () => {
         actual: true,
         confidence: 0.5,
         analysisTime: 100,
-        vulnerabilityType: 'xss'
+        vulnerabilityType: 'xss',
       });
 
       const highResult = await collector.endAccuracyMeasurement(highConfidenceSession);
       const lowResult = await collector.endAccuracyMeasurement(lowConfidenceSession);
 
-      expect(highResult.accuracyMetrics.integrated.confidenceScore)
-        .toBeGreaterThan(lowResult.accuracyMetrics.integrated.confidenceScore);
+      expect(highResult.accuracyMetrics.integrated.confidenceScore).toBeGreaterThan(
+        lowResult.accuracyMetrics.integrated.confidenceScore
+      );
     });
   });
 
@@ -391,7 +397,7 @@ describe('AccuracyCollector', () => {
           actual: true,
           confidence: 0.9,
           analysisTime: 100,
-          vulnerabilityType: 'sql-injection'
+          vulnerabilityType: 'sql-injection',
         });
       }
 
@@ -403,13 +409,15 @@ describe('AccuracyCollector', () => {
           actual: false,
           confidence: 0.6,
           analysisTime: 100,
-          vulnerabilityType: 'sql-injection'
+          vulnerabilityType: 'sql-injection',
         });
       }
 
       const currentMetrics = await collector.getCurrentAccuracy(sessionId);
       expect(currentMetrics.alerts).toBeDefined();
-      expect(currentMetrics.alerts.some(alert => alert.type === 'accuracy_threshold_breach')).toBe(true);
+      expect(currentMetrics.alerts.some(alert => alert.type === 'accuracy_threshold_breach')).toBe(
+        true
+      );
     });
 
     it('改善トレンドを追跡すること', async () => {
@@ -421,7 +429,7 @@ describe('AccuracyCollector', () => {
 
       for (let i = 0; i < timePoints.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 50)); // 時間経過を模擬
-        
+
         await collector.recordTaintAnalysisResult(sessionId, {
           file: `trend-${i}.ts`,
           expected: true,
@@ -429,7 +437,7 @@ describe('AccuracyCollector', () => {
           confidence: accuracyLevels[i],
           analysisTime: 100,
           vulnerabilityType: 'sql-injection',
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
@@ -457,34 +465,43 @@ class TestFixtures {
     await fs.mkdir(fixturesDir, { recursive: true });
 
     // SQL Injection脆弱性のあるコード例
-    await fs.writeFile(path.join(fixturesDir, 'vulnerable-sql.ts'), `
+    await fs.writeFile(
+      path.join(fixturesDir, 'vulnerable-sql.ts'),
+      `
       function getUserData(userId: string) {
         const query = "SELECT * FROM users WHERE id = " + userId; // 脆弱
         return db.query(query);
       }
-    `);
+    `
+    );
 
     // 安全なコード例
-    await fs.writeFile(path.join(fixturesDir, 'safe-sql.ts'), `
+    await fs.writeFile(
+      path.join(fixturesDir, 'safe-sql.ts'),
+      `
       function getUserData(userId: string) {
         const query = "SELECT * FROM users WHERE id = ?";
         return db.query(query, [userId]); // 安全
       }
-    `);
+    `
+    );
   }
 
   private async createIntentExtractionFixtures(): Promise<void> {
     const fixturesDir = path.join(this.tempDir, 'intent-fixtures');
     await fs.mkdir(fixturesDir, { recursive: true });
 
-    await fs.writeFile(path.join(fixturesDir, 'validation.spec.ts'), `
+    await fs.writeFile(
+      path.join(fixturesDir, 'validation.spec.ts'),
+      `
       describe('User validation', () => {
         it('should reject invalid email addresses', async () => {
           const result = validateEmail('invalid-email');
           expect(result).toBe(false);
         });
       });
-    `);
+    `
+    );
   }
 
   private async createGapDetectionFixtures(): Promise<void> {
@@ -492,7 +509,9 @@ class TestFixtures {
     await fs.mkdir(fixturesDir, { recursive: true });
 
     // プロダクションコード
-    await fs.writeFile(path.join(fixturesDir, 'calculator.ts'), `
+    await fs.writeFile(
+      path.join(fixturesDir, 'calculator.ts'),
+      `
       export class Calculator {
         divide(a: number, b: number): number {
           if (b === 0) throw new Error('Division by zero');
@@ -504,10 +523,13 @@ class TestFixtures {
           return Math.sqrt(n);
         }
       }
-    `);
+    `
+    );
 
     // 不完全なテスト
-    await fs.writeFile(path.join(fixturesDir, 'calculator.spec.ts'), `
+    await fs.writeFile(
+      path.join(fixturesDir, 'calculator.spec.ts'),
+      `
       describe('Calculator', () => {
         it('should divide numbers', () => {
           const calc = new Calculator();
@@ -517,7 +539,8 @@ class TestFixtures {
         
         // sqrt関数のテスト自体が欠けている
       });
-    `);
+    `
+    );
   }
 
   async getTaintAnalysisTestCases() {
@@ -528,7 +551,7 @@ class TestFixtures {
         actualVulnerable: true,
         confidence: 0.95,
         analysisTime: 120,
-        vulnerabilityType: 'sql-injection'
+        vulnerabilityType: 'sql-injection',
       },
       {
         file: 'safe-sql.ts',
@@ -536,25 +559,43 @@ class TestFixtures {
         actualVulnerable: false,
         confidence: 0.9,
         analysisTime: 100,
-        vulnerabilityType: 'sql-injection'
-      }
+        vulnerabilityType: 'sql-injection',
+      },
     ];
   }
 
   async getTaintTestCasesByType(vulnerabilityType: string) {
     const testCaseMap: Record<string, any[]> = {
       'sql-injection': [
-        { file: 'sql-test-1.ts', expected: true, actual: true, confidence: 0.9, analysisTime: 100 }
+        { file: 'sql-test-1.ts', expected: true, actual: true, confidence: 0.9, analysisTime: 100 },
       ],
-      'xss': [
-        { file: 'xss-test-1.ts', expected: true, actual: true, confidence: 0.85, analysisTime: 110 }
+      xss: [
+        {
+          file: 'xss-test-1.ts',
+          expected: true,
+          actual: true,
+          confidence: 0.85,
+          analysisTime: 110,
+        },
       ],
       'path-traversal': [
-        { file: 'path-test-1.ts', expected: true, actual: false, confidence: 0.7, analysisTime: 90 }
+        {
+          file: 'path-test-1.ts',
+          expected: true,
+          actual: false,
+          confidence: 0.7,
+          analysisTime: 90,
+        },
       ],
       'command-injection': [
-        { file: 'cmd-test-1.ts', expected: false, actual: false, confidence: 0.95, analysisTime: 105 }
-      ]
+        {
+          file: 'cmd-test-1.ts',
+          expected: false,
+          actual: false,
+          confidence: 0.95,
+          analysisTime: 105,
+        },
+      ],
     };
     return testCaseMap[vulnerabilityType] || [];
   }
@@ -567,23 +608,23 @@ class TestFixtures {
         extractedIntent: 'should reject invalid email addresses',
         similarity: 1.0,
         confidence: 0.95,
-        analysisTime: 150
-      }
+        analysisTime: 150,
+      },
     ];
   }
 
   async getIntentTestCasesByCategory(category: string) {
     const testCaseMap: Record<string, any[]> = {
-      'validation': [
+      validation: [
         {
           file: 'email-validation.spec.ts',
           expectedIntent: 'should validate email format',
           extractedIntent: 'should validate email format',
           similarity: 1.0,
           confidence: 0.9,
-          analysisTime: 140
-        }
-      ]
+          analysisTime: 140,
+        },
+      ],
     };
     return testCaseMap[category] || [];
   }
@@ -596,8 +637,8 @@ class TestFixtures {
         extractedIntent: 'should test functionality',
         similarity: 0.95,
         confidence: 0.8,
-        analysisTime: 130
-      }
+        analysisTime: 130,
+      },
     ];
   }
 
@@ -609,8 +650,8 @@ class TestFixtures {
         expectedGaps: 2, // ゼロ除算テストとsqrt関数テストが欠けている
         detectedGaps: 2,
         confidence: 0.85,
-        analysisTime: 200
-      }
+        analysisTime: 200,
+      },
     ];
   }
 
@@ -623,9 +664,9 @@ class TestFixtures {
           expectedGaps: 1,
           detectedGaps: 1,
           confidence: 0.8,
-          analysisTime: 180
-        }
-      ]
+          analysisTime: 180,
+        },
+      ],
     };
     return testCaseMap[gapType] || [];
   }

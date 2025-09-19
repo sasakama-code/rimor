@@ -6,30 +6,28 @@
     "composite": false,
     "incremental": true,
     "tsBuildInfoFile": "../../dist/.tsbuildinfo",
-    
+
     // Issue #126対応: セキュアな本番ビルド設定
     "sourceMap": false,
     "inlineSourceMap": false,
     "inlineSources": false,
     "declaration": true,
     "declarationMap": false,
-    
+
     // 本番最適化
     "removeComments": true,
     "preserveConstEnums": false,
     "stripInternal": true,
-    
+
     // セキュリティ強化
     "noEmitHelpers": false,
     "importHelpers": true,
-    
+
     // 型情報の最適化（本番では型チェックより速度優先）
     "skipLibCheck": true,
     "skipDefaultLibCheck": true
   },
-  "include": [
-    "../../src/**/*"
-  ],
+  "include": ["../../src/**/*"],
   "exclude": [
     "node_modules",
     "dist",

@@ -1,14 +1,14 @@
 /**
  * ベンチマークレポート生成システム
  * Phase 4: レポート生成・可視化機能
- * 
+ *
  * SOLID原則に基づく設計:
  * - Single Responsibility: レポート生成に特化
  * - Open/Closed: 新しいフォーマットの追加に開放的
  * - Liskov Substitution: フォーマット実装の互換性
  * - Interface Segregation: フォーマット別インターフェース分離
  * - Dependency Inversion: テンプレートエンジンへの依存性注入
- * 
+ *
  * Defensive Programming原則:
  * - 入力検証とサニタイゼーション
  * - エラーハンドリングとフォールバック
@@ -118,7 +118,7 @@ export class BenchmarkReportGenerator {
       templateDir: config.templateDir || path.join(__dirname, '../templates'),
       enableCharts: config.enableCharts ?? true,
       includeRawData: config.includeRawData ?? false,
-      customTemplates: config.customTemplates || {}
+      customTemplates: config.customTemplates || {},
     };
 
     // 出力ディレクトリの確保
@@ -127,13 +127,13 @@ export class BenchmarkReportGenerator {
 
   /**
    * Markdownレポート生成
-   * 
+   *
    * @param results ベンチマーク結果配列
    * @param comparison オプションのベースライン比較結果
    * @returns 生成されたレポートファイルパス
    */
   async generateMarkdownReport(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     comparison?: BaselineComparison
   ): Promise<string> {
     // 入力検証（Defensive Programming）
@@ -146,10 +146,10 @@ export class BenchmarkReportGenerator {
     const filepath = path.join(this.config.outputDir, 'markdown', filename);
 
     const successfulResults = results.filter(r => r.success);
-    
+
     // Markdownコンテンツ生成
     const markdownContent = this.generateMarkdownContent(successfulResults, comparison);
-    
+
     // ファイル書き込み
     await this.ensureDirectory(path.dirname(filepath));
     await fs.writeFile(filepath, markdownContent, 'utf-8');
@@ -159,13 +159,13 @@ export class BenchmarkReportGenerator {
 
   /**
    * HTMLレポート生成
-   * 
+   *
    * @param results ベンチマーク結果配列
    * @param options HTML生成オプション
    * @returns 生成されたレポートファイルパス
    */
   async generateHTMLReport(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     options: HTMLReportOptions = {}
   ): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -173,10 +173,10 @@ export class BenchmarkReportGenerator {
     const filepath = path.join(this.config.outputDir, 'html', filename);
 
     const successfulResults = results.filter(r => r.success);
-    
+
     // HTMLコンテンツ生成
     const htmlContent = await this.generateHTMLContent(successfulResults, options);
-    
+
     // ファイル書き込み
     await this.ensureDirectory(path.dirname(filepath));
     await fs.writeFile(filepath, htmlContent, 'utf-8');
@@ -186,13 +186,13 @@ export class BenchmarkReportGenerator {
 
   /**
    * CSVエクスポート
-   * 
+   *
    * @param results ベンチマーク結果配列
    * @param options CSVエクスポートオプション
    * @returns 生成されたCSVファイルパス
    */
   async generateCSVExport(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     options: CSVExportOptions = {}
   ): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -200,10 +200,10 @@ export class BenchmarkReportGenerator {
     const filepath = path.join(this.config.outputDir, 'csv', filename);
 
     const successfulResults = results.filter(r => r.success);
-    
+
     // CSVコンテンツ生成
     const csvContent = this.generateCSVContent(successfulResults, options);
-    
+
     // ファイル書き込み
     await this.ensureDirectory(path.dirname(filepath));
     await fs.writeFile(filepath, csvContent, options.encoding || 'utf-8');
@@ -213,13 +213,13 @@ export class BenchmarkReportGenerator {
 
   /**
    * ダッシュボード生成
-   * 
+   *
    * @param integratedResults 統合ベンチマーク結果配列（履歴データ）
    * @param options ダッシュボード生成オプション
    * @returns 生成されたダッシュボードファイルパス
    */
   async generateDashboard(
-    integratedResults: BaselineIntegratedResult[], 
+    integratedResults: BaselineIntegratedResult[],
     options: DashboardOptions = {}
   ): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -228,7 +228,7 @@ export class BenchmarkReportGenerator {
 
     // ダッシュボードコンテンツ生成
     const dashboardContent = await this.generateDashboardContent(integratedResults, options);
-    
+
     // ファイル書き込み
     await this.ensureDirectory(path.dirname(filepath));
     await fs.writeFile(filepath, dashboardContent, 'utf-8');
@@ -238,13 +238,13 @@ export class BenchmarkReportGenerator {
 
   /**
    * 全フォーマット一括生成
-   * 
+   *
    * @param results ベンチマーク結果配列
    * @param formats 生成するフォーマット設定
    * @returns 各フォーマットのファイルパス
    */
   async generateAllFormats(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     formats: AllFormatsOptions = {}
   ): Promise<AllFormatsResult> {
     const allReports: AllFormatsResult = {};
@@ -280,7 +280,7 @@ export class BenchmarkReportGenerator {
       // ダッシュボードは統合結果が必要なため、簡易版を作成
       const mockIntegratedResult: BaselineIntegratedResult = {
         results,
-        baselineId: 'generated-' + Date.now().toString()
+        baselineId: 'generated-' + Date.now().toString(),
       };
 
       tasks.push(
@@ -302,8 +302,8 @@ export class BenchmarkReportGenerator {
    * 出力ディレクトリの確保
    */
   private async ensureOutputDirectories(): Promise<void> {
-    const dirs = ['markdown', 'html', 'csv', 'dashboard'].map(
-      subdir => path.join(this.config.outputDir, subdir)
+    const dirs = ['markdown', 'html', 'csv', 'dashboard'].map(subdir =>
+      path.join(this.config.outputDir, subdir)
     );
 
     await Promise.all(dirs.map(dir => this.ensureDirectory(dir)));
@@ -325,11 +325,11 @@ export class BenchmarkReportGenerator {
    * Markdownコンテンツ生成
    */
   private generateMarkdownContent(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     comparison?: BaselineComparison
   ): string {
     const timestamp = new Date().toLocaleString('ja-JP');
-    
+
     let content = `# ベンチマーク実行レポート\\n\\n`;
     content += `**生成日時**: ${timestamp}\\n`;
     content += `**対象プロジェクト数**: ${results.length}\\n\\n`;
@@ -352,7 +352,7 @@ export class BenchmarkReportGenerator {
     results.forEach(result => {
       const target5msIcon = result.target5ms.achieved ? '✅' : '❌';
       const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
-      
+
       content += `| ${result.projectName} | ${result.performance.timePerFile.toFixed(2)} | ${target5msIcon} | ${(result.accuracy.taintTyperSuccessRate * 100).toFixed(1)}% | ${memoryMB} |\\n`;
     });
 
@@ -362,15 +362,19 @@ export class BenchmarkReportGenerator {
     if (comparison) {
       content += `## 📈 ベースライン比較結果\\n\\n`;
       content += `**全体改善率**: ${comparison.overallImprovement.toFixed(2)}%\\n\\n`;
-      
+
       content += `### プロジェクト別比較\\n\\n`;
       content += `| プロジェクト | 性能改善率 | 精度改善率 | 5ms目標状況 |\\n`;
       content += `|------------|-----------|-----------|-------------|\\n`;
 
       comparison.projectComparisons.forEach(comp => {
-        const statusIcon = comp.target5msStatus === 'improved' ? '🎯' : 
-                          comp.target5msStatus === 'maintained' ? '✅' : '⚠️';
-        
+        const statusIcon =
+          comp.target5msStatus === 'improved'
+            ? '🎯'
+            : comp.target5msStatus === 'maintained'
+              ? '✅'
+              : '⚠️';
+
         content += `| ${comp.projectName} | ${comp.performanceImprovement.toFixed(1)}% | ${comp.accuracyImprovement.toFixed(1)}% | ${comp.target5msStatus} ${statusIcon} |\\n`;
       });
 
@@ -391,22 +395,22 @@ export class BenchmarkReportGenerator {
    * HTMLコンテンツ生成
    */
   private async generateHTMLContent(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     options: HTMLReportOptions
   ): Promise<string> {
     const timestamp = new Date().toLocaleString('ja-JP');
     const stats = this.calculateSummaryStatistics(results);
-    
+
     let html = `<!DOCTYPE html>\\n<html lang="ja">\\n<head>\\n`;
     html += `    <meta charset="UTF-8">\\n`;
     html += `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n`;
     html += `    <title>ベンチマーク実行レポート</title>\\n`;
-    
+
     // Chart.js CDN
     if (options.includeCharts) {
       html += `    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\\n`;
     }
-    
+
     html += `    <style>\\n`;
     html += `        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 2rem; }\\n`;
     html += `        .container { max-width: 1200px; margin: 0 auto; }\\n`;
@@ -420,12 +424,12 @@ export class BenchmarkReportGenerator {
     html += `        .chart-container { width: 100%; height: 400px; margin: 2rem 0; }\\n`;
     html += `    </style>\\n`;
     html += `</head>\\n<body>\\n`;
-    
+
     html += `    <div class="container">\\n`;
     html += `        <h1>📊 ベンチマーク実行レポート</h1>\\n`;
     html += `        <p><strong>生成日時:</strong> ${timestamp}</p>\\n`;
     html += `        <p><strong>対象プロジェクト数:</strong> ${results.length}</p>\\n`;
-    
+
     // 統計カード
     html += `        <div class="stats-grid">\\n`;
     html += `            <div class="stat-card">\\n`;
@@ -445,7 +449,7 @@ export class BenchmarkReportGenerator {
     html += `                <div class="stat-label">平均精度</div>\\n`;
     html += `            </div>\\n`;
     html += `        </div>\\n`;
-    
+
     // グラフ（Chart.js）
     if (options.includeCharts) {
       html += `        <h2>📈 パフォーマンス可視化</h2>\\n`;
@@ -456,7 +460,7 @@ export class BenchmarkReportGenerator {
       html += `            <canvas id="accuracyChart"></canvas>\\n`;
       html += `        </div>\\n`;
     }
-    
+
     // プロジェクト詳細テーブル
     html += `        <h2>📋 プロジェクト別詳細</h2>\\n`;
     html += `        <table>\\n`;
@@ -470,11 +474,11 @@ export class BenchmarkReportGenerator {
     html += `                </tr>\\n`;
     html += `            </thead>\\n`;
     html += `            <tbody>\\n`;
-    
+
     results.forEach(result => {
       const target5msIcon = result.target5ms.achieved ? '✅' : '❌';
       const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
-      
+
       html += `                <tr>\\n`;
       html += `                    <td>${result.projectName}</td>\\n`;
       html += `                    <td>${result.performance.timePerFile.toFixed(2)}</td>\\n`;
@@ -483,18 +487,18 @@ export class BenchmarkReportGenerator {
       html += `                    <td>${memoryMB}</td>\\n`;
       html += `                </tr>\\n`;
     });
-    
+
     html += `            </tbody>\\n`;
     html += `        </table>\\n`;
     html += `    </div>\\n`;
-    
+
     // Chart.js スクリプト
     if (options.includeCharts) {
       html += this.generateChartJavaScript(results);
     }
-    
+
     html += `</body>\\n</html>`;
-    
+
     return html;
   }
 
@@ -504,7 +508,7 @@ export class BenchmarkReportGenerator {
   private generateCSVContent(results: BenchmarkResult[], options: CSVExportOptions): string {
     const delimiter = options.delimiter || ',';
     let csv = '';
-    
+
     // ヘッダー行
     let headers = [
       'プロジェクト名',
@@ -516,19 +520,19 @@ export class BenchmarkReportGenerator {
       'Gap検出精度(%)',
       'メモリ使用量(MB)',
       'CPU使用率(%)',
-      'スループット(files/sec)'
+      'スループット(files/sec)',
     ];
-    
+
     if (options.includeComparison) {
       headers.push('性能改善率(%)', '精度改善率(%)', '目標達成状況');
     }
-    
+
     csv += headers.join(delimiter) + '\\n';
-    
+
     // データ行
     results.forEach(result => {
       const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
-      
+
       let row = [
         result.projectName,
         result.performance.timePerFile.toFixed(2),
@@ -539,14 +543,14 @@ export class BenchmarkReportGenerator {
         (result.accuracy.gapDetectionAccuracy * 100).toFixed(1),
         memoryMB.toString(),
         (result.performance.cpuUsage || 0).toFixed(1),
-        result.performance.throughput.toFixed(1)
+        result.performance.throughput.toFixed(1),
       ];
-      
+
       if (options.includeComparison && options.comparison) {
         const projectComparison = options.comparison.projectComparisons.find(
           comp => comp.projectName === result.projectName
         );
-        
+
         if (projectComparison) {
           row.push(
             projectComparison.performanceImprovement.toFixed(1),
@@ -557,10 +561,10 @@ export class BenchmarkReportGenerator {
           row.push('N/A', 'N/A', 'N/A');
         }
       }
-      
+
       csv += row.join(delimiter) + '\\n';
     });
-    
+
     return csv;
   }
 
@@ -568,13 +572,13 @@ export class BenchmarkReportGenerator {
    * ダッシュボードコンテンツ生成
    */
   private async generateDashboardContent(
-    integratedResults: BaselineIntegratedResult[], 
+    integratedResults: BaselineIntegratedResult[],
     options: DashboardOptions
   ): Promise<string> {
     const timestamp = new Date().toLocaleString('ja-JP');
     const latestResult = integratedResults[integratedResults.length - 1];
     const results = latestResult.results.filter(r => r.success);
-    
+
     let html = `<!DOCTYPE html>\\n<html lang="ja">\\n<head>\\n`;
     html += `    <meta charset="UTF-8">\\n`;
     html += `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n`;
@@ -594,12 +598,12 @@ export class BenchmarkReportGenerator {
     html += `        .recommendations { background: #d1ecf1; border-left: 4px solid #bee5eb; padding: 1rem; border-radius: 4px; }\\n`;
     html += `    </style>\\n`;
     html += `</head>\\n<body>\\n`;
-    
+
     html += `    <div class="dashboard">\\n`;
     html += `        <div class="panel">\\n`;
     html += `            <h2>📊 パフォーマンス概要</h2>\\n`;
     html += `            <p><strong>最終更新:</strong> ${timestamp}</p>\\n`;
-    
+
     const stats = this.calculateSummaryStatistics(results);
     html += `            <div class="metric-grid">\\n`;
     html += `                <div class="metric">\\n`;
@@ -620,7 +624,7 @@ export class BenchmarkReportGenerator {
     html += `                </div>\\n`;
     html += `            </div>\\n`;
     html += `        </div>\\n`;
-    
+
     // 傾向分析パネル
     if (options.includeTrendAnalysis && integratedResults.length > 1) {
       html += `        <div class="panel">\\n`;
@@ -630,7 +634,7 @@ export class BenchmarkReportGenerator {
       html += `            </div>\\n`;
       html += `        </div>\\n`;
     }
-    
+
     // メインパフォーマンスチャート
     html += `        <div class="panel chart-panel">\\n`;
     html += `            <h2>📊 プロジェクト別パフォーマンス</h2>\\n`;
@@ -638,7 +642,7 @@ export class BenchmarkReportGenerator {
     html += `                <canvas id="performanceChart"></canvas>\\n`;
     html += `            </div>\\n`;
     html += `        </div>\\n`;
-    
+
     // 推奨事項パネル
     if (options.includeRecommendations) {
       html += `        <div class="panel">\\n`;
@@ -653,14 +657,14 @@ export class BenchmarkReportGenerator {
       html += `            </div>\\n`;
       html += `        </div>\\n`;
     }
-    
+
     html += `    </div>\\n`;
-    
+
     // ダッシュボード用JavaScript
     html += this.generateDashboardJavaScript(integratedResults, options);
-    
+
     html += `</body>\\n</html>`;
-    
+
     return html;
   }
 
@@ -671,7 +675,7 @@ export class BenchmarkReportGenerator {
     const projectNames = results.map(r => r.projectName);
     const timePerFile = results.map(r => r.performance.timePerFile);
     const accuracy = results.map(r => r.accuracy.taintTyperSuccessRate * 100);
-    
+
     return `
     <script>
     // パフォーマンスチャート
@@ -752,13 +756,15 @@ export class BenchmarkReportGenerator {
    * ダッシュボード用JavaScript生成
    */
   private generateDashboardJavaScript(
-    integratedResults: BaselineIntegratedResult[], 
+    integratedResults: BaselineIntegratedResult[],
     options: DashboardOptions
   ): string {
-    const latestResults = integratedResults[integratedResults.length - 1].results.filter(r => r.success);
+    const latestResults = integratedResults[integratedResults.length - 1].results.filter(
+      r => r.success
+    );
     const projectNames = latestResults.map(r => r.projectName);
     const timePerFile = latestResults.map(r => r.performance.timePerFile);
-    
+
     let script = `
     <script>
     // メインパフォーマンスチャート
@@ -795,18 +801,20 @@ export class BenchmarkReportGenerator {
         }
     });
     `;
-    
+
     // 時系列トレンドチャート
     if (options.includeTrendAnalysis && integratedResults.length > 1) {
       const trendData = integratedResults.map(result => {
-        const avgTime = result.results.filter(r => r.success)
-          .reduce((sum, r) => sum + r.performance.timePerFile, 0) / 
+        const avgTime =
+          result.results
+            .filter(r => r.success)
+            .reduce((sum, r) => sum + r.performance.timePerFile, 0) /
           result.results.filter(r => r.success).length;
         return avgTime;
       });
-      
+
       const trendLabels = integratedResults.map((_, index) => `実行 ${index + 1}`);
-      
+
       script += `
       // 時系列トレンドチャート
       const trendCtx = document.getElementById('trendChart').getContext('2d');
@@ -843,7 +851,7 @@ export class BenchmarkReportGenerator {
       });
       `;
     }
-    
+
     // 自動更新機能
     if (options.autoRefreshInterval) {
       script += `
@@ -853,11 +861,11 @@ export class BenchmarkReportGenerator {
       }, ${options.autoRefreshInterval * 1000});
       `;
     }
-    
+
     script += `
     </script>
     `;
-    
+
     return script;
   }
 
@@ -870,21 +878,23 @@ export class BenchmarkReportGenerator {
         averageTimePerFile: 0,
         target5msAchievementRate: 0,
         successRate: 0,
-        averageAccuracy: 0
+        averageAccuracy: 0,
       };
     }
 
-    const averageTimePerFile = results.reduce((sum, r) => sum + r.performance.timePerFile, 0) / results.length;
+    const averageTimePerFile =
+      results.reduce((sum, r) => sum + r.performance.timePerFile, 0) / results.length;
     const target5msAchieved = results.filter(r => r.target5ms.achieved).length;
     const target5msAchievementRate = target5msAchieved / results.length;
     const successRate = 1.0; // フィルタ済みなので100%
-    const averageAccuracy = results.reduce((sum, r) => sum + r.accuracy.taintTyperSuccessRate, 0) / results.length;
+    const averageAccuracy =
+      results.reduce((sum, r) => sum + r.accuracy.taintTyperSuccessRate, 0) / results.length;
 
     return {
       averageTimePerFile,
       target5msAchievementRate,
       successRate,
-      averageAccuracy
+      averageAccuracy,
     };
   }
 
@@ -892,13 +902,13 @@ export class BenchmarkReportGenerator {
    * 推奨事項の生成
    */
   private generateRecommendations(
-    results: BenchmarkResult[], 
+    results: BenchmarkResult[],
     comparison?: BaselineComparison
   ): string[] {
     const recommendations: string[] = [];
-    
+
     const stats = this.calculateSummaryStatistics(results);
-    
+
     // 基本的な推奨事項
     if (stats.target5msAchievementRate >= 0.9) {
       recommendations.push('優秀な性能です。現在の最適化戦略を継続してください。');
@@ -907,18 +917,22 @@ export class BenchmarkReportGenerator {
     } else {
       recommendations.push('全体的な性能改善が必要です。ボトルネック分析を実施してください。');
     }
-    
+
     // メモリ使用量チェック
-    const avgMemoryMB = results.reduce((sum, r) => sum + r.performance.memoryUsage.heapUsed, 0) / results.length / 1024 / 1024;
+    const avgMemoryMB =
+      results.reduce((sum, r) => sum + r.performance.memoryUsage.heapUsed, 0) /
+      results.length /
+      1024 /
+      1024;
     if (avgMemoryMB > 200) {
       recommendations.push('メモリ使用量が高めです。メモリプロファイリングを検討してください。');
     }
-    
+
     // 精度関連
     if (stats.averageAccuracy < 0.85) {
       recommendations.push('解析精度の向上が必要です。設定の見直しを検討してください。');
     }
-    
+
     // ベースライン比較に基づく推奨事項
     if (comparison) {
       if (comparison.overallImprovement > 10) {
@@ -926,12 +940,14 @@ export class BenchmarkReportGenerator {
       } else if (comparison.overallImprovement < -5) {
         recommendations.push('性能劣化が検出されました。最近の変更内容を確認してください。');
       }
-      
+
       if (comparison.target5msImprovements.degraded.length > 0) {
-        recommendations.push(`${comparison.target5msImprovements.degraded.join(', ')} で5ms目標未達成になりました。優先的に対応してください。`);
+        recommendations.push(
+          `${comparison.target5msImprovements.degraded.join(', ')} で5ms目標未達成になりました。優先的に対応してください。`
+        );
       }
     }
-    
+
     return recommendations;
   }
 }

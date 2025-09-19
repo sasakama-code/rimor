@@ -8,7 +8,7 @@ import {
   TaintAnalysisResult,
   TaintFlow,
   SecurityAnalysisResult,
-  DependencyAnalysisResult
+  DependencyAnalysisResult,
 } from '../../../src/core/types/analysis-types';
 
 // 実装された型ガード関数をインポート
@@ -17,7 +17,7 @@ import {
   isTaintAnalysisResult,
   isTaintFlow,
   isSecurityAnalysisResult,
-  isDependencyAnalysisResult
+  isDependencyAnalysisResult,
 } from '../../../src/core/types/analysis-type-guards';
 
 describe('Analysis Types - Type Guards', () => {
@@ -39,10 +39,10 @@ describe('Analysis Types - Type Guards', () => {
             high: 2,
             medium: 2,
             low: 0,
-            info: 0
+            info: 0,
           },
           totalPatterns: 15,
-          totalImprovements: 3
+          totalImprovements: 3,
         },
         issues: [],
         improvements: [],
@@ -52,9 +52,9 @@ describe('Analysis Types - Type Guards', () => {
           dimensions: {
             completeness: 0.8,
             correctness: 0.7,
-            maintainability: 0.75
-          }
-        }
+            maintainability: 0.75,
+          },
+        },
       };
 
       expect(isProjectAnalysisResult(validResult)).toBe(true);
@@ -73,7 +73,7 @@ describe('Analysis Types - Type Guards', () => {
         projectPath: '/path/to/project',
         // timestamp missing
         duration: 1000,
-        success: true
+        success: true,
       };
       expect(isProjectAnalysisResult(incomplete)).toBe(false);
     });
@@ -92,9 +92,9 @@ describe('Analysis Types - Type Guards', () => {
             confidence: 0.85,
             location: {
               file: 'test.ts',
-              line: 42
-            }
-          }
+              line: 42,
+            },
+          },
         ],
         summary: {
           totalFlows: 1,
@@ -104,9 +104,9 @@ describe('Analysis Types - Type Guards', () => {
           lowFlows: 0,
           sourcesCount: 1,
           sinksCount: 1,
-          sanitizersCount: 0
+          sanitizersCount: 0,
         },
-        recommendations: ['入力検証を追加してください']
+        recommendations: ['入力検証を追加してください'],
       };
 
       expect(isTaintAnalysisResult(validResult)).toBe(true);
@@ -121,8 +121,8 @@ describe('Analysis Types - Type Guards', () => {
             sink: 'database',
             path: [],
             taintLevel: 'invalid-level', // 無効な値
-            confidence: 0.85
-          }
+            confidence: 0.85,
+          },
         ],
         summary: {
           totalFlows: 1,
@@ -132,9 +132,9 @@ describe('Analysis Types - Type Guards', () => {
           lowFlows: 0,
           sourcesCount: 1,
           sinksCount: 1,
-          sanitizersCount: 0
+          sanitizersCount: 0,
         },
-        recommendations: []
+        recommendations: [],
       };
 
       expect(isTaintAnalysisResult(invalidResult)).toBe(false);
@@ -156,19 +156,19 @@ describe('Analysis Types - Type Guards', () => {
             description: 'SQLインジェクションの可能性',
             location: {
               file: 'db.ts',
-              line: 100
+              line: 100,
             },
             cwe: 'CWE-89',
-            owasp: 'A03:2021'
-          }
+            owasp: 'A03:2021',
+          },
         ],
         securityScore: 65,
         compliance: {
           standard: 'OWASP Top 10',
           passed: false,
           score: 65,
-          violations: []
-        }
+          violations: [],
+        },
       };
 
       expect(isSecurityAnalysisResult(validResult)).toBe(true);
@@ -182,8 +182,8 @@ describe('Analysis Types - Type Guards', () => {
           {
             name: 'express',
             version: '4.18.0',
-            type: 'production' as const
-          }
+            type: 'production' as const,
+          },
         ],
         vulnerabilities: [],
         outdated: [
@@ -192,12 +192,12 @@ describe('Analysis Types - Type Guards', () => {
             current: '4.17.20',
             wanted: '4.17.21',
             latest: '4.17.21',
-            type: 'patch' as const
-          }
+            type: 'patch' as const,
+          },
         ],
         unused: ['unused-package'],
         missing: [],
-        circular: []
+        circular: [],
       };
 
       expect(isDependencyAnalysisResult(validResult)).toBe(true);
@@ -209,14 +209,14 @@ describe('Analysis Types - Type Guards', () => {
           {
             name: 'express',
             version: '4.18.0',
-            type: 'invalid-type' // 無効な値
-          }
+            type: 'invalid-type', // 無効な値
+          },
         ],
         vulnerabilities: [],
         outdated: [],
         unused: [],
         missing: [],
-        circular: []
+        circular: [],
       };
 
       expect(isDependencyAnalysisResult(invalidResult)).toBe(false);

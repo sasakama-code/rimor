@@ -1,6 +1,11 @@
 import { UnifiedAIFormatter } from '../../src/ai-output/unified-ai-formatter';
 import { FormattingStrategy } from '../../src/ai-output/adapter';
-import { UnifiedAnalysisResult, AIJsonOutput, UnifiedAIFormatterOptions, RiskLevel } from '../../src/ai-output/types';
+import {
+  UnifiedAnalysisResult,
+  AIJsonOutput,
+  UnifiedAIFormatterOptions,
+  RiskLevel,
+} from '../../src/ai-output/types';
 import { AnalysisResult, Issue } from '../../src/core/types';
 
 // テスト用のモックデータ（UnifiedAnalysisResult用）
@@ -18,9 +23,9 @@ const mockUnifiedAnalysisResult: UnifiedAnalysisResult = {
         HIGH: 2,
         MEDIUM: 1,
         LOW: 1,
-        MINIMAL: 0
-      }
-    }
+        MINIMAL: 0,
+      },
+    },
   },
   aiKeyRisks: [
     {
@@ -32,13 +37,13 @@ const mockUnifiedAnalysisResult: UnifiedAnalysisResult = {
       context: {
         codeSnippet: '',
         startLine: 10,
-        endLine: 20
+        endLine: 20,
       },
       suggestedAction: {
         type: 'SANITIZE_VARIABLE' as const,
         description: 'Fix immediately',
-        example: '// Fix example code'
-      }
+        example: '// Fix example code',
+      },
     },
     {
       riskId: 'RISK-002',
@@ -49,13 +54,13 @@ const mockUnifiedAnalysisResult: UnifiedAnalysisResult = {
       context: {
         codeSnippet: '',
         startLine: 100,
-        endLine: 110
+        endLine: 110,
       },
       suggestedAction: {
         type: 'REFACTOR_COMPLEX_CODE' as const,
         description: 'Refactor code',
-        example: '// Refactor example code'
-      }
+        example: '// Refactor example code',
+      },
     },
     {
       riskId: 'RISK-003',
@@ -66,17 +71,17 @@ const mockUnifiedAnalysisResult: UnifiedAnalysisResult = {
       context: {
         codeSnippet: '',
         startLine: 200,
-        endLine: 210
+        endLine: 210,
       },
       suggestedAction: {
         type: 'ADD_MISSING_TEST' as const,
         description: 'Add unit tests',
-        example: '// Test example code'
-      }
-    }
+        example: '// Test example code',
+      },
+    },
   ],
   detailedIssues: [],
-  schemaVersion: "1.0" as const
+  schemaVersion: '1.0' as const,
 };
 
 // テスト用のモックデータ（AnalysisResult用）
@@ -92,9 +97,9 @@ const mockAnalysisResult: AnalysisResult = {
       message: 'Missing assertion in test',
       filePath: 'test.ts',
       line: 10,
-      column: 5
-    } as Issue
-  ]
+      column: 5,
+    } as Issue,
+  ],
 };
 
 describe('UnifiedAIFormatterStrategy', () => {
@@ -111,7 +116,7 @@ describe('UnifiedAIFormatterStrategy', () => {
 
     it('デフォルト戦略（Base）でフォーマットできる', () => {
       const result = formatter.format(mockAnalysisResult);
-      
+
       expect(result).toBeDefined();
       expect(result.keyRisks).toBeDefined();
       expect(result.keyRisks.length).toBeGreaterThan(0);
@@ -120,15 +125,17 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('オプションを適用してフォーマットできる', () => {
       const options: UnifiedAIFormatterOptions = {
         maxRisks: 2,
-        includeRiskLevels: ['CRITICAL', 'HIGH']
+        includeRiskLevels: ['CRITICAL', 'HIGH'],
       };
-      
+
       const result = formatter.formatAsAIJson(mockUnifiedAnalysisResult, options);
-      
+
       expect(result.keyRisks).toHaveLength(2);
-      expect(result.keyRisks.every((r: any) => 
-        r.riskLevel === RiskLevel.CRITICAL || r.riskLevel === RiskLevel.HIGH
-      )).toBeTruthy();
+      expect(
+        result.keyRisks.every(
+          (r: any) => r.riskLevel === RiskLevel.CRITICAL || r.riskLevel === RiskLevel.HIGH
+        )
+      ).toBeTruthy();
     });
   });
 
@@ -136,7 +143,7 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('Base戦略に切り替えできる', () => {
       formatter.setStrategy('base');
       const result = formatter.format(mockAnalysisResult);
-      
+
       expect(result).toBeDefined();
       expect(result.keyRisks).toBeDefined();
     });
@@ -144,7 +151,7 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('Optimized戦略に切り替えできる', () => {
       formatter.setStrategy('optimized');
       const result = formatter.format(mockAnalysisResult);
-      
+
       expect(result).toBeDefined();
       // Optimized戦略特有の最適化を確認
       expect(result.keyRisks.length).toBeLessThanOrEqual(10);
@@ -153,14 +160,13 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('Parallel戦略に切り替えできる', async () => {
       formatter.setStrategy('parallel');
       const result = await formatter.formatAsync(mockAnalysisResult);
-      
+
       expect(result).toBeDefined();
       expect(result).toBeDefined();
     });
 
     it('無効な戦略名でエラーをスローする', () => {
-      expect(() => formatter.setStrategy('invalid' as any))
-        .toThrow('Unknown strategy: invalid');
+      expect(() => formatter.setStrategy('invalid' as any)).toThrow('Unknown strategy: invalid');
     });
 
     it('カスタム戦略を登録できる', () => {
@@ -173,17 +179,17 @@ describe('UnifiedAIFormatterStrategy', () => {
               totalIssues: 0,
               criticalIssues: 0,
               highIssues: 0,
-              overallRisk: 'LOW' as const
+              overallRisk: 'LOW' as const,
             },
-            context: { custom: 'Custom context' }
+            context: { custom: 'Custom context' },
           };
-        }
+        },
       };
-      
+
       formatter.registerStrategy(customStrategy);
       formatter.setStrategy('custom');
       const result = formatter.format(mockAnalysisResult);
-      
+
       expect(result.keyRisks).toBeDefined();
       expect(result).toBeDefined();
     });
@@ -191,14 +197,12 @@ describe('UnifiedAIFormatterStrategy', () => {
 
   describe('エラーハンドリング', () => {
     it('無効な入力でエラーをスローする', () => {
-      expect(() => formatter.format(null as any))
-        .toThrow('Unsupported result format');
+      expect(() => formatter.format(null as any)).toThrow('Unsupported result format');
     });
 
     it('必須フィールドが欠けている場合エラーをスローする', () => {
       const invalidResult = { summary: {} } as any;
-      expect(() => formatter.formatAsAIJson(invalidResult))
-        .toThrow('Missing required fields');
+      expect(() => formatter.formatAsAIJson(invalidResult)).toThrow('Missing required fields');
     });
   });
 
@@ -206,7 +210,7 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('非同期フォーマットが正しく動作する', async () => {
       formatter.setStrategy('parallel');
       const result = await formatter.formatAsync(mockAnalysisResult);
-      
+
       expect(result).toBeDefined();
       expect(result.keyRisks).toBeDefined();
     });
@@ -216,9 +220,9 @@ describe('UnifiedAIFormatterStrategy', () => {
       const results = await formatter.formatBatch([
         mockAnalysisResult,
         mockAnalysisResult,
-        mockAnalysisResult
+        mockAnalysisResult,
       ]);
-      
+
       expect(results).toHaveLength(3);
       results.forEach(result => {
         expect(result).toBeDefined();
@@ -231,30 +235,32 @@ describe('UnifiedAIFormatterStrategy', () => {
     it('大量のリスクを効率的に処理できる', () => {
       const largeResult: UnifiedAnalysisResult = {
         ...mockUnifiedAnalysisResult,
-        aiKeyRisks: Array(100).fill(null).map((_, i) => ({
-          riskId: `RISK-${i}`,
-          filePath: `src/file${i}.ts`,
-          riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'][i % 5] as any,
-          title: `Problem ${i}`,
-          problem: `Problem ${i}`,
-          context: {
-            codeSnippet: '',
-            startLine: i * 10,
-            endLine: i * 10 + 10
-          },
-          suggestedAction: {
-            type: 'ADD_ASSERTION' as const,
-            description: `Solution ${i}`,
-            example: `// Example ${i}`
-          }
-        }))
+        aiKeyRisks: Array(100)
+          .fill(null)
+          .map((_, i) => ({
+            riskId: `RISK-${i}`,
+            filePath: `src/file${i}.ts`,
+            riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL'][i % 5] as any,
+            title: `Problem ${i}`,
+            problem: `Problem ${i}`,
+            context: {
+              codeSnippet: '',
+              startLine: i * 10,
+              endLine: i * 10 + 10,
+            },
+            suggestedAction: {
+              type: 'ADD_ASSERTION' as const,
+              description: `Solution ${i}`,
+              example: `// Example ${i}`,
+            },
+          })),
       };
-      
+
       formatter.setStrategy('optimized');
       const startTime = Date.now();
       const result = formatter.formatAsAIJson(largeResult);
       const endTime = Date.now();
-      
+
       expect(result.keyRisks.length).toBeLessThanOrEqual(10);
       expect(endTime - startTime).toBeLessThan(100); // 100ms以内
     });
@@ -263,23 +269,21 @@ describe('UnifiedAIFormatterStrategy', () => {
   describe('SOLID原則の遵守', () => {
     it('単一責任原則: AI向けフォーマットのみを責務とする', () => {
       const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(formatter));
-      const formattingMethods = methods.filter(m => 
-        m.includes('format') || 
-        m.includes('Strategy') ||
-        m === 'constructor'
+      const formattingMethods = methods.filter(
+        m => m.includes('format') || m.includes('Strategy') || m === 'constructor'
       );
-      
+
       expect(formattingMethods.length).toBeGreaterThan(0);
     });
 
     it('開放閉鎖原則: 新しい戦略を追加できる', () => {
       const initialStrategies = formatter.getAvailableStrategies();
-      
+
       formatter.registerStrategy({
         name: 'extended',
-        format: (result, options) => ({} as AIJsonOutput)
+        format: (result, options) => ({}) as AIJsonOutput,
       });
-      
+
       const updatedStrategies = formatter.getAvailableStrategies();
       expect(updatedStrategies).toContain('extended');
       expect(updatedStrategies.length).toBe(initialStrategies.length + 1);
@@ -287,11 +291,11 @@ describe('UnifiedAIFormatterStrategy', () => {
 
     it('リスコフの置換原則: 全ての戦略が同じインターフェースを実装', () => {
       const strategies = ['base', 'optimized', 'parallel'] as const;
-      
+
       strategies.forEach(strategy => {
         formatter.setStrategy(strategy);
         const result = formatter.format(mockAnalysisResult);
-        
+
         // 全ての戦略が同じ出力構造を持つ
         expect(result).toHaveProperty('keyRisks');
         expect(result).toHaveProperty('summary');

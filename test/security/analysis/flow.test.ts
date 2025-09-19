@@ -5,7 +5,7 @@ import {
   TaintLevel,
   TaintSource,
   SecuritySink,
-  SecurityIssue
+  SecurityIssue,
 } from '../../../src/security/types';
 // Removed TaintQualifier import - using source property instead
 
@@ -29,14 +29,14 @@ describe('FlowSensitiveAnalyzer', () => {
         content: '',
         body: '',
         signature: 'emptyMethod(): void',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const graph = analyzer.buildFlowGraph(method);
-      
+
       expect(graph).toBeDefined();
       expect(graph.nodes.size).toBeGreaterThanOrEqual(1);
       expect(graph.entryNode).toBeDefined();
@@ -62,17 +62,17 @@ describe('FlowSensitiveAnalyzer', () => {
           return z;
         `,
         signature: 'linearFlow(): string',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const graph = analyzer.buildFlowGraph(method);
-      
+
       expect(graph.nodes.size).toBeGreaterThan(1);
       expect(graph.exitNodes).toBeDefined();
-      
+
       // ノードが順番に接続されていることを確認
       const entryNode = Array.from(graph.nodes.values()).find(n => n.id === graph.entryNode);
       expect(entryNode).toBeDefined();
@@ -101,14 +101,14 @@ describe('FlowSensitiveAnalyzer', () => {
         `,
         type: 'test',
         signature: 'conditionalFlow(): string',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const graph = analyzer.buildFlowGraph(method);
-      
+
       // 分岐が存在することを確認
       const branchingNodes = Array.from(graph.nodes.values()).filter(n => n.successors.length > 1);
       expect(branchingNodes.length).toBeGreaterThan(0);
@@ -132,15 +132,15 @@ describe('FlowSensitiveAnalyzer', () => {
           db.query(propagated);
         `,
         signature: 'taintPropagation(request: Request): void',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const result = analyzer.analyzeTaintFlow(method.body || method.content || '');
       const issues = result.violations;
-      
+
       expect(issues.length).toBeGreaterThan(0);
       expect(issues[0].severity).toBeDefined();
     });
@@ -161,15 +161,15 @@ describe('FlowSensitiveAnalyzer', () => {
         `,
         type: 'test',
         signature: 'sanitizerFlow(request: Request): void',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const result = analyzer.analyzeTaintFlow(method.body || method.content || '');
       const issues = result.violations;
-      
+
       expect(issues).toHaveLength(0);
     });
   });
@@ -184,7 +184,7 @@ describe('FlowSensitiveAnalyzer', () => {
             inputTaint: TaintLevel.DEFINITELY_TAINTED,
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: ['2'],
-            predecessors: []
+            predecessors: [],
           },
           {
             id: '2',
@@ -193,16 +193,16 @@ describe('FlowSensitiveAnalyzer', () => {
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: [],
             predecessors: ['1'],
-            metadata: { sink: SecuritySink.DATABASE_QUERY }
-          }
+            metadata: { sink: SecuritySink.DATABASE_QUERY },
+          },
         ],
         entry: '1',
-        exit: '2'
+        exit: '2',
       };
 
       // TODO: detectVulnerabilities method needs to be implemented
       const vulnerabilities: any[] = []; // analyzer.detectVulnerabilities(graph);
-      
+
       expect(vulnerabilities.length).toBe(1);
       expect(vulnerabilities[0].type).toBe('SQL_INJECTION');
     });
@@ -212,11 +212,15 @@ describe('FlowSensitiveAnalyzer', () => {
         nodes: [
           {
             id: '1',
-            statement: { type: 'assignment' as const, target: 'userContent', value: 'request.body.content' },
+            statement: {
+              type: 'assignment' as const,
+              target: 'userContent',
+              value: 'request.body.content',
+            },
             inputTaint: TaintLevel.DEFINITELY_TAINTED,
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: ['2'],
-            predecessors: []
+            predecessors: [],
           },
           {
             id: '2',
@@ -225,16 +229,16 @@ describe('FlowSensitiveAnalyzer', () => {
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: [],
             predecessors: ['1'],
-            metadata: { sink: SecuritySink.HTML_OUTPUT }
-          }
+            metadata: { sink: SecuritySink.HTML_OUTPUT },
+          },
         ],
         entry: '1',
-        exit: '2'
+        exit: '2',
       };
 
       // TODO: detectVulnerabilities method needs to be implemented
       const vulnerabilities: any[] = []; // analyzer.detectVulnerabilities(graph);
-      
+
       expect(vulnerabilities.length).toBe(1);
       expect(vulnerabilities[0].type).toBe('XSS');
     });
@@ -253,7 +257,7 @@ describe('FlowSensitiveAnalyzer', () => {
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: ['2'],
             predecessors: [],
-            metadata: { source: TaintSource.USER_INPUT }
+            metadata: { source: TaintSource.USER_INPUT },
           },
           {
             id: '2',
@@ -261,7 +265,7 @@ describe('FlowSensitiveAnalyzer', () => {
             inputTaint: TaintLevel.DEFINITELY_TAINTED,
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: ['3'],
-            predecessors: ['1']
+            predecessors: ['1'],
           },
           {
             id: '3',
@@ -270,16 +274,16 @@ describe('FlowSensitiveAnalyzer', () => {
             outputTaint: TaintLevel.DEFINITELY_TAINTED,
             successors: [],
             predecessors: ['2'],
-            metadata: { sink: SecuritySink.JAVASCRIPT_EXEC }
-          }
+            metadata: { sink: SecuritySink.JAVASCRIPT_EXEC },
+          },
         ],
         entry: '1',
-        exit: '3'
+        exit: '3',
       };
 
       // TODO: trackTaintPath method needs to be implemented
       const path: any = null; // analyzer.trackTaintPath(source, sink, graph);
-      
+
       expect(path).toBeDefined();
       expect(path!.steps).toHaveLength(3);
       expect(path!.source).toBe(TaintSource.USER_INPUT);
@@ -310,22 +314,22 @@ describe('FlowSensitiveAnalyzer', () => {
           }
         `,
         signature: 'loopFlow(): void',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const graph = analyzer.buildFlowGraph(method);
-      
+
       // ループによる循環参照が存在することを確認
       const nodesArray = Array.from(graph.nodes.values());
-      const hasBackEdge = nodesArray.some(node => 
-        node.successors.some(succ => 
+      const hasBackEdge = nodesArray.some(node =>
+        node.successors.some(succ =>
           nodesArray.find(n => n.id === succ)?.successors.includes(node.id)
         )
       );
-      
+
       expect(graph.nodes.size).toBeGreaterThan(2);
     });
 
@@ -353,15 +357,15 @@ describe('FlowSensitiveAnalyzer', () => {
           }
         `,
         signature: 'exceptionFlow(input: string): any',
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
-          end: { line: 1, column: 1 }
-        }
+          end: { line: 1, column: 1 },
+        },
       };
 
       const result = analyzer.analyzeTaintFlow(method.body || method.content || '');
       const issues = result.violations;
-      
+
       // 例外ハンドリングパスが存在することを確認
       // 現在の実装では例外処理の全パスを計算できないため、最小限のパスを確認
       expect(result.flows.length).toBeGreaterThanOrEqual(0);

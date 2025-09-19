@@ -1,13 +1,19 @@
 /**
  * BaseSecurityPlugin テスト
- * 
+ *
  * TDD RED段階: セキュリティプラグインの基底クラステスト
  * SOLID原則に従い、セキュリティ固有の共通機能を提供
  */
 
 import { BaseSecurityPlugin } from '../../../src/plugins/base/BaseSecurityPlugin';
 import { BasePlugin } from '../../../src/plugins/base/BasePlugin';
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../src/core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../src/core/types';
 import { createDefaultQualityScore } from '../../helpers/quality-score.helper';
 
 // テスト用の具象クラス
@@ -30,12 +36,12 @@ class TestSecurityPlugin extends BaseSecurityPlugin {
       location: {
         file: testFile.path,
         line: p.line || 1,
-        column: p.column || 1
+        column: p.column || 1,
       },
       metadata: {
         description: p.description,
-        category: 'security'
-      }
+        category: 'security',
+      },
     }));
   }
 
@@ -48,39 +54,43 @@ class TestSecurityPlugin extends BaseSecurityPlugin {
         correctness: 1.0,
         maintainability: 0.8,
         performance: 0.8,
-        security: securityScore
+        security: securityScore,
       },
       breakdown: {
         completeness: securityScore * 100,
         correctness: 100,
-        maintainability: 80
+        maintainability: 80,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 1,
     });
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     if (evaluation.overall < 50) {
-      return [{
-        id: 'fix-security-issues',
-        priority: 'high',
-        type: 'modify',
-        category: 'security',
-        title: 'Fix security vulnerabilities',
-        description: 'Address detected security issues',
-        location: {
-          file: '',
-          line: 1,
-          column: 1
+      return [
+        {
+          id: 'fix-security-issues',
+          priority: 'high',
+          type: 'modify',
+          category: 'security',
+          title: 'Fix security vulnerabilities',
+          description: 'Address detected security issues',
+          location: {
+            file: '',
+            line: 1,
+            column: 1,
+          },
+          estimatedImpact: 0.5,
+          impact: {
+            scoreImprovement: 50,
+            effortMinutes: 30,
+          },
+          automatable: false,
         },
-        estimatedImpact: 0.5,
-        impact: {
-          scoreImprovement: 50,
-          effortMinutes: 30
-        },
-        automatable: false
-      }];
+      ];
     }
     return [];
   }
@@ -117,11 +127,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'sql-injection',
-        severity: 'critical',
-        description: expect.stringContaining('SQL injection')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'sql-injection',
+          severity: 'critical',
+          description: expect.stringContaining('SQL injection'),
+        })
+      );
     });
 
     test('should detect XSS patterns', () => {
@@ -135,11 +147,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'xss',
-        severity: 'high',
-        description: expect.stringContaining('XSS')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'xss',
+          severity: 'high',
+          description: expect.stringContaining('XSS'),
+        })
+      );
     });
 
     test('should detect command injection patterns', () => {
@@ -153,11 +167,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'command-injection',
-        severity: 'critical',
-        description: expect.stringContaining('Command injection')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'command-injection',
+          severity: 'critical',
+          description: expect.stringContaining('Command injection'),
+        })
+      );
     });
 
     test('should detect path traversal patterns', () => {
@@ -171,11 +187,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'path-traversal',
-        severity: 'high',
-        description: expect.stringContaining('Path traversal')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'path-traversal',
+          severity: 'high',
+          description: expect.stringContaining('Path traversal'),
+        })
+      );
     });
 
     test('should detect hardcoded credentials', () => {
@@ -191,11 +209,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'hardcoded-credentials',
-        severity: 'high',
-        description: expect.stringContaining('Hardcoded')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'hardcoded-credentials',
+          severity: 'high',
+          description: expect.stringContaining('Hardcoded'),
+        })
+      );
     });
 
     test('should detect weak cryptography', () => {
@@ -209,11 +229,13 @@ describe('BaseSecurityPlugin', () => {
       // @ts-ignore - accessing protected method for testing
       const patterns = plugin.detectSecurityPatterns(content);
 
-      expect(patterns).toContainEqual(expect.objectContaining({
-        type: 'weak-crypto',
-        severity: 'medium',
-        description: expect.stringContaining('weak')
-      }));
+      expect(patterns).toContainEqual(
+        expect.objectContaining({
+          type: 'weak-crypto',
+          severity: 'medium',
+          description: expect.stringContaining('weak'),
+        })
+      );
     });
 
     test('should return empty array for clean code', () => {
@@ -242,9 +264,9 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test.ts',
             line: 1,
-            column: 1
-          }
-        }
+            column: 1,
+          },
+        },
       ];
 
       // @ts-ignore - accessing protected method for testing
@@ -263,9 +285,9 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test.ts',
             line: 1,
-            column: 1
-          }
-        }
+            column: 1,
+          },
+        },
       ];
 
       // @ts-ignore - accessing protected method for testing
@@ -285,9 +307,9 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test.ts',
             line: 1,
-            column: 1
-          }
-        }
+            column: 1,
+          },
+        },
       ];
 
       // @ts-ignore - accessing protected method for testing
@@ -316,8 +338,8 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test1.ts',
             line: 1,
-            column: 1
-          }
+            column: 1,
+          },
         },
         {
           patternId: 'xss',
@@ -327,8 +349,8 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test2.ts',
             line: 1,
-            column: 1
-          }
+            column: 1,
+          },
         },
         {
           patternId: 'weak-crypto',
@@ -338,9 +360,9 @@ describe('BaseSecurityPlugin', () => {
           location: {
             file: 'test3.ts',
             line: 1,
-            column: 1
-          }
-        }
+            column: 1,
+          },
+        },
       ];
 
       // @ts-ignore - accessing protected method for testing
@@ -355,7 +377,7 @@ describe('BaseSecurityPlugin', () => {
     test('should identify taint sources', () => {
       // @ts-ignore - accessing protected method for testing
       const isTaintSource = plugin.isTaintSource;
-      
+
       if (isTaintSource) {
         expect(isTaintSource('request.params')).toBe(true);
         expect(isTaintSource('request.body')).toBe(true);
@@ -369,7 +391,7 @@ describe('BaseSecurityPlugin', () => {
     test('should identify dangerous sinks', () => {
       // @ts-ignore - accessing protected method for testing
       const isDangerousSink = plugin.isDangerousSink;
-      
+
       if (isDangerousSink) {
         expect(isDangerousSink('eval')).toBe(true);
         expect(isDangerousSink('exec')).toBe(true);
@@ -386,9 +408,9 @@ describe('BaseSecurityPlugin', () => {
         projectPath: '/test/project',
         packageJson: {
           name: 'test-project',
-          version: '1.0.0'
+          version: '1.0.0',
         },
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -401,7 +423,7 @@ describe('BaseSecurityPlugin', () => {
           test('vulnerable test', () => {
             const query = "SELECT * FROM users WHERE id = " + userId;
           });
-        `
+        `,
       };
 
       const results = await plugin.detectPatterns(testFile);

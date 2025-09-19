@@ -18,11 +18,11 @@ describe('Code Context to Code Analysis Migration', () => {
 
     it('code-analysisディレクトリに必要なファイルが存在すること', () => {
       const requiredFiles = [
-        'context-extractor.ts',  // core.ts から改名
-        'language-parser.ts',    // language.ts から改名
-        'scope-analyzer.ts',      // scope.ts から改名
-        'file-analyzer.ts',       // file.ts から改名
-        'utils.ts'               // そのまま
+        'context-extractor.ts', // core.ts から改名
+        'language-parser.ts', // language.ts から改名
+        'scope-analyzer.ts', // scope.ts から改名
+        'file-analyzer.ts', // file.ts から改名
+        'utils.ts', // そのまま
       ];
 
       requiredFiles.forEach(file => {
@@ -73,7 +73,7 @@ describe('Code Context to Code Analysis Migration', () => {
     it('CodeContextAnalyzerが新しいモジュールを正しく使用すること', async () => {
       const { CodeContextAnalyzer } = await import('../../src/analyzers/code-context');
       const analyzer = new CodeContextAnalyzer();
-      
+
       // 各メソッドが定義されていることを確認
       expect(analyzer.analyzeCodeContext).toBeDefined();
       expect(analyzer.extractFunctionInfo).toBeDefined();
@@ -87,7 +87,7 @@ describe('Code Context to Code Analysis Migration', () => {
         'context-extractor.test.ts',
         'language-parser.test.ts',
         'scope-analyzer.test.ts',
-        'file-analyzer.test.ts'
+        'file-analyzer.test.ts',
       ];
 
       const testPath = path.join(__dirname, 'code-analysis');
@@ -104,7 +104,7 @@ describe('Code Context to Code Analysis Migration', () => {
         'context-extractor.ts': 'コンテキスト抽出の責務',
         'language-parser.ts': '言語解析の責務',
         'scope-analyzer.ts': 'スコープ分析の責務',
-        'file-analyzer.ts': 'ファイル分析の責務'
+        'file-analyzer.ts': 'ファイル分析の責務',
       };
 
       Object.keys(moduleNames).forEach(moduleName => {
@@ -116,10 +116,7 @@ describe('Code Context to Code Analysis Migration', () => {
 
   describe('Import Path Updates', () => {
     it('code-context.tsのインポートパスが更新されていること', async () => {
-      const facadeContent = fs.readFileSync(
-        path.join(analyzersPath, 'code-context.ts'),
-        'utf-8'
-      );
+      const facadeContent = fs.readFileSync(path.join(analyzersPath, 'code-context.ts'), 'utf-8');
 
       // 新しいパスを使用していることを確認
       expect(facadeContent).toContain('./code-analysis/context-extractor');
@@ -143,7 +140,7 @@ describe('Code Analysis Module Responsibilities', () => {
         '../../src/analyzers/code-analysis/context-extractor'
       );
       const analyzer = new AdvancedCodeContextAnalyzer();
-      
+
       expect(analyzer.analyzeCodeContext).toBeDefined();
       expect(analyzer.extractCodeContext).toBeDefined();
     });
@@ -155,7 +152,7 @@ describe('Code Analysis Module Responsibilities', () => {
         '../../src/analyzers/code-analysis/language-parser'
       );
       const analyzer = new LanguageAnalyzer();
-      
+
       expect(analyzer.extractFunctionInfo).toBeDefined();
       expect(analyzer.detectLanguage).toBeDefined();
       expect(analyzer.parseLanguageSpecificFeatures).toBeDefined();
@@ -164,11 +161,9 @@ describe('Code Analysis Module Responsibilities', () => {
 
   describe('Scope Analyzer', () => {
     it('スコープ階層の分析に専念していること', async () => {
-      const { ScopeAnalyzer } = await import(
-        '../../src/analyzers/code-analysis/scope-analyzer'
-      );
+      const { ScopeAnalyzer } = await import('../../src/analyzers/code-analysis/scope-analyzer');
       const analyzer = new ScopeAnalyzer();
-      
+
       expect(analyzer.analyzeScopeHierarchy).toBeDefined();
       expect(analyzer.extractScopes).toBeDefined();
     });
@@ -176,11 +171,9 @@ describe('Code Analysis Module Responsibilities', () => {
 
   describe('File Analyzer', () => {
     it('ファイル関連の分析に専念していること', async () => {
-      const { FileAnalyzer } = await import(
-        '../../src/analyzers/code-analysis/file-analyzer'
-      );
+      const { FileAnalyzer } = await import('../../src/analyzers/code-analysis/file-analyzer');
       const analyzer = new FileAnalyzer();
-      
+
       expect(analyzer.findRelatedFiles).toBeDefined();
       expect(analyzer.analyzeFileStructure).toBeDefined();
     });

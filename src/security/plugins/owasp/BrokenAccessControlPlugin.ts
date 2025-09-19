@@ -3,7 +3,13 @@
  * TDD実装
  */
 
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../core/types';
 import { SecurityIssue } from '../../../security/types/security';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
 
@@ -18,22 +24,22 @@ export class BrokenAccessControlPlugin {
   isApplicable(context: ProjectContext): boolean {
     const authLibraries = ['passport', 'jsonwebtoken'];
     const deps = context.dependencies;
-    
+
     if (!deps) return false;
-    
+
     if (Array.isArray(deps)) {
       return authLibraries.some(lib => (deps as string[]).includes(lib));
     } else if (typeof deps === 'object') {
       return authLibraries.some(lib => lib in deps);
     }
-    
+
     return false;
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const results: DetectionResult[] = [];
     const content = testFile.content.toLowerCase();
-    
+
     // アクセス制御関連のキーワード
     const accessControlKeywords = [
       'authorization',
@@ -45,9 +51,9 @@ export class BrokenAccessControlPlugin {
       'deny',
       'token',
       '401',
-      '403'
+      '403',
     ];
-    
+
     // キーワードに基づく検出
     let hasAccessControlTest = false;
     for (const keyword of accessControlKeywords) {
@@ -56,14 +62,14 @@ export class BrokenAccessControlPlugin {
         break;
       }
     }
-    
+
     if (hasAccessControlTest) {
       results.push({
         patternId: 'access-control-test',
-        confidence: 0.8
+        confidence: 0.8,
       });
     }
-    
+
     return results;
   }
 
@@ -75,21 +81,19 @@ export class BrokenAccessControlPlugin {
         confidence: 0.8,
         dimensions: {
           security: 30,
-          completeness: 20
+          completeness: 20,
         },
         details: {
           strengths: [],
           weaknesses: ['アクセス制御テストが検出されませんでした'],
-          suggestions: ['認証・認可に関するテストを追加してください']
-        }
+          suggestions: ['認証・認可に関するテストを追加してください'],
+        },
       };
     }
-    
+
     // アクセス制御テストが存在する場合
-    const hasAccessControlTests = patterns.some(p => 
-      p.patternId === 'access-control-test'
-    );
-    
+    const hasAccessControlTests = patterns.some(p => p.patternId === 'access-control-test');
+
     if (hasAccessControlTests) {
       return {
         overall: 80,
@@ -97,35 +101,35 @@ export class BrokenAccessControlPlugin {
         confidence: 0.9,
         dimensions: {
           security: 80,
-          completeness: 75
+          completeness: 75,
         },
         details: {
           strengths: ['アクセス制御テストが適切に実装されています'],
           weaknesses: [],
-          suggestions: ['さらなるセキュリティテストの強化を検討してください']
-        }
+          suggestions: ['さらなるセキュリティテストの強化を検討してください'],
+        },
       };
     }
-    
+
     return {
       overall: 50,
       security: 50,
       confidence: 0.7,
       dimensions: {
         security: 50,
-        completeness: 45
+        completeness: 45,
       },
       details: {
         strengths: ['基本的なテストは存在します'],
         weaknesses: ['アクセス制御の検証が不十分です'],
-        suggestions: ['より詳細な認証・認可テストを追加してください']
-      }
+        suggestions: ['より詳細な認証・認可テストを追加してください'],
+      },
     };
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
-    
+
     if (evaluation.overall < 50) {
       // 低スコアの場合、基本的なアクセス制御テストの実装を提案
       improvements.push({
@@ -133,14 +137,15 @@ export class BrokenAccessControlPlugin {
         priority: 'high',
         type: 'add-test',
         title: 'アクセス制御テストの実装',
-        description: '認証・認可に関するテストが不足しています。401/403エラーのテスト、ロールベースアクセス制御のテストを追加してください。',
+        description:
+          '認証・認可に関するテストが不足しています。401/403エラーのテスト、ロールベースアクセス制御のテストを追加してください。',
         location: {
           file: 'test/',
           line: 1,
-          column: 1
+          column: 1,
         },
         impact: 50,
-        automatable: true
+        automatable: true,
       });
     } else {
       // 高スコアの場合、より高度なテストを提案
@@ -153,13 +158,13 @@ export class BrokenAccessControlPlugin {
         location: {
           file: 'test/',
           line: 1,
-          column: 1
+          column: 1,
         },
         impact: 20,
-        automatable: true
+        automatable: true,
       });
     }
-    
+
     return improvements;
   }
 
@@ -169,7 +174,7 @@ export class BrokenAccessControlPlugin {
     const missingTests: string[] = [];
     const recommendations: string[] = [];
     const issues: SecurityIssue[] = [];
-    
+
     // 必要なテストパターン
     const requiredPatterns = [
       { pattern: '401', name: '認証エラーテスト' },
@@ -177,9 +182,9 @@ export class BrokenAccessControlPlugin {
       { pattern: 'authorization', name: '認可テスト' },
       { pattern: 'role', name: 'ロールベースアクセス制御テスト' },
       { pattern: 'permission', name: 'パーミッションテスト' },
-      { pattern: 'token', name: 'トークン検証テスト' }
+      { pattern: 'token', name: 'トークン検証テスト' },
     ];
-    
+
     // 検出されたパターンを記録
     let detectedCount = 0;
     for (const req of requiredPatterns) {
@@ -190,10 +195,10 @@ export class BrokenAccessControlPlugin {
         missingTests.push(req.name);
       }
     }
-    
+
     // カバレッジ計算
     const coverage = Math.round((detectedCount / requiredPatterns.length) * 100);
-    
+
     // 推奨事項の生成
     if (coverage < 50) {
       recommendations.push('基本的なアクセス制御テストが不足しています');
@@ -203,7 +208,7 @@ export class BrokenAccessControlPlugin {
       recommendations.push('より包括的なアクセス制御テストを検討してください');
       recommendations.push('エッジケースや境界値のテストを追加してください');
     }
-    
+
     // セキュリティ問題の検出
     if (!content.includes('401') && !content.includes('403')) {
       issues.push({
@@ -214,47 +219,39 @@ export class BrokenAccessControlPlugin {
         location: {
           file: testFile.path,
           line: 1,
-          column: 1
-        }
+          column: 1,
+        },
       });
     }
-    
+
     return {
       category: OWASPCategory.A01_BROKEN_ACCESS_CONTROL,
       coverage,
       issues,
       recommendations,
       testPatterns,
-      missingTests
+      missingTests,
     };
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
     const lines = content.split('\n');
-    
+
     // パストラバーサルパターンの検出
     const pathTraversalPatterns = [
       /sendFile\s*\(/i, // sendFileの使用を検出
       /readFile\s*\(/i, // readFileの使用を検出
       /\.\.\/|\.\.\\/, // ディレクトリトラバーサル
-      /path\.join\s*\(/i // path.joinの使用を検出
+      /path\.join\s*\(/i, // path.joinの使用を検出
     ];
-    
+
     // ユーザー入力を示すパターン
-    const userInputPatterns = [
-      /req\.(query|params|body)/i,
-      /req\.query\./i,
-      /req\.params\./i
-    ];
-    
+    const userInputPatterns = [/req\.(query|params|body)/i, /req\.query\./i, /req\.params\./i];
+
     // 認証チェックなしのパターン
-    const adminPatterns = [
-      /\/admin\//i,
-      /\/api\/admin/i,
-      /\/manage/i
-    ];
-    
+    const adminPatterns = [/\/admin\//i, /\/api\/admin/i, /\/manage/i];
+
     lines.forEach((line, index) => {
       // パストラバーサルチェック
       let hasFileOperation = false;
@@ -264,13 +261,13 @@ export class BrokenAccessControlPlugin {
           break;
         }
       }
-      
+
       if (hasFileOperation) {
         // 近くの行でユーザー入力を使用しているかチェック
         const contextStart = Math.max(0, index - 3);
         const contextEnd = Math.min(lines.length - 1, index + 3);
         let hasUserInput = false;
-        
+
         for (let i = contextStart; i <= contextEnd; i++) {
           for (const inputPattern of userInputPatterns) {
             if (inputPattern.test(lines[i])) {
@@ -280,22 +277,23 @@ export class BrokenAccessControlPlugin {
           }
           if (hasUserInput) break;
         }
-        
+
         if (hasUserInput) {
           issues.push({
             id: `path-traversal-${index}`,
             type: 'insufficient-validation',
             severity: 'critical',
-            message: 'パストラバーサルの脆弱性が検出されました。ユーザー入力を直接ファイルパスに使用しています。',
+            message:
+              'パストラバーサルの脆弱性が検出されました。ユーザー入力を直接ファイルパスに使用しています。',
             location: {
               file: 'unknown',
               line: index + 1,
-              column: 1
-            }
+              column: 1,
+            },
           });
         }
       }
-      
+
       // 認証なしアクセスチェック
       let hasAdminRoute = false;
       for (const pattern of adminPatterns) {
@@ -304,20 +302,20 @@ export class BrokenAccessControlPlugin {
           break;
         }
       }
-      
+
       if (hasAdminRoute) {
         // 前後の行で認証チェックがあるか確認
         const contextStart = Math.max(0, index - 5);
         const contextEnd = Math.min(lines.length - 1, index + 5);
         let hasAuthCheck = false;
-        
+
         for (let i = contextStart; i <= contextEnd; i++) {
           if (/auth|authenticate|isAuthenticated|requireAuth|checkAuth/i.test(lines[i])) {
             hasAuthCheck = true;
             break;
           }
         }
-        
+
         if (!hasAuthCheck) {
           issues.push({
             id: `missing-auth-${index}`,
@@ -327,23 +325,29 @@ export class BrokenAccessControlPlugin {
             location: {
               file: 'unknown',
               line: index + 1,
-              column: 1
-            }
+              column: 1,
+            },
           });
         }
       }
     });
-    
+
     return issues;
   }
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
     const deps = context.dependencies;
-    const hasExpress = Array.isArray(deps) ? deps.includes('express') : (deps && typeof deps === 'object' && 'express' in deps);
-    const hasPassport = Array.isArray(deps) ? deps.includes('passport') : (deps && typeof deps === 'object' && 'passport' in deps);
-    const hasJWT = Array.isArray(deps) ? deps.includes('jsonwebtoken') : (deps && typeof deps === 'object' && 'jsonwebtoken' in deps);
-    
+    const hasExpress = Array.isArray(deps)
+      ? deps.includes('express')
+      : deps && typeof deps === 'object' && 'express' in deps;
+    const hasPassport = Array.isArray(deps)
+      ? deps.includes('passport')
+      : deps && typeof deps === 'object' && 'passport' in deps;
+    const hasJWT = Array.isArray(deps)
+      ? deps.includes('jsonwebtoken')
+      : deps && typeof deps === 'object' && 'jsonwebtoken' in deps;
+
     // 基本的な認証テスト
     tests.push(`
 describe('Access Control - Authentication', () => {
@@ -355,7 +359,7 @@ describe('Access Control - Authentication', () => {
     expect(response.body).toHaveProperty('error');
   });
 });`);
-    
+
     // 認可テスト
     tests.push(`
 describe('Access Control - Authorization', () => {
@@ -369,7 +373,7 @@ describe('Access Control - Authorization', () => {
     expect(response.body).toHaveProperty('error', 'Forbidden');
   });
 });`);
-    
+
     // JWTベースのテスト
     if (hasJWT) {
       tests.push(`
@@ -390,7 +394,7 @@ describe('JWT Token Validation', () => {
   });
 });`);
     }
-    
+
     // Passportベースのテスト
     if (hasPassport) {
       tests.push(`
@@ -412,7 +416,7 @@ describe('Passport Authentication', () => {
   });
 });`);
     }
-    
+
     // ロールベースアクセス制御
     tests.push(`
 describe('Role-Based Access Control', () => {
@@ -432,7 +436,7 @@ describe('Role-Based Access Control', () => {
       .expect(200);
   });
 });`);
-    
+
     // パストラバーサル防止
     tests.push(`
 describe('Path Traversal Prevention', () => {
@@ -444,7 +448,7 @@ describe('Path Traversal Prevention', () => {
     expect(response.body).toHaveProperty('error', 'Invalid path');
   });
 });`);
-    
+
     return tests;
   }
 }

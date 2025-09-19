@@ -28,7 +28,7 @@ describe('CI Shard Configuration', () => {
     it('should have defined test:shard scripts', () => {
       const scripts = packageJson.scripts;
       expect(scripts).toBeDefined();
-      
+
       // 現在定義されているシャードスクリプトを確認
       const shardScripts = Object.keys(scripts).filter(key => key.startsWith('test:shard'));
       expect(shardScripts.length).toBeGreaterThan(0);
@@ -37,14 +37,14 @@ describe('CI Shard Configuration', () => {
     it('should have consistent shard numbers across scripts', () => {
       const scripts = packageJson.scripts;
       const shardScripts = Object.keys(scripts).filter(key => key.match(/^test:shard\d+$/));
-      
+
       // 連続した番号を持つかチェック
-      const shardNumbers = shardScripts.map(script => 
-        parseInt(script.replace('test:shard', ''))
-      ).sort((a, b) => a - b);
-      
+      const shardNumbers = shardScripts
+        .map(script => parseInt(script.replace('test:shard', '')))
+        .sort((a, b) => a - b);
+
       expect(shardNumbers.length).toBeGreaterThan(0);
-      
+
       for (let i = 0; i < shardNumbers.length; i++) {
         expect(shardNumbers[i]).toBe(i + 1);
       }
@@ -53,7 +53,7 @@ describe('CI Shard Configuration', () => {
     it('should have consistent shard configuration in each script', () => {
       const scripts = packageJson.scripts;
       const shardScripts = Object.keys(scripts).filter(key => key.match(/^test:shard\d+$/));
-      
+
       shardScripts.forEach(scriptName => {
         const scriptContent = scripts[scriptName];
         expect(scriptContent).toContain('jest');
@@ -91,13 +91,13 @@ describe('CI Shard Configuration', () => {
 
     it('should use npm run test:shard command instead of npm test --shard', () => {
       const testJob = ciOptimizedConfig.jobs['parallel-tests'];
-      const runStep = testJob.steps.find((step: any) => 
-        step.name && step.name.includes('Run tests')
+      const runStep = testJob.steps.find(
+        (step: any) => step.name && step.name.includes('Run tests')
       );
-      
+
       expect(runStep).toBeDefined();
       expect(runStep.run).toBeDefined();
-      
+
       // 修正後は 'npm run test:shard' を使用する
       expect(runStep.run).toContain('npm run test:shard');
     });
@@ -107,10 +107,10 @@ describe('CI Shard Configuration', () => {
     it('should validate that all shard scripts are executable', () => {
       const scripts = packageJson.scripts;
       const shardScripts = Object.keys(scripts).filter(key => key.match(/^test:shard\d+$/));
-      
+
       shardScripts.forEach(scriptName => {
         const scriptContent = scripts[scriptName];
-        
+
         // shardスクリプトの必須要素をチェック
         expect(scriptContent).toContain('NODE_OPTIONS=');
         expect(scriptContent).toContain('jest');
@@ -124,7 +124,7 @@ describe('CI Shard Configuration', () => {
       const scripts = packageJson.scripts;
       const shardScripts = Object.keys(scripts).filter(key => key.match(/^test:shard\d+$/));
       const totalShards = shardScripts.length;
-      
+
       shardScripts.forEach((scriptName, index) => {
         const scriptContent = scripts[scriptName];
         const expectedShardPattern = `--shard=${index + 1}/${totalShards}`;
@@ -137,14 +137,14 @@ describe('CI Shard Configuration', () => {
     it('should have consistent NODE_OPTIONS across shard scripts', () => {
       const scripts = packageJson.scripts;
       const shardScripts = Object.keys(scripts).filter(key => key.match(/^test:shard\d+$/));
-      
+
       const nodeOptionsRegex = /NODE_OPTIONS="([^"]+)"/;
       const nodeOptionsList = shardScripts.map(scriptName => {
         const scriptContent = scripts[scriptName];
         const match = scriptContent.match(nodeOptionsRegex);
         return match ? match[1] : null;
       });
-      
+
       // 全てのシャードで同じNODE_OPTIONSを使用することを確認
       const uniqueNodeOptions = [...new Set(nodeOptionsList)];
       expect(uniqueNodeOptions.length).toBe(1);

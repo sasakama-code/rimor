@@ -1,17 +1,17 @@
 /**
  * TestQualityIntegrator
- * 
+ *
  * カバレッジデータとテスト存在チェックを統合した
  * 高精度なテスト品質評価システム
- * 
+ *
  * Issue #81: カバレッジ統合によるテスト品質評価の改善
- * 
+ *
  * 特徴:
  * - 業界標準閾値（80% line, 70% branch）の適用
  * - 3段階評価システム（基礎点30% + カバレッジ点50% + 品質点20%）
  * - A-D グレーディングシステム
  * - Defensive Programming適用
- * 
+ *
  * 設計原則:
  * - SOLID原則準拠
  * - DRY原則適用
@@ -25,35 +25,35 @@ import { QualityScore } from '../../core/types';
 import { TestFile, ProjectContext } from '../../core/types';
 
 export interface IntegratedQualityMetrics {
-  baseScore: number;        // 基礎点（テスト存在など）
-  coverageScore: number;    // カバレッジ点
-  qualityScore: number;     // テスト品質点
-  penalty: number;          // ペナルティ
-  finalScore: number;       // 最終スコア
+  baseScore: number; // 基礎点（テスト存在など）
+  coverageScore: number; // カバレッジ点
+  qualityScore: number; // テスト品質点
+  penalty: number; // ペナルティ
+  finalScore: number; // 最終スコア
 }
 
 /**
  * TestQualityIntegrator
- * 
+ *
  * カバレッジとテスト品質を統合評価するクラス
  * t_wadaのTDD手法に基づいて設計・実装
  */
 export class TestQualityIntegrator {
   private readonly qualityEvaluator: TestQualityEvaluator;
-  
+
   // 業界標準閾値
   private readonly industryThresholds: CoverageThresholds = {
     lines: 80,
     statements: 80,
     functions: 80,
-    branches: 70
+    branches: 70,
   };
 
   // 重み付け設定
   private readonly weights = {
-    base: 0.3,      // 基礎点30%
-    coverage: 0.5,  // カバレッジ50%
-    quality: 0.2    // 品質20%
+    base: 0.3, // 基礎点30%
+    coverage: 0.5, // カバレッジ50%
+    quality: 0.2, // 品質20%
   };
 
   constructor() {
@@ -62,7 +62,7 @@ export class TestQualityIntegrator {
 
   /**
    * 統合品質評価
-   * 
+   *
    * @param testFile テストファイル
    * @param coverage カバレッジデータ
    * @param context プロジェクトコンテキスト
@@ -91,22 +91,22 @@ export class TestQualityIntegrator {
   ): IntegratedQualityMetrics {
     // 基礎点の計算（テスト存在チェック）
     const baseScore = this.calculateBaseScore(testFile);
-    
+
     // カバレッジ点の計算
     const coverageScore = this.calculateCoverageScore(coverage);
-    
+
     // 品質点の計算
     const qualityScore = this.calculateQualityScore(testFile, coverage);
-    
+
     // ペナルティの計算
     const penalty = this.calculatePenalty(coverage);
-    
+
     // 最終スコア計算（重み付け平均）
-    const weightedScore = 
-      (baseScore * this.weights.base) +
-      (coverageScore * this.weights.coverage) +
-      (qualityScore * this.weights.quality);
-    
+    const weightedScore =
+      baseScore * this.weights.base +
+      coverageScore * this.weights.coverage +
+      qualityScore * this.weights.quality;
+
     const finalScore = Math.max(0, Math.min(100, weightedScore - penalty));
 
     return {
@@ -114,7 +114,7 @@ export class TestQualityIntegrator {
       coverageScore,
       qualityScore,
       penalty,
-      finalScore
+      finalScore,
     };
   }
 
@@ -143,19 +143,28 @@ export class TestQualityIntegrator {
 
     // 各メトリクスの重み付きスコア計算
     const lineScore = this.calculateMetricScore(coverage.lines.pct, this.industryThresholds.lines);
-    const statementScore = this.calculateMetricScore(coverage.statements.pct, this.industryThresholds.statements);
-    const functionScore = this.calculateMetricScore(coverage.functions.pct, this.industryThresholds.functions);
-    const branchScore = this.calculateMetricScore(coverage.branches.pct, this.industryThresholds.branches);
+    const statementScore = this.calculateMetricScore(
+      coverage.statements.pct,
+      this.industryThresholds.statements
+    );
+    const functionScore = this.calculateMetricScore(
+      coverage.functions.pct,
+      this.industryThresholds.functions
+    );
+    const branchScore = this.calculateMetricScore(
+      coverage.branches.pct,
+      this.industryThresholds.branches
+    );
 
     // TestQualityEvaluatorの重み付けを使用
     const weights = {
       lines: 0.3,
       statements: 0.25,
       functions: 0.25,
-      branches: 0.2
+      branches: 0.2,
     };
 
-    const weightedAverage = 
+    const weightedAverage =
       lineScore * weights.lines +
       statementScore * weights.statements +
       functionScore * weights.functions +
@@ -240,16 +249,16 @@ export class TestQualityIntegrator {
   private calculateMetricScore(actualPct: number, threshold: number): number {
     if (actualPct >= threshold) {
       // 基準値以上の場合は70-100点の範囲
-      return 70 + (actualPct - threshold) / (100 - threshold) * 30;
+      return 70 + ((actualPct - threshold) / (100 - threshold)) * 30;
     } else {
       // 基準値未満の場合は0-70点の範囲
       const baseScore = (actualPct / threshold) * 70;
-      
+
       // 60%以下の場合はさらにペナルティ
       if (actualPct <= 60) {
         return baseScore * 0.75; // 25%減点
       }
-      
+
       return baseScore;
     }
   }
@@ -267,17 +276,20 @@ export class TestQualityIntegrator {
   /**
    * QualityScoreオブジェクトの作成
    */
-  private createQualityScore(metrics: IntegratedQualityMetrics, coverage: CoverageSummary | null): QualityScore {
+  private createQualityScore(
+    metrics: IntegratedQualityMetrics,
+    coverage: CoverageSummary | null
+  ): QualityScore {
     const confidence = this.calculateConfidence(coverage);
-    
+
     return {
       overall: Math.round(metrics.finalScore * 100) / 100,
       dimensions: {
         completeness: Math.round(metrics.baseScore + metrics.coverageScore * 0.6),
         correctness: Math.round(metrics.coverageScore + metrics.qualityScore * 0.5),
-        maintainability: Math.round(metrics.qualityScore * 4 + 20) // 20-100の範囲
+        maintainability: Math.round(metrics.qualityScore * 4 + 20), // 20-100の範囲
       },
-      confidence: Math.max(0.1, confidence)
+      confidence: Math.max(0.1, confidence),
     };
   }
 
@@ -290,9 +302,9 @@ export class TestQualityIntegrator {
       dimensions: {
         completeness: 0,
         correctness: 0,
-        maintainability: 0
+        maintainability: 0,
       },
-      confidence: 0.1
+      confidence: 0.1,
     };
   }
 
@@ -322,7 +334,7 @@ export class TestQualityIntegrator {
       /it\s*\(/,
       /expect\s*\(/,
       /assert\./,
-      /should\./
+      /should\./,
     ];
 
     const cleanedContent = this.removeCommentsAndStrings(content);
@@ -330,23 +342,13 @@ export class TestQualityIntegrator {
   }
 
   private containsAssertions(content: string): boolean {
-    const assertionPatterns = [
-      /expect\s*\(/,
-      /assert\./,
-      /should\./,
-      /toEqual/,
-      /toBe/,
-      /toThrow/
-    ];
+    const assertionPatterns = [/expect\s*\(/, /assert\./, /should\./, /toEqual/, /toBe/, /toThrow/];
 
     return assertionPatterns.some(pattern => pattern.test(content));
   }
 
   private countTestCases(content: string): number {
-    const testCasePatterns = [
-      /it\s*\(/g,
-      /test\s*\(/g
-    ];
+    const testCasePatterns = [/it\s*\(/g, /test\s*\(/g];
 
     let count = 0;
     testCasePatterns.forEach(pattern => {
@@ -360,22 +362,13 @@ export class TestQualityIntegrator {
   }
 
   private containsErrorHandlingTests(content: string): boolean {
-    const errorPatterns = [
-      /toThrow/,
-      /catch/,
-      /error/i,
-      /exception/i,
-      /fail/i
-    ];
+    const errorPatterns = [/toThrow/, /catch/, /error/i, /exception/i, /fail/i];
 
     return errorPatterns.some(pattern => pattern.test(content));
   }
 
   private hasGoodDescriptions(content: string): boolean {
-    const descriptionPatterns = [
-      /describe\s*\(\s*["'`][^"'`]{10,}/,
-      /it\s*\(\s*["'`][^"'`]{10,}/
-    ];
+    const descriptionPatterns = [/describe\s*\(\s*["'`][^"'`]{10,}/, /it\s*\(\s*["'`][^"'`]{10,}/];
 
     return descriptionPatterns.some(pattern => pattern.test(content));
   }

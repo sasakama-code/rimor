@@ -1,10 +1,10 @@
-import { 
-  FileScore, 
-  DirectoryScore, 
+import {
+  FileScore,
+  DirectoryScore,
   ProjectScore,
   PluginResult,
   WeightConfig,
-  DEFAULT_WEIGHTS
+  DEFAULT_WEIGHTS,
 } from './types';
 import { ScoreCalculatorV2 } from './calculator';
 import path from 'path';
@@ -47,10 +47,7 @@ export class ScoreAggregator {
    * @param fileScores ディレクトリ内のファイルスコア配列
    * @returns ディレクトリスコア
    */
-  aggregateFilesToDirectory(
-    directoryPath: string,
-    fileScores: FileScore[]
-  ): DirectoryScore {
+  aggregateFilesToDirectory(directoryPath: string, fileScores: FileScore[]): DirectoryScore {
     return this.calculator.calculateDirectoryScore(directoryPath, fileScores);
   }
 
@@ -79,7 +76,7 @@ export class ScoreAggregator {
 
     for (const fileScore of fileScores) {
       const directory = this.extractDirectoryPath(fileScore.filePath);
-      
+
       if (!directoryMap.has(directory)) {
         directoryMap.set(directory, []);
       }
@@ -88,7 +85,7 @@ export class ScoreAggregator {
 
     // 各ディレクトリのスコアを計算
     const directoryScores: DirectoryScore[] = [];
-    
+
     for (const [directoryPath, filesInDirectory] of directoryMap.entries()) {
       const directoryScore = this.aggregateFilesToDirectory(directoryPath, filesInDirectory);
       directoryScores.push(directoryScore);
@@ -135,12 +132,12 @@ export class ScoreAggregator {
       skipOnError?: boolean;
     } = {}
   ): Promise<ProjectScore> {
-    const { 
-      batchSize = 100, 
+    const {
+      batchSize = 100,
       weights = DEFAULT_WEIGHTS,
       onProgress,
       maxMemoryUsage = 512, // デフォルト512MB
-      skipOnError = true
+      skipOnError = true,
     } = options;
 
     const totalFiles = pluginResultsMap.size;
@@ -161,7 +158,7 @@ export class ScoreAggregator {
 
     // メモリ使用量監視
     const initialMemory = this.getMemoryUsage();
-    
+
     try {
       // バッチ処理でファイルスコアを生成
       const fileScores: FileScore[] = [];
@@ -169,18 +166,18 @@ export class ScoreAggregator {
 
       for (let i = 0; i < fileEntries.length; i += batchSize) {
         const batch = fileEntries.slice(i, i + batchSize);
-        
+
         // メモリ使用量チェック
         const currentMemory = this.getMemoryUsage();
         if (currentMemory - initialMemory > maxMemoryUsage) {
           errorHandler.handleWarning(
             `メモリ使用量が制限を超過: ${currentMemory - initialMemory}MB`,
-            { 
-              currentMemory, 
-              initialMemory, 
+            {
+              currentMemory,
+              initialMemory,
               exceeded: currentMemory - initialMemory,
               maxMemoryUsage,
-              batchIndex: Math.floor(i / batchSize)
+              batchIndex: Math.floor(i / batchSize),
             },
             'aggregateScores'
           );
@@ -189,22 +186,24 @@ export class ScoreAggregator {
             global.gc();
           }
         }
-        
+
         for (const [filePath, pluginResults] of batch) {
           try {
             // ファイルサイズ制限チェック（プラグイン結果の量で推定）
             if (pluginResults.length > 1000) {
               errorHandler.handleWarning(
                 `ファイル ${filePath} のプラグイン結果が多すぎます: ${pluginResults.length}件`,
-                { 
-                  filePath, 
+                {
+                  filePath,
                   resultCount: pluginResults.length,
-                  threshold: 1000
+                  threshold: 1000,
                 },
                 'aggregateScores'
               );
               if (!skipOnError) {
-                throw new Error(`ファイル ${filePath} の処理がスキップされました（プラグイン結果過多）`);
+                throw new Error(
+                  `ファイル ${filePath} の処理がスキップされました（プラグイン結果過多）`
+                );
               }
               failedFiles.push(filePath);
               continue;
@@ -220,20 +219,22 @@ export class ScoreAggregator {
           } catch (error) {
             errorCount++;
             failedFiles.push(filePath);
-            
+
             if (skipOnError) {
               errorHandler.handleWarning(
                 `ファイル ${filePath} の処理中にエラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
-                { 
-                  filePath, 
+                {
+                  filePath,
                   error: error instanceof Error ? error.message : '不明なエラー',
-                  skipOnError: true
+                  skipOnError: true,
                 },
                 'aggregateScores'
               );
               continue;
             } else {
-              throw new Error(`ファイル ${filePath} の処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+              throw new Error(
+                `ファイル ${filePath} の処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`
+              );
             }
           }
         }
@@ -248,20 +249,20 @@ export class ScoreAggregator {
       if (errorCount > 0) {
         errorHandler.handleWarning(
           `処理完了: ${processedFiles}/${totalFiles}ファイル成功, ${errorCount}ファイルエラー`,
-          { 
-            processedFiles, 
-            totalFiles, 
+          {
+            processedFiles,
+            totalFiles,
             errorCount,
-            successRate: (processedFiles / totalFiles * 100).toFixed(2) + '%'
+            successRate: ((processedFiles / totalFiles) * 100).toFixed(2) + '%',
           },
           'aggregateScores'
         );
         if (failedFiles.length > 0) {
           errorHandler.handleWarning(
             `失敗したファイル（最初の10件）: ${failedFiles.slice(0, 10).join(', ')}`,
-            { 
+            {
               failedCount: failedFiles.length,
-              failedFiles: failedFiles.slice(0, 10)
+              failedFiles: failedFiles.slice(0, 10),
             },
             'aggregateScores'
           );
@@ -276,25 +277,28 @@ export class ScoreAggregator {
       // ディレクトリとプロジェクトレベルの集約
       const directoryScores = this.aggregateByDirectoryStructure(fileScores);
       return this.aggregateDirectoriesToProject('.', directoryScores, weights);
-      
     } catch (error) {
       const memoryAfter = this.getMemoryUsage();
-      console.error(`段階的集約処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      console.error(
+        `段階的集約処理に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`
+      );
       console.error(`メモリ使用量: ${initialMemory}MB -> ${memoryAfter}MB`);
-      
+
       // フォールバック: エラー時は基本的な集約を試行
       try {
         errorHandler.handleWarning(
           'フォールバック: 基本的な集約処理を実行中...',
-          { 
+          {
             originalError: error instanceof Error ? error.message : '不明なエラー',
-            memoryUsage: { initial: initialMemory, current: memoryAfter }
+            memoryUsage: { initial: initialMemory, current: memoryAfter },
           },
           'aggregateScores'
         );
         return this.buildCompleteHierarchy(pluginResultsMap, weights);
       } catch (fallbackError) {
-        throw new Error(`集約処理とフォールバックの両方に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        throw new Error(
+          `集約処理とフォールバックの両方に失敗: ${error instanceof Error ? error.message : '不明なエラー'}`
+        );
       }
     }
   }
@@ -328,7 +332,7 @@ export class ScoreAggregator {
     // 更新されたファイルスコア配列から階層構造を再構築
     const updatedFileScores = Array.from(currentFileScoresMap.values());
     const updatedDirectoryScores = this.aggregateByDirectoryStructure(updatedFileScores);
-    
+
     return this.aggregateDirectoriesToProject('.', updatedDirectoryScores, weights);
   }
 
@@ -351,11 +355,12 @@ export class ScoreAggregator {
   ): ProjectScore {
     // ファイルレベルのフィルタリング
     let filteredPluginResults = new Map(pluginResultsMap);
-    
+
     if (filter.includeFiles) {
       filteredPluginResults = new Map(
-        Array.from(pluginResultsMap.entries())
-          .filter(([filePath]) => filter.includeFiles!(filePath))
+        Array.from(pluginResultsMap.entries()).filter(([filePath]) =>
+          filter.includeFiles!(filePath)
+        )
       );
     }
 
@@ -411,8 +416,13 @@ export class ScoreAggregator {
 
     // パフォーマンスの良い/悪いディレクトリを特定
     const sortedDirectories = [...directoryScores].sort((a, b) => b.overallScore - a.overallScore);
-    const topPerforming = sortedDirectories.slice(0, Math.max(3, Math.ceil(directoryScores.length * 0.2)));
-    const worstPerforming = sortedDirectories.slice(-Math.max(3, Math.ceil(directoryScores.length * 0.2))).reverse();
+    const topPerforming = sortedDirectories.slice(
+      0,
+      Math.max(3, Math.ceil(directoryScores.length * 0.2))
+    );
+    const worstPerforming = sortedDirectories
+      .slice(-Math.max(3, Math.ceil(directoryScores.length * 0.2)))
+      .reverse();
 
     return {
       fileCount: allFileScores.length,
@@ -420,10 +430,10 @@ export class ScoreAggregator {
       averageFilesPerDirectory: allFileScores.length / Math.max(1, directoryScores.length),
       scoreDistribution: {
         files: fileDistribution,
-        directories: directoryDistribution
+        directories: directoryDistribution,
       },
       topPerformingDirectories: topPerforming,
-      worstPerformingDirectories: worstPerforming
+      worstPerformingDirectories: worstPerforming,
     };
   }
 
@@ -434,12 +444,12 @@ export class ScoreAggregator {
    */
   private extractDirectoryPath(filePath: string): string {
     const directory = path.dirname(filePath);
-    
+
     // ルートディレクトリの場合
     if (directory === '.' || directory === '/') {
       return './';
     }
-    
+
     // 末尾にスラッシュを追加してディレクトリであることを明確化
     return directory.endsWith('/') ? directory : directory + '/';
   }
@@ -449,13 +459,13 @@ export class ScoreAggregator {
    */
   private calculateGradeDistribution(grades: string[]): Record<string, number> {
     const distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
-    
+
     for (const grade of grades) {
       if (grade in distribution) {
         distribution[grade]++;
       }
     }
-    
+
     return distribution;
   }
 

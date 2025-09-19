@@ -2,17 +2,14 @@
  * HTMLFormatter
  * v0.9.0 - Issue #64: レポートシステムの統合
  * REFACTOR段階: BaseFormatterを継承
- * 
+ *
  * SOLID原則: 単一責任（HTML形式の生成のみ）
  * DRY原則: 共通ロジックをBaseFormatterに委譲
  * KISS原則: シンプルなHTML生成
  */
 
 import { BaseFormatter } from './BaseFormatter';
-import { 
-  UnifiedAnalysisResult, 
-  RiskLevel 
-} from '../../nist/types/unified-analysis-result';
+import { UnifiedAnalysisResult, RiskLevel } from '../../nist/types/unified-analysis-result';
 
 /**
  * HTML形式のフォーマッター
@@ -20,14 +17,14 @@ import {
  */
 export class HTMLFormatter extends BaseFormatter {
   name = 'html';
-  
+
   // リスクレベルごとの色定義
   private readonly riskColors: Record<string, string> = {
-    'CRITICAL': '#dc3545',
-    'HIGH': '#fd7e14',
-    'MEDIUM': '#ffc107',
-    'LOW': '#28a745',
-    'MINIMAL': '#6c757d'
+    CRITICAL: '#dc3545',
+    HIGH: '#fd7e14',
+    MEDIUM: '#ffc107',
+    LOW: '#28a745',
+    MINIMAL: '#6c757d',
   };
 
   /**
@@ -47,45 +44,51 @@ export class HTMLFormatter extends BaseFormatter {
     html.push(this.generateStyles());
     html.push('</head>');
     html.push('<body>');
-    
+
     // コンテナ
     html.push('  <div class="container">');
-    
+
     // ヘッダー
     html.push('    <header class="header">');
     html.push('      <h1>Rimor 分析レポート</h1>');
-    html.push(`      <p class="timestamp">生成日時: ${this.generateLocalizedDateTime('ja-JP')}</p>`);
+    html.push(
+      `      <p class="timestamp">生成日時: ${this.generateLocalizedDateTime('ja-JP')}</p>`
+    );
     // プロジェクトパスは省略（UnifiedAnalysisResultに含まれない）
     html.push('    </header>');
-    
+
     // エグゼクティブサマリー
     if (result.summary) {
       html.push('    <section class="summary-section">');
       html.push('      <h2>エグゼクティブサマリー</h2>');
       html.push('      <div class="summary-cards">');
-      
+
       // スコアカード
       html.push('        <div class="card score-card">');
       html.push('          <div class="card-title">総合スコア</div>');
       html.push(`          <div class="score-value">${result.summary.overallScore}/100</div>`);
       html.push(`          <div class="grade">グレード: ${result.summary.overallGrade}</div>`);
       html.push('        </div>');
-      
+
       // 統計カード
       html.push('        <div class="card stats-card">');
       html.push('          <div class="card-title">プロジェクト統計</div>');
-      html.push(`          <div class="stat-item">ファイル数: ${result.summary.statistics.totalFiles}</div>`);
-      html.push(`          <div class="stat-item">テスト数: ${result.summary.statistics.totalTests || 0}</div>`);
+      html.push(
+        `          <div class="stat-item">ファイル数: ${result.summary.statistics.totalFiles}</div>`
+      );
+      html.push(
+        `          <div class="stat-item">テスト数: ${result.summary.statistics.totalTests || 0}</div>`
+      );
       html.push('        </div>');
-      
+
       // リスク統計カード
       html.push('        <div class="card risk-stats-card">');
       html.push('          <div class="card-title">リスク分布</div>');
       html.push(this.generateRiskStats(result.summary.statistics.riskCounts));
       html.push('        </div>');
-      
+
       html.push('      </div>');
-      
+
       // ディメンション別スコア
       if (result.summary.dimensions && result.summary.dimensions.length > 0) {
         html.push('      <h3>評価ディメンション</h3>');
@@ -99,52 +102,55 @@ export class HTMLFormatter extends BaseFormatter {
         });
         html.push('      </div>');
       }
-      
+
       html.push('    </section>');
     }
-    
+
     // 主要なリスク
     if (result.aiKeyRisks && result.aiKeyRisks.length > 0) {
       html.push('    <section class="risks-section">');
       html.push('      <h2>主要なリスク</h2>');
-      
+
       const maxRisks = (options?.maxRisks as number) ?? 10;
       const risksToShow = result.aiKeyRisks.slice(0, maxRisks);
-      
+
       risksToShow.forEach((risk, index) => {
         html.push('      <div class="risk-item">');
         html.push(`        <h3>${index + 1}. ${risk.title || risk.problem}</h3>`);
-        html.push(`        <span class="risk-level risk-level-${risk.riskLevel.toLowerCase()}">${risk.riskLevel}</span>`);
+        html.push(
+          `        <span class="risk-level risk-level-${risk.riskLevel.toLowerCase()}">${risk.riskLevel}</span>`
+        );
         html.push(`        <p class="file-path">📁 ${risk.filePath}</p>`);
-        
+
         if (risk.problem) {
           html.push(`        <p class="problem">問題: ${risk.problem}</p>`);
         }
-        
+
         if (risk.context && risk.context.codeSnippet) {
           html.push('        <pre class="code-snippet"><code>');
           html.push(this.escapeHtml(risk.context.codeSnippet));
           html.push('</code></pre>');
         }
-        
+
         if (risk.suggestedAction) {
-          const action = typeof risk.suggestedAction === 'string' 
-            ? risk.suggestedAction 
-            : risk.suggestedAction.description;
+          const action =
+            typeof risk.suggestedAction === 'string'
+              ? risk.suggestedAction
+              : risk.suggestedAction.description;
           html.push(`        <p class="suggested-action">💡 推奨: ${action}</p>`);
         }
-        
+
         html.push('      </div>');
       });
-      
+
       html.push('    </section>');
     }
-    
+
     // 詳細な問題リスト
     if (result.detailedIssues && result.detailedIssues.length > 0) {
       html.push('    <section class="detailed-issues-section">');
       html.push('      <h2>検出された問題</h2>');
-      
+
       // フィルタードロップダウン
       html.push('      <div class="filter-container">');
       html.push('        <select id="risk-filter" class="risk-filter">');
@@ -156,42 +162,44 @@ export class HTMLFormatter extends BaseFormatter {
       html.push('          <option value="MINIMAL">MINIMAL</option>');
       html.push('        </select>');
       html.push('      </div>');
-      
+
       html.push('      <div class="issues-list table">');
       result.detailedIssues.forEach((issue, index) => {
         html.push(`        <div class="issue-item" data-risk-level="${issue.riskLevel}">`);
         html.push(`          <h3>${index + 1}. ${issue.title}</h3>`);
-        html.push(`          <span class="badge badge-${issue.riskLevel.toLowerCase()}">${issue.riskLevel}</span>`);
+        html.push(
+          `          <span class="badge badge-${issue.riskLevel.toLowerCase()}">${issue.riskLevel}</span>`
+        );
         html.push(`          <p class="file-path">📁 ${issue.filePath}</p>`);
         html.push(`          <p class="line-range">行: ${issue.startLine}-${issue.endLine}</p>`);
         html.push(`          <p class="description">${issue.description}</p>`);
-        
+
         if (issue.contextSnippet) {
           html.push('          <pre class="code-snippet"><code>');
           html.push(this.escapeHtml(issue.contextSnippet));
           html.push('</code></pre>');
         }
-        
+
         html.push('        </div>');
       });
       html.push('      </div>');
-      
+
       html.push('    </section>');
     } else if (result.detailedIssues && result.detailedIssues.length === 0) {
       html.push('    <section class="no-issues">');
       html.push('      <p>問題は検出されませんでした</p>');
       html.push('    </section>');
     }
-    
+
     // フッター
     html.push('    <footer class="footer">');
     html.push('      <p>Generated by Rimor UnifiedReportEngine v0.9.0</p>');
     html.push('    </footer>');
-    
+
     html.push('  </div>');
     html.push('</body>');
     html.push('</html>');
-    
+
     return html.join('\n');
   }
 
@@ -316,15 +324,14 @@ export class HTMLFormatter extends BaseFormatter {
    */
   private generateRiskStats(riskCounts: Record<string, number>): string {
     const html: string[] = [];
-    
+
     Object.entries(riskCounts).forEach(([level, count]) => {
       const color = this.riskColors[level] || '#999';
       html.push(`<div class="stat-item">`);
       html.push(`  <span style="color: ${color}">●</span> ${level}: ${count}`);
       html.push(`</div>`);
     });
-    
+
     return html.join('\n');
   }
-
 }

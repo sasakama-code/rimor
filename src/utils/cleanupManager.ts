@@ -18,21 +18,21 @@ export class CleanupManager {
   private readonly defaultRules: CleanupRule[] = [
     {
       pattern: /^src\/plugins\/generated\/saved-plugin\.ts$/,
-      reason: "",
-      enabled: true
+      reason: '',
+      enabled: true,
     },
     // 安全性重視: 他のプラグインファイルは削除対象から除外
     // ユーザーが意図的に作成したファイルの削除を防ぐ
     {
       pattern: /\.tmp$/,
-      reason: "",
-      enabled: true
+      reason: '',
+      enabled: true,
     },
     {
       pattern: /\.bak$/,
-      reason: "",
-      enabled: true
-    }
+      reason: '',
+      enabled: true,
+    },
   ];
 
   private constructor() {}
@@ -49,27 +49,21 @@ export class CleanupManager {
    * @param projectRoot プロジェクトルートディレクトリ
    */
   async performStartupCleanup(projectRoot: string = process.cwd()): Promise<void> {
-    console.log("");
-    
+    console.log('');
+
     try {
       const cleanedFiles = await this.cleanupByRules(projectRoot);
-      
+
       if (cleanedFiles.length > 0) {
-        console.log("");
+        console.log('');
         cleanedFiles.forEach(file => {
           console.log(`   - ${file.relativePath} (${file.reason})`);
         });
       } else {
-        console.log("");
+        console.log('');
       }
     } catch (error) {
-      errorHandler.handleError(
-        error,
-        undefined,
-        "",
-        { projectRoot },
-        true
-      );
+      errorHandler.handleError(error, undefined, '', { projectRoot }, true);
     }
   }
 
@@ -81,13 +75,13 @@ export class CleanupManager {
   async emergencyDelete(filePath: string, reason: string): Promise<boolean> {
     try {
       const absolutePath = path.resolve(filePath);
-      
+
       if (!fs.existsSync(absolutePath)) {
         return true; // 既に存在しない場合は削除成功とみなす
       }
 
       fs.unlinkSync(absolutePath);
-      console.log("");
+      console.log('');
       return true;
     } catch (error) {
       errorHandler.handleFileError(error, filePath, 'delete');
@@ -101,27 +95,25 @@ export class CleanupManager {
    */
   async handleCompileError(errorMessage: string): Promise<boolean> {
     // saved-plugin.tsによるエラーのみを自動削除対象とする
-    const savedPluginError = errorMessage.includes('saved-plugin.ts') && 
-                             (errorMessage.includes('Cannot find name \'IPlugin\'') ||
-                              errorMessage.includes('TS2552') ||
-                              errorMessage.includes('TS2304'));
-    
+    const savedPluginError =
+      errorMessage.includes('saved-plugin.ts') &&
+      (errorMessage.includes("Cannot find name 'IPlugin'") ||
+        errorMessage.includes('TS2552') ||
+        errorMessage.includes('TS2304'));
+
     if (savedPluginError) {
       const savedPluginPath = 'src/plugins/generated/saved-plugin.ts';
-      console.log("");
-      return await this.emergencyDelete(
-        savedPluginPath, 
-        ""
-      );
+      console.log('');
+      return await this.emergencyDelete(savedPluginPath, '');
     }
 
     // その他のプラグインファイルエラーは警告のみ表示（削除しない）
     const pluginGeneratedMatch = errorMessage.match(/src\/plugins\/generated\/([^:]+\.ts)/);
     if (pluginGeneratedMatch) {
       const problematicFile = pluginGeneratedMatch[0];
-      console.log("");
-      console.log('   ' + "");
-      console.log('   ' + "");
+      console.log('');
+      console.log('   ' + '');
+      console.log('   ' + '');
       // 削除は行わず、falseを返す
       return false;
     }
@@ -133,19 +125,21 @@ export class CleanupManager {
    * ルールベースのクリーンアップ実行
    * @param rootDir 対象ディレクトリ
    */
-  private async cleanupByRules(rootDir: string): Promise<Array<{relativePath: string, reason: string}>> {
-    const cleanedFiles: Array<{relativePath: string, reason: string}> = [];
+  private async cleanupByRules(
+    rootDir: string
+  ): Promise<Array<{ relativePath: string; reason: string }>> {
+    const cleanedFiles: Array<{ relativePath: string; reason: string }> = [];
     const enabledRules = this.defaultRules.filter(rule => rule.enabled);
 
     for (const rule of enabledRules) {
       const matches = await this.findFilesByRule(rootDir, rule);
-      
+
       for (const match of matches) {
         try {
           fs.unlinkSync(match.absolutePath);
           cleanedFiles.push({
             relativePath: match.relativePath,
-            reason: rule.reason
+            reason: rule.reason,
           });
         } catch (error) {
           errorHandler.handleFileError(error, match.absolutePath, 'delete');
@@ -162,10 +156,10 @@ export class CleanupManager {
    * @param rule クリーンアップルール
    */
   private async findFilesByRule(
-    rootDir: string, 
+    rootDir: string,
     rule: CleanupRule
-  ): Promise<Array<{absolutePath: string, relativePath: string}>> {
-    const matches: Array<{absolutePath: string, relativePath: string}> = [];
+  ): Promise<Array<{ absolutePath: string; relativePath: string }>> {
+    const matches: Array<{ absolutePath: string; relativePath: string }> = [];
 
     const searchDir = (dir: string): void => {
       if (!fs.existsSync(dir)) return;
@@ -193,7 +187,7 @@ export class CleanupManager {
           if (isMatch) {
             matches.push({
               absolutePath: fullPath,
-              relativePath: relativePath
+              relativePath: relativePath,
             });
           }
         }

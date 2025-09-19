@@ -7,7 +7,10 @@
  * デコレーターのターゲット型
  * クラス、メソッド、プロパティに適用可能
  */
-export type DecoratorTarget = Object | Function | { prototype?: Object; new?(...args: unknown[]): unknown };
+export type DecoratorTarget =
+  | Object
+  | Function
+  | { prototype?: Object; new?(...args: unknown[]): unknown };
 
 /**
  * プロパティキーの型
@@ -91,7 +94,11 @@ export type CompositeDecorator = PropertyDecorator & ParameterDecorator & Method
  * メソッドデコレーター拡張型
  */
 export interface ExtendedMethodDecorator {
-  (target: DecoratorTarget, propertyKey: PropertyKey, descriptor: PropertyDescriptor): PropertyDescriptor | void;
+  (
+    target: DecoratorTarget,
+    propertyKey: PropertyKey,
+    descriptor: PropertyDescriptor
+  ): PropertyDescriptor | void;
 }
 
 /**
@@ -129,9 +136,18 @@ export interface TaintAnalysisResult {
  */
 export interface MetadataCollector {
   getTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): TaintMetadata | undefined;
-  getParameterTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): ParameterTaintMetadata;
-  getPolyTaintMetadata(target: DecoratorTarget, propertyKey: PropertyKey): PolyTaintMetadata | undefined;
-  getSuppressMetadata(target: DecoratorTarget, propertyKey: PropertyKey): SuppressTaintMetadata | undefined;
+  getParameterTaintMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): ParameterTaintMetadata;
+  getPolyTaintMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): PolyTaintMetadata | undefined;
+  getSuppressMetadata(
+    target: DecoratorTarget,
+    propertyKey: PropertyKey
+  ): SuppressTaintMetadata | undefined;
   collectClassAnnotations(target: DecoratorTarget): ClassAnnotationMap;
   validateAnnotations(target: DecoratorTarget): string[];
 }
@@ -155,20 +171,12 @@ export interface DecoratorContext {
  * 型ガード関数
  */
 export function isTaintMetadata(value: unknown): value is TaintMetadata {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'level' in value &&
-    'timestamp' in value
-  );
+  return typeof value === 'object' && value !== null && 'level' in value && 'timestamp' in value;
 }
 
 export function isPolyTaintMetadata(value: unknown): value is PolyTaintMetadata {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    'polymorphic' in value &&
-    'timestamp' in value
+    typeof value === 'object' && value !== null && 'polymorphic' in value && 'timestamp' in value
   );
 }
 

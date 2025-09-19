@@ -1,7 +1,7 @@
 /**
  * AI JSON出力のパフォーマンステスト
  * Issue #58: パフォーマンス改善のためのRed Phase
- * 
+ *
  * TDD原則に従い、まず失敗するテストを作成
  * t_wada推奨: Red → Green → Refactor
  */
@@ -15,7 +15,7 @@ import { VulnerabilityEvaluator } from '../../src/nist/evaluators/VulnerabilityE
 import {
   UnifiedAnalysisResult,
   RiskLevel,
-  AIActionType
+  AIActionType,
 } from '../../src/nist/types/unified-analysis-result';
 
 describe('AI JSON Performance Tests', () => {
@@ -35,13 +35,13 @@ describe('AI JSON Performance Tests', () => {
     it('1000件のリスクを100ミリ秒以内に処理できること', async () => {
       // Arrange: 大量のリスクデータを生成
       const largeResult = generateLargeUnifiedResult(1000);
-      
+
       // Act: 処理時間を計測
       const startTime = performance.now();
       const result = formatter.formatAsAIJsonSync(largeResult);
       const endTime = performance.now();
       const processingTime = endTime - startTime;
-      
+
       // Assert: 100ミリ秒以内に処理完了（より厳しい条件）
       expect(processingTime).toBeLessThan(100);
       expect(result.keyRisks).toHaveLength(10); // デフォルトの最大10件
@@ -50,13 +50,13 @@ describe('AI JSON Performance Tests', () => {
     it('10000件のリスクを500ミリ秒以内に処理できること', async () => {
       // Arrange: 超大量のリスクデータ
       const hugeResult = generateLargeUnifiedResult(10000);
-      
+
       // Act: 処理時間を計測
       const startTime = performance.now();
       const result = formatter.formatAsAIJsonSync(hugeResult);
       const endTime = performance.now();
       const processingTime = endTime - startTime;
-      
+
       // Assert: 500ミリ秒以内に処理完了（より厳しい条件）
       expect(processingTime).toBeLessThan(500);
     });
@@ -65,10 +65,10 @@ describe('AI JSON Performance Tests', () => {
       // Arrange: メモリ使用量の初期値を記録
       const initialMemory = process.memoryUsage().heapUsed;
       const largeResult = generateLargeUnifiedResult(5000);
-      
+
       // Act: 処理実行
       formatter.formatAsAIJsonSync(largeResult);
-      
+
       // Assert: メモリ増加量をチェック
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = (finalMemory - initialMemory) / 1024 / 1024; // MB
@@ -80,17 +80,17 @@ describe('AI JSON Performance Tests', () => {
     it('同じデータの2回目の処理は50%以上高速化すること', async () => {
       // Arrange
       const result = generateLargeUnifiedResult(1000);
-      
+
       // Act: 1回目の処理
       const firstStart = performance.now();
       formatter.formatAsAIJsonSync(result);
       const firstTime = performance.now() - firstStart;
-      
+
       // Act: 2回目の処理（キャッシュ効果を期待）
       const secondStart = performance.now();
       formatter.formatAsAIJsonSync(result);
       const secondTime = performance.now() - secondStart;
-      
+
       // Assert: 2回目は50%以上高速
       expect(secondTime).toBeLessThan(firstTime * 0.5);
     });
@@ -104,16 +104,16 @@ describe('AI JSON Performance Tests', () => {
       // Arrange
       const progressCallbacks: number[] = [];
       const result = generateLargeUnifiedResult(1000);
-      
+
       // Act: プログレスコールバック付きで実行
       const options = {
         onProgress: (progress: number) => {
           progressCallbacks.push(progress);
-        }
+        },
       };
-      
+
       formatter.formatAsAIJsonSync(result, options);
-      
+
       // Assert: プログレスが報告されること
       expect(progressCallbacks.length).toBeGreaterThan(0);
       expect(progressCallbacks[progressCallbacks.length - 1]).toBe(100);
@@ -134,13 +134,13 @@ function generateLargeUnifiedResult(riskCount: number): UnifiedAnalysisResult {
     context: {
       codeSnippet: `// Code snippet ${i}\nconst value = ${i};`,
       startLine: i * 10,
-      endLine: i * 10 + 5
+      endLine: i * 10 + 5,
     },
     suggestedAction: {
       type: AIActionType.ADD_ASSERTION,
       description: `Fix for risk ${i}`,
-      example: `assert(value !== null);`
-    }
+      example: `assert(value !== null);`,
+    },
   }));
 
   return {
@@ -157,11 +157,11 @@ function generateLargeUnifiedResult(riskCount: number): UnifiedAnalysisResult {
           [RiskLevel.HIGH]: Math.floor(riskCount / 3),
           [RiskLevel.MEDIUM]: Math.floor(riskCount / 3),
           [RiskLevel.LOW]: 0,
-          [RiskLevel.MINIMAL]: 0
-        }
-      }
+          [RiskLevel.MINIMAL]: 0,
+        },
+      },
     },
     detailedIssues: [],
-    aiKeyRisks: risks
+    aiKeyRisks: risks,
   };
 }

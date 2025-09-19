@@ -1,7 +1,7 @@
 /**
  * UnifiedAnalysisResult テスト
  * v0.9.0
- * 
+ *
  * TDD実践: 統合分析結果のテスト
  */
 
@@ -13,7 +13,7 @@ import {
   DomainAnalysisSection,
   StaticAnalysisSection,
   QualityScoreSection,
-  RecommendationSection
+  RecommendationSection,
 } from '../../src/domain-analysis/UnifiedAnalysisResult';
 import { DomainDefinition } from '../../src/domain-analysis/types';
 import { Issue } from '../../src/core/types';
@@ -21,11 +21,11 @@ import { Issue } from '../../src/core/types';
 describe('UnifiedAnalysisResult', () => {
   describe('UnifiedAnalysisResultBuilder', () => {
     let builder: UnifiedAnalysisResultBuilder;
-    
+
     beforeEach(() => {
       builder = new UnifiedAnalysisResultBuilder();
     });
-    
+
     it('should build a complete UnifiedAnalysisResult', () => {
       const metadata: AnalysisMetadata = {
         targetPath: '/test/path',
@@ -36,51 +36,51 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 100,
           analyzedFiles: 90,
           testFiles: 40,
-          sourceFiles: 50
-        }
+          sourceFiles: 50,
+        },
       };
-      
+
       const domainAnalysis: DomainAnalysisSection = {
         definition: {
           version: '1.0.0',
           project: {
             name: 'test-project',
             path: '/test/path',
-            analyzed: new Date()
+            analyzed: new Date(),
           },
           domains: [],
           integrity: {
             hash: 'test-signature',
             timestamp: new Date(),
-            version: '1.0.0'
-          }
+            version: '1.0.0',
+          },
         },
         clusters: [],
         coverage: {
           termCoverage: 0.8,
           ruleCoverage: 0.7,
-          domainTestRatio: 0.6
+          domainTestRatio: 0.6,
         },
         domainIssues: [],
         terms: {},
-        rules: []
+        rules: [],
       };
-      
+
       const staticAnalysis: StaticAnalysisSection = {
         issues: [],
         statistics: {
           totalIssues: 0,
           bySeverity: {},
           byPlugin: {},
-          byFile: {}
+          byFile: {},
         },
         metrics: {
           estimatedCoverage: 0.75,
           assertionDensity: 0.85,
-          testStructureScore: 80
-        }
+          testStructureScore: 80,
+        },
       };
-      
+
       const qualityScore: QualityScoreSection = {
         overall: 75,
         categories: {
@@ -88,20 +88,20 @@ describe('UnifiedAnalysisResult', () => {
           testCompleteness: 75,
           codeQuality: 70,
           security: 75,
-          maintainability: 75
+          maintainability: 75,
         },
-        rationale: ['テスト品質は良好です']
+        rationale: ['テスト品質は良好です'],
       };
-      
+
       const recommendations: RecommendationSection = {
         items: [],
         estimatedImpact: {
           scoreImprovement: 10,
           estimatedEffort: 5,
-          roi: 2
-        }
+          roi: 2,
+        },
       };
-      
+
       const result = builder
         .setMetadata(metadata)
         .setDomainAnalysis(domainAnalysis)
@@ -109,7 +109,7 @@ describe('UnifiedAnalysisResult', () => {
         .setQualityScore(qualityScore)
         .setRecommendations(recommendations)
         .build();
-      
+
       expect(result.metadata).toEqual(metadata);
       expect(result.domainAnalysis).toEqual(domainAnalysis);
       expect(result.staticAnalysis).toEqual(staticAnalysis);
@@ -117,7 +117,7 @@ describe('UnifiedAnalysisResult', () => {
       expect(result.recommendations).toEqual(recommendations);
       expect(result.timestamp).toBeInstanceOf(Date);
     });
-    
+
     it('should throw error when required fields are missing', () => {
       const metadata: AnalysisMetadata = {
         targetPath: '/test/path',
@@ -128,15 +128,15 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 0,
           analyzedFiles: 0,
           testFiles: 0,
-          sourceFiles: 0
-        }
+          sourceFiles: 0,
+        },
       };
-      
+
       builder.setMetadata(metadata);
-      
+
       expect(() => builder.build()).toThrow('必須フィールドが不足しています');
     });
-    
+
     it('should set integrity hash', () => {
       const metadata: AnalysisMetadata = {
         targetPath: '/test/path',
@@ -147,36 +147,36 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 0,
           analyzedFiles: 0,
           testFiles: 0,
-          sourceFiles: 0
-        }
+          sourceFiles: 0,
+        },
       };
-      
+
       const domainAnalysis: DomainAnalysisSection = {
         definition: {
           version: '1.0.0',
           project: {
             name: 'test-project',
             path: '/test/path',
-            analyzed: new Date()
+            analyzed: new Date(),
           },
           domains: [],
           integrity: {
             hash: 'test',
             timestamp: new Date(),
-            version: '1.0.0'
-          }
+            version: '1.0.0',
+          },
         },
         clusters: [],
         coverage: {
           termCoverage: 0,
           ruleCoverage: 0,
-          domainTestRatio: 0
+          domainTestRatio: 0,
         },
         domainIssues: [],
         terms: {},
-        rules: []
+        rules: [],
       };
-      
+
       const result = builder
         .setMetadata(metadata)
         .setDomainAnalysis(domainAnalysis)
@@ -186,9 +186,9 @@ describe('UnifiedAnalysisResult', () => {
             totalIssues: 0,
             bySeverity: {},
             byPlugin: {},
-            byFile: {}
+            byFile: {},
           },
-          metrics: {}
+          metrics: {},
         })
         .setQualityScore({
           overall: 0,
@@ -197,25 +197,25 @@ describe('UnifiedAnalysisResult', () => {
             testCompleteness: 0,
             codeQuality: 0,
             security: 0,
-            maintainability: 0
+            maintainability: 0,
           },
-          rationale: []
+          rationale: [],
         })
         .setRecommendations({
           items: [],
           estimatedImpact: {
             scoreImprovement: 0,
             estimatedEffort: 0,
-            roi: 0
-          }
+            roi: 0,
+          },
         })
         .setIntegrityHash('test-hash')
         .build();
-      
+
       expect(result.integrityHash).toBe('test-hash');
     });
   });
-  
+
   describe('createUnifiedAnalysisResult', () => {
     it('should create a unified analysis result from components', () => {
       const domainDefinition: DomainDefinition = {
@@ -223,7 +223,7 @@ describe('UnifiedAnalysisResult', () => {
         project: {
           name: 'test-project',
           path: '/test',
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: [
           {
@@ -231,16 +231,16 @@ describe('UnifiedAnalysisResult', () => {
             name: 'Test Domain',
             keywords: ['test', 'domain'],
             confidence: 0.9,
-            files: ['/test/file1.ts']
-          }
+            files: ['/test/file1.ts'],
+          },
         ],
         integrity: {
           hash: 'test-signature',
           timestamp: new Date(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       const staticIssues: Issue[] = [
         {
           id: 'issue-1',
@@ -251,10 +251,10 @@ describe('UnifiedAnalysisResult', () => {
           column: 5,
           severity: 'high',
           message: 'Test issue',
-          category: 'test-quality' as const
-        }
+          category: 'test-quality' as const,
+        },
       ];
-      
+
       const metadata: AnalysisMetadata = {
         targetPath: '/test',
         engineVersion: '0.9.0',
@@ -264,16 +264,12 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 10,
           analyzedFiles: 10,
           testFiles: 5,
-          sourceFiles: 5
-        }
+          sourceFiles: 5,
+        },
       };
-      
-      const result = createUnifiedAnalysisResult(
-        domainDefinition,
-        staticIssues,
-        metadata
-      );
-      
+
+      const result = createUnifiedAnalysisResult(domainDefinition, staticIssues, metadata);
+
       expect(result).toBeDefined();
       expect(result.metadata).toEqual(metadata);
       expect(result.domainAnalysis.definition).toEqual(domainDefinition);
@@ -283,23 +279,23 @@ describe('UnifiedAnalysisResult', () => {
       expect(result.recommendations.items).toBeDefined();
       expect(result.timestamp).toBeInstanceOf(Date);
     });
-    
+
     it('should calculate statistics correctly', () => {
       const domainDefinition: DomainDefinition = {
         version: '1.0.0',
         project: {
           name: 'test-project',
           path: '/test',
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: [],
         integrity: {
           hash: 'test',
           timestamp: new Date(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       const staticIssues: Issue[] = [
         {
           id: 'issue-2',
@@ -311,7 +307,7 @@ describe('UnifiedAnalysisResult', () => {
           severity: 'high',
           message: 'Issue 1',
           category: 'test-quality' as const,
-          plugin: 'plugin1'
+          plugin: 'plugin1',
         } as Issue & { plugin: string },
         {
           id: 'issue-3',
@@ -323,7 +319,7 @@ describe('UnifiedAnalysisResult', () => {
           severity: 'medium',
           message: 'Issue 2',
           category: 'test-quality' as const,
-          plugin: 'plugin2'
+          plugin: 'plugin2',
         } as Issue & { plugin: string },
         {
           id: 'issue-4',
@@ -335,10 +331,10 @@ describe('UnifiedAnalysisResult', () => {
           severity: 'high',
           message: 'Issue 3',
           category: 'test-quality' as const,
-          plugin: 'plugin1'
-        } as Issue & { plugin: string }
+          plugin: 'plugin1',
+        } as Issue & { plugin: string },
       ];
-      
+
       const metadata: AnalysisMetadata = {
         targetPath: '/test',
         engineVersion: '0.9.0',
@@ -348,16 +344,12 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 2,
           analyzedFiles: 2,
           testFiles: 2,
-          sourceFiles: 0
-        }
+          sourceFiles: 0,
+        },
       };
-      
-      const result = createUnifiedAnalysisResult(
-        domainDefinition,
-        staticIssues,
-        metadata
-      );
-      
+
+      const result = createUnifiedAnalysisResult(domainDefinition, staticIssues, metadata);
+
       expect(result.staticAnalysis.statistics.totalIssues).toBe(3);
       expect(result.staticAnalysis.statistics.bySeverity['high']).toBe(2);
       expect(result.staticAnalysis.statistics.bySeverity['medium']).toBe(1);
@@ -366,23 +358,23 @@ describe('UnifiedAnalysisResult', () => {
       expect(result.staticAnalysis.statistics.byFile['/test/file1.ts']).toBe(2);
       expect(result.staticAnalysis.statistics.byFile['/test/file2.ts']).toBe(1);
     });
-    
+
     it('should generate recommendations based on analysis', () => {
       const domainDefinition: DomainDefinition = {
         version: '1.0.0',
         project: {
           name: 'test-project',
           path: '/test',
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: [],
         integrity: {
           hash: 'test',
           timestamp: new Date(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       const staticIssues: Issue[] = [
         {
           id: 'issue-critical',
@@ -393,10 +385,10 @@ describe('UnifiedAnalysisResult', () => {
           filePath: '/test/file.ts',
           category: 'test-quality',
           line: 1,
-          column: 1
-        }
+          column: 1,
+        },
       ];
-      
+
       const metadata: AnalysisMetadata = {
         targetPath: '/test',
         engineVersion: '0.9.0',
@@ -406,44 +398,40 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 1,
           analyzedFiles: 1,
           testFiles: 1,
-          sourceFiles: 0
-        }
+          sourceFiles: 0,
+        },
       };
-      
-      const result = createUnifiedAnalysisResult(
-        domainDefinition,
-        staticIssues,
-        metadata
-      );
-      
+
+      const result = createUnifiedAnalysisResult(domainDefinition, staticIssues, metadata);
+
       // 重大な問題があるため、推奨事項が生成されるはず
       expect(result.recommendations.items.length).toBeGreaterThan(0);
-      
+
       const criticalRecommendation = result.recommendations.items.find(
         r => r.priority === 'critical'
       );
       expect(criticalRecommendation).toBeDefined();
       expect(criticalRecommendation?.title).toContain('重大な問題');
     });
-    
+
     it('should handle empty inputs gracefully', () => {
       const domainDefinition: DomainDefinition = {
         version: '1.0.0',
         project: {
           name: 'test-project',
           path: '/test',
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: [],
         integrity: {
           hash: 'test',
           timestamp: new Date(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       const staticIssues: Issue[] = [];
-      
+
       const metadata: AnalysisMetadata = {
         targetPath: '/test',
         engineVersion: '0.9.0',
@@ -453,22 +441,18 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 0,
           analyzedFiles: 0,
           testFiles: 0,
-          sourceFiles: 0
-        }
+          sourceFiles: 0,
+        },
       };
-      
-      const result = createUnifiedAnalysisResult(
-        domainDefinition,
-        staticIssues,
-        metadata
-      );
-      
+
+      const result = createUnifiedAnalysisResult(domainDefinition, staticIssues, metadata);
+
       expect(result).toBeDefined();
       expect(result.staticAnalysis.statistics.totalIssues).toBe(0);
       expect(result.domainAnalysis.domainIssues).toEqual([]);
     });
   });
-  
+
   describe('Quality Score Calculation', () => {
     it('should calculate quality scores based on coverage', () => {
       const domainDefinition: DomainDefinition = {
@@ -476,18 +460,18 @@ describe('UnifiedAnalysisResult', () => {
         project: {
           name: 'test-project',
           path: '/test',
-          analyzed: new Date()
+          analyzed: new Date(),
         },
         domains: [],
         integrity: {
           hash: 'test',
           timestamp: new Date(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
-      
+
       const staticIssues: Issue[] = [];
-      
+
       const metadata: AnalysisMetadata = {
         targetPath: '/test',
         engineVersion: '0.9.0',
@@ -497,16 +481,12 @@ describe('UnifiedAnalysisResult', () => {
           totalFiles: 10,
           analyzedFiles: 10,
           testFiles: 5,
-          sourceFiles: 5
-        }
+          sourceFiles: 5,
+        },
       };
-      
-      const result = createUnifiedAnalysisResult(
-        domainDefinition,
-        staticIssues,
-        metadata
-      );
-      
+
+      const result = createUnifiedAnalysisResult(domainDefinition, staticIssues, metadata);
+
       // カバレッジに基づいてスコアが計算される
       expect(result.qualityScore.categories.domainAlignment).toBeGreaterThanOrEqual(0);
       expect(result.qualityScore.categories.domainAlignment).toBeLessThanOrEqual(100);

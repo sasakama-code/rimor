@@ -14,7 +14,7 @@ describe('統一TestCase型の仕様', () => {
     it('必須フィールドを持つこと', () => {
       // 基本的なTestCaseの構造（Red phase）
       type TestStatus = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
-      
+
       type TestCase = {
         id: string;
         name: string;
@@ -25,7 +25,7 @@ describe('統一TestCase型の仕様', () => {
       const testCase: TestCase = {
         id: 'test-001',
         name: 'Sample Test',
-        status: 'pending'
+        status: 'pending',
       };
 
       expect(testCase.id).toBe('test-001');
@@ -50,7 +50,7 @@ describe('統一TestCase型の仕様', () => {
         status: 'passed',
         input: { a: 1, b: 2 },
         expectedOutput: 3,
-        actualOutput: 3
+        actualOutput: 3,
       };
 
       expect(testCase.input).toEqual({ a: 1, b: 2 });
@@ -83,8 +83,8 @@ describe('統一TestCase型の仕様', () => {
           executionTime: 150,
           startTime: '2025-01-17T10:00:00Z',
           endTime: '2025-01-17T10:00:00.150Z',
-          retryCount: 0
-        }
+          retryCount: 0,
+        },
       };
 
       expect(testCase.metadata?.executionTime).toBe(150);
@@ -119,8 +119,8 @@ describe('統一TestCase型の仕様', () => {
           timeout: 5000,
           retries: 3,
           tags: ['security', 'critical'],
-          priority: 'HIGH'
-        }
+          priority: 'HIGH',
+        },
       };
 
       expect(pluginTest.pluginName).toBe('security-checker');
@@ -155,15 +155,15 @@ describe('統一TestCase型の仕様', () => {
         name: 'Unit Tests',
         testCases: [
           { id: 'test-1', name: 'Test 1', status: 'passed', suiteId: 'suite-001' },
-          { id: 'test-2', name: 'Test 2', status: 'failed', suiteId: 'suite-001' }
+          { id: 'test-2', name: 'Test 2', status: 'failed', suiteId: 'suite-001' },
         ],
         summary: {
           total: 2,
           passed: 1,
           failed: 1,
           skipped: 0,
-          pending: 0
-        }
+          pending: 0,
+        },
       };
 
       expect(suite.testCases).toHaveLength(2);
@@ -196,15 +196,15 @@ describe('統一TestCase型の仕様', () => {
             type: 'toBe',
             expected: 10,
             actual: 10,
-            passed: true
+            passed: true,
           },
           {
             type: 'toContain',
             expected: 'hello',
             actual: ['hello', 'world'],
-            passed: true
-          }
-        ]
+            passed: true,
+          },
+        ],
       };
 
       expect(testCase.assertions).toHaveLength(2);
@@ -216,59 +216,76 @@ describe('統一TestCase型の仕様', () => {
   describe('型ガード', () => {
     it('isTestCase型ガードが正しく動作すること', () => {
       const isTestCase = (obj: any): boolean => {
-        return obj !== null &&
+        return (
+          obj !== null &&
           obj !== undefined &&
           typeof obj === 'object' &&
           typeof obj.id === 'string' &&
           typeof obj.name === 'string' &&
           typeof obj.status === 'string' &&
-          ['pending', 'running', 'passed', 'failed', 'skipped'].includes(obj.status);
+          ['pending', 'running', 'passed', 'failed', 'skipped'].includes(obj.status)
+        );
       };
 
-      expect(isTestCase({
-        id: 'test-001',
-        name: 'Test',
-        status: 'passed'
-      })).toBe(true);
+      expect(
+        isTestCase({
+          id: 'test-001',
+          name: 'Test',
+          status: 'passed',
+        })
+      ).toBe(true);
 
-      expect(isTestCase({
-        id: 'test-001',
-        name: 'Test',
-        status: 'invalid' // 無効なステータス
-      })).toBe(false);
+      expect(
+        isTestCase({
+          id: 'test-001',
+          name: 'Test',
+          status: 'invalid', // 無効なステータス
+        })
+      ).toBe(false);
 
-      expect(isTestCase({
-        name: 'Test',
-        status: 'passed'
-        // idが欠けている
-      })).toBe(false);
+      expect(
+        isTestCase({
+          name: 'Test',
+          status: 'passed',
+          // idが欠けている
+        })
+      ).toBe(false);
 
       expect(isTestCase(null)).toBe(false);
     });
 
     it('hasTestMetadata型ガードが正しく動作すること', () => {
       const hasTestMetadata = (obj: any): boolean => {
-        return obj &&
+        return (
+          obj &&
           obj.metadata &&
           typeof obj.metadata === 'object' &&
-          (obj.metadata.executionTime === undefined || typeof obj.metadata.executionTime === 'number');
+          (obj.metadata.executionTime === undefined ||
+            typeof obj.metadata.executionTime === 'number')
+        );
       };
 
-      expect(hasTestMetadata({
-        metadata: {
-          executionTime: 100
-        }
-      })).toBe(true);
+      expect(
+        hasTestMetadata({
+          metadata: {
+            executionTime: 100,
+          },
+        })
+      ).toBe(true);
 
-      expect(hasTestMetadata({
-        metadata: {}
-      })).toBe(true); // 空のメタデータもOK
+      expect(
+        hasTestMetadata({
+          metadata: {},
+        })
+      ).toBe(true); // 空のメタデータもOK
 
-      expect(hasTestMetadata({
-        metadata: {
-          executionTime: '100' // 型が違う
-        }
-      })).toBe(false);
+      expect(
+        hasTestMetadata({
+          metadata: {
+            executionTime: '100', // 型が違う
+          },
+        })
+      ).toBe(false);
     });
   });
 
@@ -296,8 +313,8 @@ describe('統一TestCase型の仕様', () => {
           lines: 85.5,
           branches: 75.0,
           functions: 90.0,
-          statements: 87.0
-        }
+          statements: 87.0,
+        },
       };
 
       expect(testFile.type).toBe('unit');
@@ -306,10 +323,10 @@ describe('統一TestCase型の仕様', () => {
 
     it('品質メトリクスをサポートすること', () => {
       interface TestQualityMetrics {
-        assertionDensity: number;  // アサーション数/コード行数
-        testCoverage: number;       // カバレッジ率
+        assertionDensity: number; // アサーション数/コード行数
+        testCoverage: number; // カバレッジ率
         testMaintainability: number; // 保守性スコア
-        testReliability: number;    // 信頼性スコア
+        testReliability: number; // 信頼性スコア
       }
 
       interface TestCaseWithQuality {
@@ -327,8 +344,8 @@ describe('統一TestCase型の仕様', () => {
           assertionDensity: 0.3,
           testCoverage: 85.0,
           testMaintainability: 75.0,
-          testReliability: 90.0
-        }
+          testReliability: 90.0,
+        },
       };
 
       expect(testCase.qualityMetrics?.assertionDensity).toBe(0.3);
@@ -360,7 +377,7 @@ describe('統一TestCase型の仕様', () => {
           return {
             id: old.testId,
             name: old.testName,
-            status: old.result === 'PASS' ? 'passed' : 'failed'
+            status: old.result === 'PASS' ? 'passed' : 'failed',
           };
         } else if (typeof old.id === 'number') {
           // OldTestCase2からの変換
@@ -369,8 +386,8 @@ describe('統一TestCase型の仕様', () => {
             name: old.description,
             status: old.passed ? 'passed' : 'failed',
             metadata: {
-              executionTime: old.duration
-            }
+              executionTime: old.duration,
+            },
           };
         }
         return old;
@@ -379,7 +396,7 @@ describe('統一TestCase型の仕様', () => {
       const old1: OldTestCase1 = {
         testId: 'old-001',
         testName: 'Old Test',
-        result: 'PASS'
+        result: 'PASS',
       };
 
       const unified = toUnifiedTestCase(old1);
@@ -403,7 +420,7 @@ describe('統一TestCase型の仕様', () => {
       const test: PluginTestCase = {
         id: 'test-001',
         name: 'Test',
-        status: 'passed'
+        status: 'passed',
       };
 
       // 同じ型として扱える

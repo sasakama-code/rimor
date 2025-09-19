@@ -45,16 +45,14 @@ describe('LoggingMonitoringFailuresPlugin', () => {
 
   // ステップ7: cweIdsプロパティ
   it('should have correct CWE IDs', () => {
-    expect(plugin.cweIds).toEqual([
-      'CWE-117', 'CWE-223', 'CWE-778'
-    ]);
+    expect(plugin.cweIds).toEqual(['CWE-117', 'CWE-223', 'CWE-778']);
   });
 
   describe('isApplicable', () => {
     // ステップ8: ログライブラリがある場合
     it('should return true when logging libraries are present', () => {
       const context: ProjectContext = {
-        dependencies: ['winston', 'bunyan']
+        dependencies: ['winston', 'bunyan'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -62,7 +60,7 @@ describe('LoggingMonitoringFailuresPlugin', () => {
     // ステップ9: モニタリングツールがある場合
     it('should return true when monitoring tools are present', () => {
       const context: ProjectContext = {
-        dependencies: ['@sentry/node', 'elastic-apm-node']
+        dependencies: ['@sentry/node', 'elastic-apm-node'],
       };
       expect(plugin.isApplicable(context)).toBe(true);
     });
@@ -74,8 +72,8 @@ describe('LoggingMonitoringFailuresPlugin', () => {
         filePatterns: {
           source: ['src/utils.js'],
           test: [],
-          ignore: []
-        }
+          ignore: [],
+        },
       };
       expect(plugin.isApplicable(context)).toBe(false);
     });
@@ -92,11 +90,13 @@ describe('LoggingMonitoringFailuresPlugin', () => {
             logger.security(event);
             expect(logSpy).toHaveBeenCalledWith(event);
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const loggingPattern = patterns.find(p => p.patternId && p.patternId.includes('security-logging'));
+      const loggingPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('security-logging')
+      );
       expect(loggingPattern).toBeDefined();
     });
 
@@ -111,11 +111,13 @@ describe('LoggingMonitoringFailuresPlugin', () => {
               expect(alertSystem.notify).toHaveBeenCalled();
             });
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const monitoringPattern = patterns.find(p => p.patternId && p.patternId.includes('monitoring'));
+      const monitoringPattern = patterns.find(
+        p => p.patternId && p.patternId.includes('monitoring')
+      );
       expect(monitoringPattern).toBeDefined();
     });
 
@@ -128,11 +130,13 @@ describe('LoggingMonitoringFailuresPlugin', () => {
             const result = authenticate(user, password);
             expect(result.success).toBe(true);
           });
-        `
+        `,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      const missingPatterns = patterns.filter(p => p.patternId && p.patternId.startsWith('missing-logging-'));
+      const missingPatterns = patterns.filter(
+        p => p.patternId && p.patternId.startsWith('missing-logging-')
+      );
       expect(missingPatterns.length).toBeGreaterThan(0);
     });
   });
@@ -141,9 +145,21 @@ describe('LoggingMonitoringFailuresPlugin', () => {
     // ステップ14: 高品質スコアの評価
     it('should return high score when logging tests exist', () => {
       const patterns = [
-        { patternId: 'logging-security-logging', metadata: { hasTest: true, testType: 'security-logging' }, confidence: 0.9 },
-        { patternId: 'logging-audit-trail', metadata: { hasTest: true, testType: 'audit-trail' }, confidence: 0.9 },
-        { patternId: 'logging-monitoring', metadata: { hasTest: true, testType: 'monitoring' }, confidence: 0.85 }
+        {
+          patternId: 'logging-security-logging',
+          metadata: { hasTest: true, testType: 'security-logging' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'logging-audit-trail',
+          metadata: { hasTest: true, testType: 'audit-trail' },
+          confidence: 0.9,
+        },
+        {
+          patternId: 'logging-monitoring',
+          metadata: { hasTest: true, testType: 'monitoring' },
+          confidence: 0.85,
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -155,7 +171,7 @@ describe('LoggingMonitoringFailuresPlugin', () => {
     it('should return low score when logging tests are missing', () => {
       const patterns = [
         { patternId: 'missing-logging-security', metadata: { hasTest: false }, confidence: 0.9 },
-        { patternId: 'missing-logging-audit', metadata: { hasTest: false }, confidence: 0.9 }
+        { patternId: 'missing-logging-audit', metadata: { hasTest: false }, confidence: 0.9 },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -175,8 +191,8 @@ describe('LoggingMonitoringFailuresPlugin', () => {
           strengths: [],
           weaknesses: ['ログカバレッジ不足'],
           suggestions: ['ログ出力を追加'],
-          coverage: 0.3
-        }
+          coverage: 0.3,
+        },
       };
 
       const improvements = plugin.suggestImprovements(lowScore);
@@ -195,7 +211,7 @@ describe('LoggingMonitoringFailuresPlugin', () => {
             const result = authenticate('invalid', 'wrong');
             expect(logger.warn).toHaveBeenCalledWith('Authentication failed');
           });
-        `
+        `,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
@@ -232,7 +248,7 @@ describe('LoggingMonitoringFailuresPlugin', () => {
     it('should generate logging security test code', () => {
       const context: ProjectContext = {
         dependencies: ['winston', '@sentry/node'],
-        testFramework: 'jest'
+        testFramework: 'jest',
       };
 
       const tests = plugin.generateSecurityTests(context);

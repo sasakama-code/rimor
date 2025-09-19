@@ -3,11 +3,7 @@
  * TDDアプローチ - REDフェーズ
  */
 
-import { 
-  ProjectAnalysisResult,
-  TaintAnalysisResult,
-  Issue
-} from '../../../src/core/types';
+import { ProjectAnalysisResult, TaintAnalysisResult, Issue } from '../../../src/core/types';
 
 import {
   AIJsonOutput,
@@ -21,7 +17,7 @@ import {
   isAIRisk,
   isReportOutput,
   convertToAIJson,
-  convertToReportOutput
+  convertToReportOutput,
 } from '../../../src/cli/commands/analyze-types';
 
 describe('AnalyzeCommand - Type Safety', () => {
@@ -37,16 +33,16 @@ describe('AnalyzeCommand - Type Safety', () => {
               filePath: 'src/test.ts',
               codeSnippet: 'function test() {}',
               startLine: 10,
-              endLine: 15
+              endLine: 15,
             },
             suggestedAction: {
               type: 'ADD_TEST',
               description: 'テストを追加してください',
-              example: 'describe("test", () => { ... })'
-            }
-          }
+              example: 'describe("test", () => { ... })',
+            },
+          },
         ],
-        fullReportUrl: '.rimor/reports/index.html'
+        fullReportUrl: '.rimor/reports/index.html',
       };
 
       expect(isAIJsonOutput(validOutput)).toBe(true);
@@ -63,16 +59,16 @@ describe('AnalyzeCommand - Type Safety', () => {
               filePath: 'test.ts',
               codeSnippet: '',
               startLine: 0,
-              endLine: 0
+              endLine: 0,
             },
             suggestedAction: {
               type: 'TEST',
               description: 'test',
-              example: ''
-            }
-          }
+              example: '',
+            },
+          },
         ],
-        fullReportUrl: 'test.html'
+        fullReportUrl: 'test.html',
       };
 
       expect(isAIJsonOutput(invalidOutput)).toBe(false);
@@ -92,8 +88,8 @@ describe('AnalyzeCommand - Type Safety', () => {
             file: 'src/index.ts',
             line: 10,
             filePath: 'src/index.ts',
-            category: 'test-quality' as const
-          }
+            category: 'test-quality' as const,
+          },
         ],
         qualityScore: {
           overall: 0.85,
@@ -101,13 +97,13 @@ describe('AnalyzeCommand - Type Safety', () => {
           dimensions: {
             completeness: 0.8,
             correctness: 0.9,
-            maintainability: 0.85
-          }
-        }
+            maintainability: 0.85,
+          },
+        },
       };
 
       const aiJson = convertToAIJson(analysisResult);
-      
+
       expect(aiJson).toBeDefined();
       expect(aiJson.keyRisks).toHaveLength(1);
       expect(aiJson.keyRisks[0].riskLevel).toBe('HIGH');
@@ -120,12 +116,12 @@ describe('AnalyzeCommand - Type Safety', () => {
         qualityScore: {
           overall: 1.0,
           confidence: 1.0,
-          dimensions: {}
-        }
+          dimensions: {},
+        },
       };
 
       const aiJson = convertToAIJson(emptyResult);
-      
+
       expect(aiJson.keyRisks).toHaveLength(0);
       expect(aiJson.overallAssessment).toContain('100');
     });
@@ -141,8 +137,8 @@ describe('AnalyzeCommand - Type Safety', () => {
             sink: 'database',
             path: ['input', 'processor', 'db'],
             taintLevel: 'high',
-            confidence: 0.9
-          }
+            confidence: 0.9,
+          },
         ],
         summary: {
           totalFlows: 1,
@@ -152,13 +148,13 @@ describe('AnalyzeCommand - Type Safety', () => {
           lowFlows: 0,
           sourcesCount: 1,
           sinksCount: 1,
-          sanitizersCount: 0
+          sanitizersCount: 0,
         },
-        recommendations: ['入力検証を追加']
+        recommendations: ['入力検証を追加'],
       };
 
       const report = convertToReportOutput(taintResult);
-      
+
       expect(report).toBeDefined();
       expect(report.summary.highIssues).toBe(1);
     });

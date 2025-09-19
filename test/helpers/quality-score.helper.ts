@@ -1,15 +1,11 @@
 /**
  * Quality Score Test Helper
- * 
+ *
  * テストで使用するQualityScoreとQualityDetailsのデフォルト値と
  * ビルダー関数を提供
  */
 
-import { 
-  QualityScore, 
-  QualityDetails,
-  QualityDimension
-} from '../../src/core/types/quality-score';
+import { QualityScore, QualityDetails, QualityDimension } from '../../src/core/types/quality-score';
 
 /**
  * デフォルトのQualityDetailsを作成
@@ -19,7 +15,7 @@ export function createDefaultQualityDetails(overrides?: Partial<QualityDetails>)
     strengths: overrides?.strengths || [],
     weaknesses: overrides?.weaknesses || [],
     suggestions: overrides?.suggestions || [],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -34,10 +30,10 @@ export function createDefaultQualityScore(overrides?: Partial<QualityScore>): Qu
       correctness: 0.8,
       maintainability: 0.8,
       performance: 0.8,
-      security: 0.8
+      security: 0.8,
     },
     confidence: 0.9,
-    details: createDefaultQualityDetails(overrides?.details)
+    details: createDefaultQualityDetails(overrides?.details),
   };
 
   // overridesがある場合、深くマージ
@@ -47,12 +43,14 @@ export function createDefaultQualityScore(overrides?: Partial<QualityScore>): Qu
       ...overrides,
       dimensions: {
         ...baseScore.dimensions,
-        ...(overrides.dimensions || {})
+        ...(overrides.dimensions || {}),
       },
-      details: overrides.details ? {
-        ...baseScore.details,
-        ...overrides.details
-      } : baseScore.details
+      details: overrides.details
+        ? {
+            ...baseScore.details,
+            ...overrides.details,
+          }
+        : baseScore.details,
     };
   }
 
@@ -122,7 +120,7 @@ export class QualityScoreBuilder {
  */
 export function convertLegacyQualityScore(legacy: any): QualityScore {
   const score = createDefaultQualityScore();
-  
+
   // overall は必須なので常にコピー
   if (typeof legacy.overall === 'number') {
     score.overall = legacy.overall;
@@ -151,7 +149,7 @@ export function convertLegacyQualityScore(legacy: any): QualityScore {
     if (typeof legacy.breakdown.effectiveness === 'number') {
       score.dimensions.security = legacy.breakdown.effectiveness / 100;
     }
-    
+
     // breakdownも保持
     score.breakdown = legacy.breakdown;
   }

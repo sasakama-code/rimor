@@ -21,30 +21,30 @@ export interface ITestQualityPlugin {
   name: string;
   version: string;
   type: PluginType;
-  
+
   // Plugin capabilities
   capabilities?: PluginCapabilities;
-  
+
   // Plugin applicability
   isApplicable(context: ProjectContext): boolean;
-  
+
   // Main functionality
   detectPatterns(testFile: TestFile): Promise<DetectionResult[]>;
   evaluateQuality(patterns: DetectionResult[]): QualityScore;
   suggestImprovements(evaluation: QualityScore): Improvement[];
-  
+
   // Optional functionality
   autoFix?(testFile: TestFile, improvements: Improvement[]): Promise<FixResult>;
   learn?(feedback: Feedback): void;
   configure?(config: Record<string, unknown>): void;
   validate?(testFile: TestFile): Promise<ValidationResult>;
-  
+
   // Lifecycle hooks
   initialize?(context: ProjectContext): Promise<void>;
   beforeAnalysis?(context: AnalysisContext): Promise<void>;
   afterAnalysis?(result: AnalysisResult): Promise<void>;
   cleanup?(): Promise<void>;
-  
+
   // Metadata
   metadata?: PluginMetadata;
 }
@@ -64,11 +64,13 @@ export interface PluginCapabilities {
 
 // Plugin metadata
 export interface PluginMetadata extends BaseMetadata {
-  author?: string | {
-    name: string;
-    email?: string;
-    url?: string;
-  };
+  author?:
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      };
   description?: string;
   documentation?: string;
   homepage?: string;
@@ -88,16 +90,16 @@ export interface PluginMetadata extends BaseMetadata {
 export interface PluginConfig {
   // Configuration schema
   schema?: ConfigSchema;
-  
+
   // Default values
   defaults?: Record<string, unknown>;
-  
+
   // Validation rules
   validation?: ValidationRule[];
-  
+
   // Environment variables
   env?: Record<string, string>;
-  
+
   // Feature flags
   features?: Record<string, boolean>;
 }
@@ -165,24 +167,24 @@ export interface PluginResult {
   pluginId: string;
   pluginName: string;
   pluginVersion?: string;
-  
+
   // Results
   detectionResults: DetectionResult[];
   qualityScore: QualityScore;
   improvements: Improvement[];
-  
+
   // Validation
   validation?: ValidationResult;
-  
+
   // Performance
   executionTime: number;
   memoryUsage?: number;
-  
+
   // Errors and warnings
   error?: string;
   errors?: string[];
   warnings?: string[];
-  
+
   // Metadata
   metadata?: Record<string, unknown>;
 }
@@ -192,25 +194,25 @@ export interface IPluginManager {
   // Plugin registration
   register(plugin: IPlugin | ITestQualityPlugin): void;
   unregister(pluginId: string): void;
-  
+
   // Plugin discovery
   discover(directory: string): Promise<void>;
   load(pluginPath: string): Promise<IPlugin | ITestQualityPlugin>;
-  
+
   // Plugin execution
   execute(context: AnalysisContext): Promise<PluginResult[]>;
   executePlugin(pluginId: string, context: AnalysisContext): Promise<PluginResult>;
-  
+
   // Plugin management
   getPlugin(pluginId: string): IPlugin | ITestQualityPlugin | undefined;
   getPlugins(): Array<IPlugin | ITestQualityPlugin>;
   getPluginIds(): string[];
   hasPlugin(pluginId: string): boolean;
-  
+
   // Configuration
   configure(pluginId: string, config: Record<string, unknown>): void;
   getConfig(pluginId: string): Record<string, unknown> | undefined;
-  
+
   // Lifecycle
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
@@ -236,27 +238,35 @@ export interface IPluginRegistry {
 // Plugin executor interface
 export interface IPluginExecutor {
   execute(plugin: IPlugin | ITestQualityPlugin, context: AnalysisContext): Promise<PluginResult>;
-  executeAll(plugins: Array<IPlugin | ITestQualityPlugin>, context: AnalysisContext): Promise<PluginResult[]>;
-  executeParallel(plugins: Array<IPlugin | ITestQualityPlugin>, context: AnalysisContext, maxConcurrency?: number): Promise<PluginResult[]>;
+  executeAll(
+    plugins: Array<IPlugin | ITestQualityPlugin>,
+    context: AnalysisContext
+  ): Promise<PluginResult[]>;
+  executeParallel(
+    plugins: Array<IPlugin | ITestQualityPlugin>,
+    context: AnalysisContext,
+    maxConcurrency?: number
+  ): Promise<PluginResult[]>;
 }
 
 // Type guards for plugins
 export function isIPlugin(value: unknown): value is IPlugin {
   if (!value || typeof value !== 'object') return false;
   const plugin = value as any;
-  return typeof plugin.name === 'string' && 
-         typeof plugin.analyze === 'function';
+  return typeof plugin.name === 'string' && typeof plugin.analyze === 'function';
 }
 
 export function isITestQualityPlugin(value: unknown): value is ITestQualityPlugin {
   if (!value || typeof value !== 'object') return false;
   const plugin = value as any;
-  return typeof plugin.id === 'string' &&
-         typeof plugin.name === 'string' &&
-         typeof plugin.version === 'string' &&
-         typeof plugin.type === 'string' &&
-         typeof plugin.isApplicable === 'function' &&
-         typeof plugin.detectPatterns === 'function' &&
-         typeof plugin.evaluateQuality === 'function' &&
-         typeof plugin.suggestImprovements === 'function';
+  return (
+    typeof plugin.id === 'string' &&
+    typeof plugin.name === 'string' &&
+    typeof plugin.version === 'string' &&
+    typeof plugin.type === 'string' &&
+    typeof plugin.isApplicable === 'function' &&
+    typeof plugin.detectPatterns === 'function' &&
+    typeof plugin.evaluateQuality === 'function' &&
+    typeof plugin.suggestImprovements === 'function'
+  );
 }

@@ -1,17 +1,17 @@
 /**
  * TaintAnalysisPlugin
- * 
+ *
  * 汚染解析に特化したセキュリティプラグイン
  * BaseSecurityPluginを継承し、データフロー解析を実行
  */
 
 import { BaseSecurityPlugin } from '../base/BaseSecurityPlugin';
-import { 
-  ProjectContext, 
-  TestFile, 
-  DetectionResult, 
-  QualityScore, 
-  Improvement 
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
 } from '../../core/types';
 import { PathSecurity } from '../../utils/pathSecurity';
 
@@ -34,7 +34,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
 
     // 汚染源から危険なシンクへのデータフローを検出
     const taintFlows = this.analyzeTaintFlow(testFile.content);
-    
+
     taintFlows.forEach(flow => {
       results.push({
         patternId: `taint-flow-${flow.type}`,
@@ -44,12 +44,12 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
         location: {
           file: testFile.path,
           line: flow.line,
-          column: flow.column
+          column: flow.column,
         },
         metadata: {
           description: `Tainted data flow detected: ${flow.source} → ${flow.sink}`,
-          category: 'security'
-        }
+          category: 'security',
+        },
       });
     });
 
@@ -65,12 +65,12 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
           location: {
             file: testFile.path,
             line: pattern.line || 1,
-            column: pattern.column || 1
+            column: pattern.column || 1,
           },
           metadata: {
             description: pattern.description,
-            category: 'security'
-          }
+            category: 'security',
+          },
         });
       }
     });
@@ -80,7 +80,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     const securityScore = this.evaluateSecurityScore(patterns);
-    
+
     // 汚染解析特有の評価ロジック
     let dataFlowScore = 1;
     patterns.forEach(pattern => {
@@ -96,10 +96,12 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
       dimensions: {
         completeness: overall,
         correctness: overall,
-        maintainability: 80
+        maintainability: 80,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 1,
     };
   }
 
@@ -117,10 +119,10 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.6,
-        autoFixable: false
+        autoFixable: false,
       });
     } else if (evaluation.overall < 70) {
       improvements.push({
@@ -133,10 +135,10 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.3,
-        autoFixable: false
+        autoFixable: false,
       });
     }
 
@@ -171,7 +173,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
       'request.body',
       'request.query',
       'process.argv',
-      'localStorage.getItem'
+      'localStorage.getItem',
     ];
 
     const dangerousSinks = [
@@ -179,7 +181,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
       { pattern: 'exec', type: 'command', severity: 'critical' as const },
       { pattern: 'innerHTML', type: 'xss', severity: 'high' as const },
       { pattern: 'eval', type: 'eval', severity: 'critical' as const },
-      { pattern: 'fs.readFile', type: 'path', severity: 'high' as const }
+      { pattern: 'fs.readFile', type: 'path', severity: 'high' as const },
     ];
 
     lines.forEach((line, index) => {
@@ -188,14 +190,14 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
       if (assignmentMatch) {
         const varName = assignmentMatch[1];
         const value = assignmentMatch[2];
-        
+
         // 汚染源からの代入かチェック
         const taintSource = taintSources.find(source => value.includes(source));
         if (taintSource) {
           // 同じ変数が危険なシンクで使用されているかチェック
           for (let j = index + 1; j < lines.length; j++) {
             const laterLine = lines[j];
-            
+
             for (const sink of dangerousSinks) {
               if (laterLine.includes(sink.pattern) && laterLine.includes(varName)) {
                 flows.push({
@@ -204,7 +206,7 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
                   sink: sink.pattern,
                   severity: sink.severity,
                   line: j + 1,
-                  column: 1
+                  column: 1,
                 });
               }
             }
@@ -220,13 +222,8 @@ export class TaintAnalysisPlugin extends BaseSecurityPlugin {
    * 汚染解析に関連するパターンかチェック
    */
   private isTaintRelated(patternType: string): boolean {
-    const taintRelatedPatterns = [
-      'sql-injection',
-      'command-injection',
-      'xss',
-      'path-traversal'
-    ];
-    
+    const taintRelatedPatterns = ['sql-injection', 'command-injection', 'xss', 'path-traversal'];
+
     return taintRelatedPatterns.includes(patternType);
   }
 }

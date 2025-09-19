@@ -1,12 +1,18 @@
 /**
  * AssertionExistencePlugin テスト
- * 
+ *
  * TDD RED段階: BasePluginを継承したAssertionExistencePluginのテスト
  * 既存のassertionExists.tsの機能を維持しつつ、新しいアーキテクチャに移行
  */
 
 import { AssertionExistencePlugin } from '../../../src/plugins/core/AssertionExistencePlugin';
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../src/core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../src/core/types';
 
 describe('AssertionExistencePlugin', () => {
   let plugin: AssertionExistencePlugin;
@@ -35,8 +41,12 @@ describe('AssertionExistencePlugin', () => {
     test('should return true for projects with test framework', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: { name: 'test-project', version: '1.0.0', devDependencies: { jest: '^27.0.0' } },
-        testFramework: 'jest'
+        packageJson: {
+          name: 'test-project',
+          version: '1.0.0',
+          devDependencies: { jest: '^27.0.0' },
+        },
+        testFramework: 'jest',
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -45,7 +55,7 @@ describe('AssertionExistencePlugin', () => {
     test('should return true even without explicit test framework', () => {
       const context: ProjectContext = {
         projectPath: '/test/project',
-        packageJson: { name: 'test-project', version: '1.0.0' }
+        packageJson: { name: 'test-project', version: '1.0.0' },
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -64,7 +74,7 @@ describe('AssertionExistencePlugin', () => {
               // No assertions
             });
           });
-        `
+        `,
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -74,7 +84,7 @@ describe('AssertionExistencePlugin', () => {
         patternId: 'missing-assertions',
         patternName: expect.stringContaining('Missing Assertions'),
         severity: 'high',
-        confidence: expect.any(Number)
+        confidence: expect.any(Number),
       });
     });
 
@@ -89,7 +99,7 @@ describe('AssertionExistencePlugin', () => {
               expect(component.state).toEqual({ loaded: true });
             });
           });
-        `
+        `,
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -108,7 +118,7 @@ describe('AssertionExistencePlugin', () => {
               expect(component.render).toBeDefined();
             });
           });
-        `
+        `,
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -118,7 +128,7 @@ describe('AssertionExistencePlugin', () => {
         patternId: 'weak-assertions',
         patternName: 'Weak Assertions',
         severity: 'medium',
-        confidence: expect.any(Number)
+        confidence: expect.any(Number),
       });
     });
 
@@ -139,7 +149,7 @@ describe('AssertionExistencePlugin', () => {
               expect(true).toBe(true);
             });
           });
-        `
+        `,
       };
 
       const results = await plugin.detectPatterns(testFile);
@@ -151,17 +161,19 @@ describe('AssertionExistencePlugin', () => {
 
   describe('evaluateQuality', () => {
     test('should return low score for missing assertions', () => {
-      const patterns: DetectionResult[] = [{
-        patternId: 'missing-assertions',
-        patternName: 'Missing Assertions',
-        severity: 'high',
-        confidence: 0.9,
-        location: {
-          file: '/test/project/src/component.test.ts',
-          line: 3,
-          column: 1
-        }
-      }];
+      const patterns: DetectionResult[] = [
+        {
+          patternId: 'missing-assertions',
+          patternName: 'Missing Assertions',
+          severity: 'high',
+          confidence: 0.9,
+          location: {
+            file: '/test/project/src/component.test.ts',
+            line: 3,
+            column: 1,
+          },
+        },
+      ];
 
       const score = plugin.evaluateQuality(patterns);
 
@@ -172,17 +184,19 @@ describe('AssertionExistencePlugin', () => {
     });
 
     test('should return medium score for weak assertions', () => {
-      const patterns: DetectionResult[] = [{
-        patternId: 'weak-assertions',
-        patternName: 'Weak Assertions',
-        severity: 'medium',
-        confidence: 0.7,
-        location: {
-          file: '/test/project/src/component.test.ts',
-          line: 5,
-          column: 1
-        }
-      }];
+      const patterns: DetectionResult[] = [
+        {
+          patternId: 'weak-assertions',
+          patternName: 'Weak Assertions',
+          severity: 'medium',
+          confidence: 0.7,
+          location: {
+            file: '/test/project/src/component.test.ts',
+            line: 5,
+            column: 1,
+          },
+        },
+      ];
 
       const score = plugin.evaluateQuality(patterns);
 
@@ -213,8 +227,8 @@ describe('AssertionExistencePlugin', () => {
           location: {
             file: '/test/project/src/component.test.ts',
             line: 3,
-            column: 1
-          }
+            column: 1,
+          },
         },
         {
           patternId: 'weak-assertions',
@@ -224,9 +238,9 @@ describe('AssertionExistencePlugin', () => {
           location: {
             file: '/test/project/src/utils.test.ts',
             line: 10,
-            column: 1
-          }
-        }
+            column: 1,
+          },
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
@@ -243,9 +257,9 @@ describe('AssertionExistencePlugin', () => {
         dimensions: {
           completeness: 50,
           correctness: 20,
-          maintainability: 80
+          maintainability: 80,
         },
-        confidence: 0.9
+        confidence: 0.9,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -256,7 +270,7 @@ describe('AssertionExistencePlugin', () => {
         type: 'fix-assertion',
         category: 'assertion-improvement',
         title: expect.stringContaining('Add missing assertions'),
-        estimatedImpact: expect.any(Number)
+        estimatedImpact: expect.any(Number),
       });
       expect(improvements[0].estimatedImpact).toBeGreaterThan(0);
     });
@@ -267,14 +281,14 @@ describe('AssertionExistencePlugin', () => {
         dimensions: {
           completeness: 0.8,
           correctness: 0.5,
-          maintainability: 0.8
+          maintainability: 0.8,
         },
         breakdown: {
           completeness: 80,
           correctness: 50,
-          maintainability: 80
+          maintainability: 80,
         },
-        confidence: 0.7
+        confidence: 0.7,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -285,7 +299,7 @@ describe('AssertionExistencePlugin', () => {
         type: 'fix-assertion',
         category: 'assertion-improvement',
         title: expect.stringContaining('Strengthen weak assertions'),
-        estimatedImpact: expect.any(Number)
+        estimatedImpact: expect.any(Number),
       });
     });
 
@@ -295,14 +309,14 @@ describe('AssertionExistencePlugin', () => {
         dimensions: {
           completeness: 0.5,
           correctness: 0.3,
-          maintainability: 0.7
+          maintainability: 0.7,
         },
         breakdown: {
           completeness: 50,
           correctness: 30,
-          maintainability: 70
+          maintainability: 70,
         },
-        confidence: 0.8
+        confidence: 0.8,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -317,14 +331,14 @@ describe('AssertionExistencePlugin', () => {
         dimensions: {
           completeness: 1.0,
           correctness: 1.0,
-          maintainability: 0.9
+          maintainability: 0.9,
         },
         breakdown: {
           completeness: 100,
           correctness: 100,
-          maintainability: 90
+          maintainability: 90,
         },
-        confidence: 1
+        confidence: 1,
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
@@ -337,7 +351,7 @@ describe('AssertionExistencePlugin', () => {
     test('should use inherited isTestFile method', () => {
       // @ts-ignore - accessing protected method for testing
       expect(plugin.isTestFile).toBeDefined();
-      
+
       // @ts-ignore - testing protected method
       expect(plugin.isTestFile('component.test.ts')).toBe(true);
       // @ts-ignore - testing protected method
@@ -349,7 +363,7 @@ describe('AssertionExistencePlugin', () => {
     test('should use inherited removeCommentsAndStrings method', () => {
       // @ts-ignore - accessing protected method for testing
       expect(plugin.removeCommentsAndStrings).toBeDefined();
-      
+
       const codeWithComments = `
         // This is a comment
         const test = "string value";
@@ -357,7 +371,7 @@ describe('AssertionExistencePlugin', () => {
            comment */
         expect(true).toBe(true);
       `;
-      
+
       // @ts-ignore - testing protected method
       const cleaned = plugin.removeCommentsAndStrings(codeWithComments);
       expect(cleaned).not.toContain('This is a comment');

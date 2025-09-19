@@ -9,17 +9,11 @@ import {
   TaintSource,
   SecuritySink,
   SanitizerType,
-  SecurityType
+  SecurityType,
 } from '../../types/common-types';
 
 // ローカル型定義
-import {
-  TaintMetadata,
-  TaintTraceStep,
-  TaintedValue,
-  SafeValue,
-  TaintLattice
-} from './taint';
+import { TaintMetadata, TaintTraceStep, TaintedValue, SafeValue, TaintLattice } from './taint';
 
 import { SecurityMethodChange } from './flow-types';
 
@@ -40,14 +34,10 @@ import {
   TypeInferenceResult,
   CompileTimeResult,
   SecurityIssue,
-  SecurityTestMetrics
+  SecurityTestMetrics,
 } from './security';
 
-import {
-  SecurityLattice,
-  SecurityViolation,
-  LatticeAnalysisStats
-} from './lattice';
+import { SecurityLattice, SecurityViolation, LatticeAnalysisStats } from './lattice';
 
 // 汚染レベルと格子理論のエクスポート
 export {
@@ -59,7 +49,7 @@ export {
   TaintTraceStep,
   TaintedValue,
   SafeValue,
-  TaintLattice
+  TaintLattice,
 };
 
 // セキュリティ型システムのエクスポート
@@ -81,20 +71,16 @@ export {
   TypeInferenceResult,
   CompileTimeResult,
   SecurityIssue,
-  SecurityTestMetrics
+  SecurityTestMetrics,
 };
 
 // セキュリティ格子システムのエクスポート
-export {
-  SecurityLattice,
-  LatticeAnalysisStats
-};
+export { SecurityLattice, LatticeAnalysisStats };
 
 // SecurityViolationとSecurityImprovementは他のファイルでも定義されているため、
 // 明示的に lattice.ts からインポートして再エクスポート
 export type { SecurityViolation } from './lattice';
 export type { SecurityImprovement } from './flow-types';
-
 
 // TestMethodはcore/typesからインポート
 import { TestMethod } from '../../core/types';
@@ -222,7 +208,7 @@ export interface IncrementalUpdate {
 export interface TypeBasedSecurityConfig {
   /** 解析の厳密さ */
   strictness: 'strict' | 'moderate' | 'lenient';
-  /** 最大解析時間（ms） */  
+  /** 最大解析時間（ms） */
   maxAnalysisTime: number;
   /** 並列度 */
   parallelism: number;
@@ -244,13 +230,13 @@ export interface TypeBasedSecurityConfig {
 export interface TypeBasedSecurityAnalysis {
   /** 汚染レベルの推論 */
   inferTaintLevels(testFile: TestCase): Promise<Map<string, TaintLevel>>;
-  
+
   /** セキュリティ型の推論 */
   inferSecurityTypes(testFile: TestCase): Promise<TypeInferenceResult>;
-  
+
   /** セキュリティ不変条件の検証 */
   verifyInvariants(testFile: TestCase): Promise<SecurityViolation[]>;
-  
+
   /** コンパイル時解析の実行 */
   analyzeAtCompileTime(testFiles: TestCase[]): Promise<CompileTimeResult>;
 }
@@ -261,10 +247,10 @@ export interface TypeBasedSecurityAnalysis {
 export interface ModularAnalysis {
   /** テストメソッド単位の解析 */
   analyzeMethod(method: TestMethod): Promise<MethodAnalysisResult>;
-  
+
   /** インクリメンタル解析 */
   incrementalAnalyze(changes: SecurityMethodChange[]): Promise<IncrementalResult>;
-  
+
   /** 並列解析 */
   analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]>;
 }

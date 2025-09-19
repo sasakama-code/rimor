@@ -2,11 +2,7 @@ import { ScoreAggregator } from '../../src/scoring/aggregator';
 import { ScoreCalculatorV2 } from '../../src/scoring/calculator';
 import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
 import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
-import { 
-  PluginResult,
-  WeightConfig,
-  DEFAULT_WEIGHTS
-} from '../../src/scoring/types';
+import { PluginResult, WeightConfig, DEFAULT_WEIGHTS } from '../../src/scoring/types';
 import { IPlugin, Issue } from '../../src/core/types';
 import path from 'path';
 
@@ -32,15 +28,15 @@ describe('Scoring System Integration', () => {
       // テストファイル構造をシミュレート
       const testFiles = [
         'src/api/user.ts',
-        'src/api/auth.ts', 
+        'src/api/auth.ts',
         'src/utils/helper.ts',
         'test/api/user.test.ts',
-        'test/utils/helper.test.ts'
+        'test/utils/helper.test.ts',
       ];
 
       // 各ファイルに対してプラグイン結果を生成
       const pluginResultsMap = new Map<string, PluginResult[]>();
-      
+
       for (const filePath of testFiles) {
         const mockResults: PluginResult[] = [
           {
@@ -48,8 +44,8 @@ describe('Scoring System Integration', () => {
             pluginName: 'Test Completeness Plugin',
             score: Math.random() * 40 + 60, // 60-100のランダムスコア
             weight: 1.0,
-            issues: []
-          }
+            issues: [],
+          },
         ];
         pluginResultsMap.set(filePath, mockResults);
       }
@@ -85,11 +81,11 @@ describe('Scoring System Integration', () => {
 
       // 実際のテストファイルパスを使用
       const testFilePath = path.join(__dirname, '../fixtures/sample.test.ts');
-      
+
       try {
         // プラグインを実行
         const pluginResults = await pluginManager.runAll(testFilePath);
-        
+
         // Issue[]をPluginResult[]に変換
         const scoringResults = convertIssuesToPluginResults(pluginResults, 'assertion-quality');
         const pluginResultsMap = new Map([[testFilePath, scoringResults]]);
@@ -103,7 +99,6 @@ describe('Scoring System Integration', () => {
         expect(fileScore.overallScore).toBeGreaterThanOrEqual(0);
         expect(fileScore.overallScore).toBeLessThanOrEqual(100);
         expect(fileScore.grade).toMatch(/^[ABCDF]$/);
-
       } catch (error) {
         // プラグイン実行エラーの場合はスキップ（テスト環境の制約）
         console.warn('プラグイン実行をスキップ:', error);
@@ -116,37 +111,40 @@ describe('Scoring System Integration', () => {
         plugins: {
           'test-existence': 2.0,
           'assertion-quality': 1.5,
-          'test-structure': 1.0
+          'test-structure': 1.0,
         },
         dimensions: {
-          completeness: 2.0,  // 最重要
+          completeness: 2.0, // 最重要
           correctness: 1.8,
           maintainability: 1.2,
           performance: 0.8,
-          security: 1.0
-        }
+          security: 1.0,
+        },
       };
 
       // 複数のプラグイン結果を生成
       const pluginResultsMap = new Map<string, PluginResult[]>([
-        ['src/core.ts', [
-          {
-            pluginId: 'test-existence',
-            pluginName: 'Test Existence Plugin',
-            score: 90,
-            weight: 1.0,
-            issues: [],
-            metadata: { dimensions: ['completeness'] }
-          },
-          {
-            pluginId: 'assertion-quality',
-            pluginName: 'Assertion Quality Plugin',
-            score: 75,
-            weight: 1.0,
-            issues: [],
-            metadata: { dimensions: ['correctness'] }
-          }
-        ]]
+        [
+          'src/core.ts',
+          [
+            {
+              pluginId: 'test-existence',
+              pluginName: 'Test Existence Plugin',
+              score: 90,
+              weight: 1.0,
+              issues: [],
+              metadata: { dimensions: ['completeness'] },
+            },
+            {
+              pluginId: 'assertion-quality',
+              pluginName: 'Assertion Quality Plugin',
+              score: 75,
+              weight: 1.0,
+              issues: [],
+              metadata: { dimensions: ['correctness'] },
+            },
+          ],
+        ],
       ]);
 
       // 重み付きスコア計算
@@ -165,7 +163,7 @@ describe('Scoring System Integration', () => {
 
       // 大量のファイルをシミュレート
       const pluginResultsMap = new Map<string, PluginResult[]>();
-      
+
       for (let i = 0; i < 1000; i++) {
         const filePath = `src/module${Math.floor(i / 100)}/file${i}.ts`;
         const pluginResults: PluginResult[] = [
@@ -174,15 +172,15 @@ describe('Scoring System Integration', () => {
             pluginName: 'Mock Plugin',
             score: Math.random() * 100,
             weight: 1.0,
-            issues: []
-          }
+            issues: [],
+          },
         ];
         pluginResultsMap.set(filePath, pluginResults);
       }
 
       // 段階的集約を使用
       const projectScore = await aggregator.aggregateIncrementally(pluginResultsMap, {
-        batchSize: 100
+        batchSize: 100,
       });
 
       const executionTime = Date.now() - startTime;
@@ -198,7 +196,7 @@ describe('Scoring System Integration', () => {
       const initialResults = new Map<string, PluginResult[]>([
         ['src/file1.ts', [createMockPluginResult('plugin1', 80)]],
         ['src/file2.ts', [createMockPluginResult('plugin1', 70)]],
-        ['src/file3.ts', [createMockPluginResult('plugin1', 90)]]
+        ['src/file3.ts', [createMockPluginResult('plugin1', 90)]],
       ]);
 
       const initialScore = aggregator.buildCompleteHierarchy(initialResults);
@@ -206,14 +204,11 @@ describe('Scoring System Integration', () => {
       // ファイルの変更をシミュレート
       const changedFiles = new Map<string, PluginResult[]>([
         ['src/file2.ts', [createMockPluginResult('plugin1', 95)]], // スコア改善
-        ['src/file4.ts', [createMockPluginResult('plugin1', 85)]]  // 新ファイル追加
+        ['src/file4.ts', [createMockPluginResult('plugin1', 85)]], // 新ファイル追加
       ]);
 
       // 差分更新
-      const updatedScore = aggregator.aggregateDifferentially(
-        initialScore,
-        changedFiles
-      );
+      const updatedScore = aggregator.aggregateDifferentially(initialScore, changedFiles);
 
       // 更新結果の検証
       expect(updatedScore.totalFiles).toBe(4); // ファイル追加で4個に
@@ -237,7 +232,7 @@ describe('Scoring System Integration', () => {
         ['excellent/perfect.ts', [createMockPluginResult('plugin1', 100)]],
         ['good/decent.ts', [createMockPluginResult('plugin1', 85)]],
         ['bad/poor.ts', [createMockPluginResult('plugin1', 30)]],
-        ['failing/broken.ts', [createMockPluginResult('plugin1', 0)]]
+        ['failing/broken.ts', [createMockPluginResult('plugin1', 0)]],
       ]);
 
       const projectScore = aggregator.buildCompleteHierarchy(mixedResults);
@@ -246,10 +241,12 @@ describe('Scoring System Integration', () => {
       expect(projectScore.distribution!.A).toBe(1);
       expect(projectScore.distribution!.B).toBe(1);
       expect(projectScore.distribution!.F).toBeGreaterThanOrEqual(1); // 30点と0点がFに分類される
-      
+
       // 分布の合計がファイル総数と一致することを確認
-      const totalInDistribution = Object.values(projectScore.distribution!)
-        .reduce((sum, count) => sum + count, 0);
+      const totalInDistribution = Object.values(projectScore.distribution!).reduce(
+        (sum, count) => sum + count,
+        0
+      );
       expect(totalInDistribution).toBe(projectScore.totalFiles);
 
       // 総合スコアは中程度になることを確認
@@ -261,17 +258,17 @@ describe('Scoring System Integration', () => {
       const mixedMap = new Map<string, PluginResult[]>([
         ['src/normal.ts', [createMockPluginResult('plugin1', 80)]],
         ['src/empty.ts', []], // プラグイン結果なし
-        ['src/another.ts', [createMockPluginResult('plugin1', 70)]]
+        ['src/another.ts', [createMockPluginResult('plugin1', 70)]],
       ]);
 
       const projectScore = aggregator.buildCompleteHierarchy(mixedMap);
 
       expect(projectScore.totalFiles).toBe(3);
-      
+
       // empty.tsは0点として計算される
       const srcDir = projectScore.directoryScores.find(d => d.directoryPath === 'src/');
       expect(srcDir?.fileCount).toBe(3);
-      
+
       // 平均スコアは (80+0+70)/3 = 50
       expect(srcDir?.averageScore).toBeCloseTo(50, 1);
     });
@@ -285,11 +282,11 @@ describe('Scoring System Integration', () => {
         // ファイルパスに基づいてスコアを調整
         const variation = Math.random() * 20 - 10; // ±10の変動
         const score = Math.max(0, Math.min(100, baseScore + variation));
-        
+
         // スコアが低いほど多くのIssueを生成
         const issueCount = Math.floor((100 - score) / 20);
         const issues: Issue[] = [];
-        
+
         for (let i = 0; i < issueCount; i++) {
           issues.push({
             id: `issue-${i}`,
@@ -299,12 +296,12 @@ describe('Scoring System Integration', () => {
             line: i + 1,
             file: filePath,
             filePath: filePath,
-            category: 'test-quality' as const
+            category: 'test-quality' as const,
           });
         }
-        
+
         return issues;
-      }
+      },
     };
   }
 
@@ -316,7 +313,7 @@ describe('Scoring System Integration', () => {
         if (filePath.endsWith('.test.ts')) {
           return []; // テストファイルは問題なし
         }
-        
+
         return [
           {
             id: 'missing-assertion-1',
@@ -326,10 +323,10 @@ describe('Scoring System Integration', () => {
             line: 10,
             file: filePath,
             filePath: filePath,
-            category: 'assertion'
-          }
+            category: 'assertion',
+          },
         ];
-      }
+      },
     };
   }
 
@@ -339,7 +336,7 @@ describe('Scoring System Integration', () => {
       pluginName: `${pluginId} Plugin`,
       score,
       weight: 1.0,
-      issues: []
+      issues: [],
     };
   }
 
@@ -347,10 +344,10 @@ describe('Scoring System Integration', () => {
     // Issue数に基づいてスコアを計算（簡単な変換）
     const errorCount = issues.filter(i => i.severity === 'high').length;
     const warningCount = issues.filter(i => i.severity === 'medium').length;
-    
+
     // スコア計算: エラーは-10点、警告は-5点
     const baseScore = 100;
-    const score = Math.max(0, baseScore - (errorCount * 10) - (warningCount * 5));
+    const score = Math.max(0, baseScore - errorCount * 10 - warningCount * 5);
 
     return [
       {
@@ -358,8 +355,8 @@ describe('Scoring System Integration', () => {
         pluginName: `${pluginId} Plugin`,
         score,
         weight: 1.0,
-        issues
-      }
+        issues,
+      },
     ];
   }
 });

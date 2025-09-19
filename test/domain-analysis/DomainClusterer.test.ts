@@ -1,7 +1,7 @@
 /**
  * DomainClusterer テスト
  * v0.9.0 - TDDアプローチ（RED→GREEN→REFACTOR）
- * 
+ *
  * t_wadaのTDD実践に従い、失敗するテストから開始
  */
 
@@ -10,7 +10,7 @@ import {
   DomainCluster,
   ClusteringConfig,
   TFIDFVector,
-  KeywordInfo
+  KeywordInfo,
 } from '../../src/domain-analysis/types';
 
 describe('DomainClusterer', () => {
@@ -23,7 +23,7 @@ describe('DomainClusterer', () => {
   describe('TF-IDF計算', () => {
     it('単一ドキュメントのTF-IDFを計算できる', () => {
       const documents = new Map<string, string[]>([
-        ['doc1', ['user', 'login', 'authentication', 'user', 'session']]
+        ['doc1', ['user', 'login', 'authentication', 'user', 'session']],
       ]);
 
       const vectors = clusterer.calculateTFIDF(documents);
@@ -38,20 +38,20 @@ describe('DomainClusterer', () => {
       const documents = new Map<string, string[]>([
         ['doc1', ['user', 'login', 'authentication']],
         ['doc2', ['payment', 'transaction', 'billing']],
-        ['doc3', ['user', 'profile', 'settings']]
+        ['doc3', ['user', 'profile', 'settings']],
       ]);
 
       const vectors = clusterer.calculateTFIDF(documents);
 
       expect(vectors).toHaveLength(3);
-      
+
       // 'user'は2つのドキュメントに出現するのでIDFが低い
       const doc1Vector = vectors.find(v => v.documentId === 'doc1');
       const doc2Vector = vectors.find(v => v.documentId === 'doc2');
-      
+
       expect(doc1Vector?.vector.get('user')).toBeDefined();
       expect(doc2Vector?.vector.get('payment')).toBeDefined();
-      
+
       // 'payment'は1つのドキュメントにしか出現しないのでIDFが高い
       const paymentIDF = doc2Vector?.vector.get('payment') || 0;
       const userIDF = doc1Vector?.vector.get('user') || 0;
@@ -61,7 +61,7 @@ describe('DomainClusterer', () => {
     it('空のドキュメントを適切に処理できる', () => {
       const documents = new Map<string, string[]>([
         ['doc1', []],
-        ['doc2', ['keyword']]
+        ['doc2', ['keyword']],
       ]);
 
       const vectors = clusterer.calculateTFIDF(documents);
@@ -78,20 +78,32 @@ describe('DomainClusterer', () => {
       const vectors: TFIDFVector[] = [
         {
           documentId: 'doc1',
-          vector: new Map([['user', 0.8], ['login', 0.6]])
+          vector: new Map([
+            ['user', 0.8],
+            ['login', 0.6],
+          ]),
         },
         {
           documentId: 'doc2',
-          vector: new Map([['user', 0.7], ['profile', 0.5]])
+          vector: new Map([
+            ['user', 0.7],
+            ['profile', 0.5],
+          ]),
         },
         {
           documentId: 'doc3',
-          vector: new Map([['payment', 0.9], ['transaction', 0.7]])
+          vector: new Map([
+            ['payment', 0.9],
+            ['transaction', 0.7],
+          ]),
         },
         {
           documentId: 'doc4',
-          vector: new Map([['order', 0.8], ['checkout', 0.6]])
-        }
+          vector: new Map([
+            ['order', 0.8],
+            ['checkout', 0.6],
+          ]),
+        },
       ];
 
       const clusters = clusterer.performKMeansClustering(vectors, 2);
@@ -107,22 +119,30 @@ describe('DomainClusterer', () => {
       const vectors: TFIDFVector[] = [
         {
           documentId: 'auth-service.ts',
-          vector: new Map([['authentication', 0.9], ['login', 0.8], ['user', 0.7]])
+          vector: new Map([
+            ['authentication', 0.9],
+            ['login', 0.8],
+            ['user', 0.7],
+          ]),
         },
         {
           documentId: 'payment-service.ts',
-          vector: new Map([['payment', 0.9], ['transaction', 0.8], ['billing', 0.7]])
-        }
+          vector: new Map([
+            ['payment', 0.9],
+            ['transaction', 0.8],
+            ['billing', 0.7],
+          ]),
+        },
       ];
 
       const clusters = clusterer.performKMeansClustering(vectors, 2);
 
       // クラスタ名が関連キーワードを反映していることを確認
-      const authCluster = clusters.find(c => 
-        c.keywords.includes('authentication') || c.keywords.includes('login')
+      const authCluster = clusters.find(
+        c => c.keywords.includes('authentication') || c.keywords.includes('login')
       );
-      const paymentCluster = clusters.find(c => 
-        c.keywords.includes('payment') || c.keywords.includes('transaction')
+      const paymentCluster = clusters.find(
+        c => c.keywords.includes('payment') || c.keywords.includes('transaction')
       );
 
       expect(authCluster).toBeDefined();
@@ -133,12 +153,12 @@ describe('DomainClusterer', () => {
       const vectors: TFIDFVector[] = [
         {
           documentId: 'doc1',
-          vector: new Map([['keyword1', 0.5]])
+          vector: new Map([['keyword1', 0.5]]),
         },
         {
           documentId: 'doc2',
-          vector: new Map([['keyword2', 0.6]])
-        }
+          vector: new Map([['keyword2', 0.6]]),
+        },
       ];
 
       const clusters = clusterer.performKMeansClustering(vectors, 1);
@@ -157,7 +177,7 @@ describe('DomainClusterer', () => {
         keywords: ['login', 'auth', 'user', 'session', 'token'],
         confidence: 0,
         files: ['auth.ts', 'login.ts', 'session.ts'],
-        centroid: ['auth', 'login', 'user']
+        centroid: ['auth', 'login', 'user'],
       };
 
       const confidence = clusterer.calculateClusterConfidence(tightCluster);
@@ -173,7 +193,7 @@ describe('DomainClusterer', () => {
         keywords: ['user', 'payment', 'product', 'report', 'config'],
         confidence: 0,
         files: ['file1.ts'],
-        centroid: ['mixed']
+        centroid: ['mixed'],
       };
 
       const confidence = clusterer.calculateClusterConfidence(looseCluster);
@@ -189,7 +209,7 @@ describe('DomainClusterer', () => {
         name: 'empty',
         keywords: [],
         confidence: 0,
-        files: []
+        files: [],
       };
 
       const confidence = clusterer.calculateClusterConfidence(emptyCluster);
@@ -202,14 +222,50 @@ describe('DomainClusterer', () => {
     it('エルボー法を使用して最適なクラスタ数を推定できる', () => {
       const vectors: TFIDFVector[] = [
         // ユーザー管理関連
-        { documentId: 'user1.ts', vector: new Map([['user', 0.9], ['profile', 0.8]]) },
-        { documentId: 'user2.ts', vector: new Map([['user', 0.8], ['settings', 0.7]]) },
+        {
+          documentId: 'user1.ts',
+          vector: new Map([
+            ['user', 0.9],
+            ['profile', 0.8],
+          ]),
+        },
+        {
+          documentId: 'user2.ts',
+          vector: new Map([
+            ['user', 0.8],
+            ['settings', 0.7],
+          ]),
+        },
         // 支払い関連
-        { documentId: 'pay1.ts', vector: new Map([['payment', 0.9], ['transaction', 0.8]]) },
-        { documentId: 'pay2.ts', vector: new Map([['billing', 0.8], ['invoice', 0.7]]) },
+        {
+          documentId: 'pay1.ts',
+          vector: new Map([
+            ['payment', 0.9],
+            ['transaction', 0.8],
+          ]),
+        },
+        {
+          documentId: 'pay2.ts',
+          vector: new Map([
+            ['billing', 0.8],
+            ['invoice', 0.7],
+          ]),
+        },
         // 商品管理関連
-        { documentId: 'prod1.ts', vector: new Map([['product', 0.9], ['inventory', 0.8]]) },
-        { documentId: 'prod2.ts', vector: new Map([['item', 0.8], ['stock', 0.7]]) }
+        {
+          documentId: 'prod1.ts',
+          vector: new Map([
+            ['product', 0.9],
+            ['inventory', 0.8],
+          ]),
+        },
+        {
+          documentId: 'prod2.ts',
+          vector: new Map([
+            ['item', 0.8],
+            ['stock', 0.7],
+          ]),
+        },
       ];
 
       const optimalK = clusterer.optimizeClusterCount(vectors);
@@ -221,7 +277,7 @@ describe('DomainClusterer', () => {
 
     it('ベクトル数が少ない場合は最小クラスタ数を返す', () => {
       const vectors: TFIDFVector[] = [
-        { documentId: 'doc1.ts', vector: new Map([['keyword', 0.5]]) }
+        { documentId: 'doc1.ts', vector: new Map([['keyword', 0.5]]) },
       ];
 
       const optimalK = clusterer.optimizeClusterCount(vectors);
@@ -233,16 +289,19 @@ describe('DomainClusterer', () => {
   describe('統合機能', () => {
     it('キーワード情報からドメインクラスタを生成できる', () => {
       const keywords = new Map<string, KeywordInfo>([
-        ['authentication', { keyword: 'authentication', frequency: 10, files: ['auth.ts', 'login.ts'] }],
+        [
+          'authentication',
+          { keyword: 'authentication', frequency: 10, files: ['auth.ts', 'login.ts'] },
+        ],
         ['login', { keyword: 'login', frequency: 8, files: ['login.ts'] }],
         ['payment', { keyword: 'payment', frequency: 12, files: ['payment.ts', 'billing.ts'] }],
-        ['transaction', { keyword: 'transaction', frequency: 9, files: ['payment.ts'] }]
+        ['transaction', { keyword: 'transaction', frequency: 9, files: ['payment.ts'] }],
       ]);
 
       const config: ClusteringConfig = {
         k: 2,
         maxIterations: 100,
-        tolerance: 0.001
+        tolerance: 0.001,
       };
 
       const clusters = clusterer.clusterFromKeywords(keywords, config);
@@ -256,13 +315,13 @@ describe('DomainClusterer', () => {
     it('設定パラメータを適切に反映する', () => {
       const keywords = new Map<string, KeywordInfo>([
         ['keyword1', { keyword: 'keyword1', frequency: 5, files: ['file1.ts'] }],
-        ['keyword2', { keyword: 'keyword2', frequency: 3, files: ['file2.ts'] }]
+        ['keyword2', { keyword: 'keyword2', frequency: 3, files: ['file2.ts'] }],
       ]);
 
       const config: ClusteringConfig = {
         k: 1,
         maxIterations: 10,
-        tolerance: 0.1
+        tolerance: 0.1,
       };
 
       const clusters = clusterer.clusterFromKeywords(keywords, config);
@@ -280,9 +339,7 @@ describe('DomainClusterer', () => {
     });
 
     it('不正なK値を検証する', () => {
-      const vectors: TFIDFVector[] = [
-        { documentId: 'doc1', vector: new Map([['keyword', 0.5]]) }
-      ];
+      const vectors: TFIDFVector[] = [{ documentId: 'doc1', vector: new Map([['keyword', 0.5]]) }];
 
       expect(() => {
         clusterer.performKMeansClustering(vectors, 0);
@@ -294,9 +351,7 @@ describe('DomainClusterer', () => {
     });
 
     it('K値がベクトル数より大きい場合にエラーを投げる', () => {
-      const vectors: TFIDFVector[] = [
-        { documentId: 'doc1', vector: new Map([['keyword', 0.5]]) }
-      ];
+      const vectors: TFIDFVector[] = [{ documentId: 'doc1', vector: new Map([['keyword', 0.5]]) }];
 
       expect(() => {
         clusterer.performKMeansClustering(vectors, 2);

@@ -6,7 +6,7 @@
 export interface PluginConfig {
   enabled: boolean;
   excludeFiles?: string[];
-  priority?: number;  // プラグイン実行優先度（高いほど先に実行）
+  priority?: number; // プラグイン実行優先度（高いほど先に実行）
   [key: string]: unknown; // 動的プロパティサポート（型安全性向上）
 }
 
@@ -39,26 +39,26 @@ export interface PluginMetadata {
   category?: 'core' | 'framework' | 'domain' | 'legacy';
   tags?: string[];
   author?: string;
-  
+
   // 設定パラメータ
   parameters?: PluginParameter[];
-  
+
   // 依存関係
   dependencies?: PluginDependency[];
-  
+
   // パフォーマンス情報
   performance?: {
     estimatedTimePerFile: number; // ミリ秒
     memoryUsage: 'low' | 'medium' | 'high';
     recommendedBatchSize?: number;
   };
-  
+
   // 対象ファイル
   targetFiles?: {
     patterns: string[];
     excludePatterns?: string[];
   };
-  
+
   // デフォルト設定（後方互換性）
   defaultConfig?: PluginConfig;
 }
@@ -69,7 +69,7 @@ export interface RimorConfig {
   output: {
     format: 'text' | 'json';
     verbose: boolean;
-    reportDir?: string;  // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
+    reportDir?: string; // レポート出力ディレクトリ（デフォルト: .rimor/reports/）
   };
   metadata?: {
     generatedAt?: string;
@@ -122,7 +122,7 @@ export interface RimorConfig {
 export interface ConfigGenerationOptions {
   preset?: 'minimal' | 'recommended' | 'comprehensive' | 'performance';
   targetEnvironment?: 'development' | 'ci' | 'production';
-  maxExecutionTime?: number;  // ミリ秒
+  maxExecutionTime?: number; // ミリ秒
   memoryLimit?: 'low' | 'medium' | 'high';
   includeExperimental?: boolean;
 }

@@ -1,7 +1,7 @@
 /**
  * TemplatedReporter Tests
  * v0.8.0 - Phase 4: Context Engineering
- * 
+ *
  * テンプレートベースレポーター機能のテスト
  */
 
@@ -10,7 +10,7 @@ import {
   StructuredAnalysisResult,
   Severity,
   IssueType,
-  ReportGenerationOptions
+  ReportGenerationOptions,
 } from '../../src/reporting/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -21,7 +21,7 @@ const mockStructuredResult: StructuredAnalysisResult = {
     version: '0.8.0',
     timestamp: '2024-01-15T10:00:00.000Z',
     analyzedPath: '/test/project',
-    duration: 2500
+    duration: 2500,
   },
   summary: {
     totalFiles: 20,
@@ -31,14 +31,14 @@ const mockStructuredResult: StructuredAnalysisResult = {
       high: 2,
       medium: 1,
       low: 1,
-      info: 0
+      info: 0,
     },
     issueByType: {
-      'SQL_INJECTION': 1,
-      'XSS': 1,
-      'MISSING_TEST': 2,
-      'TEST_QUALITY': 1
-    }
+      SQL_INJECTION: 1,
+      XSS: 1,
+      MISSING_TEST: 2,
+      TEST_QUALITY: 1,
+    },
   },
   issues: [
     {
@@ -51,7 +51,7 @@ const mockStructuredResult: StructuredAnalysisResult = {
         startLine: 45,
         endLine: 45,
         startColumn: 10,
-        endColumn: 50
+        endColumn: 50,
       },
       message: 'SQLインジェクション脆弱性: ユーザー入力が直接SQLクエリに使用されています',
       recommendation: 'パラメータ化クエリまたはプリペアドステートメントを使用してください',
@@ -60,21 +60,21 @@ const mockStructuredResult: StructuredAnalysisResult = {
         source: {
           location: { file: 'src/api.ts', startLine: 20, endLine: 20 },
           type: 'user_input',
-          description: 'HTTPリクエストパラメータ'
+          description: 'HTTPリクエストパラメータ',
         },
         sink: {
           location: { file: 'src/database.ts', startLine: 45, endLine: 45 },
           type: 'sql_query',
-          description: 'SQLクエリ実行'
+          description: 'SQLクエリ実行',
         },
         path: [
           {
             location: { file: 'src/controller.ts', startLine: 30, endLine: 30 },
             type: 'propagation',
-            description: 'パラメータの受け渡し'
-          }
-        ]
-      }
+            description: 'パラメータの受け渡し',
+          },
+        ],
+      },
     },
     {
       id: '234567890abcdef1',
@@ -84,11 +84,11 @@ const mockStructuredResult: StructuredAnalysisResult = {
       location: {
         file: 'src/auth.ts',
         startLine: 1,
-        endLine: 100
+        endLine: 100,
       },
       message: 'テストファイルが存在しません',
-      recommendation: 'auth.test.tsファイルを作成し、認証ロジックのテストを実装してください'
-    }
+      recommendation: 'auth.test.tsファイルを作成し、認証ロジックのテストを実装してください',
+    },
   ],
   metrics: {
     testCoverage: {
@@ -96,12 +96,12 @@ const mockStructuredResult: StructuredAnalysisResult = {
       byModule: {
         'src/core': { coverage: 80, testedFiles: 8, untestedFiles: 2 },
         'src/utils': { coverage: 90, testedFiles: 9, untestedFiles: 1 },
-        'src/api': { coverage: 40, testedFiles: 4, untestedFiles: 6 }
+        'src/api': { coverage: 40, testedFiles: 4, untestedFiles: 6 },
       },
       missingTests: [
         { file: 'src/auth.ts', reason: 'テストファイルが存在しません' },
-        { file: 'src/payment.ts', reason: 'テストカバレッジが10%未満です' }
-      ]
+        { file: 'src/payment.ts', reason: 'テストカバレッジが10%未満です' },
+      ],
     },
     codeQuality: {
       complexity: {
@@ -111,23 +111,20 @@ const mockStructuredResult: StructuredAnalysisResult = {
           {
             method: 'processPayment',
             complexity: 25,
-            location: { file: 'src/payment.ts', startLine: 50, endLine: 150 }
-          }
-        ]
+            location: { file: 'src/payment.ts', startLine: 50, endLine: 150 },
+          },
+        ],
       },
       maintainability: {
         score: 72,
-        issues: [
-          '重複コードが検出されました',
-          '長すぎるメソッドが存在します'
-        ]
-      }
-    }
+        issues: ['重複コードが検出されました', '長すぎるメソッドが存在します'],
+      },
+    },
   },
   plugins: {
     'test-existence': { executed: true, duration: 500, issues: 2 },
-    'assertion-quality': { executed: true, duration: 300, issues: 3 }
-  }
+    'assertion-quality': { executed: true, duration: 300, issues: 3 },
+  },
 };
 
 describe('TemplatedReporter', () => {
@@ -185,9 +182,9 @@ describe('TemplatedReporter', () => {
             high: 0,
             medium: 0,
             low: 0,
-            info: 0
-          }
-        }
+            info: 0,
+          },
+        },
       };
 
       const report = await reporter.generateSummaryReport(emptyResult);
@@ -209,7 +206,7 @@ describe('TemplatedReporter', () => {
 
     it('should include data flow analysis for security issues', async () => {
       const report = await reporter.generateDetailedReport(mockStructuredResult, {
-        includeDataFlow: true
+        includeDataFlow: true,
       });
 
       expect(report).toContain('汚染データフロー解析');
@@ -221,25 +218,25 @@ describe('TemplatedReporter', () => {
 
     it('should filter by severity when specified', async () => {
       const options: ReportGenerationOptions = {
-        severityFilter: [Severity.CRITICAL, Severity.HIGH]
+        severityFilter: [Severity.CRITICAL, Severity.HIGH],
       };
 
       const report = await reporter.generateDetailedReport(mockStructuredResult, options);
-      
+
       // Critical と High の問題は含まれる
       expect(report).toContain('SQL_INJECTION');
       expect(report).toContain('MISSING_TEST');
-      
+
       // フィルタリングされた結果の確認（実際の実装に依存）
     });
 
     it('should exclude recommendations when specified', async () => {
       const options: ReportGenerationOptions = {
-        includeRecommendations: false
+        includeRecommendations: false,
       };
 
       const report = await reporter.generateDetailedReport(mockStructuredResult, options);
-      
+
       // 推奨事項が含まれないことを確認
       expect(report).not.toContain('推奨される対応');
     });
@@ -257,15 +254,12 @@ Total Issues: {{summary.totalIssues}}
 - {{this.type}}: {{this.message}}
 {{/each}}
 `;
-      
+
       const tempFile = path.join(__dirname, 'temp-custom.hbs');
       await fs.writeFile(tempFile, customTemplate, 'utf-8');
 
       try {
-        const report = await reporter.generateCustomReport(
-          mockStructuredResult,
-          tempFile
-        );
+        const report = await reporter.generateCustomReport(mockStructuredResult, tempFile);
 
         expect(report).toContain('Custom Report for /test/project');
         expect(report).toContain('Total Issues: 5');
@@ -281,7 +275,7 @@ Total Issues: {{summary.totalIssues}}
   describe('Handlebars helpers', () => {
     it('should format date correctly', async () => {
       const report = await reporter.generateSummaryReport(mockStructuredResult);
-      
+
       // 日本語形式の日付が含まれることを確認
       expect(report).toMatch(/2024\/01\/15 \d{2}:\d{2}:\d{2}/);
     });
@@ -291,8 +285,8 @@ Total Issues: {{summary.totalIssues}}
         ...mockStructuredResult,
         metadata: {
           ...mockStructuredResult.metadata,
-          duration: 2500
-        }
+          duration: 2500,
+        },
       };
 
       const report = await reporter.generateSummaryReport(testData);
@@ -301,7 +295,7 @@ Total Issues: {{summary.totalIssues}}
 
     it('should calculate percentages correctly', async () => {
       const report = await reporter.generateDetailedReport(mockStructuredResult);
-      
+
       // 重要度別の割合計算
       // Critical: 1/5 = 20%
       expect(report).toContain('20.0%');
@@ -309,7 +303,7 @@ Total Issues: {{summary.totalIssues}}
 
     it('should use severity icons correctly', async () => {
       const report = await reporter.generateSummaryReport(mockStructuredResult);
-      
+
       expect(report).toContain('🔴'); // Critical
       expect(report).toContain('🟠'); // High
     });
@@ -322,7 +316,7 @@ Total Issues: {{summary.totalIssues}}
           version: '0.8.0',
           timestamp: new Date().toISOString(),
           analyzedPath: '/test',
-          duration: 100
+          duration: 100,
         },
         summary: {
           totalFiles: 1,
@@ -332,29 +326,29 @@ Total Issues: {{summary.totalIssues}}
             high: 0,
             medium: 0,
             low: 0,
-            info: 0
+            info: 0,
           },
-          issueByType: {}
+          issueByType: {},
         },
         issues: [],
         metrics: {
           testCoverage: { overall: 0, byModule: {} },
-          codeQuality: {}
-        }
+          codeQuality: {},
+        },
       };
 
-      await expect(
-        reporter.generateSummaryReport(minimalResult)
-      ).resolves.not.toThrow();
+      await expect(reporter.generateSummaryReport(minimalResult)).resolves.not.toThrow();
     });
 
     it('should handle very long issue messages', async () => {
       const longMessageResult = {
         ...mockStructuredResult,
-        issues: [{
-          ...mockStructuredResult.issues[0],
-          message: 'A'.repeat(1000) // 非常に長いメッセージ
-        }]
+        issues: [
+          {
+            ...mockStructuredResult.issues[0],
+            message: 'A'.repeat(1000), // 非常に長いメッセージ
+          },
+        ],
       };
 
       const report = await reporter.generateDetailedReport(longMessageResult);

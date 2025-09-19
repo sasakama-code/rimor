@@ -19,18 +19,18 @@ export class IntegrationTestSuite {
       {
         name: 'Dictionary Plugin Integration',
         description: 'プラグイン統合機能のテスト',
-        path: './dictionary-plugin-integration.test.ts'
+        path: './dictionary-plugin-integration.test.ts',
       },
       {
         name: 'Performance Tests',
         description: '性能・負荷テスト',
-        path: './performance.test.ts'
+        path: './performance.test.ts',
       },
       {
         name: 'End-to-End Workflow',
         description: 'エンドツーエンドワークフローテスト',
-        path: './end-to-end-workflow.test.ts'
-      }
+        path: './end-to-end-workflow.test.ts',
+      },
     ];
 
     for (const suite of testSuites) {
@@ -51,7 +51,7 @@ export class IntegrationTestSuite {
       // Jest programmatic API の使用を想定
       // 実際の実装では jest.runCLI() などを使用
       const mockResult = await this.simulateTestExecution(suite);
-      
+
       const duration = Date.now() - startTime;
       const result: TestResult = {
         suiteName: suite.name,
@@ -61,18 +61,19 @@ export class IntegrationTestSuite {
         testsPassed: mockResult.testsPassed,
         testsFailed: mockResult.testsFailed,
         coverage: mockResult.coverage,
-        errors: mockResult.errors
+        errors: mockResult.errors,
       };
 
       this.testResults.set(suite.name, result);
-      
+
       const statusIcon = result.status === 'passed' ? '✅' : '❌';
-      console.log(`${statusIcon} ${suite.name}: ${result.testsRun}件中${result.testsPassed}件成功 (${duration}ms)`);
-      
+      console.log(
+        `${statusIcon} ${suite.name}: ${result.testsRun}件中${result.testsPassed}件成功 (${duration}ms)`
+      );
+
       if (result.errors.length > 0) {
         console.log(`   ⚠️  ${result.errors.length}件のエラー/警告`);
       }
-
     } catch (error) {
       const duration = Date.now() - startTime;
       const result: TestResult = {
@@ -83,7 +84,7 @@ export class IntegrationTestSuite {
         testsPassed: 0,
         testsFailed: 1,
         coverage: 0,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
 
       this.testResults.set(suite.name, result);
@@ -97,7 +98,7 @@ export class IntegrationTestSuite {
   private async simulateTestExecution(suite: TestSuiteInfo): Promise<MockTestResult> {
     // 実際の実装では Jest programmatic API を使用
     // ここではテストメトリクスのシミュレーション
-    
+
     const delay = Math.random() * 2000 + 1000; // 1-3秒のランダム遅延
     await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -113,7 +114,7 @@ export class IntegrationTestSuite {
       testsPassed,
       testsFailed,
       coverage: Math.floor(Math.random() * 20) + 80, // 80-100%のカバレッジ
-      errors: testsFailed > 0 ? [`Mock error in ${suite.name}`] : []
+      errors: testsFailed > 0 ? [`Mock error in ${suite.name}`] : [],
     };
   }
 
@@ -123,15 +124,15 @@ export class IntegrationTestSuite {
   private generateReport(): IntegrationTestReport {
     const totalDuration = Date.now() - this.startTime;
     const results = Array.from(this.testResults.values());
-    
+
     const totalTests = results.reduce((sum, r) => sum + r.testsRun, 0);
     const totalPassed = results.reduce((sum, r) => sum + r.testsPassed, 0);
     const totalFailed = results.reduce((sum, r) => sum + r.testsFailed, 0);
     const avgCoverage = results.reduce((sum, r) => sum + r.coverage, 0) / results.length;
-    
+
     const allErrors = results.flatMap(r => r.errors);
-    const criticalErrors = allErrors.filter(error => 
-      error.includes('Error') || error.includes('Failed') || error.includes('Timeout')
+    const criticalErrors = allErrors.filter(
+      error => error.includes('Error') || error.includes('Failed') || error.includes('Timeout')
     );
 
     const report: IntegrationTestReport = {
@@ -144,16 +145,16 @@ export class IntegrationTestSuite {
         totalPassed,
         totalFailed,
         overallSuccessRate: totalTests > 0 ? (totalPassed / totalTests) * 100 : 0,
-        avgCoverage
+        avgCoverage,
       },
       results,
       issues: {
         criticalErrors,
         warnings: allErrors.filter(error => !criticalErrors.includes(error)),
         performanceIssues: this.identifyPerformanceIssues(results),
-        recommendations: this.generateRecommendations(results)
+        recommendations: this.generateRecommendations(results),
       },
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
 
     this.printReport(report);
@@ -165,12 +166,13 @@ export class IntegrationTestSuite {
    */
   private identifyPerformanceIssues(results: TestResult[]): string[] {
     const issues: string[] = [];
-    
+
     for (const result of results) {
-      if (result.duration > 30000) { // 30秒以上
+      if (result.duration > 30000) {
+        // 30秒以上
         issues.push(`${result.suiteName}: 実行時間が長すぎます (${result.duration}ms)`);
       }
-      
+
       if (result.suiteName.includes('Performance') && result.status !== 'passed') {
         issues.push(`${result.suiteName}: 性能テストの失敗は重大な問題の可能性があります`);
       }
@@ -184,26 +186,36 @@ export class IntegrationTestSuite {
    */
   private generateRecommendations(results: TestResult[]): string[] {
     const recommendations: string[] = [];
-    
-    const overallSuccessRate = results.reduce((sum, r) => sum + r.testsPassed, 0) / 
-                               results.reduce((sum, r) => sum + r.testsRun, 0) * 100;
-    
+
+    const overallSuccessRate =
+      (results.reduce((sum, r) => sum + r.testsPassed, 0) /
+        results.reduce((sum, r) => sum + r.testsRun, 0)) *
+      100;
+
     if (overallSuccessRate < 90) {
-      recommendations.push('テスト成功率が90%を下回っています。失敗したテストを優先的に修正してください。');
+      recommendations.push(
+        'テスト成功率が90%を下回っています。失敗したテストを優先的に修正してください。'
+      );
     }
-    
+
     const avgCoverage = results.reduce((sum, r) => sum + r.coverage, 0) / results.length;
     if (avgCoverage < 85) {
-      recommendations.push('テストカバレッジが85%を下回っています。追加のテストケースを検討してください。');
+      recommendations.push(
+        'テストカバレッジが85%を下回っています。追加のテストケースを検討してください。'
+      );
     }
-    
+
     const longRunningTests = results.filter(r => r.duration > 10000);
     if (longRunningTests.length > 0) {
-      recommendations.push('実行時間の長いテストがあります。並列化やモック使用を検討してください。');
+      recommendations.push(
+        '実行時間の長いテストがあります。並列化やモック使用を検討してください。'
+      );
     }
-    
+
     if (results.some(r => r.status === 'error')) {
-      recommendations.push('テスト実行エラーが発生しています。テスト環境の設定を確認してください。');
+      recommendations.push(
+        'テスト実行エラーが発生しています。テスト環境の設定を確認してください。'
+      );
     }
 
     return recommendations;
@@ -216,7 +228,7 @@ export class IntegrationTestSuite {
     console.log('\n' + '='.repeat(80));
     console.log('📊 統合テストスイート実行結果レポート');
     console.log('='.repeat(80));
-    
+
     // サマリー
     console.log('\n📈 実行サマリー:');
     console.log(`  実行テストスイート数: ${report.summary.totalSuites}`);
@@ -225,22 +237,22 @@ export class IntegrationTestSuite {
     console.log(`  成功: ${report.summary.totalPassed} / 失敗: ${report.summary.totalFailed}`);
     console.log(`  全体成功率: ${report.summary.overallSuccessRate.toFixed(1)}%`);
     console.log(`  平均カバレッジ: ${report.summary.avgCoverage.toFixed(1)}%`);
-    
+
     // 各スイートの結果
     console.log('\n📋 スイート別結果:');
     for (const result of report.results) {
-      const statusIcon = result.status === 'passed' ? '✅' : 
-                        result.status === 'failed' ? '❌' : '⚠️';
+      const statusIcon =
+        result.status === 'passed' ? '✅' : result.status === 'failed' ? '❌' : '⚠️';
       console.log(`  ${statusIcon} ${result.suiteName}:`);
       console.log(`     実行時間: ${Math.round(result.duration / 1000)}秒`);
       console.log(`     テスト結果: ${result.testsPassed}/${result.testsRun} 成功`);
       console.log(`     カバレッジ: ${result.coverage}%`);
-      
+
       if (result.errors.length > 0) {
         console.log(`     エラー: ${result.errors.length}件`);
       }
     }
-    
+
     // 問題と推奨事項
     if (report.issues.criticalErrors.length > 0) {
       console.log('\n🚨 重大なエラー:');
@@ -248,27 +260,34 @@ export class IntegrationTestSuite {
         console.log(`  - ${error}`);
       });
     }
-    
+
     if (report.issues.performanceIssues.length > 0) {
       console.log('\n⚡ 性能問題:');
       report.issues.performanceIssues.forEach(issue => {
         console.log(`  - ${issue}`);
       });
     }
-    
+
     if (report.issues.recommendations.length > 0) {
       console.log('\n💡 改善推奨事項:');
       report.issues.recommendations.forEach(rec => {
         console.log(`  - ${rec}`);
       });
     }
-    
+
     // 最終評価
-    const overallStatus = report.summary.overallSuccessRate >= 95 ? '優秀' :
-                         report.summary.overallSuccessRate >= 90 ? '良好' :
-                         report.summary.overallSuccessRate >= 80 ? '要改善' : '要修正';
-    
-    console.log(`\n🎯 総合評価: ${overallStatus} (成功率: ${report.summary.overallSuccessRate.toFixed(1)}%)`);
+    const overallStatus =
+      report.summary.overallSuccessRate >= 95
+        ? '優秀'
+        : report.summary.overallSuccessRate >= 90
+          ? '良好'
+          : report.summary.overallSuccessRate >= 80
+            ? '要改善'
+            : '要修正';
+
+    console.log(
+      `\n🎯 総合評価: ${overallStatus} (成功率: ${report.summary.overallSuccessRate.toFixed(1)}%)`
+    );
     console.log('='.repeat(80));
   }
 
@@ -277,17 +296,17 @@ export class IntegrationTestSuite {
    */
   async saveReportToFile(report: IntegrationTestReport, filePath?: string): Promise<void> {
     const outputPath = filePath || path.join(process.cwd(), 'integration-test-report.json');
-    
+
     const reportData = {
       ...report,
       metadata: {
         rimorVersion: '0.6.0',
         nodeVersion: process.version,
         platform: process.platform,
-        testEnvironment: process.env.NODE_ENV || 'test'
-      }
+        testEnvironment: process.env.NODE_ENV || 'test',
+      },
     };
-    
+
     fs.writeFileSync(outputPath, JSON.stringify(reportData, null, 2), 'utf-8');
     console.log(`📄 詳細レポートを保存しました: ${outputPath}`);
   }

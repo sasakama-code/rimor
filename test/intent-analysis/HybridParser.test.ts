@@ -1,7 +1,7 @@
 /**
  * HybridParser Tests
  * v0.9.0 - ハイブリッドパーサーのテストスイート
- * 
+ *
  * TDD: RED-GREEN-REFACTORサイクル
  */
 
@@ -18,9 +18,9 @@ describe('HybridParser', () => {
     parser = new HybridParser({
       enableWarnings: false,
       enableFallback: true,
-      enableSmartTruncation: true
+      enableSmartTruncation: true,
     });
-    
+
     // テスト用一時ディレクトリ作成
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hybrid-parser-test-'));
   });
@@ -129,9 +129,9 @@ describe('HybridParser', () => {
       const parser = new HybridParser({
         maxTreeSitterSize: 100, // テスト用に小さく設定
         enableSmartTruncation: true,
-        enableFallback: false
+        enableFallback: false,
       });
-      
+
       const content = `
 function first() {
   return 1;
@@ -149,7 +149,7 @@ function fourth() {
   return 4;
 }
 `.repeat(10); // 境界が複数ある大きめのコンテンツ
-      
+
       const testFile = path.join(tempDir, 'functions.js');
       await fs.writeFile(testFile, content);
 
@@ -168,9 +168,9 @@ function fourth() {
       const parser = new HybridParser({
         maxTreeSitterSize: 150, // テスト用に小さく設定
         enableSmartTruncation: true,
-        enableFallback: false
+        enableFallback: false,
       });
-      
+
       const content = `
 class First {
   method1() { return 1; }
@@ -184,7 +184,7 @@ class Third {
   method3() { return 3; }
 }
 `.repeat(5);
-      
+
       const testFile = path.join(tempDir, 'classes.ts');
       await fs.writeFile(testFile, content);
 
@@ -214,9 +214,9 @@ class Third {
       // Arrange
       const parser = new HybridParser({
         enableFallback: false,
-        maxTreeSitterSize: 10 // 非常に小さく設定
+        maxTreeSitterSize: 10, // 非常に小さく設定
       });
-      
+
       const content = 'const x = "long content that exceeds limit";';
       const testFile = path.join(tempDir, 'no-fallback.js');
       await fs.writeFile(testFile, content);
@@ -234,7 +234,7 @@ class Third {
       const files = [
         { name: 'small1.js', content: 'const a = 1;' },
         { name: 'small2.ts', content: 'const b: number = 2;' },
-        { name: 'large.js', content: 'const x = 0;\n'.repeat(3000) }
+        { name: 'large.js', content: 'const x = 0;\n'.repeat(3000) },
       ];
 
       for (const file of files) {
@@ -257,7 +257,7 @@ class Third {
       // Arrange
       const testFile = path.join(tempDir, 'test.js');
       await fs.writeFile(testFile, 'const test = 123;');
-      
+
       // Act
       await parser.parseFile(testFile);
       const stats = parser.getParseStats();

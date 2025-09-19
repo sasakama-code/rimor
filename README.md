@@ -6,7 +6,8 @@ Rimorは、プロダクションコードとテストコードの両方を解析
 
 ### AIコーディング時代の課題
 
-- **大量のコード生成**: Claude Code、GitHub Copilotなどが数秒で数百行のコードを生成
+- **大量のコード生成**: Claude Code、GitHub
+  Copilotなどが数秒で数百行のコードを生成
 - **人手レビューの限界**: 膨大なテストコードを人間が完全にレビューすることは非現実的
 - **品質保証の危機**: テストの質を保証できなければ、ソフトウェアの信頼性が崩壊する
 
@@ -133,7 +134,8 @@ result.recommendations.forEach(rec => {
 
 ### 専用コマンド
 
-Rimor v0.9.0では、従来の`analyze`コマンドに加えて、特定用途向けの専用コマンドも提供しています：
+Rimor
+v0.9.0では、従来の`analyze`コマンドに加えて、特定用途向けの専用コマンドも提供しています：
 
 ```bash
 # Implementation Truth専用分析（高精度）
@@ -150,6 +152,7 @@ npx rimor implementation-truth-analyze ./src --min-severity high --verbose
 ```
 
 **専用コマンドの利点:**
+
 - Implementation Truth機能に特化した高精度分析
 - より詳細な進捗表示とエラーハンドリング
 - AI向け出力の高度なカスタマイズ
@@ -172,6 +175,7 @@ npx rimor implementation-truth-analyze ./legacy-src --test-path ./test --detail-
 ```
 
 **推奨設定:**
+
 - プロダクション環境では`--min-severity=high`以上を推奨
 - AI支援開発では`--ai-output`フラグを活用
 - 大規模プロジェクトでは`--parallel`オプションを使用

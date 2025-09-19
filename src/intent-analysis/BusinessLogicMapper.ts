@@ -1,7 +1,7 @@
 /**
  * Business Logic Mapper
  * v0.9.0 Phase 2 - テストとビジネスロジックの関連付け実装
- * 
+ *
  * KISS原則: シンプルな実装から開始
  * YAGNI原則: 必要最小限の機能のみ実装
  * DRY原則: 重複を避ける
@@ -15,7 +15,7 @@ import {
   BusinessCriticality,
   ImpactScope,
   RiskAssessment,
-  DomainImportanceConfig
+  DomainImportanceConfig,
 } from './IBusinessLogicMapper';
 import { CallGraphNode, TypeInfo } from './ITypeScriptAnalyzer';
 import { DomainInference } from './IDomainInferenceEngine';
@@ -23,18 +23,18 @@ import { DomainInferenceEngine } from './DomainInferenceEngine';
 
 export class BusinessLogicMapper implements IBusinessLogicMapper {
   private domainEngine: DomainInferenceEngine;
-  
+
   // ドメイン重要度設定
   private importanceConfig: DomainImportanceConfig = {
     weightMap: {
       critical: 70,
       high: 50,
       medium: 30,
-      low: 15
+      low: 15,
     },
     criticalDomains: ['payment', 'authentication', 'user-management', 'security', 'billing'],
     domainBonus: 15,
-    disableDomainOverrides: false
+    disableDomainOverrides: false,
   };
 
   constructor() {
@@ -71,7 +71,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       domain: 'unknown',
       confidence: 0,
       concepts: [],
-      businessImportance: 'low' as const
+      businessImportance: 'low' as const,
     };
     const businessCriticality = await this.calculateBusinessImportance(allFunctions, primaryDomain);
 
@@ -80,7 +80,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       directImpact: businessLogicFiles.length,
       indirectImpact: 0, // YAGNI: 今は実装しない
       affectedDomains: Array.from(affectedDomains),
-      onCriticalPath: await this.checkCriticalPath(businessLogicFiles)
+      onCriticalPath: await this.checkCriticalPath(businessLogicFiles),
     };
 
     // リスク評価
@@ -92,7 +92,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       coverageDepth,
       businessCriticality,
       impactScope,
-      riskAssessment
+      riskAssessment,
     };
   }
 
@@ -121,7 +121,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       isTested: true, // テストから到達可能なので
       complexity: this.estimateComplexity(node),
       dependencyCount: node.calls.length,
-      containsBusinessRules: await this.checkBusinessRules(node.name)
+      containsBusinessRules: await this.checkBusinessRules(node.name),
     };
 
     // 既存のファイルに追加するか、新規作成
@@ -131,7 +131,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
         filePath: node.filePath,
         domain,
         functions: [],
-        importanceScore: 0
+        importanceScore: 0,
       };
       businessLogicFiles.push(file);
     }
@@ -159,7 +159,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     // ファイルパスからドメインを推論
     const pathParts = filePath.split('/');
     const fileName = pathParts[pathParts.length - 1].replace(/\.(ts|js)$/, '');
-    
+
     // ファイル名から型情報を探す
     const type = typeInfo.get(fileName);
     if (type) {
@@ -179,21 +179,21 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
         domain: 'payment',
         confidence: 0.6,
         concepts: ['決済'],
-        businessImportance: 'high'  // criticalではなくhighをデフォルトに
+        businessImportance: 'high', // criticalではなくhighをデフォルトに
       };
     } else if (filePath.includes('order') || filePath.includes('Order')) {
       return {
         domain: 'order-management',
         confidence: 0.6,
         concepts: ['注文'],
-        businessImportance: 'high'
+        businessImportance: 'high',
       };
     } else if (filePath.includes('user') || filePath.includes('User')) {
       return {
         domain: 'user-management',
         confidence: 0.6,
         concepts: ['ユーザー管理'],
-        businessImportance: 'high'
+        businessImportance: 'high',
       };
     }
 
@@ -201,21 +201,21 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       domain: 'unknown',
       confidence: 0.3,
       concepts: [],
-      businessImportance: 'low'
+      businessImportance: 'low',
     };
   }
 
   private calculateCoverageDepth(files: BusinessLogicFile[]): number {
     if (files.length === 0) return 0;
-    
+
     // 高重要度ファイルの割合とテスト済み関数の割合から計算
     const importantFiles = files.filter(f => f.importanceScore > 70);
     const importanceRatio = importantFiles.length / files.length;
-    
+
     const allFunctions = files.flatMap(f => f.functions);
     const testedFunctions = allFunctions.filter(f => f.isTested);
     const testRatio = testedFunctions.length / (allFunctions.length || 1);
-    
+
     // 重み付け平均（KISS）
     return importanceRatio * 0.4 + testRatio * 0.6;
   }
@@ -227,14 +227,17 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       file.functions.reduce((sum, f) => sum + f.complexity * 5, 0)
     );
     const businessRuleScore = file.functions.filter(f => f.containsBusinessRules).length * 20;
-    
+
     // 設定されたクリティカルドメインに対してボーナスを付与
     const criticalDomains = this.importanceConfig.criticalDomains || [];
-    const domainBonus = criticalDomains.includes(file.domain.domain) 
-      ? (this.importanceConfig.domainBonus || 15) 
+    const domainBonus = criticalDomains.includes(file.domain.domain)
+      ? this.importanceConfig.domainBonus || 15
       : 0;
-    
-    return Math.min(100, domainWeight + complexityScore * 0.3 + businessRuleScore * 0.5 + domainBonus);
+
+    return Math.min(
+      100,
+      domainWeight + complexityScore * 0.3 + businessRuleScore * 0.5 + domainBonus
+    );
   }
 
   private getDomainWeight(importance: string): number {
@@ -243,13 +246,13 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       const key = importance as keyof typeof this.importanceConfig.weightMap;
       return this.importanceConfig.weightMap[key] ?? 15;
     }
-    
+
     // デフォルト値
     const defaultWeights: Record<string, number> = {
       critical: 70,
       high: 50,
       medium: 30,
-      low: 15
+      low: 15,
     };
     return defaultWeights[importance] || 15;
   }
@@ -270,9 +273,9 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       /tax/i,
       /discount/i,
       /payment/i,
-      /order/i
+      /order/i,
     ];
-    
+
     return businessRulePatterns.some(pattern => pattern.test(functionName));
   }
 
@@ -285,33 +288,31 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
   private assessRisk(files: BusinessLogicFile[], coverageDepth: number): RiskAssessment {
     // カバレッジリスク
     const coverageRisk = coverageDepth < 0.5 ? 'high' : coverageDepth < 0.7 ? 'medium' : 'low';
-    
+
     // 複雑度リスク
     const avgComplexity = this.calculateAverageComplexity(files);
     const complexityRisk = avgComplexity > 10 ? 'high' : avgComplexity > 5 ? 'medium' : 'low';
-    
+
     // 変更リスク（YAGNI: 今は簡単な実装）
     const changeRisk = 'medium';
-    
+
     // 総合リスクスコア
     const riskScores = { high: 30, medium: 20, low: 10 };
-    const overallRiskScore = 
-      riskScores[coverageRisk] + 
-      riskScores[complexityRisk] + 
-      riskScores[changeRisk];
-    
+    const overallRiskScore =
+      riskScores[coverageRisk] + riskScores[complexityRisk] + riskScores[changeRisk];
+
     return {
       coverageRisk,
       complexityRisk,
       changeRisk,
-      overallRiskScore
+      overallRiskScore,
     };
   }
 
   private calculateAverageComplexity(files: BusinessLogicFile[]): number {
     const allFunctions = files.flatMap(f => f.functions);
     if (allFunctions.length === 0) return 0;
-    
+
     const totalComplexity = allFunctions.reduce((sum, f) => sum + f.complexity, 0);
     return totalComplexity / allFunctions.length;
   }
@@ -324,9 +325,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     let score = 0;
 
     // 全ての関数が単純（複雑度低、依存なし）かチェック
-    const allSimple = functions.every(f => 
-      f.complexity <= 7 && f.dependencyCount === 0
-    );
+    const allSimple = functions.every(f => f.complexity <= 7 && f.dependencyCount === 0);
 
     // 単純な関数のみの場合は、ドメインに関わらずlowとする
     if (allSimple && functions.length > 0) {
@@ -334,7 +333,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       return {
         level: 'low',
         score: 30,
-        reasons
+        reasons,
       };
     }
 
@@ -381,7 +380,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
     return {
       level,
       reasons,
-      score: Math.min(100, score)
+      score: Math.min(100, score),
     };
   }
 
@@ -399,7 +398,8 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       if (visited.has(nodeId)) return;
       visited.add(nodeId);
 
-      if (depth > 0) {  // 0より大きい場合は直接影響
+      if (depth > 0) {
+        // 0より大きい場合は直接影響
         directImpact++;
       }
 
@@ -425,7 +425,7 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
       directImpact,
       indirectImpact: 0, // YAGNI
       affectedDomains: Array.from(affectedDomains),
-      onCriticalPath: false // 別途判定
+      onCriticalPath: false, // 別途判定
     };
   }
 
@@ -435,39 +435,38 @@ export class BusinessLogicMapper implements IBusinessLogicMapper {
   ): Promise<boolean> {
     // ビジネスルールのパターンを検出
     const businessPatterns = [
-      /if\s*\([^)]*\>\s*\d+/,     // 数値比較
+      /if\s*\([^)]*\>\s*\d+/, // 数値比較
       /if\s*\([^)]*\<\s*\d+/,
-      /\*\s*0\.\d+/,              // パーセンテージ計算
-      /discount/i,                 // ビジネス用語
+      /\*\s*0\.\d+/, // パーセンテージ計算
+      /discount/i, // ビジネス用語
       /tax/i,
       /fee/i,
       /rate/i,
-      /customer\.type/i,          // ビジネスエンティティ
-      /PREMIUM|STANDARD|BASIC/    // ビジネス定数
+      /customer\.type/i, // ビジネスエンティティ
+      /PREMIUM|STANDARD|BASIC/, // ビジネス定数
     ];
 
     // パターンマッチング
     const hasBusinessPattern = businessPatterns.some(pattern => pattern.test(functionBody));
-    
+
     // 単純な文字列操作は除外
-    const isSimpleUtility = /^\s*return\s+\w+\.(trim|toLowerCase|toUpperCase|split|join)/.test(functionBody);
-    
+    const isSimpleUtility = /^\s*return\s+\w+\.(trim|toLowerCase|toUpperCase|split|join)/.test(
+      functionBody
+    );
+
     return hasBusinessPattern && !isSimpleUtility;
   }
 
-  async isOnCriticalPath(
-    node: CallGraphNode,
-    domains: string[]
-  ): Promise<boolean> {
+  async isOnCriticalPath(node: CallGraphNode, domains: string[]): Promise<boolean> {
     // ファイルパスからドメインを推定
     const filePath = node.filePath.toLowerCase();
-    
+
     // クリティカルなパターン
     const criticalPatterns = domains.map(d => new RegExp(d.replace('-', ''), 'i'));
-    
+
     return criticalPatterns.some(pattern => pattern.test(filePath));
   }
-  
+
   /**
    * ドメイン重要度設定を適用
    */

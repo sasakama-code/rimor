@@ -8,7 +8,7 @@ import {
   SecurityIssue,
   TaintLevel,
   MethodAnalysisResult,
-  SecurityTestMetrics
+  SecurityTestMetrics,
 } from '../types';
 import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { RealWorldProject, ValidationResult } from './RealWorldProjectValidator';
@@ -84,7 +84,7 @@ export interface AccuracyMetrics {
   totalTestCases: number;
   /** 解析済みテストケース数 */
   analyzedTestCases: number;
-  
+
   /** 自動推論関連 */
   inference: {
     /** 自動推論率（目標85%以上） */
@@ -94,7 +94,7 @@ export interface AccuracyMetrics {
     /** 推論失敗数 */
     inferenceFailed: number;
   };
-  
+
   /** 検出精度関連 */
   detection: {
     /** 真陽性（正しく検出） */
@@ -116,7 +116,7 @@ export interface AccuracyMetrics {
     /** 偽陰性率 */
     falseNegativeRate: number;
   };
-  
+
   /** 型システム関連 */
   typeSystem: {
     /** 型推論成功率 */
@@ -126,7 +126,7 @@ export interface AccuracyMetrics {
     /** セキュリティ不変条件検証率 */
     invariantVerificationRate: number;
   };
-  
+
   /** パフォーマンス関連 */
   performance: {
     /** 平均解析時間（ms/file）目標5ms以下 */
@@ -244,7 +244,7 @@ export class AccuracyEvaluationSystem {
     this.securityEngine = new TypeBasedSecurityEngine({
       strictness: 'moderate',
       enableCache: true,
-      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8))
+      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8)),
     });
   }
 
@@ -284,7 +284,7 @@ export class AccuracyEvaluationSystem {
     const currentTrend: AccuracyTrend = {
       timestamp: new Date(),
       metrics: overallMetrics,
-      changes: ['accuracy-evaluation-completed']
+      changes: ['accuracy-evaluation-completed'],
     };
     this.accuracyHistory.push(currentTrend);
 
@@ -295,7 +295,7 @@ export class AccuracyEvaluationSystem {
       perFrameworkResults,
       issueTypeAnalysis,
       accuracyTrends: [...this.accuracyHistory], // 最新の履歴を含む
-      recommendedImprovements
+      recommendedImprovements,
     };
 
     await this.saveAccuracyResults(result);
@@ -309,30 +309,38 @@ export class AccuracyEvaluationSystem {
   /**
    * リアルタイム精度監視
    */
-  async monitorAccuracyInRealTime(
-    projects: RealWorldProject[]
-  ): Promise<void> {
+  async monitorAccuracyInRealTime(projects: RealWorldProject[]): Promise<void> {
     console.log('📊 リアルタイム精度監視開始');
     console.log(`監視対象: ${projects.length}プロジェクト`);
 
     for (const project of projects) {
       console.log(`\n🔍 ${project.name} 精度監視中...`);
-      
+
       // テストケースの収集
       const testCases = await this.collectTestCases(project);
-      
+
       // 精度評価の実行
       const accuracyResult = await this.evaluateAccuracy(testCases);
-      
+
       // 目標達成度の確認
       const achievementStatus = this.checkTargetAchievement(accuracyResult.overallMetrics);
-      
-      console.log(`   自動推論率: ${(accuracyResult.overallMetrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`);
-      console.log(`   推論精度: ${(accuracyResult.overallMetrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`);
-      console.log(`   誤検知率: ${(accuracyResult.overallMetrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`);
-      console.log(`   偽陰性率: ${(accuracyResult.overallMetrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`);
-      console.log(`   平均解析時間: ${accuracyResult.overallMetrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`);
-      
+
+      console.log(
+        `   自動推論率: ${(accuracyResult.overallMetrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`
+      );
+      console.log(
+        `   推論精度: ${(accuracyResult.overallMetrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`
+      );
+      console.log(
+        `   誤検知率: ${(accuracyResult.overallMetrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`
+      );
+      console.log(
+        `   偽陰性率: ${(accuracyResult.overallMetrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`
+      );
+      console.log(
+        `   平均解析時間: ${accuracyResult.overallMetrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`
+      );
+
       // 目標未達成の場合はアラート
       if (!achievementStatus.allTargetsAchieved) {
         console.log(`   ⚠️  目標未達成項目: ${achievementStatus.failedTargets.join(', ')}`);
@@ -358,7 +366,7 @@ export class AccuracyEvaluationSystem {
         requiredSecurityTests: this.generateRequiredTests(testCase),
         manualVerificationResult: this.classifyTestSafety(testCase),
         verifiedBy: 'accuracy-evaluation-system',
-        verifiedAt: new Date()
+        verifiedAt: new Date(),
       };
 
       this.groundTruthDatabase.set(testCase.file, groundTruth);
@@ -372,7 +380,7 @@ export class AccuracyEvaluationSystem {
    */
   private async runSecurityAnalysis(testCases: TestCase[]): Promise<MethodAnalysisResult[]> {
     console.log('🔍 セキュリティ解析実行中...');
-    
+
     const startTime = Date.now();
     const result = await this.securityEngine.analyzeAtCompileTime(testCases);
     const endTime = Date.now();
@@ -380,13 +388,13 @@ export class AccuracyEvaluationSystem {
     // 結果をMethodAnalysisResult[]形式に変換
     const methodResults: MethodAnalysisResult[] = testCases.map((testCase, index) => {
       const issues = result.issues.filter(issue => issue.location.file === testCase.file);
-      
+
       return {
         method: {
           name: testCase.name,
           params: [],
           returnType: 'void',
-          body: testCase.content
+          body: testCase.content,
         },
         methodName: testCase.name,
         flowGraph: { nodes: [], edges: [] },
@@ -395,7 +403,7 @@ export class AccuracyEvaluationSystem {
         issues,
         metrics: this.calculateSecurityMetrics(issues),
         suggestions: [],
-        analysisTime: (endTime - startTime) / testCases.length
+        analysisTime: (endTime - startTime) / testCases.length,
       };
     });
 
@@ -431,25 +439,19 @@ export class AccuracyEvaluationSystem {
 
       // 真陽性: 正しく検出された問題
       const correctDetections = detectedIssues.filter(detected =>
-        actualIssues.some(actual => 
-          this.isMatchingIssue(detected, actual)
-        )
+        actualIssues.some(actual => this.isMatchingIssue(detected, actual))
       );
       truePositives += correctDetections.length;
 
       // 偽陽性: 誤検知
-      const falseAlarms = detectedIssues.filter(detected =>
-        !actualIssues.some(actual => 
-          this.isMatchingIssue(detected, actual)
-        )
+      const falseAlarms = detectedIssues.filter(
+        detected => !actualIssues.some(actual => this.isMatchingIssue(detected, actual))
       );
       falsePositives += falseAlarms.length;
 
       // 偽陰性: 見逃し
-      const missedIssues = actualIssues.filter(actual =>
-        !detectedIssues.some(detected => 
-          this.isMatchingIssue(detected, actual)
-        )
+      const missedIssues = actualIssues.filter(
+        actual => !detectedIssues.some(detected => this.isMatchingIssue(detected, actual))
       );
       falseNegatives += missedIssues.length;
 
@@ -465,44 +467,56 @@ export class AccuracyEvaluationSystem {
     // 真陰性の計算を改善 - より現実的な推定値を使用
     // 各テストケースで平均的に3-4の検証ポイントがあると仮定
     const estimatedVerificationPoints = testCases.length * 3.5;
-    trueNegatives = Math.max(0, Math.floor(estimatedVerificationPoints - truePositives - falsePositives - falseNegatives));
+    trueNegatives = Math.max(
+      0,
+      Math.floor(estimatedVerificationPoints - truePositives - falsePositives - falseNegatives)
+    );
 
     // Precision/Recallの計算 - 未定義の場合はNaNを返す（型安全性のため）
-    const precision = truePositives + falsePositives > 0 ? 
-      truePositives / (truePositives + falsePositives) : 
-      (truePositives === 0 && falsePositives === 0 ? NaN : 0);
-    
-    const recall = truePositives + falseNegatives > 0 ? 
-      truePositives / (truePositives + falseNegatives) : 
-      (truePositives === 0 && falseNegatives === 0 ? NaN : 0);
-    
+    const precision =
+      truePositives + falsePositives > 0
+        ? truePositives / (truePositives + falsePositives)
+        : truePositives === 0 && falsePositives === 0
+          ? NaN
+          : 0;
+
+    const recall =
+      truePositives + falseNegatives > 0
+        ? truePositives / (truePositives + falseNegatives)
+        : truePositives === 0 && falseNegatives === 0
+          ? NaN
+          : 0;
+
     // F1スコアの計算 - precision/recallがNaNの場合は0
-    const f1Score = (!isNaN(precision) && !isNaN(recall) && precision + recall > 0) ? 
-      2 * (precision * recall) / (precision + recall) : 0;
+    const f1Score =
+      !isNaN(precision) && !isNaN(recall) && precision + recall > 0
+        ? (2 * (precision * recall)) / (precision + recall)
+        : 0;
 
     const totalDetected = truePositives + falsePositives;
     const totalActual = truePositives + falseNegatives;
-    
+
     // False Positive Rateの正確な計算
-    const falsePositiveRate = falsePositives + trueNegatives > 0 ? 
-      falsePositives / (falsePositives + trueNegatives) : 0;
-    
+    const falsePositiveRate =
+      falsePositives + trueNegatives > 0 ? falsePositives / (falsePositives + trueNegatives) : 0;
+
     // False Negative Rateの計算
     const falseNegativeRate = totalActual > 0 ? falseNegatives / totalActual : 0;
 
-    const automaticInferenceRate = totalInferenceAttempts > 0 ? inferenceSuccesses / totalInferenceAttempts : 0;
+    const automaticInferenceRate =
+      totalInferenceAttempts > 0 ? inferenceSuccesses / totalInferenceAttempts : 0;
     const averageAnalysisTime = testCases.length > 0 ? totalAnalysisTime / testCases.length : 0;
 
     return {
       totalTestCases: testCases.length,
       analyzedTestCases: analysisResults.length,
-      
+
       inference: {
         automaticInferenceRate,
         inferenceAccuracy: automaticInferenceRate, // 簡略化
-        inferenceFailed: totalInferenceAttempts - inferenceSuccesses
+        inferenceFailed: totalInferenceAttempts - inferenceSuccesses,
       },
-      
+
       detection: {
         truePositives,
         falsePositives,
@@ -512,20 +526,20 @@ export class AccuracyEvaluationSystem {
         recall: isNaN(recall) ? null : recall,
         f1Score: isNaN(f1Score) ? null : f1Score,
         falsePositiveRate,
-        falseNegativeRate
+        falseNegativeRate,
       },
-      
+
       typeSystem: {
         typeInferenceSuccessRate: automaticInferenceRate,
         taintTrackingAccuracy: this.calculateTaintTrackingAccuracy(testCases, analysisResults),
-        invariantVerificationRate: recall
+        invariantVerificationRate: recall,
       },
-      
+
       performance: {
         averageAnalysisTime,
         targetAchievementRate: averageAnalysisTime <= 5.0 ? 1.0 : 5.0 / averageAnalysisTime,
-        throughput: averageAnalysisTime > 0 ? 1000 / averageAnalysisTime : 0
-      }
+        throughput: averageAnalysisTime > 0 ? 1000 / averageAnalysisTime : 0,
+      },
     };
   }
 
@@ -554,23 +568,29 @@ export class AccuracyEvaluationSystem {
       );
 
       // 誤検知
-      const falseAlarms = detectedIssues.filter(detected =>
-        !actualIssues.some(actual => this.isMatchingIssue(detected, actual))
+      const falseAlarms = detectedIssues.filter(
+        detected => !actualIssues.some(actual => this.isMatchingIssue(detected, actual))
       );
 
       // 見逃し
-      const missedIssues = actualIssues.filter(actual =>
-        !detectedIssues.some(detected => this.isMatchingIssue(detected, actual))
+      const missedIssues = actualIssues.filter(
+        actual => !detectedIssues.some(detected => this.isMatchingIssue(detected, actual))
       );
 
       // Precision/Recallの計算 - 分母が0の場合の適切な処理
-      const precision = detectedIssues.length > 0 ? 
-        correctDetections.length / detectedIssues.length : 
-        (correctDetections.length === 0 ? NaN : 0);
-      
-      const recall = actualIssues.length > 0 ? 
-        correctDetections.length / actualIssues.length : 
-        (correctDetections.length === 0 ? NaN : 0);
+      const precision =
+        detectedIssues.length > 0
+          ? correctDetections.length / detectedIssues.length
+          : correctDetections.length === 0
+            ? NaN
+            : 0;
+
+      const recall =
+        actualIssues.length > 0
+          ? correctDetections.length / actualIssues.length
+          : correctDetections.length === 0
+            ? NaN
+            : 0;
 
       results.push({
         testCase,
@@ -580,13 +600,13 @@ export class AccuracyEvaluationSystem {
           correct: missedIssues.length === 0 && falseAlarms.length === 0,
           precision,
           recall,
-          inferenceSuccessful: this.isInferenceSuccessful(analysisResult, groundTruth)
+          inferenceSuccessful: this.isInferenceSuccessful(analysisResult, groundTruth),
         },
         analysis: {
           missedIssues,
           falseAlarms,
-          correctDetections
-        }
+          correctDetections,
+        },
       });
     }
 
@@ -601,10 +621,13 @@ export class AccuracyEvaluationSystem {
     analysisResults: MethodAnalysisResult[]
   ): Map<string, AccuracyMetrics> {
     const frameworkResults = new Map<string, AccuracyMetrics>();
-    
+
     // フレームワーク別にグループ化
-    const frameworkGroups = new Map<string, { cases: TestCase[], results: MethodAnalysisResult[] }>();
-    
+    const frameworkGroups = new Map<
+      string,
+      { cases: TestCase[]; results: MethodAnalysisResult[] }
+    >();
+
     testCases.forEach((testCase, index) => {
       const framework = testCase.metadata?.framework || 'unknown';
       if (!frameworkGroups.has(framework)) {
@@ -626,7 +649,9 @@ export class AccuracyEvaluationSystem {
   /**
    * 問題種別分析
    */
-  private analyzeIssueTypes(analysisResults: MethodAnalysisResult[]): Map<string, IssueTypeAccuracy> {
+  private analyzeIssueTypes(
+    analysisResults: MethodAnalysisResult[]
+  ): Map<string, IssueTypeAccuracy> {
     const issueTypeMap = new Map<string, IssueTypeAccuracy>();
 
     analysisResults.forEach(result => {
@@ -639,10 +664,10 @@ export class AccuracyEvaluationSystem {
             precision: 0,
             recall: 0,
             commonFalsePositives: [],
-            commonMisses: []
+            commonMisses: [],
           });
         }
-        
+
         const accuracy = issueTypeMap.get(issue.type)!;
         accuracy.detected++;
       });
@@ -673,26 +698,26 @@ export class AccuracyEvaluationSystem {
         recommendations: [
           '型アノテーションの充実化',
           'メソッドシグネチャベースの推論ロジック強化',
-          '機械学習による推論パターンの学習'
+          '機械学習による推論パターンの学習',
         ],
         estimatedImpact: 0.15,
-        implementationComplexity: 'medium'
+        implementationComplexity: 'medium',
       });
     }
 
     // 推論精度の改善
-    if (metrics.inference.inferenceAccuracy < 0.90) {
+    if (metrics.inference.inferenceAccuracy < 0.9) {
       improvements.push({
         area: 'inference',
         currentValue: metrics.inference.inferenceAccuracy,
-        targetValue: 0.90,
+        targetValue: 0.9,
         recommendations: [
           '格子理論ベースの汚染レベル精緻化',
           'フロー感度解析の精度向上',
-          'コンテキスト感度の強化'
+          'コンテキスト感度の強化',
         ],
         estimatedImpact: 0.12,
-        implementationComplexity: 'high'
+        implementationComplexity: 'high',
       });
     }
 
@@ -705,10 +730,10 @@ export class AccuracyEvaluationSystem {
         recommendations: [
           'サニタイザー検出ロジックの改善',
           '保守的解析の調整',
-          'ホワイトリスト機能の拡充'
+          'ホワイトリスト機能の拡充',
         ],
-        estimatedImpact: 0.10,
-        implementationComplexity: 'low'
+        estimatedImpact: 0.1,
+        implementationComplexity: 'low',
       });
     }
 
@@ -721,10 +746,10 @@ export class AccuracyEvaluationSystem {
         recommendations: [
           'モジュラー解析の最適化',
           'インクリメンタル解析の強化',
-          '並列処理の効率化'
+          '並列処理の効率化',
         ],
         estimatedImpact: metrics.performance.averageAnalysisTime - 5.0,
-        implementationComplexity: 'medium'
+        implementationComplexity: 'medium',
       });
     }
 
@@ -743,7 +768,7 @@ export class AccuracyEvaluationSystem {
     if (metrics.inference.automaticInferenceRate < 0.85) {
       failedTargets.push('自動推論率(85%以上)');
     }
-    if (metrics.inference.inferenceAccuracy < 0.90) {
+    if (metrics.inference.inferenceAccuracy < 0.9) {
       failedTargets.push('推論精度(90%以上)');
     }
     if (metrics.detection.falsePositiveRate > 0.15) {
@@ -758,7 +783,7 @@ export class AccuracyEvaluationSystem {
 
     return {
       allTargetsAchieved: failedTargets.length === 0,
-      failedTargets
+      failedTargets,
     };
   }
 
@@ -771,19 +796,19 @@ export class AccuracyEvaluationSystem {
       console.log('📝 テスト環境のため、精度評価結果の保存をスキップしました');
       return;
     }
-    
+
     // .rimor/accuracy-evaluations/ ディレクトリに保存
     const outputDir = path.join(process.cwd(), '.rimor', 'accuracy-evaluations');
-    
+
     // ディレクトリが存在しない場合は作成
     await fs.mkdir(outputDir, { recursive: true });
-    
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = path.join(outputDir, `accuracy-evaluation-${timestamp}.json`);
-    
+
     // 個人情報をマスキングした結果を作成
     const sanitizedResult = this.sanitizeAccuracyResults(result);
-    
+
     await fs.writeFile(reportPath, JSON.stringify(sanitizedResult, null, 2));
     console.log(`📄 精度評価結果を保存しました: ${reportPath}`);
   }
@@ -797,23 +822,39 @@ export class AccuracyEvaluationSystem {
     console.log('='.repeat(60));
     console.log(`解析対象: ${metrics.totalTestCases}件のテストケース`);
     console.log('');
-    
+
     console.log('📊 自動推論性能:');
-    console.log(`   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`);
-    console.log(`   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`);
+    console.log(
+      `   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`
+    );
+    console.log(
+      `   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`
+    );
     console.log(`   推論失敗: ${metrics.inference.inferenceFailed}件`);
     console.log('');
-    
+
     console.log('🔍 検出精度:');
-    console.log(`   精度(Precision): ${metrics.detection.precision !== null ? (metrics.detection.precision * 100).toFixed(1) + '%' : 'N/A'}`);
-    console.log(`   再現率(Recall): ${metrics.detection.recall !== null ? (metrics.detection.recall * 100).toFixed(1) + '%' : 'N/A'}`);
-    console.log(`   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`);
-    console.log(`   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`);
-    console.log(`   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`);
+    console.log(
+      `   精度(Precision): ${metrics.detection.precision !== null ? (metrics.detection.precision * 100).toFixed(1) + '%' : 'N/A'}`
+    );
+    console.log(
+      `   再現率(Recall): ${metrics.detection.recall !== null ? (metrics.detection.recall * 100).toFixed(1) + '%' : 'N/A'}`
+    );
+    console.log(
+      `   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`
+    );
+    console.log(
+      `   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`
+    );
+    console.log(
+      `   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`
+    );
     console.log('');
-    
+
     console.log('⚡ パフォーマンス:');
-    console.log(`   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`);
+    console.log(
+      `   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`
+    );
     console.log(`   目標達成率: ${(metrics.performance.targetAchievementRate * 100).toFixed(1)}%`);
     console.log(`   スループット: ${metrics.performance.throughput.toFixed(1)} files/sec`);
     console.log('');
@@ -828,7 +869,7 @@ export class AccuracyEvaluationSystem {
         console.log(`   - ${target}`);
       });
     }
-    
+
     console.log('');
     console.log('✅ 精度評価完了');
   }
@@ -842,17 +883,17 @@ export class AccuracyEvaluationSystem {
   private generateSampleGroundTruthIssues(testCase: TestCase): GroundTruthIssue[] {
     // サンプル正解データ生成（実際は手動検証データ）
     const issues: GroundTruthIssue[] = [];
-    
+
     if (testCase.content.includes('expect(') && testCase.content.includes('sanitize')) {
       issues.push({
         type: 'missing-sanitizer',
         severity: 'medium',
         location: { file: testCase.file, line: 10, column: 5 },
         description: 'サニタイザーのテストが不十分',
-        confidence: 0.8
+        confidence: 0.8,
       });
     }
-    
+
     return issues;
   }
 
@@ -888,28 +929,34 @@ export class AccuracyEvaluationSystem {
         authentication: Math.min(100, issues.filter(i => i.type.includes('auth')).length * 20),
         inputValidation: Math.min(100, issues.filter(i => i.type.includes('input')).length * 20),
         apiSecurity: Math.min(100, issues.filter(i => i.type.includes('api')).length * 20),
-        overall: Math.min(100, issues.length * 10)
+        overall: Math.min(100, issues.length * 10),
       },
       taintFlowDetection: issues.some(i => i.type === 'unsafe-taint-flow') ? 0.7 : 1.0,
       sanitizerCoverage: issues.some(i => i.type === 'missing-sanitizer') ? 0.6 : 1.0,
-      invariantCompliance: issues.some(i => i.severity === 'error') ? 0.5 : 1.0
+      invariantCompliance: issues.some(i => i.severity === 'error') ? 0.5 : 1.0,
     };
   }
 
-  private generateSuggestions(issues: SecurityIssue[]): Array<{id: string; issue: SecurityIssue; suggestion: string}> {
+  private generateSuggestions(
+    issues: SecurityIssue[]
+  ): Array<{ id: string; issue: SecurityIssue; suggestion: string }> {
     return issues.map(issue => ({
       id: `fix-${issue.id}`,
       issue: issue,
-      suggestion: `${issue.type}の問題を修正してください: ${issue.message}`
+      suggestion: `${issue.type}の問題を修正してください: ${issue.message}`,
     }));
   }
 
   private isMatchingIssue(detected: SecurityIssue, actual: GroundTruthIssue): boolean {
-    return detected.type === actual.type &&
-           Math.abs(detected.location.line - actual.location.line) <= 2;
+    return (
+      detected.type === actual.type && Math.abs(detected.location.line - actual.location.line) <= 2
+    );
   }
 
-  private isInferenceSuccessful(result: MethodAnalysisResult, groundTruth: GroundTruthData): boolean {
+  private isInferenceSuccessful(
+    result: MethodAnalysisResult,
+    groundTruth: GroundTruthData
+  ): boolean {
     // 推論成功の判定（簡略実装）
     return result.issues.length > 0 || groundTruth.actualSecurityIssues.length === 0;
   }
@@ -934,7 +981,7 @@ export class AccuracyEvaluationSystem {
       // 汚染追跡が必要なケースの判定
       if (this.requiresTaintTracking(testCase, groundTruth)) {
         totalTaintTrackingAttempts++;
-        
+
         // 汚染追跡の正確性評価
         if (this.evaluateTaintTrackingCorrectness(analysisResult, groundTruth)) {
           correctTaintTracking++;
@@ -950,30 +997,34 @@ export class AccuracyEvaluationSystem {
    */
   private requiresTaintTracking(testCase: TestCase, groundTruth: GroundTruthData): boolean {
     // テストケースに汚染データが含まれているか確認
-    return testCase.content.includes('input') || 
-           testCase.content.includes('user') ||
-           testCase.content.includes('request') ||
-           groundTruth.actualTaintLevels.size > 0;
+    return (
+      testCase.content.includes('input') ||
+      testCase.content.includes('user') ||
+      testCase.content.includes('request') ||
+      groundTruth.actualTaintLevels.size > 0
+    );
   }
 
   /**
    * 汚染追跡の正確性評価
    */
   private evaluateTaintTrackingCorrectness(
-    analysisResult: MethodAnalysisResult, 
+    analysisResult: MethodAnalysisResult,
     groundTruth: GroundTruthData
   ): boolean {
     // 汚染フロー関連の問題が正しく検出されているかを評価
-    const taintRelatedIssues = analysisResult.issues.filter(issue => 
-      issue.type.includes('taint') || 
-      issue.type.includes('flow') ||
-      issue.type.includes('sanitizer')
+    const taintRelatedIssues = analysisResult.issues.filter(
+      issue =>
+        issue.type.includes('taint') ||
+        issue.type.includes('flow') ||
+        issue.type.includes('sanitizer')
     );
 
-    const expectedTaintIssues = groundTruth.actualSecurityIssues.filter(issue =>
-      issue.type.includes('taint') ||
-      issue.type.includes('flow') ||
-      issue.type.includes('sanitizer')
+    const expectedTaintIssues = groundTruth.actualSecurityIssues.filter(
+      issue =>
+        issue.type.includes('taint') ||
+        issue.type.includes('flow') ||
+        issue.type.includes('sanitizer')
     );
 
     // 簡略化された正確性判定：検出数が期待値の80%以上であれば正確とみなす
@@ -993,7 +1044,7 @@ export class AccuracyEvaluationSystem {
     if (typeof obj !== 'object') return obj;
     if (obj instanceof Date) return new Date(obj.getTime()) as T;
     if (Array.isArray(obj)) return obj.map(item => this.deepClone(item)) as T;
-    
+
     const cloned: Record<string, unknown> = {};
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
@@ -1009,7 +1060,7 @@ export class AccuracyEvaluationSystem {
   private sanitizeAccuracyResults(result: DetailedAccuracyResult): DetailedAccuracyResult {
     // nullを保持するためのカスタムクローン（JSON.parse(JSON.stringify)はnullを0に変換する場合がある）
     const sanitizedResult = this.deepClone(result);
-    
+
     // テストケース別結果のパスをマスキング
     if (sanitizedResult.perTestCaseResults) {
       sanitizedResult.perTestCaseResults.forEach((testCaseResult: TestCaseAccuracyResult) => {
@@ -1018,9 +1069,11 @@ export class AccuracyEvaluationSystem {
           testCaseResult.testCase.file = this.maskFilePath(testCaseResult.testCase.file);
         }
         if (testCaseResult.groundTruth?.testFileId) {
-          testCaseResult.groundTruth.testFileId = this.maskFilePath(testCaseResult.groundTruth.testFileId);
+          testCaseResult.groundTruth.testFileId = this.maskFilePath(
+            testCaseResult.groundTruth.testFileId
+          );
         }
-        
+
         // 検出されたissuesのlocation.fileマスキング
         if (testCaseResult.detectedIssues) {
           testCaseResult.detectedIssues.forEach((issue: SecurityIssue) => {
@@ -1029,7 +1082,7 @@ export class AccuracyEvaluationSystem {
             }
           });
         }
-        
+
         // 正解データの問題のlocation.fileマスキング
         if (testCaseResult.groundTruth?.actualSecurityIssues) {
           testCaseResult.groundTruth.actualSecurityIssues.forEach((issue: GroundTruthIssue) => {
@@ -1038,10 +1091,14 @@ export class AccuracyEvaluationSystem {
             }
           });
         }
-        
+
         // 分析結果のissuesマスキング
         if (testCaseResult.analysis) {
-          const analysisKeys: (keyof typeof testCaseResult.analysis)[] = ['missedIssues', 'falseAlarms', 'correctDetections'];
+          const analysisKeys: (keyof typeof testCaseResult.analysis)[] = [
+            'missedIssues',
+            'falseAlarms',
+            'correctDetections',
+          ];
           analysisKeys.forEach(key => {
             const items = testCaseResult.analysis[key];
             if (items && Array.isArray(items)) {
@@ -1055,7 +1112,7 @@ export class AccuracyEvaluationSystem {
         }
       });
     }
-    
+
     return sanitizedResult;
   }
 
@@ -1065,25 +1122,25 @@ export class AccuracyEvaluationSystem {
    */
   private maskFilePath(filePath: string): string {
     if (!filePath) return filePath;
-    
+
     // Andy Hunt & Dave Thomas DRY原則適用: 設定値による柔軟なマスキング
     const MASK_PLACEHOLDER = '[MASKED_PATH]';
-    
+
     // 絶対パスを相対パスに変換（最も安全な方法）
     const homeDir = os.homedir();
     if (filePath.startsWith(homeDir)) {
       return filePath.replace(homeDir, '~');
     }
-    
+
     // Jean-Louis Boulanger Defensive Programming: 各セグメントを安全にチェック
     const pathSegments = filePath.split(path.sep);
     if (pathSegments.length < 3) {
       return filePath; // 短いパスはそのまま（相対パスなど）
     }
-    
+
     // Kelly Johnson KISS原則適用: シンプルな文字列置換による安全なマスキング
     let maskedPath = filePath;
-    
+
     // 各オペレーティングシステム対応のセキュアマスキング
     if (process.platform === 'win32') {
       // Windows: システムディレクトリのユーザー名部分をマスキング
@@ -1098,13 +1155,13 @@ export class AccuracyEvaluationSystem {
         maskedPath = pathSegments.join(path.sep);
       }
     }
-    
+
     // Uncle Bob SOLID原則適用: 追加の絶対パス保護
     if (path.isAbsolute(maskedPath) && maskedPath !== filePath) {
       // パスが変更された場合は適切にマスキングされている
       return maskedPath;
     }
-    
+
     // それ以外の絶対パスは完全マスキング
     return path.isAbsolute(filePath) ? MASK_PLACEHOLDER : filePath;
   }

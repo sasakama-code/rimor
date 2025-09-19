@@ -6,11 +6,6 @@
     "outDir": "../../../dist/types/testing",
     "tsBuildInfoFile": "../../../dist/types/testing/.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }

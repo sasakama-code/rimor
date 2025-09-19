@@ -4,8 +4,16 @@
  * Phase 5: 実コンポーネント統合
  */
 
-import { GapDetector, IGapDetectionStrategy, GapAnalysisConfig } from '../../src/gap-analysis/GapDetector';
-import { TaintAnalysisResult, IntentAnalysisResult, GapAnalysisResult } from '../../src/orchestrator/types';
+import {
+  GapDetector,
+  IGapDetectionStrategy,
+  GapAnalysisConfig,
+} from '../../src/gap-analysis/GapDetector';
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+} from '../../src/orchestrator/types';
 
 describe('GapDetector', () => {
   let gapDetector: GapDetector;
@@ -14,7 +22,7 @@ describe('GapDetector', () => {
 
   beforeEach(() => {
     gapDetector = new GapDetector();
-    
+
     // モックデータの準備
     mockTaintResult = {
       vulnerabilities: [
@@ -24,7 +32,7 @@ describe('GapDetector', () => {
           severity: 'HIGH',
           source: { file: 'fileHandler.ts', line: 25, column: 10 },
           sink: { file: 'fileHandler.ts', line: 30, column: 5 },
-          dataFlow: ['userInput', 'filesystem']
+          dataFlow: ['userInput', 'filesystem'],
         },
         {
           id: 'VULN002',
@@ -32,15 +40,15 @@ describe('GapDetector', () => {
           severity: 'CRITICAL',
           source: { file: 'database.ts', line: 15, column: 8 },
           sink: { file: 'database.ts', line: 20, column: 12 },
-          dataFlow: ['userInput', 'sqlQuery']
-        }
+          dataFlow: ['userInput', 'sqlQuery'],
+        },
       ],
       summary: {
         totalVulnerabilities: 2,
         highSeverity: 1,
         mediumSeverity: 0,
-        lowSeverity: 0
-      }
+        lowSeverity: 0,
+      },
     };
 
     mockIntentResult = {
@@ -49,21 +57,21 @@ describe('GapDetector', () => {
           testName: 'ファイルアップロード機能テスト',
           expectedBehavior: 'セキュアなファイルアップロード',
           securityRequirements: ['パストラバーサル防止', 'ファイル拡張子検証'],
-          riskLevel: 'HIGH'
+          riskLevel: 'HIGH',
         },
         {
           testName: 'ユーザー認証テスト',
           expectedBehavior: '適切な認証フロー',
           securityRequirements: ['SQLインジェクション防止', 'パスワード検証'],
-          riskLevel: 'CRITICAL'
-        }
+          riskLevel: 'CRITICAL',
+        },
       ],
       summary: {
         totalTests: 2,
         highRiskTests: 1,
         mediumRiskTests: 0,
-        lowRiskTests: 1
-      }
+        lowRiskTests: 1,
+      },
     };
   });
 
@@ -84,8 +92,10 @@ describe('GapDetector', () => {
       const result = await gapDetector.analyzeGaps(mockIntentResult, mockTaintResult);
 
       // Assert
-      const pathTraversalGap = result.gaps.find(gap => 
-        gap.intention.includes('パストラバーサル') || gap.testName.includes('ファイルアップロード')
+      const pathTraversalGap = result.gaps.find(
+        gap =>
+          gap.intention.includes('パストラバーサル') ||
+          gap.testName.includes('ファイルアップロード')
       );
       expect(pathTraversalGap).toBeDefined();
       expect(pathTraversalGap?.riskLevel).toBe('HIGH');
@@ -96,8 +106,8 @@ describe('GapDetector', () => {
       const result = await gapDetector.analyzeGaps(mockIntentResult, mockTaintResult);
 
       // Assert
-      const sqlInjectionGap = result.gaps.find(gap =>
-        gap.intention.includes('SQLインジェクション') || gap.testName.includes('認証')
+      const sqlInjectionGap = result.gaps.find(
+        gap => gap.intention.includes('SQLインジェクション') || gap.testName.includes('認証')
       );
       expect(sqlInjectionGap).toBeDefined();
       expect(sqlInjectionGap?.riskLevel).toMatch(/^(HIGH|CRITICAL)$/);
@@ -110,8 +120,12 @@ describe('GapDetector', () => {
       // Assert
       expect(result.summary).toBeDefined();
       expect(result.summary.totalGaps).toBe(result.gaps.length);
-      expect(result.summary.criticalGaps + result.summary.highGaps + 
-             result.summary.mediumGaps + result.summary.lowGaps).toBe(result.summary.totalGaps);
+      expect(
+        result.summary.criticalGaps +
+          result.summary.highGaps +
+          result.summary.mediumGaps +
+          result.summary.lowGaps
+      ).toBe(result.summary.totalGaps);
     });
   });
 
@@ -124,10 +138,10 @@ describe('GapDetector', () => {
             testName: '基本機能テスト',
             expectedBehavior: 'データ処理',
             securityRequirements: [], // セキュリティ要件なし
-            riskLevel: 'LOW' as const
-          }
+            riskLevel: 'LOW' as const,
+          },
         ],
-        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 0, lowRiskTests: 1 }
+        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 0, lowRiskTests: 1 },
       };
 
       // Act
@@ -135,8 +149,9 @@ describe('GapDetector', () => {
 
       // Assert
       expect(result.gaps.length).toBeGreaterThan(0);
-      const coverageGap = result.gaps.find(gap => 
-        gap.intention.includes('カバレッジ') || gap.actualImplementation.includes('テスト不足')
+      const coverageGap = result.gaps.find(
+        gap =>
+          gap.intention.includes('カバレッジ') || gap.actualImplementation.includes('テスト不足')
       );
       expect(coverageGap).toBeDefined();
     });
@@ -149,19 +164,18 @@ describe('GapDetector', () => {
             testName: 'ユーザー入力テスト',
             expectedBehavior: '入力値処理',
             securityRequirements: ['入力検証'], // PATH_TRAVERSALの言及なし
-            riskLevel: 'MEDIUM' as const
-          }
+            riskLevel: 'MEDIUM' as const,
+          },
         ],
-        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 1, lowRiskTests: 0 }
+        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 1, lowRiskTests: 0 },
       };
 
       // Act
       const result = await gapDetector.analyzeGaps(limitedIntentResult, mockTaintResult);
 
       // Assert
-      const unaddressedGap = result.gaps.find(gap =>
-        gap.actualImplementation.includes('PATH_TRAVERSAL') && 
-        gap.riskLevel === 'HIGH'
+      const unaddressedGap = result.gaps.find(
+        gap => gap.actualImplementation.includes('PATH_TRAVERSAL') && gap.riskLevel === 'HIGH'
       );
       expect(unaddressedGap).toBeDefined();
     });
@@ -174,18 +188,18 @@ describe('GapDetector', () => {
             testName: 'SQLクエリテスト',
             expectedBehavior: 'データベース操作',
             securityRequirements: ['SQLインジェクション防止'],
-            riskLevel: 'LOW' as const // 実際はCRITICALであるべき
-          }
+            riskLevel: 'LOW' as const, // 実際はCRITICALであるべき
+          },
         ],
-        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 0, lowRiskTests: 1 }
+        summary: { totalTests: 1, highRiskTests: 0, mediumRiskTests: 0, lowRiskTests: 1 },
       };
 
       // Act
       const result = await gapDetector.analyzeGaps(underestimatedRiskIntent, mockTaintResult);
 
       // Assert
-      const riskGap = result.gaps.find(gap =>
-        gap.intention.includes('リスク評価') || gap.actualImplementation.includes('過小評価')
+      const riskGap = result.gaps.find(
+        gap => gap.intention.includes('リスク評価') || gap.actualImplementation.includes('過小評価')
       );
       expect(riskGap).toBeDefined();
     });
@@ -198,7 +212,7 @@ describe('GapDetector', () => {
         enableSemanticAnalysis: true,
         riskThreshold: 'HIGH',
         includeRecommendations: true,
-        analysisDepth: 'comprehensive'
+        analysisDepth: 'comprehensive',
       };
 
       // Act
@@ -219,11 +233,11 @@ describe('GapDetector', () => {
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
-          }
+            lowGaps: 0,
+          },
         }),
         getName: jest.fn().mockReturnValue('MockStrategy'),
-        validate: jest.fn().mockReturnValue(true)
+        validate: jest.fn().mockReturnValue(true),
       };
 
       // Act
@@ -255,9 +269,9 @@ describe('GapDetector', () => {
       const invalidIntent = null as any;
 
       // Act & Assert
-      await expect(gapDetector.analyzeGaps(invalidIntent, mockTaintResult))
-        .rejects
-        .toThrow('IntentAnalysisResultが無効です');
+      await expect(gapDetector.analyzeGaps(invalidIntent, mockTaintResult)).rejects.toThrow(
+        'IntentAnalysisResultが無効です'
+      );
     });
 
     it('無効なTaintAnalysisResultに対してエラーを発生させる', async () => {
@@ -265,9 +279,9 @@ describe('GapDetector', () => {
       const invalidTaint = null as any;
 
       // Act & Assert
-      await expect(gapDetector.analyzeGaps(mockIntentResult, invalidTaint))
-        .rejects
-        .toThrow('TaintAnalysisResultが無効です');
+      await expect(gapDetector.analyzeGaps(mockIntentResult, invalidTaint)).rejects.toThrow(
+        'TaintAnalysisResultが無効です'
+      );
     });
 
     it('ギャップ検出処理中のエラーを適切にハンドリングする', async () => {
@@ -275,15 +289,15 @@ describe('GapDetector', () => {
       const faultyStrategy: IGapDetectionStrategy = {
         analyze: jest.fn().mockRejectedValue(new Error('Strategy error')),
         getName: jest.fn().mockReturnValue('FaultyStrategy'),
-        validate: jest.fn().mockReturnValue(true)
+        validate: jest.fn().mockReturnValue(true),
       };
 
       gapDetector.setStrategy(faultyStrategy);
 
       // Act & Assert
-      await expect(gapDetector.analyzeGaps(mockIntentResult, mockTaintResult))
-        .rejects
-        .toThrow('ギャップ分析に失敗しました');
+      await expect(gapDetector.analyzeGaps(mockIntentResult, mockTaintResult)).rejects.toThrow(
+        'ギャップ分析に失敗しました'
+      );
     });
   });
 
@@ -307,11 +321,11 @@ describe('GapDetector', () => {
     it('メモリ効率的なギャップ分析を実行する', async () => {
       // Arrange & Act
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < 100; i++) {
         await gapDetector.analyzeGaps(mockIntentResult, mockTaintResult);
       }
-      
+
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = finalMemory - initialMemory;
 
@@ -330,18 +344,18 @@ function createMockStrategy(name: string, gapCount: number): IGapDetectionStrate
         intention: `Intention${i}`,
         actualImplementation: `Implementation${i}`,
         riskLevel: 'MEDIUM' as const,
-        recommendations: [`Recommendation${i}`]
+        recommendations: [`Recommendation${i}`],
       })),
       summary: {
         totalGaps: gapCount,
         criticalGaps: 0,
         highGaps: 0,
         mediumGaps: gapCount,
-        lowGaps: 0
-      }
+        lowGaps: 0,
+      },
     }),
     getName: jest.fn().mockReturnValue(name),
-    validate: jest.fn().mockReturnValue(true)
+    validate: jest.fn().mockReturnValue(true),
   };
 }
 
@@ -353,14 +367,14 @@ function createLargeTaintResult(count: number): TaintAnalysisResult {
       severity: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'][i % 4] as any,
       source: { file: `file${i}.ts`, line: 10, column: 5 },
       sink: { file: `file${i}.ts`, line: 20, column: 10 },
-      dataFlow: ['input', 'processing', 'output']
+      dataFlow: ['input', 'processing', 'output'],
     })),
     summary: {
       totalVulnerabilities: count,
       highSeverity: Math.floor(count / 4),
       mediumSeverity: Math.floor(count / 4),
-      lowSeverity: Math.floor(count / 2)
-    }
+      lowSeverity: Math.floor(count / 2),
+    },
   };
 }
 
@@ -370,13 +384,13 @@ function createLargeIntentResult(count: number): IntentAnalysisResult {
       testName: `テスト${i}`,
       expectedBehavior: `期待動作${i}`,
       securityRequirements: [`要件${i}`, `要件${i + 1000}`],
-      riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'][i % 4] as any
+      riskLevel: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'][i % 4] as any,
     })),
     summary: {
       totalTests: count,
       highRiskTests: Math.floor(count / 4),
       mediumRiskTests: Math.floor(count / 4),
-      lowRiskTests: Math.floor(count / 2)
-    }
+      lowRiskTests: Math.floor(count / 2),
+    },
   };
 }

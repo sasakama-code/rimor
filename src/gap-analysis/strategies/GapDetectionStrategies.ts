@@ -4,11 +4,11 @@
  * SOLID原則とデザインパターンによるコード品質向上
  */
 
-import { 
-  TaintAnalysisResult, 
-  IntentAnalysisResult, 
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
   GapAnalysisResult,
-  SecurityGap 
+  SecurityGap,
 } from '../../orchestrator/types';
 import { IGapDetectionStrategy, GapAnalysisConfig } from '../GapDetector';
 
@@ -20,7 +20,7 @@ export class SemanticGapDetectionStrategy implements IGapDetectionStrategy {
   constructor(private config: GapAnalysisConfig) {}
 
   async analyze(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const analyzer = new SemanticAnalyzer(this.config);
@@ -44,7 +44,7 @@ export class RiskBasedGapDetectionStrategy implements IGapDetectionStrategy {
   constructor(private config: GapAnalysisConfig) {}
 
   async analyze(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const analyzer = new RiskAnalyzer(this.config);
@@ -68,7 +68,7 @@ export class CoverageBasedGapDetectionStrategy implements IGapDetectionStrategy 
   constructor(private config: GapAnalysisConfig) {}
 
   async analyze(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const analyzer = new CoverageAnalyzer(this.config);
@@ -92,14 +92,17 @@ class SemanticAnalyzer {
   constructor(private config: GapAnalysisConfig) {}
 
   async performSemanticAnalysis(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const gaps: SecurityGap[] = [];
-    
+
     // セマンティックマッチングによるギャップ検出
     const semanticMap = new SemanticMappingEngine();
-    const mappings = semanticMap.analyzeMappings(intentResult.testIntents, taintResult.vulnerabilities);
+    const mappings = semanticMap.analyzeMappings(
+      intentResult.testIntents,
+      taintResult.vulnerabilities
+    );
 
     for (const mapping of mappings) {
       if (mapping.hasGap) {
@@ -108,14 +111,14 @@ class SemanticAnalyzer {
           intention: mapping.expectedBehavior,
           actualImplementation: mapping.actualImplementation,
           riskLevel: mapping.riskLevel,
-          recommendations: mapping.recommendations
+          recommendations: mapping.recommendations,
         });
       }
     }
 
     return {
       gaps,
-      summary: this.calculateSummary(gaps)
+      summary: this.calculateSummary(gaps),
     };
   }
 
@@ -125,7 +128,7 @@ class SemanticAnalyzer {
       criticalGaps: gaps.filter(g => g.riskLevel === 'CRITICAL').length,
       highGaps: gaps.filter(g => g.riskLevel === 'HIGH').length,
       mediumGaps: gaps.filter(g => g.riskLevel === 'MEDIUM').length,
-      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length
+      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length,
     };
   }
 }
@@ -138,15 +141,15 @@ class RiskAnalyzer {
   constructor(private config: GapAnalysisConfig) {}
 
   async performRiskBasedAnalysis(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const gaps: SecurityGap[] = [];
-    
+
     // リスクレベルの不整合を検出
     for (const intent of intentResult.testIntents) {
       const relatedVulns = this.findRelatedVulnerabilities(intent, taintResult.vulnerabilities);
-      
+
       for (const vuln of relatedVulns) {
         const riskGap = this.assessRiskGap(intent, vuln);
         if (riskGap) {
@@ -157,31 +160,27 @@ class RiskAnalyzer {
 
     return {
       gaps,
-      summary: this.calculateSummary(gaps)
+      summary: this.calculateSummary(gaps),
     };
   }
 
   private findRelatedVulnerabilities(intent: any, vulnerabilities: any[]): any[] {
     return vulnerabilities.filter(vuln =>
-      intent.securityRequirements.some((req: string) =>
-        this.isSemanticMatch(req, vuln.type)
-      )
+      intent.securityRequirements.some((req: string) => this.isSemanticMatch(req, vuln.type))
     );
   }
 
   private isSemanticMatch(requirement: string, vulnType: string): boolean {
     // セマンティックマッチングロジック
     const keywordMap: Record<string, string[]> = {
-      'PATH_TRAVERSAL': ['パストラバーサル', 'ファイル', 'パス'],
-      'SQL_INJECTION': ['SQLインジェクション', 'データベース', 'SQL'],
-      'XSS': ['XSS', 'スクリプト', 'HTMLエスケープ'],
-      'COMMAND_INJECTION': ['コマンド', '実行', 'シェル']
+      PATH_TRAVERSAL: ['パストラバーサル', 'ファイル', 'パス'],
+      SQL_INJECTION: ['SQLインジェクション', 'データベース', 'SQL'],
+      XSS: ['XSS', 'スクリプト', 'HTMLエスケープ'],
+      COMMAND_INJECTION: ['コマンド', '実行', 'シェル'],
     };
 
     const keywords = keywordMap[vulnType] || [];
-    return keywords.some(keyword => 
-      requirement.toLowerCase().includes(keyword.toLowerCase())
-    );
+    return keywords.some(keyword => requirement.toLowerCase().includes(keyword.toLowerCase()));
   }
 
   private assessRiskGap(intent: any, vuln: any): SecurityGap | null {
@@ -195,7 +194,7 @@ class RiskAnalyzer {
         intention: `リスク評価: ${intentRisk}`,
         actualImplementation: `実際のリスク: ${vulnRisk} - 過小評価`,
         riskLevel: vulnRisk,
-        recommendations: ['リスク評価の見直し', 'セキュリティテストの強化']
+        recommendations: ['リスク評価の見直し', 'セキュリティテストの強化'],
       };
     }
 
@@ -204,11 +203,16 @@ class RiskAnalyzer {
 
   private mapSeverityToRiskLevel(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     switch (severity.toUpperCase()) {
-      case 'CRITICAL': return 'CRITICAL';
-      case 'HIGH': return 'HIGH';
-      case 'MEDIUM': return 'MEDIUM';
-      case 'LOW': return 'LOW';
-      default: return 'MEDIUM';
+      case 'CRITICAL':
+        return 'CRITICAL';
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MEDIUM';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return 'MEDIUM';
     }
   }
 
@@ -216,7 +220,7 @@ class RiskAnalyzer {
     const riskOrder = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
     const intentIndex = riskOrder.indexOf(intentRisk.toUpperCase());
     const actualIndex = riskOrder.indexOf(actualRisk.toUpperCase());
-    
+
     return actualIndex > intentIndex;
   }
 
@@ -226,7 +230,7 @@ class RiskAnalyzer {
       criticalGaps: gaps.filter(g => g.riskLevel === 'CRITICAL').length,
       highGaps: gaps.filter(g => g.riskLevel === 'HIGH').length,
       mediumGaps: gaps.filter(g => g.riskLevel === 'MEDIUM').length,
-      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length
+      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length,
     };
   }
 }
@@ -239,14 +243,14 @@ class CoverageAnalyzer {
   constructor(private config: GapAnalysisConfig) {}
 
   async performCoverageAnalysis(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const gaps: SecurityGap[] = [];
-    
+
     // テストカバレッジのギャップを検出
     const uncoveredVulnerabilities = this.findUncoveredVulnerabilities(
-      intentResult.testIntents, 
+      intentResult.testIntents,
       taintResult.vulnerabilities
     );
 
@@ -256,50 +260,51 @@ class CoverageAnalyzer {
         intention: 'セキュリティ対策のテストカバレッジ',
         actualImplementation: `未カバーの脆弱性: ${vuln.type} - ${vuln.source.file}`,
         riskLevel: this.mapSeverityToRiskLevel(vuln.severity),
-        recommendations: [
-          `${vuln.type}対策のテスト追加`,
-          'セキュリティテストカバレッジの向上'
-        ]
+        recommendations: [`${vuln.type}対策のテスト追加`, 'セキュリティテストカバレッジの向上'],
       });
     }
 
     return {
       gaps,
-      summary: this.calculateSummary(gaps)
+      summary: this.calculateSummary(gaps),
     };
   }
 
   private findUncoveredVulnerabilities(testIntents: any[], vulnerabilities: any[]): any[] {
-    return vulnerabilities.filter(vuln =>
-      !testIntents.some(intent =>
-        intent.securityRequirements.some((req: string) =>
-          this.isRequirementRelatedToVulnerability(req, vuln.type)
+    return vulnerabilities.filter(
+      vuln =>
+        !testIntents.some(intent =>
+          intent.securityRequirements.some((req: string) =>
+            this.isRequirementRelatedToVulnerability(req, vuln.type)
+          )
         )
-      )
     );
   }
 
   private isRequirementRelatedToVulnerability(requirement: string, vulnType: string): boolean {
     const relationMap: Record<string, string[]> = {
-      'PATH_TRAVERSAL': ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ'],
-      'SQL_INJECTION': ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
-      'XSS': ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
-      'COMMAND_INJECTION': ['コマンドインジェクション', 'コマンド', '実行', 'シェル']
+      PATH_TRAVERSAL: ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ'],
+      SQL_INJECTION: ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
+      XSS: ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
+      COMMAND_INJECTION: ['コマンドインジェクション', 'コマンド', '実行', 'シェル'],
     };
 
     const keywords = relationMap[vulnType] || [];
-    return keywords.some(keyword => 
-      requirement.toLowerCase().includes(keyword.toLowerCase())
-    );
+    return keywords.some(keyword => requirement.toLowerCase().includes(keyword.toLowerCase()));
   }
 
   private mapSeverityToRiskLevel(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     switch (severity.toUpperCase()) {
-      case 'CRITICAL': return 'CRITICAL';
-      case 'HIGH': return 'HIGH';
-      case 'MEDIUM': return 'MEDIUM';
-      case 'LOW': return 'LOW';
-      default: return 'MEDIUM';
+      case 'CRITICAL':
+        return 'CRITICAL';
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MEDIUM';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return 'MEDIUM';
     }
   }
 
@@ -309,7 +314,7 @@ class CoverageAnalyzer {
       criticalGaps: gaps.filter(g => g.riskLevel === 'CRITICAL').length,
       highGaps: gaps.filter(g => g.riskLevel === 'HIGH').length,
       mediumGaps: gaps.filter(g => g.riskLevel === 'MEDIUM').length,
-      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length
+      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length,
     };
   }
 }
@@ -347,7 +352,7 @@ class SemanticMappingEngine {
         actualImplementation: `脆弱性検出: ${vuln.type} (${vuln.severity})`,
         hasGap: true,
         riskLevel: this.mapSeverityToRiskLevel(vuln.severity),
-        recommendations: [`${vuln.type}対策の実装`, 'セキュリティテストの強化']
+        recommendations: [`${vuln.type}対策の実装`, 'セキュリティテストの強化'],
       };
     }
 
@@ -357,25 +362,28 @@ class SemanticMappingEngine {
   private isSemanticMatch(requirement: string, vulnType: string): boolean {
     // セマンティックマッチングロジック
     const keywordMap: Record<string, string[]> = {
-      'PATH_TRAVERSAL': ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ'],
-      'SQL_INJECTION': ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
-      'XSS': ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
-      'COMMAND_INJECTION': ['コマンドインジェクション', 'コマンド', '実行', 'シェル']
+      PATH_TRAVERSAL: ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ'],
+      SQL_INJECTION: ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
+      XSS: ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
+      COMMAND_INJECTION: ['コマンドインジェクション', 'コマンド', '実行', 'シェル'],
     };
 
     const keywords = keywordMap[vulnType] || [];
-    return keywords.some(keyword => 
-      requirement.toLowerCase().includes(keyword.toLowerCase())
-    );
+    return keywords.some(keyword => requirement.toLowerCase().includes(keyword.toLowerCase()));
   }
 
   private mapSeverityToRiskLevel(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     switch (severity.toUpperCase()) {
-      case 'CRITICAL': return 'CRITICAL';
-      case 'HIGH': return 'HIGH';
-      case 'MEDIUM': return 'MEDIUM';
-      case 'LOW': return 'LOW';
-      default: return 'MEDIUM';
+      case 'CRITICAL':
+        return 'CRITICAL';
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MEDIUM';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return 'MEDIUM';
     }
   }
 }

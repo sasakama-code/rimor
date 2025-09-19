@@ -17,7 +17,7 @@ describe('DomainInferenceEngine', () => {
     it('Userクラスからユーザー管理ドメインを推論できる', async () => {
       const typeInfo: TypeInfo = {
         typeName: 'User',
-        isPrimitive: false
+        isPrimitive: false,
       };
 
       const result = await engine.inferDomainFromType(typeInfo);
@@ -26,14 +26,14 @@ describe('DomainInferenceEngine', () => {
         domain: 'user-management',
         confidence: 0.7,
         concepts: ['ユーザー', '認証', 'アカウント管理'],
-        businessImportance: 'high'
+        businessImportance: 'high',
       });
     });
 
     it('PaymentServiceから決済ドメインを推論できる', async () => {
       const typeInfo: TypeInfo = {
         typeName: 'PaymentService',
-        isPrimitive: false
+        isPrimitive: false,
       };
 
       const result = await engine.inferDomainFromType(typeInfo);
@@ -42,14 +42,14 @@ describe('DomainInferenceEngine', () => {
         domain: 'payment',
         confidence: 0.75,
         concepts: ['決済', '支払い', 'トランザクション'],
-        businessImportance: 'high'
+        businessImportance: 'high',
       });
     });
 
     it('プリミティブ型の場合は低信頼度で汎用ドメインを返す', async () => {
       const typeInfo: TypeInfo = {
         typeName: 'string',
-        isPrimitive: true
+        isPrimitive: true,
       };
 
       const result = await engine.inferDomainFromType(typeInfo);
@@ -58,7 +58,7 @@ describe('DomainInferenceEngine', () => {
         domain: 'general',
         confidence: 0.1,
         concepts: [],
-        businessImportance: 'low'
+        businessImportance: 'low',
       });
     });
 
@@ -66,19 +66,21 @@ describe('DomainInferenceEngine', () => {
       const typeInfo: TypeInfo = {
         typeName: 'Repository',
         isPrimitive: false,
-        typeArguments: [{
-          typeName: 'Order',
-          isPrimitive: false
-        }]
+        typeArguments: [
+          {
+            typeName: 'Order',
+            isPrimitive: false,
+          },
+        ],
       };
 
       const result = await engine.inferDomainFromType(typeInfo);
 
       expect(result).toEqual({
         domain: 'order-management',
-        confidence: 0.75,  // 0.65 + 0.1 = 0.75
+        confidence: 0.75, // 0.65 + 0.1 = 0.75
         concepts: ['注文', 'リポジトリ', 'データアクセス'],
-        businessImportance: 'high'
+        businessImportance: 'high',
       });
     });
   });
@@ -88,13 +90,13 @@ describe('DomainInferenceEngine', () => {
       const context = {
         filePath: '/src/auth/services/AuthenticationService.ts',
         className: 'AuthenticationService',
-        imports: ['User', 'Token', 'Permission']
+        imports: ['User', 'Token', 'Permission'],
       };
 
       const result = await engine.inferDomainFromContext(context);
 
       expect(result.domain).toBe('authentication');
-      expect(result.confidence).toBeGreaterThanOrEqual(0.6);  // 最低でもパスベースの0.6
+      expect(result.confidence).toBeGreaterThanOrEqual(0.6); // 最低でもパスベースの0.6
       expect(result.businessImportance).toBe('high');
       expect(result.concepts).toContain('認証');
       expect(result.concepts).toContain('アクセス制御');
@@ -107,13 +109,13 @@ describe('DomainInferenceEngine', () => {
       const context = {
         filePath: '/src/billing/processors/InvoiceProcessor.ts',
         className: 'InvoiceProcessor',
-        imports: ['Invoice', 'Payment', 'Customer', 'TaxCalculator']
+        imports: ['Invoice', 'Payment', 'Customer', 'TaxCalculator'],
       };
 
       const result = await engine.inferDomainFromContext(context);
 
       expect(result.domain).toBe('billing');
-      expect(result.confidence).toBeGreaterThanOrEqual(0.6);  // 最低でもパスベースの0.6
+      expect(result.confidence).toBeGreaterThanOrEqual(0.6); // 最低でもパスベースの0.6
       expect(result.businessImportance).toBe('high');
       expect(result.concepts).toContain('請求');
       expect(result.concepts).toContain('課金');
@@ -127,7 +129,7 @@ describe('DomainInferenceEngine', () => {
   describe('getDomainImportance', () => {
     it('ドメインのビジネス重要度を評価できる', async () => {
       const paymentImportance = await engine.getDomainImportance('payment');
-      expect(paymentImportance).toBe('high');  // 特別扱いせず、通常の高重要度
+      expect(paymentImportance).toBe('high'); // 特別扱いせず、通常の高重要度
 
       const loggingImportance = await engine.getDomainImportance('logging');
       expect(loggingImportance).toBe('medium');
@@ -144,17 +146,17 @@ describe('DomainInferenceEngine', () => {
         terms: [
           { term: 'User', domain: 'user-management', weight: 0.9 },
           { term: 'Payment', domain: 'payment', weight: 0.95 },
-          { term: 'Order', domain: 'e-commerce', weight: 0.85 }
+          { term: 'Order', domain: 'e-commerce', weight: 0.85 },
         ],
         rules: [
           { pattern: /.*Service$/, domain: 'service-layer', weight: 0.7 },
-          { pattern: /.*Repository$/, domain: 'data-access', weight: 0.8 }
-        ]
+          { pattern: /.*Repository$/, domain: 'data-access', weight: 0.8 },
+        ],
       });
 
       const typeInfo: TypeInfo = {
         typeName: 'UserService',
-        isPrimitive: false
+        isPrimitive: false,
       };
 
       const result = await engine.inferDomainFromType(typeInfo);
@@ -170,20 +172,20 @@ describe('DomainInferenceEngine', () => {
     it('設定された信頼度値が固定値ではなく設定可能である', async () => {
       const engine1 = new DomainInferenceEngine();
       const engine2 = new DomainInferenceEngine();
-      
+
       // 同じ型に対して異なる信頼度を設定できるべき
       const typeInfo: TypeInfo = {
         typeName: 'PaymentService',
-        isPrimitive: false
+        isPrimitive: false,
       };
-      
+
       // engine1のデフォルト値
       const result1 = await engine1.inferDomainFromType(typeInfo);
-      
+
       // engine2に異なる設定を適用
       engine2.setConfidenceConfig({ typeConfidenceMap: { PaymentService: 0.7 } });
       const result2 = await engine2.inferDomainFromType(typeInfo);
-      
+
       // engine1はデフォルト値
       expect(result1.confidence).toBe(0.75);
       // engine2は設定された値
@@ -197,42 +199,41 @@ describe('DomainInferenceEngine', () => {
         { typeName: 'PaymentService', expectedConfidence: 0.75 },
         { typeName: 'Order', expectedConfidence: 0.65 },
         { typeName: 'AuthenticationService', expectedConfidence: 0.75 },
-        { typeName: 'Invoice', expectedConfidence: 0.7 }
+        { typeName: 'Invoice', expectedConfidence: 0.7 },
       ];
-      
+
       for (const testCase of testCases) {
         const typeInfo: TypeInfo = {
           typeName: testCase.typeName,
-          isPrimitive: false
+          isPrimitive: false,
         };
-        
+
         const result = await engine.inferDomainFromType(typeInfo);
         expect(result.confidence).toBe(testCase.expectedConfidence);
       }
     });
 
-
     it('文脈に応じて信頼度が動的に変化する', async () => {
       // 同じ型でも、文脈情報によって信頼度が変化することを検証
       const typeInfo: TypeInfo = {
         typeName: 'ProcessorService',
-        isPrimitive: false
+        isPrimitive: false,
       };
 
       // 文脈1: 支払い処理の文脈
       const paymentContext = {
         filePath: '/src/payment/services/ProcessorService.ts',
         className: 'ProcessorService',
-        imports: ['Payment', 'Transaction', 'CreditCard']
+        imports: ['Payment', 'Transaction', 'CreditCard'],
       };
 
       const paymentResult = await engine.inferDomainFromContext(paymentContext);
-      
+
       // 文脈2: 一般的なデータ処理の文脈
       const generalContext = {
         filePath: '/src/utils/services/ProcessorService.ts',
         className: 'ProcessorService',
-        imports: ['Logger', 'Config']
+        imports: ['Logger', 'Config'],
       };
 
       const generalResult = await engine.inferDomainFromContext(generalContext);
@@ -247,16 +248,16 @@ describe('DomainInferenceEngine', () => {
       // 単一の証拠
       const singleEvidence: TypeInfo = {
         typeName: 'SimpleService',
-        isPrimitive: false
+        isPrimitive: false,
       };
-      
+
       const singleResult = await engine.inferDomainFromType(singleEvidence);
 
       // 複数の証拠が組み合わさった場合
       const multiEvidence = {
         filePath: '/src/payment/services/PaymentService.ts',
         className: 'PaymentService',
-        imports: ['Payment', 'Transaction', 'PaymentGateway', 'PaymentValidator']
+        imports: ['Payment', 'Transaction', 'PaymentGateway', 'PaymentValidator'],
       };
 
       const multiResult = await engine.inferDomainFromContext(multiEvidence);
@@ -271,7 +272,11 @@ describe('DomainInferenceEngine', () => {
         { typeName: 'string', isPrimitive: true },
         { typeName: 'UnknownType', isPrimitive: false },
         { typeName: 'PaymentService', isPrimitive: false },
-        { typeName: 'Repository', isPrimitive: false, typeArguments: [{ typeName: 'User', isPrimitive: false }] }
+        {
+          typeName: 'Repository',
+          isPrimitive: false,
+          typeArguments: [{ typeName: 'User', isPrimitive: false }],
+        },
       ];
 
       for (const testCase of testCases) {
@@ -288,7 +293,7 @@ describe('DomainInferenceEngine', () => {
       const context = {
         filePath: '/some/unrelated/path/RandomFile.ts',
         className: 'UnknownClass',
-        imports: ['SomeUnrelatedImport']
+        imports: ['SomeUnrelatedImport'],
       };
 
       const result = await engine.inferDomainFromContext(context);
@@ -303,7 +308,7 @@ describe('DomainInferenceEngine', () => {
     it('getDomainImportanceが空文字に対してmediumを返さないこと', async () => {
       // 直接空文字をgetDomainImportanceに渡した場合のテスト
       const importance = await engine.getDomainImportance('');
-      
+
       // Issue #134: 空文字に対してmediumが返されるのは不適切
       // 代わりにlowまたは適切なデフォルト値を期待
       expect(importance).not.toBe('medium');
@@ -313,7 +318,7 @@ describe('DomainInferenceEngine', () => {
       const context = {
         filePath: '/completely/unknown/path.ts',
         className: 'VeryUnknownClass',
-        imports: []
+        imports: [],
       };
 
       const result = await engine.inferDomainFromContext(context);

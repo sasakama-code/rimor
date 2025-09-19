@@ -4,12 +4,7 @@
  */
 
 import { injectable } from 'inversify';
-import {
-  IReporter,
-  ReportOptions,
-  ReportResult,
-  ReportFormat
-} from '../interfaces/IReporter';
+import { IReporter, ReportOptions, ReportResult, ReportFormat } from '../interfaces/IReporter';
 import { AnalysisResult } from '../interfaces/IAnalysisEngine';
 import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
 import * as fs from 'fs';
@@ -17,14 +12,13 @@ import * as path from 'path';
 
 @injectable()
 export class Reporter implements IReporter {
-  
   async generateAnalysisReport(
     result: AnalysisResult,
     options: ReportOptions
   ): Promise<ReportResult> {
     try {
       let content: string;
-      
+
       switch (options.format) {
         case ReportFormat.JSON:
           content = this.generateJsonReport(result);
@@ -40,34 +34,34 @@ export class Reporter implements IReporter {
           content = this.generateTextReport(result);
           break;
       }
-      
+
       if (options.outputPath) {
         await this.saveToFile(content, options.outputPath);
         return {
           success: true,
-          outputPath: options.outputPath
+          outputPath: options.outputPath,
         };
       }
-      
+
       return {
         success: true,
-        content
+        content,
       };
     } catch (error) {
       return {
         success: false,
-        error: `レポート生成に失敗しました: ${error}`
+        error: `レポート生成に失敗しました: ${error}`,
       };
     }
   }
-  
+
   async generateSecurityReport(
     result: SecurityAuditResult,
     options: ReportOptions
   ): Promise<ReportResult> {
     try {
       let content: string;
-      
+
       switch (options.format) {
         case ReportFormat.JSON:
           content = JSON.stringify(result, null, 2);
@@ -83,33 +77,33 @@ export class Reporter implements IReporter {
           content = this.generateSecurityTextReport(result);
           break;
       }
-      
+
       if (options.outputPath) {
         await this.saveToFile(content, options.outputPath);
         return {
           success: true,
-          outputPath: options.outputPath
+          outputPath: options.outputPath,
         };
       }
-      
+
       return {
         success: true,
-        content
+        content,
       };
     } catch (error) {
       return {
         success: false,
-        error: `セキュリティレポート生成に失敗しました: ${error}`
+        error: `セキュリティレポート生成に失敗しました: ${error}`,
       };
     }
   }
-  
+
   printToConsole(content: string): void {
     console.log(content);
   }
-  
+
   // Private methods
-  
+
   private generateTextReport(result: AnalysisResult): string {
     const lines = [
       '=== Rimor 分析レポート ===',
@@ -117,9 +111,9 @@ export class Reporter implements IReporter {
       `分析対象ファイル数: ${result.totalFiles}`,
       `検出された問題数: ${result.issues.length}`,
       `実行時間: ${result.executionTime}ms`,
-      ''
+      '',
     ];
-    
+
     if (result.issues.length > 0) {
       lines.push('検出された問題:');
       result.issues.forEach((issue, index) => {
@@ -133,14 +127,14 @@ export class Reporter implements IReporter {
     } else {
       lines.push('問題は検出されませんでした。');
     }
-    
+
     return lines.join('\n');
   }
-  
+
   private generateJsonReport(result: AnalysisResult): string {
     return JSON.stringify(result, null, 2);
   }
-  
+
   private generateHtmlReport(result: AnalysisResult): string {
     return `<!DOCTYPE html>
 <html>
@@ -162,17 +156,21 @@ export class Reporter implements IReporter {
     <p>実行時間: ${result.executionTime}ms</p>
   </div>
   <h2>検出された問題</h2>
-  ${result.issues.map((issue, index) => `
+  ${result.issues
+    .map(
+      (issue, index) => `
     <div class="issue ${issue.severity}">
       <h3>#${index + 1} [${issue.severity}] ${issue.message}</h3>
       <p>ファイル: ${issue.file}</p>
       ${issue.line ? `<p>行: ${issue.line}</p>` : ''}
     </div>
-  `).join('')}
+  `
+    )
+    .join('')}
 </body>
 </html>`;
   }
-  
+
   private generateMarkdownReport(result: AnalysisResult): string {
     const lines = [
       '# Rimor 分析レポート',
@@ -184,9 +182,9 @@ export class Reporter implements IReporter {
       `- 実行時間: ${result.executionTime}ms`,
       '',
       '## 検出された問題',
-      ''
+      '',
     ];
-    
+
     if (result.issues.length > 0) {
       result.issues.forEach((issue, index) => {
         lines.push(`### ${index + 1}. [${issue.severity}] ${issue.message}`);
@@ -200,10 +198,10 @@ export class Reporter implements IReporter {
     } else {
       lines.push('問題は検出されませんでした。');
     }
-    
+
     return lines.join('\n');
   }
-  
+
   private generateSecurityTextReport(result: SecurityAuditResult): string {
     const lines = [
       '=== Rimor セキュリティ監査レポート ===',
@@ -217,9 +215,9 @@ export class Reporter implements IReporter {
       `  Medium: ${result.summary.medium}`,
       `  Low: ${result.summary.low}`,
       `実行時間: ${result.executionTime}ms`,
-      ''
+      '',
     ];
-    
+
     if (result.threats.length > 0) {
       lines.push('検出された脅威:');
       result.threats.forEach((threat, index) => {
@@ -232,10 +230,10 @@ export class Reporter implements IReporter {
     } else {
       lines.push('セキュリティ脅威は検出されませんでした。');
     }
-    
+
     return lines.join('\n');
   }
-  
+
   private generateSecurityHtmlReport(result: SecurityAuditResult): string {
     return `<!DOCTYPE html>
 <html>
@@ -265,18 +263,22 @@ export class Reporter implements IReporter {
     <p>実行時間: ${result.executionTime}ms</p>
   </div>
   <h2>検出された脅威</h2>
-  ${result.threats.map((threat, index) => `
+  ${result.threats
+    .map(
+      (threat, index) => `
     <div class="threat ${threat.severity}">
       <h3>#${index + 1} [${threat.severity}] ${threat.type}</h3>
       <p>${threat.message}</p>
       <p><strong>ファイル:</strong> ${threat.file}:${threat.line}</p>
       <p><strong>推奨事項:</strong> ${threat.recommendation}</p>
     </div>
-  `).join('')}
+  `
+    )
+    .join('')}
 </body>
 </html>`;
   }
-  
+
   private generateSecurityMarkdownReport(result: SecurityAuditResult): string {
     const lines = [
       '# Rimor セキュリティ監査レポート',
@@ -292,9 +294,9 @@ export class Reporter implements IReporter {
       `- 実行時間: ${result.executionTime}ms`,
       '',
       '## 検出された脅威',
-      ''
+      '',
     ];
-    
+
     if (result.threats.length > 0) {
       result.threats.forEach((threat, index) => {
         lines.push(`### ${index + 1}. [${threat.severity}] ${threat.type}`);
@@ -308,10 +310,10 @@ export class Reporter implements IReporter {
     } else {
       lines.push('セキュリティ脅威は検出されませんでした。');
     }
-    
+
     return lines.join('\n');
   }
-  
+
   private async saveToFile(content: string, outputPath: string): Promise<void> {
     const dir = path.dirname(outputPath);
     if (!fs.existsSync(dir)) {

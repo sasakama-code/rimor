@@ -1,6 +1,6 @@
 /**
  * 共通型定義
- * 
+ *
  * 複数のモジュールで使用される汎用的な型を集約
  * DRY原則に基づいた設計
  */
@@ -8,7 +8,7 @@
 /**
  * デザインパターンの種類
  */
-export type DesignPatternType = 
+export type DesignPatternType =
   // 生成パターン
   | 'SINGLETON'
   | 'FACTORY'
@@ -39,24 +39,24 @@ export type DesignPatternType =
 /**
  * アンチパターンの種類
  */
-export type AntiPatternType = 
-  | 'GOD_OBJECT'           // 神オブジェクト
-  | 'SPAGHETTI_CODE'       // スパゲッティコード
-  | 'COPY_PASTE'           // コピペプログラミング
-  | 'MAGIC_NUMBERS'        // マジックナンバー
-  | 'DEAD_CODE'            // デッドコード
-  | 'LONG_METHOD'          // 長すぎるメソッド
-  | 'LARGE_CLASS'          // 巨大クラス
-  | 'FEATURE_ENVY'         // 不適切な親密さ
-  | 'DATA_CLUMPS'          // データの塊
-  | 'PRIMITIVE_OBSESSION'  // 基本データ型への執着
-  | 'SWITCH_STATEMENTS'    // Switch文の乱用
+export type AntiPatternType =
+  | 'GOD_OBJECT' // 神オブジェクト
+  | 'SPAGHETTI_CODE' // スパゲッティコード
+  | 'COPY_PASTE' // コピペプログラミング
+  | 'MAGIC_NUMBERS' // マジックナンバー
+  | 'DEAD_CODE' // デッドコード
+  | 'LONG_METHOD' // 長すぎるメソッド
+  | 'LARGE_CLASS' // 巨大クラス
+  | 'FEATURE_ENVY' // 不適切な親密さ
+  | 'DATA_CLUMPS' // データの塊
+  | 'PRIMITIVE_OBSESSION' // 基本データ型への執着
+  | 'SWITCH_STATEMENTS' // Switch文の乱用
   | 'PARALLEL_INHERITANCE' // 並行継承階層
-  | 'LAZY_CLASS'           // 怠惰なクラス
+  | 'LAZY_CLASS' // 怠惰なクラス
   | 'SPECULATIVE_GENERALITY' // 憶測による一般化
-  | 'TEMPORARY_FIELD'      // 一時的フィールド
-  | 'MESSAGE_CHAINS'       // メッセージの連鎖
-  | 'MIDDLE_MAN';          // 仲介者
+  | 'TEMPORARY_FIELD' // 一時的フィールド
+  | 'MESSAGE_CHAINS' // メッセージの連鎖
+  | 'MIDDLE_MAN'; // 仲介者
 
 /**
  * デザインパターン
@@ -268,11 +268,14 @@ export interface ProjectMetrics {
   /** 空行数 */
   blankLines: number;
   /** 言語別統計 */
-  languages: Record<string, {
-    files: number;
-    lines: number;
-    percentage: number;
-  }>;
+  languages: Record<
+    string,
+    {
+      files: number;
+      lines: number;
+      percentage: number;
+    }
+  >;
   /** 複雑度 */
   complexity?: {
     cyclomatic: number;
@@ -285,7 +288,8 @@ export interface ProjectMetrics {
  * 型ガード: DesignPatternかどうかを判定
  */
 export function isDesignPattern(obj: unknown): obj is DesignPattern {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'type' in obj &&
     'name' in obj &&
@@ -294,14 +298,16 @@ export function isDesignPattern(obj: unknown): obj is DesignPattern {
     (obj as any).type !== undefined &&
     typeof (obj as any).name === 'string' &&
     (obj as any).location !== undefined &&
-    typeof (obj as any).confidence === 'number';
+    typeof (obj as any).confidence === 'number'
+  );
 }
 
 /**
  * 型ガード: AntiPatternかどうかを判定
  */
 export function isAntiPattern(obj: unknown): obj is AntiPattern {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'type' in obj &&
     'name' in obj &&
@@ -312,7 +318,8 @@ export function isAntiPattern(obj: unknown): obj is AntiPattern {
     typeof (obj as any).name === 'string' &&
     (obj as any).location !== undefined &&
     (obj as any).severity !== undefined &&
-    Array.isArray((obj as any).refactoringSuggestions);
+    Array.isArray((obj as any).refactoringSuggestions)
+  );
 }
 
 /**
@@ -324,10 +331,10 @@ export function calculateCodeQualityScore(
   totalFiles: number
 ): number {
   if (totalFiles === 0) return 0;
-  
+
   const patternScore = (designPatterns / totalFiles) * 50;
   const antiPatternPenalty = (antiPatterns / totalFiles) * 30;
-  
+
   const score = Math.max(0, Math.min(100, 50 + patternScore - antiPatternPenalty));
   return Math.round(score);
 }
@@ -341,11 +348,12 @@ export function calculateMaintainabilityIndex(
   cyclomaticComplexity: number,
   linesOfCode: number
 ): number {
-  const mi = 171 - 
+  const mi =
+    171 -
     5.2 * Math.log(halsteadVolume) -
     0.23 * cyclomaticComplexity -
     16.2 * Math.log(linesOfCode);
-  
+
   return Math.max(0, Math.min(100, mi));
 }
 

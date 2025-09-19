@@ -9,14 +9,14 @@ import {
   DetectionResult,
   QualityScore,
   Improvement,
-  SecurityIssue
+  SecurityIssue,
 } from '../../../core/types';
 import {
   IOWASPSecurityPlugin,
   OWASPCategory,
   OWASPTestResult,
   OWASPUtils,
-  OWASPBasePlugin
+  OWASPBasePlugin,
 } from './IOWASPSecurityPlugin';
 import { hasDependencyPattern, getDependencyNames } from './dependency-utils';
 
@@ -34,32 +34,57 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
   isApplicable(context: ProjectContext): boolean {
     // CI/CD関連ツールの確認
     const cicdTools = [
-      '@actions/core', '@actions/github', 'semantic-release', 'standard-version',
-      'release-it', 'shipjs', 'auto', 'lerna', 'nx', 'changesets',
-      'jenkins', 'travis-ci', 'circle-ci', 'gitlab-ci'
+      '@actions/core',
+      '@actions/github',
+      'semantic-release',
+      'standard-version',
+      'release-it',
+      'shipjs',
+      'auto',
+      'lerna',
+      'nx',
+      'changesets',
+      'jenkins',
+      'travis-ci',
+      'circle-ci',
+      'gitlab-ci',
     ];
-    
+
     // シリアライゼーション関連ライブラリの確認
     const serializationLibs = [
-      'serialize-javascript', 'node-serialize', 'js-yaml', 'msgpack',
-      'protobufjs', 'avro-js', 'pickle', 'marshal'
+      'serialize-javascript',
+      'node-serialize',
+      'js-yaml',
+      'msgpack',
+      'protobufjs',
+      'avro-js',
+      'pickle',
+      'marshal',
     ];
 
     // 署名・検証関連ライブラリの確認
     const signingLibs = [
-      'jsonwebtoken', 'node-forge', 'crypto', 'openpgp',
-      'node-rsa', 'jsrsasign'
+      'jsonwebtoken',
+      'node-forge',
+      'crypto',
+      'openpgp',
+      'node-rsa',
+      'jsrsasign',
     ];
-    
+
     const hasCicdTool = hasDependencyPattern(context, cicdTools);
     const hasSerializationLib = hasDependencyPattern(context, serializationLibs);
     const hasSigningLib = hasDependencyPattern(context, signingLibs);
 
     // CI/CD関連ファイルの確認
-    const hasCicdFiles = context.filePatterns?.source?.some((pattern: string) =>
-      pattern.includes('.github/workflows') || pattern.includes('ci/cd') || 
-      pattern.includes('deploy') || pattern.includes('release')
-    ) || false;
+    const hasCicdFiles =
+      context.filePatterns?.source?.some(
+        (pattern: string) =>
+          pattern.includes('.github/workflows') ||
+          pattern.includes('ci/cd') ||
+          pattern.includes('deploy') ||
+          pattern.includes('release')
+      ) || false;
 
     return hasCicdTool || hasSerializationLib || hasSigningLib || hasCicdFiles;
   }
@@ -83,20 +108,22 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
           confidence: 0.85,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'high',
-          metadata: { hasTest: true, testType: 'signature-verification' }
+          metadata: { hasTest: true, testType: 'signature-verification' },
         });
       }
 
       // デシリアライゼーションセキュリティテストの検出
-      if (deserializationPattern.test(line) && 
-          (line.includes('untrusted') || line.includes('malicious') || line.includes('safe'))) {
+      if (
+        deserializationPattern.test(line) &&
+        (line.includes('untrusted') || line.includes('malicious') || line.includes('safe'))
+      ) {
         patterns.push({
           patternId: 'integrity-deserialization',
           pattern: 'secure-deserialization',
           confidence: 0.9,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'critical',
-          metadata: { hasTest: true, testType: 'deserialization' }
+          metadata: { hasTest: true, testType: 'deserialization' },
         });
       }
 
@@ -108,21 +135,15 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
           confidence: 0.8,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'high',
-          metadata: { hasTest: true, testType: 'cicd' }
+          metadata: { hasTest: true, testType: 'cicd' },
         });
       }
     });
 
     // 不足テストの検出
-    const hasSignatureTest = patterns.some(p => 
-      p.metadata?.testType === 'signature-verification'
-    );
-    const hasDeserializationTest = patterns.some(p => 
-      p.metadata?.testType === 'deserialization'
-    );
-    const hasCicdTest = patterns.some(p => 
-      p.metadata?.testType === 'cicd'
-    );
+    const hasSignatureTest = patterns.some(p => p.metadata?.testType === 'signature-verification');
+    const hasDeserializationTest = patterns.some(p => p.metadata?.testType === 'deserialization');
+    const hasCicdTest = patterns.some(p => p.metadata?.testType === 'cicd');
 
     if (!hasSignatureTest) {
       patterns.push({
@@ -130,7 +151,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         pattern: 'missing-signature-test',
         confidence: 1,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -140,7 +161,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         pattern: 'missing-deserialization-test',
         confidence: 1,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -150,7 +171,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         pattern: 'missing-cicd-security-test',
         confidence: 1,
         severity: 'high',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -158,12 +179,12 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    const integrityTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('integrity-') && p.metadata?.hasTest
+    const integrityTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('integrity-') && p.metadata?.hasTest
     );
 
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-integrity-')
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-integrity-')
     );
 
     // カバレッジ計算
@@ -171,25 +192,19 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
     const testCoverage = (integrityTests.length / requiredTests.length) * 100;
 
     // セキュリティスコア計算
-    const baseScore = OWASPUtils.calculateSecurityScore(
-      testCoverage,
-      missingTests.length
-    );
+    const baseScore = OWASPUtils.calculateSecurityScore(testCoverage, missingTests.length);
 
-    const hasSignatureTest = integrityTests.some(p => 
-      p.metadata?.testType === 'signature-verification'
+    const hasSignatureTest = integrityTests.some(
+      p => p.metadata?.testType === 'signature-verification'
     );
-    const hasDeserializationTest = integrityTests.some(p => 
-      p.metadata?.testType === 'deserialization'
+    const hasDeserializationTest = integrityTests.some(
+      p => p.metadata?.testType === 'deserialization'
     );
-    const hasCicdTest = integrityTests.some(p => 
-      p.metadata?.testType === 'cicd'
-    );
+    const hasCicdTest = integrityTests.some(p => p.metadata?.testType === 'cicd');
 
     const coverageScore = testCoverage / 100;
-    const securityScore = (hasSignatureTest ? 0.35 : 0) + 
-                         (hasDeserializationTest ? 0.35 : 0) + 
-                         (hasCicdTest ? 0.3 : 0);
+    const securityScore =
+      (hasSignatureTest ? 0.35 : 0) + (hasDeserializationTest ? 0.35 : 0) + (hasCicdTest ? 0.3 : 0);
 
     return {
       overall: baseScore,
@@ -199,14 +214,15 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
       dimensions: {
         completeness: testCoverage,
         correctness: integrityTests.length > 0 ? 75 : 0,
-        maintainability: (hasSignatureTest ? 50 : 0) + (hasDeserializationTest ? 25 : 0) + (hasCicdTest ? 25 : 0)
+        maintainability:
+          (hasSignatureTest ? 50 : 0) + (hasDeserializationTest ? 25 : 0) + (hasCicdTest ? 25 : 0),
       },
       details: {
         strengths: hasSignatureTest ? ['署名検証実装済み'] : [],
         weaknesses: !hasSignatureTest ? ['署名検証不足'] : [],
         suggestions: [],
-        validationCoverage: hasSignatureTest ? 100 : 0
-      }
+        validationCoverage: hasSignatureTest ? 100 : 0,
+      },
     };
   }
 
@@ -222,7 +238,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         description: 'パッケージ、コード、アップデートの署名検証テストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 35,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -235,7 +251,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         description: '信頼できないデータのデシリアライゼーションを防ぐテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 35,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -248,7 +264,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         description: 'ビルド、デプロイプロセスの完全性チェックテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 30,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -261,7 +277,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
         description: '自動更新プロセスの署名検証と完全性チェックテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 25,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -272,13 +288,13 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
     const patterns = await this.detectPatterns(testFile);
     const evaluation = this.evaluateQuality(patterns);
     const vulnerabilities = this.detectVulnerabilityPatterns(testFile.content);
-    
-    const integrityTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('integrity-') && p.metadata?.hasTest
+
+    const integrityTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('integrity-') && p.metadata?.hasTest
     );
-    
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-integrity-')
+
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-integrity-')
     );
 
     const testPatterns: string[] = [];
@@ -307,7 +323,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
     }
 
     const missingTestDescriptions = missingTests.map(p => {
-      switch(p.patternId) {
+      switch (p.patternId) {
         case 'missing-integrity-signature':
           return '署名検証テスト';
         case 'missing-integrity-deserialization':
@@ -325,31 +341,32 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
       issues: vulnerabilities,
       recommendations,
       testPatterns,
-      missingTests: missingTestDescriptions
+      missingTests: missingTestDescriptions,
     };
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
     const lines = content.split('\n');
-    
+
     // 安全でないデシリアライゼーションパターンの検出
     const deserializationPatterns = [
       {
         pattern: /JSON\.parse\s*\([^)]*userInput[^)]*\)/gi,
         message: '安全でないデシリアライゼーション: ユーザー入力を直接JSON.parseしています',
-        type: 'CODE_EXECUTION' as const
+        type: 'CODE_EXECUTION' as const,
       },
       {
         pattern: /eval\s*\([^)]*\)/gi,
         message: '危険なコード実行: evalの使用は深刻なセキュリティリスクです',
-        type: 'CODE_EXECUTION' as const
+        type: 'CODE_EXECUTION' as const,
       },
       {
         pattern: /unserialize\s*\([^)]*\)/gi,
-        message: '安全でないデシリアライゼーション: unserializeは任意のコード実行につながる可能性があります',
-        type: 'CODE_EXECUTION' as const
-      }
+        message:
+          '安全でないデシリアライゼーション: unserializeは任意のコード実行につながる可能性があります',
+        type: 'CODE_EXECUTION' as const,
+      },
     ];
 
     let issueId = 0;
@@ -365,8 +382,8 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
             location: {
               file: 'unknown',
               line: lineIndex + 1,
-              column: matches.index || 0
-            }
+              column: matches.index || 0,
+            },
           });
         }
       });
@@ -378,7 +395,7 @@ export class DataIntegrityFailuresPlugin extends OWASPBasePlugin {
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
     const deps = getDependencyNames(context);
-    
+
     // 基本的な署名検証テスト
     tests.push(`// 署名検証テスト
 describe('Code Integrity Tests', () => {

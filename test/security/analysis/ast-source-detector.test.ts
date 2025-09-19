@@ -38,8 +38,8 @@ describe('ASTSourceDetector', () => {
         apiCall: {
           functionName: 'query',
           objectName: 'req',
-          arguments: []
-        }
+          arguments: [],
+        },
       });
       expect(sources[0].confidence).toBeGreaterThanOrEqual(0.9);
       expect(sources[0].location.line).toBe(6);
@@ -60,12 +60,12 @@ describe('ASTSourceDetector', () => {
 
       // Assert
       expect(sources).toHaveLength(2);
-      
+
       const userDataSource = sources.find(s => s.variableName === 'userData');
       expect(userDataSource).toBeDefined();
       expect(userDataSource?.type).toBe('user-input');
       expect(userDataSource?.category).toBe('http-request');
-      
+
       const nameSource = sources.find(s => s.variableName === 'name');
       expect(nameSource).toBeDefined();
     });
@@ -130,8 +130,8 @@ describe('ASTSourceDetector', () => {
         category: 'filesystem',
         apiCall: {
           functionName: 'readFileSync',
-          objectName: 'fs'
-        }
+          objectName: 'fs',
+        },
       });
     });
 
@@ -178,8 +178,8 @@ describe('ASTSourceDetector', () => {
         type: 'network-input',
         category: 'http-client',
         apiCall: {
-          functionName: 'fetch'
-        }
+          functionName: 'fetch',
+        },
       });
     });
 
@@ -207,7 +207,7 @@ describe('ASTSourceDetector', () => {
 
   describe('環境変数からのSource検出', () => {
     it('process.env からのTaint Sourceを検出できる', async () => {
-      // Arrange  
+      // Arrange
       const sourceCode = `
         function getDbConfig() {
           const dbUrl = process.env.DATABASE_URL;
@@ -290,7 +290,7 @@ describe('ASTSourceDetector', () => {
 
       // Assert
       expect(sources).toHaveLength(4);
-      
+
       const types = sources.map(s => s.type);
       expect(types).toContain('user-input');
       expect(types).toContain('file-input');
@@ -312,10 +312,10 @@ describe('ASTSourceDetector', () => {
 
       // Assert
       expect(sources).toHaveLength(3); // req.body, req.query, fs.readFileSync
-      
+
       const userInputSources = sources.filter(s => s.type === 'user-input');
       const fileInputSources = sources.filter(s => s.type === 'file-input');
-      
+
       expect(userInputSources).toHaveLength(2);
       expect(fileInputSources).toHaveLength(1);
     });
@@ -337,13 +337,13 @@ app.get('/test', (req, res) => {
 
       // Assert
       expect(sources).toHaveLength(2);
-      
+
       const querySource = sources.find(s => s.apiCall.functionName === 'query');
       const bodySource = sources.find(s => s.apiCall.functionName === 'body');
-      
+
       expect(querySource?.location.line).toBe(5);
       expect(bodySource?.location.line).toBe(6);
-      
+
       expect(querySource?.location.column).toBeGreaterThan(0);
       expect(bodySource?.location.column).toBeGreaterThan(0);
     });
@@ -358,8 +358,9 @@ app.get('/test', (req, res) => {
       `;
 
       // Act & Assert
-      await expect(detector.detectSources(invalidCode, 'invalid.ts'))
-        .resolves.toBeInstanceOf(Array); // エラーではなく空配列または部分的な結果
+      await expect(detector.detectSources(invalidCode, 'invalid.ts')).resolves.toBeInstanceOf(
+        Array
+      ); // エラーではなく空配列または部分的な結果
     });
 
     it('空のソースコードでも正常に処理する', async () => {

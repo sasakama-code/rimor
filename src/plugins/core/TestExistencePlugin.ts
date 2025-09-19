@@ -1,6 +1,6 @@
 /**
  * TestExistencePlugin
- * 
+ *
  * テストファイルの存在を確認するプラグイン
  * BasePluginを継承し、ITestQualityPluginインターフェースを実装
  */
@@ -8,13 +8,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { BasePlugin } from '../base/BasePlugin';
-import { 
-  ProjectContext, 
-  TestFile, 
-  DetectionResult, 
-  QualityScore, 
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
   Improvement,
-  Issue 
+  Issue,
 } from '../../core/types';
 import { PluginConfig } from '../../core/config';
 import { PathSecurity } from '../../utils/pathSecurity';
@@ -26,7 +26,7 @@ export class TestExistencePlugin extends BasePlugin {
   name = 'Test File Existence Checker';
   version = '1.0.0';
   type = 'core' as const;
-  
+
   private config?: PluginConfig;
   private qualityIntegrator: TestQualityIntegrator;
   private coverageAnalyzer: CoverageAnalyzer;
@@ -59,12 +59,12 @@ export class TestExistencePlugin extends BasePlugin {
         location: {
           file: testFile.path,
           line: 1,
-          column: 1
+          column: 1,
         },
         metadata: {
           description: `No test file found for ${PathSecurity.toRelativeOrMasked(testFile.path)}`,
-          category: 'test-existence'
-        }
+          category: 'test-existence',
+        },
       });
     } else {
       // テストファイルは存在するが、実際のテストが含まれていない場合
@@ -78,12 +78,12 @@ export class TestExistencePlugin extends BasePlugin {
           location: {
             file: testFile.path,
             line: 1,
-            column: 1
+            column: 1,
           },
           metadata: {
             description: `Test file exists but contains no tests: ${PathSecurity.toRelativeOrMasked(testFile.path)}`,
-            category: 'test-existence'
-          }
+            category: 'test-existence',
+          },
         });
       }
     }
@@ -96,14 +96,14 @@ export class TestExistencePlugin extends BasePlugin {
     try {
       // テストファイルの情報を構築
       const testFile: TestFile = this.buildTestFileFromPatterns(patterns);
-      
+
       // カバレッジデータを同期的に取得（簡易版）
       const coverage = this.getCoverageDataSync(testFile);
-      
+
       // TestQualityIntegratorによる統合評価
       return this.qualityIntegrator.evaluateIntegratedQuality(
-        testFile, 
-        coverage, 
+        testFile,
+        coverage,
         this.currentProjectContext || null
       );
     } catch (error) {
@@ -127,10 +127,10 @@ export class TestExistencePlugin extends BasePlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.5,
-        autoFixable: false
+        autoFixable: false,
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
@@ -143,10 +143,10 @@ export class TestExistencePlugin extends BasePlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.3,
-        autoFixable: false
+        autoFixable: false,
       });
     }
 
@@ -167,14 +167,16 @@ export class TestExistencePlugin extends BasePlugin {
 
     if (!exists) {
       const maskedPath = PathSecurity.toRelativeOrMasked(filePath);
-      return [{
-        id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        type: 'missing-test',
-        severity: 'high' as const,
-        message: `テストファイルが存在しません: ${maskedPath}`,
-        filePath: filePath,
-        category: 'test-quality' as const
-      }];
+      return [
+        {
+          id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: 'missing-test',
+          severity: 'high' as const,
+          message: `テストファイルが存在しません: ${maskedPath}`,
+          filePath: filePath,
+          category: 'test-quality' as const,
+        },
+      ];
     }
 
     return [];
@@ -187,7 +189,7 @@ export class TestExistencePlugin extends BasePlugin {
     // パターンから最初のファイルパスを取得
     const firstPattern = patterns.find(p => p.location?.file);
     const filePath = firstPattern?.location?.file || 'unknown';
-    
+
     // ファイルの内容を取得（存在する場合）
     let content = '';
     try {
@@ -197,10 +199,10 @@ export class TestExistencePlugin extends BasePlugin {
     } catch (error) {
       // ファイル読み取りエラーは無視して空文字列を使用
     }
-    
+
     return {
       path: filePath,
-      content: content
+      content: content,
     };
   }
 
@@ -211,44 +213,44 @@ export class TestExistencePlugin extends BasePlugin {
     if (!this.currentProjectContext?.rootPath) {
       return null;
     }
-    
+
     try {
       // 全体カバレッジを取得（個別ファイルより確実）
       const coveragePath = path.resolve(this.currentProjectContext.rootPath, 'coverage');
-      
+
       // coverage-summary.jsonの存在チェック
       const summaryPath = path.join(coveragePath, 'coverage-summary.json');
       if (!fs.existsSync(summaryPath)) {
         return null;
       }
-      
+
       // 全体カバレッジデータを同期的に読み込み
       const summaryData = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
       if (!summaryData.total) {
         return null;
       }
-      
+
       return {
         lines: {
           total: summaryData.total.lines.total,
           covered: summaryData.total.lines.covered,
-          pct: summaryData.total.lines.pct
+          pct: summaryData.total.lines.pct,
         },
         statements: {
           total: summaryData.total.statements.total,
           covered: summaryData.total.statements.covered,
-          pct: summaryData.total.statements.pct
+          pct: summaryData.total.statements.pct,
         },
         functions: {
           total: summaryData.total.functions.total,
           covered: summaryData.total.functions.covered,
-          pct: summaryData.total.functions.pct
+          pct: summaryData.total.functions.pct,
         },
         branches: {
           total: summaryData.total.branches.total,
           covered: summaryData.total.branches.covered,
-          pct: summaryData.total.branches.pct
-        }
+          pct: summaryData.total.branches.pct,
+        },
       };
     } catch (error) {
       return null;
@@ -290,14 +292,16 @@ export class TestExistencePlugin extends BasePlugin {
       dimensions: {
         completeness,
         correctness: overall,
-        maintainability: 80
+        maintainability: 80,
       },
       breakdown: {
         completeness,
-        correctness: overall
+        correctness: overall,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 1,
     };
   }
 
@@ -311,7 +315,7 @@ export class TestExistencePlugin extends BasePlugin {
       /it\s*\(/,
       /expect\s*\(/,
       /assert\./,
-      /should\./
+      /should\./,
     ];
 
     const cleanedContent = this.removeCommentsAndStrings(content);
@@ -337,10 +341,14 @@ export class TestExistencePlugin extends BasePlugin {
 
     // デフォルトの除外パターン
     const defaultExcludePatterns = [
-      'index.ts', 'index.js',
-      'types.ts', 'types.js',
-      'config.ts', 'config.js',
-      'constants.ts', 'constants.js'
+      'index.ts',
+      'index.js',
+      'types.ts',
+      'types.js',
+      'config.ts',
+      'config.js',
+      'constants.ts',
+      'constants.js',
     ];
 
     return defaultExcludePatterns.includes(fileName);

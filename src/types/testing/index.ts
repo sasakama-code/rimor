@@ -1,6 +1,6 @@
 /**
  * 統一されたテスト関連型定義
- * 
+ *
  * SOLID原則に従い、テストケース、テストスイート、
  * テスト品質メトリクスを統合した設計
  */
@@ -19,7 +19,7 @@ export type TestType = 'unit' | 'integration' | 'e2e' | 'performance' | 'securit
 /**
  * アサーションの種類
  */
-export type AssertionType = 
+export type AssertionType =
   | 'toBe'
   | 'toEqual'
   | 'toContain'
@@ -34,7 +34,7 @@ export type AssertionType =
 /**
  * テストケースの基本構造
  * SRP（単一責任原則）: テストケースの核心情報のみ
- * 
+ *
  * @example
  * ```typescript
  * const testCase: BaseTestCase = {
@@ -226,12 +226,12 @@ export interface TestFile {
  * 統一されたテストケース型
  * DRY原則: 既存のインターフェースを組み合わせて定義
  */
-export interface TestCase extends
-  BaseTestCase,
-  TestCaseWithIO,
-  TestCaseWithMetadata,
-  TestCaseWithAssertions,
-  TestCaseWithQuality {
+export interface TestCase
+  extends BaseTestCase,
+    TestCaseWithIO,
+    TestCaseWithMetadata,
+    TestCaseWithAssertions,
+    TestCaseWithQuality {
   /** 所属するスイートID（オプション） */
   suiteId?: string;
   /** 所属するファイルパス（オプション） */
@@ -245,7 +245,8 @@ export interface TestCase extends
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTestCase(obj: unknown): obj is TestCase {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'id' in obj &&
     'name' in obj &&
@@ -253,47 +254,53 @@ export function isTestCase(obj: unknown): obj is TestCase {
     typeof (obj as any).id === 'string' &&
     typeof (obj as any).name === 'string' &&
     typeof (obj as any).status === 'string' &&
-    ['pending', 'running', 'passed', 'failed', 'skipped'].includes((obj as any).status));
+    ['pending', 'running', 'passed', 'failed', 'skipped'].includes((obj as any).status)
+  );
 }
 
 /**
  * 型ガード: テストメタデータを持つかどうかを判定
  */
 export function hasTestMetadata(obj: unknown): obj is TestCaseWithMetadata {
-  return obj !== null &&
+  return (
+    obj !== null &&
     typeof obj === 'object' &&
     'metadata' in obj &&
     (obj as any).metadata !== null &&
     typeof (obj as any).metadata === 'object' &&
-    ((obj as any).metadata.executionTime === undefined || typeof (obj as any).metadata.executionTime === 'number');
+    ((obj as any).metadata.executionTime === undefined ||
+      typeof (obj as any).metadata.executionTime === 'number')
+  );
 }
 
 /**
  * 型ガード: アサーション情報を持つかどうかを判定
  */
 export function hasAssertions(obj: unknown): obj is TestCaseWithAssertions {
-  return !!(obj !== null &&
+  return !!(
+    obj !== null &&
     typeof obj === 'object' &&
     'assertions' in obj &&
     Array.isArray((obj as any).assertions) &&
-    (obj as any).assertions.every((a: any) => 
-      a.type && a.expected !== undefined && a.actual !== undefined && typeof a.passed === 'boolean'
-    ));
+    (obj as any).assertions.every(
+      (a: any) =>
+        a.type &&
+        a.expected !== undefined &&
+        a.actual !== undefined &&
+        typeof a.passed === 'boolean'
+    )
+  );
 }
 
 /**
  * ファクトリ関数: 基本的なTestCaseを作成
  * YAGNI原則: 現時点で必要な最小限の実装
  */
-export function createTestCase(
-  id: string,
-  name: string,
-  status: TestStatus = 'pending'
-): TestCase {
+export function createTestCase(id: string, name: string, status: TestStatus = 'pending'): TestCase {
   return {
     id,
     name,
-    status
+    status,
   };
 }
 
@@ -307,14 +314,14 @@ export function calculateTestSuiteSummary(testCases: TestCase[]): TestSuite['sum
     failed: testCases.filter(tc => tc.status === 'failed').length,
     skipped: testCases.filter(tc => tc.status === 'skipped').length,
     pending: testCases.filter(tc => tc.status === 'pending').length,
-    executionTime: 0
+    executionTime: 0,
   };
 
   // 実行時間の合計を計算
   const totalTime = testCases
     .filter(tc => tc.metadata?.executionTime)
     .reduce((sum, tc) => sum + (tc.metadata?.executionTime || 0), 0);
-  
+
   if (totalTime > 0) {
     summary.executionTime = totalTime;
   }

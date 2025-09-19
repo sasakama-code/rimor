@@ -58,7 +58,7 @@ export interface AIContext {
 // メイン出力構造
 export interface AIOptimizedOutput {
   version: string;
-  format: "ai-optimized";
+  format: 'ai-optimized';
   metadata: {
     projectType: string;
     language: string;
@@ -66,21 +66,21 @@ export interface AIOptimizedOutput {
     timestamp: string;
     rimVersion: string;
   };
-  
+
   context: {
     rootPath: string;
     configFiles: Record<string, string>; // ファイル名: 内容
     dependencies: Record<string, string>; // パッケージ名: バージョン
     projectStructure: string; // ディレクトリ構造の簡潔な表現
   };
-  
+
   qualityOverview: {
     projectScore: number;
     projectGrade: string;
     criticalIssues: number;
     totalIssues: number;
   };
-  
+
   files: Array<{
     path: string;
     language: string;
@@ -95,7 +95,7 @@ export interface AIOptimizedOutput {
       fix: SuggestedFix;
     }>;
   }>;
-  
+
   actionableTasks: Array<{
     id: string;
     priority: number;
@@ -105,7 +105,7 @@ export interface AIOptimizedOutput {
     estimatedImpact: ImpactEstimation;
     steps: ActionStep[];
   }>;
-  
+
   instructions: {
     forHuman: string;
     forAI: string;
@@ -120,7 +120,7 @@ export interface CodeContext {
     startLine: number;
     endLine: number;
   };
-  
+
   // 関連するソースコード（テスト対象）
   relatedSource?: {
     path: string;
@@ -130,16 +130,16 @@ export interface CodeContext {
       endLine: number;
     };
   };
-  
+
   // 周辺のコンテキスト
   surroundingCode: {
     before: string; // 前10行
-    after: string;  // 後10行
+    after: string; // 後10行
   };
-  
+
   // インポート文
   imports: string[];
-  
+
   // 使用されている主要なAPI/関数
   usedAPIs: string[];
 }
@@ -227,17 +227,17 @@ export interface TaskSection {
 export interface AIPromptTemplate {
   // 汎用修正プロンプト
   genericFix: string;
-  
+
   // 問題タイプ別プロンプト
   byIssueType: {
     [issueType: string]: string;
   };
-  
+
   // フレームワーク別プロンプト
   byFramework: {
     [framework: string]: string;
   };
-  
+
   // バッチ処理用プロンプト
   batchFix: string;
 }
@@ -260,7 +260,7 @@ export interface EnhancedAnalysisResult {
   projectScore?: ProjectScore;
   fileScores?: FileScore[];
   projectContext?: ProjectContext;
-  
+
   // AI向け拡張情報
   aiContext?: {
     codeContext: Map<string, CodeContext>;
@@ -274,15 +274,15 @@ export interface EnhancedAnalysisResult {
 export interface AIJsonOutput {
   // AIが最初に読むべき全体状況と最重要問題点
   overallAssessment: string;
-  
+
   // 対処すべき問題の優先順位付きリスト
   keyRisks: Array<{
     // 問題点の簡潔な自然言語での説明
     problem: string;
-    
+
     // リスクレベル
     riskLevel: string;
-    
+
     // 修正に必要な最小限のコードスニペットと行番号
     context: {
       filePath: string;
@@ -290,7 +290,7 @@ export interface AIJsonOutput {
       startLine: number;
       endLine: number;
     };
-    
+
     // AIが次にとるべき具体的なアクション
     suggestedAction: {
       type: string; // ADD_ASSERTION, SANITIZE_VARIABLE, etc.
@@ -298,7 +298,7 @@ export interface AIJsonOutput {
       example?: string; // 具体的なコード例
     };
   }>;
-  
+
   // 人間が確認するための詳細なHTMLレポートへのリンク
   fullReportUrl: string;
 }
@@ -309,21 +309,25 @@ export const RiskLevel = CoreTypes.RiskLevel;
 export type RiskLevel = CoreTypes.RiskLevel;
 
 // AIエージェントへのアクション提案の種別 (Issue #58)
-export type AIActionType = 'ADD_ASSERTION' | 'SANITIZE_VARIABLE' | 'REFACTOR_COMPLEX_CODE' | 'ADD_MISSING_TEST';
+export type AIActionType =
+  | 'ADD_ASSERTION'
+  | 'SANITIZE_VARIABLE'
+  | 'REFACTOR_COMPLEX_CODE'
+  | 'ADD_MISSING_TEST';
 
 // 評価ディメンションごとの詳細なスコア内訳 (Issue #58)
 export interface ScoreBreakdown {
-  label: string;        // 例: "クリティカルリスク", "Unsafe Taint Flow"
-  calculation: string;  // 例: "-5点 x 21件"
-  deduction: number;    // 例: -105
+  label: string; // 例: "クリティカルリスク", "Unsafe Taint Flow"
+  calculation: string; // 例: "-5点 x 21件"
+  deduction: number; // 例: -105
 }
 
 // 多角的な評価ディメンション (Issue #58)
 export interface ReportDimension {
-  name: string;         // 例: "テスト意図実現度", "セキュリティリスク"
-  score: number;        // 100点満点のスコア
-  weight: number;       // 総合スコアへの寄与度 (0.0 ~ 1.0)
-  impact: number;       // 総合スコアへの実際の影響点 (score * weight)
+  name: string; // 例: "テスト意図実現度", "セキュリティリスク"
+  score: number; // 100点満点のスコア
+  weight: number; // 総合スコアへの寄与度 (0.0 ~ 1.0)
+  impact: number; // 総合スコアへの実際の影響点 (score * weight)
   breakdown: ScoreBreakdown[];
 }
 
@@ -352,7 +356,7 @@ export interface DetailedIssue {
   severity?: string;
   message?: string;
   category?: string;
-  contextSnippet?: string; 
+  contextSnippet?: string;
 }
 
 // AIエージェントが直接利用できる、構造化されたリスク情報 (Issue #58)
@@ -377,29 +381,33 @@ export interface AIActionableRisk {
 
 // Issue #52 が生成する統一された分析結果の最終形式 (Issue #58)
 export interface UnifiedAnalysisResult {
-  schemaVersion: "1.0";
+  schemaVersion: '1.0';
   summary: ExecutiveSummary;
   detailedIssues: DetailedIssue[]; // 人間向けレポート用の全問題リスト
-  aiKeyRisks: AIActionableRisk[];  // AI向けの優先順位付き問題リスト
+  aiKeyRisks: AIActionableRisk[]; // AI向けの優先順位付き問題リスト
 }
 
 // UnifiedAIFormatterのオプション
 export interface UnifiedAIFormatterOptions {
   // レポートの出力先パス
   reportPath?: string;
-  
+
   // 最大リスク数（デフォルト: 10）
   maxRisks?: number;
-  
+
   // 含めるリスクレベル
   includeRiskLevels?: string[];
-  
+
   // 実際のHTMLレポートパス (Issue #58)
   htmlReportPath?: string;
 }
 
 // エラー処理
 export interface AIOutputError extends Error {
-  code: 'CONTEXT_EXTRACTION_FAILED' | 'FORMAT_GENERATION_FAILED' | 'SIZE_LIMIT_EXCEEDED' | 'TOKEN_LIMIT_EXCEEDED';
+  code:
+    | 'CONTEXT_EXTRACTION_FAILED'
+    | 'FORMAT_GENERATION_FAILED'
+    | 'SIZE_LIMIT_EXCEEDED'
+    | 'TOKEN_LIMIT_EXCEEDED';
   details?: any;
 }

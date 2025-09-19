@@ -20,8 +20,8 @@ describe('AnalyzerExtended', () => {
       filePatterns: {
         test: ['**/*.test.ts', '**/*.spec.ts'],
         source: ['**/*.ts'],
-        ignore: ['**/node_modules/**']
-      }
+        ignore: ['**/node_modules/**'],
+      },
     };
   });
 
@@ -29,13 +29,16 @@ describe('AnalyzerExtended', () => {
     const completenessPlugin = new TestCompletenessPlugin();
     const assertionPlugin = new AssertionQualityPlugin();
     const structurePlugin = new TestStructurePlugin();
-    
+
     analyzer.registerQualityPlugin(completenessPlugin);
     analyzer.registerQualityPlugin(assertionPlugin);
     analyzer.registerQualityPlugin(structurePlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('sample.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('sample.test.ts'),
+      mockProjectContext
+    );
+
     expect(result.qualityAnalysis).toBeDefined();
     expect(result.qualityAnalysis.pluginResults).toHaveLength(3);
     expect(result.aggregatedScore).toBeDefined();
@@ -45,7 +48,7 @@ describe('AnalyzerExtended', () => {
 
   it('should maintain backward compatibility with legacy analyze method', async () => {
     const legacyResult = await analyzer.analyze(path.dirname(getFixturePath('sample.test.ts')));
-    
+
     expect(legacyResult.totalFiles).toBeDefined();
     expect(legacyResult.issues).toBeDefined();
     expect(legacyResult.executionTime).toBeDefined();
@@ -56,8 +59,11 @@ describe('AnalyzerExtended', () => {
     const completenessPlugin = new TestCompletenessPlugin();
     analyzer.registerQualityPlugin(completenessPlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('comprehensive.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('comprehensive.test.ts'),
+      mockProjectContext
+    );
+
     expect(result.filePath).toBe(getFixturePath('comprehensive.test.ts'));
     expect(result.qualityAnalysis.executionStats).toBeDefined();
     expect(result.aggregatedScore.breakdown).toBeDefined();
@@ -68,15 +74,18 @@ describe('AnalyzerExtended', () => {
   it('should aggregate scores from multiple plugins', async () => {
     const completenessPlugin = new TestCompletenessPlugin();
     const assertionPlugin = new AssertionQualityPlugin();
-    
+
     analyzer.registerQualityPlugin(completenessPlugin);
     analyzer.registerQualityPlugin(assertionPlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('multi-plugin.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('multi-plugin.test.ts'),
+      mockProjectContext
+    );
+
     expect(result.aggregatedScore?.breakdown?.completeness).toBeDefined();
     expect(result.aggregatedScore?.breakdown?.correctness).toBeDefined();
-    
+
     // 集約されたスコアは個別プラグインのスコアの加重平均
     expect(result.aggregatedScore?.overall).toBeGreaterThanOrEqual(0);
     expect(result.aggregatedScore?.overall).toBeLessThanOrEqual(100);
@@ -92,8 +101,11 @@ describe('AnalyzerExtended', () => {
     const errorPlugin = new ErrorPlugin();
     analyzer.registerQualityPlugin(errorPlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('error.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('error.test.ts'),
+      mockProjectContext
+    );
+
     // エラーが発生してもアナライザーは継続動作する
     expect(result.qualityAnalysis.pluginResults).toHaveLength(1);
     expect(result.qualityAnalysis.pluginResults[0].error).toBeDefined();
@@ -103,14 +115,17 @@ describe('AnalyzerExtended', () => {
   it('should provide actionable recommendations', async () => {
     const completenessPlugin = new TestCompletenessPlugin();
     const assertionPlugin = new AssertionQualityPlugin();
-    
+
     analyzer.registerQualityPlugin(completenessPlugin);
     analyzer.registerQualityPlugin(assertionPlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('needs-improvement.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('needs-improvement.test.ts'),
+      mockProjectContext
+    );
+
     expect(Array.isArray(result.recommendations)).toBe(true);
-    
+
     if (result.recommendations.length > 0) {
       const recommendation = result.recommendations[0];
       expect(recommendation.priority).toBeDefined();
@@ -125,15 +140,21 @@ describe('AnalyzerExtended', () => {
     const completenessPlugin = new TestCompletenessPlugin();
     analyzer.registerQualityPlugin(completenessPlugin);
 
-    const result = await analyzer.analyzeWithQuality(getFixturePath('confidence.test.ts'), mockProjectContext);
-    
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('confidence.test.ts'),
+      mockProjectContext
+    );
+
     expect(result.aggregatedScore?.confidence).toBeGreaterThanOrEqual(0);
     expect(result.aggregatedScore?.confidence).toBeLessThanOrEqual(1);
-    
+
     // 信頼度は個別プラグインの信頼度の加重平均
-    const pluginConfidences = result.qualityAnalysis.pluginResults.map(r => r.qualityScore.confidence);
+    const pluginConfidences = result.qualityAnalysis.pluginResults.map(
+      r => r.qualityScore.confidence
+    );
     if (pluginConfidences.length > 0) {
-      const avgConfidence = pluginConfidences.reduce<number>((sum, c) => sum + (c ?? 0), 0) / pluginConfidences.length;
+      const avgConfidence =
+        pluginConfidences.reduce<number>((sum, c) => sum + (c ?? 0), 0) / pluginConfidences.length;
       expect(Math.abs((result.aggregatedScore?.confidence ?? 0) - avgConfidence)).toBeLessThan(0.1);
     }
   });
@@ -142,19 +163,21 @@ describe('AnalyzerExtended', () => {
     const completenessPlugin = new TestCompletenessPlugin();
     const assertionPlugin = new AssertionQualityPlugin();
     const structurePlugin = new TestStructurePlugin();
-    
+
     analyzer.registerQualityPlugin(completenessPlugin);
     analyzer.registerQualityPlugin(assertionPlugin);
     analyzer.registerQualityPlugin(structurePlugin);
 
     const result = await analyzer.analyzeWithQuality(
-      getFixturePath('filtered.test.ts'), 
+      getFixturePath('filtered.test.ts'),
       mockProjectContext,
       { skipPlugins: ['test-structure'] }
     );
-    
+
     expect(result.qualityAnalysis.pluginResults).toHaveLength(2);
-    expect(result.qualityAnalysis.pluginResults.every(r => r.pluginId !== 'test-structure')).toBe(true);
+    expect(result.qualityAnalysis.pluginResults.every(r => r.pluginId !== 'test-structure')).toBe(
+      true
+    );
   });
 
   it('should provide performance metrics', async () => {
@@ -162,11 +185,16 @@ describe('AnalyzerExtended', () => {
     analyzer.registerQualityPlugin(completenessPlugin);
 
     const startTime = Date.now();
-    const result = await analyzer.analyzeWithQuality(getFixturePath('performance.test.ts'), mockProjectContext);
+    const result = await analyzer.analyzeWithQuality(
+      getFixturePath('performance.test.ts'),
+      mockProjectContext
+    );
     const endTime = Date.now();
-    
+
     expect(result.qualityAnalysis.executionStats.totalExecutionTime).toBeGreaterThanOrEqual(0);
-    expect(result.qualityAnalysis.executionStats.totalExecutionTime).toBeLessThan(endTime - startTime + 100);
+    expect(result.qualityAnalysis.executionStats.totalExecutionTime).toBeLessThan(
+      endTime - startTime + 100
+    );
     expect(result.qualityAnalysis.executionStats.totalPlugins).toBe(1);
     expect(result.qualityAnalysis.executionStats.successfulPlugins).toBe(1);
     expect(result.qualityAnalysis.executionStats.failedPlugins).toBe(0);
@@ -177,21 +205,23 @@ describe('AnalyzerExtended', () => {
     const legacyPlugin = {
       name: 'legacy-test-plugin',
       async analyze(_filePath: string) {
-        return [{
-          id: 'legacy-issue-id',
-          type: 'legacy-issue',
-          severity: 'medium' as const,
-          message: 'Legacy plugin issue detected',
-          filePath: _filePath,
-          category: 'test-quality' as const
-        }];
-      }
+        return [
+          {
+            id: 'legacy-issue-id',
+            type: 'legacy-issue',
+            severity: 'medium' as const,
+            message: 'Legacy plugin issue detected',
+            filePath: _filePath,
+            category: 'test-quality' as const,
+          },
+        ];
+      },
     };
 
     analyzer.registerPlugin(legacyPlugin);
 
     const result = await analyzer.analyze(getFixturePath('legacy.test.ts'));
-    
+
     expect(result.issues.some((issue: any) => issue.type === 'legacy-issue')).toBe(true);
   });
 
@@ -203,11 +233,11 @@ describe('AnalyzerExtended', () => {
       const files = [
         getFixturePath('test1.test.ts'),
         getFixturePath('test2.test.ts'),
-        getFixturePath('test3.test.ts')
+        getFixturePath('test3.test.ts'),
       ];
 
       const results = await analyzer.analyzeMultiple(files, mockProjectContext);
-      
+
       expect(results).toHaveLength(3);
       results.forEach(result => {
         expect(result.filePath).toBeDefined();
@@ -220,14 +250,11 @@ describe('AnalyzerExtended', () => {
       const completenessPlugin = new TestCompletenessPlugin();
       analyzer.registerQualityPlugin(completenessPlugin);
 
-      const files = [
-        getFixturePath('good.test.ts'),
-        getFixturePath('bad.test.ts')
-      ];
+      const files = [getFixturePath('good.test.ts'), getFixturePath('bad.test.ts')];
 
       const results = await analyzer.analyzeMultiple(files, mockProjectContext);
       const summary = analyzer.generateSummary(results);
-      
+
       expect(summary.totalFiles).toBe(2);
       expect(summary.averageScore).toBeGreaterThanOrEqual(0);
       expect(summary.averageScore).toBeLessThanOrEqual(100);

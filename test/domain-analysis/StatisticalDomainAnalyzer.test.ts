@@ -18,7 +18,7 @@ describe('StatisticalDomainAnalyzer', () => {
       excludePatterns: ['node_modules', 'dist', 'coverage'],
       supportedExtensions: ['.ts', '.js', '.tsx', '.jsx'],
       minKeywordFrequency: 2,
-      maxClusters: 5
+      maxClusters: 5,
     };
     analyzer = new StatisticalDomainAnalyzer(config);
   });
@@ -28,7 +28,7 @@ describe('StatisticalDomainAnalyzer', () => {
       expect(analyzer).toBeDefined();
       expect(analyzer.getConfig()).toMatchObject({
         projectPath: testProjectPath,
-        excludePatterns: ['node_modules', 'dist', 'coverage']
+        excludePatterns: ['node_modules', 'dist', 'coverage'],
       });
     });
 
@@ -42,7 +42,7 @@ describe('StatisticalDomainAnalyzer', () => {
       const configWithEmptyExclude = {
         projectPath: testProjectPath,
         excludePatterns: [] as string[],
-        supportedExtensions: ['.ts', '.js']
+        supportedExtensions: ['.ts', '.js'],
       };
       const analyzerWithEmptyExclude = new StatisticalDomainAnalyzer(configWithEmptyExclude);
       expect(analyzerWithEmptyExclude.getConfig().excludePatterns).toEqual([]);
@@ -53,17 +53,24 @@ describe('StatisticalDomainAnalyzer', () => {
       const configWithUndefinedExclude = {
         projectPath: testProjectPath,
         excludePatterns: undefined,
-        supportedExtensions: ['.ts', '.js']
+        supportedExtensions: ['.ts', '.js'],
       };
-      const analyzerWithUndefinedExclude = new StatisticalDomainAnalyzer(configWithUndefinedExclude);
-      expect(analyzerWithUndefinedExclude.getConfig().excludePatterns).toEqual(['node_modules', 'dist', 'coverage', '.git']);
+      const analyzerWithUndefinedExclude = new StatisticalDomainAnalyzer(
+        configWithUndefinedExclude
+      );
+      expect(analyzerWithUndefinedExclude.getConfig().excludePatterns).toEqual([
+        'node_modules',
+        'dist',
+        'coverage',
+        '.git',
+      ]);
       expect(analyzerWithUndefinedExclude.getConfig().excludePatterns).not.toBeUndefined();
     });
 
     it('空配列のsupportedExtensionsを正しく処理できる', () => {
       const configWithEmptyExt = {
         projectPath: testProjectPath,
-        supportedExtensions: [] as string[]
+        supportedExtensions: [] as string[],
       };
       const analyzerWithEmptyExt = new StatisticalDomainAnalyzer(configWithEmptyExt);
       expect(analyzerWithEmptyExt.getConfig().supportedExtensions).toEqual([]);
@@ -73,11 +80,11 @@ describe('StatisticalDomainAnalyzer', () => {
     it('部分的な設定オブジェクトを正しくマージできる', () => {
       const partialConfig = {
         projectPath: testProjectPath,
-        maxClusters: 10
+        maxClusters: 10,
       };
       const analyzerWithPartialConfig = new StatisticalDomainAnalyzer(partialConfig);
       const config = analyzerWithPartialConfig.getConfig();
-      
+
       expect(config.projectPath).toBe(testProjectPath);
       expect(config.maxClusters).toBe(10);
       expect(config.excludePatterns).toEqual(['node_modules', 'dist', 'coverage', '.git']);
@@ -92,19 +99,19 @@ describe('StatisticalDomainAnalyzer', () => {
       const testFiles = [
         path.join(testProjectPath, 'test1.ts'),
         path.join(testProjectPath, 'test2.js'),
-        path.join(testProjectPath, 'src', 'test3.ts')
+        path.join(testProjectPath, 'src', 'test3.ts'),
       ];
-      
+
       await fs.mkdir(path.join(testProjectPath, 'src'), { recursive: true });
       for (const file of testFiles) {
         await fs.writeFile(file, '// test file');
       }
-      
+
       const files = await analyzer.collectSourceFiles();
       expect(Array.isArray(files)).toBe(true);
       expect(files.length).toBeGreaterThanOrEqual(3);
       expect(files.every(f => f.endsWith('.ts') || f.endsWith('.js'))).toBe(true);
-      
+
       // クリーンアップ
       for (const file of testFiles) {
         await fs.unlink(file).catch(() => {});
@@ -116,22 +123,26 @@ describe('StatisticalDomainAnalyzer', () => {
       const includedFile = path.join(testProjectPath, 'included.ts');
       const excludedFile1 = path.join(testProjectPath, 'node_modules', 'package', 'index.js');
       const excludedFile2 = path.join(testProjectPath, 'dist', 'output.js');
-      
+
       await fs.mkdir(path.join(testProjectPath, 'node_modules', 'package'), { recursive: true });
       await fs.mkdir(path.join(testProjectPath, 'dist'), { recursive: true });
-      
+
       await fs.writeFile(includedFile, '// included');
       await fs.writeFile(excludedFile1, '// excluded');
       await fs.writeFile(excludedFile2, '// excluded');
-      
+
       const files = await analyzer.collectSourceFiles();
       expect(files.every(f => !f.includes('node_modules'))).toBe(true);
       expect(files.every(f => !f.includes('dist'))).toBe(true);
-      
+
       // クリーンアップ
       await fs.unlink(includedFile).catch(() => {});
-      await fs.rm(path.join(testProjectPath, 'node_modules'), { recursive: true, force: true }).catch(() => {});
-      await fs.rm(path.join(testProjectPath, 'dist'), { recursive: true, force: true }).catch(() => {});
+      await fs
+        .rm(path.join(testProjectPath, 'node_modules'), { recursive: true, force: true })
+        .catch(() => {});
+      await fs
+        .rm(path.join(testProjectPath, 'dist'), { recursive: true, force: true })
+        .catch(() => {});
     });
   });
 
@@ -146,16 +157,16 @@ describe('StatisticalDomainAnalyzer', () => {
           }
         }
       `;
-      
+
       // テストファイルを作成
       await fs.mkdir(path.dirname(testFile), { recursive: true });
       await fs.writeFile(testFile, code);
-      
+
       const tokens = await analyzer.extractTokensFromFile(testFile);
       // トークンが抽出されることを確認（実装により具体的なトークンは異なる可能性がある）
       expect(Array.isArray(tokens)).toBe(true);
       expect(tokens.length).toBeGreaterThan(0);
-      
+
       // クリーンアップ
       await fs.unlink(testFile);
     });
@@ -168,16 +179,16 @@ describe('StatisticalDomainAnalyzer', () => {
           return order.total + tax;
         }
       `;
-      
+
       await fs.mkdir(path.dirname(testFile), { recursive: true });
       await fs.writeFile(testFile, code);
-      
+
       const tokens = await analyzer.extractTokensFromFile(testFile);
       // トークンが抽出されることを確認（実装により具体的なトークンは異なる可能性がある）
       expect(Array.isArray(tokens)).toBe(true);
       // パーサーの初期化問題により空の配列が返される可能性があるため、長さの期待値を調整
       expect(tokens.length).toBeGreaterThanOrEqual(0);
-      
+
       await fs.unlink(testFile);
     });
   });
@@ -186,7 +197,7 @@ describe('StatisticalDomainAnalyzer', () => {
     it('トークンの頻度を計算できる', async () => {
       const tokens = ['user', 'user', 'payment', 'order', 'user', 'payment'];
       const frequencies = analyzer.calculateTokenFrequencies(tokens);
-      
+
       expect(frequencies.get('user')).toBe(3);
       expect(frequencies.get('payment')).toBe(2);
       expect(frequencies.get('order')).toBe(1);
@@ -196,7 +207,7 @@ describe('StatisticalDomainAnalyzer', () => {
       const tokens = ['user', 'user', 'user', 'payment', 'payment', 'order'];
       const frequencies = analyzer.calculateTokenFrequencies(tokens);
       const filtered = analyzer.filterLowFrequencyTokens(frequencies, 2);
-      
+
       expect(filtered.has('user')).toBe(true);
       expect(filtered.has('payment')).toBe(true);
       expect(filtered.has('order')).toBe(false);
@@ -215,27 +226,27 @@ describe('StatisticalDomainAnalyzer', () => {
         path.join(testProjectPath, 'payment.ts'),
         'class PaymentService { processPayment() {} refundPayment() {} }'
       );
-      
+
       const result: DomainAnalysisResult = await analyzer.analyze();
-      
+
       expect(result).toBeDefined();
       expect(result.domains).toBeDefined();
       expect(Array.isArray(result.domains)).toBe(true);
       expect(result.keywords).toBeDefined();
       expect(result.timestamp).toBeInstanceOf(Date);
-      
+
       // クリーンアップ
       await fs.rm(testProjectPath, { recursive: true, force: true });
     });
 
     it('空のプロジェクトでもエラーにならない', async () => {
       await fs.mkdir(testProjectPath, { recursive: true });
-      
+
       const result = await analyzer.analyze();
-      
+
       expect(result.domains).toEqual([]);
       expect(result.keywords.size).toBe(0);
-      
+
       await fs.rm(testProjectPath, { recursive: true, force: true });
     });
   });
@@ -247,9 +258,9 @@ describe('StatisticalDomainAnalyzer', () => {
         excludePatterns: [],
         supportedExtensions: ['.ts'],
         minKeywordFrequency: 2,
-        maxClusters: 5
+        maxClusters: 5,
       });
-      
+
       await expect(invalidAnalyzer.analyze()).rejects.toThrow();
     });
 
@@ -259,10 +270,10 @@ describe('StatisticalDomainAnalyzer', () => {
         path.join(testProjectPath, 'invalid.ts'),
         'this is not valid TypeScript {{{'
       );
-      
+
       const result = await analyzer.analyze();
       expect(result).toBeDefined();
-      
+
       await fs.rm(testProjectPath, { recursive: true, force: true });
     });
   });

@@ -33,7 +33,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
 
       // TDD Red期待: 現在はsourcemapファイルが存在するため失敗する
       expect(allMapFiles).toHaveLength(0);
-      
+
       if (allMapFiles.length > 0) {
         console.warn('⚠️ 検出されたsourcemapファイル:', allMapFiles);
         console.warn('⚠️ これらのファイルは機密情報漏えいリスクがあります');
@@ -56,7 +56,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
       for (const jsFile of jsFiles) {
         const filePath = path.join(distDir, jsFile);
         const content = fs.readFileSync(filePath, 'utf-8');
-        
+
         // inline sourcemapの検出（base64エンコード）
         if (content.includes('sourceMappingURL=data:application/json;base64,')) {
           inlineSourcemapFiles.push(jsFile);
@@ -65,7 +65,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
 
       // TDD Red期待: inline sourcemapが存在しないことを確認
       expect(inlineSourcemapFiles).toHaveLength(0);
-      
+
       if (inlineSourcemapFiles.length > 0) {
         console.warn('⚠️ inline sourceMappingURL検出ファイル:', inlineSourcemapFiles);
         console.warn('⚠️ Issue #126: 機密情報がinline埋め込みされています');
@@ -83,12 +83,12 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
       }
 
       const mapFiles = await Array.fromAsync(new Glob('**/*.map', { cwd: distDir }));
-      const pathLeakageFiles: Array<{file: string; paths: string[]}> = [];
+      const pathLeakageFiles: Array<{ file: string; paths: string[] }> = [];
 
       for (const mapFile of mapFiles) {
         const filePath = path.join(distDir, mapFile);
         const content = fs.readFileSync(filePath, 'utf-8');
-        
+
         try {
           const sourcemap = JSON.parse(content);
           const leakedPaths: string[] = [];
@@ -100,19 +100,19 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
               if (path.isAbsolute(source)) {
                 leakedPaths.push(`絶対パス: ${source}`);
               }
-              
+
               // プロジェクト構造露出検出
               if (source.includes('../../src/') || source.includes('../src/')) {
                 leakedPaths.push(`プロジェクト構造露出: ${source}`);
               }
-              
+
               // ユーザーディレクトリ情報検出（Issue #120対応: パターンベース検証）
               const userDirPatterns = [
                 { pattern: 'Users', platform: 'macOS/Linux' },
                 { pattern: 'home', platform: 'Linux' },
-                { pattern: 'Documents and Settings', platform: 'Windows XP' }
+                { pattern: 'Documents and Settings', platform: 'Windows XP' },
               ];
-              
+
               for (const { pattern, platform } of userDirPatterns) {
                 if (source.includes(`/${pattern}/`) || source.includes(`\\${pattern}\\`)) {
                   leakedPaths.push(`${platform}ユーザーディレクトリ情報: ${source}`);
@@ -132,7 +132,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
 
       // TDD Red期待: 機密パス情報が漏えいしていないことを確認
       expect(pathLeakageFiles).toHaveLength(0);
-      
+
       if (pathLeakageFiles.length > 0) {
         console.error('🚨 機密パス情報漏えい検出:');
         pathLeakageFiles.forEach(({ file, paths }) => {
@@ -155,14 +155,14 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
       }
 
       const jsFiles = await Array.fromAsync(new Glob('**/*.js', { cwd: distDir }));
-      const externalSourcemapRefs: Array<{file: string; refs: string[]}> = [];
+      const externalSourcemapRefs: Array<{ file: string; refs: string[] }> = [];
 
       for (const jsFile of jsFiles) {
         const filePath = path.join(distDir, jsFile);
         const content = fs.readFileSync(filePath, 'utf-8');
         const lines = content.split('\n');
         const refs: string[] = [];
-        
+
         // 外部sourcemap参照の検出
         for (const line of lines) {
           const trimmedLine = line.trim();
@@ -179,7 +179,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
       // 本番環境では外部sourcemap参照も除去されるべき
       // 開発環境では許可される場合がある
       const isProduction = process.env.NODE_ENV === 'production';
-      
+
       if (isProduction) {
         expect(externalSourcemapRefs).toHaveLength(0);
       } else {
@@ -202,7 +202,7 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
       const jestCacheDirs = [
         path.join(projectRoot, '.jest-cache'),
         path.join(projectRoot, '.cache/jest'),
-        path.join(projectRoot, 'node_modules/.cache/jest')
+        path.join(projectRoot, 'node_modules/.cache/jest'),
       ];
 
       for (const cacheDir of jestCacheDirs) {
@@ -210,15 +210,20 @@ describe('Issue #126: Sourcemap セキュリティ脆弱性検証', () => {
           // キャッシュディレクトリが存在する場合は警告
           console.warn(`⚠️ Jestキャッシュディレクトリが存在: ${cacheDir}`);
           console.warn('⚠️ キャッシュクリアを推奨: npm run clean:cache:jest');
-          
+
           // .gitignoreで除外されているかチェック
           const gitignorePath = path.join(projectRoot, '.gitignore');
           if (fs.existsSync(gitignorePath)) {
             const gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8');
             const relativeCacheDir = path.relative(projectRoot, cacheDir);
-            
-            if (!gitignoreContent.includes('.jest-cache') && !gitignoreContent.includes(relativeCacheDir)) {
-              console.error(`🚨 .gitignoreでキャッシュディレクトリが除外されていません: ${relativeCacheDir}`);
+
+            if (
+              !gitignoreContent.includes('.jest-cache') &&
+              !gitignoreContent.includes(relativeCacheDir)
+            ) {
+              console.error(
+                `🚨 .gitignoreでキャッシュディレクトリが除外されていません: ${relativeCacheDir}`
+              );
             }
           }
         }

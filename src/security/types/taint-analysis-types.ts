@@ -1,7 +1,7 @@
 /**
  * Taint Analysis 型定義
  * TaintAnalysisSystemで使用される型定義
- * 
+ *
  * SOLID原則: インターフェース分離の原則
  */
 
@@ -16,7 +16,7 @@ export enum TaintLevel {
   LOW = 1,
   MEDIUM = 2,
   HIGH = 3,
-  CRITICAL = 4
+  CRITICAL = 4,
 }
 
 /**

@@ -4,11 +4,11 @@
  * Phase 5: 実コンポーネント統合
  */
 
-import { 
-  TaintAnalysisResult, 
-  IntentAnalysisResult, 
+import {
+  TaintAnalysisResult,
+  IntentAnalysisResult,
   GapAnalysisResult,
-  SecurityGap 
+  SecurityGap,
 } from '../orchestrator/types';
 import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
 
@@ -17,7 +17,10 @@ import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
  * Strategy Pattern: 異なるギャップ検出アルゴリズムの抽象化
  */
 export interface IGapDetectionStrategy {
-  analyze(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): Promise<GapAnalysisResult>;
+  analyze(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): Promise<GapAnalysisResult>;
   getName(): string;
   validate(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): boolean;
 }
@@ -48,7 +51,7 @@ export class GapDetector {
       riskThreshold: 'MEDIUM',
       includeRecommendations: true,
       analysisDepth: 'detailed',
-      ...config
+      ...config,
     };
 
     // デフォルト戦略の設定
@@ -60,7 +63,7 @@ export class GapDetector {
    * Defensive Programming: 堅牢な入力検証
    */
   async analyzeGaps(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     // 入力検証
@@ -76,9 +79,10 @@ export class GapDetector {
       }
 
       return result;
-
     } catch (error) {
-      throw new Error(`ギャップ分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `ギャップ分析に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -115,7 +119,10 @@ export class GapDetector {
    * 入力検証
    * Defensive Programming: 堅牢なバリデーション
    */
-  private validateInputs(intentResult: IntentAnalysisResult, taintResult: TaintAnalysisResult): void {
+  private validateInputs(
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
+  ): void {
     if (!intentResult) {
       throw new Error('IntentAnalysisResultが無効です');
     }
@@ -138,8 +145,8 @@ export class GapDetector {
    * DRY原則: 結果統合ロジックの一元化
    */
   private async combineStrategyResults(
-    intentResult: IntentAnalysisResult, 
-    taintResult: TaintAnalysisResult, 
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult,
     baseResult: GapAnalysisResult
   ): Promise<GapAnalysisResult> {
     const allGaps = [...baseResult.gaps];
@@ -160,7 +167,7 @@ export class GapDetector {
 
     return {
       gaps: uniqueGaps,
-      summary
+      summary,
     };
   }
 
@@ -169,7 +176,7 @@ export class GapDetector {
    */
   private deduplicateGaps(gaps: SecurityGap[]): SecurityGap[] {
     const uniqueMap = new Map<string, SecurityGap>();
-    
+
     for (const gap of gaps) {
       const key = `${gap.testName}-${gap.intention}-${gap.actualImplementation}`;
       if (!uniqueMap.has(key)) {
@@ -189,7 +196,7 @@ export class GapDetector {
       criticalGaps: gaps.filter(g => g.riskLevel === 'CRITICAL').length,
       highGaps: gaps.filter(g => g.riskLevel === 'HIGH').length,
       mediumGaps: gaps.filter(g => g.riskLevel === 'MEDIUM').length,
-      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length
+      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length,
     };
   }
 }
@@ -202,7 +209,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
   constructor(private config: GapAnalysisConfig) {}
 
   async analyze(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): Promise<GapAnalysisResult> {
     const gaps: SecurityGap[] = [];
@@ -236,7 +243,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    * テスト意図と脆弱性の対応関係分析
    */
   private analyzeIntentVulnerabilityMapping(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): SecurityGap[] {
     const gaps: SecurityGap[] = [];
@@ -244,7 +251,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
     for (const intent of intentResult.testIntents) {
       // セキュリティ要件に対応する脆弱性を探す
       const relatedVulns = taintResult.vulnerabilities.filter(vuln =>
-        intent.securityRequirements.some(req => 
+        intent.securityRequirements.some(req =>
           this.isRequirementRelatedToVulnerability(req, vuln.type)
         )
       );
@@ -254,19 +261,21 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
         for (const vuln of relatedVulns) {
           // 基本的な脆弱性重要度をマッピング
           let gapRiskLevel = this.mapSeverityToRiskLevel(vuln.severity);
-          
+
           // SQLインジェクションがCRITICAL重要度の場合、またはユーザー認証関連の場合はCRITICALとする
-          if (vuln.type === 'SQL_INJECTION' && 
-              (vuln.severity === 'CRITICAL' || intent.testName.includes('ユーザー認証'))) {
+          if (
+            vuln.type === 'SQL_INJECTION' &&
+            (vuln.severity === 'CRITICAL' || intent.testName.includes('ユーザー認証'))
+          ) {
             gapRiskLevel = 'CRITICAL';
           }
-          
+
           gaps.push({
             testName: intent.testName,
             intention: `${intent.expectedBehavior} - ${intent.securityRequirements.join(', ')}`,
             actualImplementation: `検出された脆弱性: ${vuln.type} (${vuln.severity})`,
             riskLevel: gapRiskLevel,
-            recommendations: this.generateRecommendations(intent, vuln)
+            recommendations: this.generateRecommendations(intent, vuln),
           });
         }
       }
@@ -279,14 +288,14 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    * カバレッジギャップの検出
    */
   private detectCoverageGaps(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): SecurityGap[] {
     const gaps: SecurityGap[] = [];
 
     // セキュリティ要件が不足しているテストを検出
-    const testsWithoutSecurity = intentResult.testIntents.filter(intent =>
-      !intent.securityRequirements || intent.securityRequirements.length === 0
+    const testsWithoutSecurity = intentResult.testIntents.filter(
+      intent => !intent.securityRequirements || intent.securityRequirements.length === 0
     );
 
     for (const intent of testsWithoutSecurity) {
@@ -295,7 +304,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
         intention: intent.expectedBehavior,
         actualImplementation: 'セキュリティ要件の定義不足 - テストカバレッジギャップ - テスト不足',
         riskLevel: 'MEDIUM',
-        recommendations: ['セキュリティ要件の明確化', 'セキュリティテストケースの追加']
+        recommendations: ['セキュリティ要件の明確化', 'セキュリティテストケースの追加'],
       });
     }
 
@@ -306,7 +315,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    * リスク評価の不整合検出
    */
   private detectRiskMismatches(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): SecurityGap[] {
     const gaps: SecurityGap[] = [];
@@ -330,7 +339,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
             intention: `リスク評価: ${intentRiskLevel}`,
             actualImplementation: `実際の脆弱性重要度: ${actualRiskLevel} - リスク過小評価`,
             riskLevel: actualRiskLevel,
-            recommendations: ['リスク評価の見直し', 'セキュリティテストの強化']
+            recommendations: ['リスク評価の見直し', 'セキュリティテストの強化'],
           });
         }
       }
@@ -343,7 +352,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    * 実装されていない対策の検出
    */
   private detectUnaddressedVulnerabilities(
-    intentResult: IntentAnalysisResult, 
+    intentResult: IntentAnalysisResult,
     taintResult: TaintAnalysisResult
   ): SecurityGap[] {
     const gaps: SecurityGap[] = [];
@@ -365,8 +374,8 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
           recommendations: [
             `${vuln.type}対策の実装`,
             'セキュリティテストの追加',
-            'コードレビューの強化'
-          ]
+            'コードレビューの強化',
+          ],
         });
       }
     }
@@ -379,10 +388,10 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    */
   private isRequirementRelatedToVulnerability(requirement: string, vulnType: string): boolean {
     const relationMap: Record<string, string[]> = {
-      'PATH_TRAVERSAL': ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ', 'アクセス制御'],
-      'SQL_INJECTION': ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
-      'XSS': ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
-      'COMMAND_INJECTION': ['コマンドインジェクション', 'コマンド', '実行', 'シェル']
+      PATH_TRAVERSAL: ['パストラバーサル', 'ファイル', 'パス', 'ディレクトリ', 'アクセス制御'],
+      SQL_INJECTION: ['SQLインジェクション', 'データベース', 'クエリ', 'SQL'],
+      XSS: ['XSS', 'クロスサイトスクリプティング', 'スクリプト', 'HTMLエスケープ'],
+      COMMAND_INJECTION: ['コマンドインジェクション', 'コマンド', '実行', 'シェル'],
     };
 
     const keywords = relationMap[vulnType] || [];
@@ -395,11 +404,16 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
    */
   private mapSeverityToRiskLevel(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     switch (severity.toUpperCase()) {
-      case 'CRITICAL': return 'CRITICAL';
-      case 'HIGH': return 'HIGH';
-      case 'MEDIUM': return 'MEDIUM';
-      case 'LOW': return 'LOW';
-      default: return 'MEDIUM';
+      case 'CRITICAL':
+        return 'CRITICAL';
+      case 'HIGH':
+        return 'HIGH';
+      case 'MEDIUM':
+        return 'MEDIUM';
+      case 'LOW':
+        return 'LOW';
+      default:
+        return 'MEDIUM';
     }
   }
 
@@ -410,7 +424,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
     const riskOrder = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
     const intentIndex = riskOrder.indexOf(intentRisk.toUpperCase());
     const actualIndex = riskOrder.indexOf(actualRisk.toUpperCase());
-    
+
     return actualIndex > intentIndex;
   }
 
@@ -449,7 +463,7 @@ class DefaultGapDetectionStrategy implements IGapDetectionStrategy {
       criticalGaps: gaps.filter(g => g.riskLevel === 'CRITICAL').length,
       highGaps: gaps.filter(g => g.riskLevel === 'HIGH').length,
       mediumGaps: gaps.filter(g => g.riskLevel === 'MEDIUM').length,
-      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length
+      lowGaps: gaps.filter(g => g.riskLevel === 'LOW').length,
     };
   }
 }

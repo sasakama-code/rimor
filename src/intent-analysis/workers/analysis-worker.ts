@@ -31,20 +31,20 @@ async function analyzeFiles(files: string[]): Promise<TestRealizationResult[]> {
     try {
       // ASTを生成
       const ast = await parser.parseFile(file);
-      
+
       // 意図を抽出
       const intent = await extractor.extractIntent(file, ast);
-      
+
       // 実際のテストを分析
       const actual = await extractor.analyzeActualTest(file, ast);
-      
+
       // ギャップを評価
       const result = await extractor.evaluateRealization(intent, actual);
-      
+
       // ファイル情報を追加
       result.file = file;
       result.description = intent.description;
-      
+
       results.push(result);
     } catch (error) {
       // エラーが発生してもスキップして続行
@@ -66,20 +66,20 @@ async function main() {
   try {
     const { files } = workerData as WorkerData;
     const results = await analyzeFiles(files);
-    
+
     const response: WorkerResult = { results };
     parentPort.postMessage(response);
   } catch (error) {
     const response: WorkerResult = {
       results: [],
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
     parentPort.postMessage(response);
   }
 }
 
 // ワーカーを開始
-main().catch((error) => {
+main().catch(error => {
   console.error('Worker error:', error);
   process.exit(1);
 });

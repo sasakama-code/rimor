@@ -21,8 +21,8 @@ describe('Plugin Performance Tests', () => {
       filePatterns: {
         test: ['**/*.test.ts', '**/*.spec.ts'],
         source: ['**/*.ts'],
-        ignore: ['**/node_modules/**']
-      }
+        ignore: ['**/node_modules/**'],
+      },
     };
   });
 
@@ -32,12 +32,9 @@ describe('Plugin Performance Tests', () => {
       analyzer.registerQualityPlugin(plugin);
 
       const startTime = process.hrtime.bigint();
-      
-      await analyzer.analyzeWithQuality(
-        getFixturePath('sample.test.ts'),
-        mockProjectContext
-      );
-      
+
+      await analyzer.analyzeWithQuality(getFixturePath('sample.test.ts'), mockProjectContext);
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -49,7 +46,9 @@ describe('Plugin Performance Tests', () => {
       // 大きなテストファイルを生成
       const largeTestContent = `
 describe('Large Test Suite', () => {
-${Array.from({ length: 100 }, (_, i) => `
+${Array.from(
+  { length: 100 },
+  (_, i) => `
   describe('Nested Suite ${i}', () => {
     it('should test case ${i}-1', () => {
       expect(true).toBe(true);
@@ -64,7 +63,8 @@ ${Array.from({ length: 100 }, (_, i) => `
       expect(value).toBeLessThan(${i + 1});
       expect(value).toBe(${i});
     });
-  });`).join('')}
+  });`
+).join('')}
 });`;
 
       const largePath = path.join(__dirname, '../fixtures/large.test.ts');
@@ -75,9 +75,9 @@ ${Array.from({ length: 100 }, (_, i) => `
         analyzer.registerQualityPlugin(plugin);
 
         const startTime = process.hrtime.bigint();
-        
+
         await analyzer.analyzeWithQuality(largePath, mockProjectContext);
-        
+
         const endTime = process.hrtime.bigint();
         const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -99,12 +99,12 @@ ${Array.from({ length: 100 }, (_, i) => `
 
       for (let i = 0; i < runs; i++) {
         const startTime = process.hrtime.bigint();
-        
+
         await analyzer.analyzeWithQuality(
           getFixturePath('comprehensive.test.ts'),
           mockProjectContext
         );
-        
+
         const endTime = process.hrtime.bigint();
         const executionTimeMs = Number(endTime - startTime) / 1_000_000;
         executionTimes.push(executionTimeMs);
@@ -126,18 +126,18 @@ ${Array.from({ length: 100 }, (_, i) => `
       const plugins = [
         new TestCompletenessPlugin(),
         new AssertionQualityPlugin(),
-        new TestStructurePlugin()
+        new TestStructurePlugin(),
       ];
 
       plugins.forEach(plugin => analyzer.registerQualityPlugin(plugin));
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await analyzer.analyzeWithQuality(
         getFixturePath('comprehensive.test.ts'),
         mockProjectContext
       );
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -152,10 +152,7 @@ ${Array.from({ length: 100 }, (_, i) => `
 
       // ベースライン測定
       const baselineStart = process.hrtime.bigint();
-      await analyzer.analyzeWithQuality(
-        getFixturePath('sample.test.ts'),
-        mockProjectContext
-      );
+      await analyzer.analyzeWithQuality(getFixturePath('sample.test.ts'), mockProjectContext);
       const baselineEnd = process.hrtime.bigint();
       const baselineTime = Number(baselineEnd - baselineStart) / 1_000_000;
 
@@ -164,16 +161,13 @@ ${Array.from({ length: 100 }, (_, i) => `
       const plugins = [
         new TestCompletenessPlugin(),
         new AssertionQualityPlugin(),
-        new TestStructurePlugin()
+        new TestStructurePlugin(),
       ];
 
       plugins.forEach(plugin => multiAnalyzer.registerQualityPlugin(plugin));
 
       const multiStart = process.hrtime.bigint();
-      await multiAnalyzer.analyzeWithQuality(
-        getFixturePath('sample.test.ts'),
-        mockProjectContext
-      );
+      await multiAnalyzer.analyzeWithQuality(getFixturePath('sample.test.ts'), mockProjectContext);
       const multiEnd = process.hrtime.bigint();
       const multiTime = Number(multiEnd - multiStart) / 1_000_000;
 
@@ -182,10 +176,10 @@ ${Array.from({ length: 100 }, (_, i) => `
       const isCI = process.env.CI === 'true';
       const nodeVersion = process.version;
       const isNode18 = nodeVersion.startsWith('v18.');
-      
+
       // CI環境またはNode.js 18.xの場合は期待値を緩和
-      const performanceMultiplier = (isCI || isNode18) ? 8 : 5;
-      
+      const performanceMultiplier = isCI || isNode18 ? 8 : 5;
+
       expect(multiTime).toBeLessThan(baselineTime * performanceMultiplier);
     });
   });
@@ -200,13 +194,13 @@ ${Array.from({ length: 100 }, (_, i) => `
         getFixturePath('comprehensive.test.ts'),
         getFixturePath('good.test.ts'),
         getFixturePath('bad.test.ts'),
-        getFixturePath('test1.test.ts')
+        getFixturePath('test1.test.ts'),
       ];
 
       const startTime = process.hrtime.bigint();
-      
+
       const results = await analyzer.analyzeMultiple(files, mockProjectContext);
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -226,7 +220,7 @@ ${Array.from({ length: 100 }, (_, i) => `
       const files = [
         getFixturePath('sample.test.ts'),
         getFixturePath('comprehensive.test.ts'),
-        getFixturePath('good.test.ts')
+        getFixturePath('good.test.ts'),
       ];
 
       // 順次実行の測定
@@ -256,13 +250,10 @@ ${Array.from({ length: 100 }, (_, i) => `
       analyzer.registerQualityPlugin(plugin);
 
       const initialMemory = process.memoryUsage();
-      
+
       // 多数の分析を実行
       for (let i = 0; i < 50; i++) {
-        await analyzer.analyzeWithQuality(
-          getFixturePath('sample.test.ts'),
-          mockProjectContext
-        );
+        await analyzer.analyzeWithQuality(getFixturePath('sample.test.ts'), mockProjectContext);
       }
 
       const finalMemory = process.memoryUsage();
@@ -312,12 +303,12 @@ ${Array.from({ length: 100 }, (_, i) => `
       analyzer.registerQualityPlugin(errorPlugin);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await analyzer.analyzeWithQuality(
         getFixturePath('sample.test.ts'),
         mockProjectContext
       );
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -342,12 +333,12 @@ ${Array.from({ length: 100 }, (_, i) => `
       analyzer.registerQualityPlugin(fastPlugin);
 
       const startTime = process.hrtime.bigint();
-      
+
       const result = await analyzer.analyzeWithQuality(
         getFixturePath('sample.test.ts'),
         mockProjectContext
       );
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -361,10 +352,7 @@ ${Array.from({ length: 100 }, (_, i) => `
 
   describe('Performance Metrics', () => {
     it('should provide detailed execution statistics', async () => {
-      const plugins = [
-        new TestCompletenessPlugin(),
-        new AssertionQualityPlugin()
-      ];
+      const plugins = [new TestCompletenessPlugin(), new AssertionQualityPlugin()];
 
       plugins.forEach(plugin => analyzer.registerQualityPlugin(plugin));
 
@@ -374,7 +362,7 @@ ${Array.from({ length: 100 }, (_, i) => `
       );
 
       const stats = result.qualityAnalysis.executionStats;
-      
+
       expect(stats.totalExecutionTime).toBeGreaterThanOrEqual(0);
       expect(stats.totalPlugins).toBe(2);
       expect(stats.successfulPlugins).toBe(2);
@@ -403,8 +391,10 @@ ${Array.from({ length: 100 }, (_, i) => `
 
       // パフォーマンスの一貫性を確認
       const avgTime = performanceData.reduce((sum, time) => sum + time, 0) / performanceData.length;
-      const variance = performanceData.map(time => Math.pow(time - avgTime, 2))
-        .reduce((sum, variance) => sum + variance, 0) / performanceData.length;
+      const variance =
+        performanceData
+          .map(time => Math.pow(time - avgTime, 2))
+          .reduce((sum, variance) => sum + variance, 0) / performanceData.length;
       const stdDev = Math.sqrt(variance);
 
       // 標準偏差による一貫性確認（CI環境対応）

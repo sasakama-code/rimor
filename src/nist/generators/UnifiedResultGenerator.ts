@@ -1,7 +1,7 @@
 /**
  * UnifiedResultGenerator
  * 全評価結果を統合してUnifiedAnalysisResultを生成
- * 
+ *
  * SOLID原則: 単一責任の原則 - 統合ロジックに特化
  * DRY原則: 変換ロジックの一元化
  * KISS原則: シンプルな統合フロー
@@ -19,18 +19,14 @@ import {
   DetailedIssue,
   AIActionableRisk,
   ReportDimension,
-  ScoreBreakdown
+  ScoreBreakdown,
 } from '../types/unified-analysis-result';
 import {
   TaintAnalysisResult,
   TaintLevel,
-  TaintFlow
+  TaintFlow,
 } from '../../security/types/taint-analysis-types';
-import {
-  RiskPriorityRequest,
-  BusinessImpact,
-  TechnicalComplexity
-} from '../types/priority-types';
+import { RiskPriorityRequest, BusinessImpact, TechnicalComplexity } from '../types/priority-types';
 
 /**
  * 統合分析結果ジェネレーター
@@ -52,7 +48,7 @@ export class UnifiedResultGenerator {
 
     const vulnerabilities = this.taintAdapter.convertTaintToVulnerabilities(taintResult);
     const assessment = await this.taintAdapter.evaluateTaintVulnerabilities(taintResult);
-    
+
     const detailedIssues = this.generateDetailedIssues(taintResult);
     const aiKeyRisks = await this.generateAIKeyRisks(taintResult);
     const summary = this.generateExecutiveSummary(taintResult, assessment.overallRiskLevel);
@@ -61,7 +57,7 @@ export class UnifiedResultGenerator {
       schemaVersion: '1.0',
       summary,
       detailedIssues,
-      aiKeyRisks
+      aiKeyRisks,
     };
   }
 
@@ -75,18 +71,18 @@ export class UnifiedResultGenerator {
     const overallScore = this.calculateOverallScore(taintResult);
     const overallGrade = this.calculateGrade(overallScore);
     const dimensions = this.calculateDimensions(taintResult);
-    
+
     const statistics = {
       totalFiles: this.countUniqueFiles(taintResult),
       totalTests: 0,
-      riskCounts: this.countRisksByLevel(taintResult)
+      riskCounts: this.countRisksByLevel(taintResult),
     };
 
     return {
       overallScore,
       overallGrade,
       dimensions,
-      statistics
+      statistics,
     };
   }
 
@@ -132,7 +128,7 @@ export class UnifiedResultGenerator {
       score: intentScore,
       weight: 0.4,
       impact: intentScore * 0.4,
-      breakdown: this.getIntentBreakdown(taintResult)
+      breakdown: this.getIntentBreakdown(taintResult),
     });
 
     const securityScore = this.calculateSecurityScore(taintResult);
@@ -141,7 +137,7 @@ export class UnifiedResultGenerator {
       score: securityScore,
       weight: 0.4,
       impact: securityScore * 0.4,
-      breakdown: this.getSecurityBreakdown(taintResult)
+      breakdown: this.getSecurityBreakdown(taintResult),
     });
 
     const coverageScore = this.calculateCoverageScore(taintResult);
@@ -150,7 +146,7 @@ export class UnifiedResultGenerator {
       score: coverageScore,
       weight: 0.2,
       impact: coverageScore * 0.2,
-      breakdown: this.getCoverageBreakdown(taintResult)
+      breakdown: this.getCoverageBreakdown(taintResult),
     });
 
     return dimensions;
@@ -161,11 +157,11 @@ export class UnifiedResultGenerator {
    */
   private calculateIntentScore(taintResult: TaintAnalysisResult): number {
     if (taintResult.flows.length === 0) return 100;
-    
+
     const baseScore = 100;
     const highRiskFlows = taintResult.summary.criticalFlows + taintResult.summary.highFlows;
     const deduction = Math.min(50, highRiskFlows * 10);
-    
+
     return baseScore - deduction;
   }
 
@@ -174,17 +170,17 @@ export class UnifiedResultGenerator {
    */
   private calculateSecurityScore(taintResult: TaintAnalysisResult): number {
     if (taintResult.flows.length === 0) return 100;
-    
+
     const baseScore = 100;
     let deduction = 0;
-    
+
     taintResult.flows.forEach(flow => {
       if (flow.taintLevel === TaintLevel.CRITICAL) deduction += 25;
       else if (flow.taintLevel === TaintLevel.HIGH) deduction += 15;
       else if (flow.taintLevel === TaintLevel.MEDIUM) deduction += 8;
       else if (flow.taintLevel === TaintLevel.LOW) deduction += 3;
     });
-    
+
     return Math.max(0, baseScore - deduction);
   }
 
@@ -193,11 +189,11 @@ export class UnifiedResultGenerator {
    */
   private calculateCoverageScore(taintResult: TaintAnalysisResult): number {
     if (taintResult.flows.length === 0) return 100;
-    
+
     const baseScore = 100;
     const flowCount = taintResult.flows.length;
     const deduction = Math.min(40, flowCount * 5);
-    
+
     return baseScore - deduction;
   }
 
@@ -206,23 +202,23 @@ export class UnifiedResultGenerator {
    */
   private getIntentBreakdown(taintResult: TaintAnalysisResult): ScoreBreakdown[] {
     const breakdown: ScoreBreakdown[] = [];
-    
+
     if (taintResult.summary.criticalFlows > 0) {
       breakdown.push({
         label: 'クリティカルリスク',
         calculation: `-10点 x ${taintResult.summary.criticalFlows}件`,
-        deduction: -10 * taintResult.summary.criticalFlows
+        deduction: -10 * taintResult.summary.criticalFlows,
       });
     }
-    
+
     if (taintResult.summary.highFlows > 0) {
       breakdown.push({
         label: '高リスク',
         calculation: `-10点 x ${taintResult.summary.highFlows}件`,
-        deduction: -10 * taintResult.summary.highFlows
+        deduction: -10 * taintResult.summary.highFlows,
       });
     }
-    
+
     return breakdown;
   }
 
@@ -231,31 +227,31 @@ export class UnifiedResultGenerator {
    */
   private getSecurityBreakdown(taintResult: TaintAnalysisResult): ScoreBreakdown[] {
     const breakdown: ScoreBreakdown[] = [];
-    
+
     if (taintResult.summary.criticalFlows > 0) {
       breakdown.push({
         label: 'Unsafe Taint Flow',
         calculation: `-25点 x ${taintResult.summary.criticalFlows}件`,
-        deduction: -25 * taintResult.summary.criticalFlows
+        deduction: -25 * taintResult.summary.criticalFlows,
       });
     }
-    
+
     if (taintResult.summary.highFlows > 0) {
       breakdown.push({
         label: 'High Risk Flow',
         calculation: `-15点 x ${taintResult.summary.highFlows}件`,
-        deduction: -15 * taintResult.summary.highFlows
+        deduction: -15 * taintResult.summary.highFlows,
       });
     }
-    
+
     if (taintResult.summary.mediumFlows > 0) {
       breakdown.push({
         label: 'Medium Risk Flow',
         calculation: `-8点 x ${taintResult.summary.mediumFlows}件`,
-        deduction: -8 * taintResult.summary.mediumFlows
+        deduction: -8 * taintResult.summary.mediumFlows,
       });
     }
-    
+
     return breakdown;
   }
 
@@ -264,15 +260,15 @@ export class UnifiedResultGenerator {
    */
   private getCoverageBreakdown(taintResult: TaintAnalysisResult): ScoreBreakdown[] {
     const breakdown: ScoreBreakdown[] = [];
-    
+
     if (taintResult.flows.length > 0) {
       breakdown.push({
         label: '未カバーフロー',
         calculation: `-5点 x ${taintResult.flows.length}件`,
-        deduction: -5 * taintResult.flows.length
+        deduction: -5 * taintResult.flows.length,
       });
     }
-    
+
     return breakdown;
   }
 
@@ -287,7 +283,7 @@ export class UnifiedResultGenerator {
       riskLevel: this.mapTaintLevelToRiskLevel(flow.taintLevel),
       title: this.generateIssueTitle(flow),
       description: flow.description,
-      contextSnippet: this.generateContextSnippet(flow)
+      contextSnippet: this.generateContextSnippet(flow),
     }));
   }
 
@@ -296,7 +292,7 @@ export class UnifiedResultGenerator {
    */
   private async generateAIKeyRisks(taintResult: TaintAnalysisResult): Promise<AIActionableRisk[]> {
     const risks: AIActionableRisk[] = [];
-    
+
     for (const flow of taintResult.flows) {
       const priorityRequest: RiskPriorityRequest = {
         riskId: flow.id,
@@ -304,11 +300,11 @@ export class UnifiedResultGenerator {
         businessImpact: this.estimateBusinessImpact(flow),
         technicalComplexity: this.estimateTechnicalComplexity(flow),
         affectedComponents: 1,
-        dependencies: flow.path.length
+        dependencies: flow.path.length,
       };
-      
+
       const priorityResult = this.priorityEngine.calculatePriority(priorityRequest);
-      
+
       risks.push({
         riskId: flow.id,
         filePath: flow.sinkLocation.file,
@@ -318,14 +314,14 @@ export class UnifiedResultGenerator {
         context: {
           codeSnippet: this.generateContextSnippet(flow),
           startLine: flow.sinkLocation.line,
-          endLine: flow.sinkLocation.line
+          endLine: flow.sinkLocation.line,
         },
-        suggestedAction: this.generateSuggestedAction(flow)
+        suggestedAction: this.generateSuggestedAction(flow),
       });
     }
-    
-    return risks.sort((a, b) => 
-      this.getRiskPriority(b.riskLevel) - this.getRiskPriority(a.riskLevel)
+
+    return risks.sort(
+      (a, b) => this.getRiskPriority(b.riskLevel) - this.getRiskPriority(a.riskLevel)
     );
   }
 
@@ -391,7 +387,8 @@ export class UnifiedResultGenerator {
     if (flow.description.includes('SQL')) {
       type = AIActionType.SANITIZE_VARIABLE;
       description = '入力をサニタイズし、パラメータ化クエリを使用してください';
-      example = '// パラメータ化クエリの使用\nconst query = "SELECT * FROM users WHERE id = ?";\ndb.query(query, [userId]);';
+      example =
+        '// パラメータ化クエリの使用\nconst query = "SELECT * FROM users WHERE id = ?";\ndb.query(query, [userId]);';
     } else if (flow.description.includes('XSS')) {
       type = AIActionType.SANITIZE_VARIABLE;
       description = 'HTMLエスケープを実装してください';
@@ -433,7 +430,7 @@ export class UnifiedResultGenerator {
    */
   private countUniqueFiles(taintResult: TaintAnalysisResult): number {
     const files = new Set<string>();
-    
+
     taintResult.flows.forEach(flow => {
       files.add(flow.sourceLocation.file);
       files.add(flow.sinkLocation.file);
@@ -442,7 +439,7 @@ export class UnifiedResultGenerator {
         if (file) files.add(file);
       });
     });
-    
+
     return files.size;
   }
 
@@ -455,7 +452,7 @@ export class UnifiedResultGenerator {
       [CoreTypes.RiskLevel.HIGH]: taintResult.summary.highFlows,
       [CoreTypes.RiskLevel.MEDIUM]: taintResult.summary.mediumFlows,
       [CoreTypes.RiskLevel.LOW]: taintResult.summary.lowFlows,
-      [CoreTypes.RiskLevel.MINIMAL]: 0
+      [CoreTypes.RiskLevel.MINIMAL]: 0,
     };
   }
 
@@ -468,7 +465,7 @@ export class UnifiedResultGenerator {
       [CoreTypes.RiskLevel.HIGH]: 4,
       [CoreTypes.RiskLevel.MEDIUM]: 3,
       [CoreTypes.RiskLevel.LOW]: 2,
-      [CoreTypes.RiskLevel.MINIMAL]: 1
+      [CoreTypes.RiskLevel.MINIMAL]: 1,
     };
     return priorities[riskLevel];
   }

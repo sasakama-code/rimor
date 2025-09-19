@@ -1,7 +1,7 @@
 /**
  * TypeScript AST を使用したTaint Source検出器
  * arXiv:2504.18529v2の理論に基づいた実装
- * 
+ *
  * Source検出の目的:
  * - untrusted dataの入り口となるAPI呼び出しを特定
  * - ファイル位置情報（行・列）を正確に記録
@@ -56,7 +56,7 @@ export class ASTSourceDetector {
    */
   async detectSources(sourceCode: string, fileName: string): Promise<TaintSource[]> {
     const isJavaScript = fileName.endsWith('.js');
-    
+
     // TypeScript プログラムの作成
     const compilerOptions: ts.CompilerOptions = {
       target: ts.ScriptTarget.ES2020,
@@ -66,18 +66,24 @@ export class ASTSourceDetector {
       noImplicitAny: !isJavaScript,
       // JSファイルのサポート
       allowJs: true,
-      checkJs: isJavaScript
+      checkJs: isJavaScript,
     };
 
     // 仮想的なファイルシステムでコンパイルホストを作成
     const host = ts.createCompilerHost(compilerOptions);
     const originalGetSourceFile = host.getSourceFile;
-    
+
     host.getSourceFile = (name, languageVersion, onError, shouldCreateNewSourceFile) => {
       if (name === fileName) {
         return ts.createSourceFile(fileName, sourceCode, languageVersion, true);
       }
-      return originalGetSourceFile.call(host, name, languageVersion, onError, shouldCreateNewSourceFile);
+      return originalGetSourceFile.call(
+        host,
+        name,
+        languageVersion,
+        onError,
+        shouldCreateNewSourceFile
+      );
     };
 
     // プログラム作成
@@ -90,7 +96,7 @@ export class ASTSourceDetector {
     }
 
     const sources: TaintSource[] = [];
-    
+
     // AST をトラバースしてSource を検出
     this.visitNode(this.sourceFile, sources);
 
@@ -105,7 +111,11 @@ export class ASTSourceDetector {
    */
   private visitNode(node: ts.Node, sources: TaintSource[]): void {
     // 関数宣言の検査（JSDocアノテーション付きパラメーター検出）
-    if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
+    if (
+      ts.isFunctionDeclaration(node) ||
+      ts.isFunctionExpression(node) ||
+      ts.isArrowFunction(node)
+    ) {
       this.analyzeFunctionDeclaration(node, sources);
     }
 
@@ -118,7 +128,7 @@ export class ASTSourceDetector {
     if (ts.isPropertyAccessExpression(node)) {
       // 親がプロパティアクセスかどうかチェック
       const hasPropertyAccessParent = ts.isPropertyAccessExpression(node.parent);
-      
+
       if (!hasPropertyAccessParent) {
         // 最外側のプロパティアクセスなので解析
         this.analyzePropertyAccess(node, sources);
@@ -136,7 +146,7 @@ export class ASTSourceDetector {
     }
 
     // 子ノードも再帰的に訪問
-    ts.forEachChild(node, (child) => this.visitNode(child, sources));
+    ts.forEachChild(node, child => this.visitNode(child, sources));
   }
 
   /**
@@ -147,13 +157,13 @@ export class ASTSourceDetector {
 
     const functionName = this.extractFunctionName(node);
     const objectName = this.extractObjectName(node);
-    
+
     // 既知のTaint Source API をチェック
     const sourceInfo = this.identifyTaintSource(functionName, objectName);
     if (sourceInfo) {
       const location = this.getNodeLocation(node);
       const args = node.arguments.map(arg => arg.getText(this.sourceFile!));
-      
+
       sources.push({
         type: sourceInfo.type,
         category: sourceInfo.category,
@@ -162,9 +172,9 @@ export class ASTSourceDetector {
         apiCall: {
           functionName,
           objectName,
-          arguments: args
+          arguments: args,
         },
-        confidence: sourceInfo.confidence
+        confidence: sourceInfo.confidence,
       });
     }
   }
@@ -177,13 +187,13 @@ export class ASTSourceDetector {
 
     // 全体のプロパティチェーンを取得 (例: req.query.id -> "req.query")
     const fullPropertyChain = this.getFullPropertyChain(node);
-    
+
     // Express.js リクエストオブジェクトのプロパティをチェック
     for (const [objectName, propertyName] of this.parsePropertyChain(fullPropertyChain)) {
       const requestSourceInfo = this.identifyRequestObjectProperty(objectName, propertyName);
       if (requestSourceInfo) {
         const location = this.getNodeLocation(node);
-        
+
         sources.push({
           type: requestSourceInfo.type,
           category: requestSourceInfo.category,
@@ -192,22 +202,22 @@ export class ASTSourceDetector {
           apiCall: {
             functionName: propertyName,
             objectName,
-            arguments: []
+            arguments: [],
           },
-          confidence: requestSourceInfo.confidence
+          confidence: requestSourceInfo.confidence,
         });
         return; // 一致したら終了
       }
     }
-    
+
     // その他のTaint Source プロパティをチェック
     const propertyName = node.name.text;
     const objectName = node.expression.getText(this.sourceFile);
-    
+
     const sourceInfo = this.identifyTaintSourceProperty(objectName, propertyName);
     if (sourceInfo) {
       const location = this.getNodeLocation(node);
-      
+
       sources.push({
         type: sourceInfo.type,
         category: sourceInfo.category,
@@ -216,9 +226,9 @@ export class ASTSourceDetector {
         apiCall: {
           functionName: propertyName,
           objectName,
-          arguments: []
+          arguments: [],
         },
-        confidence: sourceInfo.confidence
+        confidence: sourceInfo.confidence,
       });
     }
   }
@@ -230,7 +240,7 @@ export class ASTSourceDetector {
     if (!this.sourceFile) return;
 
     const objectName = node.expression.getText(this.sourceFile);
-    
+
     // プロパティ名を抽出（文字列リテラルから）
     let propertyName = '';
     if (node.argumentExpression && ts.isStringLiteral(node.argumentExpression)) {
@@ -243,7 +253,7 @@ export class ASTSourceDetector {
     const requestSourceInfo = this.identifyRequestObjectProperty(objectName, propertyName);
     if (requestSourceInfo) {
       const location = this.getNodeLocation(node);
-      
+
       sources.push({
         type: requestSourceInfo.type,
         category: requestSourceInfo.category,
@@ -252,9 +262,9 @@ export class ASTSourceDetector {
         apiCall: {
           functionName: propertyName,
           objectName,
-          arguments: []
+          arguments: [],
         },
-        confidence: requestSourceInfo.confidence
+        confidence: requestSourceInfo.confidence,
       });
       return;
     }
@@ -263,7 +273,7 @@ export class ASTSourceDetector {
     const sourceInfo = this.identifyTaintSourceProperty(objectName, propertyName);
     if (sourceInfo) {
       const location = this.getNodeLocation(node);
-      
+
       sources.push({
         type: sourceInfo.type,
         category: sourceInfo.category,
@@ -272,9 +282,9 @@ export class ASTSourceDetector {
         apiCall: {
           functionName: propertyName,
           objectName,
-          arguments: []
+          arguments: [],
         },
-        confidence: sourceInfo.confidence
+        confidence: sourceInfo.confidence,
       });
     }
   }
@@ -284,7 +294,7 @@ export class ASTSourceDetector {
    */
   private analyzeVariableDeclaration(node: ts.VariableDeclaration, sources: TaintSource[]): void {
     if (!node.initializer) return;
-    
+
     // 初期化式がTaint Source APIの場合
     if (ts.isCallExpression(node.initializer)) {
       this.analyzeCallExpression(node.initializer, sources);
@@ -302,7 +312,7 @@ export class ASTSourceDetector {
     } else if (ts.isPropertyAccessExpression(node.expression)) {
       return node.expression.name.text;
     }
-    
+
     return node.expression.getText(this.sourceFile);
   }
 
@@ -315,14 +325,17 @@ export class ASTSourceDetector {
     if (ts.isPropertyAccessExpression(node.expression)) {
       return node.expression.expression.getText(this.sourceFile);
     }
-    
+
     return undefined;
   }
 
   /**
    * Taint Sourceの特定
    */
-  private identifyTaintSource(functionName: string, objectName?: string): {
+  private identifyTaintSource(
+    functionName: string,
+    objectName?: string
+  ): {
     type: TaintSource['type'];
     category: string;
     confidence: number;
@@ -335,19 +348,27 @@ export class ASTSourceDetector {
         case 'body':
           return { type: 'user-input', category: 'http-request', confidence: 0.95 };
         case 'headers':
-          return { type: 'user-input', category: 'http-headers', confidence: 0.90 };
+          return { type: 'user-input', category: 'http-headers', confidence: 0.9 };
         case 'cookies':
           return { type: 'user-input', category: 'http-cookies', confidence: 0.85 };
       }
     }
 
     // ファイルシステム操作（戻り値としてはsource、引数としてはsink）
-    if (objectName === 'fs' && ['readFile', 'readFileSync', 'readdir', 'readdirSync', 'createReadStream'].includes(functionName)) {
-      return { type: 'file-input', category: 'filesystem', confidence: 0.80 };
+    if (
+      objectName === 'fs' &&
+      ['readFile', 'readFileSync', 'readdir', 'readdirSync', 'createReadStream'].includes(
+        functionName
+      )
+    ) {
+      return { type: 'file-input', category: 'filesystem', confidence: 0.8 };
     }
-    
+
     // 名前空間なしのファイルシステム関数（import { readFile } from 'fs'）
-    if (!objectName && ['readFile', 'readFileSync', 'readdir', 'readdirSync'].includes(functionName)) {
+    if (
+      !objectName &&
+      ['readFile', 'readFileSync', 'readdir', 'readdirSync'].includes(functionName)
+    ) {
       return { type: 'file-input', category: 'filesystem', confidence: 0.75 };
     }
 
@@ -357,7 +378,10 @@ export class ASTSourceDetector {
     }
 
     // axios メソッド
-    if (objectName === 'axios' && ['get', 'post', 'put', 'delete', 'patch', 'request'].includes(functionName)) {
+    if (
+      objectName === 'axios' &&
+      ['get', 'post', 'put', 'delete', 'patch', 'request'].includes(functionName)
+    ) {
       return { type: 'network-input', category: 'http-client', confidence: 0.85 };
     }
 
@@ -367,8 +391,12 @@ export class ASTSourceDetector {
     }
 
     // ユーザー入力関数（テスト用）
-    if (functionName === 'getUserInput' || functionName === 'getInput' || functionName === 'readUserInput') {
-      return { type: 'user-input', category: 'test-input', confidence: 0.90 };
+    if (
+      functionName === 'getUserInput' ||
+      functionName === 'getInput' ||
+      functionName === 'readUserInput'
+    ) {
+      return { type: 'user-input', category: 'test-input', confidence: 0.9 };
     }
 
     // データベース操作（これらはSinkであってSourceではない）
@@ -380,7 +408,10 @@ export class ASTSourceDetector {
   /**
    * Express.js リクエストオブジェクトの特定
    */
-  private identifyRequestObjectProperty(objectName: string, propertyName: string): {
+  private identifyRequestObjectProperty(
+    objectName: string,
+    propertyName: string
+  ): {
     type: TaintSource['type'];
     category: string;
     confidence: number;
@@ -393,7 +424,7 @@ export class ASTSourceDetector {
         case 'body':
           return { type: 'user-input', category: 'http-request', confidence: 0.95 };
         case 'headers':
-          return { type: 'user-input', category: 'http-headers', confidence: 0.90 };
+          return { type: 'user-input', category: 'http-headers', confidence: 0.9 };
         case 'cookies':
           return { type: 'user-input', category: 'http-cookies', confidence: 0.85 };
         default:
@@ -407,14 +438,17 @@ export class ASTSourceDetector {
   /**
    * プロパティベースのTaint Source特定
    */
-  private identifyTaintSourceProperty(objectName: string, propertyName: string): {
+  private identifyTaintSourceProperty(
+    objectName: string,
+    propertyName: string
+  ): {
     type: TaintSource['type'];
     category: string;
     confidence: number;
   } | null {
     // window.location 系
     if (objectName === 'window.location' || objectName === 'location') {
-      return { type: 'user-input', category: 'browser-location', confidence: 0.90 };
+      return { type: 'user-input', category: 'browser-location', confidence: 0.9 };
     }
 
     // document プロパティ
@@ -443,12 +477,12 @@ export class ASTSourceDetector {
     const sourceFile = this.sourceFile;
     const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
     const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
-    
+
     return {
       file: sourceFile.fileName,
       line: start.line + 1, // 1-based line numbers
-      column: start.character + 1, // 1-based column numbers  
-      length: node.getEnd() - node.getStart(sourceFile)
+      column: start.character + 1, // 1-based column numbers
+      length: node.getEnd() - node.getStart(sourceFile),
     };
   }
 
@@ -468,14 +502,14 @@ export class ASTSourceDetector {
   private parsePropertyChain(propertyChain: string): Array<[string, string]> {
     const parts = propertyChain.split('.');
     const pairs: Array<[string, string]> = [];
-    
+
     // 各レベルで (親オブジェクト, プロパティ) ペアを作成
     for (let i = 1; i < parts.length; i++) {
       const objectName = parts.slice(0, i).join('.');
       const propertyName = parts[i];
       pairs.push([objectName, propertyName]);
     }
-    
+
     return pairs;
   }
 
@@ -487,12 +521,16 @@ export class ASTSourceDetector {
 
     // 親ノードを辿って代入先を探す
     let parent = node.parent;
-    
+
     if (parent && ts.isVariableDeclaration(parent) && parent.name && ts.isIdentifier(parent.name)) {
       return parent.name.text;
     }
 
-    if (parent && ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+    if (
+      parent &&
+      ts.isBinaryExpression(parent) &&
+      parent.operatorToken.kind === ts.SyntaxKind.EqualsToken
+    ) {
       return parent.left.getText(this.sourceFile);
     }
 
@@ -507,7 +545,7 @@ export class ASTSourceDetector {
 
     // 親ノードを辿って使用コンテキストを探す
     let parent = node.parent;
-    
+
     if (parent && ts.isVariableDeclaration(parent) && parent.name && ts.isIdentifier(parent.name)) {
       return parent.name.text;
     }
@@ -523,7 +561,7 @@ export class ASTSourceDetector {
 
     // 親ノードを辿って使用コンテキストを探す
     let parent = node.parent;
-    
+
     if (parent && ts.isVariableDeclaration(parent) && parent.name && ts.isIdentifier(parent.name)) {
       return parent.name.text;
     }
@@ -547,17 +585,17 @@ export class ASTSourceDetector {
 
     // 関数のパラメーターをチェック
     const parameters = node.parameters;
-    
+
     for (const param of parameters) {
       if (ts.isIdentifier(param.name)) {
         const paramName = param.name.text;
-        
+
         // JSDocアノテーションをチェック
         const taintType = this.extractTaintTypeFromJSDoc(node, paramName);
-        
+
         if (taintType === 'tainted') {
           const location = this.getNodeLocation(param);
-          
+
           sources.push({
             type: 'user-input',
             category: 'tainted-parameter',
@@ -566,9 +604,9 @@ export class ASTSourceDetector {
             apiCall: {
               functionName: paramName,
               objectName: 'parameter',
-              arguments: []
+              arguments: [],
             },
-            confidence: 0.9
+            confidence: 0.9,
           });
         }
       }
@@ -584,9 +622,14 @@ export class ASTSourceDetector {
   ): 'tainted' | 'untainted' | null {
     // TypeScript Compiler APIを使用してJSDocタグを取得
     const jsDocTags = ts.getJSDocTags(functionNode);
-    
+
     for (const tag of jsDocTags) {
-      if (ts.isJSDocParameterTag(tag) && tag.name && ts.isIdentifier(tag.name) && tag.name.text === paramName) {
+      if (
+        ts.isJSDocParameterTag(tag) &&
+        tag.name &&
+        ts.isIdentifier(tag.name) &&
+        tag.name.text === paramName
+      ) {
         const comment = tag.comment;
         if (typeof comment === 'string') {
           if (comment.includes('@tainted')) {
@@ -597,23 +640,23 @@ export class ASTSourceDetector {
         }
       }
     }
-    
+
     // フォールバック: 関数全体のテキストから検索
     const fullText = functionNode.getFullText();
     const patterns = [
       new RegExp(`@param\\s+${paramName}\\s+@tainted`, 'i'),
       new RegExp(`@param\\s+${paramName}\\s+@untainted`, 'i'),
       new RegExp(`\\*\\s+@param\\s+${paramName}\\s+@tainted`, 'i'),
-      new RegExp(`\\*\\s+@param\\s+${paramName}\\s+@untainted`, 'i')
+      new RegExp(`\\*\\s+@param\\s+${paramName}\\s+@untainted`, 'i'),
     ];
-    
+
     for (let i = 0; i < patterns.length; i++) {
       const pattern = patterns[i];
       if (pattern.test(fullText)) {
         return i % 2 === 0 ? 'tainted' : 'untainted';
       }
     }
-    
+
     return null;
   }
 
@@ -622,16 +665,16 @@ export class ASTSourceDetector {
    */
   private removeDuplicateSources(sources: TaintSource[]): TaintSource[] {
     const seen = new Map<string, TaintSource>();
-    
+
     for (const source of sources) {
       // ユニークキーを作成（位置 + APIコール）
       const key = `${source.location.file}:${source.location.line}:${source.location.column}:${source.apiCall.functionName}:${source.apiCall.objectName || ''}`;
-      
+
       if (!seen.has(key)) {
         seen.set(key, source);
       }
     }
-    
+
     return Array.from(seen.values());
   }
 }

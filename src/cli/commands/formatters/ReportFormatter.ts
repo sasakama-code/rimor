@@ -11,7 +11,10 @@ import { UnifiedAnalyzeOptions, UnifiedAnalyzeResult } from '../unified-analyze-
  * レポートフォーマッター戦略インターフェース
  */
 export interface IReportFormatter {
-  format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult;
+  format(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): UnifiedAnalyzeResult;
   getSupportedFormat(): string;
 }
 
@@ -19,7 +22,10 @@ export interface IReportFormatter {
  * テキストフォーマッター
  */
 export class TextReportFormatter implements IReportFormatter {
-  format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
+  format(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): UnifiedAnalyzeResult {
     return {
       format: 'text',
       content: this.generateTextContent(analysisResult, options),
@@ -27,8 +33,8 @@ export class TextReportFormatter implements IReportFormatter {
       metadata: {
         executionTime: 0,
         analyzedPath: options.path,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -36,7 +42,10 @@ export class TextReportFormatter implements IReportFormatter {
     return 'text';
   }
 
-  private generateTextContent(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): string {
+  private generateTextContent(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): string {
     let content = '統合セキュリティ分析レポート\n';
     content += '='.repeat(50) + '\n\n';
 
@@ -72,15 +81,18 @@ export class TextReportFormatter implements IReportFormatter {
  * JSONフォーマッター
  */
 export class JsonReportFormatter implements IReportFormatter {
-  format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
+  format(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): UnifiedAnalyzeResult {
     return {
       format: 'json',
       content: JSON.stringify(analysisResult, null, 2),
       metadata: {
         executionTime: 0,
         analyzedPath: options.path,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -93,15 +105,18 @@ export class JsonReportFormatter implements IReportFormatter {
  * Markdownフォーマッター
  */
 export class MarkdownReportFormatter implements IReportFormatter {
-  format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
+  format(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): UnifiedAnalyzeResult {
     return {
       format: 'markdown',
       content: this.generateMarkdownContent(analysisResult, options),
       metadata: {
         executionTime: 0,
         analyzedPath: options.path,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -109,9 +124,12 @@ export class MarkdownReportFormatter implements IReportFormatter {
     return 'markdown';
   }
 
-  private generateMarkdownContent(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): string {
+  private generateMarkdownContent(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): string {
     let content = '# 統合セキュリティ分析レポート\n\n';
-    
+
     const report = analysisResult.unifiedReport;
     content += `**総合グレード**: ${report.summary.overallGrade}\n`;
     content += `**総合スコア**: ${report.overallRiskScore}/100\n`;
@@ -132,15 +150,18 @@ export class MarkdownReportFormatter implements IReportFormatter {
  * HTMLフォーマッター
  */
 export class HtmlReportFormatter implements IReportFormatter {
-  format(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): UnifiedAnalyzeResult {
+  format(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): UnifiedAnalyzeResult {
     return {
       format: 'html',
       content: this.generateHtmlContent(analysisResult, options),
       metadata: {
         executionTime: 0,
         analyzedPath: options.path,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -148,9 +169,12 @@ export class HtmlReportFormatter implements IReportFormatter {
     return 'html';
   }
 
-  private generateHtmlContent(analysisResult: UnifiedAnalysisResult, options: UnifiedAnalyzeOptions): string {
+  private generateHtmlContent(
+    analysisResult: UnifiedAnalysisResult,
+    options: UnifiedAnalyzeOptions
+  ): string {
     const report = analysisResult.unifiedReport;
-    
+
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -186,7 +210,7 @@ export class ReportFormatterFactory {
     ['text', () => new TextReportFormatter()],
     ['json', () => new JsonReportFormatter()],
     ['markdown', () => new MarkdownReportFormatter()],
-    ['html', () => new HtmlReportFormatter()]
+    ['html', () => new HtmlReportFormatter()],
   ]);
 
   static createFormatter(format: string): IReportFormatter {

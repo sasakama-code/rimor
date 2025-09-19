@@ -9,14 +9,14 @@ import {
   DetectionResult,
   QualityScore,
   Improvement,
-  SecurityIssue
+  SecurityIssue,
 } from '../../../core/types';
 import {
   IOWASPSecurityPlugin,
   OWASPCategory,
   OWASPTestResult,
   OWASPUtils,
-  OWASPBasePlugin
+  OWASPBasePlugin,
 } from './IOWASPSecurityPlugin';
 import { hasDependencyPattern, hasDependency } from './dependency-utils';
 
@@ -34,18 +34,30 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
   isApplicable(context: ProjectContext): boolean {
     // 認証関連ライブラリの確認
     const authLibraries = [
-      'passport', 'jsonwebtoken', 'express-session', 'bcrypt', 'argon2',
-      'oauth2-server', 'auth0', '@auth0/nextjs-auth0', 'next-auth',
-      'firebase-auth', '@aws-amplify/auth'
+      'passport',
+      'jsonwebtoken',
+      'express-session',
+      'bcrypt',
+      'argon2',
+      'oauth2-server',
+      'auth0',
+      '@auth0/nextjs-auth0',
+      'next-auth',
+      'firebase-auth',
+      '@aws-amplify/auth',
     ];
-    
+
     const hasAuthLibrary = hasDependencyPattern(context, authLibraries);
 
     // 認証関連ファイルの確認
-    const hasAuthFiles = context.filePatterns?.source?.some((pattern: string) =>
-      pattern.includes('auth') || pattern.includes('login') || 
-      pattern.includes('session') || pattern.includes('password')
-    ) || false;
+    const hasAuthFiles =
+      context.filePatterns?.source?.some(
+        (pattern: string) =>
+          pattern.includes('auth') ||
+          pattern.includes('login') ||
+          pattern.includes('session') ||
+          pattern.includes('password')
+      ) || false;
 
     return hasAuthLibrary || hasAuthFiles;
   }
@@ -55,7 +67,8 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
     const lines = testFile.content.split('\n');
 
     // パスワード強度テストパターン
-    const passwordStrengthPattern = /password.*strength|strong.*password|weak.*password|validatePassword/i;
+    const passwordStrengthPattern =
+      /password.*strength|strong.*password|weak.*password|validatePassword/i;
     const bruteForcePattern = /brute.*force|rate.*limit|lockout|attempt.*limit/i;
     const mfaPattern = /multi.*factor|two.*factor|2fa|mfa|totp|authenticator/i;
     const sessionPattern = /session.*timeout|session.*expire|session.*hijack/i;
@@ -69,7 +82,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
           confidence: 0.85,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'high',
-          metadata: { hasTest: true, testType: 'password-strength' }
+          metadata: { hasTest: true, testType: 'password-strength' },
         });
       }
 
@@ -81,7 +94,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
           confidence: 0.9,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'critical',
-          metadata: { hasTest: true, testType: 'brute-force' }
+          metadata: { hasTest: true, testType: 'brute-force' },
         });
       }
 
@@ -93,18 +106,14 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
           confidence: 0.9,
           location: { file: testFile.path, line: index + 1, column: 0 },
           severity: 'medium',
-          metadata: { hasTest: true, testType: 'mfa' }
+          metadata: { hasTest: true, testType: 'mfa' },
         });
       }
     });
 
     // 不足テストの検出
-    const hasPasswordTest = patterns.some(p => 
-      p.metadata?.testType === 'password-strength'
-    );
-    const hasBruteForceTest = patterns.some(p => 
-      p.metadata?.testType === 'brute-force'
-    );
+    const hasPasswordTest = patterns.some(p => p.metadata?.testType === 'password-strength');
+    const hasBruteForceTest = patterns.some(p => p.metadata?.testType === 'brute-force');
 
     if (!hasPasswordTest) {
       patterns.push({
@@ -112,7 +121,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         pattern: 'missing-password-strength-test',
         confidence: 1,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -122,7 +131,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         pattern: 'missing-brute-force-test',
         confidence: 1,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
 
@@ -130,12 +139,12 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
-    const authTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('auth-') && p.metadata?.hasTest
+    const authTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('auth-') && p.metadata?.hasTest
     );
 
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-auth-')
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-auth-')
     );
 
     // カバレッジ計算
@@ -143,25 +152,15 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
     const testCoverage = (authTests.length / requiredTests.length) * 100;
 
     // セキュリティスコア計算
-    const baseScore = OWASPUtils.calculateSecurityScore(
-      testCoverage,
-      missingTests.length
-    );
+    const baseScore = OWASPUtils.calculateSecurityScore(testCoverage, missingTests.length);
 
-    const hasPasswordTest = authTests.some(p => 
-      p.metadata?.testType === 'password-strength'
-    );
-    const hasBruteForceTest = authTests.some(p => 
-      p.metadata?.testType === 'brute-force'
-    );
-    const hasMfaTest = authTests.some(p => 
-      p.metadata?.testType === 'mfa'
-    );
+    const hasPasswordTest = authTests.some(p => p.metadata?.testType === 'password-strength');
+    const hasBruteForceTest = authTests.some(p => p.metadata?.testType === 'brute-force');
+    const hasMfaTest = authTests.some(p => p.metadata?.testType === 'mfa');
 
     const coverageScore = testCoverage / 100;
-    const securityScore = (hasPasswordTest ? 0.4 : 0) + 
-                         (hasBruteForceTest ? 0.4 : 0) + 
-                         (hasMfaTest ? 0.2 : 0);
+    const securityScore =
+      (hasPasswordTest ? 0.4 : 0) + (hasBruteForceTest ? 0.4 : 0) + (hasMfaTest ? 0.2 : 0);
 
     return {
       overall: baseScore,
@@ -171,14 +170,15 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
       dimensions: {
         completeness: testCoverage,
         correctness: authTests.length > 0 ? 75 : 0,
-        maintainability: (hasPasswordTest ? 40 : 0) + (hasBruteForceTest ? 40 : 0) + (hasMfaTest ? 20 : 0)
+        maintainability:
+          (hasPasswordTest ? 40 : 0) + (hasBruteForceTest ? 40 : 0) + (hasMfaTest ? 20 : 0),
       },
       details: {
         strengths: hasPasswordTest ? ['パスワード強度テスト実装済み'] : [],
         weaknesses: !hasPasswordTest ? ['パスワード強度テスト不足'] : [],
         suggestions: [],
-        validationCoverage: hasPasswordTest ? 100 : 0
-      }
+        validationCoverage: hasPasswordTest ? 100 : 0,
+      },
     };
   }
 
@@ -191,10 +191,11 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         priority: 'critical',
         type: 'add-test',
         title: 'パスワード強度テストの追加',
-        description: 'パスワードの複雑性要件（長さ、大小文字、数字、特殊文字）を検証するテストを実装してください',
+        description:
+          'パスワードの複雑性要件（長さ、大小文字、数字、特殊文字）を検証するテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 30,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -204,10 +205,11 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         priority: 'critical',
         type: 'add-test',
         title: 'ブルートフォース対策テストの追加',
-        description: 'ログイン試行回数制限、アカウントロックアウト、レート制限のテストを実装してください',
+        description:
+          'ログイン試行回数制限、アカウントロックアウト、レート制限のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 30,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -220,7 +222,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         description: 'TOTP、SMS、バックアップコードなどのMFA機能のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 20,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -230,10 +232,11 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
         priority: 'high',
         type: 'add-test',
         title: 'セッション管理テストの追加',
-        description: 'セッションタイムアウト、セッション固定攻撃対策、セキュアなセッション生成のテストを実装してください',
+        description:
+          'セッションタイムアウト、セッション固定攻撃対策、セキュアなセッション生成のテストを実装してください',
         location: { file: '', line: 0, column: 0 },
         impact: 25,
-        automatable: true
+        automatable: true,
       });
     }
 
@@ -244,13 +247,13 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
     const patterns = await this.detectPatterns(testFile);
     const evaluation = this.evaluateQuality(patterns);
     const vulnerabilities = this.detectVulnerabilityPatterns(testFile.content);
-    
-    const authTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('auth-') && p.metadata?.hasTest
+
+    const authTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('auth-') && p.metadata?.hasTest
     );
-    
-    const missingTests = patterns.filter(p => 
-      p.patternId && p.patternId.startsWith('missing-auth-')
+
+    const missingTests = patterns.filter(
+      p => p.patternId && p.patternId.startsWith('missing-auth-')
     );
 
     const testPatterns: string[] = [];
@@ -279,7 +282,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
     }
 
     const missingTestDescriptions = missingTests.map(p => {
-      switch(p.patternId) {
+      switch (p.patternId) {
         case 'missing-auth-password-strength':
           return 'パスワード強度検証テスト';
         case 'missing-auth-brute-force':
@@ -295,7 +298,7 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
       issues: vulnerabilities,
       recommendations,
       testPatterns,
-      missingTests: missingTestDescriptions
+      missingTests: missingTestDescriptions,
     };
   }
 
@@ -318,44 +321,49 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
             severity: 'critical',
             type: 'insufficient-validation',
             message: '弱いパスワードがハードコードされています',
-            location: { 
-              file: '', 
-              line: index + 1, 
-              column: 0 
-            }
+            location: {
+              file: '',
+              line: index + 1,
+              column: 0,
+            },
           });
         }
       }
 
       // 平文パスワード比較
-      if ((line.includes('===') || line.includes('==')) && 
-          line.includes('password') && !line.includes('hash')) {
+      if (
+        (line.includes('===') || line.includes('==')) &&
+        line.includes('password') &&
+        !line.includes('hash')
+      ) {
         issues.push({
           id: `plaintext-password-${index}`,
           severity: 'critical',
           type: 'insufficient-validation',
           message: 'パスワードが平文で比較されている可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
       // 認証バイパスの可能性
-      if (line.includes('return true') && 
-          (line.includes('authenticate') || line.includes('auth') || line.includes('login'))) {
+      if (
+        line.includes('return true') &&
+        (line.includes('authenticate') || line.includes('auth') || line.includes('login'))
+      ) {
         issues.push({
           id: `auth-bypass-${index}`,
           severity: 'warning',
           type: 'insufficient-validation',
           message: '認証バイパスの可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
 
@@ -366,11 +374,11 @@ export class IdentificationAuthFailuresPlugin extends OWASPBasePlugin {
           severity: 'warning',
           type: 'insufficient-validation',
           message: 'セッション固定攻撃の脆弱性がある可能性があります',
-          location: { 
-            file: '', 
-            line: index + 1, 
-            column: 0 
-          }
+          location: {
+            file: '',
+            line: index + 1,
+            column: 0,
+          },
         });
       }
     });

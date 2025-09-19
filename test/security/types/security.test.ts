@@ -20,7 +20,7 @@ import {
   TypeInferenceResult,
   CompileTimeResult,
   SecurityIssue,
-  SecurityTestMetrics
+  SecurityTestMetrics,
 } from '../../../src/security/types/security';
 import { TaintLevel, TaintSource, SanitizerType } from '../../../src/security/types/taint';
 
@@ -44,9 +44,9 @@ describe('インターフェース定義のテスト', () => {
         location: {
           file: 'auth.test.ts',
           line: 42,
-          method: 'validateUserInput'
+          method: 'validateUserInput',
         },
-        timestamp: new Date('2025-07-30T10:00:00Z')
+        timestamp: new Date('2025-07-30T10:00:00Z'),
       };
 
       expect(validation.type).toBe('input-validation');
@@ -64,7 +64,7 @@ describe('インターフェース定義のテスト', () => {
         type: 'auth-test',
         required: ['login-success', 'login-failure', 'token-expiry'],
         minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-        applicableSources: [TaintSource.USER_INPUT, TaintSource.EXTERNAL_API]
+        applicableSources: [TaintSource.USER_INPUT, TaintSource.EXTERNAL_API],
       };
 
       expect(requirement.id).toBe('AUTH-001');
@@ -83,7 +83,7 @@ describe('インターフェース定義のテスト', () => {
         { type: 'null', value: null, tested: true },
         { type: 'empty', value: '', tested: true },
         { type: 'invalid-format', value: 'not-a-number', tested: false },
-        { type: 'overflow', value: Number.MAX_SAFE_INTEGER + 1, tested: true }
+        { type: 'overflow', value: Number.MAX_SAFE_INTEGER + 1, tested: true },
       ];
 
       expect(boundaries).toHaveLength(6);
@@ -102,9 +102,9 @@ describe('インターフェース定義のテスト', () => {
         location: {
           file: 'userRepository.ts',
           line: 123,
-          method: 'findUserByName'
+          method: 'findUserByName',
         },
-        fixSuggestion: 'パラメータ化クエリを使用してください'
+        fixSuggestion: 'パラメータ化クエリを使用してください',
       };
 
       expect(vulnerability.type).toBe('sql-injection');
@@ -123,8 +123,8 @@ describe('インターフェース定義のテスト', () => {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date('2025-07-30T10:00:00Z')
-        }
+          lastModified: new Date('2025-07-30T10:00:00Z'),
+        },
       };
 
       expect(testCase.name).toBe('should validate user input');
@@ -140,7 +140,7 @@ describe('インターフェース定義のテスト', () => {
         content: 'const userInput = request.body.name;',
         location: { line: 10, column: 5 },
         lhs: 'userInput',
-        rhs: 'request.body.name'
+        rhs: 'request.body.name',
       };
 
       const methodCallStmt: TestStatement = {
@@ -149,7 +149,7 @@ describe('インターフェース定義のテスト', () => {
         location: { line: 11, column: 5 },
         method: 'sanitizeInput',
         arguments: ['userInput'],
-        returnValue: 'result'
+        returnValue: 'result',
       };
 
       const assertionStmt: TestStatement = {
@@ -158,7 +158,7 @@ describe('インターフェース定義のテスト', () => {
         location: { line: 12, column: 5 },
         actual: 'result',
         expected: '"sanitized"',
-        isNegativeAssertion: false
+        isNegativeAssertion: false,
       };
 
       expect(assignmentStmt.type).toBe('assignment');
@@ -174,7 +174,7 @@ describe('インターフェース定義のテスト', () => {
         { name: 'userInput', type: 'string', scope: 'local' },
         { name: 'userId', type: 'number', scope: 'parameter' },
         { name: 'authToken', type: 'string', scope: 'field' },
-        { name: 'CONFIG', type: 'object', scope: 'global' }
+        { name: 'CONFIG', type: 'object', scope: 'global' },
       ];
 
       expect(variables[0].scope).toBe('local');
@@ -194,9 +194,9 @@ describe('インターフェース定義のテスト', () => {
         confidence: 0.95,
         evidence: [
           'Variable receives data from request.body',
-          'No sanitization detected before use'
+          'No sanitization detected before use',
         ],
-        flowPolicy: 'must-sanitize-before-use'
+        flowPolicy: 'must-sanitize-before-use',
       };
 
       expect(annotation.target).toBe('userInput');
@@ -211,7 +211,7 @@ describe('インターフェース定義のテスト', () => {
         securityType: SecurityType.VALIDATED_INPUT,
         taintLevel: TaintLevel.CLEAN,
         confidence: 1.0,
-        evidence: ['Validated by input validator']
+        evidence: ['Validated by input validator'],
       };
 
       expect(annotation.variable).toBe('legacyVar');
@@ -228,16 +228,16 @@ describe('インターフェース定義のテスト', () => {
             securityType: SecurityType.USER_INPUT,
             taintLevel: TaintLevel.LIKELY_TAINTED,
             confidence: 0.9,
-            evidence: ['From request body']
-          }
+            evidence: ['From request body'],
+          },
         ],
         statistics: {
           totalVariables: 10,
           inferred: 8,
           failed: 2,
-          averageConfidence: 0.85
+          averageConfidence: 0.85,
         },
-        inferenceTime: 150
+        inferenceTime: 150,
       };
 
       expect(result.annotations).toHaveLength(1);
@@ -260,18 +260,18 @@ describe('インターフェース定義のテスト', () => {
               file: 'controller.ts',
               line: 42,
               column: 10,
-              method: 'handleRequest'
+              method: 'handleRequest',
             },
-            fixSuggestion: 'sanitizeInput()を使用してください'
-          }
+            fixSuggestion: 'sanitizeInput()を使用してください',
+          },
         ],
         executionTime: 500,
         runtimeImpact: 0,
         statistics: {
           filesAnalyzed: 25,
           methodsAnalyzed: 150,
-          inferenceSuccessRate: 0.92
-        }
+          inferenceSuccessRate: 0.92,
+        },
       };
 
       expect(result.issues).toHaveLength(1);
@@ -292,7 +292,7 @@ describe('インターフェース定義のテスト', () => {
           file: 'database.ts',
           line: 100,
           column: 15,
-          method: 'executeQuery'
+          method: 'executeQuery',
         },
         fixSuggestion: 'SQLクエリをパラメータ化してください',
         taintInfo: {
@@ -301,11 +301,11 @@ describe('インターフェース定義のテスト', () => {
           location: {
             file: 'database.ts',
             line: 100,
-            column: 15
+            column: 15,
           },
           tracePath: [],
-          securityRules: ['no-raw-sql']
-        }
+          securityRules: ['no-raw-sql'],
+        },
       };
 
       expect(issue.type).toBe('unsafe-taint-flow');
@@ -321,11 +321,11 @@ describe('インターフェース定義のテスト', () => {
           authentication: 0.85,
           inputValidation: 0.92,
           apiSecurity: 0.78,
-          overall: 0.85
+          overall: 0.85,
         },
         taintFlowDetection: 0.94,
         sanitizerCoverage: 0.88,
-        invariantCompliance: 0.91
+        invariantCompliance: 0.91,
       };
 
       expect(metrics.securityCoverage.authentication).toBe(0.85);
@@ -346,8 +346,8 @@ describe('ブランド型のテスト', () => {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
 
       const secureTest: SecureTest<TestCase> = {
@@ -358,13 +358,13 @@ describe('ブランド型のテスト', () => {
             location: {
               file: 'auth.test.ts',
               line: 10,
-              method: 'testAuth'
+              method: 'testAuth',
             },
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         __taintLevel: TaintLevel.CLEAN,
-        __securityType: SecurityType.VALIDATED_AUTH
+        __securityType: SecurityType.VALIDATED_AUTH,
       };
 
       expect(secureTest.name).toBe('secure authentication test');
@@ -382,8 +382,8 @@ describe('ブランド型のテスト', () => {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
 
       const unsafeTest: UnsafeTest<TestCase> = {
@@ -394,8 +394,8 @@ describe('ブランド型のテスト', () => {
             type: 'input-validation',
             required: ['boundary-test', 'sanitization-test'],
             minTaintLevel: TaintLevel.POSSIBLY_TAINTED,
-            applicableSources: [TaintSource.USER_INPUT]
-          }
+            applicableSources: [TaintSource.USER_INPUT],
+          },
         ],
         __vulnerabilities: [
           {
@@ -405,12 +405,12 @@ describe('ブランド型のテスト', () => {
             location: {
               file: 'unsafe.test.ts',
               line: 20,
-              method: 'renderHTML'
+              method: 'renderHTML',
             },
-            fixSuggestion: 'escapeHtml()を使用してください'
-          }
+            fixSuggestion: 'escapeHtml()を使用してください',
+          },
         ],
-        __riskLevel: 'high'
+        __riskLevel: 'high',
       };
 
       expect(unsafeTest.__missing).toHaveLength(1);
@@ -428,8 +428,8 @@ describe('ブランド型のテスト', () => {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
 
       const authTest: ValidatedAuthTest = {
@@ -437,7 +437,7 @@ describe('ブランド型のテスト', () => {
         __brand: 'auth-validated',
         __covers: ['success', 'failure', 'token-expiry', 'brute-force'],
         __tokenValidation: true,
-        __sessionManagement: true
+        __sessionManagement: true,
       };
 
       expect(authTest.__brand).toBe('auth-validated');
@@ -455,8 +455,8 @@ describe('ブランド型のテスト', () => {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       };
 
       const inputTest: ValidatedInputTest = {
@@ -466,9 +466,9 @@ describe('ブランド型のテスト', () => {
         __boundaries: [
           { type: 'min', value: 0, tested: true },
           { type: 'max', value: 100, tested: true },
-          { type: 'null', value: null, tested: true }
+          { type: 'null', value: null, tested: true },
         ],
-        __typeValidation: true
+        __typeValidation: true,
       };
 
       expect(inputTest.__brand).toBe('input-validated');
@@ -488,7 +488,7 @@ describe('AuthTestCoverage型のテスト', () => {
       'brute-force',
       'session-hijack',
       'csrf',
-      'privilege-escalation'
+      'privilege-escalation',
     ];
 
     expect(coverageTypes).toHaveLength(7);

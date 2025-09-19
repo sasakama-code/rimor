@@ -14,13 +14,15 @@ export class FsCompat {
     const version = process.version;
     const match = version.match(/^v(\d+)\.(\d+)\.(\d+)/);
     if (!match) return false;
-    
+
     const major = parseInt(match[1], 10);
     const minor = parseInt(match[2], 10);
     const patch = parseInt(match[3], 10);
-    
+
     // fs.rmSyncはNode.js 14.14.0以降で利用可能
-    return major > 14 || (major === 14 && minor > 14) || (major === 14 && minor === 14 && patch >= 0);
+    return (
+      major > 14 || (major === 14 && minor > 14) || (major === 14 && minor === 14 && patch >= 0)
+    );
   }
 
   /**
@@ -47,7 +49,7 @@ export class FsCompat {
   private static removeRecursiveSync(targetPath: string, force: boolean): void {
     try {
       const stat = fs.statSync(targetPath);
-      
+
       if (stat.isDirectory()) {
         // ディレクトリの場合、中身を先に削除
         const items = fs.readdirSync(targetPath);

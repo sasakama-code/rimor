@@ -1,19 +1,19 @@
 /**
  * TaintLevel列挙型から新型システムへの互換アダプター
  * arXiv:2504.18529v2への段階的移行をサポート
- * 
+ *
  * このアダプターは、既存のTaintLevelベースのコードを
  * 新しい@Tainted/@Untaintedアノテーションシステムに
  * 段階的に移行するためのブリッジとして機能します。
  */
 
 import { TaintLevel, TaintSource, TaintMetadata } from '../types/taint';
-import { 
-  TaintQualifier, 
-  TypeConstructors, 
+import {
+  TaintQualifier,
+  TypeConstructors,
   QualifiedType,
   TaintedType,
-  UntaintedType
+  UntaintedType,
 } from '../types/checker-framework-types';
 
 /**
@@ -39,14 +39,14 @@ export class TaintLevelAdapter {
    * 信頼度情報を保持しながら新型システムに変換
    */
   static toQualifiedType<T>(
-    value: T, 
+    value: T,
     level: TaintLevel,
     source?: TaintSource,
     metadata?: TaintMetadata
   ): QualifiedType<T> {
     // 信頼度の計算（0.0-1.0の範囲）
     const confidence = this.calculateConfidence(level);
-    
+
     if (level === 'untainted' || level === 'sanitized') {
       return TypeConstructors.untainted(value, 'legacy-clean');
     } else {
@@ -113,44 +113,34 @@ export class TaintLevelAdapter {
    * 格子演算の互換実装
    * 新型システムで格子理論の演算を再現
    */
-  static join<T>(
-    a: QualifiedType<T>, 
-    b: QualifiedType<T>
-  ): QualifiedType<T> {
+  static join<T>(a: QualifiedType<T>, b: QualifiedType<T>): QualifiedType<T> {
     // 両方が@Untaintedの場合のみ@Untainted
     if (a.__brand === '@Untainted' && b.__brand === '@Untainted') {
       return a;
     }
-    
+
     // いずれかが@Taintedなら結果も@Tainted
     if (a.__brand === '@Tainted') {
       return a;
     } else if (b.__brand === '@Tainted') {
       return b;
     }
-    
+
     // PolyTaintが含まれる場合は保守的に@Tainted
-    return TypeConstructors.tainted(
-      a.__value, 
-      'join-operation',
-      0.5
-    );
+    return TypeConstructors.tainted(a.__value, 'join-operation', 0.5);
   }
 
   /**
    * 格子演算のmeet操作
    */
-  static meet<T>(
-    a: QualifiedType<T>, 
-    b: QualifiedType<T>
-  ): QualifiedType<T> {
+  static meet<T>(a: QualifiedType<T>, b: QualifiedType<T>): QualifiedType<T> {
     // いずれかが@Untaintedなら結果も@Untainted
     if (a.__brand === '@Untainted') {
       return a;
     } else if (b.__brand === '@Untainted') {
       return b;
     }
-    
+
     // 両方が@Taintedの場合、より低い信頼度を選択
     if (a.__brand === '@Tainted' && b.__brand === '@Tainted') {
       const aConf = (a as TaintedType<T>).__confidence;
@@ -161,7 +151,7 @@ export class TaintLevelAdapter {
         return b;
       }
     }
-    
+
     return a;
   }
 
@@ -169,10 +159,7 @@ export class TaintLevelAdapter {
    * レガシーコードのための便利メソッド
    * TaintLevelベースの比較を新型システムで実行
    */
-  static isMoreTaintedThan<T>(
-    a: QualifiedType<T>,
-    b: QualifiedType<T>
-  ): boolean {
+  static isMoreTaintedThan<T>(a: QualifiedType<T>, b: QualifiedType<T>): boolean {
     const aLevel = this.fromQualifiedType(a);
     const bLevel = this.fromQualifiedType(b);
     return aLevel > bLevel;
@@ -185,9 +172,7 @@ export class TaintLevelAdapter {
   static batchConvert<T>(
     values: Array<{ value: T; level: TaintLevel; source?: TaintSource }>
   ): QualifiedType<T>[] {
-    return values.map(({ value, level, source }) => 
-      this.toQualifiedType(value, level, source)
-    );
+    return values.map(({ value, level, source }) => this.toQualifiedType(value, level, source));
   }
 
   /**
@@ -228,16 +213,16 @@ export class MigrationHelper {
         POSSIBLY_TAINTED: '@Tainted' as const,
         LIKELY_TAINTED: '@Tainted' as const,
         DEFINITELY_TAINTED: '@Tainted' as const,
-        HIGHLY_TAINTED: '@Tainted' as const
+        HIGHLY_TAINTED: '@Tainted' as const,
       },
-      
+
       // 格子演算の互換実装
       TaintLattice: {
         join: TaintLevelAdapter.join,
         meet: TaintLevelAdapter.meet,
-        lessThanOrEqual: <T>(a: QualifiedType<T>, b: QualifiedType<T>) => 
-          !TaintLevelAdapter.isMoreTaintedThan(a, b)
-      }
+        lessThanOrEqual: <T>(a: QualifiedType<T>, b: QualifiedType<T>) =>
+          !TaintLevelAdapter.isMoreTaintedThan(a, b),
+      },
     };
   }
 
@@ -259,17 +244,20 @@ export class MigrationHelper {
  * 移行状況の追跡
  */
 export class MigrationTracker {
-  private static migrationStats = new Map<string, {
-    total: number;
-    migrated: number;
-    lastUpdated: Date;
-  }>();
+  private static migrationStats = new Map<
+    string,
+    {
+      total: number;
+      migrated: number;
+      lastUpdated: Date;
+    }
+  >();
 
   static recordMigration(fileName: string, total: number, migrated: number): void {
     this.migrationStats.set(fileName, {
       total,
       migrated,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
   }
 
@@ -286,13 +274,13 @@ export class MigrationTracker {
       migratedItems += stats.migrated;
       fileStats.push({
         file,
-        progress: stats.total > 0 ? (stats.migrated / stats.total) * 100 : 0
+        progress: stats.total > 0 ? (stats.migrated / stats.total) * 100 : 0,
       });
     }
 
     return {
       overallProgress: totalItems > 0 ? (migratedItems / totalItems) * 100 : 0,
-      fileStats
+      fileStats,
     };
   }
 }

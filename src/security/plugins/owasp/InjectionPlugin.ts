@@ -3,7 +3,13 @@
  * TDD実装
  */
 
-import { ProjectContext, TestFile, DetectionResult, QualityScore, Improvement } from '../../../core/types';
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
+} from '../../../core/types';
 import { SecurityIssue } from '../../../security/types/security';
 import { OWASPCategory, OWASPTestResult } from './IOWASPSecurityPlugin';
 import { getDependencyNames, hasDependency } from './dependency-utils';
@@ -19,26 +25,37 @@ export class InjectionPlugin {
 
   isApplicable(context: ProjectContext): boolean {
     if (!context.dependencies) return false;
-    
+
     // データベース関連の依存関係をチェック
-    const dbDependencies = ['mysql', 'mysql2', 'pg', 'postgres', 'sqlite', 'sqlite3', 
-                           'sequelize', 'typeorm', 'mongoose', 'mongodb', 'redis'];
-    
+    const dbDependencies = [
+      'mysql',
+      'mysql2',
+      'pg',
+      'postgres',
+      'sqlite',
+      'sqlite3',
+      'sequelize',
+      'typeorm',
+      'mongoose',
+      'mongodb',
+      'redis',
+    ];
+
     // コマンド実行関連の依存関係をチェック
     const cmdDependencies = ['child_process', 'exec-sh', 'shelljs', 'node-cmd'];
-    
+
     // いずれかの依存関係が存在するかチェック
     const deps = getDependencyNames(context);
-    return deps.some(dep => 
-      dbDependencies.includes(dep.toLowerCase()) || 
-      cmdDependencies.includes(dep.toLowerCase())
+    return deps.some(
+      dep =>
+        dbDependencies.includes(dep.toLowerCase()) || cmdDependencies.includes(dep.toLowerCase())
     );
   }
 
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const patterns: DetectionResult[] = [];
     const content = testFile.content.toLowerCase();
-    
+
     // SQLインジェクション対策パターンの検出
     if (content.includes('sanitize') && content.includes('sql')) {
       patterns.push({
@@ -48,10 +65,10 @@ export class InjectionPlugin {
         location: { file: testFile.path, line: 1, column: 0 },
         confidence: 0.9,
         securityRelevance: 0.95,
-        metadata: { hasTest: true }
+        metadata: { hasTest: true },
       });
     }
-    
+
     // パラメータ化クエリのパターン検出
     if (content.includes('prepare') || content.includes('parameterized')) {
       if (!patterns.some(p => p.pattern === 'sql-injection-test')) {
@@ -62,14 +79,16 @@ export class InjectionPlugin {
           location: { file: testFile.path, line: 1, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.95,
-          metadata: { hasTest: true }
+          metadata: { hasTest: true },
         });
       }
     }
-    
+
     // コマンドインジェクション対策パターンの検出
-    if ((content.includes('command') || content.includes('exec')) && 
-        (content.includes('injection') || content.includes('escape'))) {
+    if (
+      (content.includes('command') || content.includes('exec')) &&
+      (content.includes('injection') || content.includes('escape'))
+    ) {
       patterns.push({
         patternId: 'injection-command-injection-test',
         patternName: 'コマンドインジェクション対策テスト',
@@ -77,10 +96,10 @@ export class InjectionPlugin {
         location: { file: testFile.path, line: 1, column: 0 },
         confidence: 0.9,
         securityRelevance: 0.9,
-        metadata: { hasTest: true }
+        metadata: { hasTest: true },
       });
     }
-    
+
     // 入力検証パターンの検出
     if (content.includes('validate') && content.includes('input')) {
       patterns.push({
@@ -90,13 +109,17 @@ export class InjectionPlugin {
         location: { file: testFile.path, line: 1, column: 0 },
         confidence: 0.8,
         securityRelevance: 0.8,
-        metadata: { hasTest: true }
+        metadata: { hasTest: true },
       });
     }
-    
+
     // 不足しているテストの検出
-    if (!content.includes('injection') && !content.includes('sanitize') && 
-        !content.includes('validate') && !content.includes('escape')) {
+    if (
+      !content.includes('injection') &&
+      !content.includes('sanitize') &&
+      !content.includes('validate') &&
+      !content.includes('escape')
+    ) {
       patterns.push({
         patternId: 'missing-injection-test',
         patternName: 'インジェクション対策テストが不足',
@@ -105,35 +128,36 @@ export class InjectionPlugin {
         confidence: 1.0,
         securityRelevance: 0.95,
         severity: 'critical',
-        metadata: { hasTest: false }
+        metadata: { hasTest: false },
       });
     }
-    
+
     return patterns;
   }
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     // パターンの分析
-    const hasSqlInjectionTest = patterns.some(p => 
-      p.pattern === 'sql-injection-test' && p.metadata?.hasTest
+    const hasSqlInjectionTest = patterns.some(
+      p => p.pattern === 'sql-injection-test' && p.metadata?.hasTest
     );
-    const hasCommandInjectionTest = patterns.some(p => 
-      p.pattern === 'command-injection-test' && p.metadata?.hasTest
+    const hasCommandInjectionTest = patterns.some(
+      p => p.pattern === 'command-injection-test' && p.metadata?.hasTest
     );
-    const hasInputValidationTest = patterns.some(p => 
-      p.pattern === 'input-validation-test' && p.metadata?.hasTest
+    const hasInputValidationTest = patterns.some(
+      p => p.pattern === 'input-validation-test' && p.metadata?.hasTest
     );
-    
+
     // カバレッジの計算
     const sqlInjectionCoverage = hasSqlInjectionTest ? 100 : 0;
     const commandInjectionCoverage = hasCommandInjectionTest ? 100 : 0;
     const inputValidationCoverage = hasInputValidationTest ? 100 : 0;
-    
+
     // スコアの計算
-    const coverageScore = (sqlInjectionCoverage + commandInjectionCoverage + inputValidationCoverage) / 3 / 100;
+    const coverageScore =
+      (sqlInjectionCoverage + commandInjectionCoverage + inputValidationCoverage) / 3 / 100;
     const overall = coverageScore * 0.9 + 0.1; // ベーススコア10%を追加
     const security = coverageScore;
-    
+
     return {
       overall,
       security,
@@ -142,7 +166,7 @@ export class InjectionPlugin {
       dimensions: {
         completeness: Math.round(coverageScore * 100),
         correctness: 60,
-        maintainability: 60
+        maintainability: 60,
       },
       confidence: 0.9,
       details: {
@@ -151,20 +175,21 @@ export class InjectionPlugin {
         suggestions: [],
         validationCoverage: sqlInjectionCoverage,
         sqlInjectionCoverage,
-        commandInjectionCoverage
-      } as InjectionQualityDetails
+        commandInjectionCoverage,
+      } as InjectionQualityDetails,
     };
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
-    
+
     // SQLインジェクション対策テストの改善提案
     if (!evaluation.details?.validationCoverage || evaluation.details.validationCoverage < 50) {
       improvements.push({
         id: 'add-sql-injection-tests',
         title: 'SQLインジェクション対策テストの追加',
-        description: 'パラメータ化クエリとSQL入力サニタイゼーションのテストを追加することで、SQLインジェクション脆弱性を防止できます。',
+        description:
+          'パラメータ化クエリとSQL入力サニタイゼーションのテストを追加することで、SQLインジェクション脆弱性を防止できます。',
         priority: 'critical',
         type: 'add-test',
         category: 'security',
@@ -196,10 +221,10 @@ export class InjectionPlugin {
     expect(sanitized).not.toContain('DROP');
     expect(sanitized).not.toContain(';');
   });
-});`
+});`,
       });
     }
-    
+
     // コマンドインジェクション対策の改善提案
     if (!evaluation.details?.sanitizerCoverage || evaluation.details.sanitizerCoverage < 50) {
       improvements.push({
@@ -211,10 +236,10 @@ export class InjectionPlugin {
         category: 'security',
         location: { file: 'test/security/injection.test.ts', line: 30, column: 0 },
         automatable: true,
-        impact: 30
+        impact: 30,
       });
     }
-    
+
     // 入力検証の改善提案
     if (!evaluation.details?.boundaryCoverage || evaluation.details.boundaryCoverage < 50) {
       improvements.push({
@@ -226,10 +251,10 @@ export class InjectionPlugin {
         category: 'security',
         location: { file: 'test/security/injection.test.ts', line: 60, column: 0 },
         automatable: true,
-        impact: 25
+        impact: 25,
       });
     }
-    
+
     return improvements;
   }
 
@@ -238,9 +263,12 @@ export class InjectionPlugin {
     const testPatterns: string[] = [];
     const recommendations: string[] = [];
     const missingTests: string[] = [];
-    
+
     // テストパターンの検出
-    if (content.includes('sql') && (content.includes('injection') || content.includes('sanitize'))) {
+    if (
+      content.includes('sql') &&
+      (content.includes('injection') || content.includes('sanitize'))
+    ) {
       testPatterns.push('sql-injection-prevention');
     }
     if (content.includes('command') && content.includes('injection')) {
@@ -255,13 +283,17 @@ export class InjectionPlugin {
     if (content.includes('escape')) {
       testPatterns.push('output-escaping');
     }
-    
+
     // カバレッジの計算
-    const requiredPatterns = ['sql-injection-prevention', 'command-injection-prevention', 
-                             'input-validation', 'parameterized-queries'];
+    const requiredPatterns = [
+      'sql-injection-prevention',
+      'command-injection-prevention',
+      'input-validation',
+      'parameterized-queries',
+    ];
     const foundPatterns = requiredPatterns.filter(p => testPatterns.includes(p));
     const coverage = Math.round((foundPatterns.length / requiredPatterns.length) * 100);
-    
+
     // 推奨事項の生成
     if (!testPatterns.includes('sql-injection-prevention')) {
       recommendations.push('SQLインジェクション防止テストを追加してください');
@@ -279,24 +311,24 @@ export class InjectionPlugin {
       recommendations.push('パラメータ化クエリのテストを追加してください');
       missingTests.push('parameterized-queries');
     }
-    
+
     if (testPatterns.length > 0) {
       recommendations.push('インジェクション攻撃のテストケースを定期的に更新してください');
     }
-    
+
     return {
       category: OWASPCategory.A03_INJECTION,
       coverage,
       issues: [],
       recommendations,
       testPatterns,
-      missingTests
+      missingTests,
     };
   }
 
   detectVulnerabilityPatterns(content: string): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
-    
+
     // SQLインジェクションパターンの検出
     const sqlPatterns = [
       // 文字列連結によるSQL構築
@@ -306,9 +338,9 @@ export class InjectionPlugin {
       /["']DELETE\s+FROM\s+.*WHERE\s+.*["']\s*\+/gi,
       // テンプレートリテラルでの危険な使用
       /`SELECT\s+.*FROM\s+.*WHERE\s+.*\$\{[^}]+\}`/g,
-      /`INSERT\s+INTO\s+.*VALUES.*\$\{[^}]+\}`/g
+      /`INSERT\s+INTO\s+.*VALUES.*\$\{[^}]+\}`/g,
     ];
-    
+
     sqlPatterns.forEach(pattern => {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -320,21 +352,21 @@ export class InjectionPlugin {
           location: {
             file: 'unknown',
             line: content.substring(0, match.index).split('\n').length,
-            column: 0
+            column: 0,
           },
-          recommendation: 'プリペアドステートメントまたはパラメータ化クエリを使用してください'
+          recommendation: 'プリペアドステートメントまたはパラメータ化クエリを使用してください',
         });
       }
     });
-    
+
     // コマンドインジェクションパターンの検出
     const cmdPatterns = [
       /exec\s*\(\s*['"`].*\s*\+/g,
       /exec\s*\(\s*`.*\$\{[^}]+\}`/g,
       /child_process\.(exec|spawn|execFile)\s*\([^,]+\+/g,
-      /shell\.exec\s*\([^)]*\+/g
+      /shell\.exec\s*\([^)]*\+/g,
     ];
-    
+
     cmdPatterns.forEach(pattern => {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -346,20 +378,20 @@ export class InjectionPlugin {
           location: {
             file: 'unknown',
             line: content.substring(0, match.index).split('\n').length,
-            column: 0
+            column: 0,
           },
-          recommendation: 'コマンドライン引数を適切にエスケープしてください'
+          recommendation: 'コマンドライン引数を適切にエスケープしてください',
         });
       }
     });
-    
+
     // eval使用の検出
     const evalPatterns = [
       /eval\s*\(/g,
       /new\s+Function\s*\(/g,
-      /setTimeout\s*\([^,]+,\s*0\s*\)/g // 文字列を実行する可能性
+      /setTimeout\s*\([^,]+,\s*0\s*\)/g, // 文字列を実行する可能性
     ];
-    
+
     evalPatterns.forEach(pattern => {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -371,19 +403,19 @@ export class InjectionPlugin {
           location: {
             file: 'unknown',
             line: content.substring(0, match.index).split('\n').length,
-            column: 0
+            column: 0,
           },
-          recommendation: 'evalやFunctionコンストラクタの使用を避けてください'
+          recommendation: 'evalやFunctionコンストラクタの使用を避けてください',
         });
       }
     });
-    
+
     return issues;
   }
 
   generateSecurityTests(context: ProjectContext): string[] {
     const tests: string[] = [];
-    
+
     // 基本的なSQLインジェクション対策テスト
     tests.push(`describe('SQLインジェクション対策', () => {
   it('悪意のある入力をサニタイズする', () => {
@@ -402,7 +434,7 @@ export class InjectionPlugin {
     expect(stmt.source).not.toContain(userId);
   });
 });`);
-    
+
     // コマンドインジェクション対策テスト
     tests.push(`describe('コマンドインジェクション対策', () => {
   it('危険なコマンド入力を防ぐ', () => {
@@ -417,7 +449,7 @@ export class InjectionPlugin {
     expect(escaped).toBe("'test; echo \\"hacked\\"'");
   });
 });`);
-    
+
     // 入力検証テスト
     tests.push(`describe('入力検証', () => {
   it('すべてのユーザー入力を検証する', () => {
@@ -434,7 +466,7 @@ export class InjectionPlugin {
     expect(validated).toMatch(/^[a-zA-Z0-9]+$/);
   });
 });`);
-    
+
     // データベース使用時の追加テスト
     const mongoDbDeps = ['mongodb', 'mongoose'];
     if (mongoDbDeps.some(dep => hasDependency(context, dep))) {
@@ -452,13 +484,13 @@ export class InjectionPlugin {
   });
 });`);
     }
-    
+
     return tests;
   }
 
   validateEnterpriseRequirements(testFile: TestFile): boolean {
     const content = testFile.content.toLowerCase();
-    
+
     // エンタープライズ要件のチェック項目
     const requirements = [
       // プリペアドステートメントの使用
@@ -468,9 +500,9 @@ export class InjectionPlugin {
       // セキュリティログの記録
       content.includes('log') && (content.includes('attempt') || content.includes('security')),
       // パラメータバインディングの確認
-      content.includes('parameter') && content.includes('bind')
+      content.includes('parameter') && content.includes('bind'),
     ];
-    
+
     // 少なくとも3つ以上の要件を満たしているかチェック
     const metRequirements = requirements.filter(req => req).length;
     return metRequirements >= 3;

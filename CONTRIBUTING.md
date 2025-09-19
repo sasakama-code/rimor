@@ -15,17 +15,20 @@ Rimorプロジェクトへの貢献をご検討いただき、ありがとうご
 ## 開発環境のセットアップ
 
 1. **リポジトリのフォーク**
+
    ```bash
    git clone https://github.com/[your-username]/rimor.git
    cd rimor
    ```
 
 2. **依存関係のインストール**
+
    ```bash
    npm install
    ```
 
 3. **ビルド**
+
    ```bash
    npm run build
    ```
@@ -51,6 +54,7 @@ Rimorプロジェクトへの貢献をご検討いただき、ありがとうご
    - 新機能やバグ修正の前に、issueを作成または既存のissueを選択
 
 2. **ブランチの作成**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -72,17 +76,20 @@ Rimorプロジェクトへの貢献をご検討いただき、ありがとうご
 Rimor v0.8.0では、4段階のCIワークフローを採用しています：
 
 ### 1. Build and Verification（ビルドと検証）
+
 - TypeScriptのコンパイル
 - 型チェック
 - 基本的な構文検証
 
 ### 2. Security Audit（セキュリティ監査）
+
 - **npm audit**: 依存関係の脆弱性チェック
 - **TaintTyper**: 型ベースセキュリティ解析
   - テストコードのセキュリティパターン検出
   - SQLインジェクション、XSSなどの脆弱性検出
 
 ### 3. Quality Audit（品質監査）
+
 - **Dogfooding**: Rimor自身でRimorを解析
 - 5次元品質評価:
   - カバレッジ（25%）
@@ -96,6 +103,7 @@ Rimor v0.8.0では、4段階のCIワークフローを採用しています：
   - カバレッジスコア: 60点以上
 
 ### 4. Test（テスト実行）
+
 - 単体テスト・統合テストの実行
 - AIエラーレポートの生成（失敗時）
 
@@ -114,6 +122,7 @@ npm test                      # テスト実行
 ### CI結果の確認
 
 各ジョブの結果は`.rimor/reports/`配下に保存されます：
+
 - `.rimor/reports/security/`: セキュリティ監査結果
 - `.rimor/reports/quality/`: 品質監査結果
 - `.rimor/reports/test-errors-ai.md`: AIエラーレポート
@@ -143,6 +152,7 @@ npm test                      # テスト実行
 ```
 
 タイプ:
+
 - `feat`: 新機能
 - `fix`: バグ修正
 - `docs`: ドキュメント
@@ -152,6 +162,7 @@ npm test                      # テスト実行
 - `chore`: ビルド、補助ツール
 
 例:
+
 ```
 feat(security): TaintTyper統合によるセキュリティ解析強化
 
@@ -192,6 +203,7 @@ npm run dev:test
 ### AIエラーレポート
 
 テスト失敗時、以下のファイルが自動生成されます：
+
 - `.rimor/reports/test-errors-ai.md`: AI向け最適化レポート
 - `.rimor/reports/test-errors-ai.json`: 構造化データ
 
@@ -201,17 +213,21 @@ npm run dev:test
 
 ```markdown
 ## 概要
+
 変更の概要を記載
 
 ## 変更内容
+
 - [ ] 実装した機能/修正した内容
 
 ## テスト
+
 - [ ] 単体テストを追加/更新
 - [ ] 統合テストを実行
 - [ ] ローカルでCI相当のチェックを実行
 
 ## チェックリスト
+
 - [ ] コードはプロジェクトのスタイルガイドに従っている
 - [ ] セルフレビューを実施した
 - [ ] ドキュメントを更新した（必要な場合）
@@ -227,11 +243,13 @@ npm run dev:test
 ## リリースプロセス
 
 1. **リリース準備チェック**
+
    ```bash
    npm run pre-release-check
    ```
 
 2. **健全性チェック**
+
    ```bash
    npm run health-check
    ```
@@ -248,6 +266,7 @@ npm run dev:test
 ## サポート
 
 質問や提案がある場合：
+
 - [Issue](https://github.com/sasakama-code/rimor/issues)を作成
 - [Discussions](https://github.com/sasakama-code/rimor/discussions)で議論
 

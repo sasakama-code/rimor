@@ -1,7 +1,7 @@
 /**
  * 外部プロジェクトベンチマークCLIコマンドの型定義
  * Issue #86: CLI完全統合対応
- * 
+ *
  * Issue #84で実装された外部プロジェクトベンチマーク機能と
  * Issue #85で追加された統合分析・有効性検証システムのCLI統合
  */
@@ -12,40 +12,40 @@
 export interface BenchmarkExternalOptions {
   /** 特定プロジェクト名（positional引数） */
   project?: string;
-  
+
   /** ベンチマーク対象ティア */
   tier?: '1' | '2' | 'all';
-  
+
   /** 高速実行モード */
   quick?: boolean;
-  
+
   /** 詳細ログを表示 */
   verbose?: boolean;
-  
+
   /** 並列実行を有効化 */
   parallel?: boolean;
-  
+
   /** 出力ディレクトリ */
   output?: string;
-  
+
   /** 実行回数 */
   iterations?: number;
-  
+
   /** タイムアウト（ミリ秒） */
   timeout?: number;
-  
+
   /** 最大リトライ回数 */
   maxRetries?: number;
-  
+
   /** 並列ワーカー数 */
   workerCount?: number;
-  
+
   /** キャッシュディレクトリ */
   cacheDir?: string;
-  
+
   /** ベースライン比較を実行 */
   baselineComparison?: boolean;
-  
+
   /** Issue #85: 有効性検証レポートを生成 */
   validationReport?: boolean;
 }
@@ -85,21 +85,21 @@ export interface BenchmarkExternalResult {
  */
 export const AVAILABLE_PROJECTS = [
   'typescript',
-  'ant-design', 
+  'ant-design',
   'vscode',
   'material-ui',
   'storybook',
-  'deno'
+  'deno',
 ] as const;
 
-export type ProjectName = typeof AVAILABLE_PROJECTS[number];
+export type ProjectName = (typeof AVAILABLE_PROJECTS)[number];
 
 /**
  * プロジェクトティアの定義
  */
 export const PROJECT_TIERS = {
   1: ['typescript', 'ant-design', 'vscode'], // 最優先プロジェクト
-  2: ['material-ui', 'storybook', 'deno']     // 追加評価プロジェクト
+  2: ['material-ui', 'storybook', 'deno'], // 追加評価プロジェクト
 } as const;
 
 /**
@@ -115,5 +115,5 @@ export const DEFAULT_OPTIONS = {
   timeout: 300000, // 5分
   maxRetries: 3,
   baselineComparison: false,
-  validationReport: true // Issue #85機能はデフォルトで有効
+  validationReport: true, // Issue #85機能はデフォルトで有効
 } as const;

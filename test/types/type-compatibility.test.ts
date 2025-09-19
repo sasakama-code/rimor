@@ -1,30 +1,21 @@
 /**
  * 型定義の互換性テスト
  * TDD（テスト駆動開発）に基づいたリファクタリングのためのテストスイート
- * 
+ *
  * このテストは、型定義のリファクタリング前後で
  * 互換性が保たれることを保証します。
  */
 
 import { describe, it, expect } from '@jest/globals';
-import type { 
-  AnalysisResult as UnifiedAnalysisResult 
-} from '../../src/core/types/analysis-result';
-import type { 
-  AnalysisResult as CoreAnalysisResult 
-} from '../../src/core/analyzer';
-import type {
-  AnalysisResult as InterfaceAnalysisResult
-} from '../../src/core/interfaces/IAnalysisEngine';
+import type { AnalysisResult as UnifiedAnalysisResult } from '../../src/core/types/analysis-result';
+import type { AnalysisResult as CoreAnalysisResult } from '../../src/core/analyzer';
+import type { AnalysisResult as InterfaceAnalysisResult } from '../../src/core/interfaces/IAnalysisEngine';
 
 /**
  * 型の互換性をチェックするヘルパー関数
  * TypeScriptのコンパイル時型チェックを利用
  */
-function assertTypeCompatibility<T, U>(
-  _value1?: T,
-  _value2?: U
-): void {
+function assertTypeCompatibility<T, U>(_value1?: T, _value2?: U): void {
   // 型チェックはコンパイル時に行われる
   // このテストが通れば型の互換性が保証される
 }
@@ -35,7 +26,7 @@ describe('AnalysisResult型の互換性テスト', () => {
     const baseResult = {
       totalFiles: 10,
       issues: [],
-      executionTime: 1000
+      executionTime: 1000,
     };
 
     // CoreAnalysisResultとしての型チェック
@@ -47,7 +38,7 @@ describe('AnalysisResult型の互換性テスト', () => {
     // InterfaceAnalysisResultとしての型チェック
     const interfaceResult: InterfaceAnalysisResult = {
       ...baseResult,
-      pluginsExecuted: ['plugin1', 'plugin2']
+      pluginsExecuted: ['plugin1', 'plugin2'],
     };
     expect(interfaceResult.totalFiles).toBe(10);
     expect(interfaceResult.pluginsExecuted).toHaveLength(2);
@@ -56,12 +47,12 @@ describe('AnalysisResult型の互換性テスト', () => {
   it('必須フィールドが全ての定義に含まれていること', () => {
     // 必須フィールドのリスト
     const requiredFields = ['totalFiles', 'issues', 'executionTime'];
-    
+
     // 各型定義が必須フィールドを持つことを確認
     const testData: CoreAnalysisResult = {
       totalFiles: 5,
       issues: [],
-      executionTime: 500
+      executionTime: 500,
     };
 
     requiredFields.forEach(field => {
@@ -79,8 +70,8 @@ describe('AnalysisResult型の互換性テスト', () => {
       metadata: {
         startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
-        version: '1.0.0'
-      }
+        version: '1.0.0',
+      },
     };
 
     expect(extendedResult.pluginsExecuted).toBeDefined();
@@ -99,9 +90,9 @@ describe('TaintAnalysisResult型の互換性テスト', () => {
         criticalFlows: 0,
         highRiskFlows: 0,
         mediumRiskFlows: 0,
-        lowRiskFlows: 0
+        lowRiskFlows: 0,
       },
-      recommendations: []
+      recommendations: [],
     };
 
     // 必須フィールドの存在確認
@@ -116,7 +107,7 @@ describe('TaintAnalysisResult型の互換性テスト', () => {
       severity: 'HIGH',
       source: 'userInput',
       sink: 'database',
-      description: 'Potential SQL injection'
+      description: 'Potential SQL injection',
     };
 
     expect(securityViolation.type).toBe('TAINT_FLOW');
@@ -133,7 +124,7 @@ describe('TestCase型の互換性テスト', () => {
       input: {},
       expectedOutput: {},
       actualOutput: undefined,
-      status: 'pending' as const
+      status: 'pending' as const,
     };
 
     expect(testCase).toHaveProperty('id');
@@ -159,8 +150,8 @@ describe('TestCase型の互換性テスト', () => {
       pluginSpecific: {
         timeout: 5000,
         retries: 3,
-        tags: ['security', 'performance']
-      }
+        tags: ['security', 'performance'],
+      },
     };
 
     expect(pluginTest.pluginSpecific?.timeout).toBe(5000);
@@ -171,24 +162,26 @@ describe('TestCase型の互換性テスト', () => {
 describe('型ガードの動作確認', () => {
   it('isAnalysisResult型ガードが正しく動作すること', () => {
     const isAnalysisResult = (obj: any): obj is CoreAnalysisResult => {
-      return obj !== null &&
+      return (
+        obj !== null &&
         obj !== undefined &&
         typeof obj === 'object' &&
         typeof obj.totalFiles === 'number' &&
         Array.isArray(obj.issues) &&
-        typeof obj.executionTime === 'number';
+        typeof obj.executionTime === 'number'
+      );
     };
 
     const validResult = {
       totalFiles: 10,
       issues: [],
-      executionTime: 1000
+      executionTime: 1000,
     };
 
     const invalidResult = {
       totalFiles: '10', // 型が異なる
       issues: [],
-      executionTime: 1000
+      executionTime: 1000,
     };
 
     expect(isAnalysisResult(validResult)).toBe(true);
@@ -199,18 +192,20 @@ describe('型ガードの動作確認', () => {
 
   it('isTaintAnalysisResult型ガードが正しく動作すること', () => {
     const isTaintAnalysisResult = (obj: any): boolean => {
-      return obj !== null &&
+      return (
+        obj !== null &&
         obj !== undefined &&
         typeof obj === 'object' &&
         Array.isArray(obj.flows) &&
         obj.summary &&
-        typeof obj.summary.totalFlows === 'number';
+        typeof obj.summary.totalFlows === 'number'
+      );
     };
 
     const validTaintResult = {
       flows: [],
       summary: { totalFlows: 0 },
-      recommendations: []
+      recommendations: [],
     };
 
     expect(isTaintAnalysisResult(validTaintResult)).toBe(true);
@@ -228,7 +223,7 @@ describe('後方互換性の確認', () => {
     const result: CoreAnalysisResult = {
       totalFiles: 5,
       issues: [{} as any, {} as any],
-      executionTime: 100
+      executionTime: 100,
     };
 
     expect(processAnalysisResult(result)).toBe(2);
@@ -237,11 +232,11 @@ describe('後方互換性の確認', () => {
   it('型エイリアスが正しく機能すること', () => {
     // 型エイリアスの例
     type LegacyAnalysisResult = CoreAnalysisResult;
-    
+
     const legacyResult: LegacyAnalysisResult = {
       totalFiles: 10,
       issues: [],
-      executionTime: 200
+      executionTime: 200,
     };
 
     expect(legacyResult.totalFiles).toBe(10);

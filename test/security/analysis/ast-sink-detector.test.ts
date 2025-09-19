@@ -39,8 +39,8 @@ describe('ASTSinkDetector', () => {
         dangerousFunction: {
           functionName: 'query',
           objectName: 'connection',
-          dangerousParameterIndex: 0
-        }
+          dangerousParameterIndex: 0,
+        },
       });
       expect(sinks[0].confidence).toBeGreaterThanOrEqual(0.9);
       expect(sinks[0].location.line).toBeGreaterThan(0);
@@ -110,8 +110,8 @@ describe('ASTSinkDetector', () => {
         dangerousFunction: {
           functionName: 'readFileSync',
           objectName: 'fs',
-          dangerousParameterIndex: 0
-        }
+          dangerousParameterIndex: 0,
+        },
       });
     });
 
@@ -179,8 +179,8 @@ describe('ASTSinkDetector', () => {
         riskLevel: 'CRITICAL',
         dangerousFunction: {
           functionName: 'exec',
-          dangerousParameterIndex: 0
-        }
+          dangerousParameterIndex: 0,
+        },
       });
     });
 
@@ -247,8 +247,8 @@ describe('ASTSinkDetector', () => {
         dangerousFunction: {
           functionName: 'send',
           objectName: 'res',
-          dangerousParameterIndex: 0
-        }
+          dangerousParameterIndex: 0,
+        },
       });
     });
 
@@ -311,8 +311,8 @@ describe('ASTSinkDetector', () => {
         riskLevel: 'CRITICAL',
         dangerousFunction: {
           functionName: 'eval',
-          dangerousParameterIndex: 0
-        }
+          dangerousParameterIndex: 0,
+        },
       });
       expect(sinks[0].confidence).toBeGreaterThanOrEqual(0.95);
     });
@@ -368,7 +368,7 @@ describe('ASTSinkDetector', () => {
 
       // Assert
       expect(sinks).toHaveLength(4);
-      
+
       const types = sinks.map(s => s.type);
       expect(types).toContain('path-traversal');
       expect(types).toContain('command-injection');
@@ -393,15 +393,15 @@ describe('ASTSinkDetector', () => {
 
       // Assert
       expect(sinks).toHaveLength(3); // JSON.parse, eval, exec
-      
+
       const dataIntegritySink = sinks.find(s => s.type === 'data-integrity-failure');
       const codeInjectionSink = sinks.find(s => s.type === 'code-injection');
       const commandInjectionSink = sinks.find(s => s.type === 'command-injection');
-      
+
       expect(dataIntegritySink).toBeDefined();
       expect(codeInjectionSink).toBeDefined();
       expect(commandInjectionSink).toBeDefined();
-      
+
       // JSON.parseのSinkを検証
       expect(dataIntegritySink?.dangerousFunction.functionName).toBe('parse');
       expect(dataIntegritySink?.dangerousFunction.objectName).toBe('JSON');
@@ -423,13 +423,13 @@ function test() {
 
       // Assert
       expect(sinks).toHaveLength(2);
-      
+
       const pathSink = sinks.find(s => s.type === 'path-traversal');
       const codeSink = sinks.find(s => s.type === 'code-injection');
-      
+
       expect(pathSink?.location.line).toBe(4);
       expect(codeSink?.location.line).toBe(5);
-      
+
       expect(pathSink?.location.column).toBeGreaterThan(0);
       expect(codeSink?.location.column).toBeGreaterThan(0);
     });
@@ -444,8 +444,7 @@ function test() {
       `;
 
       // Act & Assert
-      await expect(detector.detectSinks(invalidCode, 'invalid.ts'))
-        .resolves.toBeInstanceOf(Array); // エラーではなく配列を返す
+      await expect(detector.detectSinks(invalidCode, 'invalid.ts')).resolves.toBeInstanceOf(Array); // エラーではなく配列を返す
     });
 
     it('空のソースコードでも正常に処理する', async () => {

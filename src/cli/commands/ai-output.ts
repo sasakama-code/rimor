@@ -54,7 +54,7 @@ export class AIOutputCommand {
       this.validateOptions(options);
 
       const targetPath = path.resolve(options.path);
-      
+
       // パスの存在確認
       if (!fs.existsSync(targetPath)) {
         throw new Error(`プロジェクトパスが存在しません: ${targetPath}`);
@@ -69,13 +69,13 @@ export class AIOutputCommand {
       // Analyzerの初期化と分析実行
       await this.initializeAnalyzer(targetPath, options);
       const analysisResult = await this.analyzer.analyze(targetPath);
-      
+
       // analyze()メソッドがIssue[]を返すため、結果を整形
-      const normalizedResult = Array.isArray(analysisResult) 
+      const normalizedResult = Array.isArray(analysisResult)
         ? {
             totalFiles: 1,
             issues: analysisResult,
-            executionTime: 0
+            executionTime: 0,
           }
         : analysisResult;
 
@@ -89,7 +89,7 @@ export class AIOutputCommand {
         includeSourceCode: options.includeSourceCode,
         optimizeForAI: options.optimizeForAI,
         maxTokens: options.maxTokens,
-        maxFileSize: options.maxFileSize
+        maxFileSize: options.maxFileSize,
       };
 
       // フォーマットと出力
@@ -98,13 +98,8 @@ export class AIOutputCommand {
       if (options.verbose) {
         console.log(OutputFormatter.success('AI向け出力生成が完了しました'));
       }
-
     } catch (error) {
-      const errorInfo = errorHandler.handleError(
-        error,
-        undefined,
-        'AI向け出力生成に失敗しました'
-      );
+      const errorInfo = errorHandler.handleError(error, undefined, 'AI向け出力生成に失敗しました');
       console.error(OutputFormatter.error(errorInfo.message));
       throw error;
     }
@@ -133,7 +128,10 @@ export class AIOutputCommand {
       throw new Error('maxTokens は 100 から 100000 の間である必要があります');
     }
 
-    if (options.maxFileSize && (options.maxFileSize < 1000 || options.maxFileSize > 100 * 1024 * 1024)) {
+    if (
+      options.maxFileSize &&
+      (options.maxFileSize < 1000 || options.maxFileSize > 100 * 1024 * 1024)
+    ) {
       throw new Error('maxFileSize は 1KB から 100MB の間である必要があります');
     }
   }
@@ -150,8 +148,9 @@ export class AIOutputCommand {
     const trimmedPath = inputPath.trim();
 
     // テスト環境の検出（rimor-*-test-*パターンをサポート）
-    const isTestTempFile = (trimmedPath.includes('/tmp/') && /rimor.*test/.test(trimmedPath)) ||
-                          (trimmedPath.includes('/var/folders/') && trimmedPath.includes('T/'));
+    const isTestTempFile =
+      (trimmedPath.includes('/tmp/') && /rimor.*test/.test(trimmedPath)) ||
+      (trimmedPath.includes('/var/folders/') && trimmedPath.includes('T/'));
 
     // 危険なパターンの検出（テスト環境では緩和）
     const dangerousPatterns = [
@@ -165,7 +164,7 @@ export class AIOutputCommand {
     if (!isTestTempFile) {
       dangerousPatterns.push(
         /^\/|^\\|^[a-zA-Z]:[\\/]/g, // 絶対パス（制限する場合）
-        /^\.|\/\./g, // 隠しファイル・ディレクトリ（一部制限）
+        /^\.|\/\./g // 隠しファイル・ディレクトリ（一部制限）
       );
     }
 
@@ -176,7 +175,8 @@ export class AIOutputCommand {
     }
 
     // 長さ制限
-    if (trimmedPath.length > 260) { // Windows MAX_PATH制限
+    if (trimmedPath.length > 260) {
+      // Windows MAX_PATH制限
       throw new Error(`${parameterName} が長すぎます（最大260文字）`);
     }
 
@@ -184,7 +184,7 @@ export class AIOutputCommand {
     if (parameterName === 'output' && !isTestTempFile) {
       const resolvedPath = path.resolve(trimmedPath);
       const projectRoot = process.cwd();
-      
+
       // プロジェクト外への書き込みを制限
       if (!resolvedPath.startsWith(projectRoot)) {
         throw new Error('出力パスはプロジェクト内である必要があります');
@@ -198,25 +198,25 @@ export class AIOutputCommand {
   private async initializeAnalyzer(targetPath: string, options: AIOutputOptions): Promise<void> {
     const configLoader = new ConfigLoader();
     this.config = await configLoader.loadConfig(targetPath);
-    
+
     // キャッシュ機能が有効な場合はCachedAnalyzerを使用
     if (options.cache === undefined || options.cache === true) {
       this.analyzer = new CachedAnalyzer({
         enableCache: true,
         showCacheStats: options.verbose || false,
         enablePerformanceMonitoring: false,
-        showPerformanceReport: false
+        showPerformanceReport: false,
       });
     } else if (options.parallel) {
       this.analyzer = new ParallelAnalyzer({
         batchSize: options.batchSize,
         maxConcurrency: options.concurrency,
-        enableStats: options.verbose
+        enableStats: options.verbose,
       });
     } else {
       this.analyzer = new UnifiedAnalysisEngine();
     }
-    
+
     // プラグインの動的登録
     await this.registerPlugins();
   }
@@ -226,10 +226,10 @@ export class AIOutputCommand {
    */
   private async registerPlugins(): Promise<void> {
     if (!this.config) return;
-    
+
     for (const [pluginName, pluginConfig] of Object.entries(this.config.plugins)) {
       if (!pluginConfig.enabled) continue;
-      
+
       try {
         if (pluginName === 'test-existence') {
           const { TestExistencePlugin } = await import('../../plugins/testExistence');
@@ -248,14 +248,14 @@ export class AIOutputCommand {
    * スコアリング情報でBasicAnalysisResultを拡張
    */
   private async enhanceWithScoring(
-    result: BasicAnalysisResult, 
-    targetPath: string, 
+    result: BasicAnalysisResult,
+    targetPath: string,
     options: AIOutputOptions
   ): Promise<EnhancedAnalysisResult> {
     try {
       // プラグイン結果をスコアリング用形式に変換
       const pluginResultsMap = this.convertToPluginResults(result, targetPath);
-      
+
       // スコア計算（簡易版）
       const projectScore = {
         projectPath: targetPath,
@@ -277,15 +277,15 @@ export class AIOutputCommand {
             correctness: 0.2,
             maintainability: 0.2,
             security: 0.2,
-            performance: 0.2
-          }
+            performance: 0.2,
+          },
         },
         metadata: {
           generatedAt: new Date(),
           executionTime: 0,
           pluginCount: 0,
-          issueCount: 0
-        }
+          issueCount: 0,
+        },
       };
 
       return {
@@ -294,23 +294,41 @@ export class AIOutputCommand {
         fileScores: projectScore.fileScores,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
-          testFramework: this.detectTestFramework(targetPath)
-        }
+          language: this.detectProjectLanguage(targetPath) as
+            | 'javascript'
+            | 'typescript'
+            | 'python'
+            | 'java'
+            | 'csharp'
+            | 'go'
+            | 'rust'
+            | 'other'
+            | undefined,
+          testFramework: this.detectTestFramework(targetPath),
+        },
       };
     } catch (error) {
       // スコアリングに失敗した場合は基本情報のみ返す
       if (options.verbose) {
         console.warn(OutputFormatter.warning('スコアリング情報の取得に失敗しました'));
       }
-      
+
       return {
         ...result,
         projectContext: {
           rootPath: targetPath,
-          language: this.detectProjectLanguage(targetPath) as "javascript" | "typescript" | "python" | "java" | "csharp" | "go" | "rust" | "other" | undefined,
-          testFramework: this.detectTestFramework(targetPath)
-        }
+          language: this.detectProjectLanguage(targetPath) as
+            | 'javascript'
+            | 'typescript'
+            | 'python'
+            | 'java'
+            | 'csharp'
+            | 'go'
+            | 'rust'
+            | 'other'
+            | undefined,
+          testFramework: this.detectTestFramework(targetPath),
+        },
       };
     }
   }
@@ -330,11 +348,17 @@ export class AIOutputCommand {
     if (formatterOptions.format === 'markdown') {
       this.reportEngine.setStrategy(new MarkdownFormatter());
       const report = await this.reportEngine.generate(result as any);
-      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
+      output =
+        typeof report.content === 'string'
+          ? report.content
+          : JSON.stringify(report.content, null, 2);
     } else {
       this.reportEngine.setStrategy(new AIJsonFormatter());
       const report = await this.reportEngine.generate(result as any);
-      output = typeof report.content === 'string' ? report.content : JSON.stringify(report.content, null, 2);
+      output =
+        typeof report.content === 'string'
+          ? report.content
+          : JSON.stringify(report.content, null, 2);
     }
 
     // 出力先の決定と保存
@@ -342,40 +366,42 @@ export class AIOutputCommand {
       // ファイルに出力
       const { PathSecurity } = await import('../../utils/pathSecurity');
       const projectRoot = process.cwd();
-      
+
       // セキュリティ: パス解決と検証
       const safeOutputPath = PathSecurity.safeResolve(options.output, projectRoot, 'ai-output');
       if (!safeOutputPath) {
         throw new Error('出力パスが無効またはプロジェクト範囲外です');
       }
-      
+
       const outputDir = path.dirname(safeOutputPath);
-      
+
       // セキュリティ: 出力ディレクトリの検証（テスト環境では緩和）
-      const isTestTempFile = (outputDir.includes('/tmp/') && /rimor.*test/.test(outputDir)) ||
-                            (outputDir.includes('/var/folders/') && outputDir.includes('T/'));
-      
+      const isTestTempFile =
+        (outputDir.includes('/tmp/') && /rimor.*test/.test(outputDir)) ||
+        (outputDir.includes('/var/folders/') && outputDir.includes('T/'));
+
       if (!isTestTempFile && !PathSecurity.validateProjectPath(outputDir, projectRoot)) {
         throw new Error('出力ディレクトリがプロジェクト範囲外です');
       }
-      
+
       // 出力ディレクトリが存在しない場合は作成
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
       }
-      
+
       // セキュリティ: 既存ファイルの上書き警告
       if (fs.existsSync(safeOutputPath)) {
         console.warn(OutputFormatter.warning(`ファイルを上書きします: ${safeOutputPath}`));
       }
-      
+
       // セキュリティ: 出力サイズ制限
-      if (output.length > 50 * 1024 * 1024) { // 50MB制限
+      if (output.length > 50 * 1024 * 1024) {
+        // 50MB制限
         throw new Error('出力ファイルサイズが制限を超えています（最大50MB）');
       }
-      
+
       fs.writeFileSync(safeOutputPath, output, 'utf-8');
-      
+
       if (options.verbose) {
         console.log(OutputFormatter.success(`出力ファイル: ${safeOutputPath}`));
         console.log(OutputFormatter.info(`出力サイズ: ${(output.length / 1024).toFixed(2)} KB`));
@@ -389,7 +415,10 @@ export class AIOutputCommand {
   /**
    * 従来の分析結果をプラグイン結果形式に変換
    */
-  private convertToPluginResults(result: BasicAnalysisResult, targetPath: string): Map<string, PluginResult[]> {
+  private convertToPluginResults(
+    result: BasicAnalysisResult,
+    targetPath: string
+  ): Map<string, PluginResult[]> {
     // 簡易版: 空のMapを返す
     return new Map<string, PluginResult[]>();
   }
@@ -404,11 +433,11 @@ export class AIOutputCommand {
 
   private detectTestFramework(projectPath: string): string {
     const packageJsonPath = path.join(projectPath, 'package.json');
-    
+
     try {
       if (fs.existsSync(packageJsonPath)) {
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        
+
         if (packageJson.devDependencies?.jest || packageJson.dependencies?.jest) {
           return 'jest';
         } else if (packageJson.devDependencies?.mocha || packageJson.dependencies?.mocha) {
@@ -418,7 +447,7 @@ export class AIOutputCommand {
     } catch (error) {
       // エラーは無視
     }
-    
+
     return 'unknown';
   }
 

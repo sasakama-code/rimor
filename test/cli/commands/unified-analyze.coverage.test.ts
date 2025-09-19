@@ -35,7 +35,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('カバレッジ統合オプションが追加される', async () => {
       // このテストは将来的にカバレッジオプションが追加された時に有効になる
       // 現在は基本機能の確認のみ
-      
+
       // ARRANGE
       const options: UnifiedAnalyzeOptions = {
         path: testFixturePath,
@@ -55,8 +55,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
-          }
+            lowSeverity: 0,
+          },
         },
         intentAnalysis: {
           testIntents: [],
@@ -64,8 +64,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
-          }
+            lowRiskTests: 0,
+          },
         },
         gapAnalysis: {
           gaps: [],
@@ -74,8 +74,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
-          }
+            lowGaps: 0,
+          },
         },
         nistEvaluation: {
           riskAssessments: [],
@@ -86,8 +86,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
-          }
+            lowRisks: 0,
+          },
         },
         unifiedReport: {
           summary: {
@@ -96,26 +96,26 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             highIssues: 0,
             mediumIssues: 0,
             lowIssues: 0,
-            overallGrade: 'A' as const
+            overallGrade: 'A' as const,
           },
           taintSummary: {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
+            lowSeverity: 0,
           },
           intentSummary: {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
+            lowRiskTests: 0,
           },
           gapSummary: {
             totalGaps: 0,
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
+            lowGaps: 0,
           },
           nistSummary: {
             overallScore: 85,
@@ -124,7 +124,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
+            lowRisks: 0,
           },
           overallRiskScore: 85,
           metadata: {
@@ -132,9 +132,9 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             timestamp: new Date().toISOString(),
             rimorVersion: '0.9.0',
             analysisType: 'unified-security',
-            executionTime: 100
-          }
-        }
+            executionTime: 100,
+          },
+        },
       });
 
       // ACT
@@ -150,7 +150,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('カバレッジ統合が有効な場合は品質評価が実行される', async () => {
       // このテストは将来的な実装で有効になる
       // カバレッジ統合機能がunified-analyzeに追加された時のテスト
-      
+
       // ARRANGE
       const options: UnifiedAnalyzeOptions = {
         path: testFixturePath,
@@ -169,8 +169,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
-          }
+            lowSeverity: 0,
+          },
         },
         intentAnalysis: {
           testIntents: [],
@@ -178,8 +178,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
-          }
+            lowRiskTests: 0,
+          },
         },
         gapAnalysis: {
           gaps: [],
@@ -188,8 +188,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
-          }
+            lowGaps: 0,
+          },
         },
         nistEvaluation: {
           riskAssessments: [],
@@ -200,8 +200,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
-          }
+            lowRisks: 0,
+          },
         },
         unifiedReport: {
           summary: {
@@ -210,26 +210,26 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             highIssues: 0,
             mediumIssues: 0,
             lowIssues: 0,
-            overallGrade: 'A' as const
+            overallGrade: 'A' as const,
           },
           taintSummary: {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
+            lowSeverity: 0,
           },
           intentSummary: {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
+            lowRiskTests: 0,
           },
           gapSummary: {
             totalGaps: 0,
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
+            lowGaps: 0,
           },
           nistSummary: {
             overallScore: 90,
@@ -238,7 +238,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
+            lowRisks: 0,
           },
           overallRiskScore: 90,
           // 将来的に追加予定のカバレッジデータ:
@@ -253,9 +253,9 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             timestamp: new Date().toISOString(),
             rimorVersion: '0.9.0',
             analysisType: 'unified-security',
-            executionTime: 150
-          }
-        }
+            executionTime: 150,
+          },
+        },
       });
 
       // ACT
@@ -272,12 +272,12 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('統合品質スコアがレポートに含まれる', async () => {
       // このテストは将来的な実装で有効になる
       // TestQualityIntegratorによる品質評価結果の出力確認
-      
+
       // ARRANGE
       const options: UnifiedAnalyzeOptions = {
         path: testFixturePath,
         format: 'text',
-        verbose: true
+        verbose: true,
       };
 
       // モックの設定
@@ -288,8 +288,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
-          }
+            lowSeverity: 0,
+          },
         },
         intentAnalysis: {
           testIntents: [],
@@ -297,8 +297,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
-          }
+            lowRiskTests: 0,
+          },
         },
         gapAnalysis: {
           gaps: [],
@@ -307,8 +307,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
-          }
+            lowGaps: 0,
+          },
         },
         nistEvaluation: {
           riskAssessments: [],
@@ -319,8 +319,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
-          }
+            lowRisks: 0,
+          },
         },
         unifiedReport: {
           summary: {
@@ -329,26 +329,26 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             highIssues: 0,
             mediumIssues: 0,
             lowIssues: 0,
-            overallGrade: 'A' as const
+            overallGrade: 'A' as const,
           },
           taintSummary: {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
+            lowSeverity: 0,
           },
           intentSummary: {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
+            lowRiskTests: 0,
           },
           gapSummary: {
             totalGaps: 0,
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
+            lowGaps: 0,
           },
           nistSummary: {
             overallScore: 92,
@@ -357,7 +357,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
+            lowRisks: 0,
           },
           overallRiskScore: 92,
           metadata: {
@@ -365,9 +365,9 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             timestamp: new Date().toISOString(),
             rimorVersion: '0.9.0',
             analysisType: 'unified-security',
-            executionTime: 200
-          }
-        }
+            executionTime: 200,
+          },
+        },
       });
 
       // ACT
@@ -382,7 +382,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('カバレッジが低い場合は適切な推奨事項が提示される', async () => {
       // このテストは将来的な実装で有効になる
       // カバレッジ閾値を下回る場合の推奨事項表示
-      
+
       // 現在はテストの構造定義のみ
       expect(true).toBe(true);
     });
@@ -392,12 +392,12 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('ai-json形式でカバレッジデータが含まれる', async () => {
       // このテストは将来的な実装で有効になる
       // AI-JSON形式でカバレッジ統合データが出力されることを確認
-      
+
       // ARRANGE
       const options: UnifiedAnalyzeOptions = {
         path: testFixturePath,
         format: 'ai-json',
-        verbose: false
+        verbose: false,
       };
 
       // 現在はモック実装での基本動作確認
@@ -408,8 +408,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
-          }
+            lowSeverity: 0,
+          },
         },
         intentAnalysis: {
           testIntents: [],
@@ -417,8 +417,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
-          }
+            lowRiskTests: 0,
+          },
         },
         gapAnalysis: {
           gaps: [],
@@ -427,8 +427,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
-          }
+            lowGaps: 0,
+          },
         },
         nistEvaluation: {
           riskAssessments: [],
@@ -439,8 +439,8 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
-          }
+            lowRisks: 0,
+          },
         },
         unifiedReport: {
           summary: {
@@ -449,26 +449,26 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             highIssues: 0,
             mediumIssues: 0,
             lowIssues: 0,
-            overallGrade: 'A' as const
+            overallGrade: 'A' as const,
           },
           taintSummary: {
             totalVulnerabilities: 0,
             highSeverity: 0,
             mediumSeverity: 0,
-            lowSeverity: 0
+            lowSeverity: 0,
           },
           intentSummary: {
             totalTests: 0,
             highRiskTests: 0,
             mediumRiskTests: 0,
-            lowRiskTests: 0
+            lowRiskTests: 0,
           },
           gapSummary: {
             totalGaps: 0,
             criticalGaps: 0,
             highGaps: 0,
             mediumGaps: 0,
-            lowGaps: 0
+            lowGaps: 0,
           },
           nistSummary: {
             overallScore: 88,
@@ -477,7 +477,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             criticalRisks: 0,
             highRisks: 0,
             mediumRisks: 0,
-            lowRisks: 0
+            lowRisks: 0,
           },
           overallRiskScore: 88,
           metadata: {
@@ -485,9 +485,9 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
             timestamp: new Date().toISOString(),
             rimorVersion: '0.9.0',
             analysisType: 'unified-security',
-            executionTime: 120
-          }
-        }
+            executionTime: 120,
+          },
+        },
       });
 
       // ACT
@@ -502,12 +502,12 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
   describe('エラーハンドリング', () => {
     it('カバレッジ分析でエラーが発生しても統合分析は継続される', async () => {
       // Defensive Programming原則に従ったエラーハンドリング
-      
+
       // ARRANGE
       const options: UnifiedAnalyzeOptions = {
         path: '/nonexistent/path',
         format: 'text',
-        verbose: true
+        verbose: true,
       };
 
       // モックでエラーを発生させる
@@ -520,7 +520,7 @@ describe('UnifiedAnalyzeCommand Coverage Integration', () => {
     it('カバレッジデータが不完全でも分析結果を返す', async () => {
       // このテストは将来的な実装で有効になる
       // Defensive Programming: 部分的なデータでも動作継続
-      
+
       // 現在はテストの構造定義のみ
       expect(true).toBe(true);
     });

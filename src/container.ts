@@ -6,12 +6,12 @@
 
 import { UnifiedSecurityAnalysisOrchestrator } from './orchestrator/UnifiedSecurityAnalysisOrchestrator';
 import { UnifiedAnalyzeCommand } from './cli/commands/unified-analyze';
-import { 
+import {
   IAnalysisStrategyFactory,
   ITaintAnalysisStrategy,
   IIntentExtractionStrategy,
   IGapDetectionStrategy,
-  INistEvaluationStrategy
+  INistEvaluationStrategy,
 } from './orchestrator/interfaces';
 import { MockAnalysisStrategyFactory } from './orchestrator/strategies/MockAnalysisStrategies';
 import { RealAnalysisStrategyFactory } from './orchestrator/strategies/RealAnalysisStrategies';
@@ -32,16 +32,16 @@ export const TYPES = {
   // オーケストレータ関連
   UnifiedSecurityAnalysisOrchestrator: Symbol('UnifiedSecurityAnalysisOrchestrator'),
   AnalysisStrategyFactory: Symbol('AnalysisStrategyFactory'),
-  
+
   // 分析戦略
   TaintAnalysisStrategy: Symbol('TaintAnalysisStrategy'),
   IntentExtractionStrategy: Symbol('IntentExtractionStrategy'),
   GapDetectionStrategy: Symbol('GapDetectionStrategy'),
   NistEvaluationStrategy: Symbol('NistEvaluationStrategy'),
-  
+
   // CLIコマンド
   UnifiedAnalyzeCommand: Symbol('UnifiedAnalyzeCommand'),
-  
+
   // 既存のTYPES（互換性のため保持）
   AnalysisEngine: Symbol('AnalysisEngine'),
   SecurityAuditor: Symbol('SecurityAuditor'),
@@ -54,14 +54,14 @@ export const TYPES = {
   Logger: Symbol('Logger'),
   Plugin: Symbol('Plugin'),
   PathResolver: Symbol('PathResolver'),
-  CacheManager: Symbol('CacheManager')
+  CacheManager: Symbol('CacheManager'),
 } as const;
 
 // サービスライフサイクル
 enum ServiceLifetime {
   Singleton,
   Transient,
-  Scoped
+  Scoped,
 }
 
 // サービス登録情報
@@ -101,7 +101,8 @@ export class Container {
       .to(() => {
         const unifiedPluginManager = new UnifiedPluginManager();
         // TestExistencePluginを品質プラグインとして登録
-        const TestExistencePlugin = require('./plugins/core/TestExistencePlugin').TestExistencePlugin;
+        const TestExistencePlugin =
+          require('./plugins/core/TestExistencePlugin').TestExistencePlugin;
         unifiedPluginManager.registerQuality(new TestExistencePlugin());
         return unifiedPluginManager;
       })
@@ -118,8 +119,8 @@ export class Container {
         const unifiedPluginManager = this.get<UnifiedPluginManager>(TYPES.UnifiedPluginManager);
         const testQualityIntegrator = this.get<TestQualityIntegrator>(TYPES.TestQualityIntegrator);
         return new UnifiedSecurityAnalysisOrchestrator(
-          this.config, 
-          factory, 
+          this.config,
+          factory,
           undefined, // validator (デフォルトを使用)
           unifiedPluginManager,
           testQualityIntegrator
@@ -130,7 +131,9 @@ export class Container {
     // 統合分析コマンド（シングルトン）
     this.bind(TYPES.UnifiedAnalyzeCommand)
       .to(() => {
-        const orchestrator = this.get<UnifiedSecurityAnalysisOrchestrator>(TYPES.UnifiedSecurityAnalysisOrchestrator);
+        const orchestrator = this.get<UnifiedSecurityAnalysisOrchestrator>(
+          TYPES.UnifiedSecurityAnalysisOrchestrator
+        );
         return new UnifiedAnalyzeCommand(orchestrator);
       })
       .asSingleton();
@@ -212,7 +215,7 @@ export class Container {
     this.validateTypeRegistration(type);
 
     const binding = this.bindings.get(type)!; // 既に検証済み
-    
+
     try {
       return this.resolveService<T>(binding);
     } catch (error) {
@@ -240,7 +243,9 @@ export class Container {
    */
   private validateTypeRegistration(type: symbol | string): void {
     if (!this.bindings.has(type)) {
-      const registeredTypes = this.getRegisteredTypes().map(t => t.toString()).join(', ');
+      const registeredTypes = this.getRegisteredTypes()
+        .map(t => t.toString())
+        .join(', ');
       throw new ContainerRegistrationError(
         `型が登録されていません: ${type.toString()}\n登録済みの型: [${registeredTypes}]`
       );
@@ -316,10 +321,11 @@ export class Container {
     return {
       name: 'core',
       configure: (container: Container) => {
-        container.bind(TYPES.AnalysisStrategyFactory)
+        container
+          .bind(TYPES.AnalysisStrategyFactory)
           .to(() => new MockAnalysisStrategyFactory())
           .asSingleton();
-      }
+      },
     };
   }
 
@@ -327,7 +333,8 @@ export class Container {
     return {
       name: 'cli',
       configure: (container: Container) => {
-        container.bind(TYPES.UnifiedAnalyzeCommand)
+        container
+          .bind(TYPES.UnifiedAnalyzeCommand)
           .to(() => {
             const orchestrator = container.get<UnifiedSecurityAnalysisOrchestrator>(
               TYPES.UnifiedSecurityAnalysisOrchestrator
@@ -335,7 +342,7 @@ export class Container {
             return new UnifiedAnalyzeCommand(orchestrator);
           })
           .asSingleton();
-      }
+      },
     };
   }
 
@@ -343,13 +350,14 @@ export class Container {
     return {
       name: 'orchestrator',
       configure: (container: Container) => {
-        container.bind(TYPES.UnifiedSecurityAnalysisOrchestrator)
+        container
+          .bind(TYPES.UnifiedSecurityAnalysisOrchestrator)
           .to(() => {
             const factory = container.get<IAnalysisStrategyFactory>(TYPES.AnalysisStrategyFactory);
             return new UnifiedSecurityAnalysisOrchestrator(container.config, factory);
           })
           .asSingleton();
-      }
+      },
     };
   }
 
@@ -359,10 +367,10 @@ export class Container {
    */
   static createWith(modules: BindingModule[]): Container {
     const container = new Container();
-    
+
     // デフォルトバインディングをクリア
     container.bindings.clear();
-    
+
     // モジュールを順次適用
     modules.forEach(module => {
       try {
@@ -371,7 +379,7 @@ export class Container {
         throw new Error(`モジュール '${module.name}' の設定中にエラーが発生しました: ${error}`);
       }
     });
-    
+
     return container;
   }
 
@@ -386,7 +394,7 @@ export class Container {
       enableGapDetection: true,
       enableNistEvaluation: true,
       parallelExecution: false,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     };
   }
 }
@@ -413,7 +421,7 @@ class BindingBuilder {
     this.bindings.set(this.type, {
       factory: () => value,
       lifetime: ServiceLifetime.Singleton,
-      instance: value
+      instance: value,
     });
   }
 }
@@ -431,21 +439,21 @@ class LifetimeBuilder {
   asSingleton(): void {
     this.bindings.set(this.type, {
       factory: this.factory,
-      lifetime: ServiceLifetime.Singleton
+      lifetime: ServiceLifetime.Singleton,
     });
   }
 
   asTransient(): void {
     this.bindings.set(this.type, {
       factory: this.factory,
-      lifetime: ServiceLifetime.Transient
+      lifetime: ServiceLifetime.Transient,
     });
   }
 
   asScoped(): void {
     this.bindings.set(this.type, {
       factory: this.factory,
-      lifetime: ServiceLifetime.Scoped
+      lifetime: ServiceLifetime.Scoped,
     });
   }
 }
@@ -473,7 +481,11 @@ class ContainerError extends Error {
 class ContainerStateError extends ContainerError {}
 class ContainerRegistrationError extends ContainerError {}
 class ContainerResolutionError extends ContainerError {
-  constructor(message: string, public readonly type: symbol | string, public readonly cause: Error) {
+  constructor(
+    message: string,
+    public readonly type: symbol | string,
+    public readonly cause: Error
+  ) {
     super(message);
   }
 }
@@ -482,7 +494,12 @@ class ContainerResolutionError extends ContainerError {
 export const container = new Container();
 
 // エラークラスのエクスポート
-export { ContainerError, ContainerStateError, ContainerRegistrationError, ContainerResolutionError };
+export {
+  ContainerError,
+  ContainerStateError,
+  ContainerRegistrationError,
+  ContainerResolutionError,
+};
 
 /**
  * コンテナ初期化関数

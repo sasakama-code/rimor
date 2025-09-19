@@ -9,17 +9,17 @@ export interface UnifiedAnalyzeOptions {
   verbose?: boolean;
   output?: string;
   includeRecommendations?: boolean;
-  
+
   // 従来の互換性オプション
   includeDetails?: boolean;
   cache?: boolean;
-  
+
   // 統合分析設定
   enableTaintAnalysis?: boolean;
   enableIntentExtraction?: boolean;
   enableGapDetection?: boolean;
   enableNistEvaluation?: boolean;
-  
+
   // 実行設定
   timeout?: number;
   parallel?: boolean;

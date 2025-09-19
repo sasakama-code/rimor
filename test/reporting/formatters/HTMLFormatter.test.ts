@@ -2,7 +2,7 @@
  * HTMLFormatter テスト
  * v0.9.0 - Issue #64: 旧HTMLReportBuilderのテストケースを統合
  * TDD RED→GREEN→REFACTOR手法に従って実装
- * 
+ *
  * SOLID原則: 単一責任（HTML形式の生成）の検証
  * DRY原則: BaseFormatterの共通ロジック活用の確認
  */
@@ -12,12 +12,12 @@ import {
   UnifiedAnalysisResult,
   RiskLevel,
   ExecutiveSummary,
-  DetailedIssue
+  DetailedIssue,
 } from '../../../src/nist/types/unified-analysis-result';
 
 describe('HTMLFormatter', () => {
   let formatter: HTMLFormatter;
-  
+
   beforeEach(() => {
     formatter = new HTMLFormatter();
   });
@@ -38,8 +38,8 @@ describe('HTMLFormatter', () => {
             HIGH: 1,
             MEDIUM: 1,
             LOW: 1,
-            MINIMAL: 0
-          }
+            MINIMAL: 0,
+          },
         },
         dimensions: [
           {
@@ -47,16 +47,16 @@ describe('HTMLFormatter', () => {
             score: 70,
             weight: 0.5,
             impact: 'positive' as any,
-            breakdown: []
+            breakdown: [],
           },
           {
             name: 'security',
             score: 80,
             weight: 0.5,
             impact: 'positive' as any,
-            breakdown: []
-          }
-        ]
+            breakdown: [],
+          },
+        ],
       },
       aiKeyRisks: [],
       detailedIssues: [
@@ -67,7 +67,7 @@ describe('HTMLFormatter', () => {
           filePath: '/test/file0.ts',
           startLine: 0,
           endLine: 5,
-          contextSnippet: 'function analyze() { ... }'
+          contextSnippet: 'function analyze() { ... }',
         },
         {
           riskLevel: RiskLevel.HIGH,
@@ -76,7 +76,7 @@ describe('HTMLFormatter', () => {
           filePath: '/test/file1.ts',
           startLine: 10,
           endLine: 15,
-          contextSnippet: 'const password = "hardcoded";'
+          contextSnippet: 'const password = "hardcoded";',
         },
         {
           riskLevel: RiskLevel.MEDIUM,
@@ -84,7 +84,7 @@ describe('HTMLFormatter', () => {
           description: 'Quality needs improvement',
           filePath: '/test/file2.ts',
           startLine: 20,
-          endLine: 25
+          endLine: 25,
         },
         {
           riskLevel: RiskLevel.LOW,
@@ -92,10 +92,10 @@ describe('HTMLFormatter', () => {
           description: 'Minor improvement needed',
           filePath: '/test/file3.ts',
           startLine: 30,
-          endLine: 35
-        }
+          endLine: 35,
+        },
       ],
-      schemaVersion: '1.0' as const
+      schemaVersion: '1.0' as const,
     };
   }
 
@@ -103,10 +103,10 @@ describe('HTMLFormatter', () => {
     test('基本的なHTMLレポートを生成できる', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('<html lang="ja">');
@@ -118,10 +118,10 @@ describe('HTMLFormatter', () => {
     test('エグゼクティブサマリーを含む', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('エグゼクティブサマリー');
       expect(html).toContain('総合スコア');
@@ -132,10 +132,10 @@ describe('HTMLFormatter', () => {
     test('リスクレベル別の統計を表示する', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('リスク分布');
       expect(html).toContain('CRITICAL: 2');
@@ -147,10 +147,10 @@ describe('HTMLFormatter', () => {
     test('詳細な問題リストを表示する', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('検出された問題');
       expect(html).toContain('Critical issue 1');
@@ -161,10 +161,10 @@ describe('HTMLFormatter', () => {
     test('リスクレベルに応じた色分けをする', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       // CSSスタイルでの色定義を確認
       expect(html).toContain('#dc3545'); // CRITICAL - red
@@ -176,10 +176,10 @@ describe('HTMLFormatter', () => {
     test('ディメンション別スコアを表示する', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('評価ディメンション');
       expect(html).toContain('testIntent');
@@ -203,19 +203,19 @@ describe('HTMLFormatter', () => {
               HIGH: 0,
               MEDIUM: 0,
               LOW: 0,
-              MINIMAL: 0
-            }
+              MINIMAL: 0,
+            },
           },
-          dimensions: []
+          dimensions: [],
         },
         aiKeyRisks: [],
         detailedIssues: [],
-        schemaVersion: '1.0' as const
+        schemaVersion: '1.0' as const,
       };
-      
+
       // Act
       const html = formatter.format(emptyResult);
-      
+
       // Assert
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('問題は検出されませんでした');
@@ -224,10 +224,10 @@ describe('HTMLFormatter', () => {
     test('Bootstrap CSSクラスを使用する', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('class="container');
       expect(html).toContain('class="card');
@@ -238,10 +238,10 @@ describe('HTMLFormatter', () => {
     test('レスポンシブデザインのメタタグを含む', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('viewport');
       expect(html).toContain('width=device-width');
@@ -251,10 +251,10 @@ describe('HTMLFormatter', () => {
     test('フィルタリング機能用のデータ属性を含む', () => {
       // Arrange
       const analysisResult = createMockAnalysisResult();
-      
+
       // Act
       const html = formatter.format(analysisResult);
-      
+
       // Assert
       expect(html).toContain('data-risk-level="CRITICAL"');
       expect(html).toContain('data-risk-level="HIGH"');
@@ -267,7 +267,7 @@ describe('HTMLFormatter', () => {
     test('BaseFormatterのvalidateメソッドを継承している', () => {
       // Arrange
       const invalidResult = null as any;
-      
+
       // Act & Assert
       expect(() => formatter.format(invalidResult)).toThrow();
     });
@@ -290,15 +290,15 @@ describe('HTMLFormatter', () => {
           description: `Description ${i}`,
           filePath: `/test/file${i}.ts`,
           startLine: i,
-          endLine: i + 5
+          endLine: i + 5,
         });
       }
-      
+
       // Act
       const startTime = Date.now();
       const html = formatter.format(largeResult);
       const duration = Date.now() - startTime;
-      
+
       // Assert
       expect(html).toBeDefined();
       expect(duration).toBeLessThan(1000); // 1秒以内に生成

@@ -27,8 +27,8 @@ export interface IntentAnalyzeOptions {
   parallel?: boolean;
   maxWorkers?: number;
   // Phase 2 高度な分析オプション
-  withTypes?: boolean;    // 型情報を使った分析
-  withDomain?: boolean;   // ドメイン推論を含む分析
+  withTypes?: boolean; // 型情報を使った分析
+  withDomain?: boolean; // ドメイン推論を含む分析
   withBusiness?: boolean; // ビジネスロジックマッピングを含む分析
 }
 
@@ -68,7 +68,7 @@ export class IntentAnalyzeCommand {
 
     // テストファイルの検索
     const testFiles = await this.findTestFiles(options.path);
-    
+
     if (options.verbose) {
       console.log(`ファイル発見: ${testFiles.length}件`);
     }
@@ -80,7 +80,7 @@ export class IntentAnalyzeCommand {
 
     // 各ファイルを分析
     let results: TestRealizationResult[] = [];
-    
+
     if (options.parallel) {
       // 並列処理
       if (options.verbose) {
@@ -93,7 +93,7 @@ export class IntentAnalyzeCommand {
         if (options.verbose) {
           console.log(`分析中: ${file}`);
         }
-        
+
         // 高度な分析を実行するか通常の分析を実行
         const result = await this.analyzeFile(file, options);
         results.push(result);
@@ -110,7 +110,7 @@ export class IntentAnalyzeCommand {
    */
   private outputResults(results: TestRealizationResult[], options: IntentAnalyzeOptions): void {
     const format = options.format || 'text';
-    
+
     switch (format) {
       case 'json':
         const jsonOutput = {
@@ -118,17 +118,20 @@ export class IntentAnalyzeCommand {
           summary: this.reporter.generateSummary(results),
           totalFiles: results.length,
           totalTests: results.reduce((sum, r) => sum + (r.actual?.assertions?.length || 0), 0),
-          averageRealizationScore: results.reduce((sum, r) => sum + r.realizationScore, 0) / results.length,
-          highRiskTests: results.filter(r => r.riskLevel === IntentRiskLevel.HIGH || r.riskLevel === IntentRiskLevel.CRITICAL).length
+          averageRealizationScore:
+            results.reduce((sum, r) => sum + r.realizationScore, 0) / results.length,
+          highRiskTests: results.filter(
+            r => r.riskLevel === IntentRiskLevel.HIGH || r.riskLevel === IntentRiskLevel.CRITICAL
+          ).length,
         };
-        
+
         if (options.output) {
           fsSync.writeFileSync(options.output, JSON.stringify(jsonOutput, null, 2));
         } else {
           console.log(JSON.stringify(jsonOutput, null, 2));
         }
         break;
-        
+
       case 'html':
         const html = this.reporter.generateHTMLReport(results);
         if (options.output) {
@@ -137,7 +140,7 @@ export class IntentAnalyzeCommand {
           console.log(html);
         }
         break;
-        
+
       case 'text':
       default:
         const markdown = this.reporter.generateMarkdownReport(results);
@@ -152,24 +155,24 @@ export class IntentAnalyzeCommand {
    */
   private async findTestFiles(targetPath: string): Promise<string[]> {
     const stats = fsSync.statSync(targetPath);
-    
+
     if (stats.isDirectory()) {
       // ディレクトリの場合、テストファイルパターンで検索
       const patterns = [
         '**/*.test.{js,jsx,ts,tsx}',
         '**/*.spec.{js,jsx,ts,tsx}',
-        '**/__tests__/**/*.{js,jsx,ts,tsx}'
+        '**/__tests__/**/*.{js,jsx,ts,tsx}',
       ];
-      
+
       const files: string[] = [];
       for (const pattern of patterns) {
         const matches = await glob(pattern, {
           cwd: targetPath,
-          ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+          ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
         });
         files.push(...matches.map(f => path.join(targetPath, f)));
       }
-      
+
       return files;
     } else {
       // ファイルの場合、そのまま返す
@@ -182,18 +185,18 @@ export class IntentAnalyzeCommand {
    * YAGNI原則: 必要最小限の並列処理実装
    */
   private async analyzeInParallel(
-    files: string[], 
+    files: string[],
     options: IntentAnalyzeOptions
   ): Promise<TestRealizationResult[]> {
     const workerCount = options.maxWorkers || os.cpus().length;
     const chunkSize = Math.ceil(files.length / workerCount);
     const chunks: string[][] = [];
-    
+
     // ファイルをチャンクに分割
     for (let i = 0; i < files.length; i += chunkSize) {
       chunks.push(files.slice(i, i + chunkSize));
     }
-    
+
     // 各チャンクをワーカーで処理
     const promises = chunks.map((chunk, index) => {
       return new Promise<TestRealizationResult[]>((resolve, reject) => {
@@ -203,13 +206,13 @@ export class IntentAnalyzeCommand {
         const workerPath = path.join(__dirname, '../../intent-analysis/workers', workerFile);
         // Worker の作成
         const worker = new Worker(workerPath, {
-          workerData: { files: chunk }
+          workerData: { files: chunk },
         });
-        
+
         if (options.verbose) {
           console.log(`ワーカー ${index + 1} 開始: ${chunk.length} ファイル`);
         }
-        
+
         worker.on('message', (result: unknown) => {
           const workerResult = result as any;
           if (workerResult && workerResult.error) {
@@ -221,19 +224,19 @@ export class IntentAnalyzeCommand {
             resolve(workerResult && workerResult.results ? workerResult.results : []);
           }
         });
-        
+
         worker.on('error', reject);
-        worker.on('exit', (code) => {
+        worker.on('exit', code => {
           if (code !== 0) {
             reject(new Error(`ワーカーが異常終了しました: ${code}`));
           }
         });
       });
     });
-    
+
     // すべてのワーカーの結果を待機
     const results = await Promise.all(promises);
-    
+
     // 結果をフラット化
     return results.flat();
   }
@@ -253,26 +256,26 @@ export class IntentAnalyzeCommand {
   private async initializePhase2Components(options: IntentAnalyzeOptions): Promise<void> {
     if (options.withTypes || options.withDomain || options.withBusiness) {
       this.tsAnalyzer = new TypeScriptAnalyzer();
-      
+
       // TypeScriptプロジェクトの設定ファイルを探す
       const tsconfigPath = await this.findTsConfig(options.path);
       if (tsconfigPath && options.verbose) {
         console.log(`TypeScript設定ファイル: ${tsconfigPath}`);
       }
-      
+
       // TypeScript Analyzerを初期化
       if (tsconfigPath) {
         await this.tsAnalyzer.initialize(tsconfigPath);
       }
     }
-    
+
     if (options.withDomain) {
       this.domainEngine = new DomainInferenceEngine();
       if (options.verbose) {
         console.log('ドメイン推論エンジンを初期化しました');
       }
     }
-    
+
     if (options.withBusiness) {
       this.businessMapper = new BusinessLogicMapper();
       if (options.verbose) {
@@ -287,20 +290,20 @@ export class IntentAnalyzeCommand {
    */
   private async findTsConfig(startPath: string): Promise<string | null> {
     let currentPath = path.resolve(startPath);
-    
+
     while (currentPath !== path.parse(currentPath).root) {
       const tsconfigPath = path.join(currentPath, 'tsconfig.json');
-      
+
       try {
         await fs.access(tsconfigPath);
         return tsconfigPath;
       } catch {
         // ファイルが存在しない場合は親ディレクトリを検索
       }
-      
+
       currentPath = path.dirname(currentPath);
     }
-    
+
     return null;
   }
 
@@ -308,26 +311,29 @@ export class IntentAnalyzeCommand {
    * ファイルを分析
    * SOLID原則: 単一責任の原則（高度な分析と通常分析の分離）
    */
-  private async analyzeFile(file: string, options: IntentAnalyzeOptions): Promise<TestRealizationResult> {
+  private async analyzeFile(
+    file: string,
+    options: IntentAnalyzeOptions
+  ): Promise<TestRealizationResult> {
     // ASTを生成
     const ast = await this.parser.parseFile(file);
-    
+
     // 意図を抽出
     const intent = await this.extractor.extractIntent(file, ast);
-    
+
     // 実際のテストを分析
     const actual = await this.extractor.analyzeActualTest(file, ast);
-    
+
     let result: TestRealizationResult;
-    
+
     // Phase 2の高度な分析を実行
     if (options.withTypes && this.tsAnalyzer) {
       // 型情報を取得
       const typeInfo = await this.tsAnalyzer.getFileTypeInfo(file);
-      
+
       // 型情報を使った評価
       result = await this.extractor.evaluateRealization(intent, actual);
-      
+
       if (options.verbose) {
         console.log(`  型情報を使った分析完了: ${file}`);
       }
@@ -335,7 +341,7 @@ export class IntentAnalyzeCommand {
       // ビジネスロジックマッピング
       const callGraph = await this.tsAnalyzer.analyzeCallGraph(file);
       result = await (this.extractor as any).analyzeWithBusinessContext(file, ast, callGraph);
-      
+
       if (options.verbose) {
         console.log(`  ビジネスロジック分析完了: ${file}`);
       }
@@ -343,17 +349,17 @@ export class IntentAnalyzeCommand {
       // 通常の評価
       result = await this.extractor.evaluateRealization(intent, actual);
     }
-    
+
     // ファイル情報を追加
     result.file = file;
     result.description = intent.description;
-    
+
     // ドメイン推論を追加（オプション）
     if (options.withDomain && this.domainEngine && result) {
       const domainInfo = await this.enhanceWithDomainInfo(result);
       Object.assign(result, domainInfo);
     }
-    
+
     return result;
   }
 
@@ -367,8 +373,8 @@ export class IntentAnalyzeCommand {
       domainRelevance: {
         domain: 'inferred-domain',
         confidence: 0.8,
-        businessImportance: 'medium'
-      }
+        businessImportance: 'medium',
+      },
     };
   }
 }

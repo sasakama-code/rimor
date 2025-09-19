@@ -1,10 +1,10 @@
 /**
  * CacheFileValidator - キャッシュファイル検証ユーティリティ
  * Issue #128対応: 未引用ハッシュファイル検出とキャッシュファイル管理
- * 
+ *
  * 適用設計原則:
  * - SOLID原則: 単一責任原則によるキャッシュファイル検証の専門化
- * - DRY原則: 重複するキャッシュファイル処理の統一化  
+ * - DRY原則: 重複するキャッシュファイル処理の統一化
  * - KISS原則: シンプルで理解しやすいAPI設計
  * - Defensive Programming: エラー耐性と安全な処理の実装
  */
@@ -33,7 +33,7 @@ export class CacheFileValidator {
     '.parcel-cache/**/*',
     '*.webpack-cache/**/*',
     '.rpt2_cache/**/*',
-    '.rollup-cache/**/*'
+    '.rollup-cache/**/*',
   ] as const;
 
   /**
@@ -47,24 +47,24 @@ export class CacheFileValidator {
    */
   private static readonly REQUIRED_GITIGNORE_PATTERNS = [
     '.jest-cache',
-    '.cache', 
-    '.rimor-cache'
+    '.cache',
+    '.rimor-cache',
   ] as const;
 
   /**
    * 未引用ハッシュファイル検出
    * Issue #128の核心問題対応
-   * 
+   *
    * @param projectRoot プロジェクトルートパス
    * @returns 問題のあるファイルパスの配列
    */
   static async detectUnquotedHashFiles(projectRoot: string): Promise<string[]> {
     const problemFiles: string[] = [];
-    
+
     try {
       for (const pattern of this.DANGEROUS_CACHE_PATTERNS) {
         const files = await this.safeGlob(path.join(projectRoot, pattern));
-        
+
         for (const file of files) {
           if (await this.hasUnquotedHashContent(file)) {
             problemFiles.push(file);
@@ -75,14 +75,14 @@ export class CacheFileValidator {
       // Defensive Programming: エラーハンドリング
       console.warn('キャッシュファイル検証エラー:', error);
     }
-    
+
     return problemFiles;
   }
 
   /**
    * .gitignoreにキャッシュファイル除外設定があるかチェック
    * Issue #118対応の検証
-   * 
+   *
    * @param projectRoot プロジェクトルートパス
    * @returns 適切な設定があればtrue
    */
@@ -92,14 +92,13 @@ export class CacheFileValidator {
       if (!fs.existsSync(gitignorePath)) {
         return false;
       }
-      
+
       const content = fs.readFileSync(gitignorePath, 'utf-8');
-      
+
       // DRY原則: 必要なキャッシュファイル除外パターンの統一チェック
-      return this.REQUIRED_GITIGNORE_PATTERNS.every(pattern =>
-        content.includes(pattern + '/') || content.includes(pattern)
+      return this.REQUIRED_GITIGNORE_PATTERNS.every(
+        pattern => content.includes(pattern + '/') || content.includes(pattern)
       );
-      
     } catch (error) {
       // Defensive Programming: エラー処理
       console.warn('gitignore検証エラー:', error);
@@ -110,7 +109,7 @@ export class CacheFileValidator {
   /**
    * プロジェクト全体のキャッシュファイル健全性チェック
    * 統合的なキャッシュファイル管理検証
-   * 
+   *
    * @param projectRoot プロジェクトルートパス
    * @returns 検証結果サマリー
    */
@@ -122,21 +121,21 @@ export class CacheFileValidator {
   }> {
     const [problematicFiles, hasValidGitignore] = await Promise.all([
       this.detectUnquotedHashFiles(projectRoot),
-      Promise.resolve(this.validateGitignoreSettings(projectRoot))
+      Promise.resolve(this.validateGitignoreSettings(projectRoot)),
     ]);
 
     return {
       hasProblematicFiles: problematicFiles.length > 0,
       problematicFiles,
       hasValidGitignore,
-      isHealthy: problematicFiles.length === 0 && hasValidGitignore
+      isHealthy: problematicFiles.length === 0 && hasValidGitignore,
     };
   }
 
   /**
    * 安全なglobファイル検索
    * Extract Method適用: エラー耐性を持つglob処理
-   * 
+   *
    * @private
    * @param pattern globパターン
    * @returns ファイルパス配列
@@ -155,7 +154,7 @@ export class CacheFileValidator {
   /**
    * ファイルに未引用ハッシュが含まれるかチェック
    * Extract Method適用: ハッシュ検証ロジックの独立化
-   * 
+   *
    * @private
    * @param filePath ファイルパス
    * @returns 未引用ハッシュが含まれればtrue
@@ -164,13 +163,13 @@ export class CacheFileValidator {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const lines = content.split('\n');
-      
+
       // Issue #128の具体的パターン: 先頭行に未引用ハッシュがあるかチェック
       if (lines.length > 0) {
         const firstLine = lines[0].trim();
         return this.INVALID_HASH_PATTERN.test(firstLine);
       }
-      
+
       return false;
     } catch (error) {
       // ファイル読み込みエラーは問題なしとして処理
@@ -181,7 +180,7 @@ export class CacheFileValidator {
   /**
    * キャッシュファイルクリーンアップの推奨実行
    * YAGNI原則に基づく必要最小限の機能
-   * 
+   *
    * @param projectRoot プロジェクトルートパス
    * @returns クリーンアップされたディレクトリ数
    */
@@ -202,7 +201,9 @@ export class CacheFileValidator {
       // 問題のあるキャッシュファイル確認
       const problematicFiles = await this.detectUnquotedHashFiles(projectRoot);
       if (problematicFiles.length > 0) {
-        suggestions.push(`${problematicFiles.length}個の問題のあるキャッシュファイルが検出されました`);
+        suggestions.push(
+          `${problematicFiles.length}個の問題のあるキャッシュファイルが検出されました`
+        );
         suggestions.push(...problematicFiles.map(file => `  - ${file}`));
         safeToClean = false;
       }
@@ -210,7 +211,6 @@ export class CacheFileValidator {
       if (suggestions.length === 0) {
         suggestions.push('キャッシュファイル管理は正常です');
       }
-
     } catch (error) {
       suggestions.push(`検証エラーが発生しました: ${error}`);
       safeToClean = false;

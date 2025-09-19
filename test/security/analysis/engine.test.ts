@@ -1,12 +1,12 @@
 import { TypeBasedSecurityEngine } from '../../../src/security/analysis/engine';
-import { 
-  TestMethod, 
-  SecurityIssue, 
+import {
+  TestMethod,
+  SecurityIssue,
   TaintSource,
   SecurityType,
   MethodSignature,
   Parameter,
-  TypeBasedSecurityConfig
+  TypeBasedSecurityConfig,
 } from '../../../src/security/types';
 
 describe('TypeBasedSecurityEngine', () => {
@@ -32,7 +32,7 @@ describe('TypeBasedSecurityEngine', () => {
       const customConfig: Partial<TypeBasedSecurityConfig> = {
         strictness: 'strict',
         parallelism: 4,
-        enableCache: true
+        enableCache: true,
       };
       const customEngine = new TypeBasedSecurityEngine(customConfig);
       expect(customEngine).toBeInstanceOf(TypeBasedSecurityEngine);
@@ -60,25 +60,26 @@ describe('TypeBasedSecurityEngine', () => {
         `,
         signature: {
           name: 'testUserInput',
-          parameters: [
-            { name: 'request', type: 'Request', source: 'user-input' }
-          ],
+          parameters: [{ name: 'request', type: 'Request', source: 'user-input' }],
           returnType: 'void',
           annotations: ['@Tainted'],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 5, column: 10 },
-          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
-        }
+          startLine: 1,
+          endLine: 5,
+          startColumn: 1,
+          endColumn: 10,
+        },
       };
 
       const result = await engine.analyzeMethod(testMethod);
-      
+
       // SQL_INJECTIONとinput-validationのwarningが検出される
       expect(result.issues).toHaveLength(2);
-      
+
       // SQL_INJECTIONのイシューを確認
       const sqlInjection = result.issues.find(issue => issue.type === 'SQL_INJECTION');
       expect(sqlInjection).toBeDefined();
@@ -102,22 +103,23 @@ describe('TypeBasedSecurityEngine', () => {
         `,
         signature: {
           name: 'testSafeInput',
-          parameters: [
-            { name: 'request', type: 'Request', source: 'user-input' }
-          ],
+          parameters: [{ name: 'request', type: 'Request', source: 'user-input' }],
           returnType: 'void',
           annotations: ['@Untainted'],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 5, column: 10 },
-          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
-        }
+          startLine: 1,
+          endLine: 5,
+          startColumn: 1,
+          endColumn: 10,
+        },
       };
 
       const result = await engine.analyzeMethod(testMethod);
-      
+
       // サニタイズされているのでSQLインジェクションは検出されないが、
       // input-validationのwarningは検出される
       expect(result.issues).toHaveLength(1);
@@ -142,25 +144,26 @@ describe('TypeBasedSecurityEngine', () => {
         `,
         signature: {
           name: 'testVulnerableEndpoint',
-          parameters: [
-            { name: 'req', type: 'Request', source: 'user-input' }
-          ],
+          parameters: [{ name: 'req', type: 'Request', source: 'user-input' }],
           returnType: 'any',
           annotations: ['@Tainted'],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 10, column: 1 },
           end: { line: 13, column: 10 },
-          startLine: 10, endLine: 13, startColumn: 1, endColumn: 10 
-        }
+          startLine: 10,
+          endLine: 13,
+          startColumn: 1,
+          endColumn: 10,
+        },
       };
 
       const result = await engine.analyzeMethod(testMethod);
-      
+
       // CODE_EXECUTIONとinput-validationのwarningが検出される
       expect(result.issues).toHaveLength(2);
-      
+
       // CODE_EXECUTIONのイシューを確認
       const codeExecution = result.issues.find(issue => issue.type === 'CODE_EXECUTION');
       expect(codeExecution).toBeDefined();
@@ -181,22 +184,30 @@ describe('TypeBasedSecurityEngine', () => {
           parameters: [],
           returnType: 'void',
           annotations: [],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 1, column: 50 },
-          startLine: 1, endLine: 1, startColumn: 1, endColumn: 50 
-        }
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 50,
+        },
       };
 
       // インクリメンタル解析機能が実装されている場合のみテスト
-      if ('analyzeIncrementally' in engine && typeof engine['analyzeIncrementally'] === 'function') {
-        const result = await engine['analyzeIncrementally']([{
-          method: updatedMethod,
-          changeType: 'modified'
-        }]);
-        
+      if (
+        'analyzeIncrementally' in engine &&
+        typeof engine['analyzeIncrementally'] === 'function'
+      ) {
+        const result = await engine['analyzeIncrementally']([
+          {
+            method: updatedMethod,
+            changeType: 'modified',
+          },
+        ]);
+
         expect(result.updatedMethods).toHaveLength(1);
         expect(result.newIssues.length).toBeGreaterThanOrEqual(0);
       } else {
@@ -228,13 +239,16 @@ describe('TypeBasedSecurityEngine', () => {
           parameters: [],
           returnType: 'unknown',
           annotations: [],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 5, column: 10 },
-          startLine: 1, endLine: 5, startColumn: 1, endColumn: 10 
-        }
+          startLine: 1,
+          endLine: 5,
+          startColumn: 1,
+          endColumn: 10,
+        },
       };
 
       // inferTypesメソッドが実装されている場合のみテスト
@@ -248,7 +262,7 @@ describe('TypeBasedSecurityEngine', () => {
         result = await engine.analyzeMethod(testMethod);
         expect(result).toBeDefined();
       }
-      
+
       expect(result).toBeDefined();
       if (result.inferredTypes) {
         expect(result.inferredTypes).toBeDefined();
@@ -266,24 +280,23 @@ describe('TypeBasedSecurityEngine', () => {
         body: `const x = input${i}; return process(x);`,
         signature: {
           name: `testMethod${i}`,
-          parameters: [
-            { name: `input${i}`, type: 'string', source: 'user-input' }
-          ],
+          parameters: [{ name: `input${i}`, type: 'string', source: 'user-input' }],
           returnType: 'string',
           annotations: ['@Tainted'],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: i * 10, column: 1 },
           end: { line: i * 10 + 1, column: 50 },
-          startLine: i * 10, endLine: i * 10 + 1, startColumn: 1, endColumn: 50 
-        }
+          startLine: i * 10,
+          endLine: i * 10 + 1,
+          startColumn: 1,
+          endColumn: 50,
+        },
       }));
 
       const startTime = Date.now();
-      const results = await Promise.all(
-        methods.map(method => engine.analyzeMethod(method))
-      );
+      const results = await Promise.all(methods.map(method => engine.analyzeMethod(method)));
       const endTime = Date.now();
 
       expect(results).toHaveLength(10);
@@ -302,18 +315,21 @@ describe('TypeBasedSecurityEngine', () => {
           parameters: [],
           returnType: 'string',
           annotations: [],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 1, column: 20 },
-          startLine: 1, endLine: 1, startColumn: 1, endColumn: 20 
-        }
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 20,
+        },
       };
 
       // 初回実行
       const result1 = await engine.analyzeMethod(testMethod);
-      
+
       // キャッシュからの実行
       const startTime = Date.now();
       const result2 = await engine.analyzeMethod(testMethod);
@@ -337,13 +353,16 @@ describe('TypeBasedSecurityEngine', () => {
           parameters: [],
           returnType: 'void',
           annotations: [],
-          isAsync: false
+          isAsync: false,
         },
-        location: { 
+        location: {
           start: { line: 1, column: 1 },
           end: { line: 1, column: 1 },
-          startLine: 1, endLine: 1, startColumn: 1, endColumn: 1 
-        }
+          startLine: 1,
+          endLine: 1,
+          startColumn: 1,
+          endColumn: 1,
+        },
       };
 
       await expect(engine.analyzeMethod(invalidMethod)).rejects.toThrow();

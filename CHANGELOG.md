@@ -3,7 +3,8 @@
 All notable changes to the Rimor project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.9.0] - 2025-08-22
 
@@ -11,13 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added - Type-Based Security Analysis
 
-- **TaintTyper統合**: arXiv:2504.18529v2理論に基づく型ベースセキュリティ解析エンジンを実装
-- **Source-Sink脆弱性検出**: SQL Injection、Command Injection、Path Traversal、XSS、Code Injectionを自動検出
-- **TypeScript AST解析**: `src/security/analysis/ast-source-detector.ts` - 汚染源の高精度検出
-- **危険操作検出**: `src/security/analysis/ast-sink-detector.ts` - 危険な関数呼び出しの分類・検出
-- **型制約解析**: `src/security/analysis/type-based-flow-analyzer.ts` - TypeScript Compiler API活用
-- **制約ソルバー**: `src/security/analysis/constraint-solver.ts` - Arc Consistencyアルゴリズム実装
-- **自動型推論**: `src/security/analysis/type-annotation-inferrer.ts` - 型アノテーション自動推論
+- **TaintTyper統合**:
+  arXiv:2504.18529v2理論に基づく型ベースセキュリティ解析エンジンを実装
+- **Source-Sink脆弱性検出**: SQL Injection、Command Injection、Path
+  Traversal、XSS、Code Injectionを自動検出
+- **TypeScript AST解析**:
+  `src/security/analysis/ast-source-detector.ts` - 汚染源の高精度検出
+- **危険操作検出**:
+  `src/security/analysis/ast-sink-detector.ts` - 危険な関数呼び出しの分類・検出
+- **型制約解析**: `src/security/analysis/type-based-flow-analyzer.ts` -
+  TypeScript Compiler API活用
+- **制約ソルバー**: `src/security/analysis/constraint-solver.ts` - Arc
+  Consistencyアルゴリズム実装
+- **自動型推論**:
+  `src/security/analysis/type-annotation-inferrer.ts` - 型アノテーション自動推論
 
 #### Added - Advanced Type Annotations Support
 
@@ -88,14 +96,16 @@ v0.8.0は、「テスト品質監査」というコア価値に集中するた�
 #### Added - Dependency Injection Architecture
 
 - **Inversify統合**: `src/container/` DIコンテナによる疎結合アーキテクチャ
-- **統合分析エンジン**: `src/core/engine.ts` 3つのエンジンを統合したUnifiedAnalysisEngine
+- **統合分析エンジン**: `src/core/engine.ts`
+  3つのエンジンを統合したUnifiedAnalysisEngine
 - **プラガブルインターフェース**: 明確に定義されたインターフェースによる拡張性
 - **自動依存性解決**: コンストラクタインジェクションによる自動配線
 - **ライフサイクル管理**: シングルトン・トランジェントスコープの適切な使用
 
 #### Added - YAML-Based Domain Rules
 
-- **YAMLルール定義**: `src/domain/simple-rules.yaml` シンプルで理解しやすいルール設定
+- **YAMLルール定義**: `src/domain/simple-rules.yaml`
+  シンプルで理解しやすいルール設定
 - **ドメイン固有ルール**: ECサイト・金融・ヘルスケアなど業界別ルールセット
 - **カスタムルール対応**: プロジェクト固有のビジネスルール定義
 - **バリデーション機能**: ルールの妥当性を自動検証
@@ -168,24 +178,35 @@ v0.6.x/v0.7.xからのアップグレード：
 
 ### 🔬 TaintTyper型ベースセキュリティテスト品質監査システム
 
-v0.7.0では**TaintTyper型ベースセキュリティ解析システム**を実装し、Dorothy Denningの格子理論とVolpano-Smith-Irvine型システムを応用した革新的なセキュリティテスト品質監査を実現しました。コンパイル時解析によるゼロランタイムオーバーヘッドと、5ms/file以下・3-20倍高速化の性能目標を達成した次世代システムです。
+v0.7.0では**TaintTyper型ベースセキュリティ解析システム**を実装し、Dorothy
+Denningの格子理論とVolpano-Smith-Irvine型システムを応用した革新的なセキュリティテスト品質監査を実現しました。コンパイル時解析によるゼロランタイムオーバーヘッドと、5ms/file以下・3-20倍高速化の性能目標を達成した次世代システムです。
 
 #### Added - TaintTyper Core System
 
-- **型ベースセキュリティエンジン**: `src/security/analysis/engine.ts` Dorothy Denningの格子理論実装
-- **モジュラー解析システム**: `src/security/analysis/modular.ts` TaintTyper研究手法による高速化
+- **型ベースセキュリティエンジン**: `src/security/analysis/engine.ts` Dorothy
+  Denningの格子理論実装
+- **モジュラー解析システム**: `src/security/analysis/modular.ts`
+  TaintTyper研究手法による高速化
 - **フロー感度解析**: `src/security/analysis/flow.ts` 文脈依存汚染伝搬追跡
-- **セキュリティ型システム**: `src/security/types/` Brand型による型レベルセキュリティ
-- **汚染レベル推論**: `DEFINITELY_TAINTED` / `UNTAINTED` / `POSSIBLY_TAINTED` の3段階評価
+- **セキュリティ型システム**: `src/security/types/`
+  Brand型による型レベルセキュリティ
+- **汚染レベル推論**: `DEFINITELY_TAINTED` / `UNTAINTED` / `POSSIBLY_TAINTED`
+  の3段階評価
 - **不変条件検証**: セキュリティポリシー違反の自動検出
 - **ゼロランタイムオーバーヘッド**: コンパイル時のみの解析でプロダクション影響ゼロ
 
 #### Added - Real-World Project Validation
 
-- **実世界プロジェクト検証**: `src/security/validation/RealWorldProjectValidator.ts` Express/React/NestJS対応
-- **フレームワーク別テスト生成**: `src/security/validation/FrameworkTestGenerator.ts` 実用的テストケース自動生成
-- **精度評価システム**: `src/security/validation/AccuracyEvaluationSystem.ts` 誤検知率・自動推論率測定
-- **大規模性能検証**: `src/security/validation/LargeScalePerformanceValidator.ts` エンタープライズ規模対応
+- **実世界プロジェクト検証**:
+  `src/security/validation/RealWorldProjectValidator.ts`
+  Express/React/NestJS対応
+- **フレームワーク別テスト生成**:
+  `src/security/validation/FrameworkTestGenerator.ts` 実用的テストケース自動生成
+- **精度評価システム**: `src/security/validation/AccuracyEvaluationSystem.ts`
+  誤検知率・自動推論率測定
+- **大規模性能検証**:
+  `src/security/validation/LargeScalePerformanceValidator.ts`
+  エンタープライズ規模対応
 - **CLI検証コマンド**: `src/cli/commands/validate.ts` 包括的検証機能
 
 #### Added - Performance & Scalability Features
@@ -199,8 +220,10 @@ v0.7.0では**TaintTyper型ベースセキュリティ解析システム**を実
 
 #### Added - Comprehensive Testing & Documentation
 
-- **統合テストスイート**: `test/integration/SecurityAnalysisIntegration.test.ts` 全システム網羅
-- **大規模性能テスト**: `test/performance/LargeScalePerformance.test.ts` エンタープライズ規模検証
+- **統合テストスイート**: `test/integration/SecurityAnalysisIntegration.test.ts`
+  全システム網羅
+- **大規模性能テスト**: `test/performance/LargeScalePerformance.test.ts`
+  エンタープライズ規模検証
 - **包括的ユーザーガイド**: `docs/user-guide.md` 735行の詳細マニュアル
 - **API仕様書**: `docs/api-specification.md` 開発者向け完全リファレンス
 - **実践的サンプル**: フレームワーク別の実装例とベストプラクティス
@@ -214,7 +237,8 @@ v0.7.0では**TaintTyper型ベースセキュリティ解析システム**を実
 
 #### Technical Infrastructure
 
-- **理論的基盤**: Dorothy Denning(1976)・Volpano-Smith-Irvine(1996)・TaintTyper(2025)研究実装
+- **理論的基盤**: Dorothy
+  Denning(1976)・Volpano-Smith-Irvine(1996)・TaintTyper(2025)研究実装
 - **型安全設計**: TypeScriptによる完全な型レベルセキュリティ保証
 - **モジュラーアーキテクチャ**: 疎結合で拡張可能な設計
 - **設定駆動**: 柔軟なカスタマイズとプロジェクト特化対応
@@ -238,15 +262,18 @@ v0.7.0では**TaintTyper型ベースセキュリティ解析システム**を実
 
 ### 🏆 Research Innovation
 
-このリリースにより、Rimorは学術研究と実用性を両立した世界初のTaintTyper型ベースセキュリティテスト品質監査ツールとして、セキュリティ解析分野における新しい標準を確立しました。Dorothy Denningの1976年からの理論的発展を現代のTypeScript型システムで実装し、実世界での実用性を実証しています。
+このリリースにより、Rimorは学術研究と実用性を両立した世界初のTaintTyper型ベースセキュリティテスト品質監査ツールとして、セキュリティ解析分野における新しい標準を確立しました。Dorothy
+Denningの1976年からの理論的発展を現代のTypeScript型システムで実装し、実世界での実用性を実証しています。
 
 ## [0.6.1] - 2025-07-26
 
 ### Fixed
+
 - **ドキュメント整理**: 承知していない将来計画・ロードマップ項目を削除
 - **実装状況の正確な反映**: v0.6.0までの実装済み機能のみを記載
 
 ### Removed
+
 - README.md の🚀ロードマップセクション（v0.7.0以降の未承認計画）
 - docs/要件定義書の「将来バージョン」「今後の拡張計画」「将来的な構想」セクション
 - 各種ファイルの「将来実装予定」言及
@@ -260,25 +287,33 @@ v0.6.0では**ドメイン辞書システム**を実装し、ビジネス知識�
 #### Added - Domain Dictionary Core System
 
 - **ドメイン辞書管理**: `src/dictionary/core/` によるビジネス用語・ルール管理
-- **知識抽出エンジン**: `src/dictionary/extractors/linter.ts` ESLint/TypeScript/Prettier設定からの自動学習
-- **文脈理解エンジン**: `src/dictionary/context/` コードのドメイン関連度とビジネス適合性評価
-- **YAML永続化**: `src/dictionary/storage/` 辞書データの構造化保存・バージョン管理
+- **知識抽出エンジン**: `src/dictionary/extractors/linter.ts`
+  ESLint/TypeScript/Prettier設定からの自動学習
+- **文脈理解エンジン**: `src/dictionary/context/`
+  コードのドメイン関連度とビジネス適合性評価
+- **YAML永続化**: `src/dictionary/storage/`
+  辞書データの構造化保存・バージョン管理
 - **高性能キャッシュ**: メモリ・ディスクの2段階キャッシュシステム（1ms辞書検索）
 - **CLI辞書管理**: `src/cli/commands/dictionary.ts` 対話型辞書操作・検証コマンド
 
 #### Enhanced - Dictionary-Aware Plugin System
 
-- **DictionaryAwarePlugin**: `src/plugins/base/DictionaryAwareBasePlugin.ts` 辞書連携プラグイン基盤
-- **ドメイン用語カバレッジ**: `src/plugins/domain/DomainTermCoveragePlugin.ts` ビジネス用語分析
+- **DictionaryAwarePlugin**: `src/plugins/base/DictionaryAwareBasePlugin.ts`
+  辞書連携プラグイン基盤
+- **ドメイン用語カバレッジ**: `src/plugins/domain/DomainTermCoveragePlugin.ts`
+  ビジネス用語分析
 - **文脈品質評価**: ドメイン適合度・ビジネス規則準拠度・技術品質の統合評価
-- **辞書対応プラグインマネージャー**: `src/core/DictionaryAwarePluginManager.ts` 辞書連携分析実行
+- **辞書対応プラグインマネージャー**: `src/core/DictionaryAwarePluginManager.ts`
+  辞書連携分析実行
 
 #### Added - Project Bootstrap System
 
-- **自動セットアップ**: `src/cli/bootstrap/DictionaryBootstrap.ts` 新規プロジェクト初期化
+- **自動セットアップ**: `src/cli/bootstrap/DictionaryBootstrap.ts`
+  新規プロジェクト初期化
 - **設定自動検出**: プロジェクト設定からのドメイン知識抽出・辞書生成
 - **対話型ウィザード**: プロジェクト特性に応じた最適辞書構築支援
-- **ブートストラップCLI**: `src/cli/commands/bootstrap.ts` init/status/validate/clean
+- **ブートストラップCLI**: `src/cli/commands/bootstrap.ts`
+  init/status/validate/clean
 
 #### Added - Advanced Analysis Features
 
@@ -296,7 +331,8 @@ v0.6.0では**ドメイン辞書システム**を実装し、ビジネス知識�
 
 #### Documentation & Developer Experience
 
-- **包括的ドキュメント**: README.md完全リニューアル・クイックスタート・APIリファレンス
+- **包括的ドキュメント**:
+  README.md完全リニューアル・クイックスタート・APIリファレンス
 - **使用例とベストプラクティス**: Ecommerce/既存プロジェクト統合/チーム開発対応
 - **開発者ガイド**: プラグイン開発・辞書設計・継続的品質改善方法論
 
@@ -363,7 +399,7 @@ v0.4.0では**包括的な品質スコア算出システム**の実装と**テ�
 - **品質スコアエンジン**: `ScoreCalculatorV2`による高精度スコア算出システム
 - **5次元品質評価**:
   - `completeness`: テスト網羅性の評価
-  - `correctness`: テスト正確性の評価  
+  - `correctness`: テスト正確性の評価
   - `maintainability`: テスト保守性の評価
   - `performance`: テストパフォーマンス評価
   - `security`: テストセキュリティ評価
@@ -381,8 +417,10 @@ v0.4.0では**包括的な品質スコア算出システム**の実装と**テ�
 
 #### Fixed - Test Stability
 
-- **Performance Test Stability**: バッチ処理パフォーマンステストの条件緩和（2倍→3倍許容）でCI環境での安定性向上
-- **Timeout Test Optimization**: タイムアウト系テストの実行時間調整による安定した動作確保
+- **Performance Test
+  Stability**: バッチ処理パフォーマンステストの条件緩和（2倍→3倍許容）でCI環境での安定性向上
+- **Timeout Test
+  Optimization**: タイムアウト系テストの実行時間調整による安定した動作確保
   - Advanced Plugin System: 100ms→200ms delay, 50ms→100ms timeout
   - Plugin Manager Extended: 200ms→300ms delay, 100ms→200ms timeout
 - **Memory Leak Fix**: withTimeoutメソッドのsetTimeout適切なクリーンアップ実装
@@ -432,7 +470,8 @@ v0.3.0では**高度なプラグインアーキテクチャ**と**パフォー�
 
 #### Added
 
-- **Advanced Plugin System**: 完全な型安全性を備えた`ITestQualityPlugin`インターフェース実装
+- **Advanced Plugin
+  System**: 完全な型安全性を備えた`ITestQualityPlugin`インターフェース実装
 - **Plugin Metadata Framework**: プラグインの詳細情報管理とバージョニング機能
 - **Extended Core Components**:
   - `AnalyzerExtended`: 高度な分析機能とキャッシュシステム
@@ -446,7 +485,7 @@ v0.3.0では**高度なプラグインアーキテクチャ**と**パフォー�
 
 - **Core Plugin Suite**: 3つの高品質コアプラグイン実装
   - `AssertionQualityPlugin`: アサーション品質の詳細分析
-  - `TestCompletenessPlugin`: テスト網羅性の包括的チェック  
+  - `TestCompletenessPlugin`: テスト網羅性の包括的チェック
   - `TestStructurePlugin`: テスト構造の品質評価
 - **Configuration Management**: メタデータ駆動設定システム
 - **Error Handling**: 堅牢なエラー処理とユーザビリティ向上
@@ -483,12 +522,13 @@ v0.2.0では念願の**対話型プラグイン作成システム**が完全実�
 
 #### Added
 
-- **対話型プラグイン作成システム**: `rimor plugin create -i` コマンドで質問に答えるだけでカスタムプラグイン作成
+- **対話型プラグイン作成システム**: `rimor plugin create -i`
+  コマンドで質問に答えるだけでカスタムプラグイン作成
 - **5種類のプラグインテンプレート**:
   - `basic`: 基本的なプラグインテンプレート
   - `pattern-match`: パターンマッチングプラグイン
   - `async-await`: 非同期テスト専用プラグイン（新規）
-  - `api-test`: APIテスト専用プラグイン（新規） 
+  - `api-test`: APIテスト専用プラグイン（新規）
   - `validation`: バリデーション専用プラグイン（新規）
 - **国際化対応基盤**: 日本語・英語対応（環境変数 `RIMOR_LANG` で切り替え）
 - **CLIコマンド統合**: `rimor plugin create` コマンドの完全統合
@@ -502,7 +542,8 @@ v0.2.0では念願の**対話型プラグイン作成システム**が完全実�
 
 #### Technical Details
 
-- **Interactive System**: `src/interactive/` 完全実装済み（creator.ts, analyzer.ts, generator.ts, validator.ts）
+- **Interactive System**: `src/interactive/` 完全実装済み（creator.ts,
+  analyzer.ts, generator.ts, validator.ts）
 - **i18n Framework**: `src/i18n/messages.ts` によるメッセージ多言語化
 - **Template Engine**: 動的プラグインコード生成機能
 - **CLI Integration**: yargs によるサブコマンド完全統合
@@ -538,16 +579,20 @@ Rimorの重要なバグ修正とCI/CD品質強化を行いました。このリ�
 
 #### Fixed
 
-- **TestExistencePlugin テストパス探索問題**: `test/`ルートディレクトリ構造でのテストファイル検出が正しく動作するように修正
-- **CI/CD環境でのRimor実行失敗**: GitHub Actions環境でのRimor自己診断実行問題を解決
-- **設定ファイル統合問題**: `.rimorrc.json`のexcludeFiles設定がプラグインで適用されない問題を修正
+- **TestExistencePlugin テストパス探索問題**:
+  `test/`ルートディレクトリ構造でのテストファイル検出が正しく動作するように修正
+- **CI/CD環境でのRimor実行失敗**: GitHub
+  Actions環境でのRimor自己診断実行問題を解決
+- **設定ファイル統合問題**:
+  `.rimorrc.json`のexcludeFiles設定がプラグインで適用されない問題を修正
 - **npm scripts引数伝達問題**: `npm run analyze`でのコマンドライン引数伝達を改善
 
 #### Improved
 
-- **テストカバレッジ大幅向上**: 27% → 100%（追加テスト作成なしで既存テスト構造の最適化により達成）
+- **テストカバレッジ大幅向上**: 27% →
+  100%（追加テスト作成なしで既存テスト構造の最適化により達成）
 - **CI/CD品質ゲート必須化**: Rimor失敗時のCI必須停止・マージ拒否システム実装
-- **テストファイル検出精度強化**: 
+- **テストファイル検出精度強化**:
   - `src/core/analyzer.ts` → `test/core/analyzer.test.ts`等の階層構造対応
   - `analyzeCommand.test.ts`等の特殊命名パターン対応
   - プロジェクトルート自動検出とパス解決アルゴリズム改善
@@ -561,7 +606,7 @@ Rimorの重要なバグ修正とCI/CD品質強化を行いました。このリ�
 
 ### 📊 Quality Metrics
 
-- **問題検出精度**: 8件誤検出 → 0件（100%改善）  
+- **問題検出精度**: 8件誤検出 → 0件（100%改善）
 - **テストカバレッジ**: 27% → 100%（273%向上）
 - **CI安定性**: 失敗続き → 必須チェック稼働
 - **実行時間**: 一貫して5ms以下の高速動作
@@ -572,20 +617,25 @@ Rimorの重要なバグ修正とCI/CD品質強化を行いました。このリ�
 
 ### 🎉 初回MVPリリース
 
-Rimorテスト品質監査ツールのMVP（Minimum Viable Product）版をリリースしました。2週間のアジャイル開発により、実用的なテスト品質分析機能を提供します。
+Rimorテスト品質監査ツールのMVP（Minimum Viable
+Product）版をリリースしました。2週間のアジャイル開発により、実用的なテスト品質分析機能を提供します。
 
 ### Added
 
 #### コア機能
+
 - **静的解析エンジン**: TypeScript/JavaScript プロジェクトの高速分析
 - **プラグインシステム**: 拡張可能なアーキテクチャ
 - **ファイル発見機能**: 再帰的なプロジェクト探索と除外パターン対応
 
 #### プラグイン
+
 - **TestExistencePlugin**: ソースファイルに対応するテストファイルの存在確認
-- **AssertionExistsPlugin**: テストファイル内のアサーション文（expect, assert, should）の存在確認
+- **AssertionExistsPlugin**: テストファイル内のアサーション文（expect, assert,
+  should）の存在確認
 
 #### CLI機能
+
 - **基本分析コマンド**: `npm run analyze <path>`
 - **出力形式選択**: テキスト形式（デフォルト）とJSON形式（`--format=json`）
 - **詳細モード**: プラグイン情報表示（`--verbose`）
@@ -593,19 +643,22 @@ Rimorテスト品質監査ツールのMVP（Minimum Viable Product）版をリ�
 - **エラーハンドリング**: 適切な終了コードとエラーメッセージ
 
 #### 設定システム
+
 - **設定ファイル対応**: `.rimorrc.json`, `.rimorrc`, `rimor.config.json`
 - **除外パターン**: 分析対象から除外するファイルパターンの設定
 - **プラグイン制御**: 個別プラグインの有効/無効設定
 - **出力設定**: デフォルト出力形式と詳細表示の設定
 
 #### npm Scripts
+
 - `npm run analyze`: 基本分析実行
 - `npm run analyze:json`: JSON形式出力
-- `npm run analyze:verbose`: 詳細モード実行  
+- `npm run analyze:verbose`: 詳細モード実行
 - `npm run dev`: 開発時の便利コマンド
 - `npm run full-check`: ビルド + テスト + 分析の完全チェック
 
 #### ドキュメント・デモ
+
 - **包括的README**: インストール、使用方法、設定、API仕様
 - **デモシステム**: サンプルプロジェクトとデモ用スクリプト
 - **フィードバック収集**: 体系的なフィードバック管理システム
@@ -646,7 +699,7 @@ Rimorテスト品質監査ツールのMVP（Minimum Viable Product）版をリ�
 
 - **Day 1-2**: 最小限コア機能（100行以内）
 - **Day 3-4**: 最初のプラグイン実装
-- **Day 5-6**: 基本CLI構築  
+- **Day 5-6**: 基本CLI構築
 - **Day 7-8**: 実用プラグイン追加
 - **Day 9-10**: 設定システム・JSON出力
 - **Day 11-12**: ドキュメント整備・npm scripts

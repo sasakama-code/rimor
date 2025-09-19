@@ -10,7 +10,7 @@ import {
   SanitizerType,
   TaintMetadata,
   TaintedValue,
-  SafeValue
+  SafeValue,
 } from './taint';
 
 import { TestMethod } from '../../core/types/project-context';
@@ -48,7 +48,12 @@ export interface SecurityRequirement {
   /** 要件ID */
   id: string;
   /** 要件の種別 */
-  type: 'auth-test' | 'input-validation' | 'api-security' | 'session-management' | SecurityTypeString;
+  type:
+    | 'auth-test'
+    | 'input-validation'
+    | 'api-security'
+    | 'session-management'
+    | SecurityTypeString;
   /** 必須テストケース */
   required: string[];
   /** 最小汚染レベル */
@@ -122,7 +127,7 @@ export interface ITypeBasedSecurityPlugin {
   id: string;
   name: string;
   version: string;
-  
+
   // Main analysis methods
   analyzeTestMethod(method: TestMethod): Promise<TestMethodAnalysisResult>;
   analyzeIncrementally?(update: IncrementalChange): Promise<TestMethodAnalysisResult>;
@@ -130,7 +135,7 @@ export interface ITypeBasedSecurityPlugin {
 }
 
 // Auth Test Coverage - Union type for coverage categories
-export type AuthTestCoverage = 
+export type AuthTestCoverage =
   | 'success'
   | 'failure'
   | 'token-expiry'
@@ -151,7 +156,14 @@ export interface AuthTestMetrics {
 }
 
 // Boundary value type definition
-export type BoundaryValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[];
+export type BoundaryValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Record<string, unknown>
+  | unknown[];
 
 export interface BoundaryCondition {
   /** 境界の種別 */
@@ -205,7 +217,18 @@ export interface TestCase {
  */
 export interface TestStatement {
   /** 文の種別 */
-  type: 'assignment' | 'methodCall' | 'assertion' | 'sanitizer' | 'userInput' | 'entry' | 'setup' | 'action' | 'teardown' | 'declaration' | 'expression';
+  type:
+    | 'assignment'
+    | 'methodCall'
+    | 'assertion'
+    | 'sanitizer'
+    | 'userInput'
+    | 'entry'
+    | 'setup'
+    | 'action'
+    | 'teardown'
+    | 'declaration'
+    | 'expression';
   /** 文の内容 */
   content: string;
   /** 位置情報 */
@@ -310,7 +333,25 @@ export interface CompileTimeResult {
 // SecurityIssue定義 - 前方互換性のため両方をサポート
 export interface SecurityIssue {
   id: string;
-  type: 'taint' | 'injection' | 'validation' | 'authentication' | 'authorization' | 'unsafe-taint-flow' | 'missing-sanitizer' | 'SQL_INJECTION' | 'CODE_EXECUTION' | 'missing-auth-test' | 'insufficient-validation' | 'sanitization' | 'boundary' | 'sql-injection' | 'command-injection' | 'code-injection' | 'vulnerable-dependency' | 'outdated-version';
+  type:
+    | 'taint'
+    | 'injection'
+    | 'validation'
+    | 'authentication'
+    | 'authorization'
+    | 'unsafe-taint-flow'
+    | 'missing-sanitizer'
+    | 'SQL_INJECTION'
+    | 'CODE_EXECUTION'
+    | 'missing-auth-test'
+    | 'insufficient-validation'
+    | 'sanitization'
+    | 'boundary'
+    | 'sql-injection'
+    | 'command-injection'
+    | 'code-injection'
+    | 'vulnerable-dependency'
+    | 'outdated-version';
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical' | 'error' | 'warning';
   message: string;
   location: {
@@ -324,7 +365,8 @@ export interface SecurityIssue {
   fixSuggestion?: string;
   cwe?: string;
   owasp?: string;
-  taintInfo?: { // テストで使用されているため追加
+  taintInfo?: {
+    // テストで使用されているため追加
     source: TaintSource;
     sink?: string;
     flow?: string[];

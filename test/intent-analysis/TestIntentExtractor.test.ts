@@ -5,7 +5,13 @@
 
 import { TestIntentExtractor } from '../../src/intent-analysis/TestIntentExtractor';
 import { TreeSitterParser, SupportedLanguage } from '../../src/intent-analysis/TreeSitterParser';
-import { TestType, TestIntent, ActualTestAnalysis, IntentRiskLevel, GapType } from '../../src/intent-analysis/ITestIntentAnalyzer';
+import {
+  TestType,
+  TestIntent,
+  ActualTestAnalysis,
+  IntentRiskLevel,
+  GapType,
+} from '../../src/intent-analysis/ITestIntentAnalyzer';
 
 describe('TestIntentExtractor', () => {
   let extractor: TestIntentExtractor;
@@ -105,7 +111,7 @@ describe('TestIntentExtractor', () => {
       expect(analysis.actualTargetMethods).toBeDefined();
       expect(analysis.assertions).toBeDefined();
       expect(analysis.complexity).toBeGreaterThanOrEqual(1);
-      
+
       // 実装では常にファイルパスが返される
       expect(analysis.actualTargetMethods).toContain('test.js');
       if (analysis.assertions.length > 0) {
@@ -140,8 +146,8 @@ describe('TestIntentExtractor', () => {
           happyPath: true,
           errorCases: false,
           edgeCases: false,
-          boundaryValues: false
-        }
+          boundaryValues: false,
+        },
       };
 
       const actual: ActualTestAnalysis = {
@@ -151,16 +157,16 @@ describe('TestIntentExtractor', () => {
             type: 'toBe',
             expected: '5',
             actual: 'result',
-            location: { line: 4, column: 10 }
-          }
+            location: { line: 4, column: 10 },
+          },
         ],
         actualCoverage: {
           happyPath: true,
           errorCases: false,
           edgeCases: false,
-          boundaryValues: false
+          boundaryValues: false,
         },
-        complexity: 1
+        complexity: 1,
       };
 
       const result = await extractor.evaluateRealization(intent, actual);
@@ -182,8 +188,8 @@ describe('TestIntentExtractor', () => {
           happyPath: true,
           errorCases: true,
           edgeCases: true,
-          boundaryValues: false
-        }
+          boundaryValues: false,
+        },
       };
 
       const actual: ActualTestAnalysis = {
@@ -193,16 +199,16 @@ describe('TestIntentExtractor', () => {
             type: 'toBe',
             expected: '2',
             actual: 'result',
-            location: { line: 4, column: 10 }
-          }
+            location: { line: 4, column: 10 },
+          },
         ],
         actualCoverage: {
           happyPath: true,
           errorCases: false, // エラーケースが不足
-          edgeCases: false,  // エッジケースが不足
-          boundaryValues: false
+          edgeCases: false, // エッジケースが不足
+          boundaryValues: false,
         },
-        complexity: 1
+        complexity: 1,
       };
 
       const result = await extractor.evaluateRealization(intent, actual);
@@ -212,7 +218,7 @@ describe('TestIntentExtractor', () => {
       expect(result.realizationScore).toBeLessThanOrEqual(100);
       expect(result.gaps).toBeDefined();
       expect(result.riskLevel).toBeDefined();
-      
+
       // 理想的には以下の詳細な検証も行いたいが、現在の実装では簡易版
       // expect(result.gaps.length).toBeGreaterThan(0);
       // expect(result.realizationScore).toBeLessThan(80);

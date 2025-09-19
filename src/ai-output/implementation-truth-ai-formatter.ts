@@ -1,7 +1,7 @@
 /**
  * Implementation Truth AI Formatter
  * v0.9.0 - AIコーディング時代の品質保証エンジン向けフォーマッター
- * 
+ *
  * ImplementationTruthAnalysisResultをAI向けの構造化JSONに変換
  * SOLID原則: 単一責任 - Implementation Truth分析結果のフォーマットのみに特化
  */
@@ -162,13 +162,13 @@ export class ImplementationTruthAIFormatter {
    */
   format(result: ImplementationTruthAnalysisResult): AIImplementationTruthOutput {
     const now = new Date().toISOString();
-    
+
     return {
       metadata: {
         generatedAt: now,
         format: 'ai-implementation-truth',
         version: this.version,
-        rimorEngine: this.engine
+        rimorEngine: this.engine,
       },
 
       executiveSummary: this.formatExecutiveSummary(result),
@@ -176,7 +176,7 @@ export class ImplementationTruthAIFormatter {
       intentRealizationAnalysis: this.formatIntentRealizationAnalysis(result),
       aiActionItems: this.formatAIActionItems(result),
       codeGenerationGuidance: this.formatCodeGenerationGuidance(result),
-      technicalDetails: this.formatTechnicalDetails(result)
+      technicalDetails: this.formatTechnicalDetails(result),
     };
   }
 
@@ -193,7 +193,7 @@ export class ImplementationTruthAIFormatter {
       keyFindings,
       criticalIssues: result.highSeverityGaps,
       totalGaps: result.totalGapsDetected,
-      realizationScore: Math.round(result.summary.realizationScore * 100) / 100
+      realizationScore: Math.round(result.summary.realizationScore * 100) / 100,
     };
   }
 
@@ -201,26 +201,24 @@ export class ImplementationTruthAIFormatter {
    * 実装の真実のフォーマット
    */
   private formatImplementationTruth(implementationTruth: ImplementationTruth) {
-    const topVulnerabilities = implementationTruth.vulnerabilities
-      .slice(0, 5)
-      .map(vuln => ({
-        type: vuln.type,
-        severity: vuln.severity,
-        description: vuln.message,
-        location: `${vuln.location.file}:${vuln.location.line}`
-      }));
+    const topVulnerabilities = implementationTruth.vulnerabilities.slice(0, 5).map(vuln => ({
+      type: vuln.type,
+      severity: vuln.severity,
+      description: vuln.message,
+      location: `${vuln.location.file}:${vuln.location.line}`,
+    }));
 
     return {
       filePath: implementationTruth.filePath,
       vulnerabilitiesDetected: implementationTruth.vulnerabilities.length,
       securityProfile: {
         riskLevel: this.calculateSecurityRiskLevel(implementationTruth.vulnerabilities),
-        topVulnerabilities
+        topVulnerabilities,
       },
       complexity: {
         overall: implementationTruth.structure.complexity.cyclomaticComplexity || 0,
         methodCount: implementationTruth.actualBehaviors.methods.length,
-        averageComplexity: this.calculateAverageComplexity(implementationTruth)
+        averageComplexity: this.calculateAverageComplexity(implementationTruth),
       },
       dependencies: {
         totalDependencies: implementationTruth.actualBehaviors.dependencies.length,
@@ -229,8 +227,8 @@ export class ImplementationTruthAIFormatter {
         ).length,
         riskDependencies: implementationTruth.actualBehaviors.dependencies
           .filter(dep => dep.depth > 3)
-          .map(dep => dep.moduleName)
-      }
+          .map(dep => dep.moduleName),
+      },
     };
   }
 
@@ -247,7 +245,7 @@ export class ImplementationTruthAIFormatter {
       averageRealizationScore: result.overallScore,
       gapsByType,
       gapsBySeverity,
-      topGaps
+      topGaps,
     };
   }
 
@@ -256,7 +254,7 @@ export class ImplementationTruthAIFormatter {
    */
   private formatAIActionItems(result: ImplementationTruthAnalysisResult) {
     const allRecommendations = result.intentRealizationResults.flatMap(r => r.recommendations);
-    
+
     return {
       immediate: allRecommendations
         .filter(rec => rec.priority === 'critical' || rec.priority === 'high')
@@ -266,7 +264,7 @@ export class ImplementationTruthAIFormatter {
           action: rec.type,
           description: rec.description,
           estimatedEffort: `${rec.expectedImpact.estimatedImplementationTime}h`,
-          impactScore: rec.expectedImpact.testQualityImprovement
+          impactScore: rec.expectedImpact.testQualityImprovement,
         })),
       shortTerm: allRecommendations
         .filter(rec => rec.priority === 'medium')
@@ -275,7 +273,7 @@ export class ImplementationTruthAIFormatter {
           priority: 'medium' as const,
           action: rec.type,
           description: rec.description,
-          estimatedEffort: `${rec.expectedImpact.estimatedImplementationTime}h`
+          estimatedEffort: `${rec.expectedImpact.estimatedImplementationTime}h`,
         })),
       longTerm: allRecommendations
         .filter(rec => rec.priority === 'low')
@@ -284,8 +282,8 @@ export class ImplementationTruthAIFormatter {
           priority: 'low' as const,
           action: rec.type,
           description: rec.description,
-          estimatedEffort: `${rec.expectedImpact.estimatedImplementationTime}h`
-        }))
+          estimatedEffort: `${rec.expectedImpact.estimatedImplementationTime}h`,
+        })),
     };
   }
 
@@ -294,7 +292,7 @@ export class ImplementationTruthAIFormatter {
    */
   private formatCodeGenerationGuidance(result: ImplementationTruthAnalysisResult) {
     const allGaps = result.intentRealizationResults.flatMap(r => r.gaps);
-    
+
     return {
       missingTests: allGaps
         .filter(gap => gap.type.includes('MISSING'))
@@ -304,16 +302,14 @@ export class ImplementationTruthAIFormatter {
           targetMethod: gap.affectedIntent.targetMethod || 'Unknown',
           testDescription: gap.description,
           sampleCode: this.generateTestSampleCode(gap),
-          priority: gap.severity
+          priority: gap.severity,
         })),
-      securityImprovements: result.implementationTruth.vulnerabilities
-        .slice(0, 5)
-        .map(vuln => ({
-          vulnerability: vuln.type,
-          currentCode: 'Current vulnerable code detected',
-          recommendedFix: vuln.recommendation || 'Apply security best practices',
-          explanation: vuln.message
-        })),
+      securityImprovements: result.implementationTruth.vulnerabilities.slice(0, 5).map(vuln => ({
+        vulnerability: vuln.type,
+        currentCode: 'Current vulnerable code detected',
+        recommendedFix: vuln.recommendation || 'Apply security best practices',
+        explanation: vuln.message,
+      })),
       qualityImprovements: allGaps
         .filter(gap => gap.type.includes('QUALITY'))
         .slice(0, 5)
@@ -321,8 +317,8 @@ export class ImplementationTruthAIFormatter {
           area: gap.type,
           currentIssue: gap.description,
           improvement: gap.recommendations[0]?.description || 'Improve code quality',
-          codeExample: 'Example code improvement'
-        }))
+          codeExample: 'Example code improvement',
+        })),
     };
   }
 
@@ -339,14 +335,14 @@ export class ImplementationTruthAIFormatter {
         filesAnalyzed: result.summary.productionFilesAnalyzed,
         methodsAnalyzed: totalMethods,
         vulnerabilitiesScanned: result.summary.vulnerabilitiesDetected,
-        testCasesAnalyzed: totalTests
+        testCasesAnalyzed: totalTests,
       },
       qualityMetrics: {
         coverageScore: this.calculateCoverageScore(result),
         testQualityScore: result.overallScore,
         securityScore: this.calculateSecurityScore(result),
-        maintainabilityScore: this.calculateMaintainabilityScore(result)
-      }
+        maintainabilityScore: this.calculateMaintainabilityScore(result),
+      },
     };
   }
 
@@ -362,11 +358,11 @@ export class ImplementationTruthAIFormatter {
 
   private extractKeyFindings(result: ImplementationTruthAnalysisResult): string[] {
     const findings: string[] = [];
-    
+
     findings.push(`${result.summary.vulnerabilitiesDetected}個のセキュリティ脆弱性を検出`);
     findings.push(`${result.totalGapsDetected}個の意図実現度ギャップを特定`);
     findings.push(`テスト実現度スコア: ${result.summary.realizationScore.toFixed(1)}%`);
-    
+
     if (result.highSeverityGaps > 0) {
       findings.push(`${result.highSeverityGaps}個の高重要度問題を発見`);
     }
@@ -374,10 +370,12 @@ export class ImplementationTruthAIFormatter {
     return findings;
   }
 
-  private calculateSecurityRiskLevel(vulnerabilities: any[]): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateSecurityRiskLevel(
+    vulnerabilities: any[]
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const criticalCount = vulnerabilities.filter(v => v.severity === 'critical').length;
     const highCount = vulnerabilities.filter(v => v.severity === 'high').length;
-    
+
     if (criticalCount > 0) return 'critical';
     if (highCount > 2) return 'high';
     if (vulnerabilities.length > 0) return 'medium';
@@ -387,46 +385,49 @@ export class ImplementationTruthAIFormatter {
   private calculateAverageComplexity(implementationTruth: ImplementationTruth): number {
     const methods = implementationTruth.actualBehaviors.methods;
     if (methods.length === 0) return 0;
-    
+
     // 簡易計算（実際の実装では詳細な複雑度計算が必要）
-    return methods.reduce((sum, method) => sum + (method.callsToMethods?.length || 0), 0) / methods.length;
+    return (
+      methods.reduce((sum, method) => sum + (method.callsToMethods?.length || 0), 0) /
+      methods.length
+    );
   }
 
   private countGapsByType(results: IntentRealizationResult[]): Record<string, number> {
     const counts: Record<string, number> = {};
-    
+
     results.forEach(result => {
       result.gaps.forEach(gap => {
         counts[gap.type] = (counts[gap.type] || 0) + 1;
       });
     });
-    
+
     return counts;
   }
 
   private countGapsBySeverity(results: IntentRealizationResult[]): Record<string, number> {
     const counts: Record<string, number> = {};
-    
+
     results.forEach(result => {
       result.gaps.forEach(gap => {
         counts[gap.severity] = (counts[gap.severity] || 0) + 1;
       });
     });
-    
+
     return counts;
   }
 
   private extractTopGaps(results: IntentRealizationResult[]) {
-    const allGaps = results.flatMap(result => 
+    const allGaps = results.flatMap(result =>
       result.gaps.map(gap => ({
         type: gap.type,
         severity: gap.severity,
         description: gap.description,
         recommendation: gap.recommendations[0]?.description || 'No recommendation available',
-        affectedFile: result.filePath
+        affectedFile: result.filePath,
       }))
     );
-    
+
     // 重要度順にソートして上位10件を返す
     return allGaps
       .sort((a, b) => this.getSeverityWeight(b.severity) - this.getSeverityWeight(a.severity))
@@ -435,11 +436,16 @@ export class ImplementationTruthAIFormatter {
 
   private getSeverityWeight(severity: string): number {
     switch (severity) {
-      case 'critical': return 4;
-      case 'high': return 3;
-      case 'medium': return 2;
-      case 'low': return 1;
-      default: return 0;
+      case 'critical':
+        return 4;
+      case 'high':
+        return 3;
+      case 'medium':
+        return 2;
+      case 'low':
+        return 1;
+      default:
+        return 0;
     }
   }
 
@@ -455,27 +461,37 @@ export class ImplementationTruthAIFormatter {
   private calculateCoverageScore(result: ImplementationTruthAnalysisResult): number {
     // 実装済みの振る舞いに対するテストカバレッジを計算
     const totalMethods = result.implementationTruth.actualBehaviors.methods.length;
-    const testedMethods = result.intentRealizationResults.filter(r => r.realizationScore > 50).length;
-    
+    const testedMethods = result.intentRealizationResults.filter(
+      r => r.realizationScore > 50
+    ).length;
+
     return totalMethods > 0 ? (testedMethods / totalMethods) * 100 : 0;
   }
 
   private calculateSecurityScore(result: ImplementationTruthAnalysisResult): number {
     const vulnerabilities = result.implementationTruth.vulnerabilities.length;
-    const criticalVulns = result.implementationTruth.vulnerabilities.filter(v => v.severity === 'critical').length;
-    
+    const criticalVulns = result.implementationTruth.vulnerabilities.filter(
+      v => v.severity === 'critical'
+    ).length;
+
     if (vulnerabilities === 0) return 100;
-    
+
     // 脆弱性の数と重要度に基づいてスコア計算
-    const score = Math.max(0, 100 - (vulnerabilities * 10) - (criticalVulns * 20));
+    const score = Math.max(0, 100 - vulnerabilities * 10 - criticalVulns * 20);
     return Math.round(score);
   }
 
   private calculateMaintainabilityScore(result: ImplementationTruthAnalysisResult): number {
     // 複雑度とテスト品質に基づくメンテナンス性スコア
-    const complexityScore = Math.min(100, Math.max(0, 100 - (result.implementationTruth.structure.complexity.cyclomaticComplexity || 0) * 2));
+    const complexityScore = Math.min(
+      100,
+      Math.max(
+        0,
+        100 - (result.implementationTruth.structure.complexity.cyclomaticComplexity || 0) * 2
+      )
+    );
     const testQualityScore = result.overallScore;
-    
+
     return Math.round((complexityScore + testQualityScore) / 2);
   }
 }

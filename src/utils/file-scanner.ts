@@ -46,21 +46,30 @@ export class FileScanner {
     totalFiles: 0,
     scannedDirectories: 0,
     excludedFiles: 0,
-    scanTime: 0
+    scanTime: 0,
   };
 
   constructor(config?: Partial<FileScannerConfig>) {
     this.config = {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       filePatterns: [],
-      excludeDirectories: ['node_modules', '.git', 'dist', 'build', 'coverage', '.nyc_output', '.next', '.vscode'],
+      excludeDirectories: [
+        'node_modules',
+        '.git',
+        'dist',
+        'build',
+        'coverage',
+        '.nyc_output',
+        '.next',
+        '.vscode',
+      ],
       excludePatterns: [
         /\.d\.ts$/, // TypeScript型定義ファイル
         /\.min\.(js|css)$/, // 最小化ファイル
-        /\.map$/ // ソースマップ
+        /\.map$/, // ソースマップ
       ],
       maxFiles: 10000,
-      ...config
+      ...config,
     };
   }
 
@@ -86,19 +95,20 @@ export class FileScanner {
       sourceFiles: [],
       testFiles: [],
       configFiles: [],
-      statistics: this.statistics
+      statistics: this.statistics,
     };
 
     try {
       await this.scanDirectory(path.resolve(projectPath), result);
-      
+
       this.statistics.scanTime = performance.now() - startTime;
       result.statistics = { ...this.statistics };
 
       return result;
-
     } catch (error) {
-      throw new Error(`ファイルスキャンに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `ファイルスキャンに失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -119,7 +129,7 @@ export class FileScanner {
 
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry);
-        
+
         try {
           const stat = fs.statSync(fullPath);
 
@@ -151,8 +161,7 @@ export class FileScanner {
    * Open-Closed原則: 設定で拡張可能
    */
   private shouldSkipDirectory(dirName: string): boolean {
-    return this.config.excludeDirectories.includes(dirName) || 
-           dirName.startsWith('.');
+    return this.config.excludeDirectories.includes(dirName) || dirName.startsWith('.');
   }
 
   /**
@@ -162,13 +171,13 @@ export class FileScanner {
   private shouldIncludeFile(filePath: string): boolean {
     const ext = path.extname(filePath).toLowerCase();
     const fileName = path.basename(filePath);
-    
+
     // ファイル名パターンチェック（優先）
     if (this.config.filePatterns && this.config.filePatterns.length > 0) {
-      const matchesPattern = this.config.filePatterns.some(pattern => 
+      const matchesPattern = this.config.filePatterns.some(pattern =>
         this.matchesFilePattern(fileName, pattern)
       );
-      
+
       if (matchesPattern) {
         // パターンに一致する場合は拡張子チェックをスキップ
         return !this.isExcludedFile(fileName);
@@ -197,9 +206,9 @@ export class FileScanner {
     // *.test.* → ^.*\.test\..*$
     // *.spec.* → ^.*\.spec\..*$
     const regexPattern = pattern
-      .replace(/\./g, '\\.')  // ドットをエスケープ
-      .replace(/\*/g, '.*');  // アスタリスクを.*に変換
-    
+      .replace(/\./g, '\\.') // ドットをエスケープ
+      .replace(/\*/g, '.*'); // アスタリスクを.*に変換
+
     const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(fileName);
   }
@@ -252,12 +261,10 @@ export class FileScanner {
       '/test/',
       '/tests/',
       '\\test\\',
-      '\\tests\\'
+      '\\tests\\',
     ];
 
-    return testPatterns.some(pattern => 
-      fileName.includes(pattern) || dirName.includes(pattern)
-    );
+    return testPatterns.some(pattern => fileName.includes(pattern) || dirName.includes(pattern));
   }
 
   /**
@@ -271,7 +278,7 @@ export class FileScanner {
       'webpack.config.',
       '.eslintrc',
       '.prettierrc',
-      'rimor.config.'
+      'rimor.config.',
     ];
 
     return configPatterns.some(pattern => fileName.includes(pattern));
@@ -286,7 +293,7 @@ export class FileScanner {
       totalFiles: 0,
       scannedDirectories: 0,
       excludedFiles: 0,
-      scanTime: 0
+      scanTime: 0,
     };
   }
 

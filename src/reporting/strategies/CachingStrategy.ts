@@ -1,7 +1,7 @@
 /**
  * CachingStrategy
  * v0.9.0 - Issue #64: レポートシステムの統合
- * 
+ *
  * SOLID原則: 単一責任（キャッシュ機能のみ）
  * DRY原則: キャッシュロジックの再利用
  * KISS原則: シンプルなキャッシュ実装
@@ -53,17 +53,20 @@ export class CachingStrategy implements IFormattingStrategy {
 
     // キャッシュミスの場合、基底戦略で処理
     const formatted = this.baseStrategy.format(result, options);
-    
+
     // 結果をキャッシュ
     this.putToCache(cacheKey, formatted);
-    
+
     return formatted;
   }
 
   /**
    * 非同期版のキャッシュ付きフォーマット処理
    */
-  async formatAsync(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): Promise<string | object> {
+  async formatAsync(
+    result: UnifiedAnalysisResult,
+    options?: ReportGenerationOptions
+  ): Promise<string | object> {
     const cacheKey = this.generateCacheKey(result, options);
     this.totalRequests++;
 
@@ -76,16 +79,16 @@ export class CachingStrategy implements IFormattingStrategy {
 
     // キャッシュミスの場合、基底戦略で処理
     let formatted: string | object;
-    
+
     if (this.baseStrategy.formatAsync) {
       formatted = await this.baseStrategy.formatAsync(result, options);
     } else {
       formatted = await Promise.resolve(this.baseStrategy.format(result, options));
     }
-    
+
     // 結果をキャッシュ
     this.putToCache(cacheKey, formatted);
-    
+
     return formatted;
   }
 
@@ -107,7 +110,7 @@ export class CachingStrategy implements IFormattingStrategy {
       hitRate: this.getCacheHitRate(),
       totalRequests: this.totalRequests,
       cacheHits: this.cacheHits,
-      cacheMisses: this.totalRequests - this.cacheHits
+      cacheMisses: this.totalRequests - this.cacheHits,
     };
   }
 
@@ -121,15 +124,18 @@ export class CachingStrategy implements IFormattingStrategy {
   /**
    * キャッシュキーを生成
    */
-  private generateCacheKey(result: UnifiedAnalysisResult, options?: ReportGenerationOptions): string {
+  private generateCacheKey(
+    result: UnifiedAnalysisResult,
+    options?: ReportGenerationOptions
+  ): string {
     // 結果とオプションのハッシュを生成
     const data = {
       schemaVersion: result.schemaVersion,
       summary: result.summary,
       risksCount: result.aiKeyRisks?.length || 0,
-      options: options
+      options: options,
     };
-    
+
     const hash = crypto.createHash('sha256');
     hash.update(JSON.stringify(data));
     return hash.digest('hex');
@@ -140,21 +146,21 @@ export class CachingStrategy implements IFormattingStrategy {
    */
   private getFromCache(key: string): string | object | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
-    
+
     // TTLチェック
     const now = Date.now();
     if (now - entry.timestamp > this.cacheTTL) {
       this.cache.delete(key);
       return null;
     }
-    
+
     // ヒット数を増やす
     entry.hits++;
-    
+
     return entry.value;
   }
 
@@ -166,14 +172,14 @@ export class CachingStrategy implements IFormattingStrategy {
     if (this.cache.size >= this.maxCacheSize) {
       this.evictOldestEntry();
     }
-    
+
     const entry: CacheEntry = {
       key,
       value,
       timestamp: Date.now(),
-      hits: 0
+      hits: 0,
     };
-    
+
     this.cache.set(key, entry);
   }
 
@@ -183,7 +189,7 @@ export class CachingStrategy implements IFormattingStrategy {
   private evictOldestEntry(): void {
     let oldestKey: string | null = null;
     let oldestTimestamp = Date.now();
-    
+
     // Map.entriesのイテレーターを配列に変換
     const entries = Array.from(this.cache.entries());
     for (const [key, entry] of entries) {
@@ -192,7 +198,7 @@ export class CachingStrategy implements IFormattingStrategy {
         oldestKey = key;
       }
     }
-    
+
     if (oldestKey) {
       this.cache.delete(oldestKey);
     }

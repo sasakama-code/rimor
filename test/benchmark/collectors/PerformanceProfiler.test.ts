@@ -4,7 +4,13 @@
  */
 
 import { PerformanceProfiler } from '../../../src/benchmark/collectors/PerformanceProfiler';
-import { ProfilerConfiguration, ProfilingSession, HotspotAnalysis, MemoryLeakAnalysis, CallStackAnalysis } from '../../../src/benchmark/collectors/types';
+import {
+  ProfilerConfiguration,
+  ProfilingSession,
+  HotspotAnalysis,
+  MemoryLeakAnalysis,
+  CallStackAnalysis,
+} from '../../../src/benchmark/collectors/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -25,7 +31,7 @@ describe('PerformanceProfiler', () => {
       maxSamples: 10000,
       memoryLeakThreshold: 1024 * 1024 * 10, // 10MB
       hotspotThreshold: 0.05, // 5%
-      outputDir: tempDir
+      outputDir: tempDir,
     };
     profiler = new PerformanceProfiler(config);
   });
@@ -68,7 +74,7 @@ describe('PerformanceProfiler', () => {
       const results = await Promise.all([
         profiler.stopProfiling(session1),
         profiler.stopProfiling(session2),
-        profiler.stopProfiling(session3)
+        profiler.stopProfiling(session3),
       ]);
 
       expect(results.every(r => r.success)).toBe(true);
@@ -77,7 +83,7 @@ describe('PerformanceProfiler', () => {
 
     it('セッションの状態変更を正しく追跡すること', async () => {
       const sessionId = await profiler.startProfiling('state-tracking');
-      
+
       let session = await profiler.getSession(sessionId);
       expect(session.status).toBe('active');
       expect(session.startTime).toBeDefined();
@@ -111,7 +117,7 @@ describe('PerformanceProfiler', () => {
 
       expect(cpuAnalysis.functionProfiles).toBeDefined();
       expect(cpuAnalysis.functionProfiles.length).toBeGreaterThan(0);
-      
+
       // 重い処理の関数がトップに来ることを確認
       const topFunction = cpuAnalysis.functionProfiles[0];
       expect(topFunction.functionName).toBe('cpuIntensiveFunction');
@@ -129,9 +135,9 @@ describe('PerformanceProfiler', () => {
 
       expect(callStackAnalysis.callPaths).toBeDefined();
       expect(callStackAnalysis.callPaths.length).toBeGreaterThan(0);
-      
+
       // ネストした関数の呼び出しパスが記録されていることを確認
-      const deepestPath = callStackAnalysis.callPaths.find(path => 
+      const deepestPath = callStackAnalysis.callPaths.find(path =>
         path.functions.includes('nestedFunction3')
       );
       expect(deepestPath).toBeDefined();
@@ -253,7 +259,7 @@ describe('PerformanceProfiler', () => {
 
       // 並列化可能だが同期実行されている処理
       await sequentialProcessing();
-      
+
       const result = await profiler.stopProfiling(sessionId);
       const parallelismAnalysis = result.profilingData.parallelismAnalysis;
 
@@ -304,12 +310,12 @@ describe('PerformanceProfiler', () => {
       const htmlReport = await profiler.generateHTMLReport(sessionId, {
         includeCharts: true,
         includeSourceCode: true,
-        includeRecommendations: true
+        includeRecommendations: true,
       });
 
       expect(htmlReport.filePath).toBeDefined();
       expect(await fs.access(htmlReport.filePath)).not.toThrow();
-      
+
       const reportContent = await fs.readFile(htmlReport.filePath, 'utf-8');
       expect(reportContent).toContain('<html');
       expect(reportContent).toContain('Performance Profile Report');
@@ -370,7 +376,7 @@ describe('PerformanceProfiler', () => {
       profiler.setAlertThresholds({
         cpuUsage: 80,
         memoryGrowthRate: 100 * 1024 * 1024, // 100MB/s
-        functionExecutionTime: 1000 // 1秒
+        functionExecutionTime: 1000, // 1秒
       });
 
       const sessionId = await profiler.startProfiling('performance-alerts');
@@ -412,7 +418,7 @@ async function simulateWork(name: string, durationMs: number): Promise<void> {
 async function cpuIntensiveFunction(intensity: string, durationMs: number): Promise<void> {
   const start = Date.now();
   const multiplier = intensity === 'light' ? 1 : intensity === 'medium' ? 10 : 100;
-  
+
   while (Date.now() - start < durationMs) {
     for (let i = 0; i < multiplier * 100; i++) {
       Math.pow(Math.random(), Math.random());
@@ -450,7 +456,7 @@ async function spikyMemoryUsage(durationMs: number): Promise<void> {
   const buffers: ArrayBuffer[] = [];
   const spikes = 5;
   const spikeInterval = durationMs / spikes;
-  
+
   for (let i = 0; i < spikes; i++) {
     buffers.push(new ArrayBuffer(1024 * 1024 * 2)); // 2MBスパイク
     await new Promise(resolve => setTimeout(resolve, spikeInterval));
@@ -461,7 +467,7 @@ async function graduallIncreasingMemoryUsage(durationMs: number): Promise<void> 
   const buffers: ArrayBuffer[] = [];
   const steps = 10;
   const stepInterval = durationMs / steps;
-  
+
   for (let i = 0; i < steps; i++) {
     buffers.push(new ArrayBuffer(1024 * 1024 * (i + 1))); // 段階的に増加
     await new Promise(resolve => setTimeout(resolve, stepInterval));
@@ -496,14 +502,14 @@ async function mediumOperation(): Promise<void> {
 async function anotherBottleneck(): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < 300) {
-    Array.from({length: 1000}, () => Math.random()).sort();
+    Array.from({ length: 1000 }, () => Math.random()).sort();
   }
 }
 
 async function slowFileOperations(tempDir: string): Promise<void> {
   const filePath = path.join(tempDir, 'slow-io-test.txt');
   const data = 'slow data '.repeat(100000);
-  
+
   await fs.writeFile(filePath, data);
   await fs.readFile(filePath);
   await fs.unlink(filePath);
@@ -554,7 +560,7 @@ async function asyncWorkflow(): Promise<void> {
   const promise1 = asyncTask1();
   const promise2 = asyncTask2();
   const promise3 = asyncTask3();
-  
+
   await Promise.all([promise1, promise2, promise3]);
 }
 
@@ -602,7 +608,8 @@ async function longRunningWork(): Promise<void> {
 
 async function extremelySlowOperation(): Promise<void> {
   const start = Date.now();
-  while (Date.now() - start < 1500) { // 1.5秒の遅い処理
+  while (Date.now() - start < 1500) {
+    // 1.5秒の遅い処理
     JSON.stringify(new Array(10000).fill(Math.random()));
   }
 }

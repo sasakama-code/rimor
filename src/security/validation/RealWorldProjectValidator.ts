@@ -3,12 +3,7 @@
  * TaintTyperベース型解析の実世界フレームワーク（Express.js/React/NestJS）での検証
  */
 
-import {
-  TestCase,
-  SecurityIssue,
-  SecurityTestMetrics,
-  MethodAnalysisResult
-} from '../types';
+import { TestCase, SecurityIssue, SecurityTestMetrics, MethodAnalysisResult } from '../types';
 import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { PerformanceBenchmark } from '../benchmarks/PerformanceBenchmark';
 import * as fs from 'fs/promises';
@@ -116,7 +111,7 @@ export class RealWorldProjectValidator {
     this.securityEngine = new TypeBasedSecurityEngine({
       strictness: 'moderate',
       enableCache: true,
-      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8))
+      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8)),
     });
     this.benchmark = new PerformanceBenchmark();
   }
@@ -126,10 +121,12 @@ export class RealWorldProjectValidator {
    */
   async validateMultipleProjects(projects: RealWorldProject[]): Promise<ValidationResult[]> {
     const enableLogs = !process.env.DISABLE_SECURITY_VALIDATION_LOGS;
-    
+
     if (enableLogs) {
       console.log('🌐 実世界プロジェクト包括検証開始');
-      console.log(`対象: ${projects.length}プロジェクト (${projects.map(p => p.framework).join(', ')})`);
+      console.log(
+        `対象: ${projects.length}プロジェクト (${projects.map(p => p.framework).join(', ')})`
+      );
       console.log('');
     }
 
@@ -139,20 +136,22 @@ export class RealWorldProjectValidator {
       if (enableLogs) {
         console.log(`📁 ${project.name} (${project.framework}) 検証中...`);
       }
-      
+
       try {
         const result = await this.validateProject(project);
         results.push(result);
-        
+
         if (enableLogs) {
-          console.log(`   ✅ 完了: ${result.accuracyMetrics.detectedIssues}件検出, ` +
-                     `精度${(result.accuracyMetrics.precision * 100).toFixed(1)}%, ` +
-                     `${result.performanceMetrics.timePerFile.toFixed(2)}ms/file`);
+          console.log(
+            `   ✅ 完了: ${result.accuracyMetrics.detectedIssues}件検出, ` +
+              `精度${(result.accuracyMetrics.precision * 100).toFixed(1)}%, ` +
+              `${result.performanceMetrics.timePerFile.toFixed(2)}ms/file`
+          );
         }
       } catch (error) {
         console.error(`   ❌ ${project.name} 検証エラー:`, error);
       }
-      
+
       if (enableLogs) {
         console.log('');
       }
@@ -172,19 +171,19 @@ export class RealWorldProjectValidator {
 
     // Step 1: テストファイルの収集
     const testCases = await this.collectTestCases(project);
-    
+
     // Step 2: セキュリティ解析の実行
     const analysisResults = await this.runSecurityAnalysis(testCases);
-    
+
     // Step 3: パフォーマンス測定
     const performanceMetrics = await this.measurePerformance(testCases);
-    
+
     // Step 4: 精度評価
     const accuracyMetrics = await this.evaluateAccuracy(analysisResults, project.expectedFindings);
-    
+
     // Step 5: セキュリティ評価
     const securityAssessment = this.assessSecurity(analysisResults);
-    
+
     // Step 6: フレームワーク固有評価
     const frameworkSpecificFindings = await this.analyzeFrameworkSpecific(project, analysisResults);
 
@@ -196,7 +195,7 @@ export class RealWorldProjectValidator {
       securityAssessment,
       frameworkSpecificFindings,
       parsingErrors: [],
-      missingFiles: []
+      missingFiles: [],
     };
 
     // 結果をキャッシュ
@@ -216,7 +215,7 @@ export class RealWorldProjectValidator {
       testPaths: [
         path.join(projectPath, 'test'),
         path.join(projectPath, '__tests__'),
-        path.join(projectPath, 'tests')
+        path.join(projectPath, 'tests'),
       ],
       expectedFindings: {
         securityIssues: 15,
@@ -225,15 +224,15 @@ export class RealWorldProjectValidator {
           'sql-injection-test',
           'xss-prevention-test',
           'auth-middleware-test',
-          'rate-limiting-test'
-        ]
+          'rate-limiting-test',
+        ],
       },
       metadata: {
         description: 'Express.js RESTful API with authentication and validation',
         complexity: 'medium',
         testCount: 50,
-        lastValidated: new Date()
-      }
+        lastValidated: new Date(),
+      },
     };
 
     return this.validateProject(expressProject);
@@ -250,7 +249,7 @@ export class RealWorldProjectValidator {
       testPaths: [
         path.join(projectPath, 'src/__tests__'),
         path.join(projectPath, 'tests'),
-        path.join(projectPath, 'src/**/*.test.tsx')
+        path.join(projectPath, 'src/**/*.test.tsx'),
       ],
       expectedFindings: {
         securityIssues: 10,
@@ -259,15 +258,15 @@ export class RealWorldProjectValidator {
           'xss-prevention-test',
           'csrf-protection-test',
           'input-sanitization-test',
-          'auth-state-test'
-        ]
+          'auth-state-test',
+        ],
       },
       metadata: {
         description: 'React SPA with authentication and form validation',
         complexity: 'medium',
         testCount: 35,
-        lastValidated: new Date()
-      }
+        lastValidated: new Date(),
+      },
     };
 
     return this.validateProject(reactProject);
@@ -284,7 +283,7 @@ export class RealWorldProjectValidator {
       testPaths: [
         path.join(projectPath, 'test'),
         path.join(projectPath, 'src/**/*.spec.ts'),
-        path.join(projectPath, 'e2e')
+        path.join(projectPath, 'e2e'),
       ],
       expectedFindings: {
         securityIssues: 20,
@@ -294,15 +293,15 @@ export class RealWorldProjectValidator {
           'dto-validation-test',
           'jwt-security-test',
           'rate-limiting-test',
-          'cors-configuration-test'
-        ]
+          'cors-configuration-test',
+        ],
       },
       metadata: {
         description: 'NestJS enterprise API with microservices architecture',
         complexity: 'large',
         testCount: 120,
-        lastValidated: new Date()
-      }
+        lastValidated: new Date(),
+      },
     };
 
     return this.validateProject(nestjsProject);
@@ -318,7 +317,7 @@ export class RealWorldProjectValidator {
       try {
         await fs.access(testPath);
         const files = await this.findTestFiles(testPath);
-        
+
         for (const file of files) {
           const content = await fs.readFile(file, 'utf-8');
           testCases.push({
@@ -328,8 +327,8 @@ export class RealWorldProjectValidator {
             metadata: {
               framework: project.framework,
               language: file.endsWith('.ts') ? 'typescript' : 'javascript',
-              lastModified: (await fs.stat(file)).mtime
-            }
+              lastModified: (await fs.stat(file)).mtime,
+            },
           });
         }
       } catch (error) {
@@ -346,13 +345,13 @@ export class RealWorldProjectValidator {
    */
   private async findTestFiles(dirPath: string): Promise<string[]> {
     const files: string[] = [];
-    
+
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
-        
+
         if (entry.isDirectory()) {
           // 再帰的に検索
           const subFiles = await this.findTestFiles(fullPath);
@@ -364,7 +363,7 @@ export class RealWorldProjectValidator {
     } catch (error) {
       // ディレクトリアクセスエラーは無視
     }
-    
+
     return files;
   }
 
@@ -376,9 +375,9 @@ export class RealWorldProjectValidator {
       /\.test\.(js|ts|jsx|tsx)$/,
       /\.spec\.(js|ts|jsx|tsx)$/,
       /-test\.(js|ts|jsx|tsx)$/,
-      /-spec\.(js|ts|jsx|tsx)$/
+      /-spec\.(js|ts|jsx|tsx)$/,
     ];
-    
+
     return testPatterns.some(pattern => pattern.test(filename));
   }
 
@@ -387,13 +386,13 @@ export class RealWorldProjectValidator {
    */
   private async runSecurityAnalysis(testCases: TestCase[]): Promise<MethodAnalysisResult[]> {
     const result = await this.securityEngine.analyzeAtCompileTime(testCases);
-    
+
     // 結果をMethodAnalysisResult[]形式に変換
     const methodResults: MethodAnalysisResult[] = [];
-    
+
     testCases.forEach((testCase, index) => {
       const issues = result.issues.filter(issue => issue.location.file === testCase.file);
-      
+
       methodResults.push({
         methodName: testCase.name,
         issues,
@@ -402,17 +401,17 @@ export class RealWorldProjectValidator {
             authentication: this.calculateCoverage(issues, 'authentication'),
             inputValidation: this.calculateCoverage(issues, 'inputValidation'),
             apiSecurity: this.calculateCoverage(issues, 'apiSecurity'),
-            overall: this.calculateOverallCoverage(issues)
+            overall: this.calculateOverallCoverage(issues),
           },
           taintFlowDetection: this.calculateTaintFlowScore(issues),
           sanitizerCoverage: this.calculateSanitizerCoverage(issues),
-          invariantCompliance: this.calculateInvariantCompliance(issues)
+          invariantCompliance: this.calculateInvariantCompliance(issues),
         },
         suggestions: this.generateSuggestions(issues),
-        analysisTime: result.executionTime / testCases.length
+        analysisTime: result.executionTime / testCases.length,
       });
     });
-    
+
     return methodResults;
   }
 
@@ -434,7 +433,7 @@ export class RealWorldProjectValidator {
 
     const endTime = Date.now();
     const finalMemory = process.memoryUsage().heapUsed;
-    
+
     const totalTime = endTime - startTime;
     const memoryUsage = Math.max(0, (finalMemory - initialMemory) / 1024 / 1024); // MB
 
@@ -442,7 +441,7 @@ export class RealWorldProjectValidator {
       totalTime,
       timePerFile: testCases.length > 0 ? totalTime / testCases.length : 0,
       memoryUsage,
-      throughput: testCases.length > 0 ? (testCases.length / totalTime) * 1000 : 0
+      throughput: testCases.length > 0 ? (testCases.length / totalTime) * 1000 : 0,
     };
   }
 
@@ -461,16 +460,16 @@ export class RealWorldProjectValidator {
     f1Score: number;
   }> {
     const detectedIssues = results.reduce((sum, result) => sum + result.issues.length, 0);
-    
+
     // 簡易的な精度計算（実際の実装では詳細な比較が必要）
     const expectedIssues = expectedFindings.securityIssues;
     const truePositives = Math.min(detectedIssues, expectedIssues);
     const falsePositives = Math.max(0, detectedIssues - expectedIssues);
     const falseNegatives = Math.max(0, expectedIssues - detectedIssues);
-    
+
     const precision = detectedIssues > 0 ? truePositives / detectedIssues : 0;
     const recall = expectedIssues > 0 ? truePositives / expectedIssues : 0;
-    const f1Score = (precision + recall) > 0 ? 2 * (precision * recall) / (precision + recall) : 0;
+    const f1Score = precision + recall > 0 ? (2 * (precision * recall)) / (precision + recall) : 0;
 
     return {
       detectedIssues,
@@ -478,7 +477,7 @@ export class RealWorldProjectValidator {
       falseNegatives,
       precision,
       recall,
-      f1Score
+      f1Score,
     };
   }
 
@@ -510,8 +509,8 @@ export class RealWorldProjectValidator {
           authentication: 0,
           inputValidation: 0,
           authorization: 0,
-          dataProtection: 0
-        }
+          dataProtection: 0,
+        },
       };
     }
 
@@ -536,9 +535,15 @@ export class RealWorldProjectValidator {
 
       result.issues.forEach(issue => {
         switch (issue.severity) {
-          case 'error': criticalIssues++; break;
-          case 'warning': highIssues++; break;
-          default: mediumIssues++; break;
+          case 'error':
+            criticalIssues++;
+            break;
+          case 'warning':
+            highIssues++;
+            break;
+          default:
+            mediumIssues++;
+            break;
         }
       });
 
@@ -551,11 +556,11 @@ export class RealWorldProjectValidator {
 
     const count = results.length;
     const totalIssues = criticalIssues + highIssues + mediumIssues + lowIssues;
-    
+
     // 有効な解析が行われなかった場合は低スコア、正常時は従来ロジック
-    const overallScore = hasValidAnalysis ? 
-      Math.max(0, 100 - (criticalIssues * 10 + highIssues * 5 + mediumIssues * 2)) : 
-      10;
+    const overallScore = hasValidAnalysis
+      ? Math.max(0, 100 - (criticalIssues * 10 + highIssues * 5 + mediumIssues * 2))
+      : 10;
 
     if (!hasValidAnalysis) {
       console.warn('⚠️  セキュリティ解析が正常に実行されませんでした（スコア: 10点）');
@@ -571,8 +576,8 @@ export class RealWorldProjectValidator {
         authentication: count > 0 ? authSum / count : 0,
         inputValidation: count > 0 ? inputSum / count : 0,
         authorization: count > 0 ? authzSum / count : 0,
-        dataProtection: count > 0 ? dataSum / count : 0
-      }
+        dataProtection: count > 0 ? dataSum / count : 0,
+      },
     };
   }
 
@@ -607,9 +612,9 @@ export class RealWorldProjectValidator {
     const findings: FrameworkSpecificFinding[] = [];
 
     // ミドルウェアセキュリティのチェック
-    const hasMiddlewareTests = results.some(r => 
-      r.methodName.includes('middleware') || 
-      r.issues.some(i => i.message.includes('middleware'))
+    const hasMiddlewareTests = results.some(
+      r =>
+        r.methodName.includes('middleware') || r.issues.some(i => i.message.includes('middleware'))
     );
 
     if (!hasMiddlewareTests) {
@@ -618,7 +623,8 @@ export class RealWorldProjectValidator {
         category: 'middleware',
         finding: 'ミドルウェアのセキュリティテストが不足しています',
         severity: 'high',
-        recommendation: 'authentication, authorization, rate limiting等のミドルウェアテストを追加してください'
+        recommendation:
+          'authentication, authorization, rate limiting等のミドルウェアテストを追加してください',
       });
     }
 
@@ -632,7 +638,7 @@ export class RealWorldProjectValidator {
     const findings: FrameworkSpecificFinding[] = [];
 
     // XSS対策のチェック
-    const hasXSSTests = results.some(r => 
+    const hasXSSTests = results.some(r =>
       r.issues.some(i => i.message.toLowerCase().includes('xss') || i.message.includes('script'))
     );
 
@@ -642,7 +648,7 @@ export class RealWorldProjectValidator {
         category: 'xss-prevention',
         finding: 'XSS対策のテストが不足しています',
         severity: 'critical',
-        recommendation: 'dangerouslySetInnerHTML使用時のサニタイズテストを追加してください'
+        recommendation: 'dangerouslySetInnerHTML使用時のサニタイズテストを追加してください',
       });
     }
 
@@ -656,8 +662,8 @@ export class RealWorldProjectValidator {
     const findings: FrameworkSpecificFinding[] = [];
 
     // Guard/Interceptorのテストチェック
-    const hasGuardTests = results.some(r => 
-      r.methodName.includes('guard') || r.methodName.includes('interceptor')
+    const hasGuardTests = results.some(
+      r => r.methodName.includes('guard') || r.methodName.includes('interceptor')
     );
 
     if (!hasGuardTests) {
@@ -666,7 +672,8 @@ export class RealWorldProjectValidator {
         category: 'guards-interceptors',
         finding: 'Guard/Interceptorのセキュリティテストが不足しています',
         severity: 'high',
-        recommendation: 'AuthGuard, RolesGuard等のセキュリティコンポーネントのテストを追加してください'
+        recommendation:
+          'AuthGuard, RolesGuard等のセキュリティコンポーネントのテストを追加してください',
       });
     }
 
@@ -679,16 +686,16 @@ export class RealWorldProjectValidator {
   private async saveValidationResults(results: ValidationResult[]): Promise<void> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = path.join(process.cwd(), `real-world-validation-${timestamp}.json`);
-    
+
     const report = {
       timestamp: new Date().toISOString(),
       summary: {
         totalProjects: results.length,
         frameworks: [...new Set(results.map(r => r.project.framework))],
         overallAccuracy: this.calculateOverallAccuracy(results),
-        averagePerformance: this.calculateAveragePerformance(results)
+        averagePerformance: this.calculateAveragePerformance(results),
       },
-      results
+      results,
     };
 
     await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
@@ -697,7 +704,7 @@ export class RealWorldProjectValidator {
 
   // ヘルパーメソッド群
   private calculateCoverage(issues: SecurityIssue[], category: string): number {
-    const categoryIssues = issues.filter(issue => 
+    const categoryIssues = issues.filter(issue =>
       issue.message.toLowerCase().includes(category.toLowerCase())
     );
     return Math.min(100, categoryIssues.length * 20);
@@ -708,15 +715,15 @@ export class RealWorldProjectValidator {
   }
 
   private calculateTaintFlowScore(issues: SecurityIssue[]): number {
-    const taintIssues = issues.filter(issue => 
-      issue.type === 'unsafe-taint-flow' || issue.message.includes('taint')
+    const taintIssues = issues.filter(
+      issue => issue.type === 'unsafe-taint-flow' || issue.message.includes('taint')
     );
     return taintIssues.length === 0 ? 1.0 : 0.7;
   }
 
   private calculateSanitizerCoverage(issues: SecurityIssue[]): number {
-    const sanitizerIssues = issues.filter(issue => 
-      issue.type === 'missing-sanitizer' || issue.message.includes('sanitizer')
+    const sanitizerIssues = issues.filter(
+      issue => issue.type === 'missing-sanitizer' || issue.message.includes('sanitizer')
     );
     return sanitizerIssues.length === 0 ? 1.0 : 0.6;
   }
@@ -735,7 +742,7 @@ export class RealWorldProjectValidator {
       description: issue.message,
       location: issue.location,
       estimatedImpact: { securityImprovement: 20, implementationMinutes: 15 },
-      automatable: false
+      automatable: false,
     }));
   }
 
@@ -750,13 +757,13 @@ export class RealWorldProjectValidator {
     avgThroughput: number;
   } {
     if (results.length === 0) return { avgTimePerFile: 0, avgThroughput: 0 };
-    
+
     const totalTimePerFile = results.reduce((sum, r) => sum + r.performanceMetrics.timePerFile, 0);
     const totalThroughput = results.reduce((sum, r) => sum + r.performanceMetrics.throughput, 0);
-    
+
     return {
       avgTimePerFile: totalTimePerFile / results.length,
-      avgThroughput: totalThroughput / results.length
+      avgThroughput: totalThroughput / results.length,
     };
   }
 
@@ -771,28 +778,30 @@ export class RealWorldProjectValidator {
     console.log('🔍 テスト品質分析開始');
     const testCases = await this.collectTestCases(project);
     const analysisResults = await this.runSecurityAnalysis(testCases);
-    
+
     // カバレッジ分析
     const coverageAnalysis = {
       totalFiles: project.testPaths.length,
       testedFiles: testCases.length,
-      coverageRate: testCases.length / Math.max(1, project.testPaths.length)
+      coverageRate: testCases.length / Math.max(1, project.testPaths.length),
     };
-    
+
     // 不足テスト検出
-    const missingTests = project.testPaths.filter(path => 
-      !testCases.some(testCase => testCase.file.includes(path))
+    const missingTests = project.testPaths.filter(
+      path => !testCases.some(testCase => testCase.file.includes(path))
     );
-    
+
     // 品質スコア計算
-    const qualityScore = analysisResults.length > 0 
-      ? analysisResults.reduce((sum, r) => sum + (r.metrics?.securityCoverage?.overall || 0), 0) / analysisResults.length
-      : 0;
-    
+    const qualityScore =
+      analysisResults.length > 0
+        ? analysisResults.reduce((sum, r) => sum + (r.metrics?.securityCoverage?.overall || 0), 0) /
+          analysisResults.length
+        : 0;
+
     return {
       coverageAnalysis,
       missingTests,
-      testQualityScore: qualityScore
+      testQualityScore: qualityScore,
     };
   }
 
@@ -807,18 +816,18 @@ export class RealWorldProjectValidator {
     console.log('⚡ テストパフォーマンス分析開始');
     const startTime = Date.now();
     const startMemory = process.memoryUsage().heapUsed;
-    
+
     // テストスイート実行シミュレーション
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const executionTime = Date.now() - startTime;
     const memoryUsage = process.memoryUsage().heapUsed - startMemory;
-    const performanceScore = Math.max(0, 1 - (executionTime / 1000)); // 1秒以内で最高スコア
-    
+    const performanceScore = Math.max(0, 1 - executionTime / 1000); // 1秒以内で最高スコア
+
     return {
       executionTime,
       memoryUsage,
-      performanceScore
+      performanceScore,
     };
   }
 
@@ -827,20 +836,20 @@ export class RealWorldProjectValidator {
    */
   async validateWithCustomRules(project: RealWorldProject): Promise<ValidationResult> {
     console.log('📋 カスタムルール検証開始');
-    
+
     // 基本検証を実行
     const baseResult = await this.validateProject(project);
-    
+
     // カスタムルール適用（フレームワーク固有の検証など）
-    const additionalFindings = await this.analyzeFrameworkSpecific(project, baseResult.analysisResults);
-    
+    const additionalFindings = await this.analyzeFrameworkSpecific(
+      project,
+      baseResult.analysisResults
+    );
+
     // 結果をマージ
     return {
       ...baseResult,
-      frameworkSpecificFindings: [
-        ...baseResult.frameworkSpecificFindings,
-        ...additionalFindings
-      ]
+      frameworkSpecificFindings: [...baseResult.frameworkSpecificFindings, ...additionalFindings],
     };
   }
 }

@@ -1,17 +1,17 @@
 /**
  * SecurityTestPatternPlugin
- * 
+ *
  * セキュリティテストパターンの検出に特化したプラグイン
  * BaseSecurityPluginを継承し、セキュリティテストの品質を評価
  */
 
 import { BaseSecurityPlugin } from '../base/BaseSecurityPlugin';
-import { 
-  ProjectContext, 
-  TestFile, 
-  DetectionResult, 
-  QualityScore, 
-  Improvement 
+import {
+  ProjectContext,
+  TestFile,
+  DetectionResult,
+  QualityScore,
+  Improvement,
 } from '../../core/types';
 import { PathSecurity } from '../../utils/pathSecurity';
 
@@ -34,7 +34,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
 
     // セキュリティテストパターンの検出
     const securityTests = this.analyzeSecurityTests(testFile.content);
-    
+
     // セキュリティテストが不足している場合
     if (securityTests.missingTests.length > 0) {
       securityTests.missingTests.forEach(missing => {
@@ -46,12 +46,12 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
           location: {
             file: testFile.path,
             line: 1,
-            column: 1
+            column: 1,
           },
           metadata: {
             description: `Missing security test for ${missing.type}`,
-            category: 'security'
-          }
+            category: 'security',
+          },
         });
       });
     }
@@ -67,12 +67,12 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
           location: {
             file: testFile.path,
             line: weak.line,
-            column: 1
+            column: 1,
           },
           metadata: {
             description: `Weak security test: ${weak.description}`,
-            category: 'security'
-          }
+            category: 'security',
+          },
         });
       });
     }
@@ -89,12 +89,12 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
           location: {
             file: testFile.path,
             line: pattern.line || 1,
-            column: pattern.column || 1
+            column: pattern.column || 1,
           },
           metadata: {
             description: pattern.description,
-            category: 'security'
-          }
+            category: 'security',
+          },
         });
       }
     });
@@ -104,7 +104,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
 
   evaluateQuality(patterns: DetectionResult[]): QualityScore {
     const securityScore = this.evaluateSecurityScore(patterns);
-    
+
     // セキュリティテスト特有の評価ロジック
     let testCoverageScore = 1;
     patterns.forEach(pattern => {
@@ -122,10 +122,12 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
       dimensions: {
         completeness: testCoverageScore * 100,
         correctness: securityScore * 100,
-        maintainability: 80
+        maintainability: 80,
       },
-      confidence: patterns.length > 0 ? 
-        patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length : 1
+      confidence:
+        patterns.length > 0
+          ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+          : 1,
     };
   }
 
@@ -143,10 +145,10 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.4,
-        autoFixable: false
+        autoFixable: false,
       });
     } else if (evaluation.overall < 80) {
       improvements.push({
@@ -159,10 +161,10 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
         location: {
           file: '',
           line: 1,
-          column: 1
+          column: 1,
         },
         estimatedImpact: 0.25,
-        autoFixable: false
+        autoFixable: false,
       });
     }
 
@@ -178,7 +180,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
   } {
     const missingTests: Array<{ type: string }> = [];
     const weakTests: Array<{ description: string; line: number }> = [];
-    
+
     // 必要なセキュリティテストのチェック
     const requiredSecurityTests = [
       { type: 'input-validation', pattern: /test.*input.*validat/i },
@@ -186,7 +188,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
       { type: 'authorization', pattern: /test.*authoriz/i },
       { type: 'csrf-protection', pattern: /test.*csrf/i },
       { type: 'rate-limiting', pattern: /test.*rate.*limit/i },
-      { type: 'encryption', pattern: /test.*encrypt/i }
+      { type: 'encryption', pattern: /test.*encrypt/i },
     ];
 
     requiredSecurityTests.forEach(required => {
@@ -203,7 +205,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
         if (!/mock|stub|fake/i.test(line)) {
           weakTests.push({
             description: 'Test contains actual vulnerability code',
-            line: index + 1
+            line: index + 1,
           });
         }
       }
@@ -213,7 +215,7 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
         if (/password\s*=\s*["']test["']/i.test(line)) {
           weakTests.push({
             description: 'Security test uses weak test credentials',
-            line: index + 1
+            line: index + 1,
           });
         }
       }
@@ -226,11 +228,8 @@ export class SecurityTestPatternPlugin extends BaseSecurityPlugin {
    * テストに関連するセキュリティパターンかチェック
    */
   private isTestRelated(patternType: string): boolean {
-    const testRelatedPatterns = [
-      'hardcoded-credentials',
-      'weak-crypto'
-    ];
-    
+    const testRelatedPatterns = ['hardcoded-credentials', 'weak-crypto'];
+
     return testRelatedPatterns.includes(patternType);
   }
 }

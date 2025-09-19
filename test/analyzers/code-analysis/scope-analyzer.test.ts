@@ -19,10 +19,10 @@ describe('ScopeAnalyzer', () => {
           }
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 7);
       const scope = analyzer.findScopeAtLine(scopes, 7);
-      
+
       expect(scope).toBeDefined();
       expect(scope).toHaveProperty('type');
       expect(scope).toHaveProperty('level');
@@ -34,10 +34,10 @@ describe('ScopeAnalyzer', () => {
         const globalVar = 1;
         // cursor position here
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 3);
       const scope = analyzer.findScopeAtLine(scopes, 3);
-      
+
       expect(scope?.type).toBe('global');
       expect(scope?.level).toBe(0);
     });
@@ -48,10 +48,10 @@ describe('ScopeAnalyzer', () => {
           // cursor position here
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 3);
       const scope = analyzer.findScopeAtLine(scopes, 3);
-      
+
       expect(scope?.type).toBe('function');
       expect(scope?.level).toBe(1);
     });
@@ -64,10 +64,10 @@ describe('ScopeAnalyzer', () => {
           }
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 4);
       const scope = analyzer.findScopeAtLine(scopes, 4);
-      
+
       expect(scope?.type).toBe('function');
       expect(scope?.parentScope).toBeDefined();
     });
@@ -84,13 +84,13 @@ describe('ScopeAnalyzer', () => {
           }
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 5);
       const chain = analyzer.getScopeHierarchy(scopes, 5);
-      
+
       expect(chain).toBeInstanceOf(Array);
       expect(chain.length).toBeGreaterThan(0);
-      
+
       // 階層に何が含まれているか確認
       const hasGlobal = chain.some(scope => scope.type === 'global');
       expect(hasGlobal).toBe(true);
@@ -107,15 +107,15 @@ describe('ScopeAnalyzer', () => {
           // cursor position here
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 6);
       const currentScope = analyzer.findScopeAtLine(scopes, 6);
       const localVariables = analyzer.getVariablesInScope(currentScope!);
-      
+
       // 現在のスコープの変数をチェック
       expect(localVariables).toBeInstanceOf(Array);
       expect(localVariables).toContain('localVar');
-      
+
       // グローバルスコープの変数は階層をたどって取得
       const hierarchy = analyzer.getScopeHierarchy(scopes, 6);
       const allVariables = new Set(hierarchy.flatMap(scope => analyzer.getVariablesInScope(scope)));
@@ -131,11 +131,11 @@ describe('ScopeAnalyzer', () => {
           // cursor position here - blockVar should not be available
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 6);
       const scope = analyzer.findScopeAtLine(scopes, 6);
       const variables = analyzer.getVariablesInScope(scope!);
-      
+
       expect(variables).not.toContain('blockVar');
     });
   });
@@ -149,17 +149,17 @@ describe('ScopeAnalyzer', () => {
           // cursor position here
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 5);
       const hierarchy = analyzer.getScopeHierarchy(scopes, 5);
-      
+
       // グローバルスコープの変数がアクセス可能
       const allVariables = new Set<string>();
       for (const scope of hierarchy) {
         const vars = analyzer.getVariablesInScope(scope);
         vars.forEach(v => allVariables.add(v));
       }
-      
+
       expect(Array.from(allVariables)).toContain('available');
     });
 
@@ -173,11 +173,11 @@ describe('ScopeAnalyzer', () => {
           // cursor position here
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 7);
       const currentScope = analyzer.findScopeAtLine(scopes, 7);
       const availableVars = analyzer.getVariablesInScope(currentScope!);
-      
+
       expect(availableVars).not.toContain('notAvailable');
     });
   });
@@ -193,10 +193,10 @@ describe('ScopeAnalyzer', () => {
           }
         }
       `;
-      
+
       const scopes = await analyzer.analyzeScopeContext(code, 6);
       const scope = analyzer.findScopeAtLine(scopes, 6);
-      
+
       expect(scope).toBeDefined();
       expect(scope?.type).toBe('block');
     });

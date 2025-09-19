@@ -23,13 +23,7 @@ describe('ArchitectureDetector', () => {
   describe('detectPattern', () => {
     it('MVCパターンを正しく検出する', async () => {
       // Arrange
-      const mockDirectories = [
-        'controllers',
-        'models',
-        'views',
-        'routes',
-        'middlewares'
-      ];
+      const mockDirectories = ['controllers', 'models', 'views', 'routes', 'middlewares'];
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readdirSync as jest.Mock).mockReturnValue(mockDirectories);
@@ -53,7 +47,7 @@ describe('ArchitectureDetector', () => {
         'application',
         'domain',
         'infrastructure',
-        'persistence'
+        'persistence',
       ];
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -78,7 +72,7 @@ describe('ArchitectureDetector', () => {
         'service-discovery',
         'auth-service',
         'user-service',
-        'product-service'
+        'product-service',
       ];
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -96,12 +90,7 @@ describe('ArchitectureDetector', () => {
 
     it('Monolithicパターンを検出する', async () => {
       // Arrange
-      const mockDirectories = [
-        'src',
-        'lib',
-        'utils',
-        'helpers'
-      ];
+      const mockDirectories = ['src', 'lib', 'utils', 'helpers'];
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readdirSync as jest.Mock).mockReturnValue(mockDirectories);
@@ -117,13 +106,7 @@ describe('ArchitectureDetector', () => {
 
     it('複数のパターンが混在する場合は最も確信度の高いものを返す', async () => {
       // Arrange
-      const mockDirectories = [
-        'controllers',
-        'models',
-        'services',
-        'domain',
-        'infrastructure'
-      ];
+      const mockDirectories = ['controllers', 'models', 'services', 'domain', 'infrastructure'];
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readdirSync as jest.Mock).mockReturnValue(mockDirectories);
@@ -146,13 +129,13 @@ describe('ArchitectureDetector', () => {
         'UserController.ts',
         'UserModel.ts',
         'UserService.ts',
-        'UserRepository.ts'
+        'UserRepository.ts',
       ];
 
       (fs.readdirSync as jest.Mock).mockReturnValue(mockFiles);
-      (fs.statSync as jest.Mock).mockReturnValue({ 
+      (fs.statSync as jest.Mock).mockReturnValue({
         isFile: () => true,
-        isDirectory: () => false 
+        isDirectory: () => false,
       });
 
       // Act

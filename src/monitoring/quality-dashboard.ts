@@ -10,7 +10,7 @@ import { CoreTypes } from '../core/types/core-definitions';
 
 export interface QualityMetrics {
   timestamp: Date;
-  
+
   // コードカバレッジ
   coverage: {
     lines: number;
@@ -19,7 +19,7 @@ export interface QualityMetrics {
     branches: number;
     trend: 'up' | 'down' | 'stable';
   };
-  
+
   // 型定義の健全性
   typeHealth: {
     totalTypes: number;
@@ -28,7 +28,7 @@ export interface QualityMetrics {
     missingTypes: number;
     consistency: number; // 0-100%
   };
-  
+
   // テストの状態
   testStatus: {
     total: number;
@@ -38,7 +38,7 @@ export interface QualityMetrics {
     duration: number; // ms
     flaky: string[]; // 不安定なテスト
   };
-  
+
   // 技術的負債
   technicalDebt: {
     score: number; // 0-100 (100が最良)
@@ -50,7 +50,7 @@ export interface QualityMetrics {
     };
     estimatedTime: string; // 修正見積もり時間
   };
-  
+
   // コード品質
   codeQuality: {
     complexity: {
@@ -64,7 +64,7 @@ export interface QualityMetrics {
     };
     maintainability: number; // 0-100
   };
-  
+
   // ビルド状態
   buildStatus: {
     success: boolean;
@@ -117,20 +117,20 @@ export class QualityDashboard {
           lines: 95,
           statements: 95,
           functions: 98,
-          branches: 85
+          branches: 85,
         },
         complexity: {
           average: 10,
-          max: 20
+          max: 20,
         },
         duplication: 3,
-        technicalDebt: 80
+        technicalDebt: 80,
       },
       alerts: {
         enabled: true,
-        channels: ['console', 'file']
+        channels: ['console', 'file'],
       },
-      ...config
+      ...config,
     };
   }
 
@@ -145,10 +145,10 @@ export class QualityDashboard {
 
     this.isRunning = true;
     console.log('🚀 Quality Dashboard started');
-    
+
     // 初回実行
     await this.refresh();
-    
+
     // 定期実行
     this.intervalId = setInterval(async () => {
       await this.refresh();
@@ -172,19 +172,19 @@ export class QualityDashboard {
    */
   async refresh(): Promise<QualityMetrics> {
     const metrics = await this.collectMetrics();
-    
+
     // 履歴に追加
     this.metricsHistory.push(metrics);
     if (this.metricsHistory.length > this.config.historyLimit) {
       this.metricsHistory.shift();
     }
-    
+
     // 閾値チェック
     this.checkThresholds(metrics);
-    
+
     // ダッシュボード更新
     this.updateDashboard(metrics);
-    
+
     return metrics;
   }
 
@@ -199,7 +199,7 @@ export class QualityDashboard {
       testStatus: await this.collectTestStatus(),
       technicalDebt: await this.collectTechnicalDebt(),
       codeQuality: await this.collectCodeQuality(),
-      buildStatus: await this.collectBuildStatus()
+      buildStatus: await this.collectBuildStatus(),
     };
 
     return metrics;
@@ -210,13 +210,13 @@ export class QualityDashboard {
    */
   private async collectCoverage(): Promise<QualityMetrics['coverage']> {
     const coveragePath = path.join(process.cwd(), 'coverage/coverage-summary.json');
-    
+
     if (!fs.existsSync(coveragePath)) {
       // カバレッジを生成
       try {
-        execSync('npm test -- --coverage --coverageReporters=json-summary', { 
+        execSync('npm test -- --coverage --coverageReporters=json-summary', {
           stdio: 'pipe',
-          timeout: 120000 
+          timeout: 120000,
         });
       } catch (error) {
         // テスト失敗してもカバレッジは生成される
@@ -226,24 +226,30 @@ export class QualityDashboard {
     if (fs.existsSync(coveragePath)) {
       const summary = JSON.parse(fs.readFileSync(coveragePath, 'utf-8'));
       const total = summary.total;
-      
+
       // トレンド計算
       let trend: 'up' | 'down' | 'stable' = 'stable';
       if (this.metricsHistory.length > 0) {
         const lastCoverage = this.metricsHistory[this.metricsHistory.length - 1].coverage;
-        const currentAvg = (total.lines.pct + total.statements.pct + total.functions.pct + total.branches.pct) / 4;
-        const lastAvg = (lastCoverage.lines + lastCoverage.statements + lastCoverage.functions + lastCoverage.branches) / 4;
-        
+        const currentAvg =
+          (total.lines.pct + total.statements.pct + total.functions.pct + total.branches.pct) / 4;
+        const lastAvg =
+          (lastCoverage.lines +
+            lastCoverage.statements +
+            lastCoverage.functions +
+            lastCoverage.branches) /
+          4;
+
         if (currentAvg > lastAvg + 1) trend = 'up';
         else if (currentAvg < lastAvg - 1) trend = 'down';
       }
-      
+
       return {
         lines: total.lines.pct,
         statements: total.statements.pct,
         functions: total.functions.pct,
         branches: total.branches.pct,
-        trend
+        trend,
       };
     }
 
@@ -252,7 +258,7 @@ export class QualityDashboard {
       statements: 0,
       functions: 0,
       branches: 0,
-      trend: 'stable'
+      trend: 'stable',
     };
   }
 
@@ -262,28 +268,28 @@ export class QualityDashboard {
   private async collectTypeHealth(): Promise<QualityMetrics['typeHealth']> {
     // 型定義一貫性チェッカーを実行
     const checkerPath = path.join(process.cwd(), 'src/tools/type-consistency-checker.ts');
-    
+
     if (fs.existsSync(checkerPath)) {
       try {
-        const output = execSync(`npx ts-node ${checkerPath}`, { 
+        const output = execSync(`npx ts-node ${checkerPath}`, {
           encoding: 'utf-8',
-          stdio: 'pipe' 
+          stdio: 'pipe',
         });
-        
+
         // 出力から数値を抽出
         const totalMatch = output.match(/Total type definitions: (\d+)/);
         const conflictMatch = output.match(/Type conflicts found: (\d+)/);
-        
+
         const totalTypes = totalMatch ? parseInt(totalMatch[1]) : 0;
         const conflicts = conflictMatch ? parseInt(conflictMatch[1]) : 0;
         const consistency = totalTypes > 0 ? ((totalTypes - conflicts) / totalTypes) * 100 : 100;
-        
+
         return {
           totalTypes,
           conflicts,
           duplicates: Math.floor(conflicts * 0.6), // 推定値
           missingTypes: Math.floor(conflicts * 0.2), // 推定値
-          consistency
+          consistency,
         };
       } catch (error) {
         // エラー時のデフォルト値
@@ -295,7 +301,7 @@ export class QualityDashboard {
       conflicts: 0,
       duplicates: 0,
       missingTypes: 0,
-      consistency: 100
+      consistency: 100,
     };
   }
 
@@ -305,22 +311,22 @@ export class QualityDashboard {
   private async collectTestStatus(): Promise<QualityMetrics['testStatus']> {
     try {
       const startTime = Date.now();
-      const output = execSync('npm test -- --json', { 
+      const output = execSync('npm test -- --json', {
         encoding: 'utf-8',
         stdio: 'pipe',
-        timeout: 120000
+        timeout: 120000,
       });
       const duration = Date.now() - startTime;
-      
+
       const results = JSON.parse(output);
-      
+
       return {
         total: results.numTotalTests || 0,
         passed: results.numPassedTests || 0,
         failed: results.numFailedTests || 0,
         skipped: results.numPendingTests || 0,
         duration,
-        flaky: [] // TODO: 不安定なテストの検出実装
+        flaky: [], // TODO: 不安定なテストの検出実装
       };
     } catch (error) {
       // テスト実行エラー時のデフォルト値
@@ -330,7 +336,7 @@ export class QualityDashboard {
         failed: 0,
         skipped: 0,
         duration: 0,
-        flaky: []
+        flaky: [],
       };
     }
   }
@@ -340,30 +346,32 @@ export class QualityDashboard {
    */
   private async collectTechnicalDebt(): Promise<QualityMetrics['technicalDebt']> {
     const reportPath = path.join(process.cwd(), '.rimor/reports/analysis-report.json');
-    
+
     if (fs.existsSync(reportPath)) {
       try {
         const report = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
         const issues = report.issues || [];
-        
-        const critical = issues.filter((i: { severity: string }) => i.severity === 'critical').length;
+
+        const critical = issues.filter(
+          (i: { severity: string }) => i.severity === 'critical'
+        ).length;
         const high = issues.filter((i: { severity: string }) => i.severity === 'high').length;
         const medium = issues.filter((i: { severity: string }) => i.severity === 'medium').length;
         const low = issues.filter((i: { severity: string }) => i.severity === 'low').length;
-        
+
         // スコア計算（重み付き）
         const totalWeighted = critical * 10 + high * 5 + medium * 2 + low;
         const maxScore = 100;
         const score = Math.max(0, maxScore - totalWeighted);
-        
+
         // 修正時間の見積もり
         const estimatedMinutes = critical * 60 + high * 30 + medium * 15 + low * 5;
         const estimatedTime = this.formatTime(estimatedMinutes);
-        
+
         return {
           score,
           issues: { critical, high, medium, low },
-          estimatedTime
+          estimatedTime,
         };
       } catch (error) {
         // エラー時のデフォルト値
@@ -373,7 +381,7 @@ export class QualityDashboard {
     return {
       score: 100,
       issues: { critical: 0, high: 0, medium: 0, low: 0 },
-      estimatedTime: '0h'
+      estimatedTime: '0h',
     };
   }
 
@@ -383,17 +391,17 @@ export class QualityDashboard {
   private async collectCodeQuality(): Promise<QualityMetrics['codeQuality']> {
     // 複雑度の計算（簡易版）
     const complexity = await this.calculateComplexity();
-    
+
     // 重複コードの検出（簡易版）
     const duplication = await this.calculateDuplication();
-    
+
     // 保守性インデックス
     const maintainability = this.calculateMaintainabilityIndex(complexity, duplication);
-    
+
     return {
       complexity,
       duplication,
-      maintainability
+      maintainability,
     };
   }
 
@@ -407,8 +415,8 @@ export class QualityDashboard {
       max: 25,
       files: [
         { path: 'src/core/analyzer.ts', complexity: 25 },
-        { path: 'src/ai-output/unified-ai-formatter.ts', complexity: 22 }
-      ]
+        { path: 'src/ai-output/unified-ai-formatter.ts', complexity: 22 },
+      ],
     };
   }
 
@@ -419,7 +427,7 @@ export class QualityDashboard {
     // TODO: 実際の重複検出実装
     return {
       percentage: 2.5,
-      blocks: 12
+      blocks: 12,
     };
   }
 
@@ -433,7 +441,7 @@ export class QualityDashboard {
     // 簡易的な計算
     const complexityScore = Math.max(0, 100 - complexity.average * 5);
     const duplicationScore = Math.max(0, 100 - duplication.percentage * 10);
-    
+
     return Math.round((complexityScore + duplicationScore) / 2);
   }
 
@@ -445,11 +453,11 @@ export class QualityDashboard {
       const startTime = Date.now();
       execSync('npm run build', { stdio: 'pipe' });
       const duration = Date.now() - startTime;
-      
+
       // ビルドサイズの計算
       const distPath = path.join(process.cwd(), 'dist');
       const size = this.getDirectorySize(distPath);
-      
+
       return {
         success: true,
         errors: 0,
@@ -458,8 +466,8 @@ export class QualityDashboard {
         size: {
           total: size,
           main: Math.floor(size * 0.7), // 推定値
-          vendor: Math.floor(size * 0.3) // 推定値
-        }
+          vendor: Math.floor(size * 0.3), // 推定値
+        },
       };
     } catch (error) {
       return {
@@ -467,7 +475,7 @@ export class QualityDashboard {
         errors: 1,
         warnings: 0,
         duration: 0,
-        size: { total: 0, main: 0, vendor: 0 }
+        size: { total: 0, main: 0, vendor: 0 },
       };
     }
   }
@@ -477,21 +485,21 @@ export class QualityDashboard {
    */
   private getDirectorySize(dirPath: string): number {
     if (!fs.existsSync(dirPath)) return 0;
-    
+
     let totalSize = 0;
     const files = fs.readdirSync(dirPath);
-    
+
     for (const file of files) {
       const filePath = path.join(dirPath, file);
       const stats = fs.statSync(filePath);
-      
+
       if (stats.isDirectory()) {
         totalSize += this.getDirectorySize(filePath);
       } else {
         totalSize += stats.size;
       }
     }
-    
+
     return totalSize;
   }
 
@@ -502,17 +510,17 @@ export class QualityDashboard {
     if (minutes < 60) {
       return `${minutes}m`;
     }
-    
+
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    
+
     if (hours < 24) {
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     }
-    
+
     const days = Math.floor(hours / 24);
     const hrs = hours % 24;
-    
+
     return hrs > 0 ? `${days}d ${hrs}h` : `${days}d`;
   }
 
@@ -521,37 +529,52 @@ export class QualityDashboard {
    */
   private checkThresholds(metrics: QualityMetrics): void {
     const alerts: string[] = [];
-    
+
     // カバレッジチェック
-    const { coverage, thresholds } = { coverage: metrics.coverage, thresholds: this.config.thresholds.coverage };
+    const { coverage, thresholds } = {
+      coverage: metrics.coverage,
+      thresholds: this.config.thresholds.coverage,
+    };
     if (coverage.lines < thresholds.lines) {
       alerts.push(`Line coverage (${coverage.lines}%) is below threshold (${thresholds.lines}%)`);
     }
     if (coverage.statements < thresholds.statements) {
-      alerts.push(`Statement coverage (${coverage.statements}%) is below threshold (${thresholds.statements}%)`);
+      alerts.push(
+        `Statement coverage (${coverage.statements}%) is below threshold (${thresholds.statements}%)`
+      );
     }
     if (coverage.functions < thresholds.functions) {
-      alerts.push(`Function coverage (${coverage.functions}%) is below threshold (${thresholds.functions}%)`);
+      alerts.push(
+        `Function coverage (${coverage.functions}%) is below threshold (${thresholds.functions}%)`
+      );
     }
     if (coverage.branches < thresholds.branches) {
-      alerts.push(`Branch coverage (${coverage.branches}%) is below threshold (${thresholds.branches}%)`);
+      alerts.push(
+        `Branch coverage (${coverage.branches}%) is below threshold (${thresholds.branches}%)`
+      );
     }
-    
+
     // 複雑度チェック
     if (metrics.codeQuality.complexity.average > this.config.thresholds.complexity.average) {
-      alerts.push(`Average complexity (${metrics.codeQuality.complexity.average}) exceeds threshold (${this.config.thresholds.complexity.average})`);
+      alerts.push(
+        `Average complexity (${metrics.codeQuality.complexity.average}) exceeds threshold (${this.config.thresholds.complexity.average})`
+      );
     }
-    
+
     // 重複チェック
     if (metrics.codeQuality.duplication.percentage > this.config.thresholds.duplication) {
-      alerts.push(`Code duplication (${metrics.codeQuality.duplication.percentage}%) exceeds threshold (${this.config.thresholds.duplication}%)`);
+      alerts.push(
+        `Code duplication (${metrics.codeQuality.duplication.percentage}%) exceeds threshold (${this.config.thresholds.duplication}%)`
+      );
     }
-    
+
     // 技術的負債チェック
     if (metrics.technicalDebt.score < this.config.thresholds.technicalDebt) {
-      alerts.push(`Technical debt score (${metrics.technicalDebt.score}) is below threshold (${this.config.thresholds.technicalDebt})`);
+      alerts.push(
+        `Technical debt score (${metrics.technicalDebt.score}) is below threshold (${this.config.thresholds.technicalDebt})`
+      );
     }
-    
+
     // アラート送信
     if (alerts.length > 0 && this.config.alerts.enabled) {
       this.sendAlerts(alerts);
@@ -584,14 +607,14 @@ export class QualityDashboard {
     // HTMLダッシュボードの生成
     const dashboardHtml = this.generateDashboardHtml(metrics);
     const dashboardPath = path.join(process.cwd(), '.rimor/reports/quality-dashboard.html');
-    
+
     fs.mkdirSync(path.dirname(dashboardPath), { recursive: true });
     fs.writeFileSync(dashboardPath, dashboardHtml);
-    
+
     // JSONレポートの生成
     const jsonPath = path.join(process.cwd(), '.rimor/reports/quality-metrics.json');
     fs.writeFileSync(jsonPath, JSON.stringify(metrics, null, 2));
-    
+
     console.log(`📊 Dashboard updated: ${dashboardPath}`);
   }
 
@@ -895,9 +918,12 @@ export class QualityDashboard {
    */
   private getTrendIcon(trend: 'up' | 'down' | 'stable'): string {
     switch (trend) {
-      case 'up': return '📈 Up';
-      case 'down': return '📉 Down';
-      case 'stable': return '➡️ Stable';
+      case 'up':
+        return '📈 Up';
+      case 'down':
+        return '📉 Down';
+      case 'stable':
+        return '➡️ Stable';
     }
   }
 
@@ -906,11 +932,11 @@ export class QualityDashboard {
    */
   private formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   }
 
@@ -967,7 +993,7 @@ export class QualityDashboard {
       '### Code Quality',
       `- Avg Complexity: ${current.codeQuality.complexity.average.toFixed(1)}`,
       `- Duplication: ${current.codeQuality.duplication.percentage.toFixed(1)}%`,
-      `- Maintainability: ${current.codeQuality.maintainability}/100`
+      `- Maintainability: ${current.codeQuality.maintainability}/100`,
     ];
 
     return lines.join('\n');
@@ -979,15 +1005,15 @@ export class QualityDashboard {
  */
 if (require.main === module) {
   const dashboard = new QualityDashboard();
-  
+
   (async () => {
     console.log('Starting Quality Dashboard...');
     await dashboard.start();
-    
+
     // サマリー表示
     const summary = dashboard.generateSummaryReport();
     console.log('\n' + summary);
-    
+
     // Ctrl+Cでの終了処理
     process.on('SIGINT', () => {
       console.log('\nStopping dashboard...');

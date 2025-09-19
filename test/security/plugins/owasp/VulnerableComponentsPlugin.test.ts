@@ -36,7 +36,7 @@ describe('VulnerableComponentsPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express', 'react', 'lodash'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       expect(plugin.isApplicable(context)).toBe(true);
@@ -46,7 +46,7 @@ describe('VulnerableComponentsPlugin', () => {
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: [],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       expect(plugin.isApplicable(context)).toBe(false);
@@ -68,11 +68,11 @@ describe('Vulnerability Tests', () => {
     const auditResult = npmAudit();
     expect(auditResult.critical).toBe(0);
   });
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.length).toBeGreaterThan(0);
       expect(patterns.some(p => p.pattern === 'vulnerability-scan')).toBe(true);
       expect(patterns.some(p => p.metadata?.hasTest)).toBe(true);
@@ -90,11 +90,11 @@ it('should check for outdated dependencies', () => {
 it('should validate dependency versions', () => {
   const versions = getDependencyVersions();
   expect(versions.every(v => !v.isVulnerable)).toBe(true);
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.some(p => p.pattern === 'dependency-check')).toBe(true);
     });
 
@@ -106,11 +106,11 @@ describe('Basic Tests', () => {
   it('should pass', () => {
     expect(true).toBe(true);
   });
-});`
+});`,
       };
 
       const patterns = await plugin.detectPatterns(testFile);
-      
+
       expect(patterns.some(p => p.patternId?.startsWith('missing-vulnerable-'))).toBe(true);
       expect(patterns.some((p: any) => p.severity === 'critical')).toBe(true);
     });
@@ -126,7 +126,7 @@ describe('Basic Tests', () => {
           location: { file: '', line: 1, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.95,
-          metadata: { hasTest: true }
+          metadata: { hasTest: true },
         },
         {
           patternId: 'vulnerable-dependency-check',
@@ -135,7 +135,7 @@ describe('Basic Tests', () => {
           location: { file: '', line: 10, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.9,
-          metadata: { hasTest: true }
+          metadata: { hasTest: true },
         },
         {
           patternId: 'vulnerable-license-check',
@@ -144,16 +144,20 @@ describe('Basic Tests', () => {
           location: { file: '', line: 20, column: 0 },
           confidence: 0.8,
           securityRelevance: 0.7,
-          metadata: { hasTest: true }
-        }
+          metadata: { hasTest: true },
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
-      
+
       expect(score.overall).toBeGreaterThan(0.7);
       expect(score.security).toBeGreaterThan(0.7);
-      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(100);
-      expect((score.details as VulnerableComponentsQualityDetails)?.dependencyCheckCoverage).toBe(100);
+      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(
+        100
+      );
+      expect((score.details as VulnerableComponentsQualityDetails)?.dependencyCheckCoverage).toBe(
+        100
+      );
     });
 
     it('不完全なテストに低スコアを付ける', () => {
@@ -165,15 +169,17 @@ describe('Basic Tests', () => {
           location: { file: '', line: 0, column: 0 },
           confidence: 1.0,
           securityRelevance: 0.95,
-          metadata: { hasTest: false }
-        }
+          metadata: { hasTest: false },
+        },
       ];
 
       const score = plugin.evaluateQuality(patterns);
-      
+
       expect(score.overall).toBeLessThan(0.5);
       expect(score.security).toBeLessThan(0.5);
-      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(0);
+      expect((score.details as VulnerableComponentsQualityDetails)?.vulnerabilityScanCoverage).toBe(
+        0
+      );
     });
   });
 
@@ -193,12 +199,12 @@ describe('Basic Tests', () => {
           suggestions: ['依存関係チェックを追加'],
           vulnerabilityScanCoverage: 0,
           dependencyCheckCoverage: 0,
-          licenseCheckCoverage: 0
-        }
+          licenseCheckCoverage: 0,
+        },
       };
 
       const improvements = plugin.suggestImprovements(evaluation);
-      
+
       expect(improvements.length).toBeGreaterThan(0);
       expect(improvements.some(i => i.id === 'add-vulnerability-scan-tests')).toBe(true);
       expect(improvements.some(i => i.priority === 'critical')).toBe(true);
@@ -221,11 +227,11 @@ describe('Component Security', () => {
     const updates = checkDependencyUpdates();
     expect(updates.security).toHaveLength(0);
   });
-});`
+});`,
       };
 
       const result = await plugin.validateSecurityTests(testFile);
-      
+
       expect(result.category).toBe(OWASPCategory.A06_VULNERABLE_COMPONENTS);
       expect(result.coverage).toBeGreaterThan(0);
       expect(result.testPatterns.length).toBeGreaterThan(0);
@@ -245,7 +251,7 @@ describe('Component Security', () => {
 }`;
 
       const issues = plugin.detectVulnerabilityPatterns(content);
-      
+
       expect(issues.length).toBeGreaterThan(0);
       expect(issues.some((i: any) => i.type === 'vulnerable-dependency')).toBe(true);
       expect(issues.some((i: any) => i.severity === 'critical')).toBe(true);
@@ -257,7 +263,7 @@ const jquery = require('jquery@1.6.0');
 const angular = require('angular@1.2.0');`;
 
       const issues = plugin.detectVulnerabilityPatterns(content);
-      
+
       expect(issues.some((i: any) => i.type === 'outdated-version')).toBe(true);
     });
   });
@@ -267,11 +273,11 @@ const angular = require('angular@1.2.0');`;
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express', 'react'],
-        filePatterns: { test: [], source: [], ignore: [] }
+        filePatterns: { test: [], source: [], ignore: [] },
       };
 
       const tests = plugin.generateSecurityTests(context);
-      
+
       expect(tests.length).toBeGreaterThan(0);
       expect(tests.some(t => t.includes('脆弱性'))).toBe(true);
       expect(tests.some(t => t.includes('依存関係'))).toBe(true);
@@ -281,11 +287,11 @@ const angular = require('angular@1.2.0');`;
       const context: ProjectContext = {
         rootPath: '/test',
         dependencies: ['express'],
-        filePatterns: { test: [], source: ['package.json'], ignore: [] }
+        filePatterns: { test: [], source: ['package.json'], ignore: [] },
       };
 
       const tests = plugin.generateSecurityTests(context);
-      
+
       expect(tests.some(t => t.includes('npm audit'))).toBe(true);
     });
   });
@@ -310,7 +316,7 @@ describe('Enterprise Component Security', () => {
     const licenses = checkLicenseCompliance();
     expect(licenses.nonCompliant).toHaveLength(0);
   });
-});`
+});`,
       };
 
       expect(plugin.validateEnterpriseRequirements!(testFile)).toBe(true);

@@ -1,7 +1,7 @@
 /**
  * HybridParser Integration Tests
  * v0.9.0 Phase 2 - SmartChunkingParser統合テスト
- * 
+ *
  * TDD: RED phase - 統合テストから開始
  * t_wadaの推奨: インテグレーションテストで全体動作を保証
  */
@@ -22,10 +22,10 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
       enableWarnings: false,
       enableFallback: true,
       enableSmartTruncation: true,
-      enableSmartChunking: true,  // 新機能: SmartChunking有効化
-      chunkingThreshold: 32767    // チャンキングを開始するサイズ
+      enableSmartChunking: true, // 新機能: SmartChunking有効化
+      chunkingThreshold: 32767, // チャンキングを開始するサイズ
     });
-    
+
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hybrid-integration-test-'));
   });
 
@@ -68,7 +68,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
           return data;
         }
       `.repeat(200); // 約50KB+
-      
+
       const testFile = path.join(tempDir, 'very-large.js');
       await fs.writeFile(testFile, veryLargeContent);
 
@@ -118,7 +118,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
           }
         }
       `.repeat(100); // 構造化された大型ファイル
-      
+
       const testFile = path.join(tempDir, 'structured.js');
       await fs.writeFile(testFile, structuredContent);
 
@@ -146,7 +146,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
           return data;
         }
       `.repeat(10); // 40KB+の有効なJavaScriptファイル
-      
+
       const testFile = path.join(tempDir, 'large-valid.js');
       await fs.writeFile(testFile, largeValidContent);
 
@@ -165,7 +165,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
       const smallFile = path.join(tempDir, 'small.js');
       const mediumFile = path.join(tempDir, 'medium.js');
       const largeFile = path.join(tempDir, 'large.js');
-      
+
       await fs.writeFile(smallFile, 'const x = 1;'); // < 32KB
       await fs.writeFile(mediumFile, 'x'.repeat(32767)); // = 32KB
       await fs.writeFile(largeFile, 'x'.repeat(40000)); // > 32KB
@@ -240,7 +240,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
           }
         }
       `.repeat(150);
-      
+
       const testFile = path.join(tempDir, 'large.ts');
       await fs.writeFile(testFile, tsContent);
 
@@ -268,7 +268,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
           );
         };
       `.repeat(150);
-      
+
       const testFile = path.join(tempDir, 'large.jsx');
       await fs.writeFile(testFile, jsxContent);
 
@@ -289,7 +289,7 @@ describe('HybridParser with SmartChunkingParser Integration', () => {
         function invalid() { return 2 // エラー
         function valid2() { return 3; }
       `.repeat(500);
-      
+
       const testFile = path.join(tempDir, 'partial-error.js');
       await fs.writeFile(testFile, partialErrorContent);
 

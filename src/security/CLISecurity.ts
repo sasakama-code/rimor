@@ -45,7 +45,7 @@ export const DEFAULT_CLI_SECURITY_LIMITS: CLISecurityLimits = {
   maxPathLength: 1000,
   maxOutputFileSize: 100 * 1024 * 1024, // 100MB
   allowedOutputExtensions: ['.json', '.txt', '.csv', '.html', '.md'],
-  validateEnvironmentVariables: true
+  validateEnvironmentVariables: true,
 };
 
 /**
@@ -54,7 +54,7 @@ export const DEFAULT_CLI_SECURITY_LIMITS: CLISecurityLimits = {
 export class CLISecurity {
   private limits: CLISecurityLimits;
   private projectRoot: string;
-  
+
   /**
    * DRY原則適用: 共通危険パターン定義（Andy Hunt & Dave Thomas推奨）
    * @private
@@ -65,10 +65,13 @@ export class CLISecurity {
     { pattern: /\||\&\&|\;|\`/g, issue: 'コマンドインジェクション攻撃' },
     { pattern: /\$\{|\$\(/g, issue: '変数展開攻撃' },
     { pattern: /\0|%00/g, issue: 'NULL文字攻撃' },
-    { pattern: /[<>"|*?]/g, issue: '無効なファイル名文字' }
+    { pattern: /[<>"|*?]/g, issue: '無効なファイル名文字' },
   ];
 
-  constructor(projectRoot: string = process.cwd(), limits: CLISecurityLimits = DEFAULT_CLI_SECURITY_LIMITS) {
+  constructor(
+    projectRoot: string = process.cwd(),
+    limits: CLISecurityLimits = DEFAULT_CLI_SECURITY_LIMITS
+  ) {
     this.projectRoot = projectRoot;
     this.limits = limits;
   }
@@ -87,7 +90,7 @@ export class CLISecurity {
         errors.push('パスが指定されていません');
         return { isValid: false, errors, warnings, securityIssues };
       }
-      
+
       // 空文字列、"."、"./"は現在のプロジェクトルートとして扱う
       if (inputPath === '' || inputPath === '.' || inputPath === './') {
         return {
@@ -95,7 +98,7 @@ export class CLISecurity {
           sanitizedValue: this.projectRoot,
           errors: [],
           warnings: [],
-          securityIssues: []
+          securityIssues: [],
         };
       }
 
@@ -118,18 +121,22 @@ export class CLISecurity {
       let resolvedPath: string;
       const isWindowsAbsolutePath = /^[a-zA-Z]:\\/i.test(inputPath);
       const isReallyAbsolute = path.isAbsolute(inputPath) || isWindowsAbsolutePath;
-      
+
       if (!isReallyAbsolute) {
         // Issue #123対応: 無害な正規化可能パス（./././など）の事前許可
         // ドット記号とスラッシュのみで構成され、..パターンを含まないパス
         const isHarmlessPath = /^[.\/]+$/.test(inputPath) && !inputPath.includes('..');
-        
+
         if (isHarmlessPath) {
           // 無害なパス（ドット記号とスラッシュのみ、..を含まない）は直接解決
           resolvedPath = path.resolve(this.projectRoot, inputPath);
         } else {
           // 相対パスの場合: PathSecurity.safeResolveで安全な解決と境界チェック
-          const safePath = PathSecurity.safeResolve(inputPath, this.projectRoot, 'cli-analysis-path');
+          const safePath = PathSecurity.safeResolve(
+            inputPath,
+            this.projectRoot,
+            'cli-analysis-path'
+          );
           if (!safePath) {
             errors.push('プロジェクト範囲外へのアクセスが検出されました');
             // パターンチェックで既にパストラバーサル攻撃が検出されている場合は重複を避ける
@@ -148,14 +155,14 @@ export class CLISecurity {
           errors.push('絶対パスの解決に失敗しました');
           return { isValid: false, errors, warnings, securityIssues };
         }
-        
+
         // 特にクロスプラットフォーム環境でのWindowsパスは常にプロジェクト範囲外として処理
         if (isWindowsAbsolutePath && process.platform !== 'win32') {
           errors.push('プロジェクト範囲外へのアクセスが検出されました');
           securityIssues.push('クロスプラットフォームWindowsパス攻撃');
           return { isValid: false, errors, warnings, securityIssues };
         }
-        
+
         const boundaryValidation = this.validatePathBoundary(resolvedPath, 'アクセス', inputPath);
         if (!boundaryValidation.isValid) {
           errors.push(...boundaryValidation.errors);
@@ -179,9 +186,8 @@ export class CLISecurity {
         sanitizedValue: resolvedPath,
         errors,
         warnings,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       errors.push('パス検証中に予期しないエラーが発生しました');
       securityIssues.push('パス検証攻撃の可能性');
@@ -231,7 +237,7 @@ export class CLISecurity {
       let resolvedPath: string;
       const isWindowsAbsolutePath = /^[a-zA-Z]:\\/i.test(outputPath);
       const isReallyAbsolute = path.isAbsolute(outputPath) || isWindowsAbsolutePath;
-      
+
       if (!isReallyAbsolute) {
         // 相対パスの場合: PathSecurity.safeResolveで安全な解決と境界チェック
         const safePath = PathSecurity.safeResolve(outputPath, this.projectRoot, 'cli-output-path');
@@ -252,14 +258,14 @@ export class CLISecurity {
           errors.push('絶対出力パスの解決に失敗しました');
           return { isValid: false, errors, warnings, securityIssues };
         }
-        
+
         // 特にクロスプラットフォーム環境でのWindowsパスは常にプロジェクト範囲外として処理
         if (isWindowsAbsolutePath && process.platform !== 'win32') {
           errors.push('プロジェクト範囲外への出力が検出されました');
           securityIssues.push('クロスプラットフォームWindowsパス攻撃');
           return { isValid: false, errors, warnings, securityIssues };
         }
-        
+
         const boundaryValidation = this.validatePathBoundary(resolvedPath, '出力', outputPath);
         if (!boundaryValidation.isValid) {
           errors.push(...boundaryValidation.errors);
@@ -301,9 +307,8 @@ export class CLISecurity {
         sanitizedValue: resolvedPath,
         errors,
         warnings,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       errors.push('出力パス検証中に予期しないエラーが発生しました');
       securityIssues.push('出力パス検証攻撃の可能性');
@@ -321,24 +326,26 @@ export class CLISecurity {
    * @returns パターンチェック結果
    */
   private checkDangerousPatterns(
-    inputPath: string, 
+    inputPath: string,
     pathType: '分析' | '出力'
   ): { errors: string[]; warnings: string[]; securityIssues: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
     const securityIssues: string[] = [];
-    
+
     // Martin Fowler Extract Method: プラットフォーム別パストラバーサル分類
     const traversalResult = this.checkPathTraversalAttack(inputPath);
     if (traversalResult) {
       securityIssues.push(traversalResult);
       errors.push('危険なパターンを検出しました');
     }
-    
+
     // Martin Fowler Replace Magic Number: パストラバーサルパターン以外の開始インデックス
     const NON_TRAVERSAL_PATTERN_START_INDEX = 2;
-    const otherDangerousPatterns = CLISecurity.COMMON_DANGEROUS_PATTERNS.slice(NON_TRAVERSAL_PATTERN_START_INDEX);
-    
+    const otherDangerousPatterns = CLISecurity.COMMON_DANGEROUS_PATTERNS.slice(
+      NON_TRAVERSAL_PATTERN_START_INDEX
+    );
+
     for (const { pattern, issue } of otherDangerousPatterns) {
       if (pattern.test(inputPath)) {
         securityIssues.push(issue);
@@ -347,31 +354,43 @@ export class CLISecurity {
         pattern.lastIndex = 0;
       }
     }
-    
+
     // システムディレクトリパターン（順序重要：具体的→一般的）
-    const systemPatterns = pathType === '分析' ? [
-      // より具体的なWindowsパターンを最初にチェック（パストラバーサル攻撃テスト用）
-      { pattern: /^C:\\Windows\\System32\\config\\SAM$/i, issue: 'Windowsシステムディレクトリアクセス試行' },
-      { pattern: /^C:\\Windows\\System32\\config\\/, issue: 'Windowsシステムディレクトリアクセス試行' },
-      
-      // 特定のUnixパス（パストラバーサル攻撃テスト用）
-      { pattern: /^\/etc\/shadow$/, issue: 'システムディレクトリアクセス試行' },
-      
-      // 一般的なシステムディレクトリアクセス攻撃テスト用
-      { pattern: /^\/etc\/|^\/root\/|^\/home\//, issue: 'システムディレクトリアクセス攻撃' },
-      { pattern: /^C:\\Windows\\|^C:\\Program Files\\/, issue: 'システムディレクトリアクセス攻撃' },
-      
-      // より広範囲なパターンは最後
-      { pattern: /^[a-zA-Z]:\\/, issue: '絶対パス使用（Windows）' },
-      { pattern: /^\/[^.]/, issue: '絶対パス使用（Unix）' }
-    ] : [
-      // 出力パス用（具体的なパスから先にチェック）
-      { pattern: /^\/etc\/|^\/root\//, issue: 'システムディレクトリ書き込み攻撃' },
-      { pattern: /^C:\\Windows\\/, issue: 'システムディレクトリ書き込み攻撃' },
-      { pattern: /^\/usr\/bin\//, issue: 'システムディレクトリ書き込み攻撃' },
-      { pattern: /^C:\\Program Files\\/, issue: 'Windowsシステムディレクトリ書き込み攻撃' }
-    ];
-    
+    const systemPatterns =
+      pathType === '分析'
+        ? [
+            // より具体的なWindowsパターンを最初にチェック（パストラバーサル攻撃テスト用）
+            {
+              pattern: /^C:\\Windows\\System32\\config\\SAM$/i,
+              issue: 'Windowsシステムディレクトリアクセス試行',
+            },
+            {
+              pattern: /^C:\\Windows\\System32\\config\\/,
+              issue: 'Windowsシステムディレクトリアクセス試行',
+            },
+
+            // 特定のUnixパス（パストラバーサル攻撃テスト用）
+            { pattern: /^\/etc\/shadow$/, issue: 'システムディレクトリアクセス試行' },
+
+            // 一般的なシステムディレクトリアクセス攻撃テスト用
+            { pattern: /^\/etc\/|^\/root\/|^\/home\//, issue: 'システムディレクトリアクセス攻撃' },
+            {
+              pattern: /^C:\\Windows\\|^C:\\Program Files\\/,
+              issue: 'システムディレクトリアクセス攻撃',
+            },
+
+            // より広範囲なパターンは最後
+            { pattern: /^[a-zA-Z]:\\/, issue: '絶対パス使用（Windows）' },
+            { pattern: /^\/[^.]/, issue: '絶対パス使用（Unix）' },
+          ]
+        : [
+            // 出力パス用（具体的なパスから先にチェック）
+            { pattern: /^\/etc\/|^\/root\//, issue: 'システムディレクトリ書き込み攻撃' },
+            { pattern: /^C:\\Windows\\/, issue: 'システムディレクトリ書き込み攻撃' },
+            { pattern: /^\/usr\/bin\//, issue: 'システムディレクトリ書き込み攻撃' },
+            { pattern: /^C:\\Program Files\\/, issue: 'Windowsシステムディレクトリ書き込み攻撃' },
+          ];
+
     // システムパターンをチェック（既に検出されていない場合のみ）
     for (const { pattern, issue } of systemPatterns) {
       if (pattern.test(inputPath)) {
@@ -386,7 +405,7 @@ export class CLISecurity {
         break; // 最初にマッチしたパターンのみを使用
       }
     }
-    
+
     return { errors, warnings, securityIssues };
   }
 
@@ -399,33 +418,35 @@ export class CLISecurity {
    * @returns 境界検証結果
    */
   private validatePathBoundary(
-    resolvedPath: string, 
+    resolvedPath: string,
     operationType: 'アクセス' | '出力',
     originalPath?: string
   ): { isValid: boolean; errors: string[]; securityIssues: string[] } {
     if (!PathSecurity.validateProjectPath(resolvedPath, this.projectRoot)) {
-      const operationMessage = operationType === 'アクセス' 
-        ? 'プロジェクト範囲外へのアクセスが検出されました'
-        : 'プロジェクト範囲外への出力が検出されました';
-      
+      const operationMessage =
+        operationType === 'アクセス'
+          ? 'プロジェクト範囲外へのアクセスが検出されました'
+          : 'プロジェクト範囲外への出力が検出されました';
+
       // Issue #123対応: エラー種別の決定（出力パスは常にパストラバーサル攻撃として扱う）
-      const securityIssue = operationType === '出力' 
-        ? 'パストラバーサル攻撃' 
-        : (originalPath && (originalPath.includes('../') || originalPath.includes('..\\'))
-          ? 'パストラバーサル攻撃' 
-          : 'プロジェクト境界突破攻撃');
-      
+      const securityIssue =
+        operationType === '出力'
+          ? 'パストラバーサル攻撃'
+          : originalPath && (originalPath.includes('../') || originalPath.includes('..\\'))
+            ? 'パストラバーサル攻撃'
+            : 'プロジェクト境界突破攻撃';
+
       return {
         isValid: false,
         errors: [operationMessage],
-        securityIssues: [securityIssue]
+        securityIssues: [securityIssue],
       };
     }
-    
+
     return {
       isValid: true,
       errors: [],
-      securityIssues: []
+      securityIssues: [],
     };
   }
 
@@ -450,7 +471,7 @@ export class CLISecurity {
         'DYLD_LIBRARY_PATH',
         'PATH_ORIGINAL',
         'SHELL_OVERRIDE',
-        'NODE_OPTIONS'
+        'NODE_OPTIONS',
       ];
 
       for (const envVar of dangerousEnvVars) {
@@ -495,9 +516,8 @@ export class CLISecurity {
         isValid: errors.length === 0,
         errors,
         warnings,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       errors.push('環境変数検証中に予期しないエラーが発生しました');
       securityIssues.push('環境変数検証攻撃の可能性');
@@ -520,7 +540,7 @@ export class CLISecurity {
 
       // 許可されたフォーマット
       const allowedFormats = ['text', 'json', 'csv', 'html', 'markdown', 'ai-json'];
-      
+
       if (!allowedFormats.includes(format.toLowerCase())) {
         errors.push(`未対応のフォーマット: ${format}`);
         securityIssues.push('フォーマット指定攻撃の可能性');
@@ -539,9 +559,8 @@ export class CLISecurity {
         sanitizedValue: format.toLowerCase(),
         errors,
         warnings,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       errors.push('フォーマット検証中に予期しないエラーが発生しました');
       securityIssues.push('フォーマット検証攻撃の可能性');
@@ -552,11 +571,7 @@ export class CLISecurity {
   /**
    * すべてのCLI引数を一括検証
    */
-  validateAllArguments(args: {
-    path?: string;
-    format?: string;
-    outputFile?: string;
-  }): {
+  validateAllArguments(args: { path?: string; format?: string; outputFile?: string }): {
     isValid: boolean;
     sanitizedArgs: {
       path?: string;
@@ -618,7 +633,7 @@ export class CLISecurity {
       sanitizedArgs,
       allErrors,
       allWarnings,
-      allSecurityIssues
+      allSecurityIssues,
     };
   }
 
@@ -639,7 +654,7 @@ export class CLISecurity {
   private checkPathTraversalAttack(inputPath: string): string | null {
     const hasUnixTraversal = inputPath.includes('../');
     const hasWindowsTraversal = inputPath.includes('..\\');
-    
+
     if (!hasUnixTraversal && !hasWindowsTraversal) {
       return null; // Martin Fowler Guard Clause適用
     }

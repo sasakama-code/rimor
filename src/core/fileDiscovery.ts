@@ -26,7 +26,7 @@ export async function* findTestFiles(
 
   try {
     const dirents = await readdir(dir, { withFileTypes: true });
-  
+
     for (const dirent of dirents) {
       // セキュリティ: ファイル名の検証
       if (!isValidFileName(dirent.name)) {
@@ -34,17 +34,17 @@ export async function* findTestFiles(
       }
 
       const path = resolve(dir, dirent.name);
-      
+
       // セキュリティ: 解決されたパスの検証
       if (!PathSecurity.validateProjectPath(path, projectRoot)) {
         continue;
       }
-      
+
       // 除外パターンの検証（より安全な方法）
       if (shouldExcludePath(path, excludePatterns)) {
         continue;
       }
-      
+
       if (dirent.isDirectory()) {
         // セキュリティ: シンボリックリンクのスキップ
         if (dirent.isSymbolicLink()) {
@@ -79,12 +79,13 @@ export async function* findTestFiles(
  */
 function shouldExcludePath(path: string, excludePatterns: string[]): boolean {
   // セキュリティ: 除外パターンの検証
-  const safePatterns = excludePatterns.filter(pattern => 
-    typeof pattern === 'string' && 
-    pattern.length > 0 && 
-    pattern.length < 200 &&
-    !pattern.includes('..') &&
-    !/[<>:"|?*]/.test(pattern)
+  const safePatterns = excludePatterns.filter(
+    pattern =>
+      typeof pattern === 'string' &&
+      pattern.length > 0 &&
+      pattern.length < 200 &&
+      !pattern.includes('..') &&
+      !/[<>:"|?*]/.test(pattern)
   );
 
   return safePatterns.some(pattern => {
@@ -104,11 +105,11 @@ function isValidFileName(filename: string): boolean {
 
   // 危険なファイル名パターンの検出
   const dangerousPatterns = [
-    /^\./,  // 隠しファイル（制限）
-    /\0/,   // NULL文字
-    /[<>:"|?*]/,  // Windows不正文字
-    /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i,  // Windows予約名
-    /\.\./,  // パストラバーサル
+    /^\./, // 隠しファイル（制限）
+    /\0/, // NULL文字
+    /[<>:"|?*]/, // Windows不正文字
+    /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i, // Windows予約名
+    /\.\./, // パストラバーサル
   ];
 
   for (const pattern of dangerousPatterns) {

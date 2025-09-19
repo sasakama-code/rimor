@@ -35,11 +35,11 @@ export class WorkerPool {
   private workers: WorkerInfo[] = [];
   private taskQueue: WorkerTask<unknown>[] = [];
   private initialized = false;
-  
+
   constructor(private size: number = 4) {
     this.size = Math.max(1, Math.min(size, 8)); // 1-8の範囲に制限
   }
-  
+
   /**
    * ワーカープールを初期化
    */
@@ -47,35 +47,35 @@ export class WorkerPool {
     if (this.initialized) {
       return;
     }
-    
+
     debug.info(`Initializing worker pool with ${this.size} workers`);
-    
+
     // ワーカースクリプトの作成
     const workerScript = this.createWorkerScript();
-    
+
     // ワーカーの作成
     for (let i = 0; i < this.size; i++) {
       const worker = new Worker(workerScript, {
         eval: true,
-        workerData: { workerId: i }
+        workerData: { workerId: i },
       });
-      
+
       const workerInfo: WorkerInfo = {
         worker,
         busy: false,
-        taskQueue: []
+        taskQueue: [],
       };
-      
+
       // イベントハンドラの設定
       this.setupWorkerHandlers(workerInfo);
-      
+
       this.workers.push(workerInfo);
     }
-    
+
     this.initialized = true;
     debug.info('Worker pool initialized');
   }
-  
+
   /**
    * タスクを実行
    */
@@ -83,19 +83,19 @@ export class WorkerPool {
     if (!this.initialized) {
       throw new Error('Worker pool not initialized');
     }
-    
+
     return new Promise((resolve, reject) => {
       const task: WorkerTask<unknown> = {
         id: this.generateTaskId(),
         type: 'analyze',
         data: data as unknown,
         resolve: resolve as (value: unknown) => void,
-        reject
+        reject,
       };
-      
+
       // 空いているワーカーを探す
       const availableWorker = this.workers.find(w => !w.busy);
-      
+
       if (availableWorker) {
         this.assignTask(availableWorker, task);
       } else {
@@ -104,7 +104,7 @@ export class WorkerPool {
       }
     });
   }
-  
+
   /**
    * ワーカープールを終了
    */
@@ -112,26 +112,24 @@ export class WorkerPool {
     if (!this.initialized) {
       return;
     }
-    
+
     debug.info('Terminating worker pool');
-    
+
     // 全てのワーカーを終了
-    await Promise.all(
-      this.workers.map(workerInfo => workerInfo.worker.terminate())
-    );
-    
+    await Promise.all(this.workers.map(workerInfo => workerInfo.worker.terminate()));
+
     // キューをクリア
     this.taskQueue.forEach(task => {
       task.reject(new Error('Worker pool terminated'));
     });
-    
+
     this.workers = [];
     this.taskQueue = [];
     this.initialized = false;
-    
+
     debug.info('Worker pool terminated');
   }
-  
+
   /**
    * ワーカースクリプトを作成
    */
@@ -176,19 +174,19 @@ export class WorkerPool {
       parentPort.postMessage({ type: 'ready' });
     `;
   }
-  
+
   /**
    * ワーカーのイベントハンドラを設定
    */
   private setupWorkerHandlers(workerInfo: WorkerInfo): void {
     const { worker } = workerInfo;
-    
-    worker.on('message', (message) => {
+
+    worker.on('message', message => {
       if (message.type === 'ready') {
         debug.verbose(`Worker ready`);
         return;
       }
-      
+
       if (message.type === 'result') {
         const task = workerInfo.taskQueue.find(t => t.id === message.id);
         if (task) {
@@ -203,8 +201,8 @@ export class WorkerPool {
         }
       }
     });
-    
-    worker.on('error', (error) => {
+
+    worker.on('error', error => {
       debug.error('Worker error:', error);
       // エラーが発生したタスクを全て拒否
       workerInfo.taskQueue.forEach(task => {
@@ -213,28 +211,28 @@ export class WorkerPool {
       workerInfo.taskQueue = [];
       workerInfo.busy = false;
     });
-    
-    worker.on('exit', (code) => {
+
+    worker.on('exit', code => {
       if (code !== 0) {
         debug.error(`Worker exited with code ${code}`);
       }
     });
   }
-  
+
   /**
    * タスクを割り当て
    */
   private assignTask(workerInfo: WorkerInfo, task: WorkerTask<unknown>): void {
     workerInfo.busy = true;
     workerInfo.taskQueue.push(task);
-    
+
     workerInfo.worker.postMessage({
       id: task.id,
       type: task.type,
-      data: task.data
+      data: task.data,
     });
   }
-  
+
   /**
    * タスクを完了
    */
@@ -244,17 +242,17 @@ export class WorkerPool {
     if (index >= 0) {
       workerInfo.taskQueue.splice(index, 1);
     }
-    
+
     // ワーカーを解放
     workerInfo.busy = false;
-    
+
     // 待機中のタスクがあれば実行
     if (this.taskQueue.length > 0) {
       const nextTask = this.taskQueue.shift()!;
       this.assignTask(workerInfo, nextTask);
     }
   }
-  
+
   /**
    * タスクIDを生成
    */
