@@ -99,14 +99,19 @@ export class TypeScriptAnalyzer implements ITypeScriptAnalyzer {
     // 関数定義を収集
     this.visitNode(sourceFile, (node) => {
       if (ts.isFunctionDeclaration(node) && node.name) {
+        // Issue #153対応: 統一されたID (filePath:method形式) を生成
+        const functionName = node.name.text;
+        const unifiedId = `${filePath}:${functionName}`;
+        
         const funcNode: CallGraphNode = {
-          name: node.name.text,
+          id: unifiedId,
+          name: functionName,
           filePath,
           line: sourceFile.getLineAndCharacterOfPosition(node.pos).line + 1,
           calls: [],
           calledBy: []
         };
-        functionNodes.set(node.name.text, funcNode);
+        functionNodes.set(functionName, funcNode);
         callGraph.push(funcNode);
       }
     });

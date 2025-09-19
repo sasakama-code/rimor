@@ -22,7 +22,18 @@ describe('MetricsCollector', () => {
       enableIoMonitoring: true,
       samplingInterval: 100 // 100ms間隔でサンプリング
     });
-    profiler = new PerformanceProfiler();
+    // Issue #150対応: PerformanceProfilerに必須設定を提供
+    profiler = new PerformanceProfiler({
+      samplingInterval: 100,
+      enableCallStackAnalysis: true,
+      enableMemoryLeakDetection: true,
+      enableHotspotDetection: true,
+      enableExecutionTimeline: true,
+      maxSamples: 1000,
+      memoryLeakThreshold: 1024 * 1024, // 1MB
+      hotspotThreshold: 0.05, // 5%
+      outputDir: tempDir
+    });
   });
 
   afterEach(async () => {

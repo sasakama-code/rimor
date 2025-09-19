@@ -30,6 +30,7 @@ export enum Severity {
 
 /**
  * 問題タイプの分類
+ * Issue #144対応: CODE_INJECTION追加
  */
 // Migrated to CoreTypes
 export enum IssueType {
@@ -37,6 +38,7 @@ export enum IssueType {
   XSS = 'XSS',
   PATH_TRAVERSAL = 'PATH_TRAVERSAL',
   COMMAND_INJECTION = 'COMMAND_INJECTION',
+  CODE_INJECTION = 'CODE_INJECTION', // Issue #144対応: TaintTyper統合で必要
   LDAP_INJECTION = 'LDAP_INJECTION',
   XPATH_INJECTION = 'XPATH_INJECTION',
   MISSING_TEST = 'MISSING_TEST',

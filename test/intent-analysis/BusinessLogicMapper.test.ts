@@ -20,10 +20,12 @@ describe('BusinessLogicMapper', () => {
       
       const callGraph: CallGraphNode[] = [
         {
+          id: '/src/services/PaymentService.ts:processPayment',
           name: 'processPayment',
           filePath: '/src/services/PaymentService.ts',
           line: 25,
           calls: [{
+            id: '/src/validators/PaymentValidator.ts:validatePayment',
             name: 'validatePayment',
             filePath: '/src/validators/PaymentValidator.ts',
             line: 10,
@@ -54,11 +56,13 @@ describe('BusinessLogicMapper', () => {
       
       const callGraph: CallGraphNode[] = [
         {
+          id: '/src/controllers/OrderController.ts:createOrder',
           name: 'createOrder',
           filePath: '/src/controllers/OrderController.ts',
           line: 15,
           calls: [
             {
+              id: '/src/services/OrderService.ts:validateOrder',
               name: 'validateOrder',
               filePath: '/src/services/OrderService.ts',
               line: 30,
@@ -66,6 +70,7 @@ describe('BusinessLogicMapper', () => {
               calledBy: []
             },
             {
+              id: '/src/services/PaymentService.ts:processPayment',
               name: 'processPayment',
               filePath: '/src/services/PaymentService.ts',
               line: 25,
@@ -153,6 +158,7 @@ describe('BusinessLogicMapper', () => {
   describe('analyzeImpactScope', () => {
     it('呼び出しグラフから影響範囲を分析できる', async () => {
       const nodeA: CallGraphNode = {
+        id: '/src/a.ts:functionA',
         name: 'functionA',
         filePath: '/src/a.ts',
         line: 1,
@@ -161,6 +167,7 @@ describe('BusinessLogicMapper', () => {
       };
 
       const nodeB: CallGraphNode = {
+        id: '/src/b.ts:functionB',
         name: 'functionB',
         filePath: '/src/b.ts',
         line: 1,
@@ -169,6 +176,7 @@ describe('BusinessLogicMapper', () => {
       };
 
       const nodeC: CallGraphNode = {
+        id: '/src/c.ts:functionC',
         name: 'functionC',
         filePath: '/src/c.ts',
         line: 1,
@@ -234,6 +242,7 @@ describe('BusinessLogicMapper', () => {
   describe('isOnCriticalPath', () => {
     it('重要ドメインに関連するノードをクリティカルパスと判定する', async () => {
       const node: CallGraphNode = {
+        id: '/src/services/PaymentService.ts:processPayment',
         name: 'processPayment',
         filePath: '/src/services/PaymentService.ts',
         line: 10,
@@ -250,6 +259,7 @@ describe('BusinessLogicMapper', () => {
 
     it('非重要ドメインのノードはクリティカルパスと判定しない', async () => {
       const node: CallGraphNode = {
+        id: '/src/utils/dateFormatter.ts:formatDate',
         name: 'formatDate',
         filePath: '/src/utils/dateFormatter.ts',
         line: 5,
@@ -271,6 +281,7 @@ describe('BusinessLogicMapper', () => {
       
       const callGraph: CallGraphNode[] = [
         {
+          id: '/src/services/ProcessorService.ts:process',
           name: 'process',
           filePath: '/src/services/ProcessorService.ts',
           line: 10,
@@ -289,6 +300,7 @@ describe('BusinessLogicMapper', () => {
       // 次にPaymentドメインでテスト（特別扱いされるはず）
       const paymentCallGraph: CallGraphNode[] = [
         {
+          id: '/src/services/PaymentService.ts:processPayment',
           name: 'processPayment',
           filePath: '/src/services/PaymentService.ts',
           line: 25,
@@ -357,6 +369,7 @@ describe('BusinessLogicMapper', () => {
       
       const paymentCallGraph: CallGraphNode[] = [
         {
+          id: '/src/services/PaymentService.ts:processPayment',
           name: 'processPayment',
           filePath: '/src/services/PaymentService.ts',
           line: 25,

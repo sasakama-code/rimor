@@ -149,6 +149,39 @@ describe('TypeScriptAnalyzer', () => {
       expect(calculateNode?.calls).toHaveLength(1); // add
       expect(calculateNode?.calledBy).toContainEqual(expect.objectContaining({ name: 'main' }));
     });
+
+    // Issue #153対応: CallGraphNodeに統一IDの追加
+    it('CallGraphNodeに統一されたIDが生成されること', async () => {
+      // Arrange
+      const testFile = path.join(tempDir, 'test-unified-id.ts');
+      const content = `
+        function calculate() {
+          return helper();
+        }
+        
+        function helper() {
+          return 42;
+        }
+      `;
+      await fs.writeFile(testFile, content);
+      await analyzer.initialize(path.join(tempDir, 'tsconfig.json'));
+      
+      // Act
+      const callGraph = await analyzer.buildCallGraph(testFile);
+      
+      // Assert - Issue #153: 統一されたID形式の検証
+      const calculateNode = callGraph.find(node => node.name === 'calculate');
+      const helperNode = callGraph.find(node => node.name === 'helper');
+      
+      expect(calculateNode?.id).toBe(`${testFile}:calculate`);
+      expect(helperNode?.id).toBe(`${testFile}:helper`);
+      
+      // 既存のname, filePathプロパティも維持されること
+      expect(calculateNode?.name).toBe('calculate');
+      expect(calculateNode?.filePath).toBe(testFile);
+      expect(helperNode?.name).toBe('helper');
+      expect(helperNode?.filePath).toBe(testFile);
+    });
   });
   
   describe('モック検出', () => {

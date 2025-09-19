@@ -55,6 +55,21 @@ interface Suggestion {
   impact: string;
   example?: string;
 }
+
+// 拡張された型情報評価結果
+interface EnhancedTestRealizationResult extends TestRealizationResult {
+  domainRelevance?: {
+    domain: string;
+    confidence: number;
+    businessImportance: 'low' | 'medium' | 'high' | 'critical';
+  };
+  domainSpecificGaps?: Array<{
+    type: string;
+    description: string;
+    domain: string;
+    severity?: string;
+  }>;
+}
 import { CoreTypes, TypeGuards, TypeUtils } from '../core/types/core-definitions';
 import { ASTNode } from '../core/interfaces/IAnalysisEngine';
 import { KeywordSearchUtils } from '../utils/KeywordSearchUtils';
@@ -965,16 +980,24 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     intent: TestIntent, 
     actual: ActualTestAnalysis,
     typeInfo: Map<string, TypeInfo>
-  ): Promise<TestRealizationResult> {
+  ): Promise<EnhancedTestRealizationResult> {
     // 基本的な評価に型情報を追加
     const basicResult = await this.evaluateRealization(intent, actual);
     
     // 型情報を活用した詳細評価
     const enhancedScore = this.enhanceScoreWithTypeInfo(basicResult.realizationScore, typeInfo);
     
+    // ドメイン関連性の評価
+    const domainRelevance = this.evaluateDomainRelevance(intent, typeInfo);
+    
+    // ドメイン固有ギャップの検出
+    const domainSpecificGaps = this.detectDomainSpecificGaps(intent, typeInfo);
+    
     return {
       ...basicResult,
-      realizationScore: enhancedScore
+      realizationScore: enhancedScore,
+      domainRelevance,
+      domainSpecificGaps
     };
   }
 
@@ -982,40 +1005,81 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    * ビジネスロジックとの関連分析
    */
   async analyzeWithBusinessContext(
-    intent: TestIntent,
+    testFilePath: string,
+    ast: ASTNode,
     callGraph: CallGraphNode[]
-  ): Promise<BusinessMapping> {
+  ): Promise<{ businessLogicCoverage: BusinessMapping }> {
     // Defensive Programming: callGraphが配列でない場合の対処
     if (!Array.isArray(callGraph)) {
       callGraph = [];
     }
     
-    const functions = callGraph.map(node => node.name);
-    const coveredFunctions = intent.targetMethod ? [intent.targetMethod] : [];
-    const uncoveredFunctions = functions.filter(f => !coveredFunctions.includes(f));
+    // AST からテスト意図を抽出
+    const intent = await this.extractIntent(testFilePath, ast);
     
-    return {
+    // 全ての関数を再帰的に収集
+    const allFunctions = this.collectAllFunctions(callGraph);
+    const coveredFunctions = intent.targetMethod ? [intent.targetMethod] : [];
+    const uncoveredFunctions = allFunctions.filter(f => !coveredFunctions.includes(f));
+    
+    const businessLogicCoverage = {
       domain: this.extractDomain(intent.description),
-      functions,
+      functions: allFunctions,
       coveredFunctions,
       uncoveredFunctions,
-      coverage: functions.length > 0 ? (coveredFunctions.length / functions.length) * 100 : 0
+      coverage: allFunctions.length > 0 ? (coveredFunctions.length / allFunctions.length) * 100 : 0
     };
+    
+    return { businessLogicCoverage };
   }
 
   /**
    * AI駆動の改善提案生成
    */
   async generateSmartSuggestions(
-    intent: TestIntent,
-    actual: ActualTestAnalysis,
-    callGraph: CallGraphNode[]
+    testFilePath: string,
+    ast: ASTNode,
+    typeInfo: Map<string, TypeInfo>
   ): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
     
+    // AST からテスト意図を抽出
+    const intent = await this.extractIntent(testFilePath, ast);
+    const actual = await this.analyzeActualTest(testFilePath, ast);
+    
     // Defensive Programming: パラメータの検証
-    if (!intent || !actual || !Array.isArray(callGraph)) {
+    if (!intent || !actual) {
       return suggestions;
+    }
+    
+    // ドメイン別の提案を生成
+    const domain = this.extractDomain(intent.description);
+    
+    // 認証ドメインの場合の特別な提案
+    if (domain.toLowerCase().includes('auth') || intent.description.toLowerCase().includes('auth')) {
+      suggestions.push({
+        type: 'security',
+        description: '無効な認証情報に対するテストを追加',
+        priority: 'critical',
+        impact: 'critical',
+        example: 'expect(() => authService.login(invalidCredentials)).toThrow();'
+      });
+      
+      suggestions.push({
+        type: 'security',
+        description: 'ブルートフォース攻撃対策のテストを追加',
+        priority: 'critical',
+        impact: 'critical',
+        example: 'expect(authService.isBlocked(attackerIp)).toBe(true);'
+      });
+      
+      suggestions.push({
+        type: 'security',
+        description: 'トークンの有効期限チェックテストを追加',
+        priority: 'high',
+        impact: 'high',
+        example: 'expect(authService.validateToken(expiredToken)).toBe(false);'
+      });
     }
     
     // Defensive Programming: actualTargetMethodsが存在するかチェック
@@ -1082,6 +1146,202 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     }
     
     return 'General';
+  }
+
+  /**
+   * ドメイン関連性の評価
+   * Issue #153対応: テスト意図とドメインコンテキストの関連性を評価
+   */
+  private evaluateDomainRelevance(intent: TestIntent, typeInfo: Map<string, TypeInfo>): {
+    domain: string;
+    confidence: number;
+    businessImportance: 'low' | 'medium' | 'high' | 'critical';
+  } {
+    const domain = this.extractDomain(intent.description);
+    
+    // 型情報に基づく信頼度計算
+    let confidence = 0.5; // 基本信頼度
+    
+    // ドメイン関連の型が含まれているかチェック
+    for (const [varName, typeData] of typeInfo) {
+      if (this.isDomainRelevantType(varName, typeData, domain)) {
+        confidence += 0.3;
+      }
+    }
+    
+    // 最大値を1.0に制限
+    confidence = Math.min(1.0, confidence);
+    
+    // ビジネス重要度の判定
+    const businessImportance = this.assessBusinessImportance(domain, intent);
+    
+    return {
+      domain: domain.toLowerCase().replace(/\s+/g, '-'),
+      confidence,
+      businessImportance
+    };
+  }
+
+  /**
+   * ドメイン固有ギャップの検出
+   * Issue #153対応: ドメイン特有の要件に対するテストギャップを検出
+   */
+  private detectDomainSpecificGaps(intent: TestIntent, typeInfo: Map<string, TypeInfo>): Array<{
+    type: string;
+    description: string;
+    domain: string;
+    severity?: string;
+  }> {
+    const gaps: Array<{
+      type: string;
+      description: string;
+      domain: string;
+      severity?: string;
+    }> = [];
+    
+    const domain = this.extractDomain(intent.description);
+    
+    // ドメイン別の必須要件チェック
+    switch (domain.toLowerCase()) {
+      case 'user management':
+        if (!this.hasAuthenticationTest(intent)) {
+          gaps.push({
+            type: 'MISSING_DOMAIN_REQUIREMENT',
+            description: '認証機能のテストが不足しています',
+            domain: 'user-management',
+            severity: 'high'
+          });
+        }
+        if (!this.hasAuthorizationTest(intent)) {
+          gaps.push({
+            type: 'MISSING_DOMAIN_REQUIREMENT',
+            description: '認可機能のテストが不足しています',
+            domain: 'user-management',
+            severity: 'medium'
+          });
+        }
+        break;
+        
+      case 'payment':
+        if (!this.hasSecurityTest(intent)) {
+          gaps.push({
+            type: 'MISSING_DOMAIN_REQUIREMENT',
+            description: '支払い処理のセキュリティテストが不足しています',
+            domain: 'payment',
+            severity: 'critical'
+          });
+        }
+        break;
+        
+      case 'order processing':
+        if (!this.hasTransactionTest(intent)) {
+          gaps.push({
+            type: 'MISSING_DOMAIN_REQUIREMENT',
+            description: 'トランザクション処理のテストが不足しています',
+            domain: 'order-processing',
+            severity: 'high'
+          });
+        }
+        break;
+    }
+    
+    return gaps;
+  }
+
+  /**
+   * 型がドメインに関連しているかチェック
+   */
+  private isDomainRelevantType(varName: string, typeData: TypeInfo, domain: string): boolean {
+    const domainKeywords = domain.toLowerCase().split(/\s+/);
+    const typeName = typeData.typeName.toLowerCase();
+    const variableName = varName.toLowerCase();
+    
+    return domainKeywords.some(keyword => 
+      typeName.includes(keyword) || variableName.includes(keyword)
+    );
+  }
+
+  /**
+   * ビジネス重要度の評価
+   */
+  private assessBusinessImportance(domain: string, intent: TestIntent): 'low' | 'medium' | 'high' | 'critical' {
+    // 重要度の高いドメイン
+    const criticalDomains = ['payment', 'security', 'authentication'];
+    const highDomains = ['user management', 'order processing'];
+    const mediumDomains = ['analytics', 'reporting'];
+    
+    const domainLower = domain.toLowerCase();
+    
+    if (criticalDomains.some(d => domainLower.includes(d))) {
+      return 'critical';
+    }
+    if (highDomains.some(d => domainLower.includes(d))) {
+      return 'high';
+    }
+    if (mediumDomains.some(d => domainLower.includes(d))) {
+      return 'medium';
+    }
+    
+    return 'low';
+  }
+
+  /**
+   * 認証テストの存在チェック
+   */
+  private hasAuthenticationTest(intent: TestIntent): boolean {
+    const keywords = ['auth', 'login', 'signin', 'token', '認証', 'ログイン'];
+    return keywords.some(keyword => 
+      intent.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  /**
+   * 認可テストの存在チェック
+   */
+  private hasAuthorizationTest(intent: TestIntent): boolean {
+    const keywords = ['authorize', 'permission', 'role', 'access', '認可', '権限'];
+    return keywords.some(keyword => 
+      intent.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  /**
+   * セキュリティテストの存在チェック
+   */
+  private hasSecurityTest(intent: TestIntent): boolean {
+    const keywords = ['security', 'secure', 'encrypt', 'hash', 'sanitize', 'セキュリティ', '暗号化'];
+    return keywords.some(keyword => 
+      intent.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  /**
+   * トランザクションテストの存在チェック
+   */
+  private hasTransactionTest(intent: TestIntent): boolean {
+    const keywords = ['transaction', 'rollback', 'commit', 'atomic', 'トランザクション'];
+    return keywords.some(keyword => 
+      intent.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  /**
+   * コールグラフから全ての関数を再帰的に収集
+   */
+  private collectAllFunctions(callGraph: CallGraphNode[]): string[] {
+    const functions = new Set<string>();
+    
+    const addFunctionsRecursively = (nodes: CallGraphNode[]) => {
+      for (const node of nodes) {
+        functions.add(node.name);
+        if (node.calls && Array.isArray(node.calls)) {
+          addFunctionsRecursively(node.calls);
+        }
+      }
+    };
+    
+    addFunctionsRecursively(callGraph);
+    return Array.from(functions);
   }
 }
 

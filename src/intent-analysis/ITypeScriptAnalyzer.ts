@@ -40,8 +40,15 @@ export interface TypeInfo {
 
 /**
  * 呼び出しグラフのノード
+ * Issue #153対応: import依存解決の設計修正
  */
 export interface CallGraphNode {
+  /**
+   * 統一されたID (filePath:method形式)
+   * Issue #153: モジュールレベルとメソッドレベルの依存関係を統合
+   */
+  id: string;
+  
   /**
    * 関数/メソッド名
    */
