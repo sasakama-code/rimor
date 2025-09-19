@@ -113,23 +113,42 @@ npx rimor analyze ./src --implementation-truth --severity critical high
 ```typescript
 import { UnifiedAnalysisEngine } from 'rimor';
 
-const engine = new UnifiedAnalysisEngine();
+async function analyzeProject() {
+  try {
+    const engine = new UnifiedAnalysisEngine();
 
-// 統合解析の実行
-const result = await engine.analyze('./src');
+    // Implementation Truth分析の実行（v0.9.0）
+    const result = await engine.analyzeWithImplementationTruth('./src');
 
-// 実装の真実を確立
-const implementationTruth = result.implementationTruth;
-console.log(`検出された脆弱性: ${implementationTruth.vulnerabilities.length}`);
+    // 実装の真実を確立
+    const implementationTruth = result.implementationTruth;
+    console.log(`検出された脆弱性: ${implementationTruth.vulnerabilities.length}`);
 
-// 意図実現度の評価
-const realizationGaps = result.realizationGaps;
-console.log(`実装と意図のギャップ: ${realizationGaps.length}`);
+    // 意図実現度の評価
+    const intentRealizationResults = result.intentRealizationResults;
+    console.log(`実装と意図のギャップ: ${intentRealizationResults.length}`);
 
-// 改善提案の確認
-result.recommendations.forEach(rec => {
-  console.log(`${rec.priority}: ${rec.description}`);
-});
+    // 改善提案の確認
+    if (result.summary.topRecommendations.length > 0) {
+      console.log('\n主要な改善提案:');
+      result.summary.topRecommendations.forEach((recommendation, index) => {
+        console.log(`${index + 1}. ${recommendation}`);
+      });
+    } else {
+      console.log('改善提案はありません。');
+    }
+
+    // 総合スコアの表示
+    console.log(`\n総合スコア: ${result.overallScore}/100`);
+    console.log(`実行時間: ${result.executionTime}ms`);
+
+  } catch (error) {
+    console.error('分析エラー:', error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
+
+analyzeProject();
 ```
 
 ### 専用コマンド
@@ -300,7 +319,7 @@ Rimor自身が2500個のテストを持つプロジェクトにおいて、以�
 
 ## アーキテクチャ詳細
 
-### ディレクトリ構成
+### ディレクトリ構成（代表的なサブセット）
 
 ```text
 src/
@@ -313,6 +332,9 @@ src/
 ├── types/         # 型定義（implementation-truth, intent-realization等）
 └── cli/           # コマンドラインインターフェース
 ```
+
+> **注**: 上記は主要コンポーネントの代表的なサブセットです。  
+> 完全なディレクトリ構成は `find src -type d -maxdepth 1 | sort` で確認できます。
 
 ### 処理フロー
 

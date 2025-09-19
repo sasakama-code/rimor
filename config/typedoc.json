@@ -11,11 +11,11 @@
   "plugin": ["typedoc-plugin-markdown", "typedoc-plugin-mermaid"],
   "readme": "README.md",
   "navigationLinks": {
-    "GitHub": "https://github.com/rimor-project/rimor",
-    "Issues": "https://github.com/rimor-project/rimor/issues"
+    "GitHub": "https://github.com/sasakama-code/rimor",
+    "Issues": "https://github.com/sasakama-code/rimor/issues"
   },
   "categorizeByGroup": true,
-  "sourceLinkTemplate": "https://github.com/rimor-project/rimor/blob/{gitRevision}/{path}#L{line}",
+  "sourceLinkTemplate": "https://github.com/sasakama-code/rimor/blob/{gitRevision}/{path}#L{line}",
   "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
   "tsconfig": "./tsconfig.json",
   "name": "Rimor API Documentation",

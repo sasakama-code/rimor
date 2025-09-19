@@ -95,7 +95,10 @@
     "type:check-circular": "node scripts/check-circular-deps.js",
     "type:convert-any": "node scripts/convert-any-to-unknown.js",
     "type:convert-any:dry": "node scripts/convert-any-to-unknown.js src --dry-run",
-    "type:report": "npm run type:coverage && npm run type:check-circular"
+    "type:report": "npm run type:coverage && npm run type:check-circular",
+    "repository:validate": "node scripts/repository-config.js validate",
+    "repository:update": "node scripts/repository-config.js update",
+    "repository:info": "node scripts/repository-config.js info"
   },
   "keywords": [
     "testing",
@@ -164,10 +167,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rimor-project/rimor.git"
+    "url": "https://github.com/sasakama-code/rimor.git"
   },
   "bugs": {
-    "url": "https://github.com/rimor-project/rimor/issues"
+    "url": "https://github.com/sasakama-code/rimor/issues"
   },
-  "homepage": "https://github.com/rimor-project/rimor#readme"
+  "homepage": "https://github.com/sasakama-code/rimor#readme"
 }
