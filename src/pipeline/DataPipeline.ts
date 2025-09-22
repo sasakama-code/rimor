@@ -317,7 +317,7 @@ export class DataPipeline {
    * 変換器の取得
    */
   getTransformer<TInput, TOutput>(name: string): IDataTransformer<TInput, TOutput> | undefined {
-    return this.transformers.get(name);
+    return this.transformers.get(name) as IDataTransformer<TInput, TOutput> | undefined;
   }
 
   /**
