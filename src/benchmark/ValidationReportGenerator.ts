@@ -11,8 +11,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import {
-  ExternalExternalBenchmarkResult,
-  ExternalExternalUnifiedAnalysisMetrics,
+  ExternalBenchmarkResult,
+  ExternalUnifiedAnalysisMetrics,
   ComparisonReport,
 } from './ExternalProjectBenchmarkRunner';
 

@@ -17,7 +17,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { ExternalExternalBenchmarkResult, BaselineIntegratedResult } from '../ExternalProjectBenchmarkRunner';
+import { ExternalBenchmarkResult, BaselineIntegratedResult } from '../ExternalProjectBenchmarkRunner';
 import { BaselineComparison } from '../types';
 
 /**
@@ -351,7 +351,7 @@ export class BenchmarkReportGenerator {
 
     results.forEach(result => {
       const target5msIcon = result.target5ms.achieved ? '✅' : '❌';
-      const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
+      const memoryMB = Math.round(((result.performance as any).memoryUsageDetail?.heapUsed || result.performance.memoryUsage) / 1024 / 1024);
 
       content += `| ${result.projectName} | ${result.performance.timePerFile.toFixed(2)} | ${target5msIcon} | ${(result.accuracy.taintTyperSuccessRate * 100).toFixed(1)}% | ${memoryMB} |\\n`;
     });
@@ -368,14 +368,18 @@ export class BenchmarkReportGenerator {
       content += `|------------|-----------|-----------|-------------|\\n`;
 
       comparison.projectComparisons.forEach(comp => {
+        const target5msStatus = comp.target5msImprovement > 0 ? 'improved' 
+          : comp.target5msImprovement === 0 && comp.target5msAchieved ? 'maintained'
+          : 'degraded';
+        
         const statusIcon =
-          comp.target5msStatus === 'improved'
+          target5msStatus === 'improved'
             ? '🎯'
-            : comp.target5msStatus === 'maintained'
+            : target5msStatus === 'maintained'
               ? '✅'
               : '⚠️';
 
-        content += `| ${comp.projectName} | ${comp.performanceImprovement.toFixed(1)}% | ${comp.accuracyImprovement.toFixed(1)}% | ${comp.target5msStatus} ${statusIcon} |\\n`;
+        content += `| ${comp.projectName} | ${comp.performanceImprovement.toFixed(1)}% | ${comp.accuracyImprovement.toFixed(1)}% | ${target5msStatus} ${statusIcon} |\\n`;
       });
 
       content += `\\n`;
@@ -477,7 +481,7 @@ export class BenchmarkReportGenerator {
 
     results.forEach(result => {
       const target5msIcon = result.target5ms.achieved ? '✅' : '❌';
-      const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
+      const memoryMB = Math.round(((result.performance as any).memoryUsageDetail?.heapUsed || result.performance.memoryUsage) / 1024 / 1024);
 
       html += `                <tr>\\n`;
       html += `                    <td>${result.projectName}</td>\\n`;
@@ -531,7 +535,7 @@ export class BenchmarkReportGenerator {
 
     // データ行
     results.forEach(result => {
-      const memoryMB = Math.round(result.performance.memoryUsage.heapUsed / 1024 / 1024);
+      const memoryMB = Math.round(((result.performance as any).memoryUsageDetail?.heapUsed || result.performance.memoryUsage) / 1024 / 1024);
 
       let row = [
         result.projectName,
@@ -552,10 +556,14 @@ export class BenchmarkReportGenerator {
         );
 
         if (projectComparison) {
+          const target5msStatus = projectComparison.target5msImprovement > 0 ? 'improved' 
+            : projectComparison.target5msImprovement === 0 && projectComparison.target5msAchieved ? 'maintained'
+            : 'degraded';
+          
           row.push(
             projectComparison.performanceImprovement.toFixed(1),
             projectComparison.accuracyImprovement.toFixed(1),
-            projectComparison.target5msStatus
+            target5msStatus
           );
         } else {
           row.push('N/A', 'N/A', 'N/A');
@@ -920,7 +928,7 @@ export class BenchmarkReportGenerator {
 
     // メモリ使用量チェック
     const avgMemoryMB =
-      results.reduce((sum, r) => sum + r.performance.memoryUsage.heapUsed, 0) /
+      results.reduce((sum, r) => sum + ((r.performance as any).memoryUsageDetail?.heapUsed || r.performance.memoryUsage), 0) /
       results.length /
       1024 /
       1024;
