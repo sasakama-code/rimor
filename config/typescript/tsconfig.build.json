@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../../src",
+    "outDir": "../../dist",
+    "composite": false,
+    "incremental": true,
+    "tsBuildInfoFile": "../../dist/.tsbuildinfo",
+
+    // Issue #147対応: PII露出リスク完全解消
+    "inlineSourceMap": false,
+    "inlineSources": false
+  },
+  "include": ["../../src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "tests",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "coverage",
+    "temp",
+    "docs",
+    "scripts",
+    "demo",
+    "**/__tests__/**",
+    "**/__mocks__/**"
+  ]
+}

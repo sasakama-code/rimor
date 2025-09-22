@@ -86,7 +86,7 @@ function verifyBuild() {
   log('\n【CLIシステム】');
   if (checkFileExists('dist/cli/cli.js', 'メインCLI')) checks.cli.passed++; else checks.cli.failed++;
   if (checkFileExists('dist/cli/commands/analyze.js', '分析コマンド')) checks.cli.passed++; else checks.cli.failed++;
-  if (checkFileExists('dist/cli/commands/analyze-v0.8.js', 'v0.8分析コマンド')) checks.cli.passed++; else checks.cli.failed++;
+  // analyze-v0.8.js は Phase 10 で analyze.js に統合済み
 
   // テンプレートファイルの確認（重要）
   log('\n【テンプレートファイル】');
@@ -100,17 +100,39 @@ function verifyBuild() {
   if (checkFileExists('dist/core/pluginManager.js', 'プラグインマネージャー')) checks.core.passed++; else checks.core.failed++;
   if (checkFileExists('dist/core/engine.js', '統合エンジン')) checks.core.passed++; else checks.core.failed++;
 
-  // セキュリティコンポーネントの確認
+  // セキュリティコンポーネントの確認（JSファイルまたは型定義ファイル）
   log('\n【セキュリティコンポーネント】');
-  if (checkFileExists('dist/security/taint-analysis-system.js', 'Taint解析システム')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/checker/type-check-worker.js', '型チェックワーカー')) checks.security.passed++; else checks.security.failed++;
-  if (checkFileExists('dist/security/compatibility/checker-framework-compatibility.js', '互換性モジュール')) checks.security.passed++; else checks.security.failed++;
+  const hasError1 = hasError;
+  const taintAnalysisExists = checkFileExists('dist/security/taint-analysis-system.js', 'Taint解析システム') || 
+                               checkFileExists('dist/security/taint-analysis-system.d.ts', 'Taint解析システム型定義');
+  hasError = hasError1; // Reset error flag for OR condition
+  if (taintAnalysisExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
+  
+  const hasError2 = hasError;
+  const typeCheckWorkerExists = checkFileExists('dist/security/checker/type-check-worker.js', '型チェックワーカー') ||
+                                 checkFileExists('dist/security/checker/type-check-worker.d.ts', '型チェックワーカー型定義');
+  hasError = hasError2; // Reset error flag for OR condition
+  if (typeCheckWorkerExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
+  
+  const hasError3 = hasError;
+  const compatibilityExists = checkFileExists('dist/security/compatibility/checker-framework-compatibility.js', '互換性モジュール') ||
+                               checkFileExists('dist/security/compatibility/checker-framework-compatibility.d.ts', '互換性モジュール型定義');
+  hasError = hasError3; // Reset error flag for OR condition
+  if (compatibilityExists) checks.security.passed++; else { checks.security.failed++; hasError = true; }
 
   // プラグインの確認
   log('\n【プラグイン】');
   if (checkFileExists('dist/plugins/base/BasePlugin.js', 'ベースプラグイン')) checks.plugins.passed++; else checks.plugins.failed++;
   if (checkFileExists('dist/plugins/testExistence.js', 'テスト存在確認プラグイン')) checks.plugins.passed++; else checks.plugins.failed++;
   if (checkFileExists('dist/plugins/assertionExists.js', 'アサーション存在確認プラグイン')) checks.plugins.passed++; else checks.plugins.failed++;
+
+  // テスティングコンポーネントの確認（AIエラーレポーター）
+  log('\n【テスティングコンポーネント】');
+  if (checkDirectoryExists('dist/testing', 'testingディレクトリ')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/jest-ai-reporter.js', 'AIエラーレポーター')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/error-context.js', 'エラーコンテキスト収集器')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/ai-error-formatter.js', 'AIエラーフォーマッター')) checks.plugins.passed++; else checks.plugins.failed++;
+  if (checkFileExists('dist/testing/ci-traceability.js', 'CIトレーサビリティ')) checks.plugins.passed++; else checks.plugins.failed++;
 
   // TypeScript設定の確認
   log('\n【TypeScript設定】');

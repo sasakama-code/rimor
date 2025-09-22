@@ -1,14 +1,14 @@
 /**
- * ResourceLimits テストスイート  
+ * ResourceLimits テストスイート
  * リソース制限監視システムのテスト
  */
 
-import { 
+import {
   AnalysisLimits,
   DEFAULT_ANALYSIS_LIMITS,
   RESOURCE_LIMIT_PROFILES,
   ResourceLimitMonitor,
-  defaultResourceMonitor
+  defaultResourceMonitor,
 } from '../../src/utils/resourceLimits';
 
 describe('ResourceLimits', () => {
@@ -29,14 +29,22 @@ describe('ResourceLimits', () => {
       expect(RESOURCE_LIMIT_PROFILES.light).toBeDefined();
       expect(RESOURCE_LIMIT_PROFILES.standard).toBeDefined();
       expect(RESOURCE_LIMIT_PROFILES.heavy).toBeDefined();
-      
+
       // light profile should have smaller limits
-      expect(RESOURCE_LIMIT_PROFILES.light.maxFileSize).toBeLessThan(DEFAULT_ANALYSIS_LIMITS.maxFileSize);
-      expect(RESOURCE_LIMIT_PROFILES.light.maxMemoryUsage).toBeLessThan(DEFAULT_ANALYSIS_LIMITS.maxMemoryUsage);
-      
+      expect(RESOURCE_LIMIT_PROFILES.light.maxFileSize).toBeLessThan(
+        DEFAULT_ANALYSIS_LIMITS.maxFileSize
+      );
+      expect(RESOURCE_LIMIT_PROFILES.light.maxMemoryUsage).toBeLessThan(
+        DEFAULT_ANALYSIS_LIMITS.maxMemoryUsage
+      );
+
       // heavy profile should have larger limits
-      expect(RESOURCE_LIMIT_PROFILES.heavy.maxFileSize).toBeGreaterThan(DEFAULT_ANALYSIS_LIMITS.maxFileSize);
-      expect(RESOURCE_LIMIT_PROFILES.heavy.maxMemoryUsage).toBeGreaterThan(DEFAULT_ANALYSIS_LIMITS.maxMemoryUsage);
+      expect(RESOURCE_LIMIT_PROFILES.heavy.maxFileSize).toBeGreaterThan(
+        DEFAULT_ANALYSIS_LIMITS.maxFileSize
+      );
+      expect(RESOURCE_LIMIT_PROFILES.heavy.maxMemoryUsage).toBeGreaterThan(
+        DEFAULT_ANALYSIS_LIMITS.maxMemoryUsage
+      );
     });
   });
 
@@ -57,7 +65,7 @@ describe('ResourceLimits', () => {
       it('should initialize with custom limits', () => {
         const customLimits: AnalysisLimits = {
           ...DEFAULT_ANALYSIS_LIMITS,
-          maxFileSize: 1024
+          maxFileSize: 1024,
         };
         const customMonitor = new ResourceLimitMonitor(customLimits);
         const usage = customMonitor.getResourceUsage();
@@ -68,7 +76,7 @@ describe('ResourceLimits', () => {
     describe('startAnalysis', () => {
       it('should initialize analysis tracking', () => {
         monitor.startAnalysis();
-        
+
         const usage = monitor.getResourceUsage();
         expect(usage.elapsedTime).toBeGreaterThanOrEqual(0);
         expect(usage.processedFiles).toBe(0);
@@ -107,10 +115,10 @@ describe('ResourceLimits', () => {
         expect(result).toBe(true);
       });
 
-      it('should return false when analysis time exceeds limit', (done) => {
+      it('should return false when analysis time exceeds limit', done => {
         // 時間制限を1msに設定してテスト
         monitor.updateLimits({ maxAnalysisTime: 1 });
-        
+
         // 少し待機してから時間チェック
         setTimeout(() => {
           const result = monitor.checkAnalysisTime();
@@ -156,7 +164,7 @@ describe('ResourceLimits', () => {
       it('should track processed files correctly', () => {
         monitor.recordProcessedFile();
         monitor.recordProcessedFile();
-        
+
         const usage = monitor.getResourceUsage();
         expect(usage.processedFiles).toBe(2);
       });
@@ -222,7 +230,7 @@ describe('ResourceLimits', () => {
         const initialUsage = monitor.getResourceUsage();
         monitor.recordProcessedFile();
         const updatedUsage = monitor.getResourceUsage();
-        
+
         expect(updatedUsage.processedFiles).toBe(initialUsage.processedFiles + 1);
       });
     });
@@ -234,12 +242,12 @@ describe('ResourceLimits', () => {
 
       it('should return current resource usage', () => {
         const usage = monitor.getResourceUsage();
-        
+
         expect(usage).toHaveProperty('elapsedTime');
         expect(usage).toHaveProperty('processedFiles');
         expect(usage).toHaveProperty('memoryUsage');
         expect(usage).toHaveProperty('limits');
-        
+
         expect(typeof usage.elapsedTime).toBe('number');
         expect(typeof usage.processedFiles).toBe('number');
         expect(typeof usage.memoryUsage).toBe('number');
@@ -251,7 +259,7 @@ describe('ResourceLimits', () => {
       it('should update specific limits', () => {
         const newLimits = { maxFileSize: 2048, maxMemoryUsage: 256 };
         monitor.updateLimits(newLimits);
-        
+
         const usage = monitor.getResourceUsage();
         expect(usage.limits.maxFileSize).toBe(2048);
         expect(usage.limits.maxMemoryUsage).toBe(256);
@@ -261,7 +269,7 @@ describe('ResourceLimits', () => {
       it('should preserve existing limits when updating', () => {
         const originalMaxFiles = DEFAULT_ANALYSIS_LIMITS.maxFilesProcessed;
         monitor.updateLimits({ maxFileSize: 1024 });
-        
+
         const usage = monitor.getResourceUsage();
         expect(usage.limits.maxFilesProcessed).toBe(originalMaxFiles);
       });
@@ -271,21 +279,21 @@ describe('ResourceLimits', () => {
       it('should set light profile limits', () => {
         monitor.setProfile('light');
         const usage = monitor.getResourceUsage();
-        
+
         expect(usage.limits).toEqual(RESOURCE_LIMIT_PROFILES.light);
       });
 
       it('should set standard profile limits', () => {
         monitor.setProfile('standard');
         const usage = monitor.getResourceUsage();
-        
+
         expect(usage.limits).toEqual(RESOURCE_LIMIT_PROFILES.standard);
       });
 
       it('should set heavy profile limits', () => {
         monitor.setProfile('heavy');
         const usage = monitor.getResourceUsage();
-        
+
         expect(usage.limits).toEqual(RESOURCE_LIMIT_PROFILES.heavy);
       });
     });

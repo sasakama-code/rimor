@@ -29,7 +29,7 @@ export class TestFileExtractor {
       '**/*.spec.ts',
       '**/*.spec.js',
       '**/__tests__/**/*.ts',
-      '**/__tests__/**/*.js'
+      '**/__tests__/**/*.js',
     ];
 
     const ignorePatterns = [
@@ -37,7 +37,7 @@ export class TestFileExtractor {
       '**/dist/**',
       '**/build/**',
       '**/coverage/**',
-      '**/.git/**'
+      '**/.git/**',
     ];
 
     const testFiles: TestCase[] = [];
@@ -45,18 +45,18 @@ export class TestFileExtractor {
     for (const pattern of testPatterns) {
       const files = glob.sync(path.join(projectPath, pattern), {
         ignore: ignorePatterns,
-        absolute: true
+        absolute: true,
       });
 
       for (const filePath of files) {
         try {
           const content = await fs.promises.readFile(filePath, 'utf8');
           const relativePath = path.relative(projectPath, filePath);
-          
+
           testFiles.push({
             filePath: relativePath,
             content,
-            methods: this.extractTestMethods(content)
+            methods: this.extractTestMethods(content),
           });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -75,11 +75,11 @@ export class TestFileExtractor {
    */
   private static extractTestMethods(content: string): string[] {
     const methods: string[] = [];
-    
+
     // Jest/Mocha形式のテストメソッドを検出
     const testPatterns = [
       /(?:it|test|describe)\s*\(\s*['"`]([^'"`]+)['"`]/g,
-      /(?:it|test|describe)\.(?:each|only|skip)\s*\(\s*['"`]([^'"`]+)['"`]/g
+      /(?:it|test|describe)\.(?:each|only|skip)\s*\(\s*['"`]([^'"`]+)['"`]/g,
     ];
 
     for (const pattern of testPatterns) {
@@ -98,11 +98,7 @@ export class TestFileExtractor {
    * @returns テストファイルの場合true
    */
   static isTestFile(filePath: string): boolean {
-    const testPatterns = [
-      /\.test\.[jt]sx?$/,
-      /\.spec\.[jt]sx?$/,
-      /__tests__\//
-    ];
+    const testPatterns = [/\.test\.[jt]sx?$/, /\.spec\.[jt]sx?$/, /__tests__\//];
 
     return testPatterns.some(pattern => pattern.test(filePath));
   }

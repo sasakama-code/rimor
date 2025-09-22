@@ -19,7 +19,7 @@ describe('SimpleDomainRules', () => {
     it('ルールを追加できること', () => {
       // デフォルトルールの数を確認
       const initialRuleCount = rules.getAllRules().length;
-      
+
       const testRule: DomainRule = {
         id: 'test-rule-add',
         name: 'テスト追加ルール',
@@ -30,14 +30,14 @@ describe('SimpleDomainRules', () => {
           {
             type: 'keyword',
             pattern: 'testpattern',
-            message: 'テストパターンが検出されました'
-          }
-        ]
+            message: 'テストパターンが検出されました',
+          },
+        ],
       };
 
       rules.addRule(testRule);
       const allRules = rules.getAllRules();
-      
+
       expect(allRules).toHaveLength(initialRuleCount + 1);
       const addedRule = allRules.find(r => r.id === 'test-rule-add');
       expect(addedRule).toBeDefined();
@@ -46,7 +46,7 @@ describe('SimpleDomainRules', () => {
 
     it('ルールを削除できること', () => {
       const initialRuleCount = rules.getAllRules().length;
-      
+
       const testRule: DomainRule = {
         id: 'test-rule-delete',
         name: '削除テストルール',
@@ -57,14 +57,14 @@ describe('SimpleDomainRules', () => {
           {
             type: 'regex',
             pattern: 'deletetest',
-            message: '削除テストメッセージ'
-          }
-        ]
+            message: '削除テストメッセージ',
+          },
+        ],
       };
-      
+
       rules.addRule(testRule);
       expect(rules.getAllRules()).toHaveLength(initialRuleCount + 1);
-      
+
       rules.removeRule('test-rule-delete');
       expect(rules.getAllRules()).toHaveLength(initialRuleCount);
       const deletedRule = rules.getAllRules().find(r => r.id === 'test-rule-delete');
@@ -82,16 +82,103 @@ describe('SimpleDomainRules', () => {
           {
             type: 'keyword',
             pattern: 'uniquepattern',
-            message: 'ユニークパターン検出'
-          }
-        ]
+            message: 'ユニークパターン検出',
+          },
+        ],
       };
-      
+
       rules.addRule(uniqueRule);
       const maintainabilityRules = rules.getRulesByCategory('maintainability');
-      
+
       const hasUniqueRule = maintainabilityRules.some(r => r.id === 'unique-category-rule');
       expect(hasUniqueRule).toBe(true);
+    });
+  });
+
+  describe('ルールの検証', () => {
+    it('不正なルールを拒否すること', () => {
+      // IDなし
+      const ruleWithoutId = {
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: [],
+      };
+      expect(() => rules.addRule(ruleWithoutId as any)).toThrow('Rule must have a valid id');
+
+      // 名前なし
+      const ruleWithoutName = {
+        id: 'test-id',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: [],
+      };
+      expect(() => rules.addRule(ruleWithoutName as any)).toThrow('Rule must have a valid name');
+
+      // パターンなし
+      const ruleWithoutPatterns = {
+        id: 'test-id',
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'high',
+      };
+      expect(() => rules.addRule(ruleWithoutPatterns as any)).toThrow(
+        'Rule must have patterns array'
+      );
+
+      // 不正なパターンタイプ
+      const ruleWithInvalidPattern = {
+        id: 'test-id',
+        name: 'テストルール',
+        description: 'テスト',
+        category: 'security',
+        severity: 'error',
+        patterns: [
+          {
+            type: 'invalid',
+            pattern: 'test',
+            message: 'test',
+          },
+        ],
+      };
+      expect(() => rules.addRule(ruleWithInvalidPattern as any)).toThrow(
+        'Pattern must have a valid type'
+      );
+    });
+
+    it('正しい型のルールを受け入れること', () => {
+      const validRule: DomainRule = {
+        id: 'valid-rule',
+        name: '有効なルール',
+        description: '有効なルールの説明',
+        category: 'quality',
+        severity: 'warning',
+        patterns: [
+          {
+            type: 'regex',
+            pattern: '^test.*$',
+            message: 'テストパターン',
+          },
+          {
+            type: 'keyword',
+            pattern: 'keyword',
+            message: 'キーワードパターン',
+          },
+          {
+            type: 'ast',
+            pattern: 'CallExpression',
+            message: 'ASTパターン',
+          },
+        ],
+        tags: ['test', 'validation'],
+      };
+
+      expect(() => rules.addRule(validRule)).not.toThrow();
+      const addedRule = rules.getAllRules().find(r => r.id === 'valid-rule');
+      expect(addedRule).toBeDefined();
     });
   });
 
@@ -107,9 +194,9 @@ describe('SimpleDomainRules', () => {
           {
             type: 'keyword',
             pattern: 'auth|login',
-            message: '認証機能のテストが必要です'
-          }
-        ]
+            message: '認証機能のテストが必要です',
+          },
+        ],
       };
       rules.addRule(testRule);
     });
@@ -146,9 +233,9 @@ describe('SimpleDomainRules', () => {
           {
             type: 'keyword',
             pattern: 'severityerror',
-            message: 'エラーレベルの違反'
-          }
-        ]
+            message: 'エラーレベルの違反',
+          },
+        ],
       };
 
       const warningRule: DomainRule = {
@@ -161,9 +248,9 @@ describe('SimpleDomainRules', () => {
           {
             type: 'keyword',
             pattern: 'severitywarning',
-            message: '警告レベルの違反'
-          }
-        ]
+            message: '警告レベルの違反',
+          },
+        ],
       };
 
       rules.addRule(errorRule);
@@ -171,12 +258,12 @@ describe('SimpleDomainRules', () => {
 
       const content = 'export function test() { severityerror(); severitywarning(); }';
       const violations = await rules.evaluateFile('test.ts', content);
-      
+
       // 追加したルールの違反のみをフィルタ
-      const testViolations = violations.filter(v => 
-        v.ruleId === 'severity-error-rule' || v.ruleId === 'severity-warning-rule'
+      const testViolations = violations.filter(
+        v => v.ruleId === 'severity-error-rule' || v.ruleId === 'severity-warning-rule'
       );
-      
+
       expect(testViolations).toHaveLength(2);
       // ソートして確認
       const sorted = testViolations.sort((a, b) => {

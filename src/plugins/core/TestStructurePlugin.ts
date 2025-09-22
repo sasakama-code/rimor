@@ -4,7 +4,7 @@ import {
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement
+  Improvement,
 } from '../../core/types';
 import { TestPatterns } from '../../utils/regexPatterns';
 import { RegexHelper } from '../../utils/regexHelper';
@@ -63,7 +63,6 @@ export class TestStructurePlugin extends BasePlugin {
       if (largeFilePattern) {
         patterns.push(largeFilePattern);
       }
-
     } catch (error) {
       this.logError('Error detecting test structure patterns', error);
     }
@@ -84,23 +83,23 @@ export class TestStructurePlugin extends BasePlugin {
           break;
         case 'poor-test-organization':
           maintainabilityScore -= 40;
-          issues.push("");
+          issues.push('');
           break;
         case 'missing-setup-teardown':
           maintainabilityScore -= 25;
-          issues.push("");
+          issues.push('');
           break;
         case 'deeply-nested-describes':
           maintainabilityScore -= 15;
-          issues.push("");
+          issues.push('');
           break;
         case 'inconsistent-naming':
           maintainabilityScore -= 10;
-          issues.push("");
+          issues.push('');
           break;
         case 'large-test-file':
           maintainabilityScore -= 15;
-          issues.push("");
+          issues.push('');
           break;
       }
     });
@@ -108,84 +107,95 @@ export class TestStructurePlugin extends BasePlugin {
     maintainabilityScore = Math.max(0, Math.min(100, maintainabilityScore));
 
     // 信頼度は検出されたパターンの平均信頼度
-    const avgConfidence = patterns.length > 0 
-      ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
-      : 1.0;
+    const avgConfidence =
+      patterns.length > 0
+        ? patterns.reduce((sum, p) => sum + p.confidence, 0) / patterns.length
+        : 1.0;
 
     return {
       overall: maintainabilityScore,
-      breakdown: {
+      dimensions: {
         completeness: 70,
         correctness: 75,
-        maintainability: maintainabilityScore
+        maintainability: maintainabilityScore,
       },
-      confidence: avgConfidence
+      confidence: avgConfidence,
     };
   }
 
   suggestImprovements(evaluation: QualityScore): Improvement[] {
     const improvements: Improvement[] = [];
-    
+
     if (evaluation.overall >= 85) {
       // 高品質の場合は改善提案なし
       return improvements;
     }
 
-    const maintainabilityScore = evaluation.breakdown?.maintainability || 0;
-    
+    const maintainabilityScore = evaluation.dimensions?.maintainability || 0;
+
     // 改善提案を生成（スコアベース）
     if (maintainabilityScore < 50) {
-      improvements.push(this.createImprovement(
-        'structure',
-        'high',
-        'refactor',
-        'AAAパターンの適用',
-        'Arrange-Act-Assertパターンを使用してテストを構造化し、各段階を明確に分離してください',
-        this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 30, effortMinutes: 45 }
-      ));
+      improvements.push(
+        this.createImprovement(
+          'structure',
+          'high',
+          'refactor',
+          'AAAパターンの適用',
+          'Arrange-Act-Assertパターンを使用してテストを構造化し、各段階を明確に分離してください',
+          this.createCodeLocation('unknown', 1, 1),
+          0.3
+        )
+      );
 
-      improvements.push(this.createImprovement(
-        'setup',
-        'medium',
-        'add',
-        'セットアップ・ティアダウンの追加',
-        'beforeEach/afterEachを使用して適切なテスト環境の準備と後処理を行ってください',
-        this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 20, effortMinutes: 30 }
-      ));
+      improvements.push(
+        this.createImprovement(
+          'setup',
+          'medium',
+          'add-test',
+          'セットアップ・ティアダウンの追加',
+          'beforeEach/afterEachを使用して適切なテスト環境の準備と後処理を行ってください',
+          this.createCodeLocation('unknown', 1, 1),
+          0.2
+        )
+      );
     }
 
     if (maintainabilityScore < 70) {
-      improvements.push(this.createImprovement(
-        'nesting',
-        'medium',
-        'refactor',
-        'ネスト構造の簡素化',
-        'describeブロックのネストを2-3レベルに制限し、より平坦な構造に変更してください',
-        this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 15, effortMinutes: 25 }
-      ));
+      improvements.push(
+        this.createImprovement(
+          'nesting',
+          'medium',
+          'refactor',
+          'ネスト構造の簡素化',
+          'describeブロックのネストを2-3レベルに制限し、より平坦な構造に変更してください',
+          this.createCodeLocation('unknown', 1, 1),
+          0.15
+        )
+      );
 
-      improvements.push(this.createImprovement(
-        'naming',
-        'low',
-        'modify',
-        '一貫した命名規則の適用',
-        'すべてのテストケースで「should + 動詞」の形式など、一貫した命名規則を使用してください',
-        this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 10, effortMinutes: 20 }
-      ));
+      improvements.push(
+        this.createImprovement(
+          'naming',
+          'low',
+          'refactor',
+          '一貫した命名規則の適用',
+          'すべてのテストケースで「should + 動詞」の形式など、一貫した命名規則を使用してください',
+          this.createCodeLocation('unknown', 1, 1),
+          0.1
+        )
+      );
 
-      improvements.push(this.createImprovement(
-        'size',
-        'medium',
-        'refactor',
-        'テストファイルの分割',
-        '大きなテストファイルを機能やクラスごとに複数のファイルに分割してください',
-        this.createCodeLocation('unknown', 1, 1),
-        { scoreImprovement: 15, effortMinutes: 40 }
-      ));
+      improvements.push(
+        this.createImprovement(
+          'size',
+          'medium',
+          'refactor',
+          'テストファイルの分割',
+          '大きなテストファイルを機能やクラスごとに複数のファイルに分割してください',
+          this.createCodeLocation('unknown', 1, 1),
+          0.15
+        )
+      );
     }
 
     return improvements;
@@ -193,7 +203,7 @@ export class TestStructurePlugin extends BasePlugin {
 
   private detectWellStructuredTests(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
-    
+
     // AAA パターンコメントの検出
     const aaaComments = this.AAA_PATTERNS.filter(pattern => {
       pattern.lastIndex = 0;
@@ -205,7 +215,7 @@ export class TestStructurePlugin extends BasePlugin {
       /beforeEach\s*\(/g,
       /afterEach\s*\(/g,
       /beforeAll\s*\(/g,
-      /afterAll\s*\(/g
+      /afterAll\s*\(/g,
     ].filter(pattern => {
       pattern.lastIndex = 0;
       return pattern.test(cleanContent);
@@ -214,21 +224,28 @@ export class TestStructurePlugin extends BasePlugin {
     // 適切な構造の指標
     const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE).length;
     const describeSuites = this.findPatternInCode(cleanContent, TestPatterns.DESCRIBE_SUITE).length;
-    
+
     // 良い構造の条件：AAA コメント使用、セットアップ・ティアダウン存在、適切な比率
-    if (aaaComments.length >= 2 && setupTeardown.length >= 1 && testCases > 0 && describeSuites > 0) {
+    if (
+      aaaComments.length >= 2 &&
+      setupTeardown.length >= 1 &&
+      testCases > 0 &&
+      describeSuites > 0
+    ) {
       return this.createDetectionResult(
         'well-structured-tests',
         'Well Structured Tests',
         this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
         0.9,
-        [{
-          type: 'structure',
-          description: `構造化されたテスト: ${aaaComments.length}個のAAAパターンコメント、${setupTeardown.length}個のセットアップ・ティアダウン`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.9
-        }]
+        [
+          {
+            type: 'structure',
+            description: `構造化されたテスト: ${aaaComments.length}個のAAAパターンコメント、${setupTeardown.length}個のセットアップ・ティアダウン`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.9,
+          },
+        ]
       );
     }
 
@@ -238,11 +255,14 @@ export class TestStructurePlugin extends BasePlugin {
   private detectPoorTestOrganization(content: string, testFile: TestFile): DetectionResult | null {
     const cleanContent = this.removeCommentsAndStrings(content);
     const testCases = this.findPatternInCode(cleanContent, TestPatterns.TEST_CASE);
-    
+
     if (testCases.length === 0) return null;
 
     // 単一のテストケース内で複数の操作を行っているかチェック
-    const totalExpectStatements = this.findPatternInCode(cleanContent, TestPatterns.EXPECT_STATEMENT).length;
+    const totalExpectStatements = this.findPatternInCode(
+      cleanContent,
+      TestPatterns.EXPECT_STATEMENT
+    ).length;
     const multipleOperationPatterns = TestPatterns.SERVICE_OPERATIONS;
 
     let totalOperations = 0;
@@ -258,13 +278,15 @@ export class TestStructurePlugin extends BasePlugin {
         'Poor Test Organization',
         this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
         0.8,
-        [{
-          type: 'structure',
-          description: `構造不良: 単一のテストケースで${totalOperations}個の操作と${totalExpectStatements}個の検証を行っています`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.8
-        }]
+        [
+          {
+            type: 'structure',
+            description: `構造不良: 単一のテストケースで${totalOperations}個の操作と${totalExpectStatements}個の検証を行っています`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.8,
+          },
+        ]
       );
     }
 
@@ -278,7 +300,7 @@ export class TestStructurePlugin extends BasePlugin {
       TestPatterns.BEFORE_EACH,
       TestPatterns.AFTER_EACH,
       TestPatterns.BEFORE_ALL,
-      TestPatterns.AFTER_ALL
+      TestPatterns.AFTER_ALL,
     ];
 
     const setupTeardownCount = setupTeardownMethods.filter(pattern => {
@@ -292,13 +314,15 @@ export class TestStructurePlugin extends BasePlugin {
         'Missing Setup Teardown',
         this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
         0.7,
-        [{
-          type: 'structure',
-          description: `セットアップ・ティアダウン不足: ${testCases}個のテストケースに対してbeforeEach/afterEachがありません`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.7
-        }]
+        [
+          {
+            type: 'structure',
+            description: `セットアップ・ティアダウン不足: ${testCases}個のテストケースに対してbeforeEach/afterEachがありません`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.7,
+          },
+        ]
       );
     }
 
@@ -328,13 +352,15 @@ export class TestStructurePlugin extends BasePlugin {
         'Deeply Nested Describes',
         this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
         0.8,
-        [{
-          type: 'structure',
-          description: `深いネスト: 最大${maxNestLevel}レベルのdescribeブロックが検出されました`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.8
-        }]
+        [
+          {
+            type: 'structure',
+            description: `深いネスト: 最大${maxNestLevel}レベルのdescribeブロックが検出されました`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.8,
+          },
+        ]
       );
     }
 
@@ -343,14 +369,14 @@ export class TestStructurePlugin extends BasePlugin {
 
   private detectInconsistentNaming(content: string, testFile: TestFile): DetectionResult | null {
     const testCases = this.findPatternInCode(content, /it\s*\(\s*['"`][^'"`]+['"`]/g);
-    
+
     if (testCases.length < 3) return null;
 
     const namingStyles: { [key: string]: number } = {
-      'should': 0,
-      'test': 0,
-      'creates': 0,
-      'other': 0
+      should: 0,
+      test: 0,
+      creates: 0,
+      other: 0,
     };
 
     testCases.forEach(testCase => {
@@ -374,13 +400,15 @@ export class TestStructurePlugin extends BasePlugin {
         'Inconsistent Naming',
         this.createCodeLocation(testFile.path, 1, this.parseCodeContent(content).totalLines),
         0.6,
-        [{
-          type: 'naming',
-          description: `命名の一貫性不足: ${usedStyles}種類の異なる命名スタイルが混在しています`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.6
-        }]
+        [
+          {
+            type: 'naming',
+            description: `命名の一貫性不足: ${usedStyles}種類の異なる命名スタイルが混在しています`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.6,
+          },
+        ]
       );
     }
 
@@ -398,13 +426,15 @@ export class TestStructurePlugin extends BasePlugin {
         'Large Test File',
         this.createCodeLocation(testFile.path, 1, parsed.totalLines),
         0.7,
-        [{
-          type: 'structure',
-          description: `大きなテストファイル: ${parsed.totalLines}行、${testCases}個のテストケース`,
-          location: this.createCodeLocation(testFile.path, 1, 1),
-          code: content.substring(0, 100) + '...',
-          confidence: 0.7
-        }]
+        [
+          {
+            type: 'structure',
+            description: `大きなテストファイル: ${parsed.totalLines}行、${testCases}個のテストケース`,
+            location: this.createCodeLocation(testFile.path, 1, 1),
+            code: content.substring(0, 100) + '...',
+            confidence: 0.7,
+          },
+        ]
       );
     }
 

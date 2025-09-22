@@ -14,15 +14,15 @@ export interface TestErrorContext {
   testFile: string;
   testName: string;
   errorType: ErrorType;
-  
+
   // エラー詳細
   error: {
     message: string;
     stack?: string;
-    actual?: any;
-    expected?: any;
+    actual?: unknown;
+    expected?: unknown;
   };
-  
+
   // コードコンテキスト（Select Context）
   codeContext: {
     failedLine: number;
@@ -33,7 +33,7 @@ export interface TestErrorContext {
     };
     testStructure: TestStructure;
   };
-  
+
   // 環境情報（Write Context）
   environment: {
     nodeVersion: string;
@@ -41,17 +41,17 @@ export interface TestErrorContext {
     ciEnvironment: boolean;
     memoryUsage: NodeJS.MemoryUsage;
   };
-  
+
   // 関連ファイル（Isolate Context）
   relatedFiles: {
     sourceFile?: string;
     dependencies: string[];
     configFiles: string[];
   };
-  
+
   // CIトレーサビリティ情報（オプション）
-  ciTraceability?: any;
-  
+  ciTraceability?: unknown;
+
   // 推奨アクション（Compress Context）
   suggestedActions: SuggestedAction[];
 }
@@ -77,49 +77,37 @@ export class TestErrorContextCollector {
   private codeAnalyzer: CodeContextAnalyzer;
   private readonly MAX_STACK_LINES = 10;
   private readonly MAX_CODE_LINES = 15;
-  
+
   constructor() {
     this.codeAnalyzer = new CodeContextAnalyzer();
   }
-  
+
   /**
    * テストエラーのコンテキストを収集
    */
   async collectErrorContext(
-    error: Error | any,
+    error: Error | unknown,
     testPath: string,
     testName: string,
     projectPath: string
   ): Promise<TestErrorContext> {
     const timestamp = new Date().toISOString();
-    
+
     // エラー情報の抽出
     const errorDetails = this.extractErrorDetails(error);
-    
+
     // コードコンテキストの収集
-    const codeContext = await this.extractCodeContext(
-      error,
-      testPath,
-      testName,
-      projectPath
-    );
-    
+    const codeContext = await this.extractCodeContext(error, testPath, testName, projectPath);
+
     // 環境情報の収集
     const environment = this.collectEnvironmentInfo();
-    
+
     // 関連ファイルの検出
-    const relatedFiles = await this.findRelatedFiles(
-      testPath,
-      projectPath
-    );
-    
+    const relatedFiles = await this.findRelatedFiles(testPath, projectPath);
+
     // 推奨アクションの生成
-    const suggestedActions = this.generateSuggestedActions(
-      errorDetails,
-      codeContext,
-      testPath
-    );
-    
+    const suggestedActions = this.generateSuggestedActions(errorDetails, codeContext, testPath);
+
     return {
       timestamp,
       testFile: testPath,
@@ -129,43 +117,55 @@ export class TestErrorContextCollector {
       codeContext,
       environment,
       relatedFiles,
-      suggestedActions
+      suggestedActions,
     };
   }
-  
+
   /**
    * エラー詳細の抽出
    */
-  private extractErrorDetails(error: Error | any): TestErrorContext['error'] {
-    const details: TestErrorContext['error'] = {
-      message: error?.message || String(error),
-      stack: error?.stack
+  private extractErrorDetails(error: Error | unknown): TestErrorContext['error'] {
+    // エラーオブジェクトの型ガード
+    const isErrorLike = (e: unknown): e is { message?: string; stack?: string } => {
+      return e !== null && typeof e === 'object';
     };
-    
+
+    const details: TestErrorContext['error'] = {
+      message: isErrorLike(error) && error.message ? error.message : String(error),
+      stack: isErrorLike(error) ? error.stack : undefined,
+    };
+
     // Jest特有のエラー情報を抽出
-    if (error && typeof error === 'object') {
-      if ('matcherResult' in error) {
-        details.actual = error.matcherResult?.actual;
-        details.expected = error.matcherResult?.expected;
-      } else if ('actual' in error && 'expected' in error) {
-        details.actual = error.actual;
-        details.expected = error.expected;
+    if (error && typeof error === 'object' && error !== null) {
+      const errorObj = error as Record<string, unknown>;
+
+      if (
+        'matcherResult' in errorObj &&
+        errorObj.matcherResult &&
+        typeof errorObj.matcherResult === 'object'
+      ) {
+        const matcherResult = errorObj.matcherResult as Record<string, unknown>;
+        details.actual = matcherResult.actual;
+        details.expected = matcherResult.expected;
+      } else if ('actual' in errorObj && 'expected' in errorObj) {
+        details.actual = errorObj.actual;
+        details.expected = errorObj.expected;
       }
     }
-    
+
     // スタックトレースの最適化（Context Compression）
     if (details.stack) {
       details.stack = this.optimizeStackTrace(details.stack);
     }
-    
+
     return details;
   }
-  
+
   /**
    * コードコンテキストの抽出
    */
   private async extractCodeContext(
-    error: Error | any,
+    error: Error | unknown,
     testPath: string,
     testName: string,
     projectPath: string
@@ -173,30 +173,30 @@ export class TestErrorContextCollector {
     const failedLine = this.extractFailedLine(error);
     const testContent = await this.readFileContent(testPath);
     const lines = testContent.split('\n');
-    
+
     // 失敗した行のコード
     const failedCode = lines[failedLine - 1] || '';
-    
+
     // 周辺コード（Context Selection）
     const beforeStart = Math.max(0, failedLine - this.MAX_CODE_LINES);
     const afterEnd = Math.min(lines.length, failedLine + this.MAX_CODE_LINES);
-    
+
     const surroundingCode = {
       before: lines.slice(beforeStart, failedLine - 1).join('\n'),
-      after: lines.slice(failedLine, afterEnd).join('\n')
+      after: lines.slice(failedLine, afterEnd).join('\n'),
     };
-    
+
     // テスト構造の分析
     const testStructure = this.analyzeTestStructure(testContent, testName);
-    
+
     return {
       failedLine,
       failedCode,
       surroundingCode,
-      testStructure
+      testStructure,
     };
   }
-  
+
   /**
    * 環境情報の収集
    */
@@ -205,10 +205,10 @@ export class TestErrorContextCollector {
       nodeVersion: process.version,
       jestVersion: this.getJestVersion(),
       ciEnvironment: process.env.CI === 'true',
-      memoryUsage: process.memoryUsage()
+      memoryUsage: process.memoryUsage(),
     };
   }
-  
+
   /**
    * 関連ファイルの検出
    */
@@ -218,15 +218,15 @@ export class TestErrorContextCollector {
   ): Promise<TestErrorContext['relatedFiles']> {
     const relatedFiles: TestErrorContext['relatedFiles'] = {
       dependencies: [],
-      configFiles: []
+      configFiles: [],
     };
-    
+
     // ソースファイルの検出
     const sourceFile = this.findSourceFile(testPath);
     if (sourceFile && fs.existsSync(sourceFile)) {
       relatedFiles.sourceFile = sourceFile;
     }
-    
+
     // インポートの解析
     try {
       const testContent = await this.readFileContent(testPath);
@@ -234,26 +234,26 @@ export class TestErrorContextCollector {
     } catch (error) {
       // エラーは無視
     }
-    
+
     // 設定ファイルの検出
     const configFiles = [
       'jest.config.js',
       'jest.config.mjs',
       'jest.setup.js',
       'tsconfig.json',
-      '.eslintrc.js'
+      '.eslintrc.js',
     ];
-    
+
     for (const configFile of configFiles) {
       const configPath = path.join(projectPath, configFile);
       if (fs.existsSync(configPath)) {
         relatedFiles.configFiles.push(configFile);
       }
     }
-    
+
     return relatedFiles;
   }
-  
+
   /**
    * 推奨アクションの生成（Context Compression）
    */
@@ -263,55 +263,55 @@ export class TestErrorContextCollector {
     testPath: string
   ): SuggestedAction[] {
     const actions: SuggestedAction[] = [];
-    
+
     // エラーメッセージに基づくアクション
     if (errorDetails.message.includes('Cannot find module')) {
       actions.push({
         priority: 'high',
         action: 'モジュールのインストールまたはパスの修正',
         reasoning: 'モジュールが見つからないエラーです',
-        codeSnippet: 'npm install <missing-module>'
+        codeSnippet: 'npm install <missing-module>',
       });
     }
-    
+
     if (errorDetails.message.includes('Expected') && errorDetails.message.includes('Received')) {
       actions.push({
         priority: 'medium',
         action: 'アサーションの期待値を確認',
         reasoning: '期待値と実際の値が一致していません',
-        codeSnippet: `expect(actual).toBe(${errorDetails.expected})`
+        codeSnippet: `expect(actual).toBe(${errorDetails.expected})`,
       });
     }
-    
+
     if (errorDetails.message.includes('TypeError')) {
       actions.push({
         priority: 'high',
         action: '型エラーの修正',
         reasoning: '型の不一致またはnull/undefined参照の可能性',
-        codeSnippet: '// null チェックを追加: if (value != null) { ... }'
+        codeSnippet: '// null チェックを追加: if (value != null) { ... }',
       });
     }
-    
+
     // コードコンテキストに基づくアクション
     if (codeContext.failedCode.includes('async') && !codeContext.failedCode.includes('await')) {
       actions.push({
         priority: 'medium',
         action: 'awaitキーワードの追加',
         reasoning: '非同期関数の呼び出しにawaitが不足している可能性',
-        codeSnippet: 'await ' + codeContext.failedCode.trim()
+        codeSnippet: 'await ' + codeContext.failedCode.trim(),
       });
     }
-    
+
     return actions;
   }
-  
+
   // ヘルパーメソッド
-  
+
   private determineErrorType(error: Error | any): ErrorType {
     if (!error) return ErrorType.UNKNOWN;
-    
+
     const message = error.message || String(error);
-    
+
     if (message.includes('Cannot find module') || message.includes('ENOENT')) {
       return ErrorType.FILE_NOT_FOUND;
     }
@@ -321,13 +321,23 @@ export class TestErrorContextCollector {
     if (message.includes('parse') || message.includes('SyntaxError')) {
       return ErrorType.PARSE_ERROR;
     }
-    
+
     return ErrorType.UNKNOWN;
   }
-  
-  private extractFailedLine(error: Error | any): number {
-    if (!error?.stack) return 1;
-    
+
+  private extractFailedLine(error: Error | unknown): number {
+    // 型ガードを使用してstackプロパティの存在を確認
+    const hasStack = (e: unknown): e is { stack: string } => {
+      return (
+        e !== null &&
+        typeof e === 'object' &&
+        'stack' in e &&
+        typeof (e as Record<string, unknown>).stack === 'string'
+      );
+    };
+
+    if (!hasStack(error)) return 1;
+
     const stackLines = error.stack.split('\n');
     for (const line of stackLines) {
       const match = line.match(/:(\d+):\d+\)$/);
@@ -335,19 +345,19 @@ export class TestErrorContextCollector {
         return parseInt(match[1], 10);
       }
     }
-    
+
     return 1;
   }
-  
+
   private optimizeStackTrace(stack: string): string {
     const lines = stack.split('\n');
     const relevantLines = lines
       .filter(line => !line.includes('node_modules'))
       .slice(0, this.MAX_STACK_LINES);
-    
+
     return relevantLines.join('\n');
   }
-  
+
   private async readFileContent(filePath: string): Promise<string> {
     try {
       return await fs.promises.readFile(filePath, 'utf-8');
@@ -355,18 +365,18 @@ export class TestErrorContextCollector {
       return '';
     }
   }
-  
+
   private analyzeTestStructure(content: string, testName: string): TestStructure {
     const describes: string[] = [];
     const hooks: string[] = [];
-    
+
     // describe ブロックの抽出
     const describeRegex = /describe\(['"`](.*?)['"`]/g;
     let match;
     while ((match = describeRegex.exec(content)) !== null) {
       describes.push(match[1]);
     }
-    
+
     // フックの検出
     const hookPatterns = ['beforeEach', 'afterEach', 'beforeAll', 'afterAll'];
     for (const hook of hookPatterns) {
@@ -374,38 +384,38 @@ export class TestErrorContextCollector {
         hooks.push(hook);
       }
     }
-    
+
     return {
       describes,
       currentTest: testName,
-      hooks
+      hooks,
     };
   }
-  
+
   private findSourceFile(testPath: string): string | undefined {
     // テストファイルから対応するソースファイルを推測
     const sourceFile = testPath
       .replace(/\.test\.(ts|js)$/, '.$1')
       .replace(/\.spec\.(ts|js)$/, '.$1')
       .replace('/__tests__/', '/');
-    
+
     return fs.existsSync(sourceFile) ? sourceFile : undefined;
   }
-  
+
   private extractImports(content: string): string[] {
     const imports: string[] = [];
     const importRegex = /import\s+.*?\s+from\s+['"`](.*?)['"`]/g;
     let match;
-    
+
     while ((match = importRegex.exec(content)) !== null) {
       if (!match[1].startsWith('.')) {
         imports.push(match[1]);
       }
     }
-    
+
     return [...new Set(imports)];
   }
-  
+
   private getJestVersion(): string | undefined {
     try {
       const packageJsonPath = path.join(process.cwd(), 'package.json');

@@ -15,7 +15,7 @@ export enum ThreatType {
   INSECURE_CRYPTO = 'insecure_crypto',
   HARDCODED_SECRET = 'hardcoded_secret',
   PATH_TRAVERSAL = 'path_traversal',
-  UNVALIDATED_INPUT = 'unvalidated_input'
+  UNVALIDATED_INPUT = 'unvalidated_input',
 }
 
 /**
@@ -52,10 +52,22 @@ export interface SecurityAuditResult {
 /**
  * セキュリティ監査オプション
  */
+/**
+ * カスタムセキュリティルール
+ */
+export interface SecurityRule {
+  id: string;
+  name: string;
+  pattern: string | RegExp;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  recommendation: string;
+}
+
 export interface SecurityAuditOptions {
   includeTests?: boolean;
   deepScan?: boolean;
-  customRules?: any[]; // 将来の拡張用
+  customRules?: SecurityRule[]; // 型安全性を向上
 }
 
 /**
@@ -67,14 +79,14 @@ export interface ISecurityAuditor {
    * セキュリティ監査を実行
    */
   audit(targetPath: string, options?: SecurityAuditOptions): Promise<SecurityAuditResult>;
-  
+
   /**
    * 特定のファイルをスキャン
    */
   scanFile(filePath: string): Promise<SecurityThreat[]>;
-  
+
   /**
    * カスタムルールの登録（将来の拡張用）
    */
-  registerRule?(rule: any): void;
+  registerRule?(rule: SecurityRule): void;
 }

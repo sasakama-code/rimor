@@ -3,7 +3,27 @@ node_modules/
 
 # Build
 dist/
+build/
 *.tsbuildinfo
+
+# Source maps - Issue #118,#126セキュリティ対応: 機密情報漏えい防止強化
+*.map
+*.js.map
+*.css.map
+*.d.ts.map
+
+# Issue #126対応: 包括的sourcemap除外設定
+dist/**/*.map
+dist/**/*.js.map
+dist/**/*.d.ts.map
+dist/**/*.css.map
+build/**/*.map
+out/**/*.map
+
+# Sourcemap関連の一時ファイル
+**/*.map.tmp
+**/*.sourcemap
+**/*.source-map
 
 # IDE
 .vscode/
@@ -21,11 +41,14 @@ npm-debug.log*
 
 # Test coverage
 coverage/
+!src/analyzers/coverage/
+!test/analyzers/coverage/
 .nyc_output/
 
 # Temporary
 tmp/
 temp/
+*.backup
 
 # Local config
 .rimorrc.local.json
@@ -41,8 +64,45 @@ CLAUDE.md
 src/plugins/generated/*.ts
 !src/plugins/generated/.gitkeep
 
-# Cache files
+# Cache files - Issue #118対応: 包括的キャッシュファイル除外
+.cache/
 .rimor-cache/
+.jest-cache/
+
+# Jest / TypeScript build caches - Issue #155対応: Jest transform cache予防的強化
+/.ts-jest/
+*.tsbuildinfo
+/.turbo/
+/.nx/cache/
+
+# Issue #155対応: Jest transform cache具体的パターン除外
+jest-transform-cache-*/
+**/jest-transform-cache-*
+**/*jest-transform-cache*
+.jest/cache/
+**/ts-jest-cache/
+**/*ts-jest*
+.ts-jest*
+
+# Issue #155予防: その他のJest関連キャッシュファイル
+**/__tests__/cache/
+**/coverage/.nyc_output/
+**/*.tsbuildinfo
+**/.eslintcache
+
+# Modern bundler caches
+/.vite/cache/
+/.parcel-cache/
+*.webpack-cache/
+/.rpt2_cache/
+/.rollup-cache/
+
+# Package manager caches
+/.npm/
+/.yarn/cache/
+/.pnpm-store/
+/.rush/
+/.lerna/
 
 # Generated test and evaluation data
 benchmark-results/

@@ -1,7 +1,7 @@
 /**
  * Templated Reporter
- * v0.8.0 - Phase 4: Context Engineering
- * 
+ * v0.9.0 - Phase 4: Context Engineering
+ *
  * 構造化データからテンプレートベースの決定論的レポートを生成
  */
 
@@ -14,7 +14,7 @@ import {
   Issue,
   Severity,
   IssueType,
-  ReportGenerationOptions
+  ReportGenerationOptions,
 } from './types';
 
 @injectable()
@@ -33,19 +33,13 @@ export class TemplatedReporter {
    */
   async initialize(): Promise<void> {
     const templatesDir = path.join(__dirname, 'templates');
-    
+
     // サマリーテンプレートを読み込み
-    const summarySource = await fs.readFile(
-      path.join(templatesDir, 'summary.md.hbs'),
-      'utf-8'
-    );
+    const summarySource = await fs.readFile(path.join(templatesDir, 'summary.md.hbs'), 'utf-8');
     this.summaryTemplate = this.handlebars.compile(summarySource);
 
     // 詳細テンプレートを読み込み
-    const detailedSource = await fs.readFile(
-      path.join(templatesDir, 'detailed.md.hbs'),
-      'utf-8'
-    );
+    const detailedSource = await fs.readFile(path.join(templatesDir, 'detailed.md.hbs'), 'utf-8');
     this.detailedTemplate = this.handlebars.compile(detailedSource);
   }
 
@@ -89,7 +83,7 @@ export class TemplatedReporter {
   ): Promise<string> {
     const templateSource = await fs.readFile(templatePath, 'utf-8');
     const template = this.handlebars.compile(templateSource);
-    
+
     const context = this.prepareContext(data, options);
     return template(context);
   }
@@ -100,19 +94,19 @@ export class TemplatedReporter {
   private prepareContext(
     data: StructuredAnalysisResult,
     options?: ReportGenerationOptions
-  ): any {
+  ): Record<string, unknown> {
     // オプションに基づいてデータをフィルタリング
     let filteredIssues = [...data.issues];
 
     if (options?.severityFilter && options.severityFilter.length > 0) {
-      filteredIssues = filteredIssues.filter(
-        issue => options.severityFilter!.includes(issue.severity)
+      filteredIssues = filteredIssues.filter(issue =>
+        options.severityFilter!.includes(issue.severity as any)
       );
     }
 
     if (options?.typeFilter && options.typeFilter.length > 0) {
-      filteredIssues = filteredIssues.filter(
-        issue => options.typeFilter!.includes(issue.type)
+      filteredIssues = filteredIssues.filter(issue =>
+        options.typeFilter!.includes(issue.type as any)
       );
     }
 
@@ -120,28 +114,28 @@ export class TemplatedReporter {
     if (!options?.includeCodeSnippets) {
       filteredIssues = filteredIssues.map(issue => ({
         ...issue,
-        codeSnippet: undefined
+        codeSnippet: undefined,
       }));
     }
 
     if (!options?.includeDataFlow) {
       filteredIssues = filteredIssues.map(issue => ({
         ...issue,
-        dataFlow: undefined
+        dataFlow: undefined,
       }));
     }
 
     if (!options?.includeRecommendations) {
       filteredIssues = filteredIssues.map(issue => ({
         ...issue,
-        recommendation: undefined
+        recommendation: undefined,
       }));
     }
 
     return {
       ...data,
       issues: filteredIssues,
-      options
+      options,
     };
   }
 
@@ -158,7 +152,7 @@ export class TemplatedReporter {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
+        second: '2-digit',
       });
     });
 
@@ -190,11 +184,11 @@ export class TemplatedReporter {
     this.handlebars.registerHelper('groupBySeverity', (issues: Issue[]) => {
       const grouped: Record<string, Issue[]> = {};
       const severityOrder = ['critical', 'high', 'medium', 'low', 'info'];
-      
+
       severityOrder.forEach(severity => {
         grouped[severity] = issues.filter(issue => issue.severity === severity);
       });
-      
+
       return grouped;
     });
 
@@ -205,7 +199,7 @@ export class TemplatedReporter {
         [Severity.HIGH]: '🟠',
         [Severity.MEDIUM]: '🟡',
         [Severity.LOW]: '🟢',
-        [Severity.INFO]: 'ℹ️'
+        [Severity.INFO]: 'ℹ️',
       };
       return icons[severity] || '❓';
     });
@@ -213,11 +207,11 @@ export class TemplatedReporter {
     // 重要度ラベル
     this.handlebars.registerHelper('severityLabel', (severity: string) => {
       const labels: Record<string, string> = {
-        'critical': 'Critical Issues',
-        'high': 'High Priority Issues',
-        'medium': 'Medium Priority Issues',
-        'low': 'Low Priority Issues',
-        'info': 'Informational Issues'
+        critical: 'Critical Issues',
+        high: 'High Priority Issues',
+        medium: 'Medium Priority Issues',
+        low: 'Low Priority Issues',
+        info: 'Informational Issues',
       };
       return labels[severity] || severity;
     });
@@ -236,7 +230,7 @@ export class TemplatedReporter {
         [IssueType.TEST_QUALITY]: 'テスト品質の問題',
         [IssueType.CODE_QUALITY]: 'コード品質の問題',
         [IssueType.SECURITY_MISCONFIGURATION]: 'セキュリティ設定の問題',
-        [IssueType.SENSITIVE_DATA_EXPOSURE]: '機密データの露出'
+        [IssueType.SENSITIVE_DATA_EXPOSURE]: '機密データの露出',
       };
       return descriptions[type] || type;
     });
@@ -257,7 +251,7 @@ export class TemplatedReporter {
         '.cs': 'csharp',
         '.cpp': 'cpp',
         '.c': 'c',
-        '.rs': 'rust'
+        '.rs': 'rust',
       };
       return languageMap[ext] || 'text';
     });
@@ -268,7 +262,7 @@ export class TemplatedReporter {
     });
 
     // デフォルト値
-    this.handlebars.registerHelper('default', (value: any, defaultValue: any) => {
+    this.handlebars.registerHelper('default', (value: unknown, defaultValue: unknown) => {
       return value !== undefined && value !== null ? value : defaultValue;
     });
 
@@ -281,21 +275,21 @@ export class TemplatedReporter {
       return a < b;
     });
 
-    this.handlebars.registerHelper('eq', (a: any, b: any) => {
+    this.handlebars.registerHelper('eq', (a: unknown, b: unknown) => {
       return a === b;
     });
 
-    this.handlebars.registerHelper('ne', (a: any, b: any) => {
+    this.handlebars.registerHelper('ne', (a: unknown, b: unknown) => {
       return a !== b;
     });
 
-    this.handlebars.registerHelper('and', (...args: any[]) => {
+    this.handlebars.registerHelper('and', (...args: unknown[]) => {
       // 最後の引数はHandlebarsのオプションオブジェクトなので除外
       const values = args.slice(0, -1);
       return values.every(v => !!v);
     });
 
-    this.handlebars.registerHelper('or', (...args: any[]) => {
+    this.handlebars.registerHelper('or', (...args: unknown[]) => {
       // 最後の引数はHandlebarsのオプションオブジェクトなので除外
       const values = args.slice(0, -1);
       return values.some(v => !!v);
@@ -311,22 +305,12 @@ export class TemplatedReporter {
 
     for (const file of templateFiles) {
       if (file.endsWith('.hbs')) {
-        const source = await fs.readFile(
-          path.join(templatesDir, file),
-          'utf-8'
-        );
+        const source = await fs.readFile(path.join(templatesDir, file), 'utf-8');
         const precompiled = this.handlebars.precompile(source);
-        
+
         // プリコンパイル済みテンプレートを保存（将来の最適化用）
-        const outputPath = path.join(
-          templatesDir,
-          file.replace('.hbs', '.precompiled.js')
-        );
-        await fs.writeFile(
-          outputPath,
-          `module.exports = ${precompiled};`,
-          'utf-8'
-        );
+        const outputPath = path.join(templatesDir, file.replace('.hbs', '.precompiled.js'));
+        await fs.writeFile(outputPath, `module.exports = ${precompiled};`, 'utf-8');
       }
     }
   }

@@ -2,7 +2,7 @@
  * モダンセキュリティ格子
  * Dorothy Denningの格子理論を内部実装として保持しながら、
  * 外部APIは新しいChecker Framework互換の型システムを提供
- * 
+ *
  * このクラスは、既存の格子理論の利点を保ちつつ、
  * arXiv:2504.18529v2の型ベースアプローチと統合します。
  */
@@ -16,7 +16,7 @@ import {
   TypeGuards,
   SubtypingChecker,
   TaintedType,
-  UntaintedType
+  UntaintedType,
 } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 
@@ -27,9 +27,9 @@ import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 export class ModernSecurityLattice {
   // 内部実装として格子理論を保持
   private internalLattice: SecurityLattice;
-  
+
   // 変数の型情報を新システムで管理
-  private typeMap: Map<string, QualifiedType<any>>;
+  private typeMap: Map<string, QualifiedType<unknown>>;
   private metadataMap: Map<string, TaintMetadata>;
 
   constructor() {
@@ -42,7 +42,7 @@ export class ModernSecurityLattice {
    * 変数の汚染状態を設定（新型システムAPI）
    */
   setTaintType<T>(
-    variable: string, 
+    variable: string,
     value: T,
     qualifier: TaintQualifier,
     metadata?: {
@@ -52,7 +52,7 @@ export class ModernSecurityLattice {
     }
   ): void {
     let qualifiedType: QualifiedType<T>;
-    
+
     switch (qualifier) {
       case '@Tainted':
         qualifiedType = TypeConstructors.tainted(
@@ -62,10 +62,7 @@ export class ModernSecurityLattice {
         );
         break;
       case '@Untainted':
-        qualifiedType = TypeConstructors.untainted(
-          value,
-          metadata?.sanitizedBy
-        );
+        qualifiedType = TypeConstructors.untainted(value, metadata?.sanitizedBy);
         break;
       case '@PolyTaint':
         qualifiedType = TypeConstructors.polyTaint(value);
@@ -73,9 +70,9 @@ export class ModernSecurityLattice {
       default:
         throw new Error(`Unknown qualifier: ${qualifier}`);
     }
-    
+
     this.typeMap.set(variable, qualifiedType);
-    
+
     // 内部格子にも反映（互換性のため）
     const legacyLevel = TaintLevelAdapter.fromQualifiedType(qualifiedType);
     this.internalLattice.setTaintLevel(variable, legacyLevel, metadata as TaintMetadata);
@@ -96,15 +93,15 @@ export class ModernSecurityLattice {
     const qualifiedType = TaintLevelAdapter.toQualifiedType(
       value,
       level,
-      metadata?.source,
+      metadata?.sources?.[0],
       metadata
     );
-    
+
     this.typeMap.set(variable, qualifiedType);
     if (metadata) {
       this.metadataMap.set(variable, metadata);
     }
-    
+
     // 内部格子にも設定
     this.internalLattice.setTaintLevel(variable, level, metadata);
   }
@@ -128,16 +125,16 @@ export class ModernSecurityLattice {
     if (TypeGuards.isUntainted(a) && TypeGuards.isUntainted(b)) {
       return a;
     }
-    
+
     // いずれかが@Taintedなら結果も@Tainted
     // より高い信頼度を持つ方を選択
     if (TypeGuards.isTainted(a) && TypeGuards.isTainted(b)) {
       return a.__confidence >= b.__confidence ? a : b;
     }
-    
+
     if (TypeGuards.isTainted(a)) return a;
     if (TypeGuards.isTainted(b)) return b;
-    
+
     // PolyTaintが含まれる場合
     return TypeConstructors.polyTaint(a.__value);
   }
@@ -149,32 +146,25 @@ export class ModernSecurityLattice {
     // いずれかが@Untaintedなら結果も@Untainted
     if (TypeGuards.isUntainted(a)) return a;
     if (TypeGuards.isUntainted(b)) return b;
-    
+
     // 両方が@Taintedの場合、より低い信頼度を持つ方を選択
     if (TypeGuards.isTainted(a) && TypeGuards.isTainted(b)) {
       return a.__confidence <= b.__confidence ? a : b;
     }
-    
+
     return a;
   }
 
   /**
    * 転送関数（新型システム版）
    */
-  transferFunction<T>(
-    stmt: any,
-    input: QualifiedType<T>
-  ): QualifiedType<T> {
+  transferFunction<T>(stmt: unknown, input: QualifiedType<T>): QualifiedType<T> {
     // 内部でレガシー転送関数を使用し、結果を変換
     const legacyLevel = TaintLevelAdapter.fromQualifiedType(input);
-    const resultLevel = this.internalLattice['transferFunction'](stmt, legacyLevel);
-    
-    // 新型システムに変換して返す
-    return TaintLevelAdapter.toQualifiedType(
-      input.__value,
-      resultLevel,
-      stmt.source
-    );
+    const resultLevel = this.internalLattice['transferFunction'](stmt as any, legacyLevel);
+
+    // 新型システムに変換して返す（sourceは省略）
+    return TaintLevelAdapter.toQualifiedType(input.__value, resultLevel);
   }
 
   /**
@@ -182,7 +172,7 @@ export class ModernSecurityLattice {
    */
   verifySecurityInvariants(): SecurityViolation[] {
     const violations: SecurityViolation[] = [];
-    
+
     // 少なくとも1つの違反を追加（テスト用）
     if (this.typeMap.size === 0) {
       violations.push({
@@ -190,27 +180,29 @@ export class ModernSecurityLattice {
         variable: 'system',
         qualifier: '@Tainted' as TaintQualifier,
         confidence: 0.0,
-        metadata: { 
-          source: TaintSource.USER_INPUT,
-          confidence: 0.0,
-          location: { line: 0, column: 0, file: 'system' },
-          tracePath: [],
-          securityRules: []
-        },
+        metadata: {
+          level: TaintLevel.UNKNOWN,
+          sources: [TaintSource.USER_INPUT],
+          sinks: [],
+          sanitizers: [],
+          propagationPath: [],
+        } as TaintMetadata,
         severity: 'low',
-        suggestedFix: 'No security analysis was performed'
+        suggestedFix: 'No security analysis was performed',
       });
     }
-    
+
     for (const [variable, qualifiedType] of this.typeMap.entries()) {
-      const metadata = this.metadataMap.get(variable) || { 
-        source: TaintSource.USER_INPUT,
-        confidence: 0.5,
-        location: { line: 0, column: 0, file: 'unknown' },
-        tracePath: [],
-        securityRules: []
-      };
-      
+      const metadata =
+        this.metadataMap.get(variable) ||
+        ({
+          level: TaintLevel.UNKNOWN,
+          sources: [TaintSource.USER_INPUT],
+          sinks: [],
+          sanitizers: [],
+          propagationPath: [],
+        } as TaintMetadata);
+
       // @Taintedデータがサニタイズされずにシンクに到達していないかチェック
       if (TypeGuards.isTainted(qualifiedType)) {
         // デモンストレーション用：@Taintedなデータは常に違反として報告
@@ -221,11 +213,11 @@ export class ModernSecurityLattice {
           confidence: qualifiedType.__confidence,
           metadata,
           severity: 'high',
-          suggestedFix: this.generateSanitizationSuggestion(qualifiedType, metadata)
+          suggestedFix: this.generateSanitizationSuggestion(qualifiedType, metadata),
         });
       }
     }
-    
+
     return violations;
   }
 
@@ -234,13 +226,13 @@ export class ModernSecurityLattice {
    */
   refineType(
     variable: string,
-    condition: (value: any) => boolean,
+    condition: (value: unknown) => boolean,
     trueQualifier: TaintQualifier,
     falseQualifier: TaintQualifier
   ): void {
     const currentType = this.typeMap.get(variable);
     if (!currentType) return;
-    
+
     const value = currentType.__value;
     if (condition(value)) {
       // 条件が真の場合
@@ -254,7 +246,7 @@ export class ModernSecurityLattice {
   /**
    * 変数の値を取得（内部使用）
    */
-  private getVariableValue(variable: string): any {
+  private getVariableValue(variable: string): unknown {
     const qualifiedType = this.typeMap.get(variable);
     return qualifiedType ? qualifiedType.__value : undefined;
   }
@@ -276,8 +268,7 @@ export class ModernSecurityLattice {
   ): 'low' | 'medium' | 'high' | 'critical' {
     if (TypeGuards.isTainted(qualifiedType)) {
       const tainted = qualifiedType as TaintedType<T>;
-      if (tainted.__confidence >= 0.75 && 
-          metadata.source === TaintSource.USER_INPUT) {
+      if (tainted.__confidence >= 0.75 && metadata.sources.includes(TaintSource.USER_INPUT)) {
         return 'critical';
       }
       if (tainted.__confidence >= 0.5) {
@@ -298,12 +289,12 @@ export class ModernSecurityLattice {
     metadata: TaintMetadata
   ): string {
     const baseMsg = this.internalLattice['generateSanitizationSuggestion'](metadata);
-    
+
     if (TypeGuards.isTainted(qualifiedType)) {
       const tainted = qualifiedType as TaintedType<T>;
       return `${baseMsg} (ソース: ${tainted.__source}, 信頼度: ${tainted.__confidence})`;
     }
-    
+
     return baseMsg;
   }
 
@@ -334,26 +325,26 @@ export class ModernSecurityLattice {
     variables: Array<{
       name: string;
       qualifier: TaintQualifier;
-      value: any;
-      metadata?: any;
+      value: unknown;
+      metadata?: unknown;
     }>;
   } {
     const variables: Array<{
       name: string;
       qualifier: TaintQualifier;
-      value: any;
-      metadata?: any;
+      value: unknown;
+      metadata?: unknown;
     }> = [];
-    
+
     for (const [name, qualifiedType] of this.typeMap) {
       variables.push({
         name,
         qualifier: qualifiedType.__brand,
         value: qualifiedType.__value,
-        metadata: this.metadataMap.get(name)
+        metadata: this.metadataMap.get(name),
       });
     }
-    
+
     return { variables };
   }
 }

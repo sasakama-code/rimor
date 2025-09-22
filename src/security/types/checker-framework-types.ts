@@ -1,17 +1,22 @@
 /**
  * Checker Framework互換の型定義
  * arXiv:2504.18529v2 "Practical Type-Based Taint Checking and Inference" の実装
- * 
+ *
  * このファイルは論文で提案されている型システムをTypeScriptで実装します。
  */
 
-import { TaintLevel } from './taint';
+import { TaintLevel } from './taint-analysis-types';
 
 /**
  * 汚染修飾子の型
  * 論文のSection 2.1で定義されている型修飾子
  */
 export type TaintQualifier = '@Tainted' | '@Untainted' | '@PolyTaint';
+
+/**
+ * 伝播規則の型
+ */
+export type PropagationRule = 'any' | 'all';
 
 /**
  * 型クオリファイア階層
@@ -62,7 +67,7 @@ export interface PolyTaintType<T> {
   readonly __brand: '@PolyTaint';
   readonly __value: T;
   readonly __parameterIndices: number[];
-  readonly __propagationRule: 'any' | 'all';
+  readonly __propagationRule: PropagationRule;
 }
 
 /**
@@ -75,17 +80,32 @@ export type QualifiedType<T> = TaintedType<T> | UntaintedType<T> | PolyTaintType
  * 型クオリファイアのガード関数
  */
 export const TypeGuards = {
-  isTainted<T>(value: any): value is TaintedType<T> {
-    return value && typeof value === 'object' && value.__brand === '@Tainted';
+  isTainted<T>(value: unknown): value is TaintedType<T> {
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      '__brand' in value &&
+      (value as Record<string, unknown>).__brand === '@Tainted'
+    );
   },
-  
-  isUntainted<T>(value: any): value is UntaintedType<T> {
-    return value && typeof value === 'object' && value.__brand === '@Untainted';
+
+  isUntainted<T>(value: unknown): value is UntaintedType<T> {
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      '__brand' in value &&
+      (value as Record<string, unknown>).__brand === '@Untainted'
+    );
   },
-  
-  isPolyTaint<T>(value: any): value is PolyTaintType<T> {
-    return value && typeof value === 'object' && value.__brand === '@PolyTaint';
-  }
+
+  isPolyTaint<T>(value: unknown): value is PolyTaintType<T> {
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      '__brand' in value &&
+      (value as Record<string, unknown>).__brand === '@PolyTaint'
+    );
+  },
 };
 
 /**
@@ -101,10 +121,10 @@ export const TypeConstructors = {
       __brand: '@Tainted',
       __value: value,
       __source: source,
-      __confidence: confidence
+      __confidence: confidence,
     };
   },
-  
+
   /**
    * 清浄な値を作成
    */
@@ -113,25 +133,25 @@ export const TypeConstructors = {
       __brand: '@Untainted',
       __value: value,
       __sanitizedBy: sanitizedBy,
-      __validatedAt: Date.now()
+      __validatedAt: Date.now(),
     };
   },
-  
+
   /**
    * ポリモーフィック汚染値を作成
    */
   polyTaint<T>(
-    value: T, 
-    parameterIndices: number[] = [], 
-    propagationRule: 'any' | 'all' = 'any'
+    value: T,
+    parameterIndices: number[] = [],
+    propagationRule: PropagationRule = 'any'
   ): PolyTaintType<T> {
     return {
       __brand: '@PolyTaint',
       __value: value,
       __parameterIndices: parameterIndices,
-      __propagationRule: propagationRule
+      __propagationRule: propagationRule,
     };
-  }
+  },
 };
 
 /**
@@ -149,35 +169,32 @@ export class SubtypingChecker {
     if (a === '@PolyTaint') return true; // PolyTaintは文脈依存
     return false;
   }
-  
+
   /**
    * 代入の安全性をチェック
    * 右辺が左辺のサブタイプである必要がある
    */
-  static isAssignmentSafe<T>(
-    lhs: QualifiedType<T>, 
-    rhs: QualifiedType<T>
-  ): boolean {
+  static isAssignmentSafe<T>(lhs: QualifiedType<T>, rhs: QualifiedType<T>): boolean {
     // @Untainted を @Tainted に代入するのは安全
     if (TypeGuards.isUntainted(rhs) && TypeGuards.isTainted(lhs)) {
       return true;
     }
-    
+
     // @Tainted を @Untainted に代入するのは危険
     if (TypeGuards.isTainted(rhs) && TypeGuards.isUntainted(lhs)) {
       return false;
     }
-    
+
     // 同じ型クオリファイア同士は安全
     if (lhs.__brand === rhs.__brand) {
       return true;
     }
-    
+
     // PolyTaintは文脈依存
     if (TypeGuards.isPolyTaint(lhs) || TypeGuards.isPolyTaint(rhs)) {
       return true; // 実行時に判定
     }
-    
+
     return false;
   }
 }
@@ -194,7 +211,7 @@ export class TypePromotion {
   static sanitize<T>(tainted: TaintedType<T>, sanitizerName: string): UntaintedType<T> {
     return TypeConstructors.untainted(tainted.__value, sanitizerName);
   }
-  
+
   /**
    * 汚染源による型の降格
    * @Untainted -> @Tainted
@@ -202,12 +219,12 @@ export class TypePromotion {
   static taint<T>(untainted: UntaintedType<T>, source: string): TaintedType<T> {
     return TypeConstructors.tainted(untainted.__value, source, 1.0);
   }
-  
+
   /**
    * 条件付き昇格（検証による）
    */
   static conditionalPromote<T>(
-    value: QualifiedType<T>, 
+    value: QualifiedType<T>,
     condition: (v: T) => boolean,
     sanitizerName: string
   ): QualifiedType<T> {
@@ -233,41 +250,44 @@ export class TypePropagation {
     operation: (a: T, b: U) => R
   ): QualifiedType<R> {
     const result = operation(lhs.__value, rhs.__value);
-    
+
     // どちらかが@Taintedなら結果も@Tainted
     if (TypeGuards.isTainted(lhs) || TypeGuards.isTainted(rhs)) {
-      const source = TypeGuards.isTainted(lhs) ? lhs.__source : 
-                    TypeGuards.isTainted(rhs) ? rhs.__source : 'unknown';
+      const source = TypeGuards.isTainted(lhs)
+        ? lhs.__source
+        : TypeGuards.isTainted(rhs)
+          ? rhs.__source
+          : 'unknown';
       return TypeConstructors.tainted(result, source);
     }
-    
+
     // 両方が@Untaintedなら結果も@Untainted
     if (TypeGuards.isUntainted(lhs) && TypeGuards.isUntainted(rhs)) {
       return TypeConstructors.untainted(result);
     }
-    
+
     // PolyTaintが含まれる場合は文脈依存
     return TypeConstructors.polyTaint(result);
   }
-  
+
   /**
    * メソッド呼び出しの結果の型を決定
    */
   static methodCall<T, R>(
     receiver: QualifiedType<T>,
     methodName: string,
-    args: QualifiedType<any>[],
-    method: (...args: any[]) => R
+    args: QualifiedType<unknown>[],
+    method: (...args: unknown[]) => R
   ): QualifiedType<R> {
     const argValues = args.map(arg => arg.__value);
     const result = method.apply(receiver.__value, argValues);
-    
+
     // レシーバーまたは引数のいずれかが汚染されていれば結果も汚染
     const taintedInputs = [receiver, ...args].filter(TypeGuards.isTainted);
     if (taintedInputs.length > 0) {
       return TypeConstructors.tainted(result, taintedInputs[0].__source);
     }
-    
+
     return TypeConstructors.untainted(result);
   }
 }
@@ -277,43 +297,43 @@ export class TypePropagation {
  * 論文のSection 4で説明されている手法
  */
 export class FlowSensitiveChecker {
-  private typeEnvironment: Map<string, QualifiedType<any>>;
-  
+  private typeEnvironment: Map<string, QualifiedType<unknown>>;
+
   constructor() {
     this.typeEnvironment = new Map();
   }
-  
+
   /**
    * 変数の型を更新
    */
-  updateType(varName: string, type: QualifiedType<any>): void {
+  updateType(varName: string, type: QualifiedType<unknown>): void {
     this.typeEnvironment.set(varName, type);
   }
-  
+
   /**
    * 変数の現在の型を取得
    */
-  getType(varName: string): QualifiedType<any> | undefined {
+  getType(varName: string): QualifiedType<unknown> | undefined {
     return this.typeEnvironment.get(varName);
   }
-  
+
   /**
    * 条件分岐での型の精緻化
    */
   refineType(
-    varName: string, 
-    condition: (value: any) => boolean,
+    varName: string,
+    condition: (value: unknown) => boolean,
     trueType: TaintQualifier,
     falseType: TaintQualifier
   ): void {
     const currentType = this.typeEnvironment.get(varName);
     if (!currentType) return;
-    
+
     if (condition(currentType.__value)) {
       // 条件が真の場合の型
       if (trueType === '@Untainted') {
         this.typeEnvironment.set(
-          varName, 
+          varName,
           TypeConstructors.untainted(currentType.__value, 'flow-refinement')
         );
       }
@@ -332,11 +352,11 @@ export class FlowSensitiveChecker {
 /**
  * 簡便なヘルパー関数
  */
-export function isTainted<T>(value: any): value is TaintedType<T> {
+export function isTainted<T>(value: unknown): value is TaintedType<T> {
   return TypeGuards.isTainted(value);
 }
 
-export function isUntainted<T>(value: any): value is UntaintedType<T> {
+export function isUntainted<T>(value: unknown): value is UntaintedType<T> {
   return TypeGuards.isUntainted(value);
 }
 
@@ -375,7 +395,7 @@ export class TypeCompatibility {
         return false;
       }
     }
-    
+
     // 戻り値は共変（より具体的な型を返す）
     // オーバーライドメソッドは、ベースメソッドより具体的な型を返す必要がある
     // つまり、override return <: base return でなければならない
@@ -421,8 +441,8 @@ export class PolyTaintInstantiation {
     argumentTypes: TaintQualifier[]
   ): QualifiedType<T> {
     const relevantArgs = polyType.__parameterIndices.map(i => argumentTypes[i]);
-    
-    if (polyType.__propagationRule === 'any') {
+
+    if (polyType.__propagationRule === ('any' as PropagationRule)) {
       // いずれかが@Taintedなら結果も@Tainted
       if (relevantArgs.some(arg => arg === '@Tainted')) {
         return TypeConstructors.tainted(polyType.__value, 'poly-instantiation');
@@ -433,7 +453,7 @@ export class PolyTaintInstantiation {
         return TypeConstructors.tainted(polyType.__value, 'poly-instantiation');
       }
     }
-    
+
     return TypeConstructors.untainted(polyType.__value, 'poly-instantiation');
   }
 }

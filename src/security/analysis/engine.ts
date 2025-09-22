@@ -9,27 +9,29 @@ import {
   CompileTimeResult,
   SecurityIssue,
   TypeInferenceResult,
+  SecurityTypeAnnotation,
   MethodAnalysisResult,
   IncrementalResult,
-  MethodChange,
   TypeBasedSecurityAnalysis,
   ModularAnalysis,
   TypeBasedSecurityConfig,
   SecurityType,
-  TaintSource
 } from '../types';
+import { TaintLevel, TaintSource } from '../../types/common-types';
+import { SecurityImprovement, FlowNode, SecurityMethodChange } from '../types/flow-types';
 import {
   TaintQualifier,
   TypeConstructors,
   TypeGuards,
-  type QualifiedType
+  type QualifiedType,
 } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { MethodSignature } from '../types';
 import { ModularTestAnalyzer } from './modular';
 import { FlowSensitiveAnalyzer, FlowGraph } from './flow';
 import { SignatureBasedInference } from './inference';
-import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import { SecurityLattice } from '../types/lattice';
+import { SecurityViolation } from '../types/flow-types';
 import { ParallelTypeChecker, createParallelTypeChecker } from '../checker/parallel-type-checker';
 import * as os from 'os';
 
@@ -54,7 +56,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       customSanitizers: [],
       customSinks: [],
       excludePatterns: [],
-      ...config
+      ...config,
     };
 
     this.modularAnalyzer = new ModularTestAnalyzer();
@@ -64,7 +66,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     this.parallelTypeChecker = createParallelTypeChecker({
       workerCount: this.config.parallelism,
       enableCache: this.config.enableCache,
-      debug: false
+      debug: false,
     });
   }
 
@@ -78,7 +80,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     const statistics = {
       filesAnalyzed: 0,
       methodsAnalyzed: 0,
-      inferenceSuccessRate: 0
+      inferenceSuccessRate: 0,
     };
 
     try {
@@ -101,9 +103,8 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
         issues: allIssues,
         executionTime: Date.now() - startTime,
         runtimeImpact: 0, // 常にゼロ - コンパイル時解析のため
-        statistics
+        statistics,
       };
-
     } catch (error) {
       // エラーハンドリング
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -115,15 +116,15 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
         location: {
           file: 'unknown',
           line: 0,
-          column: 0
-        }
+          column: 0,
+        },
       });
 
       return {
         issues: allIssues,
         executionTime: Date.now() - startTime,
         runtimeImpact: 0,
-        statistics
+        statistics,
       };
     }
   }
@@ -131,27 +132,27 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * 汚染レベルの推論（新型システム版）
    */
-  async inferTaintTypes(testFile: TestCase): Promise<Map<string, QualifiedType<any>>> {
+  async inferTaintTypes(testFile: TestCase): Promise<Map<string, QualifiedType<unknown>>> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const taintMap = new Map<string, QualifiedType<any>>();
+    const taintMap = new Map<string, QualifiedType<unknown>>();
 
     for (const method of testMethods) {
       // フロー解析による汚染追跡
       const flowGraph = this.flowAnalyzer.trackSecurityDataFlow(method);
-      
+
       // 各変数の汚染レベルを抽出
-      for (const node of flowGraph.nodes) {
+      for (const [nodeId, node] of flowGraph.nodes) {
         const variables = this.extractVariablesFromNode(node);
         variables.forEach(variable => {
           const currentType = taintMap.get(variable) || TypeConstructors.untainted(variable);
-          
+
           // node.outputTaintを新型システムに変換
           const nodeType = TaintLevelAdapter.toQualifiedType(
             variable,
-            node.outputTaint,
-            node.metadata?.source || TaintSource.USER_INPUT
+            node.outputTaint || TaintLevel.UNTAINTED,
+            node.metadata?.sources?.[0] || TaintSource.USER_INPUT
           );
-          
+
           // より汚染度の高い型を選択（join操作）
           const newType = TaintLevelAdapter.join(currentType, nodeType);
           taintMap.set(variable, newType);
@@ -166,15 +167,15 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    * レガシー互換メソッド（段階的移行のため）
    * @deprecated 新しいinferTaintTypesメソッドを使用してください
    */
-  async inferTaintLevels(testFile: TestCase): Promise<Map<string, number>> {
+  async inferTaintLevels(testFile: TestCase): Promise<Map<string, TaintLevel>> {
     const qualifiedTypes = await this.inferTaintTypes(testFile);
-    const legacyMap = new Map<string, number>();
-    
+    const legacyMap = new Map<string, TaintLevel>();
+
     for (const [variable, qualifiedType] of qualifiedTypes) {
       const legacyLevel = TaintLevelAdapter.fromQualifiedType(qualifiedType);
       legacyMap.set(variable, legacyLevel);
     }
-    
+
     return legacyMap;
   }
 
@@ -183,7 +184,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   async inferSecurityTypes(testFile: TestCase): Promise<TypeInferenceResult> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const allAnnotations: any[] = [];
+    const allAnnotations: SecurityTypeAnnotation[] = [];
     let totalTime = 0;
     let totalVariables = 0;
     let totalInferred = 0;
@@ -204,26 +205,49 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
         totalVariables,
         inferred: totalInferred,
         failed: totalFailed,
-        averageConfidence: this.calculateAverageConfidence(allAnnotations)
+        averageConfidence: this.calculateAverageConfidence(allAnnotations),
       },
-      inferenceTime: totalTime
+      inferenceTime: totalTime,
     };
   }
 
   /**
    * セキュリティ不変条件の検証
    */
-  async verifyInvariants(testFile: TestCase): Promise<SecurityViolation[]> {
+  async verifyInvariants(
+    testFile: TestCase
+  ): Promise<import('../types/lattice').SecurityViolation[]> {
     const testMethods = await this.extractTestMethodsFromFile(testFile);
-    const allViolations: SecurityViolation[] = [];
+    const allViolations: import('../types/lattice').SecurityViolation[] = [];
 
     for (const method of testMethods) {
       // フロー解析の実行
       const flowGraph = this.flowAnalyzer.trackSecurityDataFlow(method);
-      
+
       // セキュリティ不変条件の検証
-      const violations = this.flowAnalyzer.verifySecurityInvariants(flowGraph);
-      allViolations.push(...violations);
+      const flowViolations = this.flowAnalyzer.verifySecurityInvariants(flowGraph);
+
+      // flow-types.SecurityViolationをlattice.SecurityViolationに変換
+      const latticeViolations: import('../types/lattice').SecurityViolation[] = flowViolations.map(
+        v => ({
+          type: v.type,
+          message: v.message || 'Security violation detected',
+          severity: ['info', 'error', 'warning'].includes(v.severity)
+            ? 'medium'
+            : (v.severity as 'low' | 'medium' | 'high' | 'critical'),
+          variable: v.variable || 'unknown',
+          taintLevel: v.taintLevel || ('unknown' as TaintLevel),
+          metadata: v.metadata || {
+            level: 'unknown' as TaintLevel,
+            sources: [],
+            sinks: [],
+            sanitizers: [],
+          },
+          suggestedFix: v.suggestedFix || v.fix || 'Apply appropriate sanitization',
+        })
+      );
+
+      allViolations.push(...latticeViolations);
     }
 
     return allViolations;
@@ -239,7 +263,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * インクリメンタル解析
    */
-  async incrementalAnalyze(changes: MethodChange[]): Promise<IncrementalResult> {
+  async incrementalAnalyze(changes: SecurityMethodChange[]): Promise<IncrementalResult> {
     const changedMethods = changes.map(change => change.method);
     return this.modularAnalyzer.incrementalAnalyze(changedMethods);
   }
@@ -250,43 +274,53 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   async analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]> {
     // 並列型チェックを実行
     const typeCheckResults = await this.parallelTypeChecker.checkMethodsInParallel(methods);
-    
+
     // 結果をMethodAnalysisResult形式に変換
     const results: MethodAnalysisResult[] = [];
-    
+
     for (const [methodName, checkResult] of typeCheckResults) {
       const method = methods.find(m => m.name === methodName);
       if (!method) continue;
-      
-      const taintedCount = Array.from(checkResult.inferredTypes.values())
-        .filter(type => type.__brand === '@Tainted').length;
+
+      const taintedCount = Array.from(checkResult.inferredTypes.values()).filter(
+        type => type.__brand === '@Tainted'
+      ).length;
       const totalVariables = checkResult.inferredTypes.size;
-      
+
       results.push({
         methodName: method.name,
-        issues: checkResult.securityIssues,
+        issues: checkResult.securityIssues.map(issue => ({
+          ...issue,
+          location: {
+            ...issue.location,
+            file: issue.location.file || method.filePath || 'unknown',
+          },
+        })),
         metrics: {
           securityCoverage: {
             authentication: 0, // TODO: 認証テストカバレッジを計算
-            inputValidation: totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0,
+            inputValidation:
+              totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0,
             apiSecurity: 0, // TODO: APIセキュリティカバレッジを計算
-            overall: totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0
+            overall: totalVariables > 0 ? (totalVariables - taintedCount) / totalVariables : 0,
           },
           taintFlowDetection: taintedCount,
           sanitizerCoverage: 0, // TODO: サニタイザー適用率を計算
-          invariantCompliance: 0 // TODO: 不変条件準拠率を計算
+          invariantCompliance: 0, // TODO: 不変条件準拠率を計算
         },
         suggestions: [], // TODO: 改善提案を生成
-        analysisTime: checkResult.executionTime
+        analysisTime: checkResult.executionTime,
       });
     }
-    
+
     // 統計情報を出力
     const stats = this.parallelTypeChecker.getStatistics();
     if (this.config.debug) {
-      console.log(`Parallel type check completed: ${stats.totalMethods} methods, speedup: ${stats.speedup.toFixed(2)}x`);
+      console.log(
+        `Parallel type check completed: ${stats.totalMethods} methods, speedup: ${stats.speedup.toFixed(2)}x`
+      );
     }
-    
+
     return results;
   }
 
@@ -295,7 +329,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   updateConfig(newConfig: Partial<TypeBasedSecurityConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     // ワーカープールの再構築（必要に応じて）
     if (newConfig.parallelism && newConfig.parallelism !== this.config.parallelism) {
       this.workerPool.resize(newConfig.parallelism);
@@ -310,7 +344,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       cacheHitRate: this.modularAnalyzer['cache']?.getHitCount() || 0,
       averageAnalysisTime: this.calculateAverageAnalysisTime(),
       memoryUsage: process.memoryUsage().heapUsed,
-      workerUtilization: this.workerPool.getUtilization()
+      workerUtilization: this.workerPool.getUtilization(),
     };
   }
 
@@ -334,7 +368,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   private async extractTestMethodsFromFile(testFile: TestCase): Promise<TestMethod[]> {
     const methods: TestMethod[] = [];
     const content = testFile.content;
-    
+
     // Step 1: まず全ての it/test メソッドを直接抽出（ネスト考慮）
     // より堅牢なテストメソッド抽出パターン
     const itPatterns = [
@@ -345,16 +379,16 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       // it('test name', async function() { ... }) - ブレース対応版
       /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*async\s+function\s*\(\s*\)\s*\{/g,
       // it('test name', function() { ... }) - ブレース対応版
-      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*function\s*\(\s*\)\s*\{/g
+      /(?:it|test)\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*function\s*\(\s*\)\s*\{/g,
     ];
-    
+
     let methodIndex = 0;
 
     // Step 2: 各パターンでitメソッドを検索し、ブレースマッチングで本体を抽出
     for (const itPattern of itPatterns) {
       let match: RegExpExecArray | null;
       itPattern.lastIndex = 0; // Reset regex state
-      
+
       while ((match = itPattern.exec(content)) !== null) {
         const methodName = match[1];
         const startIndex = match.index;
@@ -362,21 +396,23 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
 
         // Step 3: ブレースマッチングで実際のメソッド本体を抽出
         const methodContent = this.extractMethodBody(content, match.index + match[0].length - 1);
-        
+
         if (methodContent) {
           // 重複を避けるため、既存のメソッド名をチェック
           if (!methods.some(m => m.name === methodName)) {
             methods.push({
               name: methodName,
+              type: 'test',
               filePath: testFile.file,
               content: methodContent,
-              signature: this.createMethodSignature(methodName, methodContent),
+              signature: methodName,
               location: {
-                startLine,
-                endLine: startLine + methodContent.split('\n').length - 1,
-                startColumn: 0,
-                endColumn: 0
-              }
+                start: { line: startLine, column: 0 } as import('../../core/types').Position,
+                end: {
+                  line: startLine + methodContent.split('\n').length - 1,
+                  column: 0,
+                } as import('../../core/types').Position,
+              },
             });
             methodIndex++;
           }
@@ -401,7 +437,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
 
     while (index < content.length && braceCount > 0) {
       const char = content[index];
-      
+
       // 文字列リテラル内のブレースは無視
       if (char === '"' || char === "'" || char === '`') {
         const quote = char;
@@ -440,9 +476,9 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   private async analyzeMethodsInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]> {
     const chunks = this.partitionMethods(methods, this.config.parallelism);
-    
+
     const results = await Promise.all(
-      chunks.map(chunk => 
+      chunks.map(chunk =>
         this.workerPool.execute(async () => {
           return Promise.all(chunk.map(method => this.analyzeMethod(method)));
         })
@@ -457,11 +493,13 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   private aggregateAnalysisResults(methodResults: MethodAnalysisResult[]): AggregatedResult {
     const allIssues: SecurityIssue[] = [];
-    const allSuggestions: any[] = [];
+    const allSuggestions: SecurityImprovement[] = [];
 
     for (const result of methodResults) {
       allIssues.push(...result.issues);
-      allSuggestions.push(...result.suggestions);
+      if (result.suggestions) {
+        allSuggestions.push(...(result.suggestions as SecurityImprovement[]));
+      }
     }
 
     // 重複除去
@@ -471,7 +509,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       issues: uniqueIssues,
       suggestions: allSuggestions,
       totalMethods: methodResults.length,
-      averageScore: this.calculateAverageScore(methodResults)
+      averageScore: this.calculateAverageScore(methodResults),
     };
   }
 
@@ -488,7 +526,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
     results.forEach(result => {
       const methodVariables = this.estimateVariableCount(result.methodName);
       const inferredVariables = Math.min(methodVariables, result.issues.length);
-      
+
       totalVariables += methodVariables;
       totalInferred += inferredVariables;
     });
@@ -528,17 +566,17 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
       returnType: 'void',
       annotations: [],
       visibility: 'public',
-      isAsync: methodContent.includes('async')
+      isAsync: methodContent.includes('async'),
     };
   }
 
   /**
    * ノードから変数を抽出
    */
-  private extractVariablesFromNode(node: any): string[] {
+  private extractVariablesFromNode(node: FlowNode): string[] {
     const variables: string[] = [];
-    const content = node.statement.content;
-    
+    const content = node.statement?.content || '';
+
     const matches = content.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [];
     matches.forEach((match: string) => {
       if (!this.isKeyword(match)) {
@@ -552,7 +590,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
   /**
    * 平均信頼度の計算
    */
-  private calculateAverageConfidence(annotations: any[]): number {
+  private calculateAverageConfidence(annotations: SecurityTypeAnnotation[]): number {
     if (annotations.length === 0) return 0;
     const total = annotations.reduce((sum, annotation) => sum + (annotation.confidence || 0), 0);
     return total / annotations.length;
@@ -586,11 +624,11 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   private calculateAverageScore(results: MethodAnalysisResult[]): number {
     if (results.length === 0) return 0;
-    
+
     const totalScore = results.reduce((sum, result) => {
       return sum + (result.metrics?.securityCoverage?.overall || 0);
     }, 0);
-    
+
     return totalScore / results.length;
   }
 
@@ -606,7 +644,20 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    * キーワード判定
    */
   private isKeyword(word: string): boolean {
-    const keywords = ['const', 'let', 'var', 'function', 'if', 'else', 'for', 'while', 'return', 'expect', 'it', 'describe'];
+    const keywords = [
+      'const',
+      'let',
+      'var',
+      'function',
+      'if',
+      'else',
+      'for',
+      'while',
+      'return',
+      'expect',
+      'it',
+      'describe',
+    ];
     return keywords.includes(word);
   }
 
@@ -615,20 +666,22 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
    */
   private searchExpectPatterns(content: string): RegExpMatchArray[] {
     const matches: RegExpMatchArray[] = [];
-    
+
     try {
       // 正しくエスケープされたexpectパターン
       const expectPattern = /expect\s*\(/gi;
       let match: RegExpExecArray | null;
-      
+
       expectPattern.lastIndex = 0;
       while ((match = expectPattern.exec(content)) !== null) {
         matches.push(match);
       }
     } catch (error) {
       // 正規表現エラーをキャッチして安全にフォールバック
-      console.warn(`正規表現パターンエラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+      console.warn(
+        `正規表現パターンエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+
       // フォールバック: 単純な文字列検索
       const simpleMatches = content.match(/expect\s*\(/g);
       if (simpleMatches) {
@@ -642,7 +695,7 @@ export class TypeBasedSecurityEngine implements TypeBasedSecurityAnalysis, Modul
         });
       }
     }
-    
+
     return matches;
   }
 }
@@ -687,7 +740,7 @@ class Worker {
 // 関連するインターフェースの定義
 interface AggregatedResult {
   issues: SecurityIssue[];
-  suggestions: any[];
+  suggestions: SecurityImprovement[];
   totalMethods: number;
   averageScore: number;
 }

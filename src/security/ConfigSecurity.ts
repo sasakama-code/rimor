@@ -32,7 +32,7 @@ export const DEFAULT_CONFIG_SECURITY_LIMITS: ConfigSecurityLimits = {
   maxObjectDepth: 5,
   maxProperties: 100,
   maxArrayLength: 50,
-  maxStringLength: 500
+  maxStringLength: 500,
 };
 
 /**
@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG_SECURITY_LIMITS: ConfigSecurityLimits = {
  */
 export interface ConfigValidationResult {
   isValid: boolean;
-  sanitizedConfig?: any;
+  sanitizedConfig?: unknown;
   errors: string[];
   warnings: string[];
   securityIssues: string[];
@@ -59,7 +59,10 @@ export class ConfigSecurity {
   /**
    * 設定ファイルの安全な読み込みと検証
    */
-  async loadAndValidateConfig(configPath: string, projectRoot: string): Promise<ConfigValidationResult> {
+  async loadAndValidateConfig(
+    configPath: string,
+    projectRoot: string
+  ): Promise<ConfigValidationResult> {
     try {
       // パス検証
       if (!PathSecurity.validateProjectPath(configPath, projectRoot)) {
@@ -67,7 +70,7 @@ export class ConfigSecurity {
           isValid: false,
           errors: ['設定ファイルのパスが不正です'],
           warnings: [],
-          securityIssues: ['パストラバーサル攻撃を検出']
+          securityIssues: ['パストラバーサル攻撃を検出'],
         };
       }
 
@@ -77,7 +80,7 @@ export class ConfigSecurity {
           isValid: false,
           errors: ['設定ファイルが存在しません'],
           warnings: [],
-          securityIssues: []
+          securityIssues: [],
         };
       }
 
@@ -86,9 +89,11 @@ export class ConfigSecurity {
       if (fileStats.size > this.limits.maxFileSize) {
         return {
           isValid: false,
-          errors: [`設定ファイルサイズが制限を超過: ${fileStats.size} > ${this.limits.maxFileSize}`],
+          errors: [
+            `設定ファイルサイズが制限を超過: ${fileStats.size} > ${this.limits.maxFileSize}`,
+          ],
           warnings: [],
-          securityIssues: ['DoS攻撃の可能性']
+          securityIssues: ['DoS攻撃の可能性'],
         };
       }
 
@@ -108,39 +113,35 @@ export class ConfigSecurity {
           isValid: false,
           errors: [parseResult.error || 'JSON解析に失敗'],
           warnings: [],
-          securityIssues: parseResult.securityIssues || []
+          securityIssues: parseResult.securityIssues || [],
         };
       }
 
       // 構造検証とサニタイゼーション
       const validationResult = this.validateAndSanitizeConfig(parseResult.data);
-      
+
       // preValidationのsecurityIssuesを結果にマージ
       if (preValidation.securityIssues && preValidation.securityIssues.length > 0) {
         validationResult.securityIssues = [
           ...validationResult.securityIssues,
-          ...preValidation.securityIssues
+          ...preValidation.securityIssues,
         ];
       }
-      
+
       // parseResultのsecurityIssuesを結果にマージ
       if (parseResult.securityIssues && parseResult.securityIssues.length > 0) {
         validationResult.securityIssues = [
           ...validationResult.securityIssues,
-          ...parseResult.securityIssues
+          ...parseResult.securityIssues,
         ];
       }
-      
+
       // preValidationのwarningsも結果にマージ
       if (preValidation.warnings && preValidation.warnings.length > 0) {
-        validationResult.warnings = [
-          ...validationResult.warnings,
-          ...preValidation.warnings
-        ];
+        validationResult.warnings = [...validationResult.warnings, ...preValidation.warnings];
       }
-      
-      return validationResult;
 
+      return validationResult;
     } catch (error) {
       errorHandler.handleError(
         error,
@@ -153,7 +154,7 @@ export class ConfigSecurity {
         isValid: false,
         errors: [error instanceof Error ? error.message : '不明なエラー'],
         warnings: [],
-        securityIssues: []
+        securityIssues: [],
       };
     }
   }
@@ -196,13 +197,13 @@ export class ConfigSecurity {
       { pattern: /\/etc\/|\/root\/|\/home\//gi, issue: 'システムディレクトリアクセス攻撃' },
       { pattern: /\\x[0-9a-f]{2}/gi, issue: 'エスケープシーケンス攻撃' },
       { pattern: /\\u[0-9a-f]{4}/gi, issue: 'Unicode攻撃' },
-      { pattern: /document\.|window\./gi, issue: 'DOM操作攻撃（環境混在）' }
+      { pattern: /document\.|window\./gi, issue: 'DOM操作攻撃（環境混在）' },
     ];
 
     for (const { pattern, issue } of criticalPatterns) {
       if (pattern.test(content)) {
         securityIssues.push(issue);
-        
+
         // 重要度に応じてエラーまたは警告に分類
         if (issue.includes('プロトタイプ') || issue.includes('eval') || issue.includes('実行')) {
           errors.push(`危険なパターンを検出: ${issue}`);
@@ -224,7 +225,7 @@ export class ConfigSecurity {
     // ネストの深度概算チェック
     const openBraces = (content.match(/\{/g) || []).length;
     const closeBraces = (content.match(/\}/g) || []).length;
-    
+
     if (openBraces !== closeBraces) {
       errors.push('JSON構造が不正です（括弧の不一致）');
     }
@@ -238,14 +239,19 @@ export class ConfigSecurity {
       isValid: errors.length === 0,
       errors,
       warnings,
-      securityIssues
+      securityIssues,
     };
   }
 
   /**
    * セキュアなJSON解析
    */
-  private secureJsonParse(content: string): { success: boolean; data?: any; error?: string; securityIssues?: string[] } {
+  private secureJsonParse(content: string): {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+    securityIssues?: string[];
+  } {
     try {
       // JSON.parseの前にコンテンツをさらに検証
       const securityIssues: string[] = [];
@@ -253,7 +259,7 @@ export class ConfigSecurity {
       // プロトタイプ汚染の具体的防止
       const cleanedContent = content
         .replace(/"__proto__"\s*:/gi, '"__proto_blocked__":')
-        .replace(/"constructor"\s*:/gi, '"constructor_blocked__":')  
+        .replace(/"constructor"\s*:/gi, '"constructor_blocked__":')
         .replace(/"prototype"\s*:/gi, '"prototype_blocked__":');
 
       if (cleanedContent !== content) {
@@ -269,21 +275,20 @@ export class ConfigSecurity {
         return {
           success: false,
           error: postParseValidation.errors.join(', '),
-          securityIssues: [...securityIssues, ...postParseValidation.securityIssues]
+          securityIssues: [...securityIssues, ...postParseValidation.securityIssues],
         };
       }
 
       return {
         success: true,
         data: parsed,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'JSON解析エラー',
-        securityIssues: ['JSON解析攻撃の可能性']
+        securityIssues: ['JSON解析攻撃の可能性'],
       };
     }
   }
@@ -291,7 +296,7 @@ export class ConfigSecurity {
   /**
    * 解析済みオブジェクトの検証
    */
-  private validateParsedObject(obj: any, depth: number): ConfigValidationResult {
+  private validateParsedObject(obj: unknown, depth: number): ConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     const securityIssues: string[] = [];
@@ -324,11 +329,11 @@ export class ConfigSecurity {
           securityIssues.push(...elementValidation.securityIssues);
         }
       }
-
     } else if (typeof obj === 'object') {
       // オブジェクトの検証
-      const keys = Object.keys(obj);
-      
+      const objRecord = obj as Record<string, unknown>;
+      const keys = Object.keys(objRecord);
+
       if (keys.length > this.limits.maxProperties) {
         errors.push(`プロパティ数が制限を超過: ${keys.length} > ${this.limits.maxProperties}`);
         securityIssues.push('DoS攻撃（大きなオブジェクト）');
@@ -336,13 +341,14 @@ export class ConfigSecurity {
       }
 
       // 危険なプロパティ名の検出
-      const dangerousKeys = keys.filter(key => 
-        key === '__proto__' || 
-        key === 'constructor' || 
-        key === 'prototype' ||
-        key.includes('..') ||
-        key.includes('/') ||
-        key.includes('\\')
+      const dangerousKeys = keys.filter(
+        key =>
+          key === '__proto__' ||
+          key === 'constructor' ||
+          key === 'prototype' ||
+          key.includes('..') ||
+          key.includes('/') ||
+          key.includes('\\')
       );
 
       if (dangerousKeys.length > 0) {
@@ -353,14 +359,13 @@ export class ConfigSecurity {
 
       // プロパティ値の再帰検証
       for (const key of keys) {
-        const propValidation = this.validateParsedObject(obj[key], depth + 1);
+        const propValidation = this.validateParsedObject(objRecord[key], depth + 1);
         if (!propValidation.isValid) {
           errors.push(...propValidation.errors.map(e => `${key}: ${e}`));
           warnings.push(...propValidation.warnings);
           securityIssues.push(...propValidation.securityIssues);
         }
       }
-
     } else if (typeof obj === 'string') {
       // 文字列の検証
       if (obj.length > this.limits.maxStringLength) {
@@ -376,7 +381,7 @@ export class ConfigSecurity {
         /<script/gi,
         /on\w+\s*=/gi,
         /eval\s*\(/gi,
-        /function\s*\(/gi
+        /function\s*\(/gi,
       ];
 
       for (const pattern of dangerousStringPatterns) {
@@ -391,21 +396,21 @@ export class ConfigSecurity {
       isValid: errors.length === 0,
       errors,
       warnings,
-      securityIssues
+      securityIssues,
     };
   }
 
   /**
    * 設定オブジェクトの検証とサニタイゼーション
    */
-  private validateAndSanitizeConfig(config: any): ConfigValidationResult {
+  private validateAndSanitizeConfig(config: unknown): ConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     const securityIssues: string[] = [];
 
     try {
       // ディープクローンで元オブジェクトを保護
-      const sanitizedConfig = JSON.parse(JSON.stringify(config));
+      const sanitizedConfig = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
 
       // 基本構造の検証
       if (!sanitizedConfig || typeof sanitizedConfig !== 'object') {
@@ -426,7 +431,9 @@ export class ConfigSecurity {
 
       // プラグイン設定の検証
       if (sanitizedConfig.plugins && typeof sanitizedConfig.plugins === 'object') {
-        for (const [pluginName, pluginConfig] of Object.entries(sanitizedConfig.plugins)) {
+        for (const [pluginName, pluginConfig] of Object.entries(
+          sanitizedConfig.plugins as Record<string, unknown>
+        )) {
           // プラグイン名の検証
           if (!/^[a-zA-Z0-9_-]+$/.test(pluginName)) {
             errors.push(`不正なプラグイン名: ${pluginName}`);
@@ -440,8 +447,8 @@ export class ConfigSecurity {
             continue;
           }
 
-          const config = pluginConfig as any;
-          
+          const config = pluginConfig as Record<string, unknown>;
+
           // 必須フィールドの検証
           if (typeof config.enabled !== 'boolean') {
             warnings.push(`プラグイン ${pluginName} のenabled設定をデフォルト値(false)に設定`);
@@ -465,10 +472,17 @@ export class ConfigSecurity {
           for (const prop of pathProperties) {
             if (config[prop] && typeof config[prop] === 'string') {
               const path = config[prop] as string;
-              if (path.includes('/etc/') || path.includes('/root/') || 
-                  path.includes('/usr/bin/') || path.includes('/sys/') ||
-                  path.includes('C:\\Windows\\') || path.includes('C:\\Program Files\\')) {
-                errors.push(`プラグイン ${pluginName} の ${prop} にシステムディレクトリへのアクセスが含まれています: ${path}`);
+              if (
+                path.includes('/etc/') ||
+                path.includes('/root/') ||
+                path.includes('/usr/bin/') ||
+                path.includes('/sys/') ||
+                path.includes('C:\\Windows\\') ||
+                path.includes('C:\\Program Files\\')
+              ) {
+                errors.push(
+                  `プラグイン ${pluginName} の ${prop} にシステムディレクトリへのアクセスが含まれています: ${path}`
+                );
                 securityIssues.push('システムディレクトリアクセス攻撃');
                 delete config[prop];
               }
@@ -481,27 +495,31 @@ export class ConfigSecurity {
             if (config[prop] && typeof config[prop] === 'string') {
               const code = config[prop] as string;
               let codeRemoved = false;
-              
+
               // Unicode攻撃の検出（最優先）
               if (/\\u[0-9a-f]{4}/gi.test(code)) {
-                errors.push(`プラグイン ${pluginName} の ${prop} にUnicode攻撃が含まれています: ${code}`);
+                errors.push(
+                  `プラグイン ${pluginName} の ${prop} にUnicode攻撃が含まれています: ${code}`
+                );
                 securityIssues.push('Unicode攻撃');
                 delete config[prop];
                 codeRemoved = true;
               }
-              
+
               // その他の危険なパターン（Unicode攻撃が検出されなかった場合のみ）
               if (!codeRemoved) {
                 const dangerousPatterns = [
                   /eval\s*\(/gi,
                   /function\s*\(/gi,
                   /require\s*\(/gi,
-                  /import\s*\(/gi
+                  /import\s*\(/gi,
                 ];
-                
+
                 for (const pattern of dangerousPatterns) {
                   if (pattern.test(code)) {
-                    errors.push(`プラグイン ${pluginName} の ${prop} に危険なコードが含まれています: ${code}`);
+                    errors.push(
+                      `プラグイン ${pluginName} の ${prop} に危険なコードが含まれています: ${code}`
+                    );
                     securityIssues.push('コード実行攻撃');
                     delete config[prop];
                     break;
@@ -522,13 +540,14 @@ export class ConfigSecurity {
           // パターンの検証とフィルタリング
           const originalLength = sanitizedConfig.excludePatterns.length;
           let dangerousPatternCount = 0;
-          
-          sanitizedConfig.excludePatterns = sanitizedConfig.excludePatterns.filter((pattern: any) => {
+
+          const patterns = sanitizedConfig.excludePatterns as unknown[];
+          sanitizedConfig.excludePatterns = patterns.filter((pattern: unknown) => {
             if (typeof pattern !== 'string') {
               warnings.push('excludePatternsに文字列以外の値を検出。除外しました。');
               return false;
             }
-            
+
             if (pattern.length > 200) {
               warnings.push(`除外パターンが長すぎます: ${pattern.substring(0, 50)}...`);
               securityIssues.push('DoS攻撃（長いパターン）');
@@ -557,15 +576,14 @@ export class ConfigSecurity {
         sanitizedConfig,
         errors,
         warnings,
-        securityIssues
+        securityIssues,
       };
-
     } catch (error) {
       return {
         isValid: false,
         errors: ['設定検証中に予期しないエラーが発生しました'],
         warnings,
-        securityIssues: ['設定処理攻撃の可能性']
+        securityIssues: ['設定処理攻撃の可能性'],
       };
     }
   }

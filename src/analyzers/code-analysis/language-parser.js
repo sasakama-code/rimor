@@ -1,0 +1,660 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LanguageAnalyzer = void 0;
+const path = __importStar(require("path"));
+/**
+ * 言語固有の解析機能
+ */
+class LanguageAnalyzer {
+    /**
+     * ファイル拡張子から言語を検出
+     */
+    detectLanguage(filePath) {
+        const ext = path.extname(filePath).toLowerCase();
+        switch (ext) {
+            case '.ts':
+                return 'typescript';
+            case '.tsx':
+                return 'typescriptreact';
+            case '.js':
+                return 'javascript';
+            case '.jsx':
+                return 'javascriptreact';
+            case '.py':
+                return 'python';
+            case '.java':
+                return 'java';
+            case '.cs':
+                return 'csharp';
+            case '.cpp':
+            case '.cc':
+            case '.cxx':
+                return 'cpp';
+            case '.c':
+                return 'c';
+            case '.go':
+                return 'go';
+            case '.rs':
+                return 'rust';
+            case '.php':
+                return 'php';
+            case '.rb':
+                return 'ruby';
+            default:
+                return 'unknown';
+        }
+    }
+    /**
+     * 関数情報の抽出
+     */
+    async extractFunctionInfo(fileContent, language) {
+        const functions = [];
+        const lines = fileContent.split('\n');
+        if (language === 'typescript' || language === 'javascript') {
+            return this.extractJavaScriptFunctions(lines);
+        }
+        if (language === 'python') {
+            return this.extractPythonFunctions(lines);
+        }
+        if (language === 'java') {
+            return this.extractJavaFunctions(lines);
+        }
+        return functions;
+    }
+    /**
+     * クラス情報の抽出
+     */
+    extractClassInfo(fileContent, language) {
+        const classes = [];
+        const lines = fileContent.split('\n');
+        if (language === 'typescript' || language === 'javascript') {
+            return this.extractJavaScriptClasses(lines, language);
+        }
+        if (language === 'python') {
+            return this.extractPythonClasses(lines);
+        }
+        if (language === 'java') {
+            return this.extractJavaClasses(lines);
+        }
+        return classes;
+    }
+    /**
+     * インターフェース情報の抽出
+     */
+    extractInterfaceInfo(fileContent, language) {
+        const interfaces = [];
+        const lines = fileContent.split('\n');
+        if (language === 'typescript') {
+            return this.extractTypeScriptInterfaces(lines);
+        }
+        if (language === 'java') {
+            return this.extractJavaInterfaces(lines);
+        }
+        return interfaces;
+    }
+    /**
+     * 変数情報の抽出
+     */
+    extractVariableInfo(fileContent, language) {
+        const variables = [];
+        const lines = fileContent.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (language === 'typescript' || language === 'javascript') {
+                const jsVars = this.extractJavaScriptVariables(line, i + 1);
+                variables.push(...jsVars);
+            }
+            else if (language === 'python') {
+                const pyVars = this.extractPythonVariables(line, i + 1);
+                variables.push(...pyVars);
+            }
+        }
+        return variables;
+    }
+    /**
+     * インポート文の抽出
+     */
+    extractImports(fileContent, language) {
+        const imports = [];
+        const lines = fileContent.split('\n');
+        const importRegexes = this.getImportRegexes(language);
+        for (const line of lines) {
+            for (const regex of importRegexes) {
+                const match = line.match(regex);
+                if (match && match[1]) {
+                    imports.push({ source: match[1] });
+                }
+            }
+        }
+        return imports;
+    }
+    /**
+     * エクスポート文の抽出
+     */
+    extractExports(fileContent, language) {
+        const exports = [];
+        const lines = fileContent.split('\n');
+        const exportRegexes = this.getExportRegexes(language);
+        for (const line of lines) {
+            for (const regex of exportRegexes) {
+                const match = line.match(regex);
+                if (match && match[1]) {
+                    exports.push(match[1]);
+                }
+            }
+        }
+        return exports;
+    }
+    /**
+     * 使用されているAPIの抽出
+     */
+    extractUsedAPIs(fileContent, language) {
+        const apis = [];
+        const patterns = this.getAPIPatterns(language);
+        for (const pattern of patterns) {
+            const matches = fileContent.matchAll(pattern);
+            for (const match of matches) {
+                if (match[1] && match[2]) {
+                    apis.push(`${match[1]}.${match[2]}`);
+                }
+            }
+        }
+        return [...new Set(apis)];
+    }
+    // Private helper methods
+    extractJavaScriptFunctions(lines) {
+        const functions = [];
+        const functionRegexes = [
+            /^[\s]*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/,
+            /^[\s]*(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
+            /^[\s]*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>/,
+            /^[\s]*(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*\{/
+        ];
+        // Skip if-statements, for-loops, etc
+        const skipPatterns = [
+            /^[\s]*(?:if|for|while|switch|catch|try)\s*\(/,
+            /^[\s]*}\s*else\s*(?:if)?/
+        ];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            // Skip lines that are not function declarations
+            let shouldSkip = false;
+            for (const skipPattern of skipPatterns) {
+                if (skipPattern.test(line)) {
+                    shouldSkip = true;
+                    break;
+                }
+            }
+            if (shouldSkip)
+                continue;
+            for (const regex of functionRegexes) {
+                const match = line.match(regex);
+                if (match) {
+                    const functionName = match[1];
+                    // constructorはスキップ
+                    if (functionName === 'constructor') {
+                        break;
+                    }
+                    let braceCount = 0;
+                    let foundStart = false;
+                    let endLine = i;
+                    // 関数の終了行を探す
+                    for (let j = i; j < lines.length; j++) {
+                        const currentLine = lines[j];
+                        for (const char of currentLine) {
+                            if (char === '{') {
+                                braceCount++;
+                                foundStart = true;
+                            }
+                            else if (char === '}') {
+                                braceCount--;
+                            }
+                        }
+                        if (foundStart && braceCount === 0) {
+                            endLine = j;
+                            break;
+                        }
+                    }
+                    const functionLines = lines.slice(i, endLine + 1);
+                    functions.push({
+                        name: functionName,
+                        startLine: i + 1,
+                        endLine: endLine + 1,
+                        parameters: this.extractParameters(line),
+                        returnType: this.extractReturnType(line),
+                        isAsync: line.includes('async '),
+                        isExported: this.isExported(line),
+                        complexity: this.calculateComplexity(functionLines),
+                        calls: this.extractFunctionCalls(functionLines),
+                        calledBy: [],
+                        variables: this.extractVariablesFromLines(functionLines),
+                        documentation: this.extractDocumentation(lines, i)
+                    });
+                    break;
+                }
+            }
+        }
+        return functions;
+    }
+    extractJavaScriptClasses(lines, language) {
+        const classes = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            const classMatch = line.match(/^[\s]*(?:export\s+)?class\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+            if (classMatch) {
+                const className = classMatch[1];
+                let braceCount = 0;
+                let foundStart = false;
+                let endLine = i;
+                for (let j = i; j < lines.length; j++) {
+                    const currentLine = lines[j];
+                    for (const char of currentLine) {
+                        if (char === '{') {
+                            braceCount++;
+                            foundStart = true;
+                        }
+                        else if (char === '}') {
+                            braceCount--;
+                        }
+                    }
+                    if (foundStart && braceCount === 0) {
+                        endLine = j;
+                        break;
+                    }
+                }
+                const members = this.extractClassMembers(lines, i, language);
+                classes.push({
+                    name: className,
+                    startLine: i + 1,
+                    endLine: endLine + 1,
+                    methods: members.methods,
+                    properties: members.properties,
+                    extends: this.extractExtendsClass(line),
+                    implements: this.extractImplementsInterfaces(line),
+                    isExported: this.isExported(line),
+                    documentation: this.extractDocumentation(lines, i)
+                });
+            }
+        }
+        return classes;
+    }
+    extractTypeScriptInterfaces(lines) {
+        const interfaces = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            const interfaceMatch = line.match(/^[\s]*(?:export\s+)?interface\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+            if (interfaceMatch) {
+                const interfaceName = interfaceMatch[1];
+                let braceCount = 0;
+                let foundStart = false;
+                let endLine = i;
+                for (let j = i; j < lines.length; j++) {
+                    const currentLine = lines[j];
+                    for (const char of currentLine) {
+                        if (char === '{') {
+                            braceCount++;
+                            foundStart = true;
+                        }
+                        else if (char === '}') {
+                            braceCount--;
+                        }
+                    }
+                    if (foundStart && braceCount === 0) {
+                        endLine = j;
+                        break;
+                    }
+                }
+                const members = this.extractInterfaceMembers(lines, i);
+                interfaces.push({
+                    name: interfaceName,
+                    startLine: i + 1,
+                    endLine: endLine + 1,
+                    methods: members.methods,
+                    properties: members.properties,
+                    extends: this.extractExtendsInterface(line) ? [this.extractExtendsInterface(line)] : [],
+                    isExported: this.isExported(line),
+                    documentation: this.extractDocumentation(lines, i)
+                });
+            }
+        }
+        return interfaces;
+    }
+    extractJavaScriptVariables(line, lineNumber) {
+        const variables = [];
+        // 通常の変数宣言
+        const normalPattern = /(?:(const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*))(?:\s*:\s*([a-zA-Z_$][a-zA-Z0-9_$<>[\]]*))?\s*=/g;
+        // デストラクチャリング構文
+        const destructuringPattern = /(const|let|var)\s*\{([^}]+)\}\s*=/g;
+        // 通常の変数を抽出
+        const normalMatches = line.matchAll(normalPattern);
+        for (const match of normalMatches) {
+            if (match[2]) {
+                variables.push({
+                    name: match[2],
+                    line: lineNumber,
+                    type: match[3] || this.extractVariableType(line, match[2]),
+                    scope: this.determineScope([line], 0),
+                    isConst: match[1] === 'const',
+                    isExported: this.isExported(line),
+                    usage: [],
+                    kind: match[1]
+                });
+            }
+        }
+        // デストラクチャリング変数を抽出
+        const destructMatches = line.matchAll(destructuringPattern);
+        for (const match of destructMatches) {
+            if (match[2]) {
+                // { name, email } から name と email を抽出
+                const vars = match[2].split(',').map(v => v.trim());
+                for (const varName of vars) {
+                    // プロパティの名前変更を処理 (例: { foo: bar })
+                    const cleanName = varName.includes(':') ? varName.split(':')[1].trim() : varName;
+                    if (cleanName && /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(cleanName)) {
+                        variables.push({
+                            name: cleanName,
+                            line: lineNumber,
+                            type: 'unknown', // デストラクチャリングの型推論は複雑なので unknown とする
+                            scope: this.determineScope([line], 0),
+                            isConst: match[1] === 'const',
+                            isExported: this.isExported(line),
+                            usage: [],
+                            kind: match[1]
+                        });
+                    }
+                }
+            }
+        }
+        return variables;
+    }
+    // Placeholder methods for other languages
+    extractPythonFunctions(lines) {
+        // TODO: Implement Python function extraction
+        return [];
+    }
+    extractPythonClasses(lines) {
+        // TODO: Implement Python class extraction
+        return [];
+    }
+    extractPythonVariables(line, lineNumber) {
+        // TODO: Implement Python variable extraction
+        return [];
+    }
+    extractJavaFunctions(lines) {
+        // TODO: Implement Java function extraction
+        return [];
+    }
+    extractJavaClasses(lines) {
+        // TODO: Implement Java class extraction
+        return [];
+    }
+    extractJavaInterfaces(lines) {
+        // TODO: Implement Java interface extraction
+        return [];
+    }
+    // Helper methods
+    getImportRegexes(language) {
+        switch (language) {
+            case 'typescript':
+            case 'javascript':
+                return [
+                    /import\s+.*from\s+['"]([^'"]+)['"]/,
+                    /require\s*\(\s*['"]([^'"]+)['"]\s*\)/
+                ];
+            case 'python':
+                return [
+                    /from\s+([a-zA-Z0-9_.]+)\s+import/,
+                    /import\s+([a-zA-Z0-9_.]+)/
+                ];
+            default:
+                return [];
+        }
+    }
+    getExportRegexes(language) {
+        switch (language) {
+            case 'typescript':
+            case 'javascript':
+                return [
+                    /export\s+.*?([a-zA-Z_$][a-zA-Z0-9_$]*)/,
+                    /module\.exports\s*=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)/
+                ];
+            default:
+                return [];
+        }
+    }
+    getAPIPatterns(language) {
+        switch (language) {
+            case 'typescript':
+            case 'javascript':
+                return [
+                    /([a-zA-Z_$][a-zA-Z0-9_$]*)\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g
+                ];
+            default:
+                return [];
+        }
+    }
+    // Helper methods that need to be implemented
+    extractParameters(line) {
+        const match = line.match(/\(([^)]*)\)/);
+        if (match && match[1]) {
+            return match[1].split(',').map(p => {
+                // パラメータ名のみを抽出（型情報を除去）
+                const paramName = p.trim().split(':')[0].trim();
+                return paramName;
+            }).filter(p => p);
+        }
+        return [];
+    }
+    extractReturnType(line) {
+        // メソッドの引数リストの後の型を抽出
+        // 最後の ) を見つけて、その後の : から { までの間を取得
+        const lastParenIndex = line.lastIndexOf(')');
+        if (lastParenIndex === -1)
+            return undefined;
+        const afterParen = line.substring(lastParenIndex + 1);
+        const match = afterParen.match(/^\s*:\s*([^{]+)/);
+        return match ? match[1].trim() : undefined;
+    }
+    calculateComplexity(lines) {
+        const complexityKeywords = ['if', 'else', 'for', 'while', 'switch', 'case', 'catch', 'try'];
+        let complexity = 1; // Base complexity
+        for (const line of lines) {
+            for (const keyword of complexityKeywords) {
+                if (line.includes(keyword)) {
+                    complexity++;
+                }
+            }
+        }
+        return complexity;
+    }
+    extractFunctionCalls(lines) {
+        const calls = [];
+        for (const line of lines) {
+            const matches = line.matchAll(/([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g);
+            if (matches) {
+                for (const match of matches) {
+                    if (match[1]) {
+                        calls.push(match[1]);
+                    }
+                }
+            }
+        }
+        return [...new Set(calls)];
+    }
+    extractVariablesFromLines(lines) {
+        const variables = [];
+        for (const line of lines) {
+            const matches = line.matchAll(/(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
+            for (const match of matches) {
+                if (match[1]) {
+                    variables.push(match[1]);
+                }
+            }
+        }
+        return [...new Set(variables)];
+    }
+    extractDocumentation(lines, lineIndex) {
+        // Look for JSDoc or other documentation before the function
+        for (let i = lineIndex - 1; i >= 0; i--) {
+            const line = lines[i].trim();
+            if (line.startsWith('/**') || line.startsWith('/*') || line.startsWith('//')) {
+                return line;
+            }
+            if (line && !line.startsWith('*') && !line.startsWith('//')) {
+                break;
+            }
+        }
+        return undefined;
+    }
+    extractClassMembers(lines, startLine, language) {
+        const methods = [];
+        const properties = [];
+        let braceLevel = 0;
+        let foundStart = false;
+        for (let i = startLine; i < lines.length; i++) {
+            const line = lines[i];
+            for (const char of line) {
+                if (char === '{') {
+                    braceLevel++;
+                    foundStart = true;
+                }
+                else if (char === '}') {
+                    braceLevel--;
+                }
+            }
+            if (braceLevel > 0) {
+                // Match various method patterns including async methods
+                const methodMatch = line.match(/^\s*(?:async\s+)?(?:static\s+)?(?:private\s+|public\s+|protected\s+)?(?:async\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
+                if (methodMatch && methodMatch[1] !== 'if' && methodMatch[1] !== 'for' && methodMatch[1] !== 'while' && methodMatch[1] !== 'switch') {
+                    methods.push(methodMatch[1]);
+                }
+                const propertyMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]/);
+                if (propertyMatch && braceLevel > 0) {
+                    properties.push(propertyMatch[1]);
+                }
+            }
+            if (foundStart && braceLevel === 0) {
+                break;
+            }
+        }
+        return { methods, properties };
+    }
+    extractInterfaceMembers(lines, startLine) {
+        const methods = [];
+        const properties = [];
+        let braceLevel = 0;
+        for (let i = startLine; i < lines.length; i++) {
+            const line = lines[i];
+            for (const char of line) {
+                if (char === '{')
+                    braceLevel++;
+                else if (char === '}')
+                    braceLevel--;
+            }
+            if (braceLevel > 0) {
+                const methodMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/);
+                if (methodMatch) {
+                    methods.push(methodMatch[1]);
+                }
+                else {
+                    const propertyMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/);
+                    if (propertyMatch) {
+                        properties.push(propertyMatch[1]);
+                    }
+                }
+            }
+            if (braceLevel === 0 && i > startLine) {
+                break;
+            }
+        }
+        return { methods, properties };
+    }
+    extractVariableType(line, varName) {
+        const typeMatch = line.match(new RegExp(`${varName}\\s*:\\s*([^=,}]+)`));
+        return typeMatch ? typeMatch[1].trim() : undefined;
+    }
+    determineScope(lines, lineIndex) {
+        // Simple scope determination - could be enhanced
+        for (let i = lineIndex; i >= 0; i--) {
+            const line = lines[i];
+            if (line.includes('function') || line.includes('class')) {
+                return 'local';
+            }
+        }
+        return 'global';
+    }
+    extractExtendsClass(line) {
+        const match = line.match(/extends\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+        return match ? match[1] : undefined;
+    }
+    extractImplementsInterfaces(line) {
+        const match = line.match(/implements\s+([^{]+)/);
+        if (match) {
+            return match[1].split(',').map(i => i.trim());
+        }
+        return [];
+    }
+    extractExtendsInterface(line) {
+        const match = line.match(/extends\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+        return match ? match[1] : undefined;
+    }
+    isExported(line) {
+        return line.trimStart().startsWith('export ');
+    }
+    /**
+     * 言語固有の機能を解析
+     */
+    parseLanguageSpecificFeatures(fileContent, language) {
+        // 言語固有の機能解析を実装
+        // 将来的な拡張のためのプレースホルダー
+        const features = {
+            language,
+            hasAsync: false,
+            hasGenerics: false,
+            hasDecorators: false,
+            hasJSX: false
+        };
+        if (language === 'typescript' || language === 'javascript') {
+            features.hasAsync = /async\s+function|\basync\s+=>/m.test(fileContent);
+            features.hasGenerics = /<[A-Z]\w*>/m.test(fileContent);
+            features.hasDecorators = /@\w+\s*\(/m.test(fileContent);
+            features.hasJSX = /<[A-Z]\w*[^>]*>/m.test(fileContent);
+        }
+        return features;
+    }
+}
+exports.LanguageAnalyzer = LanguageAnalyzer;
+//# sourceMappingURL=language-parser.js.map

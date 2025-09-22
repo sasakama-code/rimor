@@ -1,14 +1,10 @@
 /**
  * レポートフォーマッター - v0.4.0 Quality Score Calculator
- * 
+ *
  * 各種出力形式（CLI、JSON、CSV、HTML）のフォーマッター
  */
 
-import { 
-  SummaryReport, 
-  DetailedReport, 
-  TrendReport 
-} from './reports';
+import { SummaryReport, DetailedReport, TrendReport } from './reports';
 
 /**
  * CLI出力フォーマッター（カラー対応）
@@ -33,8 +29,12 @@ export class CliFormatter {
     // プロジェクト情報
     output.push(this.colorize('📁 プロジェクト情報', 'blue', true));
     output.push(`パス: ${report.projectInfo.path}`);
-    output.push(`総合スコア: ${this.formatScore(report.projectInfo.overallScore)} ${this.formatGrade(report.projectInfo.grade)}`);
-    output.push(`ファイル数: ${report.projectInfo.totalFiles} ディレクトリ数: ${report.projectInfo.totalDirectories}`);
+    output.push(
+      `総合スコア: ${this.formatScore(report.projectInfo.overallScore)} ${this.formatGrade(report.projectInfo.grade)}`
+    );
+    output.push(
+      `ファイル数: ${report.projectInfo.totalFiles} ディレクトリ数: ${report.projectInfo.totalDirectories}`
+    );
     output.push(`実行時間: ${report.projectInfo.executionTime}ms`);
     output.push('');
 
@@ -49,7 +49,10 @@ export class CliFormatter {
 
     // グレード分布
     output.push(this.colorize('🏆 グレード分布', 'blue', true));
-    const totalFiles = Object.values(report.gradeDistribution).reduce((sum, count) => sum + count, 0);
+    const totalFiles = Object.values(report.gradeDistribution).reduce(
+      (sum, count) => sum + count,
+      0
+    );
     Object.entries(report.gradeDistribution).forEach(([grade, count]) => {
       if (count > 0) {
         const percentage = ((count / totalFiles) * 100).toFixed(1);
@@ -83,9 +86,15 @@ export class CliFormatter {
     // メタデータ
     output.push(this.colorize('📈 統計情報', 'blue', true));
     output.push(`平均ファイルスコア: ${report.metadata.averageFileScore}`);
-    output.push(`最弱ディメンション: ${this.getDimensionName(report.metadata.worstPerformingDimension)}`);
-    output.push(`最強ディメンション: ${this.getDimensionName(report.metadata.bestPerformingDimension)}`);
-    output.push(`プラグイン数: ${report.metadata.pluginCount} 課題数: ${report.metadata.issueCount}`);
+    output.push(
+      `最弱ディメンション: ${this.getDimensionName(report.metadata.worstPerformingDimension)}`
+    );
+    output.push(
+      `最強ディメンション: ${this.getDimensionName(report.metadata.bestPerformingDimension)}`
+    );
+    output.push(
+      `プラグイン数: ${report.metadata.pluginCount} 課題数: ${report.metadata.issueCount}`
+    );
 
     return output.join('\n');
   }
@@ -107,14 +116,16 @@ export class CliFormatter {
     report.fileDetails.forEach((file, index) => {
       output.push(this.colorize(`${index + 1}. ${file.filePath}`, 'yellow', true));
       output.push(`スコア: ${this.formatScore(file.score)} ${this.formatGrade(file.grade)}`);
-      
+
       // ディメンション詳細
       output.push('ディメンション:');
       file.dimensions.forEach(dim => {
         const bar = this.createProgressBar(dim.score, 15);
         const name = this.getDimensionName(dim.name);
-        output.push(`  ${name.padEnd(12)}: ${this.formatScore(dim.score)} ${bar} (重み: ${dim.weight})`);
-        
+        output.push(
+          `  ${name.padEnd(12)}: ${this.formatScore(dim.score)} ${bar} (重み: ${dim.weight})`
+        );
+
         if (dim.issues.length > 0) {
           output.push(`    課題: ${dim.issues.join(', ')}`);
         }
@@ -139,8 +150,10 @@ export class CliFormatter {
 
       report.directoryDetails.forEach((dir, index) => {
         output.push(this.colorize(`${index + 1}. ${dir.directoryPath}`, 'yellow', true));
-        output.push(`スコア: ${this.formatScore(dir.score)} ${this.formatGrade(dir.grade)} (${dir.fileCount}ファイル)`);
-        
+        output.push(
+          `スコア: ${this.formatScore(dir.score)} ${this.formatGrade(dir.grade)} (${dir.fileCount}ファイル)`
+        );
+
         // ディメンション内訳
         output.push('ディメンション内訳:');
         Object.entries(dir.dimensionBreakdown).forEach(([dimension, score]) => {
@@ -175,13 +188,18 @@ export class CliFormatter {
     output.push(this.colorize('📈 現在の状況', 'blue', true));
     output.push(`現在のスコア: ${this.formatScore(report.currentScore)}`);
     output.push(`前回のスコア: ${this.formatScore(report.previousScore)}`);
-    
+
     const trendIcon = this.getTrendIcon(report.trend);
     const trendColor = this.getTrendColor(report.trend);
-    output.push(`トレンド: ${this.colorize(trendIcon + ' ' + this.getTrendName(report.trend), trendColor, true)}`);
-    
+    output.push(
+      `トレンド: ${this.colorize(trendIcon + ' ' + this.getTrendName(report.trend), trendColor, true)}`
+    );
+
     if (report.improvementRate !== 0) {
-      const rateDisplay = report.improvementRate > 0 ? `+${report.improvementRate.toFixed(2)}%` : `${report.improvementRate.toFixed(2)}%`;
+      const rateDisplay =
+        report.improvementRate > 0
+          ? `+${report.improvementRate.toFixed(2)}%`
+          : `${report.improvementRate.toFixed(2)}%`;
       output.push(`変化率: ${this.colorize(rateDisplay, trendColor)}`);
     }
     output.push('');
@@ -242,7 +260,7 @@ export class CliFormatter {
       magenta: '\x1b[35m',
       cyan: '\x1b[36m',
       white: '\x1b[37m',
-      gray: '\x1b[90m'
+      gray: '\x1b[90m',
     };
 
     const colorCode = colors[color] || '';
@@ -273,11 +291,11 @@ export class CliFormatter {
    */
   private formatGrade(grade: string): string {
     const colors: Record<string, string> = {
-      'A': 'green',
-      'B': 'blue', 
-      'C': 'yellow',
-      'D': 'magenta',
-      'F': 'red'
+      A: 'green',
+      B: 'blue',
+      C: 'yellow',
+      D: 'magenta',
+      F: 'red',
     };
 
     return this.colorize(`[${grade}]`, colors[grade] || 'white');
@@ -288,15 +306,15 @@ export class CliFormatter {
    */
   private formatSeverity(severity: string): string {
     const colors: Record<string, string> = {
-      'high': 'red',
-      'medium': 'yellow',
-      'low': 'green'
+      high: 'red',
+      medium: 'yellow',
+      low: 'green',
     };
 
     const labels: Record<string, string> = {
-      'high': '高',
-      'medium': '中',
-      'low': '低'
+      high: '高',
+      medium: '中',
+      low: '低',
     };
 
     return this.colorize(labels[severity] || severity, colors[severity] || 'white');
@@ -327,11 +345,11 @@ export class CliFormatter {
    */
   private getDimensionName(dimension: string): string {
     const names: Record<string, string> = {
-      'completeness': '完全性',
-      'correctness': '正確性',
-      'maintainability': '保守性',
-      'performance': 'パフォーマンス',
-      'security': 'セキュリティ'
+      completeness: '完全性',
+      correctness: '正確性',
+      maintainability: '保守性',
+      performance: 'パフォーマンス',
+      security: 'セキュリティ',
     };
 
     return names[dimension] || dimension;
@@ -342,9 +360,9 @@ export class CliFormatter {
    */
   private getTrendIcon(trend: string): string {
     const icons: Record<string, string> = {
-      'improving': '📈',
-      'declining': '📉',
-      'stable': '➡️'
+      improving: '📈',
+      declining: '📉',
+      stable: '➡️',
     };
 
     return icons[trend] || '❓';
@@ -355,9 +373,9 @@ export class CliFormatter {
    */
   private getTrendName(trend: string): string {
     const names: Record<string, string> = {
-      'improving': '改善傾向',
-      'declining': '低下傾向', 
-      'stable': '安定'
+      improving: '改善傾向',
+      declining: '低下傾向',
+      stable: '安定',
     };
 
     return names[trend] || trend;
@@ -368,9 +386,9 @@ export class CliFormatter {
    */
   private getTrendColor(trend: string): string {
     const colors: Record<string, string> = {
-      'improving': 'green',
-      'declining': 'red',
-      'stable': 'blue'
+      improving: 'green',
+      declining: 'red',
+      stable: 'blue',
     };
 
     return colors[trend] || 'white';
@@ -412,10 +430,27 @@ export class CsvFormatter {
    */
   formatSummaryReport(report: SummaryReport): string {
     const headers = [
-      'ファイルパス', 'プロジェクトパス', '総合スコア', 'グレード', '総ファイル数', '総ディレクトリ数',
-      '完全性', '正確性', '保守性', 'パフォーマンス', 'セキュリティ',
-      'A級ファイル数', 'B級ファイル数', 'C級ファイル数', 'D級ファイル数', 'F級ファイル数',
-      '平均ファイルスコア', '最弱ディメンション', '最強ディメンション', 'プラグイン数', '課題数'
+      'ファイルパス',
+      'プロジェクトパス',
+      '総合スコア',
+      'グレード',
+      '総ファイル数',
+      '総ディレクトリ数',
+      '完全性',
+      '正確性',
+      '保守性',
+      'パフォーマンス',
+      'セキュリティ',
+      'A級ファイル数',
+      'B級ファイル数',
+      'C級ファイル数',
+      'D級ファイル数',
+      'F級ファイル数',
+      '平均ファイルスコア',
+      '最弱ディメンション',
+      '最強ディメンション',
+      'プラグイン数',
+      '課題数',
     ];
 
     const row = [
@@ -439,7 +474,7 @@ export class CsvFormatter {
       report.metadata.worstPerformingDimension,
       report.metadata.bestPerformingDimension,
       report.metadata.pluginCount,
-      report.metadata.issueCount
+      report.metadata.issueCount,
     ];
 
     return [headers.join(','), row.join(',')].join('\n');
@@ -450,22 +485,33 @@ export class CsvFormatter {
    */
   formatDetailedReport(report: DetailedReport): string {
     const headers = [
-      'ファイルパス', 'スコア', 'グレード',
-      '完全性スコア', '完全性重み',
-      '正確性スコア', '正確性重み',
-      '保守性スコア', '保守性重み',
-      'パフォーマンススコア', 'パフォーマンス重み',
-      'セキュリティスコア', 'セキュリティ重み',
-      '課題数', '提案数'
+      'ファイルパス',
+      'スコア',
+      'グレード',
+      '完全性スコア',
+      '完全性重み',
+      '正確性スコア',
+      '正確性重み',
+      '保守性スコア',
+      '保守性重み',
+      'パフォーマンススコア',
+      'パフォーマンス重み',
+      'セキュリティスコア',
+      'セキュリティ重み',
+      '課題数',
+      '提案数',
     ];
 
     const rows = [headers.join(',')];
 
     report.fileDetails.forEach(file => {
-      const dimensionMap = file.dimensions.reduce((acc, dim) => {
-        acc[dim.name] = { score: dim.score, weight: dim.weight };
-        return acc;
-      }, {} as Record<string, { score: number; weight: number }>);
+      const dimensionMap = file.dimensions.reduce(
+        (acc, dim) => {
+          acc[dim.name] = { score: dim.score, weight: dim.weight };
+          return acc;
+        },
+        {} as Record<string, { score: number; weight: number }>
+      );
 
       const row = [
         file.filePath,
@@ -482,7 +528,7 @@ export class CsvFormatter {
         dimensionMap.security?.score || 0,
         dimensionMap.security?.weight || 0,
         file.issues.length,
-        file.suggestions.length
+        file.suggestions.length,
       ];
 
       rows.push(row.join(','));
@@ -496,8 +542,14 @@ export class CsvFormatter {
    */
   formatTrendReport(report: TrendReport): string {
     const headers = [
-      '日付', 'スコア', 'グレード', 'トレンド', '変化率',
-      '来週予測', '来月予測', '予測信頼度'
+      '日付',
+      'スコア',
+      'グレード',
+      'トレンド',
+      '変化率',
+      '来週予測',
+      '来月予測',
+      '予測信頼度',
     ];
 
     const rows = [headers.join(',')];
@@ -511,7 +563,7 @@ export class CsvFormatter {
       report.improvementRate,
       report.predictions.nextWeekScore,
       report.predictions.nextMonthScore,
-      report.predictions.confidence
+      report.predictions.confidence,
     ];
     rows.push(currentRow.join(','));
 
@@ -525,7 +577,7 @@ export class CsvFormatter {
         '',
         '',
         '',
-        ''
+        '',
       ];
       rows.push(row.join(','));
     });
@@ -608,10 +660,12 @@ export class HtmlFormatter {
 
         <div class="section">
             <h2>📊 ディメンション別スコア</h2>
-            ${Object.entries(report.dimensionScores).map(([dimension, score]) => {
-              const progressClass = score >= 80 ? 'progress-green' : score >= 60 ? 'progress-yellow' : 'progress-red';
-              const dimensionName = this.getDimensionName(dimension);
-              return `
+            ${Object.entries(report.dimensionScores)
+              .map(([dimension, score]) => {
+                const progressClass =
+                  score >= 80 ? 'progress-green' : score >= 60 ? 'progress-yellow' : 'progress-red';
+                const dimensionName = this.getDimensionName(dimension);
+                return `
                 <div style="margin: 15px 0;">
                     <div>${dimensionName}: ${score}</div>
                     <div class="progress-bar">
@@ -619,41 +673,64 @@ export class HtmlFormatter {
                     </div>
                 </div>
               `;
-            }).join('')}
+              })
+              .join('')}
         </div>
 
         <div class="section">
             <h2>🏆 グレード分布</h2>
             <table>
                 <tr><th>グレード</th><th>ファイル数</th><th>割合</th></tr>
-                ${Object.entries(report.gradeDistribution).map(([grade, count]) => {
-                  const total = Object.values(report.gradeDistribution).reduce((sum, c) => sum + c, 0);
-                  const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-                  return `<tr><td class="grade grade-${grade}">${grade}</td><td>${count}</td><td>${percentage}%</td></tr>`;
-                }).join('')}
+                ${Object.entries(report.gradeDistribution)
+                  .map(([grade, count]) => {
+                    const total = Object.values(report.gradeDistribution).reduce(
+                      (sum, c) => sum + c,
+                      0
+                    );
+                    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                    return `<tr><td class="grade grade-${grade}">${grade}</td><td>${count}</td><td>${percentage}%</td></tr>`;
+                  })
+                  .join('')}
             </table>
         </div>
 
-        ${report.topIssues.length > 0 ? `
+        ${
+          report.topIssues.length > 0
+            ? `
         <div class="section">
             <h2>⚠️ 主要課題</h2>
-            ${report.topIssues.slice(0, 5).map(issue => `
+            ${report.topIssues
+              .slice(0, 5)
+              .map(
+                issue => `
                 <div class="issue ${issue.severity}">
                     <strong>${this.getDimensionName(issue.dimension)}</strong>: ${issue.description}
                     <br>影響ファイル: ${issue.affectedFiles}個
                 </div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${report.recommendations.length > 0 ? `
+        ${
+          report.recommendations.length > 0
+            ? `
         <div class="section">
             <h2>💡 推奨事項</h2>
-            ${report.recommendations.map(rec => `
+            ${report.recommendations
+              .map(
+                rec => `
                 <div class="recommendation">${rec}</div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="section">
             <h2>📈 統計情報</h2>
@@ -676,12 +753,16 @@ export class HtmlFormatter {
    */
   formatDetailedReport(report: DetailedReport): string {
     // 詳細レポートは長くなるため、サマリー + ファイルリストの簡略版
-    return this.formatSummaryReport(report.summary) + `
+    return (
+      this.formatSummaryReport(report.summary) +
+      `
     <div class="section">
         <h2>📄 ファイル詳細</h2>
         <table>
             <tr><th>ファイルパス</th><th>スコア</th><th>グレード</th><th>課題数</th><th>提案数</th></tr>
-            ${report.fileDetails.map(file => `
+            ${report.fileDetails
+              .map(
+                file => `
                 <tr>
                     <td>${file.filePath}</td>
                     <td>${file.score}</td>
@@ -689,10 +770,13 @@ export class HtmlFormatter {
                     <td>${file.issues.length}</td>
                     <td>${file.suggestions.length}</td>
                 </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
         </table>
     </div>
-    `;
+    `
+    );
   }
 
   /**
@@ -724,11 +808,11 @@ export class HtmlFormatter {
 
   private getDimensionName(dimension: string): string {
     const names: Record<string, string> = {
-      'completeness': '完全性',
-      'correctness': '正確性', 
-      'maintainability': '保守性',
-      'performance': 'パフォーマンス',
-      'security': 'セキュリティ'
+      completeness: '完全性',
+      correctness: '正確性',
+      maintainability: '保守性',
+      performance: 'パフォーマンス',
+      security: 'セキュリティ',
     };
     return names[dimension] || dimension;
   }

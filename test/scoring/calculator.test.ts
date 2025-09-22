@@ -1,10 +1,10 @@
-import { 
-  FileScore, 
-  DirectoryScore, 
+import {
+  FileScore,
+  DirectoryScore,
   ProjectScore,
   PluginResult,
   WeightConfig,
-  DEFAULT_WEIGHTS
+  DEFAULT_WEIGHTS,
 } from '../../src/scoring/types';
 import { ScoreCalculatorV2 } from '../../src/scoring/calculator';
 import { GradeCalculator } from '../../src/scoring/grades';
@@ -21,7 +21,7 @@ describe('ScoreCalculatorV2', () => {
   describe('calculateFileScore', () => {
     test('should return zero score for empty plugin results', () => {
       const result = calculator.calculateFileScore('test.ts', []);
-      
+
       expect(result.overallScore).toBe(0);
       expect(result.grade).toBe('F');
       expect(result.filePath).toBe('test.ts');
@@ -34,12 +34,12 @@ describe('ScoreCalculatorV2', () => {
           pluginName: 'Test Existence Plugin',
           score: 80,
           weight: 1.0,
-          issues: []
-        }
+          issues: [],
+        },
       ];
 
       const result = calculator.calculateFileScore('test.ts', pluginResults);
-      
+
       expect(result.overallScore).toBe(80);
       expect(result.grade).toBe('B');
       expect(result.pluginScores!['test-existence']).toBeDefined();
@@ -53,19 +53,19 @@ describe('ScoreCalculatorV2', () => {
           pluginName: 'Plugin 1',
           score: 60,
           weight: 1.0,
-          issues: []
+          issues: [],
         },
         {
-          pluginId: 'plugin2', 
+          pluginId: 'plugin2',
           pluginName: 'Plugin 2',
           score: 100,
           weight: 2.0,
-          issues: []
-        }
+          issues: [],
+        },
       ];
 
       const result = calculator.calculateFileScore('test.ts', pluginResults);
-      
+
       // 加重平均: (60*1 + 100*2) / (1+2) = 260/3 ≈ 86.67
       expect(result.overallScore).toBeCloseTo(86.67, 1);
       expect(result.grade).toBe('B');
@@ -78,12 +78,12 @@ describe('ScoreCalculatorV2', () => {
           pluginName: 'Perfect Plugin',
           score: 100,
           weight: 1.0,
-          issues: []
-        }
+          issues: [],
+        },
       ];
 
       const result = calculator.calculateFileScore('test.ts', pluginResults);
-      
+
       expect(result.overallScore).toBe(100);
       expect(result.grade).toBe('A');
     });
@@ -96,20 +96,20 @@ describe('ScoreCalculatorV2', () => {
           score: 85,
           weight: 1.0,
           issues: [],
-          metadata: { dimensions: ['completeness'] }
+          metadata: { dimensions: ['completeness'] },
         },
         {
           pluginId: 'correctness-plugin',
-          pluginName: 'Correctness Plugin', 
+          pluginName: 'Correctness Plugin',
           score: 75,
           weight: 1.5,
           issues: [],
-          metadata: { dimensions: ['correctness'] }
-        }
+          metadata: { dimensions: ['correctness'] },
+        },
       ];
 
       const result = calculator.calculateFileScore('test.ts', pluginResults);
-      
+
       expect(result.dimensions.completeness.score).toBeGreaterThan(0);
       expect(result.dimensions.correctness.score).toBeGreaterThan(0);
     });
@@ -118,7 +118,7 @@ describe('ScoreCalculatorV2', () => {
   describe('calculateDirectoryScore', () => {
     test('should return zero score for empty file scores', () => {
       const result = calculator.calculateDirectoryScore('src/', []);
-      
+
       expect(result.overallScore).toBe(0);
       expect(result.averageScore).toBe(0);
       expect(result.fileCount).toBe(0);
@@ -129,11 +129,11 @@ describe('ScoreCalculatorV2', () => {
       const fileScores: FileScore[] = [
         createMockFileScore('file1.ts', 80),
         createMockFileScore('file2.ts', 90),
-        createMockFileScore('file3.ts', 70)
+        createMockFileScore('file3.ts', 70),
       ];
 
       const result = calculator.calculateDirectoryScore('src/', fileScores);
-      
+
       expect(result.averageScore).toBe(80); // (80+90+70)/3
       expect(result.fileCount).toBe(3);
       expect(result.grade).toBe('B');
@@ -142,11 +142,11 @@ describe('ScoreCalculatorV2', () => {
     test('should aggregate dimension scores correctly', () => {
       const fileScores: FileScore[] = [
         createMockFileScore('file1.ts', 85),
-        createMockFileScore('file2.ts', 75)
+        createMockFileScore('file2.ts', 75),
       ];
 
       const result = calculator.calculateDirectoryScore('src/', fileScores);
-      
+
       Object.values(result.dimensions!).forEach(dimension => {
         expect(dimension.score).toBeGreaterThanOrEqual(0);
         expect(dimension.score).toBeLessThanOrEqual(100);
@@ -159,11 +159,11 @@ describe('ScoreCalculatorV2', () => {
       const directoryScores: DirectoryScore[] = [
         createMockDirectoryScore('src/', 85, 10),
         createMockDirectoryScore('test/', 90, 5),
-        createMockDirectoryScore('lib/', 75, 3)
+        createMockDirectoryScore('lib/', 75, 3),
       ];
 
       const result = calculator.calculateProjectScore(directoryScores, DEFAULT_WEIGHTS);
-      
+
       expect(result.totalFiles).toBe(18); // 10+5+3
       expect(result.overallScore).toBeGreaterThan(0);
       expect(result.grade).toBeDefined();
@@ -173,17 +173,19 @@ describe('ScoreCalculatorV2', () => {
       const directoryScores: DirectoryScore[] = [
         createMockDirectoryScore('src/', 95, 2), // A grade files
         createMockDirectoryScore('test/', 85, 3), // B grade files
-        createMockDirectoryScore('lib/', 55, 1)  // F grade files
+        createMockDirectoryScore('lib/', 55, 1), // F grade files
       ];
 
       const result = calculator.calculateProjectScore(directoryScores, DEFAULT_WEIGHTS);
-      
+
       expect(result.distribution!.A).toBeGreaterThan(0);
       expect(result.distribution!.B).toBeGreaterThan(0);
       expect(result.distribution!.F).toBeGreaterThan(0);
-      
-      const totalInDistribution = Object.values(result.distribution!)
-        .reduce((sum, count) => sum + count, 0);
+
+      const totalInDistribution = Object.values(result.distribution!).reduce(
+        (sum, count) => sum + count,
+        0
+      );
       expect(totalInDistribution).toBe(result.totalFiles);
     });
   });
@@ -197,8 +199,8 @@ describe('ScoreCalculatorV2', () => {
           correctness: 3.0, // 重要度最高
           maintainability: 1.0,
           performance: 0.1,
-          security: 2.0
-        }
+          security: 2.0,
+        },
       };
 
       const pluginResults: PluginResult[] = [
@@ -208,7 +210,7 @@ describe('ScoreCalculatorV2', () => {
           score: 60,
           weight: 1.0,
           issues: [],
-          metadata: { dimensions: ['correctness'] }
+          metadata: { dimensions: ['correctness'] },
         },
         {
           pluginId: 'performance-plugin',
@@ -216,12 +218,12 @@ describe('ScoreCalculatorV2', () => {
           score: 100,
           weight: 1.0,
           issues: [],
-          metadata: { dimensions: ['performance'] }
-        }
+          metadata: { dimensions: ['performance'] },
+        },
       ];
 
       const result = calculator.calculateFileScore('test.ts', pluginResults, customWeights);
-      
+
       // 正確性の重みが高いため、パフォーマンスの高得点よりも正確性の低得点が影響大
       expect(result.overallScore).toBeLessThan(80);
     });
@@ -237,7 +239,7 @@ describe('ScoreCalculatorV2', () => {
         correctness: { score: score, weight: 1.0, contributors: [], details: '', issues: [] },
         maintainability: { score: score, weight: 1.0, contributors: [], details: '', issues: [] },
         performance: { score: score, weight: 1.0, contributors: [], details: '', issues: [] },
-        security: { score: score, weight: 1.0, contributors: [], details: '', issues: [] }
+        security: { score: score, weight: 1.0, contributors: [], details: '', issues: [] },
       },
       pluginScores: {},
       grade: gradeCalculator.calculateGrade(score),
@@ -245,12 +247,16 @@ describe('ScoreCalculatorV2', () => {
       metadata: {
         analysisTime: 0,
         pluginResults: [],
-        issueCount: 0
-      }
+        issueCount: 0,
+      },
     };
   }
 
-  function createMockDirectoryScore(dirPath: string, avgScore: number, fileCount: number): DirectoryScore {
+  function createMockDirectoryScore(
+    dirPath: string,
+    avgScore: number,
+    fileCount: number
+  ): DirectoryScore {
     const fileScores: FileScore[] = [];
     for (let i = 0; i < fileCount; i++) {
       fileScores.push(createMockFileScore(`${dirPath}file${i}.ts`, avgScore));
@@ -266,17 +272,23 @@ describe('ScoreCalculatorV2', () => {
         correctness: avgScore,
         maintainability: avgScore,
         performance: avgScore,
-        security: avgScore
+        security: avgScore,
       },
       averageScore: avgScore,
       dimensions: {
         completeness: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
         correctness: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
-        maintainability: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
+        maintainability: {
+          score: avgScore,
+          weight: 1.0,
+          contributors: [],
+          details: '',
+          issues: [],
+        },
         performance: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
-        security: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] }
+        security: { score: avgScore, weight: 1.0, contributors: [], details: '', issues: [] },
       },
-      grade: gradeCalculator.calculateGrade(avgScore)
+      grade: gradeCalculator.calculateGrade(avgScore),
     };
   }
 });

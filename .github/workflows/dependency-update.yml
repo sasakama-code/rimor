@@ -1,0 +1,389 @@
+name: 🔄 Dependency Updates
+
+on:
+  schedule:
+    # 毎週月曜日の09:00 JST (00:00 UTC)
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Update type'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - all
+      create_pr:
+        description: 'Create pull request automatically'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # セキュリティ脆弱性チェック
+  security-audit:
+    name: Security Vulnerability Check
+    runs-on: ubuntu-latest
+    outputs:
+      has_vulnerabilities: ${{ steps.audit.outputs.has_vulnerabilities }}
+      vulnerability_count: ${{ steps.audit.outputs.vulnerability_count }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Security audit
+      id: audit
+      run: |
+        echo "🔍 Checking for security vulnerabilities..."
+        
+        # Run npm audit and capture output
+        if npm audit --audit-level=moderate --json > audit-results.json 2>/dev/null; then
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          echo "vulnerability_count=0" >> $GITHUB_OUTPUT
+          echo "✅ No security vulnerabilities found"
+        else
+          VULN_COUNT=$(jq '.metadata.vulnerabilities.total' audit-results.json 2>/dev/null || echo "0")
+          echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+          echo "vulnerability_count=$VULN_COUNT" >> $GITHUB_OUTPUT
+          echo "⚠️ Found $VULN_COUNT security vulnerabilities"
+          
+          # Display critical and high vulnerabilities
+          jq -r '.vulnerabilities | to_entries[] | select(.value.severity == "critical" or .value.severity == "high") | "- \(.key): \(.value.severity) - \(.value.title)"' audit-results.json || true
+        fi
+        
+    - name: Upload audit results
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-audit-results
+        path: audit-results.json
+        if-no-files-found: ignore
+
+  # 依存関係更新チェック
+  check-updates:
+    name: Check Available Updates
+    runs-on: ubuntu-latest
+    outputs:
+      has_updates: ${{ steps.check.outputs.has_updates }}
+      update_summary: ${{ steps.check.outputs.update_summary }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install npm-check-updates
+      run: npm install -g npm-check-updates
+      
+    - name: Check for updates
+      id: check
+      run: |
+        echo "🔍 Checking for dependency updates..."
+        
+        UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+        
+        # Generate update report
+        case $UPDATE_TYPE in
+          "patch")
+            ncu --target patch --jsonUpgraded > updates.json 2>/dev/null || echo "{}" > updates.json
+            ;;
+          "minor")
+            ncu --target minor --jsonUpgraded > updates.json 2>/dev/null || echo "{}" > updates.json
+            ;;
+          "major")
+            ncu --target latest --jsonUpgraded > updates.json 2>/dev/null || echo "{}" > updates.json
+            ;;
+          "all")
+            ncu --jsonUpgraded > updates.json 2>/dev/null || echo "{}" > updates.json
+            ;;
+        esac
+        
+        # Check if updates are available
+        UPDATE_COUNT=$(jq 'length' updates.json)
+        
+        if [ "$UPDATE_COUNT" -gt 0 ]; then
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+          
+          # Generate summary
+          SUMMARY="Found $UPDATE_COUNT package updates ($UPDATE_TYPE level):"$'\n'
+          jq -r 'to_entries[] | "- \(.key): \(.value)"' updates.json | while read line; do
+            SUMMARY="$SUMMARY$line"$'\n'
+          done
+          
+          echo "update_summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "📦 $UPDATE_COUNT updates available"
+        else
+          echo "has_updates=false" >> $GITHUB_OUTPUT
+          echo "✅ All dependencies are up to date"
+        fi
+        
+    - name: Upload update report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-updates
+        path: updates.json
+
+  # 依存関係更新実行
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    needs: [security-audit, check-updates]
+    if: needs.check-updates.outputs.has_updates == 'true' || needs.security-audit.outputs.has_vulnerabilities == 'true'
+    
+    outputs:
+      has_changes: ${{ steps.commit.outputs.has_changes }}
+      branch_name: ${{ steps.branch.outputs.branch_name }}
+    
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Configure Git
+      run: |
+        git config user.name "dependabot[bot]"
+        git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+        
+    - name: Create update branch
+      id: branch
+      run: |
+        BRANCH_NAME="auto-dependency-update-$(date +%Y%m%d-%H%M%S)"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        git checkout -b "$BRANCH_NAME"
+        
+    - name: Fix security vulnerabilities (if any)
+      if: needs.security-audit.outputs.has_vulnerabilities == 'true'
+      run: |
+        echo "🔒 Fixing security vulnerabilities..."
+        npm audit fix --audit-level=moderate || true
+        echo "Security fixes applied"
+        
+    - name: Update dependencies
+      if: needs.check-updates.outputs.has_updates == 'true'
+      run: |
+        echo "📦 Updating dependencies..."
+        
+        UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+        
+        case $UPDATE_TYPE in
+          "patch")
+            npx npm-check-updates --target patch -u
+            ;;
+          "minor")
+            npx npm-check-updates --target minor -u
+            ;;
+          "major")
+            npx npm-check-updates --target latest -u
+            ;;
+          "all")
+            npx npm-check-updates -u
+            ;;
+        esac
+        
+    - name: Install updated dependencies
+      run: |
+        echo "📥 Installing updated dependencies..."
+        npm install
+        
+    - name: Run tests
+      run: |
+        echo "🧪 Running tests with updated dependencies..."
+        
+        # Build first
+        npm run build:full
+        
+        # Run critical tests
+        npm run test:quick || {
+          echo "❌ Quick tests failed with updated dependencies"
+          exit 1
+        }
+        
+        # Run full test suite if quick tests pass
+        npm test || {
+          echo "❌ Full test suite failed with updated dependencies"
+          exit 1
+        }
+        
+        echo "✅ All tests passed with updated dependencies"
+        
+    - name: Run security check
+      run: |
+        echo "🔒 Running security checks..."
+        npm run security-check || {
+          echo "❌ Security check failed"
+          exit 1
+        }
+        echo "✅ Security check passed"
+        
+    - name: Commit changes
+      id: commit
+      run: |
+        if git diff --quiet && git diff --cached --quiet; then
+          echo "No changes to commit"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "has_changes=true" >> $GITHUB_OUTPUT
+        
+        # Generate commit message
+        COMMIT_MSG="chore(deps): update dependencies"
+        
+        if [ "${{ needs.security-audit.outputs.has_vulnerabilities }}" = "true" ]; then
+          COMMIT_MSG="$COMMIT_MSG - fix ${{ needs.security-audit.outputs.vulnerability_count }} vulnerabilities"
+        fi
+        
+        if [ "${{ needs.check-updates.outputs.has_updates }}" = "true" ]; then
+          UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+          COMMIT_MSG="$COMMIT_MSG ($UPDATE_TYPE updates)"
+        fi
+        
+        # Issue #167修正: heredoc方式でYAML構文エラー回避
+        git add -A
+        git commit -m "$(cat <<EOF
+$COMMIT_MSG
+
+🤖 Auto-generated dependency update
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+        git push origin "$BRANCH_NAME"
+        
+    - name: Create Pull Request
+      if: github.event.inputs.create_pr != 'false' && steps.commit.outputs.has_changes == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const baseBranch = 'main';
+          const headBranch = process.env.BRANCH_NAME;
+          
+          // Issue #168修正: Extract Method適用とDRY原則実装
+          // セキュリティ監査結果の統一取得（Defensive Programming）
+          const securityAuditResults = {
+            hasVulnerabilities: '${{ needs.security-audit.outputs.has_vulnerabilities }}' === 'true',
+            vulnerabilityCount: '${{ needs.security-audit.outputs.vulnerability_count }}' || '0'
+          };
+          
+          // Extract Method: チェックボックス生成ヘルパー関数
+          const generateVerificationCheckbox = (label, isPassed) => `- [${isPassed ? 'x' : ' '}] ${label}\n`;
+          
+          // Prepare PR body
+          let prBody = '## 🔄 Automated Dependency Update\n\n';
+          
+          // DRY原則適用: セキュリティ情報の統一使用
+          if (securityAuditResults.hasVulnerabilities) {
+            prBody += '### 🔒 Security Fixes\n';
+            prBody += `This PR fixes **${securityAuditResults.vulnerabilityCount}** security vulnerabilities.\n\n`;
+          }
+          
+          if ('${{ needs.check-updates.outputs.has_updates }}' === 'true') {
+            prBody += '### 📦 Dependency Updates\n';
+            prBody += '${{ needs.check-updates.outputs.update_summary }}\n\n';
+          }
+          
+          // Extract Method適用: 検証チェックリスト生成
+          prBody += '### ✅ Verification\n';
+          prBody += generateVerificationCheckbox('All tests pass', true);
+          prBody += generateVerificationCheckbox('Build successful', true);
+          prBody += generateVerificationCheckbox('Security audit clean', !securityAuditResults.hasVulnerabilities);
+          prBody += '\n🤖 *Auto-generated by [Claude Code](https://claude.ai/code)*';
+          
+          // Create PR
+          const pr = await github.rest.pulls.create({
+            owner,
+            repo,
+            title: '🔄 chore(deps): automated dependency update',
+            head: headBranch,
+            base: baseBranch,
+            body: prBody,
+          });
+          
+          console.log(`Created PR #${pr.data.number}: ${pr.data.html_url}`);
+          
+          // Add labels
+          await github.rest.issues.addLabels({
+            owner,
+            repo,
+            issue_number: pr.data.number,
+            labels: ['dependencies', 'automated', 'chore']
+          });
+          
+          if ('${{ needs.security-audit.outputs.has_vulnerabilities }}' === 'true') {
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.data.number,
+              labels: ['security']
+            });
+          }
+
+  # まとめレポート
+  summary:
+    name: Update Summary
+    runs-on: ubuntu-latest
+    needs: [security-audit, check-updates, update-dependencies]
+    if: always()
+    
+    steps:
+    - name: Generate summary
+      run: |
+        echo "## 🔄 Dependency Update Summary"
+        echo
+        
+        if [ "${{ needs.security-audit.outputs.has_vulnerabilities }}" = "true" ]; then
+          echo "🔒 **Security**: Found ${{ needs.security-audit.outputs.vulnerability_count }} vulnerabilities"
+        else
+          echo "🔒 **Security**: No vulnerabilities found"
+        fi
+        
+        if [ "${{ needs.check-updates.outputs.has_updates }}" = "true" ]; then
+          echo "📦 **Updates**: Available updates found"
+        else
+          echo "📦 **Updates**: All dependencies up to date"
+        fi
+        
+        if [ "${{ needs.update-dependencies.result }}" = "success" ]; then
+          if [ "${{ needs.update-dependencies.outputs.has_changes }}" = "true" ]; then
+            echo "✅ **Result**: Update completed successfully"
+          else
+            echo "✅ **Result**: No changes were needed"
+          fi
+        elif [ "${{ needs.update-dependencies.result }}" = "failure" ]; then
+          echo "❌ **Result**: Update failed"
+        else
+          echo "⏭️ **Result**: No updates needed"
+        fi

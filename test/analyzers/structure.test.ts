@@ -1,14 +1,14 @@
 import { ProjectStructureAnalyzer } from '../../src/analyzers/structure';
-import { 
-  ProjectStructure, 
-  ProjectOverview, 
-  DirectoryInfo, 
+import {
+  ProjectStructure,
+  ProjectOverview,
+  DirectoryInfo,
   ArchitecturePattern,
   NamingConventions,
   ProjectMetrics,
   DirectoryPurpose,
   ArchitectureType,
-  NamingPattern 
+  NamingPattern,
 } from '../../src/analyzers/types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,10 +20,10 @@ describe('ProjectStructureAnalyzer', () => {
 
   beforeEach(() => {
     analyzer = new ProjectStructureAnalyzer();
-    
+
     // テスト用プロジェクトディレクトリを作成
     testProjectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-structure-test-'));
-    
+
     // 複雑なプロジェクト構造を作成
     const projectStructure = {
       'package.json': {
@@ -36,20 +36,20 @@ describe('ProjectStructureAnalyzer', () => {
           test: 'jest',
           start: 'node dist/index.js',
           dev: 'nodemon src/index.ts',
-          lint: 'eslint src/**/*.ts'
+          lint: 'eslint src/**/*.ts',
         },
         dependencies: {
-          'express': '^4.18.0',
-          'mongoose': '^7.0.0',
-          'lodash': '^4.17.21'
+          express: '^4.18.0',
+          mongoose: '^7.0.0',
+          lodash: '^4.17.21',
         },
         devDependencies: {
-          'typescript': '^5.0.0',
-          'jest': '^29.0.0',
+          typescript: '^5.0.0',
+          jest: '^29.0.0',
           '@types/express': '^4.17.0',
-          'nodemon': '^2.0.0',
-          'eslint': '^8.0.0'
-        }
+          nodemon: '^2.0.0',
+          eslint: '^8.0.0',
+        },
       },
       'tsconfig.json': {
         compilerOptions: {
@@ -58,10 +58,10 @@ describe('ProjectStructureAnalyzer', () => {
           outDir: './dist',
           rootDir: './src',
           strict: true,
-          esModuleInterop: true
+          esModuleInterop: true,
         },
         include: ['src/**/*'],
-        exclude: ['node_modules', 'dist', 'test']
+        exclude: ['node_modules', 'dist', 'test'],
       },
       'README.md': `# Test Project
 
@@ -104,13 +104,13 @@ coverage/
     'no-console': 'warn',
     '@typescript-eslint/no-unused-vars': 'error'
   }
-};`
+};`,
     };
 
     // ディレクトリ構造とファイルを作成
     const directories = {
-      'src': {
-        'controllers': {
+      src: {
+        controllers: {
           'UserController.ts': `import { Request, Response } from 'express';
 import { UserService } from '../services/UserService';
 
@@ -154,9 +154,9 @@ export class ProductController {
     const products = await this.productService.getAllProducts();
     res.json(products);
   }
-}`
+}`,
         },
-        'services': {
+        services: {
           'UserService.ts': `import { User } from '../models/User';
 import { DatabaseConnection } from '../utils/database';
 
@@ -193,9 +193,9 @@ export class ProductService {
   async getAllProducts(): Promise<Product[]> {
     return await this.db.collection('products').find({}).toArray();
   }
-}`
+}`,
         },
-        'models': {
+        models: {
           'User.ts': `export interface User {
   id: string;
   name: string;
@@ -226,9 +226,9 @@ export class UserModel implements User {
   description: string;
 }`,
           'index.ts': `export { User } from './User';
-export { Product } from './Product';`
+export { Product } from './Product';`,
         },
-        'routes': {
+        routes: {
           'userRoutes.ts': `import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
 
@@ -257,9 +257,9 @@ const router = Router();
 router.use('/api', userRoutes);
 router.use('/api', productRoutes);
 
-export { router };`
+export { router };`,
         },
-        'middleware': {
+        middleware: {
           'authMiddleware.ts': `import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
@@ -283,9 +283,9 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
-}`
+}`,
         },
-        'utils': {
+        utils: {
           'database.ts': `import { MongoClient, Db } from 'mongodb';
 
 export class DatabaseConnection {
@@ -326,9 +326,9 @@ export function validateRequired(value: any): boolean {
   static warn(message: string): void {
     console.warn(\`[WARN] \${new Date().toISOString()}: \${message}\`);
   }
-}`
+}`,
         },
-        'config': {
+        config: {
           'database.config.ts': `export const databaseConfig = {
   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017',
   dbName: 'testproject',
@@ -341,7 +341,7 @@ export function validateRequired(value: any): boolean {
   port: process.env.PORT || 3000,
   env: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET || 'fallback-secret'
-};`
+};`,
         },
         'index.ts': `import express from 'express';
 import { router } from './routes';
@@ -358,10 +358,10 @@ app.listen(appConfig.port, () => {
   console.log(\`Server running on port \${appConfig.port}\`);
 });
 
-export default app;`
+export default app;`,
       },
-      'test': {
-        'controllers': {
+      test: {
+        controllers: {
           'UserController.test.ts': `import { UserController } from '../../src/controllers/UserController';
 import { Request, Response } from 'express';
 
@@ -398,9 +398,9 @@ describe('ProductController', () => {
   it('should create controller instance', () => {
     expect(controller).toBeInstanceOf(ProductController);
   });
-});`
+});`,
         },
-        'services': {
+        services: {
           'UserService.test.ts': `import { UserService } from '../../src/services/UserService';
 
 describe('UserService', () => {
@@ -416,9 +416,9 @@ describe('UserService', () => {
       expect(Array.isArray(users)).toBe(true);
     });
   });
-});`
+});`,
         },
-        'utils': {
+        utils: {
           'validation_helpers.test.ts': `import { validateEmail, validateRequired } from '../../src/utils/validation_helpers';
 
 describe('Validation Helpers', () => {
@@ -448,10 +448,10 @@ describe('Validation Helpers', () => {
       expect(validateRequired(undefined)).toBe(false);
     });
   });
-});`
-        }
+});`,
+        },
       },
-      'docs': {
+      docs: {
         'API.md': `# API Documentation
 
 ## Endpoints
@@ -485,9 +485,9 @@ npm start
 - MONGODB_URI
 - JWT_SECRET
 - PORT
-`
+`,
       },
-      'scripts': {
+      scripts: {
         'setup.sh': `#!/bin/bash
 echo "Setting up project..."
 npm install
@@ -497,32 +497,29 @@ echo "Setup complete!"`,
 echo "Deploying application..."
 npm run build
 docker build -t test-project .
-echo "Deployment complete!"`
+echo "Deployment complete!"`,
       },
-      'build': {},
-      'dist': {},
-      'coverage': {},
-      'assets': {
-        'images': {
-          'logo.png': 'binary-placeholder'
+      build: {},
+      dist: {},
+      coverage: {},
+      assets: {
+        images: {
+          'logo.png': 'binary-placeholder',
         },
-        'styles': {
+        styles: {
           'main.css': `body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
-}`
-        }
-      }
+}`,
+        },
+      },
     };
 
     // 基本設定ファイルを作成
     Object.entries(projectStructure).forEach(([filename, content]) => {
       if (typeof content === 'object') {
-        fs.writeFileSync(
-          path.join(testProjectPath, filename), 
-          JSON.stringify(content, null, 2)
-        );
+        fs.writeFileSync(path.join(testProjectPath, filename), JSON.stringify(content, null, 2));
       } else {
         fs.writeFileSync(path.join(testProjectPath, filename), content);
       }
@@ -532,7 +529,7 @@ echo "Deployment complete!"`
     const createDirectory = (basePath: string, structure: any) => {
       Object.entries(structure).forEach(([name, content]) => {
         const fullPath = path.join(basePath, name);
-        
+
         if (typeof content === 'object' && content !== null) {
           fs.mkdirSync(fullPath, { recursive: true });
           createDirectory(fullPath, content);
@@ -646,7 +643,7 @@ echo "Deployment complete!"`
 
       expect(conventions.files.pattern).toBe('camelCase');
       expect(conventions.files.confidence).toBeGreaterThan(0.4);
-      
+
       expect(conventions.classes.pattern).toBe('PascalCase');
       expect(conventions.classes.confidence).toBeGreaterThan(0.8);
 
@@ -737,7 +734,9 @@ echo "Deployment complete!"`
     test('should identify naming violations', async () => {
       // Create file with inconsistent naming
       const inconsistentFile = path.join(testProjectPath, 'src/bad-naming-example.ts');
-      fs.writeFileSync(inconsistentFile, `
+      fs.writeFileSync(
+        inconsistentFile,
+        `
 class bad_class_name {
   BAD_VARIABLE = 'test';
   
@@ -745,7 +744,8 @@ class bad_class_name {
     return this.BAD_VARIABLE;
   }
 }
-`);
+`
+      );
 
       const conventions = await analyzer.analyzeNamingConventions(testProjectPath);
 
@@ -807,7 +807,7 @@ class bad_class_name {
       const docsDir = directories.find(dir => dir.path.includes('docs'));
       expect(docsDir?.purpose).toBe('documentation');
 
-      const buildDir = directories.find(dir => dir.path.includes('build'));  
+      const buildDir = directories.find(dir => dir.path.includes('build'));
       expect(buildDir?.purpose).toBe('build');
 
       const assetsDir = directories.find(dir => dir.path.includes('assets'));
@@ -839,14 +839,12 @@ class bad_class_name {
 
   describe('Error Handling', () => {
     test('should handle non-existent project path', async () => {
-      await expect(
-        analyzer.analyzeProjectStructure('/non/existent/path')
-      ).rejects.toThrow();
+      await expect(analyzer.analyzeProjectStructure('/non/existent/path')).rejects.toThrow();
     });
 
     test('should handle empty project directory', async () => {
       const emptyProjectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'empty-project-'));
-      
+
       try {
         const structure = await analyzer.analyzeProjectStructure(emptyProjectPath);
 
@@ -883,10 +881,10 @@ class bad_class_name {
     test('should handle large projects efficiently', async () => {
       // Create many files to simulate large project
       const largeProjectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'large-structure-'));
-      
+
       try {
         fs.mkdirSync(path.join(largeProjectPath, 'src'), { recursive: true });
-        
+
         // Create 50 files
         for (let i = 0; i < 50; i++) {
           const content = `export class Class${i} {
@@ -928,11 +926,11 @@ class bad_class_name {
 
       // Architecture suggestions should be practical
       expect(structure.architecture.suggestions.length).toBeGreaterThan(0);
-      
+
       // Metrics should be realistic
       expect(structure.metrics.maintainability.maintainabilityIndex).toBeGreaterThan(20);
       expect(structure.metrics.maintainability.maintainabilityIndex).toBeLessThan(100);
-      
+
       // Documentation quality should be reasonable
       expect(structure.metrics.documentation.readmeQuality).toBeGreaterThan(0);
     });

@@ -1,6 +1,13 @@
 import { AdvancedCodeContextAnalyzer } from '../../src/analyzers/code-context';
 import { Issue } from '../../src/core/types';
-import { AnalysisOptions, ExtractedCodeContext, FunctionInfo, ScopeInfo, VariableInfo, RelatedFileInfo } from '../../src/analyzers/types';
+import {
+  AnalysisOptions,
+  ExtractedCodeContext,
+  FunctionInfo,
+  ScopeInfo,
+  VariableInfo,
+  RelatedFileInfo,
+} from '../../src/analyzers/types';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -11,10 +18,10 @@ describe('AdvancedCodeContextAnalyzer', () => {
 
   beforeEach(() => {
     analyzer = new AdvancedCodeContextAnalyzer();
-    
+
     // テスト用プロジェクトディレクトリを作成
     testProjectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'rimor-context-test-'));
-    
+
     // 複雑なTypeScriptファイルを作成
     const complexCode = `import { Request, Response } from 'express';
 import { UserService } from './services/UserService';
@@ -67,7 +74,7 @@ export { UserController };`;
 
     fs.mkdirSync(path.join(testProjectPath, 'src'), { recursive: true });
     fs.writeFileSync(path.join(testProjectPath, 'src/UserController.ts'), complexCode);
-    
+
     // テストファイルも作成
     const testCode = `import { UserController } from '../src/UserController';
 import { Request, Response } from 'express';
@@ -95,29 +102,43 @@ describe('UserController', () => {
 });`;
 
     fs.writeFileSync(path.join(testProjectPath, 'src/UserController.test.ts'), testCode);
-    
+
     // 設定ファイル群
-    fs.writeFileSync(path.join(testProjectPath, 'tsconfig.json'), JSON.stringify({
-      compilerOptions: {
-        target: "es2020",
-        module: "commonjs",
-        strict: true,
-        esModuleInterop: true
-      }
-    }, null, 2));
-    
-    fs.writeFileSync(path.join(testProjectPath, 'package.json'), JSON.stringify({
-      name: 'test-project',
-      dependencies: {
-        'express': '^4.18.0',
-        'jsonwebtoken': '^9.0.0'
-      },
-      devDependencies: {
-        'jest': '^29.0.0',
-        '@types/express': '^4.17.0',
-        '@types/jest': '^29.0.0'
-      }
-    }, null, 2));
+    fs.writeFileSync(
+      path.join(testProjectPath, 'tsconfig.json'),
+      JSON.stringify(
+        {
+          compilerOptions: {
+            target: 'es2020',
+            module: 'commonjs',
+            strict: true,
+            esModuleInterop: true,
+          },
+        },
+        null,
+        2
+      )
+    );
+
+    fs.writeFileSync(
+      path.join(testProjectPath, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'test-project',
+          dependencies: {
+            express: '^4.18.0',
+            jsonwebtoken: '^9.0.0',
+          },
+          devDependencies: {
+            jest: '^29.0.0',
+            '@types/express': '^4.17.0',
+            '@types/jest': '^29.0.0',
+          },
+        },
+        null,
+        2
+      )
+    );
   });
 
   afterEach(() => {
@@ -142,11 +163,14 @@ describe('UserController', () => {
   describe('analyzeCodeContext', () => {
     test('should analyze TypeScript file and extract comprehensive context', async () => {
       const issue: Issue = {
+        id: 'test-issue-1',
         type: 'missing-assertion',
-        severity: 'error',
+        severity: 'high',
         message: 'Missing proper assertions',
         line: 21,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-quality' as const,
       };
 
       const options: AnalysisOptions = {
@@ -154,7 +178,7 @@ describe('UserController', () => {
         includeExports: true,
         analyzeFunctions: true,
         analyzeClasses: true,
-        contextLines: 10
+        contextLines: 10,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, options);
@@ -165,7 +189,7 @@ describe('UserController', () => {
       expect(context.imports).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ source: expect.stringContaining('UserController') }),
-          expect.objectContaining({ source: expect.stringContaining('express') })
+          expect.objectContaining({ source: expect.stringContaining('express') }),
         ])
       );
       expect(context.functions).toBeDefined();
@@ -175,18 +199,21 @@ describe('UserController', () => {
 
     test('should handle complex TypeScript with classes and interfaces', async () => {
       const issue: Issue = {
+        id: 'test-issue-2',
         type: 'missing-error-handling',
-        severity: 'warning', 
+        severity: 'medium',
         message: 'Missing error handling',
         line: 20,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'error-handling' as const,
       };
 
       const options: AnalysisOptions = {
         includeImports: true,
         analyzeFunctions: true,
         analyzeClasses: true,
-        analyzeInterfaces: true
+        analyzeInterfaces: true,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, options);
@@ -195,7 +222,7 @@ describe('UserController', () => {
       expect(context.classes[0].name).toBe('UserController');
       expect(context.classes[0].methods).toContain('getUserById');
       expect(context.classes[0].methods).toContain('createUser');
-      
+
       expect(context.interfaces).toHaveLength(1);
       expect(context.interfaces[0].name).toBe('UserData');
       expect(context.interfaces[0].properties).toEqual(
@@ -205,45 +232,51 @@ describe('UserController', () => {
 
     test('should extract function-level context accurately', async () => {
       const issue: Issue = {
+        id: 'test-issue-3',
         type: 'missing-validation',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing input validation',
         line: 35,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'validation' as const,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
         analyzeFunctions: true,
-        analyzeVariables: true
+        analyzeVariables: true,
       });
 
       const targetFunction = context.functions.find((f: FunctionInfo) => f.name === 'createUser');
       expect(targetFunction).toBeDefined();
-      expect(targetFunction!.parameters).toEqual(
-        expect.arrayContaining(['req', 'res'])
-      );
+      expect(targetFunction!.parameters).toEqual(expect.arrayContaining(['req', 'res']));
       expect(targetFunction!.isAsync).toBe(true);
       expect(targetFunction!.returnType).toBe('Promise<void>');
     });
 
     test('should analyze scope context with variable tracking', async () => {
       const issue: Issue = {
+        id: 'test-issue-4',
         type: 'unused-variable',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Variable may be unused',
         line: 53,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'code-quality' as const,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
         analyzeVariables: true,
-        analyzeScopes: true
+        analyzeScopes: true,
       });
 
       expect(context.scopes).toBeDefined();
       expect(context.scopes.length).toBeGreaterThan(0);
       expect(context.variables).toBeDefined();
-      expect(context.variables.some((v: VariableInfo) => v.name === 'name' || v.name === 'email')).toBe(true);
+      expect(
+        context.variables.some((v: VariableInfo) => v.name === 'name' || v.name === 'email')
+      ).toBe(true);
     });
 
     test('should detect related source files', async () => {
@@ -257,26 +290,31 @@ describe('UserController', () => {
     // Implementation
   }
 }`;
-      
+
       fs.mkdirSync(path.join(testProjectPath, 'src/services'), { recursive: true });
       fs.writeFileSync(path.join(testProjectPath, 'src/services/UserService.ts'), serviceCode);
 
       const issue: Issue = {
+        id: 'test-issue-5',
         type: 'missing-test-coverage',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Missing test coverage for UserService interaction',
         line: 18,
-        file: path.join(testProjectPath, 'src/UserController.test.ts')
+        file: path.join(testProjectPath, 'src/UserController.test.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.test.ts'),
+        category: 'test-coverage' as const,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
         detectRelatedFiles: true,
-        maxRelatedFiles: 5
+        maxRelatedFiles: 5,
       });
 
       expect(context.relatedFiles).toBeDefined();
       expect(context.relatedFiles.length).toBeGreaterThan(0);
-      expect(context.relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.ts'))).toBe(true);
+      expect(
+        context.relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.ts'))
+      ).toBe(true);
     });
   });
 
@@ -284,11 +322,11 @@ describe('UserController', () => {
     test('should extract detailed function information', async () => {
       const filePath = path.join(testProjectPath, 'src/UserController.ts');
       const fileContent = fs.readFileSync(filePath, 'utf-8');
-      
+
       const functions = await analyzer.extractFunctionInfo(fileContent, 'typescript');
 
       expect(functions).toHaveLength(2);
-      
+
       const getUserByIdFunc = functions.find((f: FunctionInfo) => f.name === 'getUserById');
       expect(getUserByIdFunc).toBeDefined();
       expect(getUserByIdFunc!.isAsync).toBe(true);
@@ -348,29 +386,29 @@ const processOrder = async (order) => {
 
       expect(scopes).toBeDefined();
       expect(scopes.length).toBeGreaterThanOrEqual(2); // グローバルとブロック
-      
+
       // ブロックスコープを見つける
       const blockScope = scopes.find((scope: any) => scope.type === 'block');
       expect(blockScope).toBeDefined();
-      expect(blockScope?.variables).toEqual(
-        expect.arrayContaining(['blockVar', 'anotherVar'])
-      );
+      expect(blockScope?.variables).toEqual(expect.arrayContaining(['blockVar', 'anotherVar']));
     });
   });
 
   describe('detectRelatedCode', () => {
     test('should find related files based on imports', async () => {
       const targetFile = path.join(testProjectPath, 'src/UserController.ts');
-      
+
       const relatedFiles = await analyzer.detectRelatedCode(targetFile, testProjectPath, {
         maxRelatedFiles: 10,
         includeTests: true,
-        includeServices: true
+        includeServices: true,
       });
 
       expect(relatedFiles).toBeDefined();
       expect(Array.isArray(relatedFiles)).toBe(true);
-      expect(relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.test.ts'))).toBe(true);
+      expect(
+        relatedFiles.some((f: RelatedFileInfo) => f.path.includes('UserController.test.ts'))
+      ).toBe(true);
     });
 
     test('should analyze dependency relationships', async () => {
@@ -384,16 +422,16 @@ const processOrder = async (order) => {
     return { id: 1, ...userData };
   }
 }`;
-      
+
       fs.mkdirSync(path.join(testProjectPath, 'src/services'), { recursive: true });
       fs.writeFileSync(path.join(testProjectPath, 'src/services/UserService.ts'), serviceCode);
 
       const targetFile = path.join(testProjectPath, 'src/UserController.ts');
-      
+
       const relatedFiles = await analyzer.detectRelatedCode(targetFile, testProjectPath, {
         analyzeDependencies: true,
         includeTransitiveDeps: false,
-        detectRelatedFiles: true
+        detectRelatedFiles: true,
       });
 
       expect(relatedFiles).toBeDefined();
@@ -404,11 +442,14 @@ const processOrder = async (order) => {
   describe('Error Handling', () => {
     test('should handle non-existent files gracefully', async () => {
       const issue: Issue = {
+        id: 'test-issue-6',
         type: 'missing-file',
-        severity: 'error',
+        severity: 'high',
         message: 'File not found',
         line: 1,
-        file: '/non/existent/file.ts'
+        file: '/non/existent/file.ts',
+        filePath: '/non/existent/file.ts',
+        category: 'file-system' as const,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {});
@@ -423,19 +464,22 @@ const processOrder = async (order) => {
         // Missing closing brace and parameter
         console.log("broken");
       `;
-      
+
       fs.writeFileSync(path.join(testProjectPath, 'src/broken.ts'), malformedCode);
-      
+
       const issue: Issue = {
+        id: 'test-issue-7',
         type: 'syntax-error',
-        severity: 'error',
+        severity: 'high',
         message: 'Syntax error',
         line: 1,
-        file: path.join(testProjectPath, 'src/broken.ts')
+        file: path.join(testProjectPath, 'src/broken.ts'),
+        filePath: path.join(testProjectPath, 'src/broken.ts'),
+        category: 'syntax' as const,
       };
 
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
-        analyzeFunctions: true
+        analyzeFunctions: true,
       });
 
       // Should not throw, but may have limited analysis
@@ -446,11 +490,14 @@ const processOrder = async (order) => {
   describe('Performance', () => {
     test('should complete analysis within reasonable time', async () => {
       const issue: Issue = {
+        id: 'test-issue-8',
         type: 'performance-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Performance test',
         line: 1,
-        file: path.join(testProjectPath, 'src/UserController.ts')
+        file: path.join(testProjectPath, 'src/UserController.ts'),
+        filePath: path.join(testProjectPath, 'src/UserController.ts'),
+        category: 'performance' as const,
       };
 
       const startTime = Date.now();
@@ -458,7 +505,7 @@ const processOrder = async (order) => {
         includeImports: true,
         analyzeFunctions: true,
         analyzeClasses: true,
-        detectRelatedFiles: true
+        detectRelatedFiles: true,
       });
       const endTime = Date.now();
 
@@ -468,24 +515,28 @@ const processOrder = async (order) => {
 
     test('should handle large files efficiently', async () => {
       // 大きなファイルを生成
-      const largeCode = Array.from({ length: 1000 }, (_, i) => 
-        `function func${i}() { return ${i}; }`
+      const largeCode = Array.from(
+        { length: 1000 },
+        (_, i) => `function func${i}() { return ${i}; }`
       ).join('\n');
-      
+
       fs.writeFileSync(path.join(testProjectPath, 'src/large.ts'), largeCode);
 
       const issue: Issue = {
+        id: 'test-issue-9',
         type: 'large-file-test',
-        severity: 'warning',
+        severity: 'medium',
         message: 'Large file test',
         line: 500,
-        file: path.join(testProjectPath, 'src/large.ts')
+        file: path.join(testProjectPath, 'src/large.ts'),
+        filePath: path.join(testProjectPath, 'src/large.ts'),
+        category: 'performance' as const,
       };
 
       const startTime = Date.now();
       const context = await analyzer.analyzeCodeContext(issue, testProjectPath, {
         analyzeFunctions: true,
-        contextLines: 20
+        contextLines: 20,
       });
       const endTime = Date.now();
 

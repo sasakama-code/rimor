@@ -1,0 +1,29 @@
+"use strict";
+/**
+ * Plugin interface definitions
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isIPlugin = isIPlugin;
+exports.isITestQualityPlugin = isITestQualityPlugin;
+// Type guards for plugins
+function isIPlugin(value) {
+    if (!value || typeof value !== 'object')
+        return false;
+    const plugin = value;
+    return typeof plugin.name === 'string' &&
+        typeof plugin.analyze === 'function';
+}
+function isITestQualityPlugin(value) {
+    if (!value || typeof value !== 'object')
+        return false;
+    const plugin = value;
+    return typeof plugin.id === 'string' &&
+        typeof plugin.name === 'string' &&
+        typeof plugin.version === 'string' &&
+        typeof plugin.type === 'string' &&
+        typeof plugin.isApplicable === 'function' &&
+        typeof plugin.detectPatterns === 'function' &&
+        typeof plugin.evaluateQuality === 'function' &&
+        typeof plugin.suggestImprovements === 'function';
+}
+//# sourceMappingURL=plugin-interface.js.map

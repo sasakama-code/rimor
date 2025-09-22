@@ -1,14 +1,10 @@
-import { 
-  CliFormatter, 
-  JsonFormatter, 
-  CsvFormatter, 
-  HtmlFormatter 
+import {
+  CliFormatter,
+  JsonFormatter,
+  CsvFormatter,
+  HtmlFormatter,
 } from '../../src/scoring/formatters';
-import { 
-  SummaryReport, 
-  DetailedReport, 
-  TrendReport 
-} from '../../src/scoring/reports';
+import { SummaryReport, DetailedReport, TrendReport } from '../../src/scoring/reports';
 
 describe('Formatters', () => {
   // Mock data for testing
@@ -20,41 +16,38 @@ describe('Formatters', () => {
       totalFiles: 10,
       totalDirectories: 3,
       executionTime: 150,
-      generatedAt: new Date('2024-01-01')
+      generatedAt: new Date('2024-01-01'),
     },
     dimensionScores: {
       completeness: 80,
       correctness: 90,
       maintainability: 85,
       performance: 80,
-      security: 85
+      security: 85,
     },
     gradeDistribution: {
       A: 2,
       B: 5,
       C: 2,
       D: 1,
-      F: 0
+      F: 0,
     },
     topIssues: [
       {
         dimension: 'completeness',
         severity: 'high',
         description: 'Missing test file',
-        affectedFiles: 3
-      }
+        affectedFiles: 3,
+      },
     ],
-    recommendations: [
-      'Add missing test files',
-      'Improve code documentation'
-    ],
+    recommendations: ['Add missing test files', 'Improve code documentation'],
     metadata: {
       averageFileScore: 82,
       worstPerformingDimension: 'completeness',
       bestPerformingDimension: 'correctness',
       pluginCount: 5,
-      issueCount: 3
-    }
+      issueCount: 3,
+    },
   };
 
   const mockDetailedReport: DetailedReport = {
@@ -69,19 +62,19 @@ describe('Formatters', () => {
             name: 'completeness',
             score: 80,
             weight: 0.3,
-            issues: ['Missing test file']
-          }
+            issues: ['Missing test file'],
+          },
         ],
         issues: [
           {
             dimension: 'completeness',
             severity: 'medium' as const,
             message: 'Missing test file',
-            line: 1
-          }
+            line: 1,
+          },
         ],
-        suggestions: ['Add test file']
-      }
+        suggestions: ['Add test file'],
+      },
     ],
     directoryDetails: [
       {
@@ -91,12 +84,12 @@ describe('Formatters', () => {
         fileCount: 5,
         dimensionBreakdown: {
           completeness: 80,
-          correctness: 90
+          correctness: 90,
         },
         worstFile: 'src/bad.ts',
-        bestFile: 'src/good.ts'
-      }
-    ]
+        bestFile: 'src/good.ts',
+      },
+    ],
   };
 
   const mockTrendReport: TrendReport = {
@@ -108,22 +101,22 @@ describe('Formatters', () => {
       {
         date: new Date('2024-01-01'),
         score: 80,
-        grade: 'B'
-      }
+        grade: 'B',
+      },
     ],
     predictions: {
       nextWeekScore: 87,
       nextMonthScore: 90,
-      confidence: 0.75
+      confidence: 0.75,
     },
     dimensionTrends: [
       {
         dimension: 'completeness',
         trend: 'improving',
-        changeRate: 5.2
-      }
+        changeRate: 5.2,
+      },
     ],
-    recommendations: ['Continue current improvement trend']
+    recommendations: ['Continue current improvement trend'],
   };
 
   describe('CliFormatter', () => {
@@ -139,7 +132,7 @@ describe('Formatters', () => {
 
     test('should format summary report', () => {
       const result = formatter.formatSummaryReport(mockSummaryReport);
-      
+
       expect(result).toContain('品質スコア サマリーレポート');
       expect(result).toContain('プロジェクト情報');
       expect(result).toContain('85');
@@ -149,7 +142,7 @@ describe('Formatters', () => {
 
     test('should format detailed report', () => {
       const result = formatter.formatDetailedReport(mockDetailedReport);
-      
+
       expect(result).toContain('品質スコア サマリーレポート');
       expect(result).toContain('ファイル詳細');
       expect(result).toContain('src/test.ts');
@@ -157,7 +150,7 @@ describe('Formatters', () => {
 
     test('should format trend report', () => {
       const result = formatter.formatTrendReport(mockTrendReport);
-      
+
       expect(result).toContain('トレンド分析レポート');
       expect(result).toContain('現在のスコア');
       expect(result).toContain('85');
@@ -167,7 +160,7 @@ describe('Formatters', () => {
     test('should handle colors disabled', () => {
       const noColorFormatter = new CliFormatter(false);
       const result = noColorFormatter.formatSummaryReport(mockSummaryReport);
-      
+
       expect(result).toContain('品質スコア サマリーレポート');
       expect(result).not.toContain('\x1b['); // ANSI escape codes
     });
@@ -187,7 +180,7 @@ describe('Formatters', () => {
     test('should format summary report as JSON', () => {
       const result = formatter.formatSummaryReport(mockSummaryReport);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.projectInfo.overallScore).toBe(85);
       expect(parsed.projectInfo.grade).toBe('B');
       expect(parsed.dimensionScores.completeness).toBe(80);
@@ -196,7 +189,7 @@ describe('Formatters', () => {
     test('should format detailed report as JSON', () => {
       const result = formatter.formatDetailedReport(mockDetailedReport);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.summary.projectInfo.overallScore).toBe(85);
       expect(parsed.fileDetails).toHaveLength(1);
       expect(parsed.fileDetails[0].filePath).toBe('src/test.ts');
@@ -205,7 +198,7 @@ describe('Formatters', () => {
     test('should format trend report as JSON', () => {
       const result = formatter.formatTrendReport(mockTrendReport);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.currentScore).toBe(85);
       expect(parsed.trend).toBe('improving');
       expect(parsed.predictions.confidence).toBe(0.75);
@@ -226,7 +219,7 @@ describe('Formatters', () => {
     test('should format summary report as CSV', () => {
       const result = formatter.formatSummaryReport(mockSummaryReport);
       const lines = result.split('\n');
-      
+
       expect(lines).toHaveLength(2); // Header + data row
       expect(lines[0]).toContain('ファイルパス,プロジェクトパス,総合スコア');
       expect(lines[1]).toContain('/test/project,85,B');
@@ -235,7 +228,7 @@ describe('Formatters', () => {
     test('should format detailed report as CSV', () => {
       const result = formatter.formatDetailedReport(mockDetailedReport);
       const lines = result.split('\n');
-      
+
       expect(lines.length).toBeGreaterThan(1);
       expect(lines[0]).toContain('ファイルパス,スコア,グレード');
       expect(lines[1]).toContain('src/test.ts,85,B');
@@ -244,7 +237,7 @@ describe('Formatters', () => {
     test('should format trend report as CSV', () => {
       const result = formatter.formatTrendReport(mockTrendReport);
       const lines = result.split('\n');
-      
+
       expect(lines.length).toBeGreaterThan(1);
       expect(lines[0]).toContain('日付,スコア,グレード,トレンド');
       expect(result).toContain('85');
@@ -265,7 +258,7 @@ describe('Formatters', () => {
 
     test('should format summary report as HTML', () => {
       const result = formatter.formatSummaryReport(mockSummaryReport);
-      
+
       expect(result).toContain('<!DOCTYPE html>');
       expect(result).toContain('<title>品質スコア サマリーレポート');
       expect(result).toContain('85');
@@ -274,7 +267,7 @@ describe('Formatters', () => {
 
     test('should format detailed report as HTML', () => {
       const result = formatter.formatDetailedReport(mockDetailedReport);
-      
+
       expect(result).toContain('<!DOCTYPE html>');
       expect(result).toContain('ファイル詳細');
       expect(result).toContain('src/test.ts');
@@ -282,7 +275,7 @@ describe('Formatters', () => {
 
     test('should format trend report as HTML', () => {
       const result = formatter.formatTrendReport(mockTrendReport);
-      
+
       expect(result).toContain('トレンド分析');
       expect(result).toContain('85');
       expect(result).toContain('improving');
@@ -294,12 +287,12 @@ describe('Formatters', () => {
       const emptyReport: SummaryReport = {
         ...mockSummaryReport,
         topIssues: [],
-        recommendations: []
+        recommendations: [],
       };
 
       const cliFormatter = new CliFormatter();
       const result = cliFormatter.formatSummaryReport(emptyReport);
-      
+
       expect(result).toContain('品質スコア サマリーレポート');
       expect(result).not.toContain('主要課題');
       expect(result).not.toContain('推奨事項');
@@ -310,16 +303,16 @@ describe('Formatters', () => {
         ...mockSummaryReport,
         gradeDistribution: {
           A: 0,
-          B: 0, 
+          B: 0,
           C: 0,
           D: 0,
-          F: 0
-        }
+          F: 0,
+        },
       };
 
       const formatter = new CsvFormatter();
       const result = formatter.formatSummaryReport(zeroGradeReport);
-      
+
       expect(result).toContain('0,0,0,0,0');
     });
 
@@ -329,14 +322,14 @@ describe('Formatters', () => {
         predictions: {
           nextWeekScore: 0,
           nextMonthScore: 0,
-          confidence: 0
-        }
+          confidence: 0,
+        },
       };
 
       const formatter = new JsonFormatter();
       const result = formatter.formatTrendReport(trendWithoutPredictions);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.predictions.confidence).toBe(0);
     });
   });

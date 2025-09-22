@@ -32,39 +32,39 @@ export interface ExtractedCodeContext {
     startLine: number;
     endLine: number;
   };
-  
+
   // 周辺コード
   surroundingCode: {
     before: string;
     after: string;
   };
-  
+
   // インポート/エクスポート
   imports: Array<{ source: string }>;
   exports: string[];
-  
+
   // 構造情報
   functions: FunctionInfo[];
   classes: ClassInfo[];
   interfaces: InterfaceInfo[];
   variables: VariableInfo[];
   scopes: ScopeInfo[];
-  
+
   // 関連ファイル
   relatedFiles: RelatedFileInfo[];
-  
+
   // 使用されているAPI/ライブラリ
   usedAPIs: string[];
-  
+
   // 言語
   language: string;
-  
+
   // 依存関係
   dependencies: {
     dependencies: string[];
     dependents: string[];
   };
-  
+
   // メタデータ
   metadata: {
     language: string;
@@ -194,6 +194,7 @@ export interface FileDependency {
   exports: string[];
   dependsOn: string[];
   dependedBy: string[];
+  absPath?: string; // Issue #116: 絶対パスを保持してリンク構築時の不整合を解決
 }
 
 export interface CyclicDependency {
@@ -244,14 +245,14 @@ export interface DirectoryInfo {
   conventions: string[];
 }
 
-export type DirectoryPurpose = 
-  | 'source' 
-  | 'test' 
-  | 'build' 
-  | 'config' 
-  | 'documentation' 
-  | 'assets' 
-  | 'vendor' 
+export type DirectoryPurpose =
+  | 'source'
+  | 'test'
+  | 'build'
+  | 'config'
+  | 'documentation'
+  | 'assets'
+  | 'vendor'
   | 'unknown';
 
 export interface ArchitecturePattern {
@@ -261,15 +262,15 @@ export interface ArchitecturePattern {
   suggestions: string[];
 }
 
-export type ArchitectureType = 
-  | 'mvc' 
-  | 'mvvm' 
-  | 'microservices' 
-  | 'layered' 
-  | 'clean' 
-  | 'hexagonal' 
-  | 'modular' 
-  | 'monolithic' 
+export type ArchitectureType =
+  | 'mvc'
+  | 'mvvm'
+  | 'microservices'
+  | 'layered'
+  | 'clean'
+  | 'hexagonal'
+  | 'modular'
+  | 'monolithic'
   | 'unknown';
 
 export interface NamingConventions {
@@ -315,13 +316,13 @@ export interface ClassNamingConvention {
   violations: string[];
 }
 
-export type NamingPattern = 
-  | 'camelCase' 
-  | 'PascalCase' 
-  | 'snake_case' 
-  | 'kebab-case' 
-  | 'SCREAMING_SNAKE_CASE' 
-  | 'mixed' 
+export type NamingPattern =
+  | 'camelCase'
+  | 'PascalCase'
+  | 'snake_case'
+  | 'kebab-case'
+  | 'SCREAMING_SNAKE_CASE'
+  | 'mixed'
   | 'unknown';
 
 export interface ProjectMetrics {
@@ -374,8 +375,18 @@ export interface ContextOptimizationOptions {
 // 分析結果のキャッシュ
 export interface AnalysisCache {
   fileHash: Map<string, string>;
-  contexts: Map<string, any>; // IntegratedContext（循環参照を避けるためany）
+  contexts: Map<string, unknown>; // IntegratedContext（循環参照を避けるためunknown）
   dependencies: Map<string, DependencyAnalysis>;
   structures: Map<string, ProjectStructure>;
   expiry: Date;
+}
+
+// バージョン制約の型定義（any型除去用）
+export interface VersionConstraint {
+  package: string;
+  declaredVersion: string;
+  installedVersion?: string;
+  constraint: 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard';
+  hasVulnerability?: boolean;
+  suggestion?: string;
 }

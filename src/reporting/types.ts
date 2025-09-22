@@ -1,7 +1,8 @@
+// import { CoreTypes, TypeGuards, TypeUtils } from '../../core/types/core-definitions'; // TODO: 修正後有効化
 /**
  * Reporting Type Definitions
  * v0.8.0 - Phase 4: Context Engineering
- * 
+ *
  * 決定論的レポーティングのための型定義
  * JSONスキーマ（schema.json）に準拠
  */
@@ -24,17 +25,20 @@ export enum Severity {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low',
-  INFO = 'info'
+  INFO = 'info',
 }
 
 /**
  * 問題タイプの分類
+ * Issue #144対応: CODE_INJECTION追加
  */
+// Migrated to CoreTypes
 export enum IssueType {
   SQL_INJECTION = 'SQL_INJECTION',
   XSS = 'XSS',
   PATH_TRAVERSAL = 'PATH_TRAVERSAL',
   COMMAND_INJECTION = 'COMMAND_INJECTION',
+  CODE_INJECTION = 'CODE_INJECTION', // Issue #144対応: TaintTyper統合で必要
   LDAP_INJECTION = 'LDAP_INJECTION',
   XPATH_INJECTION = 'XPATH_INJECTION',
   MISSING_TEST = 'MISSING_TEST',
@@ -42,7 +46,7 @@ export enum IssueType {
   TEST_QUALITY = 'TEST_QUALITY',
   CODE_QUALITY = 'CODE_QUALITY',
   SECURITY_MISCONFIGURATION = 'SECURITY_MISCONFIGURATION',
-  SENSITIVE_DATA_EXPOSURE = 'SENSITIVE_DATA_EXPOSURE'
+  SENSITIVE_DATA_EXPOSURE = 'SENSITIVE_DATA_EXPOSURE',
 }
 
 /**
@@ -76,22 +80,35 @@ export interface DataFlow {
 
 /**
  * 検出された問題
+ * CoreTypes.Issueを使用してください
  */
-export interface Issue {
-  id: string;
-  type: IssueType;
+// Migrated to CoreTypes - Import from core-definitions
+// import type { Issue as CoreIssue } from '../core/types/core-definitions'; // TODO: 修正後有効化
+// 暫定的な基本Issue型定義
+interface BaseIssue {
+  id?: string;
+  type: string;
   severity: Severity;
-  location: CodeLocation;
   message: string;
+  filePath?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  category: string;
+}
+
+export type Issue = BaseIssue & {
+  location?: CodeLocation;
   dataFlow?: DataFlow;
   recommendation?: string;
   codeSnippet?: string;
   references?: string[];
-}
+};
 
 /**
  * 重要度別の問題数
  */
+// Migrated to CoreTypes
 export interface IssueBySeverity {
   critical: number;
   high: number;

@@ -3,16 +3,68 @@
  * TaintTyper実装の実世界での性能目標達成度を検証
  */
 
-import {
-  TestCase,
-  TypeBasedSecurityConfig,
-  MethodAnalysisResult
-} from '../types';
+import { TestCase, TypeBasedSecurityConfig, MethodAnalysisResult, SecurityIssue } from '../types';
 import { TypeBasedSecurityEngine } from '../analysis/engine';
 import { PerformanceBenchmark } from '../benchmarks/PerformanceBenchmark';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+/**
+ * システム情報の型定義
+ */
+interface SystemInfo {
+  cpu: {
+    model: string;
+    cores: number;
+  };
+  memory: {
+    total: number;
+  };
+  cpuModel: string;
+  cpuCores: number;
+  totalMemory: number;
+  nodeVersion: string;
+  platform: string;
+  osVersion: string;
+}
+
+/**
+ * スケーラビリティデータポイント
+ */
+interface ScalabilityDataPoint {
+  fileCount: number;
+  totalTime: number;
+  memoryUsed: number;
+  throughput: number;
+  executionTime: number;
+  timePerFile: number;
+  memoryUsage: number;
+}
+
+/**
+ * 処理済み解析結果
+ */
+interface ProcessedAnalysisResult {
+  issueCount: number;
+  issueTypeDistribution: Map<string, number>;
+  criticalIssues: number;
+  highPriorityIssues: number;
+  totalIssues: number;
+  issuesPerFile: number;
+}
+
+/**
+ * スケーラビリティ分析結果
+ */
+interface ScalabilityAnalysis {
+  complexity: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  regressionCoefficient: number;
+  scalabilityScore: number;
+  recommendedMaxFiles: number;
+}
 
 /**
  * 大規模プロジェクト設定
@@ -147,13 +199,13 @@ export interface ScalabilityTestResult {
 export class LargeScalePerformanceValidator {
   private securityEngine: TypeBasedSecurityEngine;
   private benchmark: PerformanceBenchmark;
-  private systemInfo: any;
+  private systemInfo: SystemInfo;
 
   constructor() {
     this.securityEngine = new TypeBasedSecurityEngine({
       strictness: 'moderate',
       enableCache: true,
-      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8))
+      parallelism: Math.max(1, Math.floor(os.cpus().length * 0.8)),
     });
     this.benchmark = new PerformanceBenchmark();
     this.systemInfo = this.collectSystemInfo();
@@ -165,8 +217,10 @@ export class LargeScalePerformanceValidator {
   async measureLargeScalePerformance(
     configs: LargeScaleProjectConfig[]
   ): Promise<PerformanceResult[]> {
-    console.log('🚀 大規模プロジェクト性能測定開始');
-    console.log(`システム情報: ${this.systemInfo.cpu.model}, ${this.systemInfo.memory.total}GB RAM`);
+    console.log('[LargeScale] 大規模プロジェクト性能測定開始');
+    console.log(
+      `システム情報: ${this.systemInfo.cpu.model}, ${this.systemInfo.memory.total}GB RAM`
+    );
     console.log(`測定対象: ${configs.length}プロジェクト設定`);
     console.log('');
 
@@ -175,16 +229,21 @@ export class LargeScalePerformanceValidator {
     for (const config of configs) {
       console.log(`📊 ${config.name} 測定中...`);
       console.log(`   規模: ${config.fileCount}ファイル, ${config.methodCount}メソッド`);
-      console.log(`   複雑度: ${config.complexity}, フレームワーク: ${config.frameworks.join(', ')}`);
+      console.log(
+        `   複雑度: ${config.complexity}, フレームワーク: ${config.frameworks.join(', ')}`
+      );
 
       try {
         const result = await this.measureSingleProject(config);
         results.push(result);
 
         // 結果サマリーの表示
-        console.log(`   ✅ 完了: ${result.timing.timePerFile.toFixed(2)}ms/file, メモリ${result.memory.peakMemory.toFixed(1)}MB`);
-        console.log(`   目標達成: 5ms/file${result.targetAchievement.fiveMsTarget ? '✅' : '❌'}, 高速化${result.targetAchievement.actualSpeedup.toFixed(1)}x${result.targetAchievement.speedupTarget ? '✅' : '❌'}`);
-
+        console.log(
+          `   ✅ 完了: ${result.timing.timePerFile.toFixed(2)}ms/file, メモリ${result.memory.peakMemory.toFixed(1)}MB`
+        );
+        console.log(
+          `   目標達成: 5ms/file${result.targetAchievement.fiveMsTarget ? '✅' : '❌'}, 高速化${result.targetAchievement.actualSpeedup.toFixed(1)}x${result.targetAchievement.speedupTarget ? '✅' : '❌'}`
+        );
       } catch (error) {
         console.error(`   ❌ ${config.name} 測定エラー:`, error);
       }
@@ -211,19 +270,19 @@ export class LargeScalePerformanceValidator {
     console.log(`ファイル数範囲: ${minFiles} - ${maxFiles}ファイル, ${steps}ステップ`);
     console.log('');
 
-    const scalabilityData: any[] = [];
+    const scalabilityData: ScalabilityDataPoint[] = [];
     const fileStep = Math.floor((maxFiles - minFiles) / steps);
 
     for (let i = 0; i <= steps; i++) {
-      const fileCount = minFiles + (i * fileStep);
-      
+      const fileCount = minFiles + i * fileStep;
+
       console.log(`🔍 ${fileCount}ファイル測定中...`);
 
       const testConfig: LargeScaleProjectConfig = {
         ...baseConfig,
         name: `${baseConfig.name}_${fileCount}files`,
         fileCount,
-        methodCount: Math.floor(fileCount * 2.5) // ファイルあたり平均2.5メソッド
+        methodCount: Math.floor(fileCount * 2.5), // ファイルあたり平均2.5メソッド
       };
 
       const startTime = Date.now();
@@ -231,28 +290,35 @@ export class LargeScalePerformanceValidator {
 
       try {
         await this.measureSingleProject(testConfig);
-        
+
         const executionTime = Date.now() - startTime;
         const finalMemory = this.getMemoryUsage();
         const timePerFile = executionTime / fileCount;
 
         scalabilityData.push({
           fileCount,
+          totalTime: executionTime,
+          memoryUsed: finalMemory - initialMemory,
+          throughput: fileCount / (executionTime / 1000),
           executionTime,
           timePerFile,
-          memoryUsage: finalMemory - initialMemory
+          memoryUsage: finalMemory - initialMemory,
         });
 
-        console.log(`   完了: ${timePerFile.toFixed(2)}ms/file, ${((finalMemory - initialMemory) / 1024 / 1024).toFixed(1)}MB追加`);
-
+        console.log(
+          `   完了: ${timePerFile.toFixed(2)}ms/file, ${((finalMemory - initialMemory) / 1024 / 1024).toFixed(1)}MB追加`
+        );
       } catch (error) {
         console.error(`   エラー: ${fileCount}ファイル測定失敗:`, error);
         // エラーがあっても継続
         scalabilityData.push({
           fileCount,
+          totalTime: 0,
+          memoryUsed: 0,
+          throughput: 0,
           executionTime: 0,
           timePerFile: 0,
-          memoryUsage: 0
+          memoryUsage: 0,
         });
       }
     }
@@ -263,7 +329,7 @@ export class LargeScalePerformanceValidator {
     const result: ScalabilityTestResult = {
       testConditions: { minFiles, maxFiles, steps },
       scalabilityData,
-      analysis
+      analysis,
     };
 
     // 結果の表示
@@ -286,7 +352,7 @@ export class LargeScalePerformanceValidator {
       methodCount: 12500,
       averageFileSize: 150,
       complexity: 'enterprise',
-      frameworks: ['express', 'react', 'nestjs', 'nextjs']
+      frameworks: ['express', 'react', 'nestjs', 'nextjs'],
     };
 
     const result = await this.measureSingleProject(enterpriseConfig);
@@ -347,31 +413,38 @@ export class LargeScalePerformanceValidator {
         timePerMethod: totalTime / config.methodCount,
         setupTime,
         analysisTime,
-        teardownTime
+        teardownTime,
       },
       memory: {
         initialMemory: initialMemory / 1024 / 1024, // MB
         peakMemory: peakMemory / 1024 / 1024, // MB
         finalMemory: finalMemory / 1024 / 1024, // MB
-        memoryPerFile: (peakMemory - initialMemory) / 1024 / 1024 / config.fileCount
+        memoryPerFile: (peakMemory - initialMemory) / 1024 / 1024 / config.fileCount,
       },
       throughput: {
         filesPerSecond: config.fileCount / (totalTime / 1000),
         methodsPerSecond: config.methodCount / (totalTime / 1000),
-        issuesPerSecond: analysisResults.totalIssues / (totalTime / 1000)
+        issuesPerSecond: analysisResults.totalIssues / (totalTime / 1000),
       },
       parallelism: {
         coreCount: os.cpus().length,
         parallelism: this.securityEngine['config']?.parallelism || 1,
         cpuUtilization: 0.8, // 推定値
-        parallelEfficiency: Math.min(1.0, speedup / this.securityEngine['config']?.parallelism || 1)
+        parallelEfficiency: Math.min(
+          1.0,
+          speedup / this.securityEngine['config']?.parallelism || 1
+        ),
       },
       targetAchievement: {
         fiveMsTarget: actualTimePerFile <= 5.0,
         speedupTarget: speedup >= 3.0 && speedup <= 20.0,
-        actualSpeedup: speedup
+        actualSpeedup: speedup,
       },
-      analysisResults
+      analysisResults: {
+        totalIssues: analysisResults.totalIssues,
+        issuesPerFile: analysisResults.issuesPerFile,
+        issueTypeDistribution: analysisResults.issueTypeDistribution,
+      },
     };
 
     return result;
@@ -412,8 +485,8 @@ export class LargeScalePerformanceValidator {
       metadata: {
         framework: framework as any,
         language: 'typescript',
-        lastModified: new Date()
-      }
+        lastModified: new Date(),
+      },
     };
   }
 
@@ -439,9 +512,13 @@ export class LargeScalePerformanceValidator {
   /**
    * メソッド内容の生成
    */
-  private generateMethodContent(framework: string, methodIndex: number, complexity: string): string {
+  private generateMethodContent(
+    framework: string,
+    methodIndex: number,
+    complexity: string
+  ): string {
     const methodName = `method_${methodIndex}`;
-    
+
     switch (framework) {
       case 'express':
         return this.generateExpressMethod(methodName, complexity);
@@ -467,14 +544,19 @@ export class LargeScalePerformanceValidator {
 
     switch (complexity) {
       case 'simple':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     expect(userInput).toBeDefined();
     const result = processData(userInput);
     expect(result).toBeTruthy();
   });
-`;
+`
+        );
       case 'moderate':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const sanitized = sanitizeInput(userInput);
     const validated = validateInput(sanitized);
     expect(validated).toBeTruthy();
@@ -482,9 +564,12 @@ export class LargeScalePerformanceValidator {
     const result = await database.execute(query);
     expect(result).toBeDefined();
   });
-`;
+`
+        );
       case 'complex':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     if (!isValidInput(userInput)) {
       throw new ValidationError('Invalid input');
     }
@@ -497,12 +582,16 @@ export class LargeScalePerformanceValidator {
     const verified = verifySignature(retrieved);
     expect(verified).toBe(true);
   });
-`;
+`
+        );
       default:
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     expect(userInput).toBeDefined();
   });
-`;
+`
+        );
     }
   }
 
@@ -517,21 +606,29 @@ export class LargeScalePerformanceValidator {
 
     switch (complexity) {
       case 'simple':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const sanitized = sanitizeHtml(userInput);
     expect(sanitized).not.toContain('<script>');
   });
-`;
+`
+        );
       case 'moderate':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const component = render(<UserProfile userInput={userInput} />);
     const sanitizedContent = component.getByTestId('content');
     expect(sanitizedContent.innerHTML).not.toContain('<script>');
     expect(sanitizedContent.innerHTML).not.toContain('onerror=');
   });
-`;
+`
+        );
       case 'complex':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const formData = { comment: userInput, metadata: { source: 'user' } };
     const validatedData = validateFormData(formData);
     const sanitizedData = sanitizeFormData(validatedData);
@@ -540,12 +637,16 @@ export class LargeScalePerformanceValidator {
     fireEvent.submit(form);
     expect(component.queryByText('Error')).toBeNull();
   });
-`;
+`
+        );
       default:
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     expect(userInput).toBeDefined();
   });
-`;
+`
+        );
     }
   }
 
@@ -560,14 +661,19 @@ export class LargeScalePerformanceValidator {
 
     switch (complexity) {
       case 'simple':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const guard = new AuthGuard();
     const canActivate = await guard.canActivate(mockContext(mockRequest));
     expect(canActivate).toBe(true);
   });
-`;
+`
+        );
       case 'moderate':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const dto = plainToClass(CreateUserDto, mockRequest.body);
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
@@ -575,9 +681,12 @@ export class LargeScalePerformanceValidator {
     const result = await service.create(dto);
     expect(result.id).toBeDefined();
   });
-`;
+`
+        );
       case 'complex':
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     const authGuard = new JwtAuthGuard();
     const rolesGuard = new RolesGuard();
     const context = mockExecutionContext(mockRequest);
@@ -593,12 +702,16 @@ export class LargeScalePerformanceValidator {
     const result = await service.complexOperation(sanitized);
     expect(result.success).toBe(true);
   });
-`;
+`
+        );
       default:
-        return baseTemplate + `
+        return (
+          baseTemplate +
+          `
     expect(mockRequest).toBeDefined();
   });
-`;
+`
+        );
     }
   }
 
@@ -624,7 +737,7 @@ export class LargeScalePerformanceValidator {
       case 'moderate':
         return methodIndex % 3 === 0 ? 'moderate' : 'simple';
       case 'complex':
-        return methodIndex % 4 === 0 ? 'complex' : (methodIndex % 2 === 0 ? 'moderate' : 'simple');
+        return methodIndex % 4 === 0 ? 'complex' : methodIndex % 2 === 0 ? 'moderate' : 'simple';
       case 'enterprise':
         const rand = methodIndex % 10;
         if (rand < 2) return 'complex';
@@ -638,32 +751,39 @@ export class LargeScalePerformanceValidator {
   /**
    * 解析結果の処理
    */
-  private processAnalysisResults(analysisResult: any): any {
+  private processAnalysisResults(analysisResult: {
+    issues?: SecurityIssue[];
+  }): ProcessedAnalysisResult {
     const issues = analysisResult.issues || [];
     const issueTypeDistribution = new Map<string, number>();
 
-    issues.forEach((issue: any) => {
+    issues.forEach((issue: SecurityIssue) => {
       const count = issueTypeDistribution.get(issue.type) || 0;
       issueTypeDistribution.set(issue.type, count + 1);
     });
 
     return {
+      issueCount: issues.length,
+      criticalIssues: issues.filter((i: SecurityIssue) => i.severity === 'critical').length,
+      highPriorityIssues: issues.filter((i: SecurityIssue) => i.severity === 'high').length,
       totalIssues: issues.length,
       issuesPerFile: 0, // 後で計算
-      issueTypeDistribution
+      issueTypeDistribution,
     };
   }
 
   /**
    * スケーラビリティ分析
    */
-  private analyzeScalability(data: any[]): any {
+  private analyzeScalability(data: ScalabilityDataPoint[]): ScalabilityAnalysis {
     if (data.length < 3) {
       return {
+        complexity: 'unknown',
         timeComplexity: 'O(?)',
         spaceComplexity: 'O(?)',
+        regressionCoefficient: 0,
         scalabilityScore: 5,
-        recommendedMaxFiles: 1000
+        recommendedMaxFiles: 1000,
       };
     }
 
@@ -674,13 +794,15 @@ export class LargeScalePerformanceValidator {
       const curr = data[i];
       if (prev.fileCount > 0 && curr.fileCount > 0) {
         const fileRatio = curr.fileCount / prev.fileCount;
-        const timeRatio = curr.executionTime / prev.executionTime;
+        const timeRatio =
+          (curr.executionTime || curr.totalTime) / (prev.executionTime || prev.totalTime);
         timeGrowthRates.push(timeRatio / fileRatio);
       }
     }
 
-    const avgGrowthRate = timeGrowthRates.reduce((sum, rate) => sum + rate, 0) / timeGrowthRates.length;
-    
+    const avgGrowthRate =
+      timeGrowthRates.reduce((sum, rate) => sum + rate, 0) / timeGrowthRates.length;
+
     let timeComplexity: string;
     let scalabilityScore: number;
 
@@ -701,34 +823,37 @@ export class LargeScalePerformanceValidator {
     const recommendedMaxFiles = Math.floor(10000 / Math.max(1, avgGrowthRate));
 
     return {
+      complexity: timeComplexity,
       timeComplexity,
       spaceComplexity: 'O(n)', // 簡略化
+      regressionCoefficient: avgGrowthRate,
       scalabilityScore,
-      recommendedMaxFiles
+      recommendedMaxFiles,
     };
   }
 
   /**
    * システム情報の収集
    */
-  private collectSystemInfo(): any {
+  private collectSystemInfo(): SystemInfo {
     const cpus = os.cpus();
     const totalMemory = os.totalmem();
-    const freeMemory = os.freemem();
+    const totalMemoryGB = Math.round(totalMemory / 1024 / 1024 / 1024);
 
     return {
       cpu: {
         model: cpus[0].model,
         cores: cpus.length,
-        speed: cpus[0].speed
       },
       memory: {
-        total: Math.round(totalMemory / 1024 / 1024 / 1024),
-        free: Math.round(freeMemory / 1024 / 1024 / 1024),
-        used: Math.round((totalMemory - freeMemory) / 1024 / 1024 / 1024)
+        total: totalMemoryGB,
       },
+      cpuModel: cpus[0].model,
+      cpuCores: cpus.length,
+      totalMemory: totalMemoryGB,
+      nodeVersion: process.version,
       platform: os.platform(),
-      arch: os.arch()
+      osVersion: os.release(),
     };
   }
 
@@ -745,21 +870,27 @@ export class LargeScalePerformanceValidator {
   private displayOverallSummary(results: PerformanceResult[]): void {
     console.log('📊 大規模プロジェクト性能測定 全体サマリー');
     console.log('='.repeat(50));
-    
-    const avgTimePerFile = results.reduce((sum, r) => sum + r.timing.timePerFile, 0) / results.length;
-    const avgSpeedup = results.reduce((sum, r) => sum + r.targetAchievement.actualSpeedup, 0) / results.length;
+
+    const avgTimePerFile =
+      results.reduce((sum, r) => sum + r.timing.timePerFile, 0) / results.length;
+    const avgSpeedup =
+      results.reduce((sum, r) => sum + r.targetAchievement.actualSpeedup, 0) / results.length;
     const fiveMsTargetAchieved = results.filter(r => r.targetAchievement.fiveMsTarget).length;
     const speedupTargetAchieved = results.filter(r => r.targetAchievement.speedupTarget).length;
 
     console.log(`測定プロジェクト数: ${results.length}`);
     console.log(`平均処理時間: ${avgTimePerFile.toFixed(2)}ms/file`);
     console.log(`平均高速化倍率: ${avgSpeedup.toFixed(1)}x`);
-    console.log(`5ms/file目標達成: ${fiveMsTargetAchieved}/${results.length}プロジェクト (${(fiveMsTargetAchieved/results.length*100).toFixed(1)}%)`);
-    console.log(`3-20x高速化達成: ${speedupTargetAchieved}/${results.length}プロジェクト (${(speedupTargetAchieved/results.length*100).toFixed(1)}%)`);
-    
+    console.log(
+      `5ms/file目標達成: ${fiveMsTargetAchieved}/${results.length}プロジェクト (${((fiveMsTargetAchieved / results.length) * 100).toFixed(1)}%)`
+    );
+    console.log(
+      `3-20x高速化達成: ${speedupTargetAchieved}/${results.length}プロジェクト (${((speedupTargetAchieved / results.length) * 100).toFixed(1)}%)`
+    );
+
     console.log('');
     console.log('🎯 TaintTyper実装の性能評価:');
-    
+
     if (avgTimePerFile <= 5.0 && avgSpeedup >= 3.0) {
       console.log('🏆 優秀: 全ての性能目標を達成しています');
     } else if (avgTimePerFile <= 10.0 && avgSpeedup >= 2.0) {
@@ -769,7 +900,7 @@ export class LargeScalePerformanceValidator {
     } else {
       console.log('❌ 要対策: 大幅な性能改善が必要です');
     }
-    
+
     console.log('');
   }
 
@@ -779,26 +910,26 @@ export class LargeScalePerformanceValidator {
   private displayScalabilityResults(result: ScalabilityTestResult): void {
     console.log('📈 スケーラビリティテスト結果');
     console.log('='.repeat(40));
-    
+
     console.log(`時間計算量: ${result.analysis.timeComplexity}`);
     console.log(`空間計算量: ${result.analysis.spaceComplexity}`);
     console.log(`スケーラビリティスコア: ${result.analysis.scalabilityScore}/10`);
     console.log(`推奨最大ファイル数: ${result.analysis.recommendedMaxFiles}`);
-    
+
     console.log('');
     console.log('📊 スケーラビリティデータ:');
     console.log('Files\t\tTime(ms)\tms/file\tMemory(MB)');
     console.log('-'.repeat(50));
-    
+
     result.scalabilityData.forEach(data => {
       console.log(
         `${data.fileCount.toString().padStart(5)}\t\t` +
-        `${data.executionTime.toString().padStart(7)}\t` +
-        `${data.timePerFile.toFixed(2).padStart(6)}\t` +
-        `${(data.memoryUsage / 1024 / 1024).toFixed(1).padStart(8)}`
+          `${data.executionTime.toString().padStart(7)}\t` +
+          `${data.timePerFile.toFixed(2).padStart(6)}\t` +
+          `${(data.memoryUsage / 1024 / 1024).toFixed(1).padStart(8)}`
       );
     });
-    
+
     console.log('');
   }
 }

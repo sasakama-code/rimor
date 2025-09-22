@@ -1,16 +1,16 @@
-import { 
-  FileScore, 
-  DirectoryScore, 
+import {
+  FileScore,
+  DirectoryScore,
   ProjectScore,
   PluginResult,
   DimensionScore,
   WeightConfig,
   DEFAULT_WEIGHTS,
   DimensionType,
-  AggregatedScore
+  AggregatedScore,
 } from './types';
 import { GradeCalculator } from './grades';
-import { QualityScore } from '../core/types';
+import { QualityScore, Issue } from '../core/types';
 import { errorHandler, ErrorType } from '../utils/errorHandler';
 
 /**
@@ -54,10 +54,10 @@ export class ScoreCalculatorV2 {
       if (pluginResults.length > 100) {
         errorHandler.handleWarning(
           `ファイル ${file} のプラグイン結果が多数: ${pluginResults.length}件`,
-          { 
-            filePath: file, 
+          {
+            filePath: file,
             resultCount: pluginResults.length,
-            threshold: 100
+            threshold: 100,
           },
           'calculateFileScore'
         );
@@ -68,40 +68,40 @@ export class ScoreCalculatorV2 {
         if (!result || typeof result !== 'object') {
           errorHandler.handleWarning(
             `ファイル ${file} の無効なプラグイン結果をスキップ: インデックス ${index}`,
-            { 
-              filePath: file, 
+            {
+              filePath: file,
               index,
-              resultType: typeof result
+              resultType: typeof result,
             },
             'calculateFileScore'
           );
           return false;
         }
-        
+
         if (typeof result.score !== 'number' || isNaN(result.score)) {
           errorHandler.handleWarning(
             `ファイル ${file} の無効なスコア値をスキップ: ${result.pluginId}`,
-            { 
-              filePath: file, 
+            {
+              filePath: file,
               pluginId: result.pluginId,
               scoreType: typeof result.score,
-              scoreValue: result.score
+              scoreValue: result.score,
             },
             'calculateFileScore'
           );
           return false;
         }
-        
+
         return true;
       });
 
       if (validPluginResults.length === 0) {
         errorHandler.handleWarning(
           `ファイル ${file} に有効なプラグイン結果がありません`,
-          { 
-            filePath: file, 
+          {
+            filePath: file,
             originalResultCount: pluginResults.length,
-            validResultCount: 0
+            validResultCount: 0,
           },
           'calculateFileScore'
         );
@@ -115,22 +115,24 @@ export class ScoreCalculatorV2 {
       const dimensions = this.calculateDimensionScores(validPluginResults, weights);
 
       // 3. プラグインスコア情報を整理
-      const pluginScores: { [pluginId: string]: { score: number; weight: number; issues: any[] } } = {};
-      
+      const pluginScores: {
+        [pluginId: string]: { score: number; weight: number; issues: Issue[] };
+      } = {};
+
       for (const result of validPluginResults) {
         try {
           pluginScores[result.pluginId] = {
             score: typeof result.score === 'number' ? result.score : 0,
             weight: typeof result.weight === 'number' ? result.weight : 1.0,
-            issues: Array.isArray(result.issues) ? result.issues : []
+            issues: Array.isArray(result.issues) ? (result.issues as Issue[]) : [],
           };
         } catch (error) {
           errorHandler.handleWarning(
             `プラグイン ${result.pluginId} の情報整理でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
-            { 
+            {
               pluginId: result.pluginId,
               error: error instanceof Error ? error.message : '不明なエラー',
-              filePath: file
+              filePath: file,
             },
             'calculateFileScore'
           );
@@ -155,14 +157,15 @@ export class ScoreCalculatorV2 {
             } catch {
               return count;
             }
-          }, 0)
+          }, 0),
         },
-        pluginScores
+        pluginScores,
       };
-      
     } catch (error) {
-      console.error(`ファイル ${file} のスコア計算でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
-      
+      console.error(
+        `ファイル ${file} のスコア計算でエラー: ${error instanceof Error ? error.message : '不明なエラー'}`
+      );
+
       // エラー時のフォールバック
       return this.createEmptyFileScore(file);
     }
@@ -174,10 +177,7 @@ export class ScoreCalculatorV2 {
    * @param fileScores ファイルスコアの配列
    * @returns ディレクトリスコア
    */
-  calculateDirectoryScore(
-    directory: string,
-    fileScores: FileScore[]
-  ): DirectoryScore {
+  calculateDirectoryScore(directory: string, fileScores: FileScore[]): DirectoryScore {
     if (fileScores.length === 0) {
       return this.createEmptyDirectoryScore(directory);
     }
@@ -204,11 +204,11 @@ export class ScoreCalculatorV2 {
         correctness: dimensions.correctness.score,
         maintainability: dimensions.maintainability.score,
         performance: dimensions.performance.score,
-        security: dimensions.security.score
+        security: dimensions.security.score,
       },
       // レガシーサポート
       averageScore: this.normalizeScore(averageScore),
-      dimensions
+      dimensions,
     };
   }
 
@@ -217,10 +217,7 @@ export class ScoreCalculatorV2 {
    * @param directoryScores ディレクトリスコアの配列
    * @returns プロジェクトスコア
    */
-  calculateProjectScore(
-    directoryScores: DirectoryScore[],
-    weights: WeightConfig
-  ): ProjectScore {
+  calculateProjectScore(directoryScores: DirectoryScore[], weights: WeightConfig): ProjectScore {
     if (directoryScores.length === 0) {
       return this.createEmptyProjectScore('.');
     }
@@ -260,12 +257,12 @@ export class ScoreCalculatorV2 {
         generatedAt: new Date(),
         executionTime: Date.now() - (Date.now() - 100), // 仮の実行時間
         pluginCount: this.getPluginCount(allFileScores),
-        issueCount: this.getIssueCount(allFileScores)
+        issueCount: this.getIssueCount(allFileScores),
       },
       // レガシーサポート
       averageScore: this.normalizeScore(averageScore),
       dimensions,
-      distribution
+      distribution,
     };
   }
 
@@ -273,10 +270,7 @@ export class ScoreCalculatorV2 {
    * QualityScoreの配列をAggregatedScoreに集約
    * 既存システムとの後方互換性のため
    */
-  aggregateScores(
-    scores: QualityScore[],
-    weights?: WeightConfig
-  ): AggregatedScore {
+  aggregateScores(scores: QualityScore[], weights?: WeightConfig): AggregatedScore {
     if (scores.length === 0) {
       return {
         score: 0,
@@ -284,8 +278,8 @@ export class ScoreCalculatorV2 {
         metadata: {
           aggregatedFrom: 0,
           totalWeight: 0,
-          algorithm: 'weighted-average'
-        }
+          algorithm: 'weighted-average',
+        },
       };
     }
 
@@ -300,18 +294,20 @@ export class ScoreCalculatorV2 {
         metadata: {
           aggregatedFrom: scores.length,
           totalWeight: 0,
-          algorithm: 'weighted-average'
-        }
+          algorithm: 'weighted-average',
+        },
       };
     }
 
     // 加重平均によるスコア計算
-    const aggregatedScore = scores.reduce((sum, score, index) => {
-      return sum + (score.overall * (weightValues[index] || 0));
-    }, 0) / (totalWeight || 1);
+    const aggregatedScore =
+      scores.reduce((sum, score, index) => {
+        return sum + score.overall * (weightValues[index] || 0);
+      }, 0) / (totalWeight || 1);
 
     // 信頼度の平均
-    const avgConfidence = scores.reduce((sum, score) => sum + (score.confidence || 0), 0) / scores.length;
+    const avgConfidence =
+      scores.reduce((sum, score) => sum + (score.confidence || 0), 0) / scores.length;
 
     return {
       score: this.normalizeScore(aggregatedScore),
@@ -319,8 +315,8 @@ export class ScoreCalculatorV2 {
       metadata: {
         aggregatedFrom: scores.length,
         totalWeight,
-        algorithm: 'weighted-average'
-      }
+        algorithm: 'weighted-average',
+      },
     };
   }
 
@@ -330,7 +326,7 @@ export class ScoreCalculatorV2 {
    * 重み付き総合スコアを計算（ディメンション重みを考慮）
    */
   private calculateWeightedOverallScore(
-    pluginResults: PluginResult[], 
+    pluginResults: PluginResult[],
     weights: WeightConfig
   ): number {
     // ディメンション別にプラグインを分類し、各ディメンションの重み付きスコアを計算
@@ -339,7 +335,7 @@ export class ScoreCalculatorV2 {
 
     // 各ディメンションのスコアを計算
     for (const dimension of Object.keys(weights.dimensions) as DimensionType[]) {
-      const relevantPlugins = pluginResults.filter(result => 
+      const relevantPlugins = pluginResults.filter(result =>
         this.isPluginRelevantToDimension(result, dimension)
       );
 
@@ -353,7 +349,8 @@ export class ScoreCalculatorV2 {
           dimensionTotalWeight += pluginWeight;
         }
 
-        dimensionScores[dimension] = dimensionTotalWeight > 0 ? dimensionWeightedScore / dimensionTotalWeight : 0;
+        dimensionScores[dimension] =
+          dimensionTotalWeight > 0 ? dimensionWeightedScore / dimensionTotalWeight : 0;
         dimensionWeights[dimension] = weights.dimensions[dimension];
       }
     }
@@ -383,19 +380,19 @@ export class ScoreCalculatorV2 {
       correctness: this.createEmptyDimensionScore(),
       maintainability: this.createEmptyDimensionScore(),
       performance: this.createEmptyDimensionScore(),
-      security: this.createEmptyDimensionScore()
+      security: this.createEmptyDimensionScore(),
     };
 
     // 各ディメンションにプラグイン結果を振り分け
     for (const dimension of Object.keys(dimensions) as DimensionType[]) {
-      const relevantPlugins = pluginResults.filter(result => 
+      const relevantPlugins = pluginResults.filter(result =>
         this.isPluginRelevantToDimension(result, dimension)
       );
 
       if (relevantPlugins.length > 0) {
         dimensions[dimension] = this.calculateSingleDimensionScore(
-          relevantPlugins, 
-          dimension, 
+          relevantPlugins,
+          dimension,
           weights
         );
       }
@@ -420,12 +417,12 @@ export class ScoreCalculatorV2 {
     for (const plugin of relevantPlugins) {
       const pluginWeight = weights.plugins[plugin.pluginId] || plugin.weight || 1.0;
       const contribution = plugin.score * pluginWeight;
-      
+
       totalWeightedScore += contribution;
       totalWeight += pluginWeight;
       contributors.push({
         pluginId: plugin.pluginId,
-        contribution: pluginWeight
+        contribution: pluginWeight,
       });
     }
 
@@ -436,7 +433,7 @@ export class ScoreCalculatorV2 {
       weight: dimensionWeight,
       issues: relevantPlugins.flatMap(p => p.issues || []),
       contributors,
-      details: `${relevantPlugins.length} plugins contributed to ${dimension} score`
+      details: `${relevantPlugins.length} plugins contributed to ${dimension} score`,
     };
   }
 
@@ -457,18 +454,30 @@ export class ScoreCalculatorV2 {
 
     switch (dimension) {
       case 'completeness':
-        if (pluginName.includes('existence') || pluginName.includes('coverage') || 
-            pluginId.includes('test-existence') || pluginId.includes('completeness')) {
+        if (
+          pluginName.includes('existence') ||
+          pluginName.includes('coverage') ||
+          pluginId.includes('test-existence') ||
+          pluginId.includes('completeness')
+        ) {
           return true;
         }
         // 他の特定ディメンションに属さない場合は、completenessに含める（デフォルト）
         return !isSpecificToOtherDimension;
       case 'correctness':
-        return pluginName.includes('assertion') || pluginName.includes('correctness') ||
-               pluginId.includes('assertion') || pluginId.includes('correctness');
+        return (
+          pluginName.includes('assertion') ||
+          pluginName.includes('correctness') ||
+          pluginId.includes('assertion') ||
+          pluginId.includes('correctness')
+        );
       case 'maintainability':
-        return pluginName.includes('structure') || pluginName.includes('maintainability') ||
-               pluginId.includes('structure') || pluginId.includes('maintainability');
+        return (
+          pluginName.includes('structure') ||
+          pluginName.includes('maintainability') ||
+          pluginId.includes('structure') ||
+          pluginId.includes('maintainability')
+        );
       case 'performance':
         return pluginName.includes('performance') || pluginId.includes('performance');
       case 'security':
@@ -485,12 +494,20 @@ export class ScoreCalculatorV2 {
     const pluginName = plugin.pluginName.toLowerCase();
     const pluginId = plugin.pluginId.toLowerCase();
 
-    return pluginName.includes('assertion') || pluginName.includes('correctness') ||
-           pluginName.includes('structure') || pluginName.includes('maintainability') ||
-           pluginName.includes('performance') || pluginName.includes('security') ||
-           pluginId.includes('assertion') || pluginId.includes('correctness') ||
-           pluginId.includes('structure') || pluginId.includes('maintainability') ||
-           pluginId.includes('performance') || pluginId.includes('security');
+    return (
+      pluginName.includes('assertion') ||
+      pluginName.includes('correctness') ||
+      pluginName.includes('structure') ||
+      pluginName.includes('maintainability') ||
+      pluginName.includes('performance') ||
+      pluginName.includes('security') ||
+      pluginId.includes('assertion') ||
+      pluginId.includes('correctness') ||
+      pluginId.includes('structure') ||
+      pluginId.includes('maintainability') ||
+      pluginId.includes('performance') ||
+      pluginId.includes('security')
+    );
   }
 
   /**
@@ -503,7 +520,7 @@ export class ScoreCalculatorV2 {
         correctness: this.createEmptyDimensionScore(),
         maintainability: this.createEmptyDimensionScore(),
         performance: this.createEmptyDimensionScore(),
-        security: this.createEmptyDimensionScore()
+        security: this.createEmptyDimensionScore(),
       };
     }
 
@@ -512,14 +529,15 @@ export class ScoreCalculatorV2 {
       correctness: this.createEmptyDimensionScore(),
       maintainability: this.createEmptyDimensionScore(),
       performance: this.createEmptyDimensionScore(),
-      security: this.createEmptyDimensionScore()
+      security: this.createEmptyDimensionScore(),
     };
 
     // 各ディメンションの平均値を計算
     for (const dimension of Object.keys(dimensions) as DimensionType[]) {
       const dimensionValues = fileScores.map(f => f.dimensions[dimension].score);
-      const averageValue = dimensionValues.reduce((sum, val) => sum + val, 0) / dimensionValues.length;
-      
+      const averageValue =
+        dimensionValues.reduce((sum, val) => sum + val, 0) / dimensionValues.length;
+
       // 重みは最初のファイルから取得（通常は同じ）
       const weight = fileScores[0].dimensions[dimension].weight;
 
@@ -528,7 +546,7 @@ export class ScoreCalculatorV2 {
         weight,
         issues: [],
         contributors: [],
-        details: `Aggregated from ${fileScores.length} files`
+        details: `Aggregated from ${fileScores.length} files`,
       };
     }
 
@@ -563,7 +581,16 @@ export class ScoreCalculatorV2 {
    * 空のファイルスコアを作成
    */
   private createEmptyFileScore(filePath: string): FileScore {
-    const emptyWeights = { plugins: {}, dimensions: { completeness: 1, correctness: 1, maintainability: 1, performance: 1, security: 1 } };
+    const emptyWeights = {
+      plugins: {},
+      dimensions: {
+        completeness: 1,
+        correctness: 1,
+        maintainability: 1,
+        performance: 1,
+        security: 1,
+      },
+    };
     return {
       filePath,
       overallScore: 0,
@@ -572,16 +599,16 @@ export class ScoreCalculatorV2 {
         correctness: this.createEmptyDimensionScore(),
         maintainability: this.createEmptyDimensionScore(),
         performance: this.createEmptyDimensionScore(),
-        security: this.createEmptyDimensionScore()
+        security: this.createEmptyDimensionScore(),
       },
       grade: 'F',
       weights: emptyWeights,
       metadata: {
         analysisTime: 0,
         pluginResults: [],
-        issueCount: 0
+        issueCount: 0,
       },
-      pluginScores: {}
+      pluginScores: {},
     };
   }
 
@@ -600,7 +627,7 @@ export class ScoreCalculatorV2 {
         correctness: 0,
         maintainability: 0,
         performance: 0,
-        security: 0
+        security: 0,
       },
       // レガシーサポート
       averageScore: 0,
@@ -609,8 +636,8 @@ export class ScoreCalculatorV2 {
         correctness: this.createEmptyDimensionScore(),
         maintainability: this.createEmptyDimensionScore(),
         performance: this.createEmptyDimensionScore(),
-        security: this.createEmptyDimensionScore()
-      }
+        security: this.createEmptyDimensionScore(),
+      },
     };
   }
 
@@ -618,7 +645,16 @@ export class ScoreCalculatorV2 {
    * 空のプロジェクトスコアを作成
    */
   private createEmptyProjectScore(projectPath: string): ProjectScore {
-    const emptyWeights = { plugins: {}, dimensions: { completeness: 1, correctness: 1, maintainability: 1, performance: 1, security: 1 } };
+    const emptyWeights = {
+      plugins: {},
+      dimensions: {
+        completeness: 1,
+        correctness: 1,
+        maintainability: 1,
+        performance: 1,
+        security: 1,
+      },
+    };
     return {
       projectPath,
       overallScore: 0,
@@ -632,7 +668,7 @@ export class ScoreCalculatorV2 {
         generatedAt: new Date(),
         executionTime: 0,
         pluginCount: 0,
-        issueCount: 0
+        issueCount: 0,
       },
       // レガシーサポート
       averageScore: 0,
@@ -641,9 +677,9 @@ export class ScoreCalculatorV2 {
         correctness: this.createEmptyDimensionScore(),
         maintainability: this.createEmptyDimensionScore(),
         performance: this.createEmptyDimensionScore(),
-        security: this.createEmptyDimensionScore()
+        security: this.createEmptyDimensionScore(),
       },
-      distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
+      distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 },
     };
   }
 
@@ -656,7 +692,7 @@ export class ScoreCalculatorV2 {
       weight: 1.0,
       issues: [],
       contributors: [],
-      details: 'No data available'
+      details: 'No data available',
     };
   }
 
@@ -678,8 +714,10 @@ export class ScoreCalculatorV2 {
    */
   private getIssueCount(fileScores: FileScore[]): number {
     return fileScores.reduce((total, file) => {
-      return total + Object.values(file.dimensions)
-        .reduce((dimTotal, dim) => dimTotal + dim.issues.length, 0);
+      return (
+        total +
+        Object.values(file.dimensions).reduce((dimTotal, dim) => dimTotal + dim.issues.length, 0)
+      );
     }, 0);
   }
 }

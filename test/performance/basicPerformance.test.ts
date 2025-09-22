@@ -1,25 +1,25 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { Analyzer } from '../../src/core/analyzer';
-import { PluginManager } from '../../src/core/pluginManager';
+import { UnifiedAnalysisEngine } from '../../src/core/UnifiedAnalysisEngine';
+import { UnifiedPluginManager } from '../../src/core/UnifiedPluginManager';
 
 const getFixturePath = (filename: string) => path.join(__dirname, '../fixtures', filename);
 
 describe('Basic Performance Tests', () => {
-  let analyzer: Analyzer;
-  let pluginManager: PluginManager;
+  let analyzer: UnifiedAnalysisEngine;
+  let pluginManager: UnifiedPluginManager;
 
   beforeEach(() => {
-    analyzer = new Analyzer();
-    pluginManager = new PluginManager();
+    analyzer = new UnifiedAnalysisEngine();
+    pluginManager = new UnifiedPluginManager();
   });
 
   describe('Analysis Performance', () => {
     it('should complete single file analysis within reasonable time', async () => {
       const startTime = process.hrtime.bigint();
-      
+
       const result = await analyzer.analyze(getFixturePath('sample.test.ts'));
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -31,11 +31,11 @@ describe('Basic Performance Tests', () => {
 
     it('should handle directory analysis efficiently', async () => {
       const testDir = path.dirname(getFixturePath('sample.test.ts'));
-      
+
       const startTime = process.hrtime.bigint();
-      
+
       const result = await analyzer.analyze(testDir);
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -63,16 +63,15 @@ describe('Performance Test', () => {
         }
 
         const startTime = process.hrtime.bigint();
-        
+
         const result = await analyzer.analyze(path.dirname(getFixturePath('sample.test.ts')));
-        
+
         const endTime = process.hrtime.bigint();
         const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
         // ファイル数が増えてもリニアにスケールすることを確認
         expect(executionTimeMs).toBeLessThan(3000);
         expect(result.totalFiles).toBeGreaterThan(5);
-        
       } finally {
         // テンポラリファイルを削除
         tempFiles.forEach(file => {
@@ -86,15 +85,15 @@ describe('Performance Test', () => {
     it('should provide consistent performance across multiple runs', async () => {
       // ウォームアップ実行でキャッシング効果を安定化
       await analyzer.analyze(getFixturePath('comprehensive.test.ts'));
-      
+
       const executionTimes: number[] = [];
       const runs = 5;
 
       for (let i = 0; i < runs; i++) {
         const startTime = process.hrtime.bigint();
-        
+
         await analyzer.analyze(getFixturePath('comprehensive.test.ts'));
-        
+
         const endTime = process.hrtime.bigint();
         const executionTimeMs = Number(endTime - startTime) / 1_000_000;
         executionTimes.push(executionTimeMs);
@@ -105,12 +104,14 @@ describe('Performance Test', () => {
       const minTime = Math.min(...executionTimes);
       const variance = maxTime - minTime;
 
-      // 環境による変動を考慮した現実的な許容値を設定 
+      // 環境による変動を考慮した現実的な許容値を設定
       // CI環境、GitHub Actions、ローカル環境での変動を包括的に考慮
-      const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || 
-                   process.env.NODE_ENV === 'test';
+      const isCI =
+        process.env.CI === 'true' ||
+        process.env.GITHUB_ACTIONS === 'true' ||
+        process.env.NODE_ENV === 'test';
       const varianceMultiplier = isCI ? 20.0 : 5.0; // CI環境でより緩い条件
-      
+
       expect(variance).toBeLessThan(avgTime * varianceMultiplier);
       expect(avgTime).toBeLessThan(500); // 基準時間も緩和
     });
@@ -119,10 +120,10 @@ describe('Performance Test', () => {
   describe('Plugin Performance', () => {
     it('should load plugins efficiently', () => {
       const startTime = process.hrtime.bigint();
-      
+
       // 既存のプラグインは初期状態で空
       const plugins: any[] = [];
-      
+
       const endTime = process.hrtime.bigint();
       const loadTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -133,12 +134,12 @@ describe('Performance Test', () => {
 
     it('should execute plugins with minimal overhead', async () => {
       const testFile = getFixturePath('sample.test.ts');
-      
+
       const startTime = process.hrtime.bigint();
-      
+
       // pluginManager.runAllを使用してテスト
       await pluginManager.runAll(testFile);
-      
+
       const endTime = process.hrtime.bigint();
       const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
@@ -150,7 +151,7 @@ describe('Performance Test', () => {
   describe('Memory Performance', () => {
     it('should not cause significant memory leaks', async () => {
       const initialMemory = process.memoryUsage();
-      
+
       // 複数回の分析を実行
       for (let i = 0; i < 20; i++) {
         await analyzer.analyze(getFixturePath('sample.test.ts'));
@@ -167,12 +168,15 @@ describe('Performance Test', () => {
       // 大きなテストファイルを生成
       const largeTestContent = `
 describe('Large Test Suite', () => {
-${Array.from({ length: 50 }, (_, i) => `
+${Array.from(
+  { length: 50 },
+  (_, i) => `
   it('should test case ${i}', () => {
     expect(${i}).toBe(${i});
     expect(true).toBe(true);
     expect(false).toBe(false);
-  });`).join('')}
+  });`
+).join('')}
 });`;
 
       const largePath = path.join(__dirname, '../fixtures/large-memory.test.ts');
@@ -180,15 +184,14 @@ ${Array.from({ length: 50 }, (_, i) => `
 
       try {
         const beforeMemory = process.memoryUsage();
-        
+
         await analyzer.analyze(largePath);
-        
+
         const afterMemory = process.memoryUsage();
         const memoryIncrease = afterMemory.heapUsed - beforeMemory.heapUsed;
 
         // 大きなファイルでもメモリ使用量が2MB以内に収まることを確認
         expect(memoryIncrease).toBeLessThan(2 * 1024 * 1024);
-        
       } finally {
         if (fs.existsSync(largePath)) {
           fs.unlinkSync(largePath);
@@ -200,13 +203,13 @@ ${Array.from({ length: 50 }, (_, i) => `
   describe('Error Handling Performance', () => {
     it('should handle non-existent files without significant delay', async () => {
       const startTime = process.hrtime.bigint();
-      
+
       try {
         await analyzer.analyze('/non/existent/file.ts');
       } catch (error) {
         // エラーは予期される
       }
-      
+
       const endTime = process.hrtime.bigint();
       const errorHandlingTime = Number(endTime - startTime) / 1_000_000;
 
@@ -221,16 +224,15 @@ ${Array.from({ length: 50 }, (_, i) => `
 
       try {
         const startTime = process.hrtime.bigint();
-        
+
         const result = await analyzer.analyze(corruptedPath);
-        
+
         const endTime = process.hrtime.bigint();
         const executionTimeMs = Number(endTime - startTime) / 1_000_000;
 
         // 破損したファイルでも500ms以内で処理を完了することを確認
         expect(executionTimeMs).toBeLessThan(500);
         expect(result).toBeDefined();
-        
       } finally {
         if (fs.existsSync(corruptedPath)) {
           fs.unlinkSync(corruptedPath);
@@ -244,15 +246,15 @@ ${Array.from({ length: 50 }, (_, i) => `
       const files = [
         getFixturePath('sample.test.ts'),
         getFixturePath('comprehensive.test.ts'),
-        getFixturePath('good.test.ts')
+        getFixturePath('good.test.ts'),
       ];
 
       const startTime = process.hrtime.bigint();
-      
+
       // 並行実行
       const promises = files.map(file => analyzer.analyze(file));
       const results = await Promise.all(promises);
-      
+
       const endTime = process.hrtime.bigint();
       const totalTime = Number(endTime - startTime) / 1_000_000;
 

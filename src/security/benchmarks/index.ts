@@ -12,11 +12,7 @@ import { PerformanceBenchmark } from './PerformanceBenchmark';
 import { BenchmarkRunner } from './BenchmarkRunner';
 
 // インターフェースのエクスポート
-export type {
-  BenchmarkResult,
-  BenchmarkComparison,
-  SystemInfo
-} from './PerformanceBenchmark';
+export type { BenchmarkResult, BenchmarkComparison, SystemInfo } from './PerformanceBenchmark';
 
 export type {
   BenchmarkConfig,
@@ -24,7 +20,7 @@ export type {
   RegressionDetectionResult,
   PerformanceRegression,
   PerformanceImprovement,
-  PerformanceTrendAnalysis
+  PerformanceTrendAnalysis,
 } from './BenchmarkRunner';
 
 /**
@@ -35,9 +31,9 @@ export async function runQuickPerformanceCheck(): Promise<boolean> {
   const runner = new BenchmarkRunner({
     testSizes: ['small'],
     iterations: 1,
-    verbose: false
+    verbose: false,
   });
-  
+
   const result = await runner.runQuickBenchmark();
   return result.overallAssessment !== 'critical';
 }
@@ -51,9 +47,9 @@ export async function runCiBenchmark(): Promise<void> {
     isCiEnvironment: true,
     testSizes: ['small', 'medium'],
     iterations: 2,
-    outputDir: './ci-benchmark-results'
+    outputDir: './ci-benchmark-results',
   });
-  
+
   await runner.runFullBenchmarkSuite();
 }
 
@@ -68,13 +64,13 @@ export async function verifyTargets(): Promise<{
   const { BenchmarkRunner } = await import('./BenchmarkRunner');
   const runner = new BenchmarkRunner();
   const result = await runner.verifyPerformanceTargets();
-  
+
   const summary = `5ms/file: ${result.target5ms ? '✅' : '❌'}, 速度向上: ${result.speedupTarget ? '✅' : '❌'}`;
-  
+
   return {
     target5ms: result.target5ms,
     speedupTarget: result.speedupTarget,
-    summary
+    summary,
   };
 }
 
@@ -84,7 +80,7 @@ const defaultExport = {
   BenchmarkRunner,
   runQuickPerformanceCheck,
   runCiBenchmark,
-  verifyTargets
+  verifyTargets,
 };
 
 export default defaultExport;

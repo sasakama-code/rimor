@@ -1,0 +1,606 @@
+name: 🚀 External Project Benchmark
+
+on:
+  # マニュアル実行
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: 'ベンチマーク対象ティア'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'  # Tier 1: TypeScript, Ant Design, VS Code
+          - '2'  # Tier 2: Material UI, Storybook, Deno
+          - 'all'  # 全プロジェクト
+      baseline_comparison:
+        description: 'ベースライン統合機能を使用'
+        required: true
+        default: true
+        type: boolean
+      generate_reports:
+        description: '全形式レポート生成'
+        required: true
+        default: true
+        type: boolean
+      
+  # 定期実行（毎週日曜 AM 3:00 JST）
+  schedule:
+    - cron: '0 18 * * 0'  # 18:00 UTC = 3:00 JST+9
+    
+  # PRでの実行（draft除く）
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, ready_for_review]
+    paths:
+      - 'src/benchmark/**'
+      - 'scripts/benchmark-external-projects.ts'
+      - '.github/workflows/benchmark-external.yml'
+
+env:
+  NODE_VERSION: '20.x'
+  BENCHMARK_TIMEOUT: '1800000'  # 30 minutes
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  # システム情報確認
+  system-check:
+    name: システムリソース確認
+    runs-on: ubuntu-latest
+    
+    outputs:
+      can_run_tier1: ${{ steps.resource_check.outputs.tier1_ready }}
+      can_run_tier2: ${{ steps.resource_check.outputs.tier2_ready }}
+      recommended_projects: ${{ steps.resource_check.outputs.recommended }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:ci
+      
+    - name: システムリソース確認
+      id: resource_check
+      run: |
+        echo "🔍 システムリソース確認中..."
+        
+        # CPU・メモリ情報取得
+        CPU_CORES=$(nproc)
+        TOTAL_MEMORY=$(free -m | awk 'NR==2{printf "%.1f", $2/1024}')
+        AVAILABLE_MEMORY=$(free -m | awk 'NR==2{printf "%.1f", $7/1024}')
+        DISK_SPACE=$(df -h . | awk 'NR==2{print $4}')
+        
+        echo "CPU cores: $CPU_CORES"
+        echo "Total memory: ${TOTAL_MEMORY}GB"
+        echo "Available memory: ${AVAILABLE_MEMORY}GB"
+        echo "Available disk: $DISK_SPACE"
+        
+        # Tier 1実行可能性判定
+        if (( CPU_CORES >= 2 && $(echo "$AVAILABLE_MEMORY >= 4.0" | bc -l) )); then
+          echo "tier1_ready=true" >> $GITHUB_OUTPUT
+          echo "✅ Tier 1プロジェクト実行可能"
+        else
+          echo "tier1_ready=false" >> $GITHUB_OUTPUT
+          echo "❌ Tier 1プロジェクト実行不可（リソース不足）"
+        fi
+        
+        # Tier 2実行可能性判定
+        if (( CPU_CORES >= 4 && $(echo "$AVAILABLE_MEMORY >= 6.0" | bc -l) )); then
+          echo "tier2_ready=true" >> $GITHUB_OUTPUT
+          echo "✅ Tier 2プロジェクト実行可能"
+        else
+          echo "tier2_ready=false" >> $GITHUB_OUTPUT
+          echo "⚠️ Tier 2プロジェクト実行制限あり"
+        fi
+        
+        # 推奨プロジェクト設定
+        if (( CPU_CORES >= 4 )); then
+          echo "recommended=all" >> $GITHUB_OUTPUT
+        else
+          echo "recommended=tier1" >> $GITHUB_OUTPUT
+        fi
+
+  # Tier 1 ベンチマーク実行
+  benchmark-tier1:
+    name: Tier 1 ベンチマーク実行
+    runs-on: ubuntu-latest
+    needs: system-check
+    if: needs.system-check.outputs.can_run_tier1 == 'true' && (github.event.inputs.tier == '1' || github.event.inputs.tier == 'all' || github.event_name == 'schedule')
+    
+    outputs:
+      benchmark_success: ${{ steps.benchmark.outputs.success }}
+      report_url: ${{ steps.benchmark.outputs.report_url }}
+      baseline_id: ${{ steps.benchmark.outputs.baseline_id }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:ci
+      
+    - name: システム最適化
+      run: |
+        echo "🔧 GitHub Actions runner最適化..."
+        
+        # Git設定最適化
+        git config --global gc.auto 0
+        git config --global core.preloadindex true
+        git config --global core.fscache true
+        
+        # Node.js最適化
+        export NODE_OPTIONS="--max-old-space-size=4096"
+        echo "NODE_OPTIONS=$NODE_OPTIONS" >> $GITHUB_ENV
+        
+        # 並列処理最適化
+        export UV_THREADPOOL_SIZE=4
+        echo "UV_THREADPOOL_SIZE=4" >> $GITHUB_ENV
+        
+        echo "✅ システム最適化完了"
+      
+    - name: Tier 1 ベンチマーク実行
+      id: benchmark
+      timeout-minutes: 25
+      run: |
+        echo "🚀 Tier 1 ベンチマーク実行開始..."
+        
+        mkdir -p .rimor/benchmark-results/reports
+        
+        # ベースライン統合モード判定
+        BASELINE_FLAG=""
+        if [[ "${{ github.event.inputs.baseline_comparison }}" == "true" || "${{ github.event_name }}" == "schedule" ]]; then
+          BASELINE_FLAG="--baseline-comparison"
+          echo "📊 ベースライン統合モードで実行"
+        fi
+        
+        # ベンチマーク実行
+        if timeout 1500 npm run benchmark:external -- \
+          --tier=1 \
+          $BASELINE_FLAG \
+          --verbose \
+          --output=.rimor/benchmark-results \
+          --timeout=300000 \
+          --max-retries=2; then
+          
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✅ Tier 1 ベンチマーク成功"
+          
+          # 結果ファイルの確認
+          LATEST_REPORT=$(find .rimor/benchmark-results/reports -name "*.json" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
+          if [[ -n "$LATEST_REPORT" ]]; then
+            echo "report_url=$LATEST_REPORT" >> $GITHUB_OUTPUT
+            
+            # ベースラインID抽出（存在する場合）
+            if [[ -f "$LATEST_REPORT" ]] && grep -q "baselineId" "$LATEST_REPORT"; then
+              BASELINE_ID=$(jq -r '.baselineId // empty' "$LATEST_REPORT" 2>/dev/null || echo "")
+              if [[ -n "$BASELINE_ID" ]]; then
+                echo "baseline_id=$BASELINE_ID" >> $GITHUB_OUTPUT
+              fi
+            fi
+          fi
+          
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+          echo "❌ Tier 1 ベンチマーク失敗またはタイムアウト"
+          exit 1
+        fi
+      
+    - name: 結果アーティファクト保存
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tier1-benchmark-results
+        path: .rimor/benchmark-results/
+        retention-days: 30
+        
+    - name: パフォーマンス指標抽出
+      if: steps.benchmark.outputs.success == 'true'
+      run: |
+        echo "📊 パフォーマンス指標抽出..."
+        
+        # 最新の結果ファイルから指標抽出
+        LATEST_REPORT="${{ steps.benchmark.outputs.report_url }}"
+        if [[ -f "$LATEST_REPORT" ]]; then
+          echo "## Tier 1 ベンチマーク結果 🚀" >> performance_summary.md
+          echo "" >> performance_summary.md
+          
+          # JSON結果から指標抽出（エラーハンドリング付き）
+          if AVG_TIME=$(jq -r '.results[]? | select(.success==true) | .performance.timePerFile' "$LATEST_REPORT" 2>/dev/null | awk '{sum+=$1; count++} END {if(count>0) printf "%.2f", sum/count; else print "N/A"}'); then
+            echo "- **平均実行時間**: ${AVG_TIME}ms/file" >> performance_summary.md
+          fi
+          
+          if SUCCESS_COUNT=$(jq -r '[.results[]? | select(.success==true)] | length' "$LATEST_REPORT" 2>/dev/null); then
+            TOTAL_COUNT=$(jq -r '.results | length' "$LATEST_REPORT" 2>/dev/null)
+            if [[ "$TOTAL_COUNT" -gt 0 ]]; then
+              SUCCESS_RATE=$((SUCCESS_COUNT * 100 / TOTAL_COUNT))
+              echo "- **成功率**: ${SUCCESS_RATE}% (${SUCCESS_COUNT}/${TOTAL_COUNT})" >> performance_summary.md
+            fi
+          fi
+          
+          if TARGET_5MS_COUNT=$(jq -r '[.results[]? | select(.success==true and .target5ms.achieved==true)] | length' "$LATEST_REPORT" 2>/dev/null); then
+            SUCCESSFUL_COUNT=$(jq -r '[.results[]? | select(.success==true)] | length' "$LATEST_REPORT" 2>/dev/null)
+            if [[ "$SUCCESSFUL_COUNT" -gt 0 ]]; then
+              TARGET_5MS_RATE=$((TARGET_5MS_COUNT * 100 / SUCCESSFUL_COUNT))
+              echo "- **5ms/file目標達成率**: ${TARGET_5MS_RATE}% (${TARGET_5MS_COUNT}/${SUCCESSFUL_COUNT})" >> performance_summary.md
+            fi
+          fi
+          
+          echo "" >> performance_summary.md
+          echo "### 📋 プロジェクト別結果" >> performance_summary.md
+          echo "" >> performance_summary.md
+          echo "| プロジェクト | 時間(ms/file) | 5ms目標 | 状態 |" >> performance_summary.md
+          echo "|------------|---------------|---------|------|" >> performance_summary.md
+          
+          # プロジェクト別結果（エラーハンドリング付き）
+          if jq -r '.results[]? | [.projectName, .performance.timePerFile, .target5ms.achieved, .success] | @tsv' "$LATEST_REPORT" 2>/dev/null | while IFS=$'\t' read -r project time target5ms success; do
+            target_icon=$([ "$target5ms" = "true" ] && echo "✅" || echo "❌")
+            status_icon=$([ "$success" = "true" ] && echo "✅" || echo "❌")
+            printf "| %s | %.2f | %s | %s |\n" "$project" "$time" "$target_icon" "$status_icon"
+          done >> performance_summary.md 2>/dev/null || echo "| エラー | N/A | ❌ | ❌ |" >> performance_summary.md; then
+            echo "指標抽出完了"
+          fi
+        fi
+        
+        cat performance_summary.md || echo "指標抽出でエラーが発生しました"
+
+  # Tier 2 ベンチマーク実行
+  benchmark-tier2:
+    name: Tier 2 ベンチマーク実行
+    runs-on: ubuntu-latest
+    needs: system-check
+    if: needs.system-check.outputs.can_run_tier2 == 'true' && (github.event.inputs.tier == '2' || github.event.inputs.tier == 'all') && github.event_name != 'pull_request'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:ci
+      
+    - name: Tier 2 ベンチマーク実行
+      timeout-minutes: 35
+      run: |
+        echo "🚀 Tier 2 ベンチマーク実行開始..."
+        
+        BASELINE_FLAG=""
+        if [[ "${{ github.event.inputs.baseline_comparison }}" == "true" || "${{ github.event_name }}" == "schedule" ]]; then
+          BASELINE_FLAG="--baseline-comparison"
+        fi
+        
+        npm run benchmark:external -- \
+          --tier=2 \
+          $BASELINE_FLAG \
+          --verbose \
+          --output=.rimor/benchmark-results \
+          --timeout=400000 \
+          --max-retries=2
+        
+    - name: Tier 2 結果アーティファクト保存
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tier2-benchmark-results
+        path: .rimor/benchmark-results/
+        retention-days: 30
+
+  # レポート生成
+  generate-reports:
+    name: 📊 統合レポート生成
+    runs-on: ubuntu-latest
+    needs: [system-check, benchmark-tier1]
+    if: always() && (needs.benchmark-tier1.outputs.benchmark_success == 'true') && (github.event.inputs.generate_reports == 'true' || github.event_name == 'schedule')
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build optimized
+      run: npm run build:ci
+      
+    - name: Download benchmark results
+      uses: actions/download-artifact@v4
+      with:
+        name: tier1-benchmark-results
+        path: .rimor/benchmark-results/
+        
+    - name: 統合レポート生成
+      run: |
+        echo "📊 統合レポート生成開始..."
+        
+        # TypeScriptでレポートジェネレーターを直接実行
+        # （実際の実装では、BenchmarkReportGeneratorを使用するスクリプトを作成）
+        
+        mkdir -p .rimor/reports/{markdown,html,csv,dashboard}
+        
+        # 基本的なMarkdownレポート生成
+        echo "# 🚀 Rimor 外部プロジェクトベンチマーク レポート" > .rimor/reports/benchmark-report.md
+        echo "" >> .rimor/reports/benchmark-report.md
+        echo "**生成日時**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> .rimor/reports/benchmark-report.md
+        echo "" >> .rimor/reports/benchmark-report.md
+        
+        # 結果ファイルからサマリー生成
+        LATEST_RESULT=$(find .rimor/benchmark-results/reports -name "*.json" -type f 2>/dev/null | head -1)
+        if [[ -n "$LATEST_RESULT" && -f "$LATEST_RESULT" ]]; then
+          echo "## 📊 実行結果サマリー" >> .rimor/reports/benchmark-report.md
+          echo "" >> .rimor/reports/benchmark-report.md
+          
+          # プロジェクト数
+          PROJECT_COUNT=$(jq -r '.results | length' "$LATEST_RESULT" 2>/dev/null || echo "0")
+          echo "- **対象プロジェクト数**: $PROJECT_COUNT" >> .rimor/reports/benchmark-report.md
+          
+          # 成功率
+          SUCCESS_COUNT=$(jq -r '[.results[] | select(.success==true)] | length' "$LATEST_RESULT" 2>/dev/null || echo "0")
+          echo "- **成功プロジェクト数**: $SUCCESS_COUNT" >> .rimor/reports/benchmark-report.md
+          
+          # ベースライン情報
+          if BASELINE_ID=$(jq -r '.baselineId // empty' "$LATEST_RESULT" 2>/dev/null) && [[ -n "$BASELINE_ID" ]]; then
+            echo "- **ベースラインID**: \`$BASELINE_ID\`" >> .rimor/reports/benchmark-report.md
+          fi
+          
+          # 比較情報
+          if jq -e '.comparison' "$LATEST_RESULT" >/dev/null 2>&1; then
+            IMPROVEMENT=$(jq -r '.comparison.overallImprovement' "$LATEST_RESULT" 2>/dev/null || echo "N/A")
+            echo "- **全体改善率**: ${IMPROVEMENT}%" >> .rimor/reports/benchmark-report.md
+          fi
+          
+          echo "" >> .rimor/reports/benchmark-report.md
+          echo "## 🎯 5ms/file 目標達成状況" >> .rimor/reports/benchmark-report.md
+          echo "" >> .rimor/reports/benchmark-report.md
+          
+          # 5ms目標達成の詳細
+          if jq -r '.results[] | [.projectName, .performance.timePerFile, .target5ms.achieved] | @tsv' "$LATEST_RESULT" 2>/dev/null | while IFS=$'\t' read -r project time achieved; do
+            icon=$([ "$achieved" = "true" ] && echo "✅" || echo "❌")
+            printf "- %s **%s**: %.2fms/file %s\n" "$icon" "$project" "$time" "$icon"
+          done >> .rimor/reports/benchmark-report.md; then
+            echo "✅ レポート生成完了"
+          fi
+        fi
+        
+        # HTMLレポートの生成（簡略版）
+        cat > .rimor/reports/html/benchmark-report.html << 'EOF'
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rimor ベンチマークレポート</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        .header { text-align: center; background: #f8f9fa; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .metric { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .metric-value { font-size: 2rem; font-weight: bold; color: #007bff; }
+        .metric-label { color: #6c757d; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Rimor 外部プロジェクトベンチマーク</h1>
+        <p>GitHub Actions自動実行レポート</p>
+    </div>
+    
+    <div class="metric-grid">
+        <div class="metric">
+            <div class="metric-value" id="projectCount">-</div>
+            <div class="metric-label">対象プロジェクト</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" id="successRate">-</div>
+            <div class="metric-label">成功率</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" id="avgTime">-</div>
+            <div class="metric-label">平均実行時間(ms/file)</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value" id="target5msRate">-</div>
+            <div class="metric-label">5ms目標達成率</div>
+        </div>
+    </div>
+    
+    <script>
+        // 実際の実装では、結果JSONから動的に値を設定
+        document.getElementById('projectCount').textContent = 'N/A';
+        document.getElementById('successRate').textContent = 'N/A';
+        document.getElementById('avgTime').textContent = 'N/A';
+        document.getElementById('target5msRate').textContent = 'N/A';
+    </script>
+</body>
+</html>
+EOF
+        
+        echo "✅ 統合レポート生成完了"
+        
+    - name: Upload generated reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-reports
+        path: .rimor/reports/
+        retention-days: 90
+
+  # PR コメント投稿
+  comment-on-pr:
+    name: 💬 PR結果コメント
+    runs-on: ubuntu-latest
+    needs: [benchmark-tier1, generate-reports]
+    if: github.event_name == 'pull_request' && needs.benchmark-tier1.outputs.benchmark_success == 'true'
+    
+    permissions:
+      pull-requests: write
+      
+    steps:
+    - name: Download performance summary
+      if: needs.benchmark-tier1.outputs.benchmark_success == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: tier1-benchmark-results
+        path: ./results/
+        
+    - name: PR コメント投稿
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // 結果ファイルから情報抽出
+          let performanceInfo = "パフォーマンス情報の取得中にエラーが発生しました。";
+          
+          try {
+            const resultsDir = './results/reports';
+            if (fs.existsSync(resultsDir)) {
+              const files = fs.readdirSync(resultsDir);
+              const jsonFiles = files.filter(f => f.endsWith('.json'));
+              
+              if (jsonFiles.length > 0) {
+                const latestFile = jsonFiles[jsonFiles.length - 1];
+                const resultData = JSON.parse(fs.readFileSync(`${resultsDir}/${latestFile}`, 'utf8'));
+                
+                const successfulResults = resultData.results ? resultData.results.filter(r => r.success) : [];
+                const totalResults = resultData.results ? resultData.results.length : 0;
+                
+                if (successfulResults.length > 0) {
+                  const avgTime = successfulResults.reduce((sum, r) => sum + r.performance.timePerFile, 0) / successfulResults.length;
+                  const target5msCount = successfulResults.filter(r => r.target5ms && r.target5ms.achieved).length;
+                  const target5msRate = (target5msCount / successfulResults.length * 100).toFixed(1);
+                  const successRate = (successfulResults.length / totalResults * 100).toFixed(1);
+                  
+                  performanceInfo = `
+## 📊 パフォーマンス結果
+
+| 指標 | 値 |
+|------|-----|
+| 平均実行時間 | ${avgTime.toFixed(2)}ms/file |
+| 成功率 | ${successRate}% (${successfulResults.length}/${totalResults}) |
+| 5ms/file目標達成率 | ${target5msRate}% (${target5msCount}/${successfulResults.length}) |
+
+### 🎯 プロジェクト別結果
+
+| プロジェクト | 実行時間 | 5ms目標 |
+|------------|---------|---------|`;
+
+                  successfulResults.forEach(result => {
+                    const targetIcon = result.target5ms && result.target5ms.achieved ? '✅' : '❌';
+                    performanceInfo += `\n| ${result.projectName} | ${result.performance.timePerFile.toFixed(2)}ms | ${targetIcon} |`;
+                  });
+
+                  // ベースライン比較情報
+                  if (resultData.comparison) {
+                    performanceInfo += `\n\n### 📈 ベースライン比較\n\n`;
+                    performanceInfo += `**全体改善率**: ${resultData.comparison.overallImprovement.toFixed(2)}%\n`;
+                  }
+                  
+                  // ベースライン情報
+                  if (resultData.baselineId) {
+                    performanceInfo += `\n**ベースラインID**: \`${resultData.baselineId}\``;
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('結果ファイル解析エラー:', error);
+            performanceInfo = `結果ファイルの解析中にエラーが発生しました: ${error.message}`;
+          }
+          
+          const comment = `
+## 🚀 外部プロジェクトベンチマーク結果
+
+${performanceInfo}
+
+---
+### 📋 実行情報
+- **実行時刻**: ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST
+- **対象ティア**: Tier 1 (TypeScript, Ant Design, VS Code)
+- **ベースライン統合**: ${{ needs.benchmark-tier1.outputs.baseline_id && '✅ 有効' || '➖ 無効' }}
+
+<details>
+<summary>📁 成果物とログ</summary>
+
+- 📊 [ベンチマーク結果アーティファクト](${context.payload.pull_request.html_url}/checks)
+- 🔍 [詳細ログ](${context.payload.pull_request.html_url}/checks)
+
+</details>
+
+> 🤖 このコメントは GitHub Actions により自動生成されました
+> 💡 性能に関する詳細な分析は、生成されたレポートファイルをご確認ください
+          `.trim();
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body: comment
+          });
+
+  # 実行完了サマリー
+  benchmark-summary:
+    name: 📋 実行完了サマリー
+    runs-on: ubuntu-latest
+    needs: [system-check, benchmark-tier1, benchmark-tier2, generate-reports]
+    if: always()
+    
+    steps:
+    - name: 実行サマリー生成
+      run: |
+        echo "## 🚀 外部プロジェクトベンチマーク 実行完了"
+        echo ""
+        echo "### 📊 実行結果サマリー"
+        echo "- **システム確認**: ${{ needs.system-check.result }}"
+        echo "- **Tier 1実行**: ${{ needs.benchmark-tier1.result }}"
+        echo "- **Tier 2実行**: ${{ needs.benchmark-tier2.result || 'スキップ' }}"
+        echo "- **レポート生成**: ${{ needs.generate-reports.result || 'スキップ' }}"
+        echo ""
+        
+        if [[ "${{ needs.benchmark-tier1.outputs.benchmark_success }}" == "true" ]]; then
+          echo "✅ **ベンチマーク成功** - 5ms/file目標達成率の継続的な監視を実施中"
+          echo ""
+          echo "### 🔗 関連リンク"
+          echo "- 📊 ベンチマーク結果: GitHub Actions Artifacts"
+          echo "- 📈 ダッシュボード: 生成されたHTMLレポート"
+          if [[ -n "${{ needs.benchmark-tier1.outputs.baseline_id }}" ]]; then
+            echo "- 📋 ベースライン: \`${{ needs.benchmark-tier1.outputs.baseline_id }}\`"
+          fi
+        else
+          echo "❌ **ベンチマーク失敗** - ログを確認して問題を特定してください"
+        fi
+        
+        echo ""
+        echo "---"
+        echo "*実行時刻: $(date -u +"%Y-%m-%d %H:%M:%S UTC")*"

@@ -16,7 +16,12 @@ export interface TestTemplate {
   /** フレームワーク */
   framework: 'express' | 'react' | 'nestjs' | 'nextjs' | 'fastify';
   /** カテゴリ */
-  category: 'authentication' | 'input-validation' | 'authorization' | 'data-protection' | 'api-security';
+  category:
+    | 'authentication'
+    | 'input-validation'
+    | 'authorization'
+    | 'data-protection'
+    | 'api-security';
   /** セキュリティパターン */
   securityPattern: string;
   /** テストコードテンプレート */
@@ -64,7 +69,7 @@ export class FrameworkTestGenerator {
    */
   async generateAllFrameworkTests(config: GenerationConfig): Promise<Map<string, TestCase[]>> {
     const enableLogs = !process.env.DISABLE_SECURITY_VALIDATION_LOGS;
-    
+
     if (enableLogs) {
       console.log('🏗️  フレームワーク別テストケース生成開始');
       console.log('対象: Express.js, React, NestJS');
@@ -113,13 +118,28 @@ export class FrameworkTestGenerator {
     const templates = this.templates.get('express') || [];
 
     // 認証テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'authentication'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'authentication'),
+        config.testCount
+      )
+    );
 
     // 入力検証テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'input-validation'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'input-validation'),
+        config.testCount
+      )
+    );
 
     // API セキュリティテスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'api-security'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'api-security'),
+        config.testCount
+      )
+    );
 
     return tests;
   }
@@ -132,13 +152,28 @@ export class FrameworkTestGenerator {
     const templates = this.templates.get('react') || [];
 
     // XSS対策テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'input-validation'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'input-validation'),
+        config.testCount
+      )
+    );
 
     // 認証状態テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'authentication'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'authentication'),
+        config.testCount
+      )
+    );
 
     // データ保護テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'data-protection'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'data-protection'),
+        config.testCount
+      )
+    );
 
     return tests;
   }
@@ -151,13 +186,28 @@ export class FrameworkTestGenerator {
     const templates = this.templates.get('nestjs') || [];
 
     // ガード/インターセプターテスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'authorization'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'authorization'),
+        config.testCount
+      )
+    );
 
     // DTO検証テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'input-validation'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'input-validation'),
+        config.testCount
+      )
+    );
 
     // JWT認証テスト
-    tests.push(...this.generateFromTemplate(templates.filter(t => t.category === 'authentication'), config.testCount));
+    tests.push(
+      ...this.generateFromTemplate(
+        templates.filter(t => t.category === 'authentication'),
+        config.testCount
+      )
+    );
 
     return tests;
   }
@@ -165,16 +215,19 @@ export class FrameworkTestGenerator {
   /**
    * テンプレートからテストケース生成
    */
-  private generateFromTemplate(templates: TestTemplate[], testCount: GenerationConfig['testCount']): TestCase[] {
+  private generateFromTemplate(
+    templates: TestTemplate[],
+    testCount: GenerationConfig['testCount']
+  ): TestCase[] {
     const tests: TestCase[] = [];
 
     templates.forEach(template => {
       const count = testCount[template.complexity] || 1;
-      
+
       for (let i = 0; i < count; i++) {
         const testName = `${template.name}_${template.complexity}_${i + 1}`;
         const content = this.generateTestContent(template, i);
-        
+
         tests.push({
           name: testName,
           file: `${testName}.test.ts`,
@@ -182,8 +235,8 @@ export class FrameworkTestGenerator {
           metadata: {
             framework: template.framework,
             language: 'typescript',
-            lastModified: new Date()
-          }
+            lastModified: new Date(),
+          },
         });
       }
     });
@@ -196,12 +249,12 @@ export class FrameworkTestGenerator {
    */
   private generateTestContent(template: TestTemplate, variation: number): string {
     let content = template.template;
-    
+
     // 変数の置換
     content = content.replace(/\{\{TEST_INDEX\}\}/g, variation.toString());
     content = content.replace(/\{\{RANDOM_VALUE\}\}/g, Math.random().toString(36).substring(7));
     content = content.replace(/\{\{TIMESTAMP\}\}/g, Date.now().toString());
-    
+
     return content;
   }
 
@@ -286,7 +339,7 @@ describe('JWT Authentication Security Tests', () => {
     expect(sanitized.userId).not.toContain('<script>');
     expect(sanitized.role).not.toContain('DROP TABLE');
   });
-});`
+});`,
       },
       {
         name: 'express_input_validation_test',
@@ -367,8 +420,8 @@ describe('Input Validation Security Tests', () => {
     expect(response.body.username).not.toContain('DROP TABLE');
     expect(response.body.bio).not.toContain('DELETE FROM');
   });
-});`
-      }
+});`,
+      },
     ]);
 
     // React テンプレート
@@ -460,7 +513,7 @@ describe('XSS Prevention Security Tests', () => {
     // スクリプトが実行されていないことを確認
     expect(document.cookie).not.toContain('stolen{{RANDOM_VALUE}}');
   });
-});`
+});`,
       },
       {
         name: 'react_auth_state_test',
@@ -545,8 +598,8 @@ describe('Authentication State Security Tests', () => {
     expect(screen.getByTestId('login')).toBeInTheDocument();
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
   });
-});`
-      }
+});`,
+      },
     ]);
 
     // NestJS テンプレート
@@ -655,7 +708,7 @@ describe('Guard Security Tests', () => {
     expect(request.body.comment).not.toContain('onerror=');
     expect(request.body.metadata.source).not.toContain('DELETE FROM');
   });
-});`
+});`,
       },
       {
         name: 'nestjs_dto_validation_test',
@@ -764,8 +817,8 @@ describe('DTO Validation Security Tests', () => {
       }
     }
   });
-});`
-      }
+});`,
+      },
     ]);
   }
 
@@ -793,9 +846,9 @@ describe('DTO Validation Security Tests', () => {
         framework,
         totalTests: tests.length,
         categories: this.categorizTests(tests),
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
       };
-      
+
       await fs.writeFile(summaryPath, JSON.stringify(summary, null, 2));
     }
   }
@@ -805,12 +858,12 @@ describe('DTO Validation Security Tests', () => {
    */
   private categorizTests(tests: TestCase[]): Record<string, number> {
     const categories: Record<string, number> = {};
-    
+
     tests.forEach(test => {
       const category = this.extractCategory(test.content);
       categories[category] = (categories[category] || 0) + 1;
     });
-    
+
     return categories;
   }
 
@@ -824,7 +877,11 @@ describe('DTO Validation Security Tests', () => {
     if (content.includes('validation') || content.includes('sanitize') || content.includes('XSS')) {
       return 'input-validation';
     }
-    if (content.includes('Guard') || content.includes('authorization') || content.includes('role')) {
+    if (
+      content.includes('Guard') ||
+      content.includes('authorization') ||
+      content.includes('role')
+    ) {
       return 'authorization';
     }
     if (content.includes('DTO') || content.includes('class-validator')) {
@@ -842,25 +899,25 @@ describe('DTO Validation Security Tests', () => {
       testCount: {
         basic: 3,
         intermediate: 2,
-        advanced: 1
+        advanced: 1,
       },
       frameworkConfig: {
         express: {
           version: '4.18.0',
           dependencies: ['express', 'jsonwebtoken', 'express-validator'],
-          testFramework: 'jest'
+          testFramework: 'jest',
         },
         react: {
           version: '18.2.0',
           dependencies: ['react', '@testing-library/react', '@testing-library/jest-dom'],
-          testFramework: 'jest'
+          testFramework: 'jest',
         },
         nestjs: {
           version: '10.0.0',
           dependencies: ['@nestjs/core', '@nestjs/testing', 'class-validator'],
-          testFramework: 'jest'
-        }
-      }
+          testFramework: 'jest',
+        },
+      },
     };
   }
 }

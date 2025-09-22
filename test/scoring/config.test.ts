@@ -9,7 +9,7 @@ describe('ScoringConfigManager', () => {
 
   beforeEach(() => {
     configManager = new ScoringConfigManager();
-    
+
     // テスト用設定ディレクトリを作成
     if (!fs.existsSync(testConfigDir)) {
       fs.mkdirSync(testConfigDir, { recursive: true });
@@ -26,7 +26,7 @@ describe('ScoringConfigManager', () => {
   describe('loadScoringConfig', () => {
     test('should load default scoring config when no file exists', async () => {
       const config = await configManager.loadScoringConfig('/nonexistent/path');
-      
+
       expect(config.weights).toEqual(DEFAULT_WEIGHTS);
       expect(config.enabled).toBe(true);
       expect(config.gradeThresholds).toBeDefined();
@@ -47,23 +47,23 @@ describe('ScoringConfigManager', () => {
               correctness: 2.0,
               maintainability: 1.0,
               performance: 0.5,
-              security: 1.2
-            }
+              security: 1.2,
+            },
           },
           gradeThresholds: {
             A: 95,
             B: 85,
             C: 75,
             D: 65,
-            F: 0
-          }
-        }
+            F: 0,
+          },
+        },
       };
 
       fs.writeFileSync(configPath, JSON.stringify(rimorConfig, null, 2));
 
       const config = await configManager.loadScoringConfig(testConfigDir);
-      
+
       expect(config.enabled).toBe(true);
       expect(config.weights.plugins['test-plugin']).toBe(2.0);
       expect(config.weights.dimensions.correctness).toBe(2.0);
@@ -77,15 +77,15 @@ describe('ScoringConfigManager', () => {
         scoring: {
           weights: {
             plugins: { 'custom-plugin': 1.8 },
-            dimensions: DEFAULT_WEIGHTS.dimensions
-          }
-        }
+            dimensions: DEFAULT_WEIGHTS.dimensions,
+          },
+        },
       };
 
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
       const result = await configManager.loadScoringConfig(testConfigDir);
-      
+
       expect(result.weights.plugins['custom-plugin']).toBe(1.8);
     });
 
@@ -96,46 +96,46 @@ describe('ScoringConfigManager', () => {
           weights: {
             plugins: {
               'valid-plugin': 1.5,
-              'invalid-plugin': -1.0,  // 無効な負の値
-              'zero-plugin': 0         // 無効なゼロ値
+              'invalid-plugin': -1.0, // 無効な負の値
+              'zero-plugin': 0, // 無効なゼロ値
             },
             dimensions: {
               completeness: 2.0,
-              correctness: -0.5,       // 無効な負の値
+              correctness: -0.5, // 無効な負の値
               maintainability: 1.0,
-              performance: 0,          // 無効なゼロ値
-              security: 1.0
-            }
+              performance: 0, // 無効なゼロ値
+              security: 1.0,
+            },
           },
           gradeThresholds: {
-            A: 110,  // 無効な範囲外値
+            A: 110, // 無効な範囲外値
             B: 80,
             C: 70,
             D: 60,
-            F: -10   // 無効な負の値
-          }
-        }
+            F: -10, // 無効な負の値
+          },
+        },
       };
 
       fs.writeFileSync(configPath, JSON.stringify(invalidConfig, null, 2));
 
       const config = await configManager.loadScoringConfig(testConfigDir);
-      
+
       // 有効な値のみ適用される
       expect(config.weights.plugins['valid-plugin']).toBe(1.5);
       expect(config.weights.dimensions.completeness).toBe(2.0);
       expect(config.weights.dimensions.maintainability).toBe(1.0);
-      
+
       // 無効な値は設定ファイルに含まれる（buildScoringConfigでマージされる）
       expect(config.weights.plugins['invalid-plugin']).toBe(-1.0);
       expect(config.weights.plugins['zero-plugin']).toBe(0);
       // getDefaultWeights()の値が使用される（DEFAULT_WEIGHTSとは異なる）
       expect(config.weights.dimensions.correctness).toBe(-0.5);
       expect(config.weights.dimensions.performance).toBe(0);
-      
+
       // グレード閾値の検証
       expect(config.gradeThresholds.A).toBe(100); // 上限でクランプ
-      expect(config.gradeThresholds.F).toBe(0);   // 下限でクランプ
+      expect(config.gradeThresholds.F).toBe(0); // 下限でクランプ
     });
   });
 
@@ -150,16 +150,16 @@ describe('ScoringConfigManager', () => {
             correctness: 1.9,
             maintainability: 1.1,
             performance: 0.7,
-            security: 1.4
-          }
+            security: 1.4,
+          },
         },
         gradeThresholds: {
           A: 92,
           B: 82,
           C: 72,
           D: 62,
-          F: 0
-        }
+          F: 0,
+        },
       };
 
       await configManager.saveScoringConfig(testConfigDir, scoringConfig);
@@ -176,9 +176,9 @@ describe('ScoringConfigManager', () => {
       const existingConfig = {
         excludePatterns: ['dist/**'],
         plugins: {
-          'existing-plugin': { enabled: true }
+          'existing-plugin': { enabled: true },
         },
-        output: { format: 'json', verbose: true }
+        output: { format: 'json', verbose: true },
       };
 
       fs.writeFileSync(configPath, JSON.stringify(existingConfig, null, 2));
@@ -186,18 +186,18 @@ describe('ScoringConfigManager', () => {
       const newScoringConfig = {
         enabled: true,
         weights: DEFAULT_WEIGHTS,
-        gradeThresholds: { A: 90, B: 80, C: 70, D: 60, F: 0 }
+        gradeThresholds: { A: 90, B: 80, C: 70, D: 60, F: 0 },
       };
 
       await configManager.saveScoringConfig(testConfigDir, newScoringConfig);
 
       const updatedConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      
+
       // 既存設定が保持される
       expect(updatedConfig.excludePatterns).toEqual(existingConfig.excludePatterns);
       expect(updatedConfig.plugins).toEqual(existingConfig.plugins);
       expect(updatedConfig.output).toEqual(existingConfig.output);
-      
+
       // スコアリング設定が追加される
       expect(updatedConfig.scoring).toEqual(newScoringConfig);
     });
@@ -206,20 +206,20 @@ describe('ScoringConfigManager', () => {
   describe('generatePresetConfig', () => {
     test('should generate strict preset configuration', () => {
       const strict = configManager.generatePresetConfig('strict');
-      
+
       // strictプリセットはgetDefaultWeights()を使用（DEFAULT_WEIGHTSとは異なる）
       expect(strict.weights).toEqual({
         dimensions: {
           correctness: 0.25,
           completeness: 0.25,
-          maintainability: 0.20,
+          maintainability: 0.2,
           performance: 0.15,
-          security: 0.15
+          security: 0.15,
         },
         plugins: {
           'test-existence': 1.0,
-          'assertion-exists': 1.0
-        }
+          'assertion-exists': 1.0,
+        },
       });
       expect(strict.gradeThresholds.A).toBe(95); // strictは高い閾値
       expect(strict.gradeThresholds.B).toBe(85);
@@ -229,42 +229,46 @@ describe('ScoringConfigManager', () => {
 
     test('should generate balanced preset configuration', () => {
       const balanced = configManager.generatePresetConfig('balanced');
-      
+
       // balancedプリセットはgetDefaultWeights()を使用
       expect(balanced.weights).toEqual({
         dimensions: {
           correctness: 0.25,
           completeness: 0.25,
-          maintainability: 0.20,
+          maintainability: 0.2,
           performance: 0.15,
-          security: 0.15
+          security: 0.15,
         },
         plugins: {
           'test-existence': 1.0,
-          'assertion-exists': 1.0
-        }
+          'assertion-exists': 1.0,
+        },
       });
       expect(balanced.gradeThresholds).toEqual({
-        A: 90, B: 80, C: 70, D: 60, F: 0
+        A: 90,
+        B: 80,
+        C: 70,
+        D: 60,
+        F: 0,
       });
     });
 
     test('should generate performance preset configuration', () => {
       const performance = configManager.generatePresetConfig('performance');
-      
+
       // performanceプリセットはgetDefaultWeights()を使用
       expect(performance.weights).toEqual({
         dimensions: {
           correctness: 0.25,
           completeness: 0.25,
-          maintainability: 0.20,
+          maintainability: 0.2,
           performance: 0.15,
-          security: 0.15
+          security: 0.15,
         },
         plugins: {
           'test-existence': 1.0,
-          'assertion-exists': 1.0
-        }
+          'assertion-exists': 1.0,
+        },
       });
       expect(performance.gradeThresholds.A).toBe(88);
       expect(performance.gradeThresholds.B).toBe(78);
@@ -274,20 +278,20 @@ describe('ScoringConfigManager', () => {
 
     test('should generate legacy preset configuration', () => {
       const legacy = configManager.generatePresetConfig('legacy');
-      
+
       // legacyプリセットはgetDefaultWeights()を使用
       expect(legacy.weights).toEqual({
         dimensions: {
           correctness: 0.25,
           completeness: 0.25,
-          maintainability: 0.20,
+          maintainability: 0.2,
           performance: 0.15,
-          security: 0.15
+          security: 0.15,
         },
         plugins: {
           'test-existence': 1.0,
-          'assertion-exists': 1.0
-        }
+          'assertion-exists': 1.0,
+        },
       });
       // レガシープロジェクト向けは基準が緩い
       expect(legacy.gradeThresholds.A).toBe(85);
@@ -298,22 +302,26 @@ describe('ScoringConfigManager', () => {
 
     test('should handle unknown preset by returning default', () => {
       const unknown = configManager.generatePresetConfig('unknown' as any);
-      
+
       expect(unknown.weights).toEqual({
         dimensions: {
           correctness: 0.25,
           completeness: 0.25,
-          maintainability: 0.20,
+          maintainability: 0.2,
           performance: 0.15,
-          security: 0.15
+          security: 0.15,
         },
         plugins: {
           'test-existence': 1.0,
-          'assertion-exists': 1.0
-        }
+          'assertion-exists': 1.0,
+        },
       });
       expect(unknown.gradeThresholds).toEqual({
-        A: 90, B: 80, C: 70, D: 60, F: 0
+        A: 90,
+        B: 80,
+        C: 70,
+        D: 60,
+        F: 0,
       });
     });
   });
@@ -329,16 +337,20 @@ describe('ScoringConfigManager', () => {
             correctness: 1.5,
             maintainability: 0.8,
             performance: 0.6,
-            security: 1.2
-          }
+            security: 1.2,
+          },
         },
         gradeThresholds: {
-          A: 90, B: 82, C: 74, D: 66, F: 0  // より均等な間隔
-        }
+          A: 90,
+          B: 82,
+          C: 74,
+          D: 66,
+          F: 0, // より均等な間隔
+        },
       };
 
       const result = configManager.validateScoringConfig(validConfig);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
       // 警告があっても構わない（最適化提案等）
@@ -349,16 +361,16 @@ describe('ScoringConfigManager', () => {
         enabled: true,
         weights: DEFAULT_WEIGHTS,
         gradeThresholds: {
-          A: 85,  // A < B は無効
+          A: 85, // A < B は無効
           B: 90,
           C: 70,
           D: 60,
-          F: 0
-        }
+          F: 0,
+        },
       };
 
       const result = configManager.validateScoringConfig(invalidConfig);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors.some(error => error.includes('グレード閾値の順序'))).toBe(true);
     });
@@ -369,15 +381,15 @@ describe('ScoringConfigManager', () => {
         weights: {
           plugins: {},
           dimensions: {
-            completeness: 1.0
+            completeness: 1.0,
             // 他のディメンションが不足
-          }
-        }
+          },
+        },
         // gradeThresholdsが不足
       } as any;
 
       const result = configManager.validateScoringConfig(incompleteConfig);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -388,24 +400,24 @@ describe('ScoringConfigManager', () => {
         weights: {
           plugins: {},
           dimensions: {
-            completeness: 0.1,  // 非常に低い
-            correctness: 10.0,  // 非常に高い
+            completeness: 0.1, // 非常に低い
+            correctness: 10.0, // 非常に高い
             maintainability: 1.0,
             performance: 1.0,
-            security: 1.0
-          }
+            security: 1.0,
+          },
         },
         gradeThresholds: {
-          A: 95,  // 非常に厳しい
-          B: 94,  // 範囲が狭い
+          A: 95, // 非常に厳しい
+          B: 94, // 範囲が狭い
           C: 70,
           D: 60,
-          F: 0
-        }
+          F: 0,
+        },
       };
 
       const result = configManager.validateScoringConfig(suboptimalConfig);
-      
+
       expect(result.isValid).toBe(true); // 技術的には有効
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(result.suggestions.length).toBeGreaterThan(0);
@@ -416,14 +428,14 @@ describe('ScoringConfigManager', () => {
     test('should migrate from old config format', () => {
       const legacyConfig = {
         plugins: {
-          'test-existence': { 
-            enabled: true, 
-            weight: 2.0 
+          'test-existence': {
+            enabled: true,
+            weight: 2.0,
           },
-          'assertion-quality': { 
-            enabled: true, 
-            weight: 1.5 
-          }
+          'assertion-quality': {
+            enabled: true,
+            weight: 1.5,
+          },
         },
         quality: {
           strictMode: true,
@@ -431,13 +443,13 @@ describe('ScoringConfigManager', () => {
             excellent: 95,
             good: 85,
             acceptable: 75,
-            poor: 65
-          }
-        }
+            poor: 65,
+          },
+        },
       };
 
       const migrated = configManager.migrateFromLegacyConfig(legacyConfig);
-      
+
       expect(migrated.weights.plugins['test-existence']).toBe(2.0);
       expect(migrated.weights.plugins['assertion-quality']).toBe(1.5);
       expect(migrated.gradeThresholds.A).toBe(95);
@@ -449,13 +461,13 @@ describe('ScoringConfigManager', () => {
     test('should handle partial legacy config', () => {
       const partialLegacy = {
         plugins: {
-          'some-plugin': { weight: 1.8 }
-        }
+          'some-plugin': { weight: 1.8 },
+        },
         // quality設定なし
       };
 
       const migrated = configManager.migrateFromLegacyConfig(partialLegacy);
-      
+
       expect(migrated.weights.plugins['some-plugin']).toBe(1.8);
       // デフォルト値が他の部分に適用される
       expect(migrated.gradeThresholds.A).toBe(90);
@@ -466,16 +478,18 @@ describe('ScoringConfigManager', () => {
     test('should work end-to-end with config loading and saving', async () => {
       // 1. プリセット設定を生成
       const strictConfig = configManager.generatePresetConfig('strict');
-      
+
       // 2. 設定を保存
       await configManager.saveScoringConfig(testConfigDir, strictConfig);
-      
+
       // 3. 設定を読み込み
       const loadedConfig = await configManager.loadScoringConfig(testConfigDir);
-      
+
       // 4. 設定が正しく保存・読み込みされることを確認
-      expect(loadedConfig.weights.dimensions.correctness)
-        .toBeCloseTo(strictConfig.weights.dimensions.correctness, 2);
+      expect(loadedConfig.weights.dimensions.correctness).toBeCloseTo(
+        strictConfig.weights.dimensions.correctness,
+        2
+      );
       expect(loadedConfig.gradeThresholds).toEqual(strictConfig.gradeThresholds);
     });
 
@@ -493,7 +507,7 @@ describe('ScoringConfigManager', () => {
 
       // 新しい設定システムで読み込み
       const config = await configManager.loadScoringConfig(testConfigDir);
-      
+
       // デフォルト値で補完されることを確認
       expect(config.weights).toEqual(DEFAULT_WEIGHTS);
       expect(config.enabled).toBe(true);

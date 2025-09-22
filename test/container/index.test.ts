@@ -1,6 +1,5 @@
 import 'reflect-metadata';
-import { Container } from 'inversify';
-import { initializeContainer, TYPES } from '../../src/container';
+import { Container, initializeContainer, TYPES } from '../../src/container';
 import type { IAnalysisEngine } from '../../src/core/interfaces/IAnalysisEngine';
 import type { IPluginManager } from '../../src/core/interfaces/IPluginManager';
 import type { IReporter } from '../../src/core/interfaces/IReporter';
@@ -14,7 +13,7 @@ describe('DIコンテナ設定', () => {
   });
 
   afterEach(() => {
-    container.unbindAll();
+    container.dispose();
   });
 
   it('IAnalysisEngineがバインドされていること', () => {

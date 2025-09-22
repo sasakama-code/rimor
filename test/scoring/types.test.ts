@@ -1,19 +1,19 @@
-import { 
-  DEFAULT_WEIGHTS, 
+import {
+  DEFAULT_WEIGHTS,
   GRADE_THRESHOLDS,
   DimensionType,
   GradeType,
   WeightConfig,
   FileScore,
   DirectoryScore,
-  ProjectScore
+  ProjectScore,
 } from '../../src/scoring/types';
 
 describe('Scoring Types', () => {
   describe('DEFAULT_WEIGHTS', () => {
     test('should have all required dimension weights', () => {
       const dimensions = DEFAULT_WEIGHTS.dimensions;
-      
+
       expect(dimensions.completeness).toBeDefined();
       expect(dimensions.correctness).toBeDefined();
       expect(dimensions.maintainability).toBeDefined();
@@ -23,7 +23,7 @@ describe('Scoring Types', () => {
 
     test('should have positive weight values', () => {
       const dimensions = DEFAULT_WEIGHTS.dimensions;
-      
+
       expect(dimensions.completeness).toBeGreaterThan(0);
       expect(dimensions.correctness).toBeGreaterThan(0);
       expect(dimensions.maintainability).toBeGreaterThan(0);
@@ -33,7 +33,7 @@ describe('Scoring Types', () => {
 
     test('should prioritize correctness over other dimensions', () => {
       const dimensions = DEFAULT_WEIGHTS.dimensions;
-      
+
       expect(dimensions.correctness).toBeGreaterThan(dimensions.completeness);
       expect(dimensions.correctness).toBeGreaterThan(dimensions.maintainability);
       expect(dimensions.correctness).toBeGreaterThan(dimensions.performance);
@@ -41,7 +41,7 @@ describe('Scoring Types', () => {
 
     test('should have security higher priority than performance', () => {
       const dimensions = DEFAULT_WEIGHTS.dimensions;
-      
+
       expect(dimensions.security).toBeGreaterThan(dimensions.performance);
     });
   });
@@ -71,19 +71,19 @@ describe('Scoring Types', () => {
   describe('Type Validation', () => {
     test('DimensionType should include all required dimensions', () => {
       const dimensions: DimensionType[] = [
-        'completeness', 
-        'correctness', 
-        'maintainability', 
-        'performance', 
-        'security'
+        'completeness',
+        'correctness',
+        'maintainability',
+        'performance',
+        'security',
       ];
-      
+
       expect(dimensions).toHaveLength(5);
     });
 
     test('GradeType should include all grade levels', () => {
       const grades: GradeType[] = ['A', 'B', 'C', 'D', 'F'];
-      
+
       expect(grades).toHaveLength(5);
     });
   });
@@ -93,19 +93,19 @@ describe('Scoring Types', () => {
       const config: WeightConfig = {
         plugins: {
           'test-plugin': 1.0,
-          'assertion-plugin': 1.5
+          'assertion-plugin': 1.5,
         },
         dimensions: {
           completeness: 1.0,
           correctness: 2.0,
           maintainability: 0.8,
           performance: 0.5,
-          security: 1.2
+          security: 1.2,
         },
         fileTypes: {
           '*.critical.test.ts': 2.0,
-          '*.integration.test.ts': 1.5
-        }
+          '*.integration.test.ts': 1.5,
+        },
       };
 
       expect(config.plugins).toBeDefined();
@@ -116,7 +116,7 @@ describe('Scoring Types', () => {
     test('should allow optional fileTypes', () => {
       const config: WeightConfig = {
         plugins: {},
-        dimensions: DEFAULT_WEIGHTS.dimensions
+        dimensions: DEFAULT_WEIGHTS.dimensions,
       };
 
       expect(config.fileTypes).toBeUndefined();

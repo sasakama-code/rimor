@@ -1,0 +1,38 @@
+// Mock @testing-library/react module for testing
+module.exports = {
+  render: () => ({
+    container: document.createElement('div'),
+    debug: () => {},
+    rerender: () => {},
+    unmount: () => {},
+    asFragment: () => document.createDocumentFragment(),
+    getByText: () => {},
+    getByRole: () => {},
+    getByTestId: () => {},
+    queryByText: () => {},
+    findByText: () => Promise.resolve({}),
+  }),
+  screen: {
+    getByText: () => {},
+    getByRole: () => {},
+    getByTestId: () => {},
+    queryByText: () => {},
+    findByText: () => Promise.resolve({}),
+    debug: () => {},
+  },
+  fireEvent: {
+    click: () => {},
+    change: () => {},
+    submit: () => {},
+    focus: () => {},
+    blur: () => {},
+    mouseOver: () => {},
+    mouseOut: () => {},
+    keyDown: () => {},
+    keyUp: () => {},
+  },
+  waitFor: () => Promise.resolve(),
+  cleanup: () => {},
+  act: (fn) => fn(),
+  renderHook: () => ({ result: { current: null } }),
+};

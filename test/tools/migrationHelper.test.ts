@@ -36,7 +36,7 @@ export class TestExistencePlugin {
   async analyze(filePath: string) {
     return [{
       type: 'missing-test',
-      severity: 'error',
+      severity: 'high',
       message: 'Test file does not exist'
     }];
   }
@@ -73,24 +73,33 @@ export class ModernPlugin extends BasePlugin {
       const pluginFile2 = getTestPath('plugin2.js');
       const normalFile = getTestPath('helper.ts');
 
-      fs.writeFileSync(pluginFile1, `
+      fs.writeFileSync(
+        pluginFile1,
+        `
 export class Plugin1 {
   name = 'plugin1';
   async analyze() { return []; }
-}`);
+}`
+      );
 
-      fs.writeFileSync(pluginFile2, `
+      fs.writeFileSync(
+        pluginFile2,
+        `
 module.exports = {
   name: 'plugin2',
   analyze: async () => []
-};`);
+};`
+      );
 
-      fs.writeFileSync(normalFile, `
+      fs.writeFileSync(
+        normalFile,
+        `
 export const helper = () => 'helper';
-`);
+`
+      );
 
       const pluginFiles = await migrationHelper.findPluginFiles(tempDir);
-      
+
       expect(pluginFiles).toHaveLength(2);
       expect(pluginFiles.map(f => path.basename(f)).sort()).toEqual(['plugin1.ts', 'plugin2.js']);
     });
@@ -107,7 +116,7 @@ export class TestExistencePlugin {
     if (!fs.existsSync(filePath)) {
       issues.push({
         type: 'missing-test',
-        severity: 'error',
+        severity: 'high',
         message: 'Test file does not exist',
         file: filePath
       });
@@ -117,7 +126,7 @@ export class TestExistencePlugin {
 }`;
 
       const migrationPlan = migrationHelper.generateMigrationPlan(legacyPluginCode);
-      
+
       expect(migrationPlan).toBeDefined();
       expect(migrationPlan.pluginName).toBe('test-existence');
       expect(migrationPlan.migrationSteps).toContain('Convert to ITestQualityPlugin interface');
@@ -128,20 +137,25 @@ export class TestExistencePlugin {
     });
 
     it('should create migration template', () => {
-      const legacyPlugin = {
+      const legacyPlugin: any = {
+        // Use 'any' type to bypass IPlugin requirements for test
         name: 'assertion-checker',
-        analyze: async (filePath: string) => [{
-          type: 'weak-assertion',
-          severity: 'warning' as const,
-          message: 'Weak assertion detected'
-        }]
+        analyze: async (filePath: string) => [
+          {
+            type: 'weak-assertion',
+            severity: 'medium' as const,
+            message: 'Weak assertion detected',
+            filePath: filePath,
+            category: 'test-quality' as const,
+          },
+        ],
       };
 
       const template = migrationHelper.createMigrationTemplate(legacyPlugin);
-      
+
       expect(template).toContain('export class AssertionCheckerPlugin extends BasePlugin');
-      expect(template).toContain('id = \'assertion-checker\'');
-      expect(template).toContain('name = \'Assertion Checker\'');
+      expect(template).toContain("id = 'assertion-checker'");
+      expect(template).toContain("name = 'Assertion Checker'");
       expect(template).toContain('detectPatterns(testFile: TestFile)');
       expect(template).toContain('evaluateQuality(patterns: DetectionResult[])');
       expect(template).toContain('suggestImprovements(evaluation: QualityScore)');
@@ -150,17 +164,14 @@ export class TestExistencePlugin {
     it('should generate migration guide', () => {
       const migrationPlan = {
         pluginName: 'test-plugin',
-        migrationSteps: [
-          'Convert to ITestQualityPlugin interface',
-          'Implement new methods'
-        ],
+        migrationSteps: ['Convert to ITestQualityPlugin interface', 'Implement new methods'],
         estimatedComplexity: 'medium' as const,
         breakingChanges: ['Method signature changes'],
-        compatibilityNotes: ['Use LegacyPluginAdapter for gradual migration']
+        compatibilityNotes: ['Use LegacyPluginAdapter for gradual migration'],
       };
 
       const guide = migrationHelper.generateMigrationGuide(migrationPlan);
-      
+
       expect(guide).toContain('# Migration Guide for test-plugin');
       expect(guide).toContain('## Migration Steps');
       expect(guide).toContain('## Breaking Changes');
@@ -178,14 +189,14 @@ export class SimplePlugin {
   async analyze(filePath: string) {
     return [{
       type: 'test-issue',
-      severity: 'warning',
+      severity: 'medium',
       message: 'Issue found'
     }];
   }
 }`;
 
       const transformedCode = migrationHelper.transformPlugin(legacyCode);
-      
+
       expect(transformedCode).toContain('extends BasePlugin');
       expect(transformedCode).toContain('ITestQualityPlugin');
       expect(transformedCode).toContain('detectPatterns');
@@ -215,7 +226,7 @@ export class LogicPlugin {
 }`;
 
       const transformedCode = migrationHelper.transformPlugin(legacyCode);
-      
+
       expect(transformedCode).toContain('fs.readFileSync');
       expect(transformedCode).toContain('console.log');
       expect(transformedCode).toContain('Console.log found');
@@ -239,7 +250,7 @@ export class ComplexPlugin {
     if (lineCount > this.config.threshold) {
       issues.push({
         type: 'file-too-long',
-        severity: 'warning',
+        severity: 'medium',
         message: \`File has \${lineCount} lines\`,
         file: filePath,
         line: lineCount
@@ -251,7 +262,7 @@ export class ComplexPlugin {
 }`;
 
       const transformedCode = migrationHelper.transformPlugin(complexLegacyCode);
-      
+
       expect(transformedCode).toContain('private config');
       expect(transformedCode).toContain('private helper');
       expect(transformedCode).toContain('this.helper(');
@@ -293,7 +304,7 @@ export class MigratedPlugin extends BasePlugin implements ITestQualityPlugin {
 }`;
 
       const validation = migrationHelper.validateMigratedPlugin(migratedCode);
-      
+
       expect(validation.isValid).toBe(true);
       expect(validation.errors).toHaveLength(0);
       expect(validation.warnings).toBeDefined();
@@ -307,7 +318,7 @@ export class InvalidPlugin {
 }`;
 
       const validation = migrationHelper.validateMigratedPlugin(invalidCode);
-      
+
       expect(validation.isValid).toBe(false);
       expect(validation.errors.length).toBeGreaterThan(0);
       expect(validation.errors.some(e => e.includes('missing required method'))).toBe(true);
@@ -318,8 +329,14 @@ export class InvalidPlugin {
     it('should generate migration report', async () => {
       // テスト用プラグインファイルを作成
       const pluginFiles = [
-        { path: getTestPath('legacy1.ts'), content: 'export class Legacy1 { name = "legacy1"; async analyze() { return []; } }' },
-        { path: getTestPath('legacy2.ts'), content: 'export class Legacy2 { name = "legacy2"; async analyze() { return []; } }' }
+        {
+          path: getTestPath('legacy1.ts'),
+          content: 'export class Legacy1 { name = "legacy1"; async analyze() { return []; } }',
+        },
+        {
+          path: getTestPath('legacy2.ts'),
+          content: 'export class Legacy2 { name = "legacy2"; async analyze() { return []; } }',
+        },
       ];
 
       pluginFiles.forEach(({ path, content }) => {
@@ -327,7 +344,7 @@ export class InvalidPlugin {
       });
 
       const report = await migrationHelper.generateMigrationReport(tempDir);
-      
+
       expect(report).toBeDefined();
       expect(report.totalPlugins).toBeGreaterThanOrEqual(2);
       expect(report.legacyPlugins).toBeGreaterThanOrEqual(0);
@@ -344,17 +361,17 @@ export class InvalidPlugin {
         migrationEstimate: {
           totalEffort: 'medium',
           estimatedHours: 24,
-          complexPlugins: 1
+          complexPlugins: 1,
         },
         pluginDetails: [
           { name: 'plugin1', type: 'legacy' as const, complexity: 'low' },
           { name: 'plugin2', type: 'legacy' as const, complexity: 'high' },
-          { name: 'plugin3', type: 'modern' as const, complexity: 'n/a' }
-        ]
+          { name: 'plugin3', type: 'modern' as const, complexity: 'n/a' },
+        ],
       };
 
       const summary = migrationHelper.createMigrationSummary(mockReport);
-      
+
       expect(summary).toContain('Migration Summary');
       expect(summary).toContain('**Total Plugins**: 5');
       expect(summary).toContain('**Legacy Plugins**: 3');
@@ -366,18 +383,18 @@ export class InvalidPlugin {
     it('should check API compatibility', () => {
       const legacyInterface = {
         name: 'string',
-        analyze: '(filePath: string) => Promise<Issue[]>'
+        analyze: '(filePath: string) => Promise<Issue[]>',
       };
 
       const newInterface = {
         id: 'string',
         name: 'string',
         detectPatterns: '(testFile: TestFile) => Promise<DetectionResult[]>',
-        evaluateQuality: '(patterns: DetectionResult[]) => QualityScore'
+        evaluateQuality: '(patterns: DetectionResult[]) => QualityScore',
       };
 
       const compatibility = migrationHelper.checkCompatibility(legacyInterface, newInterface);
-      
+
       expect(compatibility.isCompatible).toBe(false);
       expect(compatibility.breakingChanges).toContain('Method analyze removed');
       expect(compatibility.newRequirements).toContain('Method detectPatterns required');
@@ -387,11 +404,11 @@ export class InvalidPlugin {
       const breakingChanges = [
         'Method analyze removed',
         'Property id required',
-        'Return type changed'
+        'Return type changed',
       ];
 
       const solutions = migrationHelper.suggestCompatibilitySolutions(breakingChanges);
-      
+
       expect(solutions).toContain('Use LegacyPluginAdapter for gradual migration');
       expect(solutions).toContain('Implement ITestQualityPlugin interface');
       expect(solutions).toContain('Update method signatures to match new interface');

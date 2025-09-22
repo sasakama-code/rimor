@@ -1,10 +1,25 @@
-import { DependencyAnalysis, ProjectDependency, FileDependency, CyclicDependency, DependencyUsage } from './types';
+import {
+  DependencyAnalysis,
+  ProjectDependency,
+  FileDependency,
+  CyclicDependency,
+  DependencyUsage,
+  VersionConstraint,
+} from './types';
+import { PackageJsonConfig } from '../core/types';
+import { PackageLockDependency } from './dependency-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PathSecurity } from '../utils/pathSecurity';
+import { PackageAnalyzer } from './dependency-analysis/package-analyzer';
+import { UsageAnalyzer } from './dependency-analysis/usage-analyzer';
+import { ProjectDependencyAnalyzer } from './dependency-analysis/project-deps';
+import { FileDependencyAnalyzer } from './dependency-analysis/file-deps';
+import { CircularDependencyDetector } from './dependency-analysis/circular-detector';
 
 /**
- * 依存関係分析器
+ * 依存関係分析器（ファサードパターン）
+ * 後方互換性を維持しながら新しい分析クラスに処理を委譲
  * プロジェクトの依存関係を分析し、循環依存、未使用・不足している依存関係を検出
  */
 export class DependencyAnalyzer {
@@ -16,8 +31,23 @@ export class DependencyAnalyzer {
     '.git',
     '.vscode',
     '.idea',
-    'coverage'
+    'coverage',
   ];
+
+  // 新しい分析クラスのインスタンス
+  private packageAnalyzer: PackageAnalyzer;
+  private usageAnalyzer: UsageAnalyzer;
+  private projectDepsAnalyzer: ProjectDependencyAnalyzer;
+  private fileDepsAnalyzer: FileDependencyAnalyzer;
+  private circularDetector: CircularDependencyDetector;
+
+  constructor() {
+    this.packageAnalyzer = new PackageAnalyzer();
+    this.usageAnalyzer = new UsageAnalyzer();
+    this.projectDepsAnalyzer = new ProjectDependencyAnalyzer();
+    this.fileDepsAnalyzer = new FileDependencyAnalyzer();
+    this.circularDetector = new CircularDependencyDetector();
+  }
 
   /**
    * プロジェクトの依存関係を包括的に分析
@@ -28,13 +58,13 @@ export class DependencyAnalyzer {
     }
 
     const packageJsonPath = path.join(projectPath, 'package.json');
-    let packageJson: any = {};
+    let packageJson: Partial<PackageJsonConfig> = {};
 
     // package.jsonの読み込み
     try {
       if (fs.existsSync(packageJsonPath)) {
         const content = fs.readFileSync(packageJsonPath, 'utf-8');
-        packageJson = JSON.parse(content);
+        packageJson = JSON.parse(content) as PackageJsonConfig;
       }
     } catch (error) {
       // package.jsonが不正な場合は空のオブジェクトを使用
@@ -45,7 +75,11 @@ export class DependencyAnalyzer {
     const lockFileInfo = await this.parseLockFiles(projectPath);
 
     // 依存関係情報を抽出
-    const projectDependencies = await this.extractProjectDependencies(packageJson, lockFileInfo, projectPath);
+    const projectDependencies = await this.extractProjectDependencies(
+      packageJson as PackageJsonConfig,
+      lockFileInfo,
+      projectPath
+    );
     const fileDependencies = await this.analyzeFileDependencies(projectPath);
 
     // 循環依存の検出
@@ -62,7 +96,7 @@ export class DependencyAnalyzer {
       unusedDependencies,
       missingDependencies,
       devDependencies: projectDependencies.filter(dep => dep.type === 'development'),
-      peerDependencies: projectDependencies.filter(dep => dep.type === 'peer')
+      peerDependencies: projectDependencies.filter(dep => dep.type === 'peer'),
     };
   }
 
@@ -75,7 +109,7 @@ export class DependencyAnalyzer {
 
     // 依存関係グラフを構築
     const dependencyGraph = new Map<string, Set<string>>();
-    
+
     fileDependencies.forEach(dep => {
       if (!dependencyGraph.has(dep.file)) {
         dependencyGraph.set(dep.file, new Set());
@@ -97,11 +131,11 @@ export class DependencyAnalyzer {
         // 循環を発見
         const cycleStart = path.indexOf(node);
         const cycleFiles = path.slice(cycleStart);
-        
+
         cyclicDeps.push({
           files: [...cycleFiles, node],
           severity: 'warning',
-          suggestion: 'Consider refactoring to break the circular dependency'
+          suggestion: 'Consider refactoring to break the circular dependency',
         });
         return;
       }
@@ -132,34 +166,44 @@ export class DependencyAnalyzer {
 
   /**
    * 未使用の依存関係を検出
+   * PackageAnalyzerに処理を委譲
    */
   async findUnusedDependencies(projectPath: string): Promise<string[]> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.findUnusedDependencies(projectPath);
+  }
+
+  /**
+   * 未使用の依存関係を検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async findUnusedDependenciesLegacy(projectPath: string): Promise<string[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       return [];
     }
 
-    let packageJson: any;
+    let packageJson: PackageJsonConfig;
     try {
       const content = fs.readFileSync(packageJsonPath, 'utf-8');
-      packageJson = JSON.parse(content);
+      packageJson = JSON.parse(content) as PackageJsonConfig;
     } catch {
       return [];
     }
 
     const allDependencies = {
-      ...packageJson.dependencies || {},
-      ...packageJson.devDependencies || {},
-      ...packageJson.peerDependencies || {},
-      ...packageJson.optionalDependencies || {}
+      ...(packageJson.dependencies || {}),
+      ...(packageJson.devDependencies || {}),
+      ...(packageJson.peerDependencies || {}),
+      ...(packageJson.optionalDependencies || {}),
     };
 
     // ファイル内で実際に使用されている依存関係を調査
     const usedDependencies = await this.findUsedDependencies(projectPath);
-    
+
     // 未使用の依存関係を特定
     const unusedDeps: string[] = [];
-    
+
     Object.keys(allDependencies).forEach(dep => {
       if (!usedDependencies.has(dep)) {
         // 特殊ケース: 一部の依存関係は直接importされないが必要
@@ -174,8 +218,18 @@ export class DependencyAnalyzer {
 
   /**
    * 不足している依存関係を検出
+   * PackageAnalyzerに処理を委譲
    */
   async findMissingDependencies(projectPath: string): Promise<string[]> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.findMissingDependencies(projectPath);
+  }
+
+  /**
+   * 不足している依存関係を検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async findMissingDependenciesLegacy(projectPath: string): Promise<string[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     let installedDependencies = new Set<string>();
 
@@ -183,11 +237,17 @@ export class DependencyAnalyzer {
       try {
         const content = fs.readFileSync(packageJsonPath, 'utf-8');
         const packageJson = JSON.parse(content);
-        
+
         Object.keys(packageJson.dependencies || {}).forEach(dep => installedDependencies.add(dep));
-        Object.keys(packageJson.devDependencies || {}).forEach(dep => installedDependencies.add(dep));
-        Object.keys(packageJson.peerDependencies || {}).forEach(dep => installedDependencies.add(dep));
-        Object.keys(packageJson.optionalDependencies || {}).forEach(dep => installedDependencies.add(dep));
+        Object.keys(packageJson.devDependencies || {}).forEach(dep =>
+          installedDependencies.add(dep)
+        );
+        Object.keys(packageJson.peerDependencies || {}).forEach(dep =>
+          installedDependencies.add(dep)
+        );
+        Object.keys(packageJson.optionalDependencies || {}).forEach(dep =>
+          installedDependencies.add(dep)
+        );
       } catch {
         // パッケージファイルの読み込みに失敗した場合
       }
@@ -195,9 +255,9 @@ export class DependencyAnalyzer {
 
     // 実際にimportされている依存関係を調査
     const usedDependencies = await this.findUsedDependencies(projectPath);
-    
+
     const missingDeps: string[] = [];
-    
+
     usedDependencies.forEach(dep => {
       if (!installedDependencies.has(dep) && !this.isBuiltIn(dep) && !this.isRelativeImport(dep)) {
         missingDeps.push(dep);
@@ -209,37 +269,78 @@ export class DependencyAnalyzer {
 
   /**
    * バージョン制約を分析
+   * PackageAnalyzerに処理を委譲
    */
-  async analyzeVersionConstraints(projectPath: string): Promise<any[]> {
+  async analyzeVersionConstraints(projectPath: string): Promise<VersionConstraint[]> {
+    // 新しい実装に委譲
+    const results = await this.packageAnalyzer.analyzeVersionConstraints(projectPath);
+    // 型を変換
+    return results.map(r => ({
+      package: r.package,
+      declaredVersion: r.constraint,
+      constraint: this.mapConstraintType(r.type),
+      hasVulnerability: r.isRisky,
+      suggestion: r.isRisky ? 'より安定したバージョン制約を検討してください' : undefined,
+    }));
+  }
+
+  /**
+   * 制約タイプをマッピング
+   * @private
+   */
+  private mapConstraintType(type: string): 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard' {
+    switch (type) {
+      case 'exact':
+        return 'exact';
+      case 'caret':
+        return 'caret';
+      case 'tilde':
+        return 'tilde';
+      case 'range':
+        return 'range';
+      case 'any':
+        return 'wildcard';
+      default:
+        return 'range';
+    }
+  }
+
+  /**
+   * バージョン制約を分析（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async analyzeVersionConstraintsLegacy(projectPath: string): Promise<VersionConstraint[]> {
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       return [];
     }
 
-    let packageJson: any;
+    let packageJson: PackageJsonConfig;
     try {
       const content = fs.readFileSync(packageJsonPath, 'utf-8');
-      packageJson = JSON.parse(content);
+      packageJson = JSON.parse(content) as PackageJsonConfig;
     } catch {
       return [];
     }
 
     const lockFileInfo = await this.parseLockFiles(projectPath);
-    const constraints: any[] = [];
+    const constraints: VersionConstraint[] = [];
 
     const allDependencies = {
-      ...packageJson.dependencies || {},
-      ...packageJson.devDependencies || {}
+      ...(packageJson.dependencies || {}),
+      ...(packageJson.devDependencies || {}),
     };
 
     Object.entries(allDependencies).forEach(([name, declared]) => {
       const installed = lockFileInfo.get(name);
-      
+
       constraints.push({
-        name,
-        declared: declared as string,
-        installed: installed || 'not installed',
-        satisfies: installed ? this.checkVersionSatisfies(declared as string, installed) : false
+        package: name,
+        declaredVersion: declared as string,
+        installedVersion: installed,
+        constraint: this.getVersionConstraintType(declared as string),
+        hasVulnerability: false,
+        suggestion: installed ? undefined : 'パッケージがインストールされていません',
       });
     });
 
@@ -248,31 +349,41 @@ export class DependencyAnalyzer {
 
   /**
    * パッケージマネージャーを検出
+   * PackageAnalyzerに処理を委譲
    */
   async detectPackageManager(projectPath: string): Promise<string> {
+    // 新しい実装に委譲
+    return this.packageAnalyzer.detectPackageManager(projectPath);
+  }
+
+  /**
+   * パッケージマネージャーを検出（旧実装）
+   * @deprecated 新しいPackageAnalyzerを使用してください
+   */
+  private async detectPackageManagerLegacy(projectPath: string): Promise<string> {
     // yarn.lockがあればyarn
     if (fs.existsSync(path.join(projectPath, 'yarn.lock'))) {
       return 'yarn';
     }
-    
+
     // pnpm-lock.yamlがあればpnpm
     if (fs.existsSync(path.join(projectPath, 'pnpm-lock.yaml'))) {
       return 'pnpm';
     }
-    
+
     // package-lock.jsonがあればnpm
     if (fs.existsSync(path.join(projectPath, 'package-lock.json'))) {
       return 'npm';
     }
-    
+
     return 'unknown';
   }
 
   // Private helper methods
 
   private async extractProjectDependencies(
-    packageJson: any, 
-    lockFileInfo: Map<string, string>, 
+    packageJson: PackageJsonConfig,
+    lockFileInfo: Map<string, string>,
     projectPath: string
   ): Promise<ProjectDependency[]> {
     const dependencies: ProjectDependency[] = [];
@@ -285,7 +396,7 @@ export class DependencyAnalyzer {
         version: version as string,
         type: 'production',
         installedVersion: lockFileInfo.get(name),
-        usage: usageMap.get(name) || []
+        usage: usageMap.get(name) || [],
       });
     });
 
@@ -296,7 +407,7 @@ export class DependencyAnalyzer {
         version: version as string,
         type: 'development',
         installedVersion: lockFileInfo.get(name),
-        usage: usageMap.get(name) || []
+        usage: usageMap.get(name) || [],
       });
     });
 
@@ -307,7 +418,7 @@ export class DependencyAnalyzer {
         version: version as string,
         type: 'peer',
         installedVersion: lockFileInfo.get(name),
-        usage: usageMap.get(name) || []
+        usage: usageMap.get(name) || [],
       });
     });
 
@@ -318,7 +429,7 @@ export class DependencyAnalyzer {
         version: version as string,
         type: 'optional',
         installedVersion: lockFileInfo.get(name),
-        usage: usageMap.get(name) || []
+        usage: usageMap.get(name) || [],
       });
     });
 
@@ -328,13 +439,13 @@ export class DependencyAnalyzer {
   private async analyzeFileDependencies(projectPath: string): Promise<FileDependency[]> {
     const fileDependencies: FileDependency[] = [];
     const files = await this.findSourceFiles(projectPath);
-    
+
     for (const file of files) {
       try {
         const content = fs.readFileSync(file, 'utf-8');
         const imports = this.extractImports(content);
         const exports = this.extractExports(content);
-        
+
         // 相対パスのimportを解決
         const resolvedDependsOn = imports
           .filter(imp => this.isRelativeImport(imp))
@@ -346,7 +457,7 @@ export class DependencyAnalyzer {
           imports,
           exports,
           dependsOn: resolvedDependsOn,
-          dependedBy: [] // これは後で計算
+          dependedBy: [], // これは後で計算
         });
       } catch (error) {
         // ファイル読み込みエラーは無視
@@ -356,8 +467,8 @@ export class DependencyAnalyzer {
     // dependedByを計算
     fileDependencies.forEach(fileDep => {
       fileDep.dependsOn.forEach(dependency => {
-        const dependedFile = fileDependencies.find(fd => 
-          path.resolve(projectPath, fd.file) === path.resolve(projectPath, dependency)
+        const dependedFile = fileDependencies.find(
+          fd => path.resolve(projectPath, fd.file) === path.resolve(projectPath, dependency)
         );
         if (dependedFile) {
           dependedFile.dependedBy.push(fileDep.file);
@@ -393,7 +504,8 @@ export class DependencyAnalyzer {
         const packageLock = JSON.parse(content);
         const packages = this.parsePackageLock(packageLock);
         packages.forEach((version, name) => {
-          if (!lockInfo.has(name)) { // yarn.lockを優先
+          if (!lockInfo.has(name)) {
+            // yarn.lockを優先
             lockInfo.set(name, version);
           }
         });
@@ -409,10 +521,10 @@ export class DependencyAnalyzer {
     const packages = new Map<string, string>();
     const lines = content.split('\n');
     let currentPackage: string | null = null;
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       // パッケージ名の行をチェック
       if (trimmed.includes('@') && trimmed.endsWith(':')) {
         const match = trimmed.match(/^([^@]+)@/);
@@ -420,7 +532,7 @@ export class DependencyAnalyzer {
           currentPackage = match[1];
         }
       }
-      
+
       // バージョン情報の行をチェック
       if (currentPackage && trimmed.startsWith('version ')) {
         const version = trimmed.replace('version ', '').replace(/"/g, '');
@@ -428,36 +540,37 @@ export class DependencyAnalyzer {
         currentPackage = null;
       }
     }
-    
+
     return packages;
   }
 
-  private parsePackageLock(packageLock: any): Map<string, string> {
+  private parsePackageLock(packageLock: Record<string, unknown>): Map<string, string> {
     const packages = new Map<string, string>();
-    
+
     if (packageLock.packages) {
-      Object.entries(packageLock.packages).forEach(([path, info]: [string, any]) => {
+      Object.entries(packageLock.packages).forEach(([path, info]: [string, unknown]) => {
         if (path && path.startsWith('node_modules/')) {
           const name = path.replace('node_modules/', '');
-          if (info.version) {
-            packages.set(name, info.version);
+          const packageInfo = info as PackageLockDependency;
+          if (packageInfo?.version) {
+            packages.set(name, packageInfo.version);
           }
         }
       });
     }
-    
+
     return packages;
   }
 
   private async findSourceFiles(projectPath: string): Promise<string[]> {
     const files: string[] = [];
-    
+
     const walkDir = (dir: string) => {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory()) {
           if (!this.IGNORE_PATTERNS.some(pattern => entry.name.includes(pattern))) {
             walkDir(fullPath);
@@ -470,7 +583,7 @@ export class DependencyAnalyzer {
         }
       }
     };
-    
+
     walkDir(projectPath);
     return files;
   }
@@ -481,7 +594,7 @@ export class DependencyAnalyzer {
       /import\s+.*?\s+from\s+['"]([^'"]+)['"]/g,
       /import\s+['"]([^'"]+)['"]/g,
       /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-      /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+      /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
     ];
 
     patterns.forEach(pattern => {
@@ -499,7 +612,7 @@ export class DependencyAnalyzer {
     const patterns = [
       /export\s+.*?\s+from\s+['"]([^'"]+)['"]/g,
       /export\s+\{[^}]*\}\s+from\s+['"]([^'"]+)['"]/g,
-      /export\s*\*\s+from\s+['"]([^'"]+)['"]/g
+      /export\s*\*\s+from\s+['"]([^'"]+)['"]/g,
     ];
 
     patterns.forEach(pattern => {
@@ -515,16 +628,16 @@ export class DependencyAnalyzer {
   private async findUsedDependencies(projectPath: string): Promise<Set<string>> {
     const usedDeps = new Set<string>();
     const files = await this.findSourceFiles(projectPath);
-    
+
     for (const file of files) {
       try {
         const content = fs.readFileSync(file, 'utf-8');
         const imports = this.extractImports(content);
-        
+
         imports.forEach(imp => {
           if (!this.isRelativeImport(imp)) {
             // スコープパッケージの場合は適切に分割
-            const packageName = imp.startsWith('@') 
+            const packageName = imp.startsWith('@')
               ? imp.split('/').slice(0, 2).join('/')
               : imp.split('/')[0];
             usedDeps.add(packageName);
@@ -534,35 +647,37 @@ export class DependencyAnalyzer {
         // ファイル読み込みエラーは無視
       }
     }
-    
+
     return usedDeps;
   }
 
-  private async analyzeDependencyUsage(projectPath: string): Promise<Map<string, DependencyUsage[]>> {
+  private async analyzeDependencyUsage(
+    projectPath: string
+  ): Promise<Map<string, DependencyUsage[]>> {
     const usageMap = new Map<string, DependencyUsage[]>();
     const files = await this.findSourceFiles(projectPath);
-    
+
     for (const file of files) {
       try {
         const content = fs.readFileSync(file, 'utf-8');
         const lines = content.split('\n');
-        
+
         lines.forEach((line, index) => {
           const imports = this.extractImports(line);
           imports.forEach(imp => {
             if (!this.isRelativeImport(imp)) {
-              const packageName = imp.startsWith('@') 
+              const packageName = imp.startsWith('@')
                 ? imp.split('/').slice(0, 2).join('/')
                 : imp.split('/')[0];
-              
+
               if (!usageMap.has(packageName)) {
                 usageMap.set(packageName, []);
               }
-              
+
               usageMap.get(packageName)!.push({
                 file: path.relative(projectPath, file),
                 imports: [imp],
-                line: index + 1
+                line: index + 1,
               });
             }
           });
@@ -571,7 +686,7 @@ export class DependencyAnalyzer {
         // ファイル読み込みエラーは無視
       }
     }
-    
+
     return usageMap;
   }
 
@@ -581,45 +696,82 @@ export class DependencyAnalyzer {
 
   private isBuiltIn(moduleName: string): boolean {
     const builtInModules = [
-      'fs', 'path', 'os', 'crypto', 'http', 'https', 'url', 'util',
-      'stream', 'events', 'buffer', 'child_process', 'cluster',
-      'dgram', 'dns', 'net', 'readline', 'repl', 'tls', 'tty',
-      'v8', 'vm', 'worker_threads', 'zlib'
+      'fs',
+      'path',
+      'os',
+      'crypto',
+      'http',
+      'https',
+      'url',
+      'util',
+      'stream',
+      'events',
+      'buffer',
+      'child_process',
+      'cluster',
+      'dgram',
+      'dns',
+      'net',
+      'readline',
+      'repl',
+      'tls',
+      'tty',
+      'v8',
+      'vm',
+      'worker_threads',
+      'zlib',
     ];
     return builtInModules.includes(moduleName);
   }
 
-  private isImplicitlyUsed(packageName: string, packageJson: any): boolean {
+  /**
+   * バージョン制約のタイプを判定
+   */
+  private getVersionConstraintType(
+    version: string
+  ): 'exact' | 'range' | 'caret' | 'tilde' | 'wildcard' {
+    if (version.startsWith('^')) return 'caret';
+    if (version.startsWith('~')) return 'tilde';
+    if (version.includes('*') || version.includes('x')) return 'wildcard';
+    if (version.includes('>') || version.includes('<') || version.includes('||')) return 'range';
+    return 'exact';
+  }
+
+  private isImplicitlyUsed(packageName: string, packageJson: PackageJsonConfig): boolean {
     // TypeScriptの型定義パッケージ
     if (packageName.startsWith('@types/')) {
       return true;
     }
-    
+
     // テストフレームワーク
     const testFrameworks = ['jest', 'mocha', 'jasmine', 'karma'];
     if (testFrameworks.includes(packageName)) {
       return true;
     }
-    
+
     // ビルドツール
     const buildTools = ['webpack', 'rollup', 'parcel', 'vite', 'typescript'];
     if (buildTools.includes(packageName)) {
       return true;
     }
-    
+
     return false;
   }
 
-  private resolveRelativePath(fromFile: string, importPath: string, projectPath: string): string | null {
+  private resolveRelativePath(
+    fromFile: string,
+    importPath: string,
+    projectPath: string
+  ): string | null {
     try {
       const fromDir = path.dirname(fromFile);
       let resolvedPath = path.resolve(fromDir, importPath);
-      
+
       // セキュリティ: パス検証
       if (!PathSecurity.validateProjectPath(resolvedPath, projectPath)) {
         return null;
       }
-      
+
       // 拡張子がない場合は補完を試行
       if (!path.extname(resolvedPath)) {
         for (const ext of this.SUPPORTED_EXTENSIONS) {
@@ -632,7 +784,7 @@ export class DependencyAnalyzer {
             break;
           }
         }
-        
+
         // index.* ファイルも試行
         const indexPath = path.join(resolvedPath, 'index');
         for (const ext of this.SUPPORTED_EXTENSIONS) {
@@ -646,14 +798,14 @@ export class DependencyAnalyzer {
           }
         }
       }
-      
+
       if (fs.existsSync(resolvedPath)) {
         return path.relative(projectPath, resolvedPath);
       }
     } catch (error) {
       // パス解決エラーは無視
     }
-    
+
     return null;
   }
 
@@ -661,12 +813,12 @@ export class DependencyAnalyzer {
     // 簡単なバージョンチェック（実際の実装ではsemverライブラリを使用するべき）
     const cleanDeclared = declared.replace(/[\^~]/, '');
     const cleanInstalled = installed;
-    
+
     // 基本的なバージョン比較
     try {
       const declaredParts = cleanDeclared.split('.').map(Number);
       const installedParts = cleanInstalled.split('.').map(Number);
-      
+
       // メジャーバージョンが一致しているかチェック
       return declaredParts[0] === installedParts[0];
     } catch {

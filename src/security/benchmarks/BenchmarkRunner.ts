@@ -118,7 +118,7 @@ export class BenchmarkRunner {
       outputDir: './benchmark-results',
       isCiEnvironment: process.env.CI === 'true',
       verbose: false,
-      ...config
+      ...config,
     };
 
     this.benchmark = new PerformanceBenchmark();
@@ -129,8 +129,8 @@ export class BenchmarkRunner {
    * 完全なベンチマークスイートの実行
    */
   async runFullBenchmarkSuite(): Promise<RegressionDetectionResult> {
-    console.log('🚀 完全ベンチマークスイート実行開始');
-    console.log(`🔧 設定: ${this.config.testSizes.join(', ')} (${this.config.iterations}回平均)`);
+    console.log('[BenchmarkRunner] 完全ベンチマークスイート実行開始');
+    console.log(`[Config] 設定: ${this.config.testSizes.join(', ')} (${this.config.iterations}回平均)`);
     console.log('');
 
     // 出力ディレクトリの作成
@@ -138,12 +138,12 @@ export class BenchmarkRunner {
 
     // 複数回実行して平均を取る
     const allResults: BenchmarkComparison[][] = [];
-    
+
     for (let i = 0; i < this.config.iterations; i++) {
       console.log(`📊 実行 ${i + 1}/${this.config.iterations}:`);
       const results = await this.benchmark.runComprehensiveBenchmark();
       allResults.push(results);
-      
+
       if (i < this.config.iterations - 1) {
         console.log('⏱️  次の実行まで少し待機中...');
         await this.delay(2000); // 2秒待機
@@ -178,7 +178,7 @@ export class BenchmarkRunner {
       ...this.config,
       testSizes: ['small'],
       iterations: 1,
-      verbose: false
+      verbose: false,
     };
 
     const originalConfig = this.config;
@@ -205,18 +205,19 @@ export class BenchmarkRunner {
 
     // 中規模テストデータで検証
     const testCases = this.generateTestCases(100, 'medium');
-    
+
     // 5ms/file目標の検証
     const target5msAchieved = await this.benchmark.verify5msPerFileTarget(testCases);
-    
+
     // 3-20x速度向上の検証
     const speedupRatio = await this.benchmark.verifySpeedupTarget(testCases);
-    const speedupTargetAchieved = speedupRatio >= this.config.speedupTargetRange.min && 
-                                  speedupRatio <= this.config.speedupTargetRange.max;
+    const speedupTargetAchieved =
+      speedupRatio >= this.config.speedupTargetRange.min &&
+      speedupRatio <= this.config.speedupTargetRange.max;
 
     const details = [
       `5ms/file目標: ${target5msAchieved ? '✅ 達成' : '❌ 未達成'}`,
-      `速度向上目標: ${speedupTargetAchieved ? '✅ 達成' : '❌ 未達成'} (${speedupRatio.toFixed(1)}x)`
+      `速度向上目標: ${speedupTargetAchieved ? '✅ 達成' : '❌ 未達成'} (${speedupRatio.toFixed(1)}x)`,
     ];
 
     console.log('🎯 性能目標検証結果:');
@@ -225,7 +226,7 @@ export class BenchmarkRunner {
     return {
       target5ms: target5msAchieved,
       speedupTarget: speedupTargetAchieved,
-      details
+      details,
     };
   }
 
@@ -239,9 +240,7 @@ export class BenchmarkRunner {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const recentHistory = history.filter(entry => 
-      new Date(entry.timestamp) >= cutoffDate
-    );
+    const recentHistory = history.filter(entry => new Date(entry.timestamp) >= cutoffDate);
 
     if (recentHistory.length < 2) {
       console.log('⚠️  十分な履歴データがありません');
@@ -251,7 +250,7 @@ export class BenchmarkRunner {
         scoreVariation: 0,
         improvements: [],
         degradations: [],
-        recommendations: ['より多くのベンチマークデータを蓄積してください']
+        recommendations: ['より多くのベンチマークデータを蓄積してください'],
       };
     }
 
@@ -270,7 +269,7 @@ export class BenchmarkRunner {
       scoreVariation,
       improvements: this.extractTrendImprovements(recentHistory),
       degradations: this.extractTrendDegradations(recentHistory),
-      recommendations: this.generateTrendRecommendations(trendDirection, scoreVariation)
+      recommendations: this.generateTrendRecommendations(trendDirection, scoreVariation),
     };
 
     console.log(`📈 トレンド分析結果: ${trendDirection} (平均スコア: ${averageScore.toFixed(1)})`);
@@ -303,8 +302,10 @@ export class BenchmarkRunner {
     const avgBaseline = this.averageBenchmarkResults(comparisons.map(c => c.baseline));
     const avgOptimized = this.averageBenchmarkResults(comparisons.map(c => c.optimized));
 
-    const avgSpeedupRatio = comparisons.reduce((sum, c) => sum + c.speedupRatio, 0) / comparisons.length;
-    const avgMemoryEfficiencyRatio = comparisons.reduce((sum, c) => sum + c.memoryEfficiencyRatio, 0) / comparisons.length;
+    const avgSpeedupRatio =
+      comparisons.reduce((sum, c) => sum + c.speedupRatio, 0) / comparisons.length;
+    const avgMemoryEfficiencyRatio =
+      comparisons.reduce((sum, c) => sum + c.memoryEfficiencyRatio, 0) / comparisons.length;
 
     return {
       baseline: avgBaseline,
@@ -312,10 +313,11 @@ export class BenchmarkRunner {
       speedupRatio: avgSpeedupRatio,
       memoryEfficiencyRatio: avgMemoryEfficiencyRatio,
       target5msAchieved: avgOptimized.timePerFile <= 5.0,
-      speedupTargetAchieved: avgSpeedupRatio >= this.config.speedupTargetRange.min && 
-                            avgSpeedupRatio <= this.config.speedupTargetRange.max,
+      speedupTargetAchieved:
+        avgSpeedupRatio >= this.config.speedupTargetRange.min &&
+        avgSpeedupRatio <= this.config.speedupTargetRange.max,
       improvements: comparisons[0].improvements, // 最初のものを使用
-      regressions: comparisons[0].regressions
+      regressions: comparisons[0].regressions,
     };
   }
 
@@ -324,7 +326,7 @@ export class BenchmarkRunner {
    */
   private averageBenchmarkResults(results: BenchmarkResult[]): BenchmarkResult {
     const count = results.length;
-    
+
     return {
       testName: results[0].testName,
       fileCount: results[0].fileCount,
@@ -338,7 +340,7 @@ export class BenchmarkRunner {
       successRate: results.reduce((sum, r) => sum + r.successRate, 0) / count,
       errorCount: Math.round(results.reduce((sum, r) => sum + r.errorCount, 0) / count),
       parallelism: results[0].parallelism,
-      cacheHitRate: results.reduce((sum, r) => sum + r.cacheHitRate, 0) / count
+      cacheHitRate: results.reduce((sum, r) => sum + r.cacheHitRate, 0) / count,
     };
   }
 
@@ -349,7 +351,7 @@ export class BenchmarkRunner {
     currentResults: BenchmarkComparison[]
   ): Promise<RegressionDetectionResult> {
     const history = await this.loadBenchmarkHistory();
-    
+
     if (history.length === 0) {
       console.log('📝 初回ベンチマーク実行 - 履歴データなし');
       return {
@@ -357,7 +359,7 @@ export class BenchmarkRunner {
         regressions: [],
         improvements: [],
         overallAssessment: 'good',
-        recommendedActions: ['ベンチマーク履歴の蓄積を開始しました']
+        recommendedActions: ['ベンチマーク履歴の蓄積を開始しました'],
       };
     }
 
@@ -377,7 +379,7 @@ export class BenchmarkRunner {
         current.optimized.totalTime,
         'lower_is_better'
       );
-      
+
       if (timeRegression.type === 'regression') {
         regressions.push(timeRegression as PerformanceRegression);
       } else if (timeRegression.type === 'improvement') {
@@ -391,7 +393,7 @@ export class BenchmarkRunner {
         current.optimized.memoryUsage,
         'lower_is_better'
       );
-      
+
       if (memoryRegression.type === 'regression') {
         regressions.push(memoryRegression as PerformanceRegression);
       } else if (memoryRegression.type === 'improvement') {
@@ -405,7 +407,7 @@ export class BenchmarkRunner {
         current.optimized.successRate,
         'higher_is_better'
       );
-      
+
       if (successRegression.type === 'regression') {
         regressions.push(successRegression as PerformanceRegression);
       } else if (successRegression.type === 'improvement') {
@@ -425,7 +427,7 @@ export class BenchmarkRunner {
       regressions,
       improvements,
       overallAssessment,
-      recommendedActions
+      recommendedActions,
     };
   }
 
@@ -437,16 +439,20 @@ export class BenchmarkRunner {
     previousValue: number,
     currentValue: number,
     comparison: 'higher_is_better' | 'lower_is_better'
-  ): { type: 'regression' | 'improvement' | 'stable' } & (PerformanceRegression | PerformanceImprovement) {
+  ): { type: 'regression' | 'improvement' | 'stable' } & (
+    | PerformanceRegression
+    | PerformanceImprovement
+  ) {
     const changePercent = Math.abs((currentValue - previousValue) / previousValue) * 100;
-    
+
     if (changePercent < 5) {
       return { type: 'stable' } as any;
     }
 
-    const isWorse = comparison === 'lower_is_better' ? 
-      currentValue > previousValue : 
-      currentValue < previousValue;
+    const isWorse =
+      comparison === 'lower_is_better'
+        ? currentValue > previousValue
+        : currentValue < previousValue;
 
     if (isWorse && changePercent >= this.config.regressionThreshold) {
       return {
@@ -456,7 +462,7 @@ export class BenchmarkRunner {
         currentValue,
         degradationPercent: changePercent,
         severity: changePercent >= 50 ? 'critical' : changePercent >= 30 ? 'high' : 'medium',
-        description: `${metricName}が${changePercent.toFixed(1)}%劣化しました`
+        description: `${metricName}が${changePercent.toFixed(1)}%劣化しました`,
       };
     } else if (!isWorse && changePercent >= 10) {
       return {
@@ -465,7 +471,7 @@ export class BenchmarkRunner {
         previousValue,
         currentValue,
         improvementPercent: changePercent,
-        description: `${metricName}が${changePercent.toFixed(1)}%改善されました`
+        description: `${metricName}が${changePercent.toFixed(1)}%改善されました`,
       };
     }
 
@@ -506,7 +512,7 @@ export class BenchmarkRunner {
       }
     } else {
       actions.push(`${regressions.length}件の性能劣化が検出されました`);
-      
+
       const criticalCount = regressions.filter(r => r.severity === 'critical').length;
       if (criticalCount > 0) {
         actions.push(`緊急対応が必要な劣化が${criticalCount}件あります`);
@@ -529,14 +535,14 @@ export class BenchmarkRunner {
     // 履歴データの更新
     const history = await this.loadBenchmarkHistory();
     const performanceScore = this.calculatePerformanceScore(results);
-    
+
     const newEntry: BenchmarkHistory = {
       timestamp: new Date().toISOString(),
       commitHash: process.env.GITHUB_SHA || process.env.CI_COMMIT_SHA,
       branch: process.env.GITHUB_REF_NAME || process.env.CI_COMMIT_REF_NAME,
       results,
       systemHash: this.generateSystemHash(),
-      performanceScore
+      performanceScore,
     };
 
     history.push(newEntry);
@@ -555,7 +561,7 @@ export class BenchmarkRunner {
       config: this.config,
       results,
       regressionResult,
-      performanceScore
+      performanceScore,
     };
 
     await fs.writeFile(reportPath, JSON.stringify(detailedReport, null, 2));
@@ -617,17 +623,21 @@ export class BenchmarkRunner {
 
     results.forEach(result => {
       // 5ms/file目標の達成度
-      const timeScore = result.target5msAchieved ? 30 : Math.max(0, 30 - (result.optimized.timePerFile - 5) * 5);
-      
+      const timeScore = result.target5msAchieved
+        ? 30
+        : Math.max(0, 30 - (result.optimized.timePerFile - 5) * 5);
+
       // 速度向上の達成度
-      const speedupScore = result.speedupTargetAchieved ? 25 : Math.min(25, result.speedupRatio * 5);
-      
+      const speedupScore = result.speedupTargetAchieved
+        ? 25
+        : Math.min(25, result.speedupRatio * 5);
+
       // 成功率
       const successScore = result.optimized.successRate * 0.2;
-      
+
       // メモリ効率
       const memoryScore = Math.max(0, 15 - result.optimized.memoryUsage * 0.5);
-      
+
       totalScore += timeScore + speedupScore + successScore + memoryScore;
       weights += 90; // 最大スコア
     });
@@ -643,10 +653,14 @@ export class BenchmarkRunner {
       platform: os.platform(),
       arch: os.arch(),
       cpus: os.cpus().length,
-      nodeVersion: process.version
+      nodeVersion: process.version,
     };
-    
-    return crypto.createHash('md5').update(JSON.stringify(systemInfo)).digest('hex').substring(0, 8);
+
+    return crypto
+      .createHash('md5')
+      .update(JSON.stringify(systemInfo))
+      .digest('hex')
+      .substring(0, 8);
   }
 
   /**
@@ -663,8 +677,8 @@ export class BenchmarkRunner {
         metadata: {
           framework: 'jest',
           language: 'typescript',
-          lastModified: new Date()
-        }
+          lastModified: new Date(),
+        },
       });
     }
 
@@ -708,7 +722,9 @@ ${methods.join('')}
   /**
    * トレンドの判定
    */
-  private determineTrend(scores: number[]): 'improving' | 'stable' | 'degrading' | 'insufficient-data' {
+  private determineTrend(
+    scores: number[]
+  ): 'improving' | 'stable' | 'degrading' | 'insufficient-data' {
     if (scores.length < 3) return 'insufficient-data';
 
     const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
@@ -742,10 +758,7 @@ ${methods.join('')}
   /**
    * トレンド推奨事項の生成
    */
-  private generateTrendRecommendations(
-    trend: string,
-    variation: number
-  ): string[] {
+  private generateTrendRecommendations(trend: string, variation: number): string[] {
     const recommendations: string[] = [];
 
     switch (trend) {

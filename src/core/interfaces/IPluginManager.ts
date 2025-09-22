@@ -43,32 +43,32 @@ export interface IPluginManager {
    * プラグインを登録
    */
   register(plugin: IPlugin): void;
-  
+
   /**
    * プラグインを登録解除
    */
   unregister(pluginId: string): void;
-  
+
   /**
    * 登録されたプラグインを取得
    */
   getPlugins(): IPlugin[];
-  
+
   /**
    * 特定のプラグインを取得
    */
   getPlugin(pluginId: string): IPlugin | undefined;
-  
+
   /**
    * 全プラグインを実行
    */
   runAll(filePath: string): Promise<PluginExecutionResult[]>;
-  
+
   /**
    * 特定のプラグインを実行
    */
   run(pluginId: string, filePath: string): Promise<PluginExecutionResult>;
-  
+
   /**
    * プラグインの有効/無効を切り替え
    */

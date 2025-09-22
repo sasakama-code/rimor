@@ -38,7 +38,7 @@ export const DEFAULT_ANALYSIS_LIMITS: AnalysisLimits = {
   maxContextLines: 50,
   maxDepth: 10,
   maxPluginResults: 1000,
-  maxCacheSize: 100 // 100MB
+  maxCacheSize: 100, // 100MB
 };
 
 /**
@@ -55,7 +55,7 @@ export const RESOURCE_LIMIT_PROFILES = {
     maxContextLines: 20,
     maxDepth: 5,
     maxPluginResults: 100,
-    maxCacheSize: 10 // 10MB
+    maxCacheSize: 10, // 10MB
   },
 
   /** 標準環境（通常の開発環境） */
@@ -71,8 +71,8 @@ export const RESOURCE_LIMIT_PROFILES = {
     maxContextLines: 200,
     maxDepth: 20,
     maxPluginResults: 5000,
-    maxCacheSize: 500 // 500MB
-  }
+    maxCacheSize: 500, // 500MB
+  },
 } as const;
 
 /**
@@ -104,10 +104,10 @@ export class ResourceLimitMonitor {
     if (size > this.limits.maxFileSize) {
       errorHandler.handleWarning(
         `ファイルサイズが制限を超過: ${this.formatBytes(size)} > ${this.formatBytes(this.limits.maxFileSize)}`,
-        { 
+        {
           filePath,
           fileSize: size,
-          limit: this.limits.maxFileSize
+          limit: this.limits.maxFileSize,
         },
         'checkFileSize'
       );
@@ -124,10 +124,10 @@ export class ResourceLimitMonitor {
     if (elapsed > this.limits.maxAnalysisTime) {
       errorHandler.handleWarning(
         `分析時間が制限を超過: ${elapsed}ms > ${this.limits.maxAnalysisTime}ms`,
-        { 
+        {
           elapsed,
           limit: this.limits.maxAnalysisTime,
-          startTime: this.startTime
+          startTime: this.startTime,
         },
         'checkAnalysisTime'
       );
@@ -142,19 +142,19 @@ export class ResourceLimitMonitor {
   checkMemoryUsage(): boolean {
     const currentMemory = this.getMemoryUsage();
     const usedMemory = currentMemory - this.initialMemory;
-    
+
     if (usedMemory > this.limits.maxMemoryUsage) {
       errorHandler.handleWarning(
         `メモリ使用量が制限を超過: ${usedMemory}MB > ${this.limits.maxMemoryUsage}MB`,
-        { 
+        {
           currentMemory,
           initialMemory: this.initialMemory,
           usedMemory,
-          limit: this.limits.maxMemoryUsage
+          limit: this.limits.maxMemoryUsage,
         },
         'checkMemoryUsage'
       );
-      
+
       // ガベージコレクションの実行を試行
       this.forceGarbageCollection();
       return false;
@@ -169,9 +169,9 @@ export class ResourceLimitMonitor {
     if (this.processedFiles >= this.limits.maxFilesProcessed) {
       errorHandler.handleWarning(
         `処理ファイル数が制限に達しました: ${this.processedFiles} >= ${this.limits.maxFilesProcessed}`,
-        { 
+        {
           processedFiles: this.processedFiles,
-          limit: this.limits.maxFilesProcessed
+          limit: this.limits.maxFilesProcessed,
         },
         'checkProcessedFiles'
       );
@@ -187,9 +187,9 @@ export class ResourceLimitMonitor {
     if (lines > this.limits.maxContextLines) {
       errorHandler.handleWarning(
         `コンテキスト行数を制限: ${lines} > ${this.limits.maxContextLines}`,
-        { 
+        {
           requestedLines: lines,
-          limit: this.limits.maxContextLines
+          limit: this.limits.maxContextLines,
         },
         'checkContextLines'
       );
@@ -205,10 +205,10 @@ export class ResourceLimitMonitor {
     if (currentDepth > this.limits.maxDepth) {
       errorHandler.handleWarning(
         `ディレクトリ探索深度が制限を超過: ${currentDepth} > ${this.limits.maxDepth}`,
-        { 
+        {
           currentDepth,
           limit: this.limits.maxDepth,
-          basePath
+          basePath,
         },
         'checkDepth'
       );
@@ -224,10 +224,10 @@ export class ResourceLimitMonitor {
     if (count > this.limits.maxPluginResults) {
       errorHandler.handleWarning(
         `プラグイン結果数が制限を超過: ${count} > ${this.limits.maxPluginResults}`,
-        { 
+        {
           count,
           limit: this.limits.maxPluginResults,
-          pluginId
+          pluginId,
         },
         'checkPluginResults'
       );
@@ -249,12 +249,12 @@ export class ResourceLimitMonitor {
   getResourceUsage() {
     const currentTime = Date.now();
     const currentMemory = this.getMemoryUsage();
-    
+
     return {
       elapsedTime: currentTime - this.startTime,
       processedFiles: this.processedFiles,
       memoryUsage: currentMemory - this.initialMemory,
-      limits: this.limits
+      limits: this.limits,
     };
   }
 
@@ -314,7 +314,7 @@ export class ResourceLimitMonitor {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   }
 }
 

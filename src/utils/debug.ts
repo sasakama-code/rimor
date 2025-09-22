@@ -9,7 +9,7 @@ export enum DebugLevel {
   WARN = 2,
   INFO = 3,
   VERBOSE = 4,
-  TRACE = 5
+  TRACE = 5,
 }
 
 export class DebugLogger {
@@ -30,7 +30,7 @@ export class DebugLogger {
     }
 
     const debugEnv = process.env.RIMOR_DEBUG?.toLowerCase();
-    
+
     switch (debugEnv) {
       case 'trace':
         this.debugLevel = DebugLevel.TRACE;
@@ -83,7 +83,7 @@ export class DebugLogger {
   /**
    * エラーレベルのログ
    */
-  static error(message: string, ...args: any[]): void {
+  static error(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.ERROR) {
       console.error(`🔴 [ERROR] ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -92,7 +92,7 @@ export class DebugLogger {
   /**
    * 警告レベルのログ
    */
-  static warn(message: string, ...args: any[]): void {
+  static warn(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.WARN) {
       console.warn(`🟡 [WARN]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -101,7 +101,7 @@ export class DebugLogger {
   /**
    * 情報レベルのログ
    */
-  static info(message: string, ...args: any[]): void {
+  static info(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.INFO) {
       console.log(`🔵 [INFO]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -110,7 +110,7 @@ export class DebugLogger {
   /**
    * 詳細レベルのログ
    */
-  static verbose(message: string, ...args: any[]): void {
+  static verbose(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       console.log(`🟢 [VERB]  ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -119,7 +119,7 @@ export class DebugLogger {
   /**
    * トレースレベルのログ
    */
-  static trace(message: string, ...args: any[]): void {
+  static trace(message: string, ...args: unknown[]): void {
     if (this.getLevel() >= DebugLevel.TRACE) {
       console.log(`⚪ [TRACE] ${new Date().toISOString()} ${message}`, ...args);
     }
@@ -146,7 +146,7 @@ export class DebugLogger {
   /**
    * オブジェクトの詳細表示
    */
-  static inspect(label: string, obj: any): void {
+  static inspect(label: string, obj: unknown): void {
     if (this.getLevel() >= DebugLevel.TRACE) {
       console.log(`🔍 [INSPECT] ${label}:`);
       console.dir(obj, { depth: 3, colors: true });
@@ -160,7 +160,7 @@ export class DebugLogger {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       const start = Date.now();
       this.verbose(`Starting: ${label}`);
-      
+
       try {
         const result = await fn();
         const duration = Date.now() - start;
@@ -183,7 +183,7 @@ export class DebugLogger {
     if (this.getLevel() >= DebugLevel.VERBOSE) {
       const start = Date.now();
       this.verbose(`Starting: ${label}`);
-      
+
       try {
         const result = fn();
         const duration = Date.now() - start;
@@ -202,7 +202,7 @@ export class DebugLogger {
   /**
    * 条件付きログ
    */
-  static logIf(condition: boolean, level: DebugLevel, message: string, ...args: any[]): void {
+  static logIf(condition: boolean, level: DebugLevel, message: string, ...args: unknown[]): void {
     if (!condition) return;
 
     switch (level) {
@@ -241,7 +241,7 @@ export const debug = {
   measure: DebugLogger.measure.bind(DebugLogger),
   logIf: DebugLogger.logIf.bind(DebugLogger),
   getLevel: DebugLogger.getLevel.bind(DebugLogger),
-  setLevel: DebugLogger.setLevel.bind(DebugLogger)
+  setLevel: DebugLogger.setLevel.bind(DebugLogger),
 };
 
 // 自動初期化

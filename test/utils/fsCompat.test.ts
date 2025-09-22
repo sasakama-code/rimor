@@ -67,7 +67,7 @@ describe('FsCompat', () => {
       Object.defineProperty(process, 'version', {
         value: originalVersion,
         writable: true,
-        configurable: true
+        configurable: true,
       });
     });
 
@@ -75,7 +75,7 @@ describe('FsCompat', () => {
       Object.defineProperty(process, 'version', {
         value: 'v18.17.0',
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       // リフレクションを使ってprivateメソッドにアクセス
@@ -87,7 +87,7 @@ describe('FsCompat', () => {
       Object.defineProperty(process, 'version', {
         value: 'v12.22.0',
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       const isRmSyncAvailable = (FsCompat as any).isRmSyncAvailable();
@@ -98,7 +98,7 @@ describe('FsCompat', () => {
       Object.defineProperty(process, 'version', {
         value: 'v14.14.0',
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       const isRmSyncAvailable = (FsCompat as any).isRmSyncAvailable();
@@ -109,7 +109,7 @@ describe('FsCompat', () => {
       Object.defineProperty(process, 'version', {
         value: 'invalid-version',
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       const isRmSyncAvailable = (FsCompat as any).isRmSyncAvailable();
@@ -120,9 +120,9 @@ describe('FsCompat', () => {
   describe('ensureDirSync', () => {
     it('should create directory if it does not exist', () => {
       expect(fs.existsSync(testDir)).toBe(false);
-      
+
       FsCompat.ensureDirSync(testDir);
-      
+
       expect(fs.existsSync(testDir)).toBe(true);
       expect(fs.statSync(testDir).isDirectory()).toBe(true);
     });
@@ -130,16 +130,16 @@ describe('FsCompat', () => {
     it('should not fail if directory already exists', () => {
       fs.mkdirSync(testDir, { recursive: true });
       expect(fs.existsSync(testDir)).toBe(true);
-      
+
       expect(() => FsCompat.ensureDirSync(testDir)).not.toThrow();
       expect(fs.existsSync(testDir)).toBe(true);
     });
 
     it('should create nested directories', () => {
       const nestedDir = path.join(testDir, 'level1', 'level2', 'level3');
-      
+
       FsCompat.ensureDirSync(nestedDir);
-      
+
       expect(fs.existsSync(nestedDir)).toBe(true);
       expect(fs.statSync(nestedDir).isDirectory()).toBe(true);
     });
@@ -153,15 +153,15 @@ describe('FsCompat', () => {
 
     it('should remove existing file', () => {
       expect(fs.existsSync(testFile)).toBe(true);
-      
+
       FsCompat.removeFileSync(testFile);
-      
+
       expect(fs.existsSync(testFile)).toBe(false);
     });
 
     it('should not fail when file does not exist', () => {
       const nonExistentFile = path.join(testDir, 'non-existent.txt');
-      
+
       expect(() => FsCompat.removeFileSync(nonExistentFile)).not.toThrow();
     });
 
@@ -170,7 +170,7 @@ describe('FsCompat', () => {
       if (process.platform === 'win32') {
         return; // Windowsでのファイルロックテストは複雑なのでスキップ
       }
-      
+
       expect(() => FsCompat.removeFileSync(testFile, false)).not.toThrow();
     });
 
@@ -189,9 +189,9 @@ describe('FsCompat', () => {
 
     it('should remove single file', () => {
       expect(fs.existsSync(testFile)).toBe(true);
-      
+
       FsCompat.removeSync(testFile);
-      
+
       expect(fs.existsSync(testFile)).toBe(false);
     });
 
@@ -199,15 +199,15 @@ describe('FsCompat', () => {
       expect(fs.existsSync(testDir)).toBe(true);
       expect(fs.existsSync(testFile)).toBe(true);
       expect(fs.existsSync(testFileInSubDir)).toBe(true);
-      
+
       FsCompat.removeSync(testDir, { recursive: true });
-      
+
       expect(fs.existsSync(testDir)).toBe(false);
     });
 
     it('should not fail when path does not exist', () => {
       const nonExistentPath = path.join(__dirname, 'non-existent');
-      
+
       expect(() => FsCompat.removeSync(nonExistentPath)).not.toThrow();
     });
 
@@ -219,14 +219,14 @@ describe('FsCompat', () => {
     it('should handle nested directory structure', () => {
       const deepDir = path.join(testDir, 'a', 'b', 'c', 'd');
       const deepFile = path.join(deepDir, 'deep-file.txt');
-      
+
       FsCompat.ensureDirSync(deepDir);
       fs.writeFileSync(deepFile, 'deep content');
-      
+
       expect(fs.existsSync(deepFile)).toBe(true);
-      
+
       FsCompat.removeSync(testDir, { recursive: true });
-      
+
       expect(fs.existsSync(testDir)).toBe(false);
     });
   });
@@ -237,8 +237,10 @@ describe('FsCompat', () => {
 
     beforeEach(() => {
       // isRmSyncAvailableメソッドをモックしてfalseを返すようにする
-      mockIsRmSyncAvailable = jest.spyOn(FsCompat as any, 'isRmSyncAvailable').mockReturnValue(false);
-      
+      mockIsRmSyncAvailable = jest
+        .spyOn(FsCompat as any, 'isRmSyncAvailable')
+        .mockReturnValue(false);
+
       // テスト構造を作成
       FsCompat.ensureDirSync(testSubDir);
       fs.writeFileSync(testFile, 'test content');
@@ -252,9 +254,9 @@ describe('FsCompat', () => {
 
     it('should use fallback implementation when fs.rmSync is not available', () => {
       expect(fs.existsSync(testDir)).toBe(true);
-      
+
       FsCompat.removeSync(testDir, { recursive: true });
-      
+
       expect(fs.existsSync(testDir)).toBe(false);
     });
 
@@ -268,7 +270,7 @@ describe('FsCompat', () => {
     it('should handle permission errors gracefully with force=true', () => {
       FsCompat.ensureDirSync(testDir);
       fs.writeFileSync(testFile, 'test content');
-      
+
       // force=trueでエラーを無視
       expect(() => FsCompat.removeFileSync(testFile, true)).not.toThrow();
     });
@@ -311,7 +313,7 @@ describe('FsCompat', () => {
 
       // 複数のファイルとディレクトリを作成
       FsCompat.ensureDirSync(testDir);
-      
+
       files.forEach(fileName => {
         fs.writeFileSync(path.join(testDir, fileName), `Content of ${fileName}`);
       });

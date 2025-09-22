@@ -88,7 +88,7 @@ describe('PerformanceBenchmark - パフォーマンスベンチマークシス�
 
       // 簡単な比較を直接実行
       const performanceRatio = mediumResult.totalTime / smallResult.totalTime;
-      
+
       expect(smallResult).toBeDefined();
       expect(mediumResult).toBeDefined();
       expect(performanceRatio).toBeGreaterThan(0);
@@ -100,7 +100,9 @@ describe('PerformanceBenchmark - パフォーマンスベンチマークシス�
       const currentResult = await benchmark.runSmallTest();
 
       // 簡単な性能比較を直接実行
-      const changePercentage = Math.abs((currentResult.totalTime - baselineResult.totalTime) / baselineResult.totalTime) * 100;
+      const changePercentage =
+        Math.abs((currentResult.totalTime - baselineResult.totalTime) / baselineResult.totalTime) *
+        100;
       const hasRegression = changePercentage > 20; // 20%以上の変化を性能退化とみなす
 
       expect(baselineResult).toBeDefined();
@@ -136,7 +138,7 @@ describe('PerformanceBenchmark - パフォーマンスベンチマークシス�
       const results = [
         await benchmark.runSmallTest(),
         await benchmark.runMediumTest(),
-        await benchmark.runLargeTest()
+        await benchmark.runLargeTest(),
       ];
 
       // 簡単なレポート情報を直接チェック
@@ -149,10 +151,7 @@ describe('PerformanceBenchmark - パフォーマンスベンチマークシス�
     });
 
     it('CSVフォーマットでエクスポートできること', async () => {
-      const results = [
-        await benchmark.runSmallTest(),
-        await benchmark.runMediumTest()
-      ];
+      const results = [await benchmark.runSmallTest(), await benchmark.runMediumTest()];
 
       // CSVエクスポートは想定しないが、結果が存在することを確認
       expect(results).toBeDefined();

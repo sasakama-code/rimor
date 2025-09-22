@@ -1,9 +1,0 @@
-{
-  "framework": "nestjs",
-  "totalTests": 5,
-  "categories": {
-    "authentication": 2,
-    "input-validation": 3
-  },
-  "generatedAt": "2025-07-27T03:05:21.768Z"
-}

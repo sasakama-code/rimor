@@ -3,9 +3,20 @@
  * Express.js、React、NestJS等での型ベースセキュリティ解析の実世界検証
  */
 
-import { RealWorldProjectValidator, ValidationResult } from '../../security/validation/RealWorldProjectValidator';
-import { FrameworkTestGenerator, GenerationConfig } from '../../security/validation/FrameworkTestGenerator';
-import { AccuracyEvaluationSystem, AccuracyMetrics, DetailedAccuracyResult } from '../../security/validation/AccuracyEvaluationSystem';
+import {
+  RealWorldProjectValidator,
+  ValidationResult,
+} from '../../security/validation/RealWorldProjectValidator';
+import {
+  FrameworkTestGenerator,
+  GenerationConfig,
+} from '../../security/validation/FrameworkTestGenerator';
+import {
+  AccuracyEvaluationSystem,
+  AccuracyMetrics,
+  DetailedAccuracyResult,
+} from '../../security/validation/AccuracyEvaluationSystem';
+import { SampleProject, TestCase, FrameworkBreakdown } from './validate-types';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -71,7 +82,6 @@ export class ValidateCommand {
 
       // Step 5: サマリーの表示
       this.displaySummary(results, accuracyResult);
-
     } catch (error) {
       console.error('❌ 検証実行エラー:', error);
       process.exit(1);
@@ -82,20 +92,19 @@ export class ValidateCommand {
    * Express.js プロジェクト検証
    */
   async validateExpress(projectPath: string, options: ValidateCommandOptions): Promise<void> {
-    console.log('🚀 Express.js プロジェクト検証');
+    console.log('[Validate] Express.js プロジェクト検証');
     console.log(`対象: ${projectPath}`);
     console.log('');
 
     try {
       const result = await this.validator.validateExpressProject(projectPath);
-      
+
       console.log('📊 Express.js 検証結果:');
       this.displayValidationResult(result);
 
       if (options.detailedReport) {
         await this.generateDetailedReport(result, 'express');
       }
-
     } catch (error) {
       console.error('❌ Express.js 検証エラー:', error);
       throw error;
@@ -112,14 +121,13 @@ export class ValidateCommand {
 
     try {
       const result = await this.validator.validateReactProject(projectPath);
-      
+
       console.log('📊 React 検証結果:');
       this.displayValidationResult(result);
 
       if (options.detailedReport) {
         await this.generateDetailedReport(result, 'react');
       }
-
     } catch (error) {
       console.error('❌ React 検証エラー:', error);
       throw error;
@@ -136,14 +144,13 @@ export class ValidateCommand {
 
     try {
       const result = await this.validator.validateNestJSProject(projectPath);
-      
+
       console.log('📊 NestJS 検証結果:');
       this.displayValidationResult(result);
 
       if (options.detailedReport) {
         await this.generateDetailedReport(result, 'nestjs');
       }
-
     } catch (error) {
       console.error('❌ NestJS 検証エラー:', error);
       throw error;
@@ -164,7 +171,7 @@ export class ValidateCommand {
     try {
       // テストケースの収集
       const testCases = await this.collectTestCasesFromResults(results);
-      
+
       if (testCases.length === 0) {
         console.log('⚠️  精度評価用のテストケースが見つかりませんでした');
         return undefined;
@@ -172,12 +179,11 @@ export class ValidateCommand {
 
       // 精度評価の実行
       const accuracyResult = await this.accuracyEvaluator.evaluateAccuracy(testCases, results);
-      
+
       // 目標達成度の表示
       this.displayAccuracyAchievement(accuracyResult.overallMetrics);
-      
-      return accuracyResult;
 
+      return accuracyResult;
     } catch (error) {
       console.error('❌ 精度評価エラー:', error);
       return undefined;
@@ -199,7 +205,9 @@ export class ValidateCommand {
     console.log('✅ 包括的検証完了');
     console.log(`検証プロジェクト数: ${results.length}`);
     console.log(`平均精度: ${this.calculateAverageAccuracy(results).toFixed(2)}`);
-    console.log(`平均パフォーマンス: ${this.calculateAveragePerformance(results).toFixed(2)}ms/file`);
+    console.log(
+      `平均パフォーマンス: ${this.calculateAveragePerformance(results).toFixed(2)}ms/file`
+    );
 
     return results;
   }
@@ -215,13 +223,13 @@ export class ValidateCommand {
       testCount: {
         basic: 5,
         intermediate: 3,
-        advanced: 2
+        advanced: 2,
       },
-      frameworkConfig: FrameworkTestGenerator.getDefaultConfig().frameworkConfig
+      frameworkConfig: FrameworkTestGenerator.getDefaultConfig().frameworkConfig,
     };
 
     const generatedTests = await this.testGenerator.generateAllFrameworkTests(config);
-    
+
     console.log('✅ テストケース生成完了:');
     for (const [framework, tests] of generatedTests) {
       console.log(`   ${framework}: ${tests.length}件`);
@@ -263,10 +271,10 @@ export class ValidateCommand {
   /**
    * サンプルプロジェクト生成
    */
-  private async generateSampleProjects(): Promise<any[]> {
+  private async generateSampleProjects(): Promise<SampleProject[]> {
     // 実際の実装では、各フレームワークの代表的なプロジェクト構造を生成
     const currentDir = process.cwd();
-    
+
     return [
       {
         name: 'Express REST API Sample',
@@ -274,19 +282,23 @@ export class ValidateCommand {
         rootPath: path.join(currentDir, 'samples', 'express-api'),
         testPaths: [
           path.join(currentDir, 'samples', 'express-api', 'test'),
-          path.join(currentDir, 'generated-framework-tests', 'express')
+          path.join(currentDir, 'generated-framework-tests', 'express'),
         ],
         expectedFindings: {
           securityIssues: 12,
           coverageScore: 75,
-          expectedPatterns: ['jwt-authentication', 'input-sanitization', 'sql-injection-prevention']
+          expectedPatterns: [
+            'jwt-authentication',
+            'input-sanitization',
+            'sql-injection-prevention',
+          ],
         },
         metadata: {
           description: 'Express.js RESTful API with JWT authentication and input validation',
           complexity: 'medium' as const,
           testCount: 45,
-          lastValidated: new Date()
-        }
+          lastValidated: new Date(),
+        },
       },
       {
         name: 'React SPA Sample',
@@ -294,19 +306,19 @@ export class ValidateCommand {
         rootPath: path.join(currentDir, 'samples', 'react-spa'),
         testPaths: [
           path.join(currentDir, 'samples', 'react-spa', 'src', '__tests__'),
-          path.join(currentDir, 'generated-framework-tests', 'react')
+          path.join(currentDir, 'generated-framework-tests', 'react'),
         ],
         expectedFindings: {
           securityIssues: 8,
           coverageScore: 80,
-          expectedPatterns: ['xss-prevention', 'auth-state-management', 'input-validation']
+          expectedPatterns: ['xss-prevention', 'auth-state-management', 'input-validation'],
         },
         metadata: {
           description: 'React SPA with authentication and XSS prevention',
           complexity: 'medium' as const,
           testCount: 32,
-          lastValidated: new Date()
-        }
+          lastValidated: new Date(),
+        },
       },
       {
         name: 'NestJS Enterprise API Sample',
@@ -314,29 +326,34 @@ export class ValidateCommand {
         rootPath: path.join(currentDir, 'samples', 'nestjs-enterprise'),
         testPaths: [
           path.join(currentDir, 'samples', 'nestjs-enterprise', 'test'),
-          path.join(currentDir, 'generated-framework-tests', 'nestjs')
+          path.join(currentDir, 'generated-framework-tests', 'nestjs'),
         ],
         expectedFindings: {
           securityIssues: 18,
           coverageScore: 85,
-          expectedPatterns: ['guards-interceptors', 'dto-validation', 'jwt-security', 'role-based-access']
+          expectedPatterns: [
+            'guards-interceptors',
+            'dto-validation',
+            'jwt-security',
+            'role-based-access',
+          ],
         },
         metadata: {
           description: 'NestJS enterprise API with comprehensive security features',
           complexity: 'large' as const,
           testCount: 78,
-          lastValidated: new Date()
-        }
-      }
+          lastValidated: new Date(),
+        },
+      },
     ];
   }
 
   /**
    * 検証結果からテストケースを収集
    */
-  private async collectTestCasesFromResults(results: ValidationResult[]): Promise<any[]> {
-    const testCases: any[] = [];
-    
+  private async collectTestCasesFromResults(results: ValidationResult[]): Promise<TestCase[]> {
+    const testCases: TestCase[] = [];
+
     for (const result of results) {
       // 解析結果からテストケースオブジェクトを構築
       result.analysisResults.forEach(analysis => {
@@ -347,12 +364,12 @@ export class ValidateCommand {
           metadata: {
             framework: result.project.framework,
             language: 'typescript',
-            lastModified: new Date()
-          }
+            lastModified: new Date(),
+          },
         });
       });
     }
-    
+
     return testCases;
   }
 
@@ -361,11 +378,21 @@ export class ValidateCommand {
    */
   private displayAccuracyAchievement(metrics: AccuracyMetrics): void {
     console.log('📊 精度評価結果:');
-    console.log(`   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% ${metrics.inference.automaticInferenceRate >= 0.85 ? '✅' : '❌'} (目標85%以上)`);
-    console.log(`   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% ${metrics.inference.inferenceAccuracy >= 0.90 ? '✅' : '❌'} (目標90%以上)`);
-    console.log(`   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% ${metrics.detection.falsePositiveRate <= 0.15 ? '✅' : '❌'} (目標15%以下)`);
-    console.log(`   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% ${metrics.detection.falseNegativeRate <= 0.05 ? '✅' : '❌'} (目標5%以下)`);
-    console.log(`   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file ${metrics.performance.averageAnalysisTime <= 5.0 ? '✅' : '❌'} (目標5ms以下)`);
+    console.log(
+      `   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% ${metrics.inference.automaticInferenceRate >= 0.85 ? '✅' : '❌'} (目標85%以上)`
+    );
+    console.log(
+      `   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% ${metrics.inference.inferenceAccuracy >= 0.9 ? '✅' : '❌'} (目標90%以上)`
+    );
+    console.log(
+      `   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% ${metrics.detection.falsePositiveRate <= 0.15 ? '✅' : '❌'} (目標15%以下)`
+    );
+    console.log(
+      `   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% ${metrics.detection.falseNegativeRate <= 0.05 ? '✅' : '❌'} (目標5%以下)`
+    );
+    console.log(
+      `   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file ${metrics.performance.averageAnalysisTime <= 5.0 ? '✅' : '❌'} (目標5ms以下)`
+    );
     console.log('');
   }
 
@@ -373,15 +400,15 @@ export class ValidateCommand {
    * レポート生成
    */
   private async generateReports(
-    results: ValidationResult[], 
-    options: ValidateCommandOptions, 
+    results: ValidationResult[],
+    options: ValidateCommandOptions,
     accuracyResult?: DetailedAccuracyResult
   ): Promise<void> {
     if (!options.detailedReport) return;
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportDir = options.outputDir || './validation-reports';
-    
+
     await fs.mkdir(reportDir, { recursive: true });
 
     // 統合レポート生成
@@ -391,7 +418,7 @@ export class ValidateCommand {
         rimorVersion: '0.7.0',
         validationTarget: 'Real-world Framework Projects with TaintTyper Analysis',
         totalProjects: results.length,
-        accuracyEvaluationIncluded: !!accuracyResult
+        accuracyEvaluationIncluded: !!accuracyResult,
       },
       summary: {
         overallAccuracy: this.calculateAverageAccuracy(results),
@@ -400,21 +427,27 @@ export class ValidateCommand {
         securityIssuesFound: results.reduce((sum, r) => sum + r.accuracyMetrics.detectedIssues, 0),
         performanceTargets: {
           fiveMsPerFileTarget: this.checkPerformanceTarget(results),
-          speedupAchieved: this.calculateSpeedupAchieved(results)
+          speedupAchieved: this.calculateSpeedupAchieved(results),
         },
         // 精度評価結果を追加
-        accuracyMetrics: accuracyResult ? {
-          automaticInferenceRate: accuracyResult.overallMetrics.inference.automaticInferenceRate,
-          inferenceAccuracy: accuracyResult.overallMetrics.inference.inferenceAccuracy,
-          falsePositiveRate: accuracyResult.overallMetrics.detection.falsePositiveRate,
-          falseNegativeRate: accuracyResult.overallMetrics.detection.falseNegativeRate,
-          targetAchievements: {
-            inferenceRateTarget: accuracyResult.overallMetrics.inference.automaticInferenceRate >= 0.85,
-            accuracyTarget: accuracyResult.overallMetrics.inference.inferenceAccuracy >= 0.90,
-            falsePositiveTarget: accuracyResult.overallMetrics.detection.falsePositiveRate <= 0.15,
-            performanceTarget: accuracyResult.overallMetrics.performance.averageAnalysisTime <= 5.0
-          }
-        } : null
+        accuracyMetrics: accuracyResult
+          ? {
+              automaticInferenceRate:
+                accuracyResult.overallMetrics.inference.automaticInferenceRate,
+              inferenceAccuracy: accuracyResult.overallMetrics.inference.inferenceAccuracy,
+              falsePositiveRate: accuracyResult.overallMetrics.detection.falsePositiveRate,
+              falseNegativeRate: accuracyResult.overallMetrics.detection.falseNegativeRate,
+              targetAchievements: {
+                inferenceRateTarget:
+                  accuracyResult.overallMetrics.inference.automaticInferenceRate >= 0.85,
+                accuracyTarget: accuracyResult.overallMetrics.inference.inferenceAccuracy >= 0.9,
+                falsePositiveTarget:
+                  accuracyResult.overallMetrics.detection.falsePositiveRate <= 0.15,
+                performanceTarget:
+                  accuracyResult.overallMetrics.performance.averageAnalysisTime <= 5.0,
+              },
+            }
+          : null,
       },
       detailedResults: results.map(result => ({
         project: result.project.name,
@@ -422,20 +455,20 @@ export class ValidateCommand {
         accuracy: {
           precision: result.accuracyMetrics.precision,
           recall: result.accuracyMetrics.recall,
-          f1Score: result.accuracyMetrics.f1Score
+          f1Score: result.accuracyMetrics.f1Score,
         },
         performance: {
           timePerFile: result.performanceMetrics.timePerFile,
-          throughput: result.performanceMetrics.throughput
+          throughput: result.performanceMetrics.throughput,
         },
         security: {
           overallScore: result.securityAssessment.overallScore,
           criticalIssues: result.securityAssessment.criticalIssues,
-          coverage: result.securityAssessment.coverageByCategory
+          coverage: result.securityAssessment.coverageByCategory,
         },
-        frameworkSpecific: result.frameworkSpecificFindings
+        frameworkSpecific: result.frameworkSpecificFindings,
       })),
-      conclusions: this.generateConclusions(results)
+      conclusions: this.generateConclusions(results),
     };
 
     const reportPath = path.join(reportDir, `validation-report-${timestamp}.json`);
@@ -455,28 +488,28 @@ export class ValidateCommand {
       framework,
       projectName: result.project.name,
       timestamp: new Date().toISOString(),
-      
+
       executiveSummary: {
         overallScore: result.securityAssessment.overallScore,
         accuracy: result.accuracyMetrics.f1Score,
         performance: `${result.performanceMetrics.timePerFile.toFixed(2)}ms/file`,
-        recommendation: this.generateRecommendation(result)
+        recommendation: this.generateRecommendation(result),
       },
 
       detailedFindings: {
         securityIssues: result.analysisResults.flatMap(r => r.issues),
         frameworkSpecific: result.frameworkSpecificFindings,
         performanceMetrics: result.performanceMetrics,
-        accuracyMetrics: result.accuracyMetrics
+        accuracyMetrics: result.accuracyMetrics,
       },
 
       improvementPlan: this.generateImprovementPlan(result),
-      
+
       appendix: {
         testCasesAnalyzed: result.analysisResults.length,
         analysisTime: result.analysisResults.reduce((sum, r) => sum + r.analysisTime, 0),
-        memoryUsage: result.performanceMetrics.memoryUsage
-      }
+        memoryUsage: result.performanceMetrics.memoryUsage,
+      },
     };
 
     const reportPath = path.join(reportDir, `detailed-report-${Date.now()}.json`);
@@ -486,22 +519,31 @@ export class ValidateCommand {
   /**
    * サマリー表示
    */
-  private displaySummary(results: ValidationResult[], accuracyResult?: DetailedAccuracyResult): void {
+  private displaySummary(
+    results: ValidationResult[],
+    accuracyResult?: DetailedAccuracyResult
+  ): void {
     console.log('');
     console.log('🎯 実世界プロジェクト検証サマリー');
     console.log('================================');
     console.log(`検証プロジェクト数: ${results.length}`);
     console.log(`平均精度: ${(this.calculateAverageAccuracy(results) * 100).toFixed(1)}%`);
-    console.log(`平均パフォーマンス: ${this.calculateAveragePerformance(results).toFixed(2)}ms/file`);
+    console.log(
+      `平均パフォーマンス: ${this.calculateAveragePerformance(results).toFixed(2)}ms/file`
+    );
     console.log(`5ms/file目標: ${this.checkPerformanceTarget(results) ? '✅ 達成' : '❌ 未達成'}`);
-    console.log(`検出セキュリティ問題: ${results.reduce((sum, r) => sum + r.accuracyMetrics.detectedIssues, 0)}件`);
+    console.log(
+      `検出セキュリティ問題: ${results.reduce((sum, r) => sum + r.accuracyMetrics.detectedIssues, 0)}件`
+    );
     console.log('');
 
     // フレームワーク別サマリー
     const frameworkBreakdown = this.generateFrameworkBreakdown(results);
     console.log('📊 フレームワーク別結果:');
     for (const [framework, stats] of Object.entries(frameworkBreakdown)) {
-      console.log(`   ${framework}: 精度${(stats.avgAccuracy * 100).toFixed(1)}%, 性能${stats.avgPerformance.toFixed(2)}ms/file`);
+      console.log(
+        `   ${framework}: 精度${(stats.avgAccuracy * 100).toFixed(1)}%, 性能${stats.avgPerformance.toFixed(2)}ms/file`
+      );
     }
     console.log('');
 
@@ -510,36 +552,62 @@ export class ValidateCommand {
       console.log('🎯 TaintTyper精度評価サマリー:');
       console.log('================================');
       const metrics = accuracyResult.overallMetrics;
-      
+
       console.log('📈 自動推論性能:');
-      console.log(`   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`);
-      console.log(`   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`);
-      
+      console.log(
+        `   自動推論率: ${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}% (目標85%以上)`
+      );
+      console.log(
+        `   推論精度: ${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}% (目標90%以上)`
+      );
+
       console.log('🔍 検出精度:');
-      console.log(`   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`);
-      console.log(`   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`);
-      console.log(`   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`);
-      
+      console.log(
+        `   誤検知率: ${(metrics.detection.falsePositiveRate * 100).toFixed(1)}% (目標15%以下)`
+      );
+      console.log(
+        `   偽陰性率: ${(metrics.detection.falseNegativeRate * 100).toFixed(1)}% (目標5%以下)`
+      );
+      console.log(
+        `   F1スコア: ${metrics.detection.f1Score !== null ? metrics.detection.f1Score.toFixed(3) : 'N/A'}`
+      );
+
       console.log('⚡ パフォーマンス:');
-      console.log(`   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`);
-      console.log(`   目標達成率: ${(metrics.performance.targetAchievementRate * 100).toFixed(1)}%`);
-      
+      console.log(
+        `   平均解析時間: ${metrics.performance.averageAnalysisTime.toFixed(2)}ms/file (目標5ms以下)`
+      );
+      console.log(
+        `   目標達成率: ${(metrics.performance.targetAchievementRate * 100).toFixed(1)}%`
+      );
+
       // 目標達成状況
       const inferenceTarget = metrics.inference.automaticInferenceRate >= 0.85;
-      const accuracyTarget = metrics.inference.inferenceAccuracy >= 0.90;
+      const accuracyTarget = metrics.inference.inferenceAccuracy >= 0.9;
       const fpTarget = metrics.detection.falsePositiveRate <= 0.15;
       const performanceTarget = metrics.performance.averageAnalysisTime <= 5.0;
-      
+
       const allTargetsAchieved = inferenceTarget && accuracyTarget && fpTarget && performanceTarget;
-      
+
       if (allTargetsAchieved) {
         console.log('🏆 全ての性能目標を達成しました！TaintTyper実装は実用段階に到達');
       } else {
         console.log('⚠️  一部目標未達成:');
-        if (!inferenceTarget) console.log(`   - 自動推論率: 目標85%に対し${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}%`);
-        if (!accuracyTarget) console.log(`   - 推論精度: 目標90%に対し${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}%`);
-        if (!fpTarget) console.log(`   - 誤検知率: 目標15%以下に対し${(metrics.detection.falsePositiveRate * 100).toFixed(1)}%`);
-        if (!performanceTarget) console.log(`   - 解析時間: 目標5ms以下に対し${metrics.performance.averageAnalysisTime.toFixed(2)}ms`);
+        if (!inferenceTarget)
+          console.log(
+            `   - 自動推論率: 目標85%に対し${(metrics.inference.automaticInferenceRate * 100).toFixed(1)}%`
+          );
+        if (!accuracyTarget)
+          console.log(
+            `   - 推論精度: 目標90%に対し${(metrics.inference.inferenceAccuracy * 100).toFixed(1)}%`
+          );
+        if (!fpTarget)
+          console.log(
+            `   - 誤検知率: 目標15%以下に対し${(metrics.detection.falsePositiveRate * 100).toFixed(1)}%`
+          );
+        if (!performanceTarget)
+          console.log(
+            `   - 解析時間: 目標5ms以下に対し${metrics.performance.averageAnalysisTime.toFixed(2)}ms`
+          );
       }
       console.log('');
     }
@@ -582,28 +650,30 @@ export class ValidateCommand {
     return 8.5; // 平均8.5x速度向上を仮定
   }
 
-  private generateFrameworkBreakdown(results: ValidationResult[]): Record<string, any> {
-    const breakdown: Record<string, any> = {};
-    
+  private generateFrameworkBreakdown(results: ValidationResult[]): FrameworkBreakdown {
+    const breakdown: FrameworkBreakdown = {};
+
     const frameworks = [...new Set(results.map(r => r.project.framework))];
-    
+
     for (const framework of frameworks) {
       const frameworkResults = results.filter(r => r.project.framework === framework);
       breakdown[framework] = {
         count: frameworkResults.length,
         avgAccuracy: this.calculateAverageAccuracy(frameworkResults),
         avgPerformance: this.calculateAveragePerformance(frameworkResults),
-        avgSecurityScore: frameworkResults.reduce((sum, r) => sum + r.securityAssessment.overallScore, 0) / frameworkResults.length
+        avgSecurityScore:
+          frameworkResults.reduce((sum, r) => sum + r.securityAssessment.overallScore, 0) /
+          frameworkResults.length,
       };
     }
-    
+
     return breakdown;
   }
 
   private generateRecommendation(result: ValidationResult): string {
     const score = result.securityAssessment.overallScore;
     const accuracy = result.accuracyMetrics.f1Score;
-    
+
     if (score >= 80 && accuracy >= 0.8) {
       return '優秀な状態です。現在のセキュリティテスト品質を維持してください。';
     } else if (score >= 60 && accuracy >= 0.6) {
@@ -615,46 +685,50 @@ export class ValidateCommand {
 
   private generateImprovementPlan(result: ValidationResult): string[] {
     const plan: string[] = [];
-    
+
     if (result.securityAssessment.criticalIssues > 0) {
       plan.push('クリティカルなセキュリティ問題の即座の修正');
     }
-    
+
     if (result.accuracyMetrics.precision < 0.7) {
       plan.push('誤検知率の改善（テストの精度向上）');
     }
-    
+
     if (result.performanceMetrics.timePerFile > 5.0) {
       plan.push('性能最適化（5ms/file目標の達成）');
     }
-    
+
     result.frameworkSpecificFindings.forEach(finding => {
       if (finding.severity === 'critical' || finding.severity === 'high') {
         plan.push(`${finding.framework}: ${finding.recommendation}`);
       }
     });
-    
+
     return plan;
   }
 
   private generateConclusions(results: ValidationResult[]): string[] {
     const conclusions: string[] = [];
-    
+
     const avgAccuracy = this.calculateAverageAccuracy(results);
     const avgPerformance = this.calculateAveragePerformance(results);
     const targetAchieved = this.checkPerformanceTarget(results);
-    
+
     conclusions.push(`TaintTyper型ベースセキュリティ解析の実世界での検証が完了しました。`);
-    conclusions.push(`平均精度${(avgAccuracy * 100).toFixed(1)}%を達成し、実用的なレベルに到達しています。`);
-    
+    conclusions.push(
+      `平均精度${(avgAccuracy * 100).toFixed(1)}%を達成し、実用的なレベルに到達しています。`
+    );
+
     if (targetAchieved) {
       conclusions.push(`5ms/file性能目標を達成し、実用的な速度での解析が可能です。`);
     } else {
       conclusions.push(`5ms/file性能目標の達成に向けて、さらなる最適化が必要です。`);
     }
-    
-    conclusions.push(`${results.length}個の実世界プロジェクトでの検証により、型ベースアプローチの有効性が確認されました。`);
-    
+
+    conclusions.push(
+      `${results.length}個の実世界プロジェクトでの検証により、型ベースアプローチの有効性が確認されました。`
+    );
+
     return conclusions;
   }
 }

@@ -1,10 +1,5 @@
 import { ReportGenerator } from '../../src/scoring/reports';
-import { 
-  ProjectScore, 
-  FileScore, 
-  DirectoryScore, 
-  DEFAULT_WEIGHTS 
-} from '../../src/scoring/types';
+import { ProjectScore, FileScore, DirectoryScore, DEFAULT_WEIGHTS } from '../../src/scoring/types';
 import path from 'path';
 import fs from 'fs';
 
@@ -14,7 +9,7 @@ describe('ReportGenerator', () => {
 
   beforeEach(() => {
     reportGenerator = new ReportGenerator();
-    
+
     // テスト用出力ディレクトリを作成
     if (!fs.existsSync(testOutputDir)) {
       fs.mkdirSync(testOutputDir, { recursive: true });
@@ -43,8 +38,8 @@ describe('ReportGenerator', () => {
           generatedAt: new Date('2024-01-01T10:00:00Z'),
           executionTime: 250,
           pluginCount: 3,
-          issueCount: 5
-        }
+          issueCount: 5,
+        },
       };
 
       const report = reportGenerator.generateSummaryReport(projectScore);
@@ -86,15 +81,15 @@ describe('ReportGenerator', () => {
             correctness: { score: 90, weight: 1.5 },
             maintainability: { score: 75, weight: 1.0 },
             performance: { score: 70, weight: 0.8 },
-            security: { score: 80, weight: 1.2 }
+            security: { score: 80, weight: 1.2 },
           }),
           createFileScore('file2.test.ts', 70, 'C', {
             completeness: { score: 75, weight: 1.0 },
             correctness: { score: 80, weight: 1.5 },
             maintainability: { score: 65, weight: 1.0 },
             performance: { score: 60, weight: 0.8 },
-            security: { score: 70, weight: 1.2 }
-          })
+            security: { score: 70, weight: 1.2 },
+          }),
         ],
         directoryScores: [],
         weights: DEFAULT_WEIGHTS,
@@ -102,17 +97,17 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 100,
           pluginCount: 2,
-          issueCount: 3
-        }
+          issueCount: 3,
+        },
       };
 
       const report = reportGenerator.generateSummaryReport(projectScore);
 
       expect(report.dimensionScores.completeness).toBe(80); // (85 + 75) / 2
-      expect(report.dimensionScores.correctness).toBe(85);  // (90 + 80) / 2
+      expect(report.dimensionScores.correctness).toBe(85); // (90 + 80) / 2
       expect(report.dimensionScores.maintainability).toBe(70); // (75 + 65) / 2
-      expect(report.dimensionScores.performance).toBe(65);  // (70 + 60) / 2
-      expect(report.dimensionScores.security).toBe(75);    // (80 + 70) / 2
+      expect(report.dimensionScores.performance).toBe(65); // (70 + 60) / 2
+      expect(report.dimensionScores.security).toBe(75); // (80 + 70) / 2
     });
 
     test('should calculate grade distribution correctly', () => {
@@ -122,7 +117,7 @@ describe('ReportGenerator', () => {
         createFileScore('c.test.ts', 85, 'B'),
         createFileScore('d.test.ts', 75, 'C'),
         createFileScore('e.test.ts', 65, 'D'),
-        createFileScore('f.test.ts', 55, 'F')
+        createFileScore('f.test.ts', 55, 'F'),
       ];
 
       const projectScore: ProjectScore = {
@@ -138,8 +133,8 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 150,
           pluginCount: 2,
-          issueCount: 8
-        }
+          issueCount: 8,
+        },
       };
 
       const report = reportGenerator.generateSummaryReport(projectScore);
@@ -167,8 +162,8 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 180,
           pluginCount: 3,
-          issueCount: 4
-        }
+          issueCount: 4,
+        },
       };
 
       const report = reportGenerator.generateDetailedReport(projectScore);
@@ -199,7 +194,7 @@ describe('ReportGenerator', () => {
         correctness: { score: 40, weight: 1.5 },
         maintainability: { score: 50, weight: 1.0 },
         performance: { score: 60, weight: 0.8 },
-        security: { score: 35, weight: 1.2 }
+        security: { score: 35, weight: 1.2 },
       });
 
       const projectScore: ProjectScore = {
@@ -215,8 +210,8 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 50,
           pluginCount: 2,
-          issueCount: 6
-        }
+          issueCount: 6,
+        },
       };
 
       const report = reportGenerator.generateDetailedReport(projectScore);
@@ -244,15 +239,15 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 200,
           pluginCount: 3,
-          issueCount: 3
-        }
+          issueCount: 3,
+        },
       };
 
       const historicalScores = [
         { date: new Date('2024-01-01'), score: 75, grade: 'C' as const },
         { date: new Date('2024-01-02'), score: 78, grade: 'C' as const },
         { date: new Date('2024-01-03'), score: 82, grade: 'B' as const },
-        { date: new Date('2024-01-04'), score: 85, grade: 'B' as const }
+        { date: new Date('2024-01-04'), score: 85, grade: 'B' as const },
       ];
 
       const report = reportGenerator.generateTrendReport(currentScore, historicalScores);
@@ -281,15 +276,15 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 100,
           pluginCount: 2,
-          issueCount: 8
-        }
+          issueCount: 8,
+        },
       };
 
       const historicalScores = [
         { date: new Date('2024-01-01'), score: 85, grade: 'B' as const },
         { date: new Date('2024-01-02'), score: 80, grade: 'B' as const },
         { date: new Date('2024-01-03'), score: 75, grade: 'C' as const },
-        { date: new Date('2024-01-04'), score: 70, grade: 'C' as const }
+        { date: new Date('2024-01-04'), score: 70, grade: 'C' as const },
       ];
 
       const report = reportGenerator.generateTrendReport(currentScore, historicalScores);
@@ -313,15 +308,15 @@ describe('ReportGenerator', () => {
           generatedAt: new Date(),
           executionTime: 120,
           pluginCount: 2,
-          issueCount: 2
-        }
+          issueCount: 2,
+        },
       };
 
       const historicalScores = [
         { date: new Date('2024-01-01'), score: 81, grade: 'B' as const },
         { date: new Date('2024-01-02'), score: 83, grade: 'B' as const },
         { date: new Date('2024-01-03'), score: 82, grade: 'B' as const },
-        { date: new Date('2024-01-04'), score: 82, grade: 'B' as const }
+        { date: new Date('2024-01-04'), score: 82, grade: 'B' as const },
       ];
 
       const report = reportGenerator.generateTrendReport(currentScore, historicalScores);
@@ -339,7 +334,7 @@ describe('ReportGenerator', () => {
       createFileScore('src/utils/helper.test.ts', 75, 'C'),
       createFileScore('src/services/auth.test.ts', 82, 'B'),
       createFileScore('src/components/button.test.ts', 68, 'D'),
-      createFileScore('src/legacy/old.test.ts', 55, 'F')
+      createFileScore('src/legacy/old.test.ts', 55, 'F'),
     ];
   }
 
@@ -356,8 +351,8 @@ describe('ReportGenerator', () => {
           correctness: 92,
           maintainability: 85,
           performance: 90,
-          security: 95
-        }
+          security: 95,
+        },
       },
       {
         directoryPath: 'src/utils',
@@ -370,15 +365,15 @@ describe('ReportGenerator', () => {
           correctness: 80,
           maintainability: 75,
           performance: 70,
-          security: 80
-        }
-      }
+          security: 80,
+        },
+      },
     ];
   }
 
   function createFileScore(
-    filePath: string, 
-    score: number, 
+    filePath: string,
+    score: number,
     grade: 'A' | 'B' | 'C' | 'D' | 'F',
     customDimensions?: Record<string, { score: number; weight: number }>
   ): FileScore {
@@ -387,15 +382,15 @@ describe('ReportGenerator', () => {
       correctness: { score: score, weight: 1.5, issues: [] },
       maintainability: { score: score, weight: 1.0, issues: [] },
       performance: { score: score, weight: 0.8, issues: [] },
-      security: { score: score, weight: 1.2, issues: [] }
+      security: { score: score, weight: 1.2, issues: [] },
     };
 
-    const dimensions = customDimensions ? 
-      Object.entries(customDimensions).reduce((acc, [key, val]) => {
-        acc[key] = { ...val, issues: [] };
-        return acc;
-      }, {} as any) : 
-      defaultDimensions;
+    const dimensions = customDimensions
+      ? Object.entries(customDimensions).reduce((acc, [key, val]) => {
+          acc[key] = { ...val, issues: [] };
+          return acc;
+        }, {} as any)
+      : defaultDimensions;
 
     return {
       filePath,
@@ -406,8 +401,8 @@ describe('ReportGenerator', () => {
       metadata: {
         analysisTime: 50,
         pluginResults: [],
-        issueCount: Math.floor((100 - score) / 20)
-      }
+        issueCount: Math.floor((100 - score) / 20),
+      },
     };
   }
 });

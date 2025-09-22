@@ -5,33 +5,42 @@
 
 import {
   TestMethod,
-  MethodAnalysisResult,
-  TaintAnalysisResult,
-  TypeInferenceResult,
-  MethodChange,
-  IncrementalUpdate,
   SecurityType,
-  TaintLevel,
-  TaintSource,
   SanitizerType,
-  SecurityIssue,
-  SecurityTestMetrics,
-  SecurityImprovement,
   BoundaryCondition,
   ITypeBasedSecurityPlugin,
-  FlowGraph,
   ProjectContext,
   TestFile,
   DetectionResult,
   QualityScore,
-  Improvement
+  Improvement,
 } from '../../core/types';
+import { TaintLevel, TaintSource } from '../../types/common-types';
+import {
+  MethodAnalysisResult,
+  TaintAnalysisResult,
+  TypeInferenceResult,
+  SecurityMethodChange,
+  IncrementalUpdate,
+  SecurityIssue,
+  SecurityTestMetrics,
+  SecurityImprovement,
+  FlowGraph,
+  FlowNode,
+  TaintMetadata,
+  InputTaintPath,
+  CriticalFlow,
+  IncrementalChange,
+  IncrementalAnalysisResult,
+  TestMethodAnalysisResult,
+} from '../types/flow-types';
 import { FlowSensitiveAnalyzer } from '../analysis/flow';
 import { SignatureBasedInference } from '../analysis/inference';
 import type { QualifiedType } from '../types/checker-framework-types';
 import { TypeConstructors } from '../types/checker-framework-types';
 import { TaintLevelAdapter } from '../compatibility/taint-level-adapter';
 import { SecurityLattice, SecurityViolation } from '../types/lattice';
+import { KeywordSearchUtils } from '../../utils/KeywordSearchUtils';
 
 /**
  * 入力検証セキュリティプラグイン
@@ -42,15 +51,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   readonly name = '入力検証セキュリティテスト品質監査';
   readonly version = '0.7.0';
   readonly type = 'security' as const;
-  
+
   // 型システムとの統合
   readonly requiredTypes = [SecurityType.USER_INPUT];
   readonly providedTypes = [SecurityType.VALIDATED_INPUT, SecurityType.SANITIZED_DATA];
-  
+
   private flowAnalyzer: FlowSensitiveAnalyzer;
   private inferenceEngine: SignatureBasedInference;
   private analysisCache = new Map<string, MethodAnalysisResult>();
-  
+
   // 入力検証パターン
   private readonly sanitizerPatterns = [
     /sanitize\(/gi,
@@ -59,14 +68,14 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     /clean\(/gi,
     /filter\(/gi,
     /htmlEscape\(/gi,
-    /sqlEscape\(/gi
+    /sqlEscape\(/gi,
   ];
 
   private readonly injectionPatterns = [
     { type: 'sql', pattern: /('|"|;|union|select|insert|update|delete|drop)/gi },
     { type: 'xss', pattern: /(<script|javascript:|on\w+\s*=)/gi },
     { type: 'command', pattern: /(\||;|&|`|\$\()/gi },
-    { type: 'path', pattern: /(\.\.\/|\.\.\\)/gi }
+    { type: 'path', pattern: /(\.\.\/|\.\.\\)/gi },
   ];
 
   constructor() {
@@ -79,28 +88,39 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    */
   isApplicable(context: ProjectContext): boolean {
     // Web関連のライブラリが存在するかチェック
-    const webLibraries = ['express', 'koa', 'fastify', 'body-parser', 'multer', 'joi', 'yup', 'validator'];
-    
+    const webLibraries = [
+      'express',
+      'koa',
+      'fastify',
+      'body-parser',
+      'multer',
+      'joi',
+      'yup',
+      'validator',
+    ];
+
     // 新しいProjectContext構造（dependencies配列）と旧構造（packageJson）の両方をサポート
     let hasWebLibrary = false;
-    
+
     if (Array.isArray(context.dependencies)) {
       // 新しい構造: dependencies が配列
-      hasWebLibrary = webLibraries.some(lib => context.dependencies!.includes(lib));
+      hasWebLibrary = webLibraries.some(lib => (context.dependencies as string[]).includes(lib));
     } else if (context.packageJson) {
       // 旧構造: packageJson オブジェクト
-      hasWebLibrary = webLibraries.some(lib => 
-        context.packageJson?.dependencies?.[lib] || 
-        context.packageJson?.devDependencies?.[lib]
+      hasWebLibrary = webLibraries.some(
+        lib =>
+          context.packageJson?.dependencies?.[lib] || context.packageJson?.devDependencies?.[lib]
       );
     }
 
     // 入力検証関連のテストファイルが存在するかチェック
-    const hasValidationTests = context.filePatterns?.test?.some(pattern => 
-      pattern.includes('validation') || 
-      pattern.includes('input') || 
-      pattern.includes('sanitize')
-    ) || false;
+    const hasValidationTests =
+      context.filePatterns?.test?.some(
+        pattern =>
+          pattern.includes('validation') ||
+          pattern.includes('input') ||
+          pattern.includes('sanitize')
+      ) || false;
 
     return hasWebLibrary || hasValidationTests;
   }
@@ -110,7 +130,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    */
   async detectPatterns(testFile: TestFile): Promise<DetectionResult[]> {
     const patterns: DetectionResult[] = [];
-    
+
     // 基本的なコンテンツベースのパターン検出
     const validationPatterns = this.detectValidationPatterns(testFile.content);
     patterns.push(...validationPatterns);
@@ -144,34 +164,34 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         security: 0,
         coverage: 0,
         maintainability: 0,
-        breakdown: {
+        dimensions: {
           completeness: 0,
           correctness: 0,
-          maintainability: 0
+          maintainability: 0,
         },
-        confidence: 0
+        confidence: 0,
       };
     }
-    
+
     // 入力検証カバレッジの計算（正規化を修正）
     const validationCoverage = this.calculateValidationCoverage(patterns);
     const sanitizerCoverage = this.calculateSanitizerCoverage(patterns);
     const boundaryCoverage = this.calculateBoundaryCoverage(patterns);
-    
+
     // スコアを0-1の範囲に正規化
     const normalizedValidation = Math.min(1.0, validationCoverage / 100);
     const normalizedSanitizer = Math.min(1.0, sanitizerCoverage / 100);
     const normalizedBoundary = Math.min(1.0, boundaryCoverage / 100);
-    
+
     // セキュリティスコアの計算（サニタイザーカバレッジを重視）
     const securityScore = normalizedSanitizer * 0.6 + normalizedValidation * 0.4;
-    
+
     // 総合的なカバレッジスコア
     const coverageScore = (normalizedValidation + normalizedSanitizer + normalizedBoundary) / 3;
-    
+
     // 保守性スコア（境界値テストの有無を重視）
     const maintainabilityScore = normalizedBoundary;
-    
+
     // 全体スコア
     const overallScore = (securityScore + coverageScore + maintainabilityScore) / 3;
 
@@ -180,10 +200,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       security: securityScore,
       coverage: coverageScore,
       maintainability: maintainabilityScore,
-      breakdown: {
+      dimensions: {
         completeness: validationCoverage,
         correctness: sanitizerCoverage,
-        maintainability: boundaryCoverage
+        maintainability: boundaryCoverage,
       },
       confidence: this.calculateConfidence(patterns),
       details: {
@@ -192,8 +212,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         boundaryCoverage: normalizedBoundary,
         sanitizationQuality: normalizedSanitizer,
         boundaryTestingScore: normalizedBoundary,
-        errorHandlingScore: Math.min(1.0, coverageScore * 0.8)
-      }
+        strengths: [],
+        weaknesses: [],
+        suggestions: [],
+      },
     };
   }
 
@@ -204,7 +226,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     const improvements: Improvement[] = [];
 
     // 常に入力検証テストの改善提案を生成（テストの期待に合わせて）
-    if (evaluation.breakdown?.completeness === undefined || evaluation.breakdown.completeness < 100) {
+    if (
+      evaluation.dimensions?.completeness === undefined ||
+      evaluation.dimensions.completeness < 100
+    ) {
       improvements.push({
         id: 'input-validation-coverage',
         priority: 'high',
@@ -212,12 +237,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         title: '入力検証テストの追加',
         description: '基本的なinput validationテストケースが不足しています',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 25, effortMinutes: 20 },
-        automatable: false
+        impact: { scoreImprovement: 25, effortMinutes: 20 },
+        automatable: false,
       });
     }
 
-    if (evaluation.breakdown?.correctness === undefined || evaluation.breakdown.correctness < 100) {
+    if (
+      evaluation.dimensions?.correctness === undefined ||
+      evaluation.dimensions.correctness < 100
+    ) {
       improvements.push({
         id: 'sanitizer-coverage',
         priority: 'critical',
@@ -225,8 +253,8 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         title: 'サニタイザーテストの追加',
         description: 'サニタイザーの動作確認テストが不足しています',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 35, effortMinutes: 30 },
-        automatable: false
+        impact: { scoreImprovement: 35, effortMinutes: 30 },
+        automatable: false,
       });
 
       // enhance-sanitization-testing タイプの改善提案を追加
@@ -237,14 +265,16 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         title: 'サニタイゼーションテストの強化',
         description: 'より包括的なサニタイゼーションテストが必要です',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 25, effortMinutes: 20 },
+        impact: { scoreImprovement: 25, effortMinutes: 20 },
         automatable: false,
-        impact: 'high'
       });
     }
 
     // 境界条件テストの改善提案（常に生成）
-    if (evaluation.breakdown?.maintainability === undefined || evaluation.breakdown.maintainability < 100) {
+    if (
+      evaluation.dimensions?.maintainability === undefined ||
+      evaluation.dimensions.maintainability < 100
+    ) {
       improvements.push({
         id: 'boundary-condition-coverage',
         priority: 'medium',
@@ -252,9 +282,14 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         title: '境界条件テストの追加',
         description: '境界条件のテストケースが不足しています',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 20, effortMinutes: 15 },
+        impact: { scoreImprovement: 20, effortMinutes: 15 },
         automatable: false,
-        suggestions: ['Add null/undefined input tests', 'Add empty string tests', 'Add maximum length tests', 'Add overflow/underflow tests']
+        suggestions: [
+          'Add null/undefined input tests',
+          'Add empty string tests',
+          'Add maximum length tests',
+          'Add overflow/underflow tests',
+        ],
       });
     }
 
@@ -267,9 +302,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         title: 'エラーハンドリングテストの改善',
         description: 'error handlingのテストケースを改善する必要があります',
         location: { file: '', line: 0, column: 0 },
-        estimatedImpact: { scoreImprovement: 15, effortMinutes: 25 },
+        impact: { scoreImprovement: 15, effortMinutes: 25 },
         automatable: false,
-        codeExample: 'try { /* test code */ } catch (error) { expect(error).toBeInstanceOf(ValidationError); }'
+        codeExample:
+          'try { /* test code */ } catch (error) { expect(error).toBeInstanceOf(ValidationError); }',
       });
     }
 
@@ -281,7 +317,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    */
   async analyzeMethod(method: TestMethod): Promise<MethodAnalysisResult> {
     const startTime = Date.now();
-    
+
     try {
       // キャッシュチェック
       const cacheKey = this.generateCacheKey(method);
@@ -307,20 +343,23 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       // Step 5: 入力検証品質の評価
       const issues = this.evaluateInputValidationQuality(method, taintResult, typeResult);
       const metrics = this.calculateInputValidationMetrics(method, taintResult);
-      const suggestions = this.generateInputValidationSuggestions(issues, method);
+      const improvements = this.generateInputValidationSuggestions(issues, method);
+      const suggestions = improvements.map(imp => imp.description);
 
       const result: MethodAnalysisResult = {
+        method,
         methodName: method.name,
-        issues,
+        flowGraph: flowGraph || { nodes: new Map(), edges: [], exitNodes: [] },
+        violations: [],
         metrics,
+        improvements,
+        issues,
         suggestions,
-        analysisTime: Date.now() - startTime
       };
 
       // キャッシュに保存
       this.analysisCache.set(cacheKey, result);
       return result;
-
     } catch (error) {
       return this.createErrorResult(method.name, error, Date.now() - startTime);
     }
@@ -341,10 +380,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     const violations: SecurityViolation[] = [];
 
     // 入力検証フローに特化した汚染解析
-    for (const node of flow.nodes) {
+    for (const [nodeId, node] of flow.nodes) {
       if (this.isInputValidationNode(node)) {
         const taintLevel = this.analyzeInputNodeTaint(node);
-        lattice.setTaintLevel(node.id, taintLevel);
+        lattice.setTaintLevel(nodeId, taintLevel);
       }
     }
 
@@ -352,11 +391,22 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     const inputViolations = this.verifyInputValidationInvariants(flow, lattice);
     violations.push(...inputViolations);
 
+    // TaintAnalysisResultに必要なプロパティを返す
+    const methodResults: MethodAnalysisResult[] = [];
+    const overallMetrics: SecurityTestMetrics = {
+      taintCoverage: 0,
+      sanitizerCoverage: 0,
+      sinkCoverage: 0,
+      securityAssertions: 0,
+      vulnerableFlows: violations.length,
+    };
+    const improvements: SecurityImprovement[] = [];
+
     return {
-      lattice,
+      methods: methodResults,
+      overallMetrics,
       violations,
-      taintPaths: this.extractInputTaintPaths(flow),
-      criticalFlows: this.identifyInputCriticalFlows(flow, violations)
+      improvements,
     };
   }
 
@@ -364,13 +414,20 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    * 型推論 - セキュリティ型の推論
    */
   async inferSecurityTypes(method: TestMethod): Promise<TypeInferenceResult> {
-    return this.inferenceEngine.inferSecurityTypes(method);
+    const result = await this.inferenceEngine.inferSecurityTypes(method);
+    // 型安全な変換
+    const baseResult = result as Partial<TypeInferenceResult>;
+    return {
+      inferredTypes: baseResult.inferredTypes || {},
+      typeConstraints: baseResult.typeConstraints || [],
+      typeErrors: baseResult.typeErrors || [],
+    };
   }
 
   /**
    * インクリメンタル更新
    */
-  async updateAnalysis(changes: MethodChange[]): Promise<IncrementalUpdate> {
+  async updateAnalysis(changes: SecurityMethodChange[]): Promise<IncrementalUpdate> {
     const updatedMethods: string[] = [];
     const invalidatedCache: string[] = [];
     const newIssues: SecurityIssue[] = [];
@@ -378,15 +435,17 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
 
     for (const change of changes) {
       const methodName = change.method.name;
-      
+
       switch (change.type) {
         case 'added':
         case 'modified':
           const result = await this.analyzeMethod(change.method);
           updatedMethods.push(methodName);
-          newIssues.push(...result.issues);
+          if (result.issues) {
+            newIssues.push(...result.issues);
+          }
           break;
-          
+
         case 'deleted':
           const cacheKey = this.generateCacheKey(change.method);
           this.analysisCache.delete(cacheKey);
@@ -395,11 +454,21 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
       }
     }
 
+    const analysisResults: MethodAnalysisResult[] = [];
+    for (const methodName of updatedMethods) {
+      const cachedResult = this.analysisCache.get(
+        this.generateCacheKey({ name: methodName, filePath: '', content: '' } as TestMethod)
+      );
+      if (cachedResult) {
+        analysisResults.push(cachedResult);
+      }
+    }
+
     return {
-      updatedMethods,
-      invalidatedCache,
-      newIssues,
-      resolvedIssues
+      changes,
+      affectedMethods: changes.map(c => c.method),
+      updatedMethods: analysisResults,
+      reanalysisRequired: newIssues.length > 0,
     };
   }
 
@@ -418,13 +487,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.8,
           securityRelevance: 0.7,
-          evidence: [{ 
-            type: 'validation', 
-            description: '入力検証のテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.8 
-          }]
+          evidence: [
+            {
+              type: 'validation',
+              description: '入力検証のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.8,
+            },
+          ],
         });
       }
 
@@ -437,13 +508,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.7,
           securityRelevance: 0.6,
-          evidence: [{ 
-            type: 'type-check', 
-            description: '型検証のテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.7 
-          }]
+          evidence: [
+            {
+              type: 'type-check',
+              description: '型検証のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.7,
+            },
+          ],
         });
       }
     });
@@ -458,10 +531,11 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     lines.forEach((line, index) => {
       // サニタイザーパターンのチェック
       const hasSanitizer = this.sanitizerPatterns.some(pattern => pattern.test(line));
-      
+
       // XSSプロテクションのチェック
-      const hasXSSProtection = line.includes('xss') || line.includes('script') || line.includes('sanitizeHtml');
-      
+      const hasXSSProtection =
+        line.includes('xss') || line.includes('script') || line.includes('sanitizeHtml');
+
       if (hasSanitizer || hasXSSProtection) {
         patterns.push({
           patternId: 'sanitizer-test',
@@ -470,16 +544,18 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.9,
           securityRelevance: 0.85,
-          evidence: [{ 
-            type: 'sanitizer', 
-            description: 'サニタイザーのテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.9 
-          }]
+          evidence: [
+            {
+              type: 'sanitizer',
+              description: 'サニタイザーのテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.9,
+            },
+          ],
         });
       }
-      
+
       // XSSプロテクション専用パターン
       if (hasXSSProtection) {
         patterns.push({
@@ -489,13 +565,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.85,
           securityRelevance: 0.95,
-          evidence: [{ 
-            type: 'xss-protection', 
-            description: 'XSSプロテクションのテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.85 
-          }]
+          evidence: [
+            {
+              type: 'xss-protection',
+              description: 'XSSプロテクションのテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.85,
+            },
+          ],
         });
       }
     });
@@ -510,13 +588,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     lines.forEach((line, index) => {
       // 境界値テストパターン
       const boundaryKeywords = ['empty', 'null', 'undefined', 'max', 'min', 'length', 'size'];
-      
-      if (boundaryKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+
+      // Issue #119 対応: 統一キーワード検索を使用
+      if (KeywordSearchUtils.containsAnyKeyword(line, boundaryKeywords)) {
         const boundaryTypes = [];
         if (line.toLowerCase().includes('empty')) boundaryTypes.push('empty-input');
         if (line.toLowerCase().includes('null')) boundaryTypes.push('null-input');
-        if (line.toLowerCase().includes('max') || line.toLowerCase().includes('length')) boundaryTypes.push('max-length');
-        
+        if (line.toLowerCase().includes('max') || line.toLowerCase().includes('length'))
+          boundaryTypes.push('max-length');
+
         patterns.push({
           patternId: 'boundary-test',
           patternName: '境界値テスト',
@@ -525,15 +605,17 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           confidence: 0.6,
           securityRelevance: 0.5,
           metadata: {
-            boundaryTypes: boundaryTypes.length > 0 ? boundaryTypes : ['empty-input']
+            boundaryTypes: boundaryTypes.length > 0 ? boundaryTypes : ['empty-input'],
           },
-          evidence: [{ 
-            type: 'boundary', 
-            description: '境界値のテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.6 
-          }]
+          evidence: [
+            {
+              type: 'boundary',
+              description: '境界値のテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.6,
+            },
+          ],
         });
       }
     });
@@ -547,9 +629,14 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
 
     lines.forEach((line, index) => {
       // 不十分な入力検証パターンを検出（条件を緩和）
-      const hasInput = line.includes('input') || line.includes('req.') || line.includes('data') || line.includes('processInput');
-      const hasValidation = line.includes('validate') || line.includes('check') || line.includes('sanitize');
-      
+      const hasInput =
+        line.includes('input') ||
+        line.includes('req.') ||
+        line.includes('data') ||
+        line.includes('processInput');
+      const hasValidation =
+        line.includes('validate') || line.includes('check') || line.includes('sanitize');
+
       // 入力はあるが検証が不足しているケース、またはexpectが含まれるケース
       if (hasInput && !hasValidation) {
         patterns.push({
@@ -560,13 +647,15 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           confidence: 0.7,
           securityRelevance: 0.8,
           severity: 'medium',
-          evidence: [{ 
-            type: 'inadequate-validation', 
-            description: '入力検証が不十分なテストケース', 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: line.trim(), 
-            confidence: 0.7 
-          }]
+          evidence: [
+            {
+              type: 'inadequate-validation',
+              description: '入力検証が不十分なテストケース',
+              location: { file: '', line: index + 1, column: 0 },
+              code: line.trim(),
+              confidence: 0.7,
+            },
+          ],
         });
       }
     });
@@ -575,70 +664,74 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private calculateValidationCoverage(patterns: DetectionResult[]): number {
-    const validationPatterns = patterns.filter(p => 
-      p.patternId === 'input-validation' || 
-      p.patternId === 'type-validation' ||
-      p.pattern === 'input-validation-test'
+    const validationPatterns = patterns.filter(
+      p =>
+        p.patternId === 'input-validation' ||
+        p.patternId === 'type-validation' ||
+        p.pattern === 'input-validation-test'
     );
-    
+
     // hasValidation メタデータもチェック
-    const metadataValidationPatterns = patterns.filter(p => 
-      p.metadata?.hasValidation === true
-    );
-    
+    const metadataValidationPatterns = patterns.filter(p => p.metadata?.hasValidation === true);
+
     const totalValidation = validationPatterns.length + metadataValidationPatterns.length;
-    
+
     // 高品質パターンとメタデータを考慮した評価
     let baseScore = Math.min(100, totalValidation * 100); // 1個で100%
-    
+
     // メタデータでvalidationTypesが多い場合は追加ボーナス
-    const qualityBonus = patterns.some(p => 
-      p.metadata?.validationTypes && p.metadata.validationTypes.length >= 3
-    ) ? 20 : 0;
-    
+    const qualityBonus = patterns.some(
+      p =>
+        p.metadata?.validationTypes &&
+        Array.isArray(p.metadata.validationTypes) &&
+        p.metadata.validationTypes.length >= 3
+    )
+      ? 20
+      : 0;
+
     return Math.min(100, baseScore + qualityBonus);
   }
 
   private calculateSanitizerCoverage(patterns: DetectionResult[]): number {
-    const sanitizerPatterns = patterns.filter(p => 
-      p.patternId === 'sanitizer-test' ||
-      p.pattern === 'sanitization-test'
+    const sanitizerPatterns = patterns.filter(
+      p => p.patternId === 'sanitizer-test' || p.pattern === 'sanitization-test'
     );
-    
+
     // 高品質パターンとメタデータを考慮した評価
     let baseScore = Math.min(100, sanitizerPatterns.length * 100); // 1個で100%に変更
-    
+
     // メタデータでsanitizerTypesが多い場合は追加ボーナス
-    const qualityBonus = patterns.some(p => 
-      p.metadata?.sanitizerTypes && p.metadata.sanitizerTypes.length >= 3
-    ) ? 20 : 0;
-    
+    const qualityBonus = patterns.some(
+      p =>
+        p.metadata?.sanitizerTypes &&
+        Array.isArray(p.metadata.sanitizerTypes) &&
+        p.metadata.sanitizerTypes.length >= 3
+    )
+      ? 20
+      : 0;
+
     return Math.min(100, baseScore + qualityBonus);
   }
 
   private calculateBoundaryCoverage(patterns: DetectionResult[]): number {
-    const boundaryPatterns = patterns.filter(p => 
-      p.patternId === 'boundary-test' ||
-      p.pattern === 'boundary-condition-test'
+    const boundaryPatterns = patterns.filter(
+      p => p.patternId === 'boundary-test' || p.pattern === 'boundary-condition-test'
     );
-    
+
     // メタデータでboundaryTestingがtrueの場合も高評価
-    const boundaryMetadataPatterns = patterns.filter(p => 
-      p.metadata?.boundaryTesting === true
-    );
-    
+    const boundaryMetadataPatterns = patterns.filter(p => p.metadata?.boundaryTesting === true);
+
     // エラーハンドリングも境界テストの一部として評価
-    const errorHandlingPatterns = patterns.filter(p =>
-      p.metadata?.errorHandling === true
-    );
-    
+    const errorHandlingPatterns = patterns.filter(p => p.metadata?.errorHandling === true);
+
     // missing-edge-case-testパターンも境界テストの一種として扱う
-    const edgeCasePatterns = patterns.filter(p =>
-      p.pattern === 'missing-edge-case-test'
-    );
-    
-    const totalBoundary = boundaryPatterns.length + boundaryMetadataPatterns.length + 
-                         errorHandlingPatterns.length + edgeCasePatterns.length;
+    const edgeCasePatterns = patterns.filter(p => p.pattern === 'missing-edge-case-test');
+
+    const totalBoundary =
+      boundaryPatterns.length +
+      boundaryMetadataPatterns.length +
+      errorHandlingPatterns.length +
+      edgeCasePatterns.length;
     return Math.min(100, totalBoundary * 50); // 2個で100%（ミックスケース用に調整）
   }
 
@@ -650,19 +743,30 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
 
   private isInputValidationTest(method: TestMethod): boolean {
     const validationKeywords = [
-      'validate', 'validation', 'input', 'sanitize', 'clean', 'filter',
-      'boundary', 'limit', 'check', 'verify'
+      'validate',
+      'validation',
+      'input',
+      'sanitize',
+      'clean',
+      'filter',
+      'boundary',
+      'limit',
+      'check',
+      'verify',
     ];
-    
+
     const methodName = method.name.toLowerCase();
-    const methodContent = method.content.toLowerCase();
-    
-    return validationKeywords.some(keyword => 
-      methodName.includes(keyword) || methodContent.includes(keyword)
+    const methodContent = (method.content || '').toLowerCase();
+
+    // Issue #119 対応: 統一キーワード検索を使用
+    return (
+      KeywordSearchUtils.containsAnyKeyword(methodName, validationKeywords) ||
+      KeywordSearchUtils.containsAnyKeyword(methodContent, validationKeywords)
     );
   }
 
-  private isInputValidationNode(node: any): boolean {
+  private isInputValidationNode(node: FlowNode): boolean {
+    if (!node.statement) return false;
     const content = node.statement.content.toLowerCase();
     const inputPatterns = ['input', 'validate', 'sanitize', 'clean', 'filter'];
     return inputPatterns.some(pattern => content.includes(pattern));
@@ -671,24 +775,31 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * 入力ノードの汚染分析（新型システム版）
    */
-  private analyzeInputNodeTaintType(node: any): QualifiedType<any> {
+  private analyzeInputNodeTaintType(node: FlowNode): QualifiedType<unknown> {
+    if (!node.statement) {
+      return TypeConstructors.untainted({});
+    }
     const content = node.statement.content.toLowerCase();
-    
+
     // ユーザー入力は高汚染
-    if (content.includes('req.body') || content.includes('req.query') || content.includes('input')) {
+    if (
+      content.includes('req.body') ||
+      content.includes('req.query') ||
+      content.includes('input')
+    ) {
       return TypeConstructors.tainted(node.statement, TaintSource.USER_INPUT, 0.9);
     }
-    
+
     // サニタイズ後は清浄
     if (this.sanitizerPatterns.some(pattern => pattern.test(content))) {
       return TypeConstructors.untainted(node.statement, 'sanitized');
     }
-    
+
     // 検証中は中程度の汚染
     if (content.includes('validate') || content.includes('check')) {
       return TypeConstructors.tainted(node.statement, 'validation-in-progress', 0.25);
     }
-    
+
     return TypeConstructors.untainted(node.statement);
   }
 
@@ -696,55 +807,61 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    * レガシー互換メソッド
    * @deprecated analyzeInputNodeTaintTypeを使用してください
    */
-  private analyzeInputNodeTaint(node: any): TaintLevel {
+  private analyzeInputNodeTaint(node: FlowNode): TaintLevel {
     const qualifiedType = this.analyzeInputNodeTaintType(node);
     return TaintLevelAdapter.fromQualifiedType(qualifiedType);
   }
 
-  private verifyInputValidationInvariants(flow: FlowGraph, lattice: SecurityLattice): SecurityViolation[] {
+  private verifyInputValidationInvariants(
+    flow: FlowGraph,
+    lattice: SecurityLattice
+  ): SecurityViolation[] {
     const violations: SecurityViolation[] = [];
-    
+
     // 入力検証特有の不変条件をチェック
-    flow.nodes.forEach(node => {
+    flow.nodes.forEach((node, nodeId) => {
+      if (!node.statement) return;
       const content = node.statement.content;
-      
+
       // サニタイズされていない入力が直接使用されているかチェック
       if (this.containsUnsanitizedInput(content)) {
         violations.push({
           type: 'unsanitized-taint-flow',
+          severity: 'high' as const,
+          message: 'ユーザー入力がサニタイズされていません',
           variable: 'user_input',
           taintLevel: TaintLevel.DEFINITELY_TAINTED,
           metadata: {
-            source: TaintSource.USER_INPUT,
-            confidence: 0.9,
-            location: { file: '', line: 0, column: 0 },
-            tracePath: [],
-            securityRules: ['input-sanitization-required']
-          },
-          severity: 'high',
-          suggestedFix: 'ユーザー入力は適切にサニタイズしてからテストしてください'
-        });
+            level: TaintLevel.DEFINITELY_TAINTED,
+            sources: [TaintSource.USER_INPUT],
+            sinks: [],
+            sanitizers: [],
+            propagationPath: [],
+          } as TaintMetadata,
+          suggestedFix: 'ユーザー入力は適切にサニタイズしてからテストしてください',
+        } as SecurityViolation);
       }
-      
+
       // インジェクション攻撃のテストが不足しているかチェック
       if (this.shouldTestInjection(content) && !this.hasInjectionTest(content)) {
         violations.push({
-          type: 'missing-sanitizer',
+          type: 'taint',
+          severity: 'medium' as const,
+          message: 'インジェクション攻撃のテストが不足しています',
           variable: 'injection_test',
           taintLevel: TaintLevel.LIKELY_TAINTED,
           metadata: {
-            source: TaintSource.USER_INPUT,
-            confidence: 0.8,
-            location: { file: '', line: 0, column: 0 },
-            tracePath: [],
-            securityRules: ['injection-test-required']
-          },
-          severity: 'medium',
-          suggestedFix: 'インジェクション攻撃に対するテストケースを追加してください'
-        });
+            level: TaintLevel.LIKELY_TAINTED,
+            sources: [TaintSource.USER_INPUT],
+            sinks: [],
+            sanitizers: [],
+            propagationPath: [],
+          } as TaintMetadata,
+          suggestedFix: 'インジェクション攻撃に対するテストケースを追加してください',
+        } as SecurityViolation);
       }
     });
-    
+
     return violations;
   }
 
@@ -762,17 +879,20 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     return this.injectionPatterns.some(pattern => pattern.pattern.test(content));
   }
 
-  private extractInputTaintPaths(flow: FlowGraph): any[] {
+  private extractInputTaintPaths(flow: FlowGraph): InputTaintPath[] {
     return [];
   }
 
-  private identifyInputCriticalFlows(flow: FlowGraph, violations: SecurityViolation[]): any[] {
+  private identifyInputCriticalFlows(
+    flow: FlowGraph,
+    violations: SecurityViolation[]
+  ): CriticalFlow[] {
     return [];
   }
 
   private evaluateInputValidationQuality(
-    method: TestMethod, 
-    taintResult: TaintAnalysisResult, 
+    method: TestMethod,
+    taintResult: TaintAnalysisResult,
     typeResult: TypeInferenceResult
   ): SecurityIssue[] {
     const issues: SecurityIssue[] = [];
@@ -781,80 +901,75 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     taintResult.violations.forEach(violation => {
       issues.push({
         id: `input-${violation.type}-${method.name}`,
-        severity: violation.severity as any,
+        severity: violation.severity,
         type: 'unsafe-taint-flow',
         message: `入力検証テストで${violation.suggestedFix}`,
-        location: { file: method.filePath, line: 0, column: 0 }
+        location: { file: method.filePath, line: 0, column: 0 },
       });
     });
 
     // 必須検証項目の不足をチェック
     const requiredValidations = ['type-check', 'length-check', 'format-check', 'sanitization'];
     const missingValidations = this.checkValidationCoverage(method, requiredValidations);
-    
+
     missingValidations.forEach(missing => {
       issues.push({
         id: `input-missing-${missing}-${method.name}`,
         severity: 'warning',
-        type: 'insufficient-validation',
+        type: 'validation',
         message: `入力検証テストで${missing}が不足しています`,
-        location: { file: method.filePath, line: 0, column: 0 }
+        location: { file: method.filePath, line: 0, column: 0 },
       });
     });
 
     return issues;
   }
 
-  private calculateInputValidationMetrics(method: TestMethod, taintResult: TaintAnalysisResult): SecurityTestMetrics {
-    const content = method.content.toLowerCase();
-    
+  private calculateInputValidationMetrics(
+    method: TestMethod,
+    taintResult: TaintAnalysisResult
+  ): SecurityTestMetrics {
+    const content = (method.content || '').toLowerCase();
+
     // 入力検証関連のメトリクスを計算
     const hasTypeValidation = content.includes('typeof') || content.includes('instanceof');
     const hasLengthValidation = content.includes('length') || content.includes('size');
     const hasSanitization = this.sanitizerPatterns.some(pattern => pattern.test(content));
     const hasBoundaryTest = content.includes('empty') || content.includes('null');
 
-    const validationCoverage = [hasTypeValidation, hasLengthValidation, hasSanitization, hasBoundaryTest]
-      .filter(Boolean).length / 4;
+    const validationCoverage =
+      [hasTypeValidation, hasLengthValidation, hasSanitization, hasBoundaryTest].filter(Boolean)
+        .length / 4;
 
     return {
-      securityCoverage: {
-        authentication: 20, // デフォルト値
-        inputValidation: validationCoverage * 100,
-        apiSecurity: 30, // デフォルト値
-        overall: validationCoverage * 100 * 0.7 + 15 // 入力検証重視
-      },
-      taintFlowDetection: taintResult.violations.length === 0 ? 1.0 : 0.4,
-      sanitizerCoverage: hasSanitization ? 0.8 : 0.2,
-      invariantCompliance: taintResult.violations.length === 0 ? 1.0 : 0.5
+      taintCoverage: validationCoverage * 100,
+      sanitizerCoverage: hasSanitization ? 80 : 20,
+      sinkCoverage: 50, // デフォルト値
+      securityAssertions: hasTypeValidation ? 1 : 0,
+      vulnerableFlows: taintResult.violations.length,
     };
   }
 
-  private generateInputValidationSuggestions(issues: SecurityIssue[], method: TestMethod): SecurityImprovement[] {
+  private generateInputValidationSuggestions(
+    issues: SecurityIssue[],
+    method: TestMethod
+  ): SecurityImprovement[] {
     const suggestions: SecurityImprovement[] = [];
 
     issues.forEach(issue => {
-      if (issue.type === 'insufficient-validation') {
+      if (issue.type === 'validation') {
         suggestions.push({
-          id: `fix-${issue.id}`,
-          priority: 'high',
           type: 'add-validation',
-          title: '入力検証テストケースの追加',
-          description: issue.message,
           location: issue.location,
-          estimatedImpact: { securityImprovement: 20, implementationMinutes: 10 },
-          automatable: false
+          description: issue.message,
+          impact: 'high',
         });
-      } else if (issue.type === 'unsafe-taint-flow') {
+      } else if (issue.type === 'taint' || issue.type === 'unsafe-taint-flow') {
         suggestions.push({
-          id: `fix-${issue.id}`,
-          priority: 'critical',
           type: 'add-sanitizer',
-          title: 'サニタイザーの追加',
-          description: issue.message,
           location: issue.location,
-          estimatedImpact: { securityImprovement: 30, implementationMinutes: 15 },
-          automatable: true
+          description: issue.message,
+          impact: 'high',
         });
       }
     });
@@ -863,12 +978,12 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private checkValidationCoverage(method: TestMethod, required: string[]): string[] {
-    const content = method.content.toLowerCase();
+    const content = (method.content || '').toLowerCase();
     const missing: string[] = [];
 
     required.forEach(validation => {
       let covered = false;
-      
+
       switch (validation) {
         case 'type-check':
           covered = content.includes('typeof') || content.includes('instanceof');
@@ -877,13 +992,14 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           covered = content.includes('length') || content.includes('size');
           break;
         case 'format-check':
-          covered = content.includes('format') || content.includes('pattern') || content.includes('regex');
+          covered =
+            content.includes('format') || content.includes('pattern') || content.includes('regex');
           break;
         case 'sanitization':
           covered = this.sanitizerPatterns.some(pattern => pattern.test(content));
           break;
       }
-      
+
       if (!covered) {
         missing.push(validation);
       }
@@ -893,90 +1009,144 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   }
 
   private generateCacheKey(method: TestMethod): string {
-    return `${method.filePath}:${method.name}:${method.content.length}`;
+    return `${method.filePath}:${method.name}:${method.content?.length || 0}`;
   }
 
   private createEmptyResult(methodName: string, analysisTime: number): MethodAnalysisResult {
+    const emptyMethod: TestMethod = {
+      name: methodName,
+      filePath: '',
+      content: '',
+      type: 'test',
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
+    };
     return {
+      method: emptyMethod,
       methodName,
-      issues: [],
+      flowGraph: { nodes: new Map(), edges: [], exitNodes: [] },
+      violations: [],
       metrics: {
-        securityCoverage: { authentication: 0, inputValidation: 0, apiSecurity: 0, overall: 0 },
-        taintFlowDetection: 0,
+        taintCoverage: 0,
         sanitizerCoverage: 0,
-        invariantCompliance: 0
+        sinkCoverage: 0,
+        securityAssertions: 0,
+        vulnerableFlows: 0,
       },
+      improvements: [],
+      issues: [],
       suggestions: [],
-      analysisTime
     };
   }
 
-  private createErrorResult(methodName: string, error: any, analysisTime: number): MethodAnalysisResult {
+  private createErrorResult(
+    methodName: string,
+    error: unknown,
+    analysisTime: number
+  ): MethodAnalysisResult {
+    const emptyMethod: TestMethod = {
+      name: methodName,
+      filePath: '',
+      content: '',
+      type: 'test',
+      location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
+    };
     return {
+      method: emptyMethod,
       methodName,
-      issues: [{
-        id: `error-${methodName}`,
-        severity: 'error',
-        type: 'missing-sanitizer', // fallback
-        message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
-        location: { file: '', line: 0, column: 0 }
-      }],
+      flowGraph: { nodes: new Map(), edges: [], exitNodes: [] },
+      violations: [],
       metrics: {
-        securityCoverage: { authentication: 0, inputValidation: 0, apiSecurity: 0, overall: 0 },
-        taintFlowDetection: 0,
+        taintCoverage: 0,
         sanitizerCoverage: 0,
-        invariantCompliance: 0
+        sinkCoverage: 0,
+        securityAssertions: 0,
+        vulnerableFlows: 0,
       },
+      improvements: [],
+      issues: [
+        {
+          id: `error-${methodName}`,
+          severity: 'critical',
+          type: 'taint',
+          message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+          location: { file: '', line: 0, column: 0 },
+        },
+      ],
       suggestions: [],
-      analysisTime
     };
   }
 
   /**
    * テストメソッド解析（セキュリティプラグイン用）
    */
-  async analyzeTestMethod(testMethod: TestMethod): Promise<any> {
+  async analyzeTestMethod(testMethod: TestMethod): Promise<TestMethodAnalysisResult> {
     try {
       const taintFlow = await this.flowAnalyzer.trackSecurityDataFlow(testMethod);
-      const issues = this.detectSecurityIssues(testMethod.content, testMethod); // methodも渡す
-      
+      const content = testMethod.content || '';
+      const issues = this.detectSecurityIssues(content, testMethod); // methodも渡す
+
       // モックデータを生成してテストが期待する構造を作成
-      const mockSources = this.generateMockTaintSources(testMethod.content);
-      const mockSanitizers = this.generateMockSanitizers(testMethod.content);
-      const mockSinks = this.generateMockSinks(testMethod.content);
-      
+      const mockSources = this.generateMockTaintSources(content);
+      const mockSanitizers = this.generateMockSanitizers(content);
+      const mockSinks = this.generateMockSinks(content);
+
       // テストが期待する構造に合わせて拡張
       const enhancedTaintFlow = {
-        ...taintFlow,
-        sources: mockSources.length > 0 ? mockSources : (taintFlow.taintSources || []),
-        sanitizers: mockSanitizers.length > 0 ? mockSanitizers : (taintFlow.sanitizers || []),
-        sinks: mockSinks.length > 0 ? mockSinks : (taintFlow.securitySinks || [])
-      };
-      
+        nodes: taintFlow.nodes,
+        edges: taintFlow.edges,
+        exitNodes: taintFlow.exitNodes,
+        entryNode: taintFlow.entryNode,
+        violations: taintFlow.violations,
+        paths: taintFlow.paths,
+        sources:
+          mockSources.length > 0
+            ? mockSources
+            : taintFlow.taintSources
+              ? taintFlow.taintSources.map(ts => ts.source)
+              : [],
+        sanitizers:
+          mockSanitizers.length > 0
+            ? mockSanitizers
+            : taintFlow.sanitizers
+              ? taintFlow.sanitizers.map(s => s.type)
+              : [],
+        sinks:
+          mockSinks.length > 0
+            ? mockSinks
+            : taintFlow.securitySinks
+              ? taintFlow.securitySinks.map(ss => ss.sink)
+              : [],
+      } as TestMethodAnalysisResult['taintFlow'];
+
       return {
         taintFlow: enhancedTaintFlow,
         issues,
-        securityScore: this.calculateSecurityScore(testMethod.content, testMethod),
+        securityScore: this.calculateSecurityScore(testMethod.content || '', testMethod),
         securityMetrics: {
-          inputValidationCoverage: this.calculateInputValidationCoverage(testMethod.content),
-          sanitizationCoverage: this.calculateSanitizationCoverage(testMethod.content)
-        }
+          inputValidationCoverage: this.calculateInputValidationCoverage(testMethod.content || ''),
+          sanitizationCoverage: this.calculateSanitizationCoverage(testMethod.content || ''),
+        },
       };
     } catch (error) {
       return {
         taintFlow: {
+          nodes: new Map(),
+          edges: [],
+          exitNodes: [],
           sources: ['default-source'],
           sanitizers: ['default-sanitizer'],
-          sinks: ['default-sink']
-        },
-        issues: [{
-          id: 'analysis-error',
-          severity: 'error' as const,
-          type: 'missing-sanitizer' as const,
-          message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
-          location: { file: testMethod.filePath, line: 0, column: 0 }
-        }],
-        securityScore: 0.3
+          sinks: ['default-sink'],
+        } as TestMethodAnalysisResult['taintFlow'],
+        issues: [
+          {
+            id: 'analysis-error',
+            severity: 'error' as const,
+            type: 'missing-sanitizer' as const,
+            message: `解析エラー: ${error instanceof Error ? error.message : '不明なエラー'}`,
+            location: { file: testMethod.filePath, line: 0, column: 0 },
+          },
+        ],
+        securityScore: 0.3,
       };
     }
   }
@@ -984,42 +1154,33 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
   /**
    * 増分解析（セキュリティプラグイン用）
    */
-  async analyzeIncrementally(changes: any[]): Promise<any> {
-    const affectedTests: string[] = [];
-    const newIssuesFound: any[] = [];
-    const resolvedIssues: any[] = [];
-    
-    for (const change of changes) {
-      // より柔軟な条件でchangeを処理
-      if (change.methodName || change.filePath || change.method?.name) {
-        const methodName = change.methodName || change.method?.name || 'unnamed-method';
-        affectedTests.push(methodName);
-        
-        // 新しい問題を検出
-        const content = change.content || change.method?.content || '';
-        const issues = this.detectSecurityIssues(content, change.method);
-        newIssuesFound.push(...issues);
-      }
-    }
-    
-    // changesが空でない場合は最低1つのaffectedTestを返す
-    if (changes.length > 0 && affectedTests.length === 0) {
-      affectedTests.push('default-test-method');
-    }
-    
+  async analyzeIncrementally(update: IncrementalChange): Promise<TestMethodAnalysisResult> {
+    // TestMethodを作成または取得
+    const testMethod: TestMethod =
+      update.method && 'type' in update.method && 'location' in update.method
+        ? (update.method as unknown as TestMethod)
+        : {
+            name: update.methodName || update.method?.name || 'unnamed-method',
+            content: update.content || update.method?.content || '',
+            filePath: update.filePath || '',
+            type: 'test' as const,
+            location: { start: { line: 0, column: 0 }, end: { line: 0, column: 0 } },
+          };
+
+    // テストメソッドを解析
+    const result = await this.analyzeTestMethod(testMethod);
+
+    // 増分解析の追加情報を含める
     return {
-      affectedTests,
-      changesProcessed: changes.length,
-      qualityImprovement: Math.random() * 0.1 + 0.05, // 0.05-0.15の改善
-      newIssuesFound,
-      resolvedIssues,
-      securityImpact: this.assessSecurityImpact(changes)
-    };
+      ...result,
+      // 増分解析固有の情報があれば追加
+      isIncremental: true,
+    } as TestMethodAnalysisResult;
   }
 
-  private detectSecurityIssues(content: string, method?: TestMethod): any[] {
-    const issues: any[] = [];
-    
+  private detectSecurityIssues(content: string, method?: TestMethod): SecurityIssue[] {
+    const issues: SecurityIssue[] = [];
+
     // 最重要: 危険な関数の使用検出（criticalを最初に）
     if (content.includes('eval(') || (method?.body && method.body.includes('eval('))) {
       issues.push({
@@ -1027,38 +1188,42 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         severity: 'critical' as const,
         type: 'unsafe-taint-flow' as const,
         message: 'eval()の使用は非常に危険です。コードインジェクションのリスクがあります',
-        location: { file: method?.filePath || '', line: 0, column: 0 }
+        location: { file: method?.filePath || '', line: 0, column: 0 },
       });
     }
-    
+
     // メソッドシグネチャの型安全性違反検出
     if (method?.signature) {
       // any型パラメータの検出
-      const unsafeParams = method.signature.parameters?.filter(p => 
-        p.type === 'any' && (p.name.includes('user') || p.name.includes('input'))
-      );
-      if (unsafeParams && unsafeParams.length > 0) {
-        issues.push({
-          id: 'unsafe-parameter-type',
-          severity: 'high' as const,
-          type: 'unsafe-taint-flow' as const,
-          message: `パラメータ '${unsafeParams[0].name}' でany型が使用されており型安全性が損なわれています`,
-          location: { file: method.filePath, line: 0, column: 0 }
-        });
+      const signature = method.signature as { parameters?: Array<{ type: string; name: string }> };
+      if (typeof signature !== 'string' && signature.parameters) {
+        const unsafeParams = signature.parameters?.filter(
+          p => p.type === 'any' && p.name && (p.name.includes('user') || p.name.includes('input'))
+        );
+        if (unsafeParams && unsafeParams.length > 0) {
+          issues.push({
+            id: 'unsafe-parameter-type',
+            severity: 'high' as const,
+            type: 'unsafe-taint-flow' as const,
+            message: `パラメータ '${unsafeParams[0].name}' でany型が使用されており型安全性が損なわれています`,
+            location: { file: method.filePath, line: 0, column: 0 },
+          });
+        }
       }
-      
+
       // any型戻り値の検出
-      if (method.signature.returnType === 'any') {
+      const signatureForReturn = method.signature as { returnType?: string };
+      if (typeof signatureForReturn !== 'string' && signatureForReturn.returnType === 'any') {
         issues.push({
           id: 'unsafe-return-type',
           severity: 'medium' as const,
           type: 'unsafe-taint-flow' as const,
           message: '戻り値でany型が使用されており型安全性が損なわれています',
-          location: { file: method.filePath, line: 0, column: 0 }
+          location: { file: method.filePath, line: 0, column: 0 },
         });
       }
     }
-    
+
     // SQLインジェクション脆弱性の検出
     if (content.includes('sql') && !content.includes('sanitize')) {
       issues.push({
@@ -1066,10 +1231,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         severity: 'high' as const,
         type: 'unsafe-taint-flow' as const,
         message: 'SQLインジェクション攻撃のリスクがあります',
-        location: { file: '', line: 0, column: 0 }
+        location: { file: '', line: 0, column: 0 },
       });
     }
-    
+
     // 基本的なセキュリティ問題の検出
     if (content.includes('req.body') && !content.includes('validate')) {
       issues.push({
@@ -1077,10 +1242,10 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         severity: 'medium' as const,
         type: 'missing-sanitizer' as const,
         message: '入力検証が不足している可能性があります',
-        location: { file: '', line: 0, column: 0 }
+        location: { file: '', line: 0, column: 0 },
       });
     }
-    
+
     // unsafe型安全性違反の検出（コンテンツベース）
     if (content.includes('any') && content.includes('user')) {
       issues.push({
@@ -1088,59 +1253,63 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         severity: 'warning' as const,
         type: 'unsafe-taint-flow' as const,
         message: 'any型の使用により型安全性が損なわれています',
-        location: { file: '', line: 0, column: 0 }
+        location: { file: '', line: 0, column: 0 },
       });
     }
-    
+
     return issues;
   }
 
   private calculateSecurityScore(content: string, method?: TestMethod): number {
     let score = 1.0;
-    
+
     // セキュリティ関連のテストなら基本点を高く設定
     if (method?.testType === 'security' || content.includes('security')) {
       score = 1.0;
     } else {
       score = 0.8;
     }
-    
+
     // 検証・サニタイズの有無で評価
-    const hasValidation = content.includes('validate') || content.includes('sanitize') || content.includes('check');
+    const hasValidation =
+      content.includes('validate') || content.includes('sanitize') || content.includes('check');
     if (hasValidation) {
       score *= 1.1; // 検証があれば加点
     } else {
       score *= 0.9; // なければ減点
     }
-    
+
     // 境界値テストの有無で評価
-    const hasBoundaryTest = content.includes('null') || content.includes('empty') || content.includes('boundary');
+    const hasBoundaryTest =
+      content.includes('null') || content.includes('empty') || content.includes('boundary');
     if (hasBoundaryTest) {
       score *= 1.05;
     }
-    
+
     // メソッドシグネチャの型安全性評価
-    if (method?.signature) {
-      const hasUnsafeTypes = method.signature.parameters?.some(p => p.type === 'any') || 
-                            method.signature.returnType === 'any';
+    if (method?.signature && typeof method.signature !== 'string') {
+      const sig = method.signature as { parameters?: Array<{ type: string }>; returnType?: string };
+      const hasUnsafeTypes =
+        sig.parameters?.some(p => p.type === 'any') || sig.returnType === 'any';
       if (hasUnsafeTypes) {
         score *= 0.7; // any型使用で大きく減点
       } else {
         score *= 1.1; // 型安全なら加点
       }
     }
-    
+
     // 危険な関数の使用チェック
     if (content.includes('eval(') || (method?.body && method.body.includes('eval('))) {
       score *= 0.5; // eval使用で大幅減点
     }
-    
+
     // 高度なセキュリティキーワードでボーナス
     const advancedSecurityKeywords = ['auth', 'token', 'permission', 'authorize', 'authenticate'];
-    if (advancedSecurityKeywords.some(keyword => content.includes(keyword))) {
+    // Issue #119 対応: 統一キーワード検索を使用
+    if (KeywordSearchUtils.containsAnyKeyword(content, advancedSecurityKeywords)) {
       score *= 1.05;
     }
-    
+
     return Math.max(0.3, Math.min(1.0, score));
   }
 
@@ -1154,18 +1323,19 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     return hasSanitization ? 0.9 : 0.2;
   }
 
-  private assessSecurityImpact(changes: any[]): string {
-    const hasSecurityChanges = changes.some(change => 
-      change.type === 'security' || 
-      (change.methodName && change.methodName.toLowerCase().includes('security'))
+  private assessSecurityImpact(changes: IncrementalChange[]): 'high' | 'medium' | 'low' {
+    const hasSecurityChanges = changes.some(
+      change =>
+        change.type === 'security' ||
+        (change.methodName && change.methodName.toLowerCase().includes('security'))
     );
-    
+
     return hasSecurityChanges ? 'high' : 'medium';
   }
 
   private generateMockTaintSources(content: string): string[] {
     const sources: string[] = [];
-    
+
     if (content.includes('input') || content.includes('req.') || content.includes('user')) {
       sources.push('user-input');
     }
@@ -1175,18 +1345,18 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     if (content.includes('file') || content.includes('upload')) {
       sources.push('file-input');
     }
-    
+
     // 最低でも1つのソースを返す（テストの期待に合わせて）
     if (sources.length === 0) {
       sources.push('default-input-source');
     }
-    
+
     return sources;
   }
 
   private generateMockSanitizers(content: string): string[] {
     const sanitizers: string[] = [];
-    
+
     if (content.includes('sanitize') || content.includes('clean')) {
       sanitizers.push('input-sanitizer');
     }
@@ -1199,18 +1369,23 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     if (content.includes('filter') || content.includes('purify')) {
       sanitizers.push('content-filter');
     }
-    
+
     // セキュリティ関連のテストには常に最低1つのサニタイザーを返す
-    if (content.includes('security') || content.includes('auth') || content.includes('input') || sanitizers.length === 0) {
+    if (
+      content.includes('security') ||
+      content.includes('auth') ||
+      content.includes('input') ||
+      sanitizers.length === 0
+    ) {
       sanitizers.push('default-sanitizer');
     }
-    
+
     return sanitizers;
   }
 
   private generateMockSinks(content: string): string[] {
     const sinks: string[] = [];
-    
+
     if (content.includes('database') || content.includes('db') || content.includes('sql')) {
       sinks.push('database');
     }
@@ -1220,21 +1395,21 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
     if (content.includes('response') || content.includes('output')) {
       sinks.push('http-response');
     }
-    
+
     // 最低でも1つのシンクを返す
     if (sinks.length === 0) {
       sinks.push('default-output-sink');
     }
-    
+
     return sinks;
   }
 
   /**
    * TestMethodsからパターンを検出
    */
-  private detectPatternsFromTestMethods(testMethods: any[]): DetectionResult[] {
+  private detectPatternsFromTestMethods(testMethods: TestMethod[]): DetectionResult[] {
     const patterns: DetectionResult[] = [];
-    
+
     testMethods.forEach((method, index) => {
       // 入力検証関連のメソッドを検出
       if (method.name && (method.name.includes('validation') || method.name.includes('input'))) {
@@ -1244,17 +1419,19 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           pattern: 'input-validation-test',
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.8,
-          securityRelevance: method.securityRelevance || 0.7,
-          evidence: [{ 
-            type: 'method-analysis', 
-            description: `メソッド ${method.name} は入力検証テストです`, 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: method.body || '', 
-            confidence: 0.8 
-          }]
+          securityRelevance: 0.7,
+          evidence: [
+            {
+              type: 'method-analysis',
+              description: `メソッド ${method.name} は入力検証テストです`,
+              location: { file: '', line: index + 1, column: 0 },
+              code: method.body || '',
+              confidence: 0.8,
+            },
+          ],
         });
       }
-      
+
       // 境界値テスト関連のメソッドを検出
       if (method.body && (method.body.includes('true') || method.body.includes('expect'))) {
         patterns.push({
@@ -1263,18 +1440,20 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
           pattern: 'boundary-condition-test',
           location: { file: '', line: index + 1, column: 0 },
           confidence: 0.6,
-          securityRelevance: method.securityRelevance || 0.5,
-          evidence: [{ 
-            type: 'boundary-analysis', 
-            description: `メソッド ${method.name} は境界値テストです`, 
-            location: { file: '', line: index + 1, column: 0 }, 
-            code: method.body || '', 
-            confidence: 0.6 
-          }]
+          securityRelevance: 0.5,
+          evidence: [
+            {
+              type: 'boundary-analysis',
+              description: `メソッド ${method.name} は境界値テストです`,
+              location: { file: '', line: index + 1, column: 0 },
+              code: method.body || '',
+              confidence: 0.6,
+            },
+          ],
         });
       }
     });
-    
+
     return patterns;
   }
 
@@ -1283,7 +1462,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
    */
   async analyzeInParallel(methods: TestMethod[]): Promise<MethodAnalysisResult[]> {
     const results: MethodAnalysisResult[] = [];
-    
+
     // 並列処理のシミュレーション（実際には同期的に処理）
     for (const method of methods) {
       try {
@@ -1294,7 +1473,7 @@ export class InputValidationSecurityPlugin implements ITypeBasedSecurityPlugin {
         results.push(this.createErrorResult(method.name, error, 0));
       }
     }
-    
+
     return results;
   }
 }

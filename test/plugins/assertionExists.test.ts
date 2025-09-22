@@ -6,7 +6,7 @@ const mockFs = fs as jest.Mocked<typeof fs>;
 
 describe('AssertionExistsPlugin', () => {
   let plugin: AssertionExistsPlugin;
-  
+
   beforeEach(() => {
     plugin = new AssertionExistsPlugin();
     jest.resetAllMocks();
@@ -27,14 +27,14 @@ describe('AssertionExistsPlugin', () => {
         });
       });
     `;
-    
+
     mockFs.readFileSync.mockReturnValue(testContent);
-    
+
     const result = await plugin.analyze('src/example.test.ts');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('missing-assertion');
-    expect(result[0].severity).toBe('warning');
+    expect(result[0].severity).toBe('medium');
     expect(result[0].message).toContain('アサーション（expect文など）が見つかりません');
   });
 
@@ -46,11 +46,11 @@ describe('AssertionExistsPlugin', () => {
         });
       });
     `;
-    
+
     mockFs.readFileSync.mockReturnValue(testContent);
-    
+
     const result = await plugin.analyze('src/example.test.ts');
-    
+
     expect(result).toEqual([]);
   });
 
@@ -67,20 +67,20 @@ describe('AssertionExistsPlugin', () => {
       'expect(() => fn()).toThrow()',
       'expect(value).toBeNull()',
       'expect(value).toBeTruthy()',
-      'expect(value).toBeFalsy()'
+      'expect(value).toBeFalsy()',
     ];
-    
+
     for (const pattern of patterns) {
       const testContent = `
         test('should work', () => {
           ${pattern};
         });
       `;
-      
+
       mockFs.readFileSync.mockReturnValue(testContent);
-      
+
       const result = await plugin.analyze('src/example.test.ts');
-      
+
       expect(result).toEqual([]);
     }
   });
@@ -93,11 +93,11 @@ describe('AssertionExistsPlugin', () => {
         const value = 42;
       });
     `;
-    
+
     mockFs.readFileSync.mockReturnValue(testContent);
-    
+
     const result = await plugin.analyze('src/example.test.ts');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('missing-assertion');
   });
@@ -110,11 +110,11 @@ describe('AssertionExistsPlugin', () => {
         console.log(message);
       });
     `;
-    
+
     mockFs.readFileSync.mockReturnValue(testContent);
-    
+
     const result = await plugin.analyze('src/example.test.ts');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('missing-assertion');
   });
@@ -123,22 +123,18 @@ describe('AssertionExistsPlugin', () => {
     mockFs.readFileSync.mockImplementation(() => {
       throw new Error('File not found');
     });
-    
+
     const result = await plugin.analyze('src/example.test.ts');
-    
+
     expect(result).toEqual([]);
   });
 
   it('should work with different test file patterns', async () => {
     const testContent = 'expect(true).toBe(true);';
     mockFs.readFileSync.mockReturnValue(testContent);
-    
-    const testFiles = [
-      'src/example.test.ts',
-      'src/example.spec.ts',
-      '__tests__/example.ts'
-    ];
-    
+
+    const testFiles = ['src/example.test.ts', 'src/example.spec.ts', '__tests__/example.ts'];
+
     for (const testFile of testFiles) {
       const result = await plugin.analyze(testFile);
       expect(result).toEqual([]);

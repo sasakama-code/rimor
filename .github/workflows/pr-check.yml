@@ -1,0 +1,177 @@
+name: PR Required Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+
+jobs:
+  # 必須チェック1: 型チェック
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run type check
+      run: npx tsc --noEmit
+    
+    - name: Set status
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const status = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+          await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: context.payload.pull_request.head.sha,
+            state: status,
+            context: 'Type Check',
+            description: status === 'success' ? 'All type checks passed' : 'Type check failed'
+          });
+
+  # 必須チェック2: テストカバレッジ
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests with coverage
+      run: npm test -- --coverage --coverageReporters=json-summary
+      continue-on-error: true
+    
+    - name: Generate coverage report
+      if: always()
+      run: |
+        # bc依存除去: Node.js専用スクリプトを使用
+        node scripts/coverage-threshold-check.js coverage/coverage-summary.json 80
+    
+    - name: Set coverage status for PR check
+      if: always()
+      run: |
+        if [ "${{ env.COVERAGE_STATUS }}" = "failure" ]; then
+          echo "::error::Test coverage is below threshold: ${{ env.COVERAGE_PCT }}%"
+          exit 1
+        else
+          echo "::notice::Test coverage: ${{ env.COVERAGE_PCT }}%"
+        fi
+
+  # 必須チェック3: ビルド成功
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run build
+      run: npm run build
+    
+    - name: Verify build output
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "::error::Build output directory 'dist' not found"
+          exit 1
+        fi
+        
+        if [ ! -f "dist/index.js" ]; then
+          echo "::error::Main entry point 'dist/index.js' not found"
+          exit 1
+        fi
+
+  # 必須チェック4: Linting
+  lint-check:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run ESLint
+      run: npx eslint src test --ext .ts,.tsx --max-warnings 0
+      continue-on-error: true
+      id: eslint
+    
+    - name: Run Prettier check
+      run: npx prettier --check "src/**/*.{ts,tsx,json}" "test/**/*.{ts,tsx,json}"
+      continue-on-error: true
+      id: prettier
+    
+    - name: Set lint status
+      if: always()
+      run: |
+        if [ "${{ steps.eslint.outcome }}" = "failure" ] || [ "${{ steps.prettier.outcome }}" = "failure" ]; then
+          echo "::error::Linting checks failed"
+          exit 1
+        fi
+
+  # 全チェックの集約
+  pr-status:
+    name: PR Status Check
+    runs-on: ubuntu-latest
+    needs: [type-check, test-coverage, build-check, lint-check]
+    if: always()
+    steps:
+    - name: Check all jobs
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const needs = ${{ toJSON(needs) }};
+          const failed = Object.entries(needs).filter(([job, data]) => 
+            data.result === 'failure'
+          ).map(([job]) => job);
+          
+          if (failed.length > 0) {
+            core.setFailed(`The following checks failed: ${failed.join(', ')}`);
+          } else {
+            console.log('All PR checks passed successfully!');
+          }
+          
+          // Set final status
+          await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: context.payload.pull_request.head.sha,
+            state: failed.length > 0 ? 'failure' : 'success',
+            context: 'PR Required Checks',
+            description: failed.length > 0 
+              ? `${failed.length} check(s) failed` 
+              : 'All checks passed'
+          });
