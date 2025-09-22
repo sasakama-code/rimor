@@ -194,7 +194,7 @@ export interface IWorkerPool {
 /**
  * タスクハンドラー
  */
-export type TaskHandler<T = any, R = any> = (payload: T) => Promise<R>;
+export type TaskHandler<T = unknown, R = unknown> = (payload: T) => Promise<R>;
 
 /**
  * タスクレジストリ
@@ -214,17 +214,21 @@ export interface TaskRegistry {
  * 型ガード: WorkerTaskかどうかを判定
  */
 export function isWorkerTask(obj: unknown): obj is WorkerTask {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'type' in obj &&
-    'payload' in obj &&
-    'createdAt' in obj &&
-    typeof (obj as any).id === 'string' &&
-    typeof (obj as any).type === 'string' &&
-    (obj as any).payload !== undefined &&
-    typeof (obj as any).createdAt === 'string'
+    'id' in candidate &&
+    'type' in candidate &&
+    'payload' in candidate &&
+    'createdAt' in candidate &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.type === 'string' &&
+    candidate.payload !== undefined &&
+    typeof candidate.createdAt === 'string'
   );
 }
 
@@ -232,15 +236,19 @@ export function isWorkerTask(obj: unknown): obj is WorkerTask {
  * 型ガード: TaskResultかどうかを判定
  */
 export function isTaskResult(obj: unknown): obj is TaskResult {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'taskId' in obj &&
-    'success' in obj &&
-    'executionTime' in obj &&
-    typeof (obj as any).taskId === 'string' &&
-    typeof (obj as any).success === 'boolean' &&
-    typeof (obj as any).executionTime === 'number'
+    'taskId' in candidate &&
+    'success' in candidate &&
+    'executionTime' in candidate &&
+    typeof candidate.taskId === 'string' &&
+    typeof candidate.success === 'boolean' &&
+    typeof candidate.executionTime === 'number'
   );
 }
 

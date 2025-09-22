@@ -198,7 +198,7 @@ export interface UsageCategory {
   /** ファイル */
   files: string[];
   /** 詳細 */
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -288,17 +288,21 @@ export interface ProjectMetrics {
  * 型ガード: DesignPatternかどうかを判定
  */
 export function isDesignPattern(obj: unknown): obj is DesignPattern {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'type' in obj &&
-    'name' in obj &&
-    'location' in obj &&
-    'confidence' in obj &&
-    (obj as any).type !== undefined &&
-    typeof (obj as any).name === 'string' &&
-    (obj as any).location !== undefined &&
-    typeof (obj as any).confidence === 'number'
+    'type' in candidate &&
+    'name' in candidate &&
+    'location' in candidate &&
+    'confidence' in candidate &&
+    candidate.type !== undefined &&
+    typeof candidate.name === 'string' &&
+    candidate.location !== undefined &&
+    typeof candidate.confidence === 'number'
   );
 }
 
@@ -306,19 +310,23 @@ export function isDesignPattern(obj: unknown): obj is DesignPattern {
  * 型ガード: AntiPatternかどうかを判定
  */
 export function isAntiPattern(obj: unknown): obj is AntiPattern {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'type' in obj &&
-    'name' in obj &&
-    'location' in obj &&
-    'severity' in obj &&
-    'refactoringSuggestions' in obj &&
-    (obj as any).type !== undefined &&
-    typeof (obj as any).name === 'string' &&
-    (obj as any).location !== undefined &&
-    (obj as any).severity !== undefined &&
-    Array.isArray((obj as any).refactoringSuggestions)
+    'type' in candidate &&
+    'name' in candidate &&
+    'location' in candidate &&
+    'severity' in candidate &&
+    'refactoringSuggestions' in candidate &&
+    candidate.type !== undefined &&
+    typeof candidate.name === 'string' &&
+    candidate.location !== undefined &&
+    candidate.severity !== undefined &&
+    Array.isArray(candidate.refactoringSuggestions)
   );
 }
 

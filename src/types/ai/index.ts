@@ -239,7 +239,7 @@ export interface FileAnalysisSection {
   /** 分析内容 */
   content: string;
   /** メトリクス */
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
 }
 
 /**
@@ -382,21 +382,25 @@ export interface AIOutputError extends Error {
  * 型ガード: AIOptimizedOutputかどうかを判定
  */
 export function isAIOptimizedOutput(obj: unknown): obj is AIOptimizedOutput {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'format' in obj &&
-    'version' in obj &&
-    'metadata' in obj &&
-    'context' in obj &&
-    'qualityOverview' in obj &&
-    'files' in obj &&
-    (obj as any).format === 'ai-optimized' &&
-    (obj as any).version !== undefined &&
-    (obj as any).metadata !== undefined &&
-    (obj as any).context !== undefined &&
-    (obj as any).qualityOverview !== undefined &&
-    Array.isArray((obj as any).files)
+    'format' in candidate &&
+    'version' in candidate &&
+    'metadata' in candidate &&
+    'context' in candidate &&
+    'qualityOverview' in candidate &&
+    'files' in candidate &&
+    candidate.format === 'ai-optimized' &&
+    candidate.version !== undefined &&
+    candidate.metadata !== undefined &&
+    candidate.context !== undefined &&
+    candidate.qualityOverview !== undefined &&
+    Array.isArray(candidate.files)
   );
 }
 
@@ -404,17 +408,21 @@ export function isAIOptimizedOutput(obj: unknown): obj is AIOptimizedOutput {
  * 型ガード: AIFormattedIssueかどうかを判定
  */
 export function isAIFormattedIssue(obj: unknown): obj is AIFormattedIssue {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'category' in obj &&
-    'severity' in obj &&
-    'message' in obj &&
-    'impact' in obj &&
-    typeof (obj as any).category === 'string' &&
-    typeof (obj as any).severity === 'string' &&
-    typeof (obj as any).message === 'string' &&
-    ['high', 'medium', 'low'].includes((obj as any).impact)
+    'category' in candidate &&
+    'severity' in candidate &&
+    'message' in candidate &&
+    'impact' in candidate &&
+    typeof candidate.category === 'string' &&
+    typeof candidate.severity === 'string' &&
+    typeof candidate.message === 'string' &&
+    ['high', 'medium', 'low'].includes(candidate.impact as string)
   );
 }
 

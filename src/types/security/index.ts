@@ -210,7 +210,7 @@ export interface TaintAnalysisResult
     /** 分析日時 */
     timestamp?: string;
     /** 分析設定 */
-    configuration?: Record<string, any>;
+    configuration?: Record<string, unknown>;
   };
 }
 
@@ -219,17 +219,22 @@ export interface TaintAnalysisResult
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTaintAnalysisResult(obj: unknown): obj is TaintAnalysisResult {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'flows' in obj &&
-    'summary' in obj &&
-    'recommendations' in obj &&
-    Array.isArray((obj as any).flows) &&
-    (obj as any).summary !== null &&
-    typeof (obj as any).summary === 'object' &&
-    typeof (obj as any).summary.totalFlows === 'number' &&
-    Array.isArray((obj as any).recommendations)
+    'flows' in candidate &&
+    'summary' in candidate &&
+    'recommendations' in candidate &&
+    Array.isArray(candidate.flows) &&
+    candidate.summary !== null &&
+    typeof candidate.summary === 'object' &&
+    candidate.summary !== null &&
+    typeof (candidate.summary as Record<string, unknown>).totalFlows === 'number' &&
+    Array.isArray(candidate.recommendations)
   );
 }
 
@@ -237,13 +242,21 @@ export function isTaintAnalysisResult(obj: unknown): obj is TaintAnalysisResult 
  * 型ガード: セキュリティ違反を含むかどうかを判定
  */
 export function hasSecurityViolations(obj: unknown): obj is TaintAnalysisWithViolations {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'violations' in obj &&
-    Array.isArray((obj as any).violations) &&
-    (obj as any).violations.every(
-      (v: any) => v.type && v.severity && v.source && v.sink && v.description
+    'violations' in candidate &&
+    Array.isArray(candidate.violations) &&
+    candidate.violations.every(
+      (v: unknown) => {
+        if (v === null || typeof v !== 'object') return false;
+        const violation = v as Record<string, unknown>;
+        return violation.type && violation.severity && violation.source && violation.sink && violation.description;
+      }
     )
   );
 }
@@ -252,14 +265,21 @@ export function hasSecurityViolations(obj: unknown): obj is TaintAnalysisWithVio
  * 型ガード: アノテーションを含むかどうかを判定
  */
 export function hasAnnotations(obj: unknown): obj is TaintAnalysisWithAnnotations {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const candidate = obj as Record<string, unknown>;
+  
+  if (!('annotations' in candidate) || candidate.annotations === null || typeof candidate.annotations !== 'object') {
+    return false;
+  }
+
+  const annotations = candidate.annotations as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'annotations' in obj &&
-    (obj as any).annotations !== null &&
-    typeof (obj as any).annotations === 'object' &&
-    Array.isArray((obj as any).annotations.taintedProperties) &&
-    Array.isArray((obj as any).annotations.untaintedProperties)
+    Array.isArray(annotations.taintedProperties) &&
+    Array.isArray(annotations.untaintedProperties)
   );
 }
 

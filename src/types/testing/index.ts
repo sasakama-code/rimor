@@ -237,7 +237,7 @@ export interface TestCase
   /** 所属するファイルパス（オプション） */
   filePath?: string;
   /** プラグイン固有の情報（オプション） */
-  pluginData?: Record<string, any>;
+  pluginData?: Record<string, unknown>;
 }
 
 /**
@@ -245,16 +245,20 @@ export interface TestCase
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isTestCase(obj: unknown): obj is TestCase {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'name' in obj &&
-    'status' in obj &&
-    typeof (obj as any).id === 'string' &&
-    typeof (obj as any).name === 'string' &&
-    typeof (obj as any).status === 'string' &&
-    ['pending', 'running', 'passed', 'failed', 'skipped'].includes((obj as any).status)
+    'id' in candidate &&
+    'name' in candidate &&
+    'status' in candidate &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.status === 'string' &&
+    ['pending', 'running', 'passed', 'failed', 'skipped'].includes(candidate.status as string)
   );
 }
 
@@ -262,14 +266,21 @@ export function isTestCase(obj: unknown): obj is TestCase {
  * 型ガード: テストメタデータを持つかどうかを判定
  */
 export function hasTestMetadata(obj: unknown): obj is TestCaseWithMetadata {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
+  if (!('metadata' in candidate) || candidate.metadata === null || typeof candidate.metadata !== 'object') {
+    return false;
+  }
+  
+  const metadata = candidate.metadata as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'metadata' in obj &&
-    (obj as any).metadata !== null &&
-    typeof (obj as any).metadata === 'object' &&
-    ((obj as any).metadata.executionTime === undefined ||
-      typeof (obj as any).metadata.executionTime === 'number')
+    metadata.executionTime === undefined ||
+    typeof metadata.executionTime === 'number'
   );
 }
 
@@ -277,17 +288,24 @@ export function hasTestMetadata(obj: unknown): obj is TestCaseWithMetadata {
  * 型ガード: アサーション情報を持つかどうかを判定
  */
 export function hasAssertions(obj: unknown): obj is TestCaseWithAssertions {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'assertions' in obj &&
-    Array.isArray((obj as any).assertions) &&
-    (obj as any).assertions.every(
-      (a: any) =>
-        a.type &&
-        a.expected !== undefined &&
-        a.actual !== undefined &&
-        typeof a.passed === 'boolean'
+    'assertions' in candidate &&
+    Array.isArray(candidate.assertions) &&
+    candidate.assertions.every(
+      (a: unknown) => {
+        if (a === null || typeof a !== 'object') return false;
+        const assertion = a as Record<string, unknown>;
+        return assertion.type &&
+          assertion.expected !== undefined &&
+          assertion.actual !== undefined &&
+          typeof assertion.passed === 'boolean';
+      }
     )
   );
 }

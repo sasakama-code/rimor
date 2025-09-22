@@ -141,7 +141,7 @@ export interface DomainEvent {
   /** 集約ID */
   aggregateId: string;
   /** ペイロード */
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   /** メタデータ */
   metadata?: {
     userId?: string;
@@ -162,8 +162,8 @@ export interface DomainService {
   /** 操作 */
   operations: Array<{
     name: string;
-    input: Record<string, any>;
-    output: Record<string, any>;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
     description: string;
   }>;
   /** 依存サービス */
@@ -250,17 +250,21 @@ export interface DomainAnalysisResult {
  * 型ガード: DomainContextかどうかを判定
  */
 export function isDomainContext(obj: unknown): obj is DomainContext {
-  return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'name' in obj &&
-    'category' in obj &&
-    'layer' in obj &&
-    'entities' in obj &&
-    typeof (obj as any).name === 'string' &&
-    (obj as any).category !== undefined &&
-    (obj as any).layer !== undefined &&
-    Array.isArray((obj as any).entities)
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
+  return (
+    'name' in candidate &&
+    'category' in candidate &&
+    'layer' in candidate &&
+    'entities' in candidate &&
+    typeof candidate.name === 'string' &&
+    candidate.category !== undefined &&
+    candidate.layer !== undefined &&
+    Array.isArray(candidate.entities)
   );
 }
 
@@ -268,17 +272,21 @@ export function isDomainContext(obj: unknown): obj is DomainContext {
  * 型ガード: DomainEntityかどうかを判定
  */
 export function isDomainEntity(obj: unknown): obj is DomainEntity {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'name' in obj &&
-    'type' in obj &&
-    'properties' in obj &&
-    typeof (obj as any).id === 'string' &&
-    typeof (obj as any).name === 'string' &&
-    (obj as any).type !== undefined &&
-    Array.isArray((obj as any).properties)
+    'id' in candidate &&
+    'name' in candidate &&
+    'type' in candidate &&
+    'properties' in candidate &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    candidate.type !== undefined &&
+    Array.isArray(candidate.properties)
   );
 }
 
@@ -286,17 +294,21 @@ export function isDomainEntity(obj: unknown): obj is DomainEntity {
  * 型ガード: DomainEventかどうかを判定
  */
 export function isDomainEvent(obj: unknown): obj is DomainEvent {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'name' in obj &&
-    'timestamp' in obj &&
-    'aggregateId' in obj &&
-    'payload' in obj &&
-    typeof (obj as any).name === 'string' &&
-    typeof (obj as any).timestamp === 'string' &&
-    typeof (obj as any).aggregateId === 'string' &&
-    (obj as any).payload !== undefined
+    'name' in candidate &&
+    'timestamp' in candidate &&
+    'aggregateId' in candidate &&
+    'payload' in candidate &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.timestamp === 'string' &&
+    typeof candidate.aggregateId === 'string' &&
+    candidate.payload !== undefined
   );
 }
 

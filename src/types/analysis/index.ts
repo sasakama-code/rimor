@@ -59,7 +59,7 @@ export interface AnalysisResultWithPlugins {
   /** 実行されたプラグインのリスト */
   pluginsExecuted?: string[];
   /** プラグイン固有の結果 */
-  pluginResults?: Record<string, any>;
+  pluginResults?: Record<string, unknown>;
 }
 
 /**
@@ -129,15 +129,19 @@ export interface AnalysisResult
  * Defensive Programming: 実行時の型安全性を確保
  */
 export function isAnalysisResult(obj: unknown): obj is AnalysisResult {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'totalFiles' in obj &&
-    'issues' in obj &&
-    'executionTime' in obj &&
-    typeof (obj as any).totalFiles === 'number' &&
-    Array.isArray((obj as any).issues) &&
-    typeof (obj as any).executionTime === 'number'
+    'totalFiles' in candidate &&
+    'issues' in candidate &&
+    'executionTime' in candidate &&
+    typeof candidate.totalFiles === 'number' &&
+    Array.isArray(candidate.issues) &&
+    typeof candidate.executionTime === 'number'
   );
 }
 
@@ -145,15 +149,19 @@ export function isAnalysisResult(obj: unknown): obj is AnalysisResult {
  * 型ガード: プラグインメタデータを持つかどうかを判定
  */
 export function hasPluginMetadata(obj: unknown): obj is AnalysisResultWithPlugins {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    (!('pluginsExecuted' in obj) ||
-      (obj as any).pluginsExecuted === undefined ||
-      Array.isArray((obj as any).pluginsExecuted)) &&
-    (!('pluginResults' in obj) ||
-      (obj as any).pluginResults === undefined ||
-      typeof (obj as any).pluginResults === 'object')
+    (!('pluginsExecuted' in candidate) ||
+      candidate.pluginsExecuted === undefined ||
+      Array.isArray(candidate.pluginsExecuted)) &&
+    (!('pluginResults' in candidate) ||
+      candidate.pluginResults === undefined ||
+      typeof candidate.pluginResults === 'object')
   );
 }
 
@@ -161,14 +169,21 @@ export function hasPluginMetadata(obj: unknown): obj is AnalysisResultWithPlugin
  * 型ガード: 並列処理統計を持つかどうかを判定
  */
 export function hasParallelStats(obj: unknown): obj is AnalysisResultWithParallelStats {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+  
+  const candidate = obj as Record<string, unknown>;
+  
+  if (!('parallelStats' in candidate) || candidate.parallelStats === null || typeof candidate.parallelStats !== 'object') {
+    return false;
+  }
+  
+  const parallelStats = candidate.parallelStats as Record<string, unknown>;
+  
   return !!(
-    obj !== null &&
-    typeof obj === 'object' &&
-    'parallelStats' in obj &&
-    (obj as any).parallelStats !== null &&
-    typeof (obj as any).parallelStats === 'object' &&
-    typeof (obj as any).parallelStats.batchCount === 'number' &&
-    typeof (obj as any).parallelStats.threadsUsed === 'number'
+    typeof parallelStats.batchCount === 'number' &&
+    typeof parallelStats.threadsUsed === 'number'
   );
 }
 
