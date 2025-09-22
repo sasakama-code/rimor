@@ -10,6 +10,10 @@ import {
   UnifiedReport,
   OrchestratorConfig,
   OrchestratorError,
+  TaintAnalysisResult,
+  IntentAnalysisResult,
+  GapAnalysisResult,
+  NistEvaluationResult,
 } from './types';
 import {
   IAnalysisStrategyFactory,
@@ -24,6 +28,25 @@ import { InputValidator } from './validators/InputValidator';
 import { UnifiedPluginManager } from '../core/UnifiedPluginManager';
 import { TestQualityIntegrator } from '../analyzers/coverage/TestQualityIntegrator';
 import { ProjectContext, TestFile } from '../core/types';
+import { DetectionResult } from '../core/types/analysis-result';
+import { QualityScore } from '../core/types/quality-score';
+
+/**
+ * 品質分析結果の型定義
+ */
+interface QualityAnalysisResult {
+  qualityScore: number;
+  coverageData: QualityPluginResult[] | null;
+  recommendations: string[];
+}
+
+interface QualityPluginResult {
+  pluginId: string;
+  score: number;
+  patterns: DetectionResult[];
+  qualityScore: QualityScore;
+  recommendations: string[];
+}
 
 export class UnifiedSecurityAnalysisOrchestrator {
   private readonly config: OrchestratorConfig;
@@ -178,7 +201,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * カバレッジ統合による品質分析実行
    * Issue #83: unified-analyzeへの機能統合
    */
-  private async executeQualityAnalysis(targetPath: string): Promise<any> {
+  private async executeQualityAnalysis(targetPath: string): Promise<QualityAnalysisResult> {
     try {
       // UnifiedPluginManagerから品質プラグインを取得
       const qualityPlugins = this.unifiedPluginManager.getQualityPlugins();
@@ -249,7 +272,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
   /**
    * 統合品質スコアの計算
    */
-  private calculateAggregatedQualityScore(qualityResults: any[]): number {
+  private calculateAggregatedQualityScore(qualityResults: QualityPluginResult[]): number {
     if (qualityResults.length === 0) {
       return 0;
     }
@@ -265,7 +288,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
   /**
    * 品質改善推奨事項の生成
    */
-  private generateQualityRecommendations(qualityResults: any[]): string[] {
+  private generateQualityRecommendations(qualityResults: QualityPluginResult[]): string[] {
     const recommendations: string[] = [];
 
     qualityResults.forEach(result => {
@@ -334,7 +357,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
   private async executeIntentExtraction(
     strategy: IIntentExtractionStrategy,
     targetPath: string,
-    taintResult: any
+    taintResult: TaintAnalysisResult
   ) {
     if (!this.config.enableIntentExtraction) {
       return {
@@ -357,8 +380,8 @@ export class UnifiedSecurityAnalysisOrchestrator {
    */
   private async executeGapDetection(
     strategy: IGapDetectionStrategy,
-    intentResult: any,
-    taintResult: any
+    intentResult: IntentAnalysisResult,
+    taintResult: TaintAnalysisResult
   ) {
     if (!this.config.enableGapDetection) {
       return {
@@ -380,7 +403,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * NIST評価実行
    * Strategy Patternによる実装の抽象化
    */
-  private async executeNistEvaluation(strategy: INistEvaluationStrategy, gapResult: any) {
+  private async executeNistEvaluation(strategy: INistEvaluationStrategy, gapResult: GapAnalysisResult) {
     if (!this.config.enableNistEvaluation) {
       return {
         riskAssessments: [],
@@ -404,13 +427,13 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * DRY原則に従い、レポート生成ロジックを一箇所に集約
    */
   private generateUnifiedReport(
-    taintResult: any,
-    intentResult: any,
-    gapResult: any,
-    nistResult: any,
+    taintResult: TaintAnalysisResult,
+    intentResult: IntentAnalysisResult,
+    gapResult: GapAnalysisResult,
+    nistResult: NistEvaluationResult,
     targetPath: string,
     executionTime: number,
-    qualityResults?: any
+    qualityResults?: QualityAnalysisResult
   ): UnifiedReport {
     // 問題数の集計（DRY原則：集計ロジックの統一化）
     const issueCounts = this.calculateIssueCounts(taintResult, gapResult, nistResult);
@@ -438,7 +461,11 @@ export class UnifiedSecurityAnalysisOrchestrator {
    * 問題数の集計
    * DRY原則：集計ロジックの一元化
    */
-  private calculateIssueCounts(taintResult: any, gapResult: any, nistResult: any) {
+  private calculateIssueCounts(
+    taintResult: TaintAnalysisResult,
+    gapResult: GapAnalysisResult,
+    nistResult: NistEvaluationResult
+  ) {
     return {
       totalIssues: taintResult.summary.totalVulnerabilities + gapResult.summary.totalGaps,
       criticalIssues: gapResult.summary.criticalGaps + nistResult.summary.criticalRisks,

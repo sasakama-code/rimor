@@ -27,6 +27,63 @@ import {
   OrchestratorConfig,
 } from '../types';
 
+import {
+  TaintFlow,
+  SecurityViolation,
+  TaintSeverity,
+} from '../../types/security';
+
+import {
+  TestIntent,
+  SecurityGap,
+  NistRiskAssessment,
+  TaintVulnerability,
+} from '../types';
+
+/**
+ * TaintAnalysisSystemの結果構造
+ * 外部システムの結果をマッピングするためのインターフェース
+ */
+interface TaintSystemResult {
+  detectedTaints?: Array<{
+    id?: string;
+    type: string;
+    severity: string;
+    sourceLocation?: {
+      file?: string;
+      line?: number;
+      column?: number;
+    };
+    sinkLocation?: {
+      file?: string;
+      line?: number;
+      column?: number;
+    };
+    dataFlowPath?: string[];
+  }>;
+}
+
+/**
+ * IntentPatternMatcherの結果構造
+ */
+interface ProjectAnalysisResult {
+  intents?: Array<{
+    testName?: string;
+    description?: string;
+    expectedBehavior?: string;
+    securityRequirements?: string[];
+  }>;
+}
+
+/**
+ * 設定オプションの型定義
+ */
+interface StrategyConfig {
+  riskThreshold?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
+  [key: string]: unknown;
+}
+
 /**
  * 実Taint分析戦略
  * Adapter Pattern: TaintAnalysisSystemを戦略インターフェースに適応
@@ -34,7 +91,7 @@ import {
 export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
   private taintSystem: TaintAnalysisSystem;
 
-  constructor(config?: any) {
+  constructor(config?: StrategyConfig | OrchestratorConfig) {
     console.log('🔧 [RealTaintAnalysisStrategy] 初期化中...');
 
     // TaintAnalysisSystemの設定に基づいて初期化
@@ -107,10 +164,10 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
    * TaintAnalysisSystemの結果を標準形式に変換
    * Adapter Pattern: 異なるインターフェース間の変換
    */
-  private convertToTaintAnalysisResult(systemResult: any): TaintAnalysisResult {
+  private convertToTaintAnalysisResult(systemResult: TaintSystemResult): TaintAnalysisResult {
     // TaintAnalysisSystemの結果構造を標準形式に変換
-    const vulnerabilities =
-      systemResult.detectedTaints?.map((taint: any) => ({
+    const vulnerabilities: TaintVulnerability[] =
+      systemResult.detectedTaints?.map((taint) => ({
         id: taint.id || `TAINT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: this.mapTaintTypeToVulnerabilityType(taint.type),
         severity: this.mapTaintSeverityToSeverity(taint.severity),
@@ -130,23 +187,23 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
     const summary = {
       totalVulnerabilities: vulnerabilities.length,
       highSeverity: vulnerabilities.filter(
-        (v: any) => v.severity === 'HIGH' || v.severity === 'CRITICAL'
+        (v) => v.severity === 'HIGH' || v.severity === 'CRITICAL'
       ).length,
-      mediumSeverity: vulnerabilities.filter((v: any) => v.severity === 'MEDIUM').length,
-      lowSeverity: vulnerabilities.filter((v: any) => v.severity === 'LOW').length,
+      mediumSeverity: vulnerabilities.filter((v) => v.severity === 'MEDIUM').length,
+      lowSeverity: vulnerabilities.filter((v) => v.severity === 'LOW').length,
     };
 
     return { vulnerabilities, summary };
   }
 
-  private mapTaintTypeToVulnerabilityType(taintType: string): string {
+  private mapTaintTypeToVulnerabilityType(taintType: string): 'SQL_INJECTION' | 'COMMAND_INJECTION' | 'XSS' | 'PATH_TRAVERSAL' {
     const typeMap: Record<string, string> = {
       PATH_TAINT: 'PATH_TRAVERSAL',
       SQL_TAINT: 'SQL_INJECTION',
       XSS_TAINT: 'XSS',
       COMMAND_TAINT: 'COMMAND_INJECTION',
     };
-    return typeMap[taintType] || 'PATH_TRAVERSAL';
+    return (typeMap[taintType] as 'SQL_INJECTION' | 'COMMAND_INJECTION' | 'XSS' | 'PATH_TRAVERSAL') || 'PATH_TRAVERSAL';
   }
 
   private mapTaintSeverityToSeverity(severity: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
@@ -172,7 +229,7 @@ export class RealTaintAnalysisStrategy implements ITaintAnalysisStrategy {
 export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
   private intentMatcher: IntentPatternMatcher;
 
-  constructor(config?: any) {
+  constructor(config?: StrategyConfig | OrchestratorConfig) {
     this.intentMatcher = new IntentPatternMatcher();
   }
 
@@ -201,11 +258,11 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
    * IntentPatternMatcherの結果を標準形式に変換
    */
   private convertProjectAnalysisToIntentResult(
-    projectAnalysis: any,
+    projectAnalysis: ProjectAnalysisResult,
     taintResult: TaintAnalysisResult
   ): IntentAnalysisResult {
     const testIntents =
-      projectAnalysis.intents?.map((intent: any) => ({
+      projectAnalysis.intents?.map((intent) => ({
         testName: intent.testName || 'Unknown Test',
         expectedBehavior: intent.expectedBehavior || intent.description || 'Unknown Behavior',
         securityRequirements: this.enhanceSecurityRequirements(
@@ -218,10 +275,10 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
     const summary = {
       totalTests: testIntents.length,
       highRiskTests: testIntents.filter(
-        (t: any) => t.riskLevel === 'HIGH' || t.riskLevel === 'CRITICAL'
+        (t) => t.riskLevel === 'HIGH' || t.riskLevel === 'CRITICAL'
       ).length,
-      mediumRiskTests: testIntents.filter((t: any) => t.riskLevel === 'MEDIUM').length,
-      lowRiskTests: testIntents.filter((t: any) => t.riskLevel === 'LOW').length,
+      mediumRiskTests: testIntents.filter((t) => t.riskLevel === 'MEDIUM').length,
+      lowRiskTests: testIntents.filter((t) => t.riskLevel === 'LOW').length,
     };
 
     return { testIntents, summary };
@@ -286,7 +343,7 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
   }
 
   private assessIntentRiskLevel(
-    intent: any,
+    intent: { testName?: string; description?: string },
     taintResult: TaintAnalysisResult
   ): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     // セキュリティ関連キーワードによるリスク評価
@@ -330,12 +387,12 @@ export class RealIntentExtractionStrategy implements IIntentExtractionStrategy {
 export class RealGapDetectionStrategy implements IGapDetectionStrategy {
   private gapDetector: GapDetector;
 
-  constructor(config?: any) {
+  constructor(config?: StrategyConfig | OrchestratorConfig) {
     this.gapDetector = new GapDetector({
       enableSemanticAnalysis: true,
-      riskThreshold: config?.riskThreshold || 'MEDIUM',
+      riskThreshold: (config as StrategyConfig)?.riskThreshold || 'MEDIUM',
       includeRecommendations: true,
-      analysisDepth: config?.analysisDepth || 'detailed',
+      analysisDepth: (config as StrategyConfig)?.analysisDepth || 'detailed',
     });
   }
 
@@ -365,7 +422,7 @@ export class RealGapDetectionStrategy implements IGapDetectionStrategy {
 export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
   private nistEvaluator: NistRiskEvaluator;
 
-  constructor(config?: any) {
+  constructor(config?: StrategyConfig | OrchestratorConfig) {
     this.nistEvaluator = new NistRiskEvaluator();
   }
 
@@ -387,7 +444,7 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
     return 'RealNistEvaluationStrategy';
   }
 
-  private async performRiskAssessments(gapResult: GapAnalysisResult): Promise<any[]> {
+  private async performRiskAssessments(gapResult: GapAnalysisResult): Promise<NistRiskAssessment[]> {
     const assessments = [];
 
     for (const gap of gapResult.gaps) {
@@ -420,7 +477,7 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
     return riskLevel as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   }
 
-  private assessImpactLevel(gap: any): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+  private assessImpactLevel(gap: SecurityGap): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     // ギャップの内容に基づいて影響レベルを評価
     if (gap.actualImplementation.includes('CRITICAL') || gap.intention.includes('認証')) {
       return 'CRITICAL';
@@ -441,7 +498,7 @@ export class RealNistEvaluationStrategy implements INistEvaluationStrategy {
     return scoreMap[riskLevel.toUpperCase()] || 50;
   }
 
-  private calculateNistSummary(assessments: any[]) {
+  private calculateNistSummary(assessments: NistRiskAssessment[]) {
     const scores = assessments.map(a => a.nistScore);
     const overallScore =
       scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 100;

@@ -401,7 +401,7 @@ export class TaintAnalysisSystem {
       if (this.config.compatibility.exportJAIF) {
         result.jaifOutput = this.exportToJAIF(result.annotations);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       result.issues.push({
         type: 'analysis-error',
         severity: 'error',
@@ -453,7 +453,7 @@ export class TaintAnalysisSystem {
       if (this.config.compatibility.exportJAIF) {
         result.jaifOutput = this.exportToJAIF(result.annotations);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       result.issues.push({
         type: 'analysis-error',
         severity: 'error',
@@ -604,7 +604,7 @@ export class TaintAnalysisSystem {
   /**
    * カスタムライブラリメソッドの登録
    */
-  registerLibraryMethod(signature: any): void {
+  registerLibraryMethod(signature: Record<string, unknown>): void {
     this.libraryHandler.registerLibraryMethod(signature);
   }
 
@@ -1122,7 +1122,7 @@ export class TaintAnalysisSystem {
    */
   private collectVariableDefinitions(
     node: ts.Node,
-    variableDefinitions: Map<string, any>,
+    variableDefinitions: Map<string, Record<string, unknown>>,
     sourceFile: ts.SourceFile
   ): void {
     if (ts.isVariableDeclaration(node) && node.name && ts.isIdentifier(node.name)) {
@@ -1154,7 +1154,7 @@ export class TaintAnalysisSystem {
    */
   private detectDangerousFunctionUsage(
     node: ts.Node,
-    variableDefinitions: Map<string, any>,
+    variableDefinitions: Map<string, Record<string, unknown>>,
     issues: TaintIssue[],
     fileName: string,
     sourceFile: ts.SourceFile
@@ -1428,7 +1428,7 @@ export class TaintAnalysisSystem {
    * データフロー解析結果の重複除去
    * 同じsource-sink組み合わせから生成される重複した脆弱性を除去
    */
-  private deduplicateDataFlowIssues(paths: any[], fileName: string): TaintIssue[] {
+  private deduplicateDataFlowIssues(paths: Record<string, unknown>[], fileName: string): TaintIssue[] {
     const uniqueIssues: TaintIssue[] = [];
     const seen = new Set<string>();
 
@@ -1462,7 +1462,7 @@ export class TaintAnalysisSystem {
   /**
    * 脆弱性タイプに最も関連性の高いソース変数を選択
    */
-  private selectRelevantSourceVariable(path: any, issueType: string): string {
+  private selectRelevantSourceVariable(path: Record<string, unknown>, issueType: string): string {
     const variableName = path.source.variableName;
 
     // 脆弱性タイプに応じて関連性の高い変数名パターンを優先
@@ -2179,7 +2179,7 @@ export class TaintAnalysisSystem {
    * マルチステップ攻撃の検出
    * 複数のOWASPカテゴリにまたがる攻撃パスを分析
    */
-  private detectMultiStepAttacks(paths: any[]): MultiStepAttack[] {
+  private detectMultiStepAttacks(paths: Record<string, unknown>[]): MultiStepAttack[] {
     const attacks: MultiStepAttack[] = [];
 
     // 既知のマルチステップ攻撃パターン
@@ -2244,7 +2244,7 @@ export class TaintAnalysisSystem {
   /**
    * パス同士が関連しているかチェック
    */
-  private arePathsRelated(path1: any, path2: any): boolean {
+  private arePathsRelated(path1: Record<string, unknown>, path2: Record<string, unknown>): boolean {
     // 同じファイルで行が近い場合は関連とみなす
     if (path1.source.location.file === path2.source.location.file) {
       const lineDiff = Math.abs(path1.source.location.line - path2.source.location.line);
@@ -2277,7 +2277,7 @@ export class TaintAnalysisSystem {
   /**
    * 攻撃パターンにマッチするかチェック
    */
-  private matchesAttackPattern(pattern: any, attackTypes: string[]): boolean {
+  private matchesAttackPattern(pattern: Record<string, unknown>, attackTypes: string[]): boolean {
     // 攻撃タイプがパターンの初期ステップに含まれているかチェック
     return attackTypes.some(type => pattern.steps.slice(0, 2).includes(type));
   }

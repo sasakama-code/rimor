@@ -13,6 +13,39 @@ import {
 import { IGapDetectionStrategy, GapAnalysisConfig } from '../GapDetector';
 
 /**
+ * テスト意図の型定義
+ */
+interface TestIntent {
+  testName: string;
+  expectedBehavior: string;
+  securityRequirements: string[];
+  riskLevel: string;
+}
+
+/**
+ * 脆弱性の型定義
+ */
+interface Vulnerability {
+  type: string;
+  severity: string;
+  source: {
+    file: string;
+  };
+}
+
+/**
+ * セマンティックマッピングの型定義
+ */
+interface SemanticMapping {
+  testName: string;
+  expectedBehavior: string;
+  actualImplementation: string;
+  hasGap: boolean;
+  riskLevel: string;
+  recommendations: string[];
+}
+
+/**
  * セマンティックギャップ検出戦略
  * 意味レベルでのギャップ検出を行う高度な戦略
  */
@@ -164,7 +197,7 @@ class RiskAnalyzer {
     };
   }
 
-  private findRelatedVulnerabilities(intent: any, vulnerabilities: any[]): any[] {
+  private findRelatedVulnerabilities(intent: TestIntent, vulnerabilities: Vulnerability[]): Vulnerability[] {
     return vulnerabilities.filter(vuln =>
       intent.securityRequirements.some((req: string) => this.isSemanticMatch(req, vuln.type))
     );
@@ -183,7 +216,7 @@ class RiskAnalyzer {
     return keywords.some(keyword => requirement.toLowerCase().includes(keyword.toLowerCase()));
   }
 
-  private assessRiskGap(intent: any, vuln: any): SecurityGap | null {
+  private assessRiskGap(intent: TestIntent, vuln: Vulnerability): SecurityGap | null {
     const intentRisk = intent.riskLevel;
     const vulnRisk = this.mapSeverityToRiskLevel(vuln.severity);
 
@@ -270,7 +303,7 @@ class CoverageAnalyzer {
     };
   }
 
-  private findUncoveredVulnerabilities(testIntents: any[], vulnerabilities: any[]): any[] {
+  private findUncoveredVulnerabilities(testIntents: TestIntent[], vulnerabilities: Vulnerability[]): Vulnerability[] {
     return vulnerabilities.filter(
       vuln =>
         !testIntents.some(intent =>
@@ -324,8 +357,8 @@ class CoverageAnalyzer {
  * Open-Closed Principle: 新しいマッピングルールを追加可能
  */
 class SemanticMappingEngine {
-  analyzeMappings(testIntents: any[], vulnerabilities: any[]): any[] {
-    const mappings: any[] = [];
+  analyzeMappings(testIntents: TestIntent[], vulnerabilities: Vulnerability[]): SemanticMapping[] {
+    const mappings: SemanticMapping[] = [];
 
     for (const intent of testIntents) {
       for (const vuln of vulnerabilities) {
@@ -339,7 +372,7 @@ class SemanticMappingEngine {
     return mappings;
   }
 
-  private createMapping(intent: any, vuln: any): any | null {
+  private createMapping(intent: TestIntent, vuln: Vulnerability): SemanticMapping | null {
     // セマンティックマッピングロジックの実装
     const hasRelation = intent.securityRequirements.some((req: string) =>
       this.isSemanticMatch(req, vuln.type)
