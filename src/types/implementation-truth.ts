@@ -417,6 +417,9 @@ export interface ImplementationTruth {
      */
     warnings: string[];
   };
+  
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 /**

@@ -73,6 +73,9 @@ export interface IntentRealizationGap {
    * セキュリティへの影響
    */
   securityImpact: SecurityImpact;
+  
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 /**
@@ -582,6 +585,9 @@ export interface IntentRealizationResult {
    * 総合評価
    */
   overallAssessment: OverallAssessment;
+  
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 /**
