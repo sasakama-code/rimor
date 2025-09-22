@@ -9,8 +9,7 @@
 
     // Issue #147対応: PII露出リスク完全解消
     "inlineSourceMap": false,
-    "inlineSources": false,
-    "sourceRoot": "."
+    "inlineSources": false
   },
   "include": ["../../src/**/*"],
   "exclude": [
