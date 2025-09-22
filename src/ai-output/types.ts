@@ -409,5 +409,5 @@ export interface AIOutputError extends Error {
     | 'FORMAT_GENERATION_FAILED'
     | 'SIZE_LIMIT_EXCEEDED'
     | 'TOKEN_LIMIT_EXCEEDED';
-  details?: any;
+  details?: Record<string, unknown>;
 }

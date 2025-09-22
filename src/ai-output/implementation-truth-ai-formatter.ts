@@ -371,7 +371,7 @@ export class ImplementationTruthAIFormatter {
   }
 
   private calculateSecurityRiskLevel(
-    vulnerabilities: any[]
+    vulnerabilities: Array<{ severity: string }>
   ): 'low' | 'medium' | 'high' | 'critical' {
     const criticalCount = vulnerabilities.filter(v => v.severity === 'critical').length;
     const highCount = vulnerabilities.filter(v => v.severity === 'high').length;
@@ -449,9 +449,9 @@ export class ImplementationTruthAIFormatter {
     }
   }
 
-  private generateTestSampleCode(gap: any): string {
+  private generateTestSampleCode(gap: { affectedIntent?: { targetMethod?: string }; description?: string }): string {
     // 簡易的なテストコードサンプル生成
-    return `describe('${gap.affectedIntent.targetMethod || 'target method'}', () => {
+    return `describe('${gap.affectedIntent?.targetMethod || 'target method'}', () => {
   it('${gap.description}', () => {
     // Test implementation needed
   });

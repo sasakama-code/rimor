@@ -239,7 +239,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
   ): AIFormattedIssue {
     // ExtendedIssueの場合はそのプロパティを使用
     const extIssue = issue as ExtendedIssue;
-    const formatted: any = {
+    const formatted: AIFormattedIssue & Record<string, unknown> = {
       category: issue.category,
       severity: issue.severity,
       message: issue.message,

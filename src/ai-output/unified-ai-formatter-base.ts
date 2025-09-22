@@ -39,7 +39,7 @@ export interface UnifiedAIOutput {
     highIssues: number;
     overallRisk: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   };
-  context?: any;
+  context?: Record<string, unknown>;
 }
 
 export abstract class UnifiedAIFormatterBase {

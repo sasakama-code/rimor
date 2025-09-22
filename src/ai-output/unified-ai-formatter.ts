@@ -181,7 +181,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
   /**
    * Get overall risk level
    */
-  private getOverallRisk(risks: any[]): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+  private getOverallRisk(risks: Array<{ riskLevel: string }>): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
     if (risks.some(r => r.riskLevel === 'CRITICAL')) return 'CRITICAL';
     if (risks.some(r => r.riskLevel === 'HIGH')) return 'HIGH';
     if (risks.some(r => r.riskLevel === 'MEDIUM')) return 'MEDIUM';
@@ -282,7 +282,7 @@ export class UnifiedAIFormatter extends UnifiedAIFormatterBase {
     }
 
     // Filter and limit key risks
-    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: any) => {
+    const filteredRisks = unifiedResult.aiKeyRisks.filter((risk: { riskLevel: string }) => {
       // Filter by includeRiskLevels if specified
       if (options.includeRiskLevels && options.includeRiskLevels.length > 0) {
         return options.includeRiskLevels.includes(risk.riskLevel);

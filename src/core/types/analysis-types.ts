@@ -8,6 +8,9 @@ import { DetectionResult } from './analysis-result';
 import { QualityScore } from './quality-score';
 import { Improvement } from './improvements';
 
+// Re-export for external use
+export { QualityScore } from './quality-score';
+
 /**
  * 分析結果の基本インターフェース
  */

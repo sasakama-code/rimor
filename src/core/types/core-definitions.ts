@@ -88,7 +88,10 @@ export namespace CoreTypes {
     fixable?: boolean;
 
     // メタデータ
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
+    
+    // Index signature for Record<string, unknown> compatibility
+    [key: string]: unknown;
   }
 
   /**
