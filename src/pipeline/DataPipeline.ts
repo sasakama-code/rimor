@@ -11,6 +11,15 @@ import {
   NistEvaluationResult,
 } from '../orchestrator/types';
 
+/**
+ * テスト意図の基本型
+ */
+interface TestIntentItem {
+  riskLevel: string;
+  testName: string;
+  securityRequirements: string[];
+}
+
 import {
   DataTransformationStrategyFactory,
   TransformationError,
@@ -123,8 +132,8 @@ export interface NistEvaluationInput {
  * 単一責任の原則：データフロー管理に特化
  */
 export class DataPipeline {
-  private transformers = new Map<string, IDataTransformer<any, any>>();
-  private validators = new Map<string, IDataValidator<any>>();
+  private transformers = new Map<string, IDataTransformer<unknown, unknown>>();
+  private validators = new Map<string, IDataValidator<unknown>>();
   private retryStrategy?: IRetryStrategy;
   private configuration: IPipelineConfiguration;
   private healthStatus: IHealthStatus;
@@ -266,7 +275,7 @@ export class DataPipeline {
    * リトライ付き実行
    * エラー処理とリカバリ機能
    */
-  async executeWithRetry<T>(operation: (data: any) => Promise<T>, data: any): Promise<T> {
+  async executeWithRetry<T, TData>(operation: (data: TData) => Promise<T>, data: TData): Promise<T> {
     if (!this.retryStrategy) {
       return await operation(data);
     }
@@ -522,7 +531,7 @@ export class DataPipeline {
     intentResult: IntentAnalysisResult
   ): string {
     const vulnTypes = new Set(taintResult.vulnerabilities.map(v => v.type)).size;
-    const testTypes = new Set(intentResult.testIntents.map((t: any) => t.riskLevel)).size;
+    const testTypes = new Set(intentResult.testIntents.map((t: TestIntentItem) => t.riskLevel)).size;
 
     const complexity = vulnTypes + testTypes;
 

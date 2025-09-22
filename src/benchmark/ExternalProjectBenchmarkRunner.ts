@@ -340,12 +340,84 @@ class IntegratedMetricsCollectionSystem {
   }
 }
 
+/**
+ * 詳細メトリクス結果
+ */
+interface DetailedMetrics {
+  timeline: { totalDuration: number };
+  memory: {
+    heap: { used: number; total: number; peak: number };
+  };
+  cpu: { averageUsage: number };
+  threading: { efficiency: number };
+}
+
+/**
+ * 精度分析結果
+ */
+interface AccuracyAnalysis {
+  taintAnalysis: {
+    overallAccuracy: number;
+    falsePositives: number;
+    falseNegatives: number;
+    truePositives: number;
+    trueNegatives: number;
+  };
+  intentExtraction: { overallAccuracy: number };
+  gapDetection: { overallAccuracy: number };
+  integrated: { overallScore: number };
+}
+
+/**
+ * パフォーマンスプロファイル結果
+ */
+interface PerformanceProfile {
+  memoryAnalysis: {
+    leakDetection: { suspected: boolean; leakRate: number };
+  };
+  hotspotAnalysis: {
+    hotspots: Array<{ functionName: string; percentage: number }>;
+  };
+  ioAnalysis: {
+    bottlenecks: Array<{ type: string; location: string }>;
+  };
+  garbageCollectionAnalysis: { impactOnPerformance: number };
+}
+
+/**
+ * 警告情報
+ */
+interface BenchmarkWarning {
+  type: string;
+  message: string;
+  source?: string;
+}
+
+/**
+ * メイン分析結果
+ */
+interface MainAnalysisResult {
+  executionTime: number;
+  totalFiles: number;
+  issues: Array<Record<string, unknown>>;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * 統合セッション情報
+ */
+interface IntegratedSessions {
+  metricsSessionId: string;
+  accuracySessionId: string;
+  profileSessionId: string;
+}
+
 interface IntegratedCollectionResult {
   success: boolean;
-  detailedMetrics?: any;
-  accuracyAnalysis?: any;
-  performanceProfile?: any;
-  warnings: any[];
+  detailedMetrics?: DetailedMetrics;
+  accuracyAnalysis?: AccuracyAnalysis;
+  performanceProfile?: PerformanceProfile;
+  warnings: BenchmarkWarning[];
   errors: string[];
 }
 
@@ -635,7 +707,7 @@ export class ExternalProjectBenchmarkRunner {
   async collectPerformanceMetrics(
     project: { name: string; path: string; fileCount: number },
     integratedResult?: IntegratedCollectionResult,
-    mainAnalysisResult?: any
+    mainAnalysisResult?: MainAnalysisResult
   ): Promise<PerformanceMetrics> {
     const startTime = performance.now();
     const startMemory = process.memoryUsage();
@@ -1097,7 +1169,7 @@ export class ExternalProjectBenchmarkRunner {
   async runSingleProjectBenchmark(project: BenchmarkProject): Promise<BenchmarkResult> {
     const timestamp = new Date().toISOString();
     const sessionId = `benchmark-${project.name}-${Date.now()}`;
-    let integratedSessions: any = null;
+    let integratedSessions: IntegratedSessions | null = null;
 
     try {
       // プロジェクトのクローン

@@ -10,8 +10,8 @@ import * as ts from 'typescript';
 
 interface TestCase {
   name: string;
-  input: any;
-  expected: any;
+  input: unknown;
+  expected: unknown;
   type: 'normal' | 'edge' | 'error';
 }
 

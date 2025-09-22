@@ -42,6 +42,48 @@ import {
 } from './types';
 
 /**
+ * Node.js V8 CallSiteインターフェース
+ */
+interface V8CallSite {
+  getFunctionName(): string | null;
+  getFileName(): string | null;
+  getLineNumber(): number | null;
+  getColumnNumber(): number | null;
+}
+
+/**
+ * CPUホットスポット情報
+ */
+interface CPUHotspotInfo {
+  functionName: string;
+  executionTime: number;
+  percentage: number;
+  callCount: number;
+  optimizationSuggestions: string[];
+}
+
+/**
+ * メモリ使用パターン分析結果
+ */
+interface MemoryUsagePatterns {
+  steady: { detected: boolean; variance: number };
+  spiky: { detected: boolean; spikeCount: number };
+  increasing: { detected: boolean; growthRate: number };
+  decreasing: { detected: boolean; reductionRate: number };
+}
+
+/**
+ * ホットスポット情報
+ */
+interface HotspotInfo {
+  functionName: string;
+  executionTime: number;
+  percentage: number;
+  callCount: number;
+  optimizationSuggestions: string[];
+}
+
+/**
  * CPU分析専用エンジン
  * Single Responsibility原則の適用
  */
@@ -50,6 +92,7 @@ class CPUAnalysisEngine {
   private functionTimes: Map<string, { totalTime: number; callCount: number; samples: number[] }> =
     new Map();
   private samplingInterval: number;
+  private sampleId: NodeJS.Timer | undefined;
 
   constructor(samplingInterval: number) {
     this.samplingInterval = samplingInterval;
@@ -80,13 +123,13 @@ class CPUAnalysisEngine {
     }, this.samplingInterval);
 
     // サンプリングIDを保存（停止時に使用）
-    (this as any).sampleId = sampleId;
+    this.sampleId = sampleId;
   }
 
   stopSampling(): void {
-    if ((this as any).sampleId) {
-      clearInterval((this as any).sampleId);
-      (this as any).sampleId = undefined;
+    if (this.sampleId) {
+      clearInterval(this.sampleId);
+      this.sampleId = undefined;
     }
   }
 
@@ -106,12 +149,12 @@ class CPUAnalysisEngine {
     // スタックトレースの取得（V8 API使用）
     const originalPrepareStackTrace = Error.prepareStackTrace;
     Error.prepareStackTrace = (_, stack) => stack;
-    const stack = new Error().stack as any;
+    const stack = new Error().stack as V8CallSite[];
     Error.prepareStackTrace = originalPrepareStackTrace;
 
     return (stack || [])
       .slice(2) // この関数と呼び出し元を除外
-      .map((site: any) => {
+      .map((site: V8CallSite) => {
         const functionName = site.getFunctionName() || '<anonymous>';
         const fileName = site.getFileName() || '<unknown>';
         const lineNumber = site.getLineNumber() || 0;
@@ -150,7 +193,7 @@ class CPUAnalysisEngine {
     return profiles.sort((a, b) => b.totalTime - a.totalTime);
   }
 
-  private detectCPUHotspots(functionProfiles: FunctionProfile[]): any[] {
+  private detectCPUHotspots(functionProfiles: FunctionProfile[]): CPUHotspotInfo[] {
     const threshold = 5; // 5%以上をホットスポットとする
     return functionProfiles
       .filter(profile => profile.percentage >= threshold)
@@ -199,6 +242,7 @@ class MemoryAnalysisEngine {
   }[] = [];
   private samplingInterval: number;
   private leakThreshold: number;
+  private sampleId: NodeJS.Timer | undefined;
 
   constructor(samplingInterval: number, leakThreshold: number) {
     this.samplingInterval = samplingInterval;
@@ -214,16 +258,16 @@ class MemoryAnalysisEngine {
       });
     }, this.samplingInterval);
 
-    (this as any).sampleId = sampleId;
+    this.sampleId = sampleId;
 
     // GCイベントの監視（V8フック使用）
     this.setupGCMonitoring();
   }
 
   stopSampling(): void {
-    if ((this as any).sampleId) {
-      clearInterval((this as any).sampleId);
-      (this as any).sampleId = undefined;
+    if (this.sampleId) {
+      clearInterval(this.sampleId);
+      this.sampleId = undefined;
     }
   }
 
@@ -285,7 +329,7 @@ class MemoryAnalysisEngine {
     };
   }
 
-  private analyzeUsagePatterns(): any {
+  private analyzeUsagePatterns(): MemoryUsagePatterns {
     const values = this.memorySnapshots.map(s => s.usage.heapUsed);
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
     const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
@@ -377,8 +421,8 @@ class HotspotDetectionEngine {
   }
 
   detectHotspots(): HotspotAnalysis {
-    const hotspots: any[] = [];
-    const memoryHotspots: any[] = [];
+    const hotspots: HotspotInfo[] = [];
+    const memoryHotspots: HotspotInfo[] = [];
 
     this.executionTimes.forEach((times, location) => {
       const totalTime = times.reduce((sum, time) => sum + time, 0);
