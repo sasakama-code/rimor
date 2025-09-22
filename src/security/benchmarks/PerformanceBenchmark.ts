@@ -144,7 +144,7 @@ export class PerformanceBenchmark {
   async runComprehensiveBenchmark(): Promise<BenchmarkComparison[]> {
     const results: BenchmarkComparison[] = [];
 
-    console.log('🚀 型ベースセキュリティ解析 性能ベンチマーク開始');
+    console.log('[Benchmark] 型ベースセキュリティ解析 性能ベンチマーク開始');
     console.log('目標: 5ms/file, 3-20x速度向上の検証');
     console.log('');
 

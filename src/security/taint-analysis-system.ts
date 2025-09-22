@@ -488,7 +488,7 @@ export class TaintAnalysisSystem {
 
     try {
       console.log(
-        `🚀 [analyzeProject] プロジェクト分析開始: ${projectPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
+        `[TaintAnalysis] プロジェクト分析開始: ${projectPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
       );
 
       // ファイルスキャン

@@ -129,8 +129,8 @@ export class BenchmarkRunner {
    * 完全なベンチマークスイートの実行
    */
   async runFullBenchmarkSuite(): Promise<RegressionDetectionResult> {
-    console.log('🚀 完全ベンチマークスイート実行開始');
-    console.log(`🔧 設定: ${this.config.testSizes.join(', ')} (${this.config.iterations}回平均)`);
+    console.log('[BenchmarkRunner] 完全ベンチマークスイート実行開始');
+    console.log(`[Config] 設定: ${this.config.testSizes.join(', ')} (${this.config.iterations}回平均)`);
     console.log('');
 
     // 出力ディレクトリの作成

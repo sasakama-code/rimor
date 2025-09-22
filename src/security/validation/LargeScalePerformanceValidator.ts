@@ -217,7 +217,7 @@ export class LargeScalePerformanceValidator {
   async measureLargeScalePerformance(
     configs: LargeScaleProjectConfig[]
   ): Promise<PerformanceResult[]> {
-    console.log('🚀 大規模プロジェクト性能測定開始');
+    console.log('[LargeScale] 大規模プロジェクト性能測定開始');
     console.log(
       `システム情報: ${this.systemInfo.cpu.model}, ${this.systemInfo.memory.total}GB RAM`
     );

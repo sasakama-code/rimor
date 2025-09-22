@@ -198,7 +198,7 @@ export class UnifiedAnalysisEngine implements IAnalysisEngine {
 
       // 品質プラグインの実行（カバレッジ統合機能を含む）
       if (this.unifiedPluginManager) {
-        console.log(`🚀 Executing quality plugins for file: ${file}`);
+        console.log(`[Engine] Executing quality plugins for file: ${file}`);
         const qualityIssues = await this.analyzeWithQualityPlugins(file);
         console.log(`✅ Quality plugins returned ${qualityIssues.length} issues`);
         allIssues.push(...qualityIssues);

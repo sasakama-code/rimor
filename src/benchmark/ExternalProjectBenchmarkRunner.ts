@@ -1624,7 +1624,7 @@ export class ExternalProjectBenchmarkRunner {
    */
   async runWithBaselineComparison(projects: BenchmarkProject[]): Promise<BaselineIntegratedResult> {
     if (this.config.verbose) {
-      console.log(`🚀 ベースライン統合ベンチマーク実行開始: ${projects.length}プロジェクト`);
+      console.log(`[BaselineBenchmark] ベースライン統合ベンチマーク実行開始: ${projects.length}プロジェクト`);
     }
 
     // 1. 通常のベンチマーク実行

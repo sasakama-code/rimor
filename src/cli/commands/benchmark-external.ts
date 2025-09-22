@@ -109,7 +109,7 @@ function displayExecutionInfo(
   selection: ProjectSelectionResult,
   config: any
 ): void {
-  console.log(chalk.cyan('🚀 Rimor外部プロジェクトベンチマーク'));
+  console.log(chalk.cyan('[ExternalBenchmark] Rimor外部プロジェクトベンチマーク'));
   console.log(chalk.cyan('=====================================\n'));
 
   // システム情報
@@ -281,7 +281,7 @@ export async function benchmarkExternalCommand(
     }
 
     // ベンチマーク実行
-    console.log(chalk.cyan('🚀 ベンチマーク実行開始...\n'));
+    console.log(chalk.cyan('[ExternalBenchmark] ベンチマーク実行開始...\n'));
 
     const runner = new ExternalProjectBenchmarkRunner(config);
     const results = await runner.runMultiProjectBenchmark(selection.projects);

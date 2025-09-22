@@ -144,7 +144,7 @@ export class QualityDashboard {
     }
 
     this.isRunning = true;
-    console.log('🚀 Quality Dashboard started');
+    console.log('[QualityDashboard] Quality Dashboard started');
 
     // 初回実行
     await this.refresh();

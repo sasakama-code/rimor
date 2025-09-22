@@ -83,7 +83,7 @@ export class UnifiedSecurityAnalysisOrchestrator {
 
     try {
       console.log(
-        `🚀 [UnifiedSecurityAnalysisOrchestrator] 統合分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
+        `[UnifiedSecurityAnalysisOrchestrator] 統合分析開始: ${targetPath}${options?.benchmarkMode ? ' (ベンチマークモード)' : ''}`
       );
 
       // 分析戦略の取得（Factory Pattern）

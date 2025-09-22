@@ -659,7 +659,7 @@ export class CLI {
               },
               async argv => {
                 const { BenchmarkRunner } = await import('../security/benchmarks');
-                console.log('🚀 型ベースセキュリティ解析 ベンチマーク実行');
+                console.log('[CLI] 型ベースセキュリティ解析 ベンチマーク実行');
                 console.log('目標: 5ms/file, 3-20x速度向上の検証\n');
 
                 try {

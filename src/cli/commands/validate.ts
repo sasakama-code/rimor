@@ -92,7 +92,7 @@ export class ValidateCommand {
    * Express.js プロジェクト検証
    */
   async validateExpress(projectPath: string, options: ValidateCommandOptions): Promise<void> {
-    console.log('🚀 Express.js プロジェクト検証');
+    console.log('[Validate] Express.js プロジェクト検証');
     console.log(`対象: ${projectPath}`);
     console.log('');
 

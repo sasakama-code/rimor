@@ -21,7 +21,7 @@ export class BootstrapCommand {
     } = {}
   ): Promise<void> {
     try {
-      console.log('🚀 Rimor プロジェクト初期化を開始します...\n');
+      console.log('[Bootstrap] Rimor プロジェクト初期化を開始します...\n');
 
       // 既存の設定確認
       if (!options.force && (await BootstrapCommand.hasExistingSetup())) {
@@ -38,7 +38,7 @@ export class BootstrapCommand {
       }
 
       // Simplified bootstrap implementation
-      console.log('🚀 Rimor プロジェクト初期化');
+      console.log('[Bootstrap] Rimor プロジェクト初期化');
       await this.createConfigFile(process.cwd());
       await this.updateGitignore(process.cwd());
       await this.setupPlugins(process.cwd());
