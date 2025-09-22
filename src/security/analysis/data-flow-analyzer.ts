@@ -14,6 +14,7 @@ import { TaintSink, ASTSinkDetector } from './ast-sink-detector';
 
 /**
  * データフローパス
+ * Record<string, unknown>互換性のためのindex signature追加
  */
 export interface DataFlowPath {
   /** 汚染源 */
@@ -26,6 +27,8 @@ export interface DataFlowPath {
   confidence: number;
   /** リスクレベル */
   riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 /**

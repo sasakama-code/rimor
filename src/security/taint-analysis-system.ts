@@ -605,7 +605,7 @@ export class TaintAnalysisSystem {
    * カスタムライブラリメソッドの登録
    */
   registerLibraryMethod(signature: Record<string, unknown>): void {
-    this.libraryHandler.registerLibraryMethod(signature);
+    this.libraryHandler.registerLibraryMethod(signature as any);
   }
 
   /**
@@ -1433,11 +1433,11 @@ export class TaintAnalysisSystem {
     const seen = new Set<string>();
 
     for (const path of paths) {
-      const issueType = this.mapToVulnerabilityType(path.source.type, path.sink.type);
+      const issueType = this.mapToVulnerabilityType((path as any).source.type, (path as any).sink.type);
       if (issueType) {
         // 重複キー: sink位置 + 脆弱性タイプで一意性を担保（同一位置での重複を防止）
-        const sinkLocation = `${path.sink.location.line}:${path.sink.location.column}`;
-        const uniqueKey = `${sinkLocation}:${issueType}:${path.sink.dangerousFunction.functionName}`;
+        const sinkLocation = `${(path as any).sink.location.line}:${(path as any).sink.location.column}`;
+        const uniqueKey = `${sinkLocation}:${issueType}:${(path as any).sink.dangerousFunction.functionName}`;
 
         if (!seen.has(uniqueKey)) {
           seen.add(uniqueKey);
@@ -1447,9 +1447,9 @@ export class TaintAnalysisSystem {
 
           uniqueIssues.push({
             type: issueType,
-            severity: this.getSeverityFromRiskLevel(path.riskLevel),
-            message: `${this.getVulnerabilityDescription(issueType)}: ${relevantSourceVar} (${path.source.location.line}:${path.source.location.column}) flows to ${path.sink.dangerousFunction.functionName} (${path.sink.location.line}:${path.sink.location.column})`,
-            location: path.sink.location,
+            severity: this.getSeverityFromRiskLevel((path as any).riskLevel),
+            message: `${this.getVulnerabilityDescription(issueType)}: ${relevantSourceVar} (${(path as any).source.location.line}:${(path as any).source.location.column}) flows to ${(path as any).sink.dangerousFunction.functionName} (${(path as any).sink.location.line}:${(path as any).sink.location.column})`,
+            location: (path as any).sink.location,
             suggestion: this.getSuggestion(issueType),
           });
         }
@@ -1463,7 +1463,7 @@ export class TaintAnalysisSystem {
    * 脆弱性タイプに最も関連性の高いソース変数を選択
    */
   private selectRelevantSourceVariable(path: Record<string, unknown>, issueType: string): string {
-    const variableName = path.source.variableName;
+    const variableName = (path as any).source.variableName;
 
     // 脆弱性タイプに応じて関連性の高い変数名パターンを優先
     switch (issueType) {
@@ -2218,8 +2218,8 @@ export class TaintAnalysisSystem {
 
         // 関連する攻撃パスかチェック（同じファイルまたは近い行）
         if (this.arePathsRelated(path1, path2)) {
-          const attackType1 = this.classifyAttackType(path1.source.type, path1.sink.type);
-          const attackType2 = this.classifyAttackType(path2.source.type, path2.sink.type);
+          const attackType1 = this.classifyAttackType((path1 as any).source.type, (path1 as any).sink.type);
+          const attackType2 = this.classifyAttackType((path2 as any).source.type, (path2 as any).sink.type);
 
           // 攻撃パターンにマッチするかチェック
           for (const pattern of attackPatterns) {
@@ -2227,7 +2227,7 @@ export class TaintAnalysisSystem {
               attacks.push({
                 attackChain: pattern.steps,
                 owaspCategories: pattern.owaspCategories,
-                finalLocation: path2.sink.location,
+                finalLocation: (path2 as any).sink.location,
                 severity: 'CRITICAL',
                 mitigations: pattern.mitigations,
                 confidence: 0.8,
@@ -2246,15 +2246,15 @@ export class TaintAnalysisSystem {
    */
   private arePathsRelated(path1: Record<string, unknown>, path2: Record<string, unknown>): boolean {
     // 同じファイルで行が近い場合は関連とみなす
-    if (path1.source.location.file === path2.source.location.file) {
-      const lineDiff = Math.abs(path1.source.location.line - path2.source.location.line);
+    if ((path1 as any).source.location.file === (path2 as any).source.location.file) {
+      const lineDiff = Math.abs((path1 as any).source.location.line - (path2 as any).source.location.line);
       return lineDiff <= 10; // 10行以内
     }
 
     // 異なるファイルでも変数名が類似している場合は関連とみなす
     const similarity = this.calculateStringSimilarity(
-      path1.source.variableName,
-      path2.source.variableName
+      (path1 as any).source.variableName,
+      (path2 as any).source.variableName
     );
     return similarity > 0.7;
   }
@@ -2279,7 +2279,7 @@ export class TaintAnalysisSystem {
    */
   private matchesAttackPattern(pattern: Record<string, unknown>, attackTypes: string[]): boolean {
     // 攻撃タイプがパターンの初期ステップに含まれているかチェック
-    return attackTypes.some(type => pattern.steps.slice(0, 2).includes(type));
+    return attackTypes.some(type => ((pattern as any).steps as string[]).slice(0, 2).includes(type));
   }
 
   /**

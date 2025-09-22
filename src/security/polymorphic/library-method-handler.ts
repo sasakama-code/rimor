@@ -15,6 +15,7 @@ export type TaintPropagationRule = 'any' | 'all' | 'none';
 
 /**
  * メソッドシグネチャ
+ * Record<string, unknown>互換性のためのindex signature追加
  */
 export interface MethodSignature {
   className: string;
@@ -23,6 +24,8 @@ export interface MethodSignature {
   parameterIndices: number[];
   propagationRule: TaintPropagationRule;
   returnQualifier: TaintQualifier | null;
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 /**
