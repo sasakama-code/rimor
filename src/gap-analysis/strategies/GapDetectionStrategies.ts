@@ -143,7 +143,7 @@ class SemanticAnalyzer {
           testName: mapping.testName,
           intention: mapping.expectedBehavior,
           actualImplementation: mapping.actualImplementation,
-          riskLevel: mapping.riskLevel,
+          riskLevel: (mapping.riskLevel.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW') || 'MEDIUM',
           recommendations: mapping.recommendations,
         });
       }

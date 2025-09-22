@@ -20,6 +20,7 @@ import {
 import { TestCase } from '../security/types/security';
 import { DomainInference } from './IDomainInferenceEngine';
 import { BusinessLogicMapping } from './IBusinessLogicMapper';
+import { OverallAssessment, UntestedReason, SecurityDomain } from '../types/intent-realization';
 
 // Type definitions for analysis results
 interface TestScenario {
@@ -71,11 +72,6 @@ interface SecurityAssessment {
   securityScore: number;
 }
 
-interface RecommendationType {
-  category: string;
-  action: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-}
 
 interface TestScenarioExtracted {
   given?: string;
@@ -89,9 +85,11 @@ interface SecurityAssessmentResult {
   overallSecurityRisk: 'low' | 'medium' | 'high' | 'critical';
   securityTestCoverage: number;
   untestedSecurityRequirements: string[];
-  securityTestRecommendations: string[];
+  securityTestRecommendations: GapRecommendation[];
   vulnerabilityMitigationCoverage: number;
   owaspCoverage: unknown[];
+  /** 共有型互換性: OWASP Top 10への対応状況 */
+  owaspTop10Coverage: OwaspCoverage[];
 }
 
 interface IntentExtractionResult {
@@ -144,6 +142,8 @@ import {
   QualitativeCoverage,
   GapRecommendation,
   SecurityImpact,
+  OwaspCoverage,
+  RecommendationType,
 } from '../types/intent-realization';
 
 /**
@@ -312,7 +312,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           untestedBehaviors: [
             {
               method: implementedMethods[0] || this.createDummyMethodBehavior(),
-              reason: 'INCOMPLETE_TEST' as IntentGapType,
+              reason: UntestedReason.INCOMPLETE_TEST,
               riskLevel: 'medium',
               recommendedTestMethod: `${expectedBehavior}のテストケースを追加`,
               conditionsToTest: [expectedBehavior],
@@ -370,7 +370,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           recommendations: [],
           securityImpact: {
             riskLevel: 'high',
-            affectedSecurityDomains: ['INPUT_VALIDATION', 'AUTHENTICATION'],
+            affectedSecurityDomains: [SecurityDomain.INPUT_VALIDATION, SecurityDomain.AUTHENTICATION],
             potentialVulnerabilities: vulnerabilities,
             attackVectors: vulnerabilities.map(v => ({
               attackType: v.type,
@@ -416,7 +416,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           affectedImplementation: methodsWithSideEffects,
           untestedBehaviors: methodsWithSideEffects.map(method => ({
             method,
-            reason: 'SIDE_EFFECT_NOT_TESTED' as IntentGapType,
+            reason: UntestedReason.SIDE_EFFECT_NOT_TESTED,
             riskLevel: 'medium',
             recommendedTestMethod: '副作用の検証テストを追加',
             conditionsToTest: method.sideEffects?.map(se => se.description) || [],
@@ -584,12 +584,16 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     else if (vulnerabilityCount > 2) overallRisk = 'high';
     else if (vulnerabilityCount > 0) overallRisk = 'medium';
 
+    const owaspCoverageData = this.generateOwaspCoverage(implementationTruth);
+    
     return {
       overallSecurityRisk: overallRisk,
       securityTestCoverage: securityGaps.length === 0 ? 100 : 0,
       untestedSecurityRequirements: securityGaps.map(g => g.description),
       securityTestRecommendations: securityGaps.flatMap(g => g.recommendations),
-      owaspTop10Coverage: this.generateOwaspCoverage(implementationTruth),
+      vulnerabilityMitigationCoverage: Math.max(0, 100 - vulnerabilityCount * 10),
+      owaspCoverage: owaspCoverageData || [],
+      owaspTop10Coverage: owaspCoverageData || [],
     };
   }
 
@@ -601,7 +605,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     qualityMetrics: QualityMetrics,
     securityAssessment: SecurityAssessmentResult,
     recommendations: GapRecommendation[]
-  ): IntentExtractionResult {
+  ): OverallAssessment {
     let grade: 'A' | 'B' | 'C' | 'D' | 'F';
     if (realizationScore >= 90) grade = 'A';
     else if (realizationScore >= 80) grade = 'B';
@@ -765,15 +769,15 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   private mapGapTypeToRecommendationType(gapType: IntentGapType): RecommendationType {
     switch (gapType) {
       case IntentGapType.MISSING_SECURITY_TEST:
-        return 'ADD_SECURITY_TEST';
+        return RecommendationType.ADD_SECURITY_TEST;
       case IntentGapType.MISSING_ERROR_CASE:
-        return 'ADD_ERROR_CASE_TEST';
+        return RecommendationType.ADD_TEST_CASE;
       case IntentGapType.MISSING_SIDE_EFFECT_TEST:
-        return 'ADD_TEST_CASE';
+        return RecommendationType.ADD_TEST_CASE;
       case IntentGapType.WRONG_TARGET:
-        return 'IMPROVE_TEST';
+        return RecommendationType.IMPROVE_TEST;
       default:
-        return 'ADD_TEST_CASE';
+        return RecommendationType.ADD_TEST_CASE;
     }
   }
 
@@ -822,7 +826,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     }
   }
 
-  private generateOwaspCoverage(implementationTruth: ImplementationTruth): unknown[] {
+  private generateOwaspCoverage(implementationTruth: ImplementationTruth): OwaspCoverage[] {
     return [
       {
         owaspCategory: 'A01:2021 – Broken Access Control',
@@ -1020,8 +1024,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
   private extractScenario(ast: ASTNode, testNode: ASTNode): TestScenarioExtracted {
     return {
       description: this.extractTestDescription(testNode),
-      context: 'テストコンテキスト',
-      testCases: [this.extractTestDescription(testNode)],
+      context: { description: 'テストコンテキスト' },
     };
   }
 
