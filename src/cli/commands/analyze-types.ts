@@ -12,6 +12,9 @@ import {
   TaintSummary,
 } from '../../core/types';
 
+// 統一型定義からインポート
+import { PluginResult } from '../../types/analysis';
+
 // AI JSON出力用の型定義
 // Migrated to CoreTypes
 export interface AIJsonOutput {
@@ -246,10 +249,6 @@ function createDefaultTaintSummary(): TaintSummary {
 export interface AnalysisResultWithPlugins {
   issues: Issue[];
   pluginResults?: Record<string, PluginResult>;
-}
-
-export interface PluginResult {
-  detections?: Detection[];
 }
 
 export interface Detection {

@@ -11,8 +11,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import {
-  BenchmarkResult,
-  UnifiedAnalysisMetrics,
+  ExternalExternalBenchmarkResult,
+  ExternalExternalUnifiedAnalysisMetrics,
   ComparisonReport,
 } from './ExternalProjectBenchmarkRunner';
 
@@ -211,7 +211,7 @@ export class ValidationReportGenerator {
    * @returns 有効性検証レポート
    */
   async generateValidationReportOnly(
-    benchmarkResults: BenchmarkResult[]
+    benchmarkResults: ExternalBenchmarkResult[]
   ): Promise<ValidationReport> {
     // 空の比較レポートを作成
     const emptyComparisonReport: ComparisonReport = {
@@ -244,7 +244,7 @@ export class ValidationReportGenerator {
    * @returns 有効性検証レポート
    */
   async generateValidationReport(
-    benchmarkResults: BenchmarkResult[],
+    benchmarkResults: ExternalBenchmarkResult[],
     comparisonReport: ComparisonReport
   ): Promise<ValidationReport> {
     const startTime = Date.now();
@@ -299,7 +299,7 @@ export class ValidationReportGenerator {
   /**
    * 全体有効性スコアの計算
    */
-  private calculateOverallEffectiveness(results: BenchmarkResult[]) {
+  private calculateOverallEffectiveness(results: ExternalBenchmarkResult[]) {
     if (results.length === 0) {
       return {
         score: 0,
@@ -365,7 +365,7 @@ export class ValidationReportGenerator {
   /**
    * 機能別有効性評価
    */
-  private evaluateFeatureEffectiveness(results: BenchmarkResult[]) {
+  private evaluateFeatureEffectiveness(results: ExternalBenchmarkResult[]) {
     return {
       taintTyper: this.evaluateTaintTyperEffectiveness(results),
       intentExtraction: this.evaluateIntentExtractionEffectiveness(results),
@@ -377,7 +377,7 @@ export class ValidationReportGenerator {
   /**
    * TaintTyper有効性評価
    */
-  private evaluateTaintTyperEffectiveness(results: BenchmarkResult[]): FeatureEffectiveness {
+  private evaluateTaintTyperEffectiveness(results: ExternalBenchmarkResult[]): FeatureEffectiveness {
     const validResults = results.filter(r => r.unifiedAnalysis);
     if (validResults.length === 0) {
       return this.getEmptyFeatureEffectiveness();
@@ -423,7 +423,7 @@ export class ValidationReportGenerator {
   /**
    * 意図抽出有効性評価
    */
-  private evaluateIntentExtractionEffectiveness(results: BenchmarkResult[]): FeatureEffectiveness {
+  private evaluateIntentExtractionEffectiveness(results: ExternalBenchmarkResult[]): FeatureEffectiveness {
     const validResults = results.filter(r => r.unifiedAnalysis);
     if (validResults.length === 0) {
       return this.getEmptyFeatureEffectiveness();
@@ -462,7 +462,7 @@ export class ValidationReportGenerator {
   /**
    * ギャップ分析有効性評価
    */
-  private evaluateGapAnalysisEffectiveness(results: BenchmarkResult[]): FeatureEffectiveness {
+  private evaluateGapAnalysisEffectiveness(results: ExternalBenchmarkResult[]): FeatureEffectiveness {
     const validResults = results.filter(r => r.unifiedAnalysis);
     if (validResults.length === 0) {
       return this.getEmptyFeatureEffectiveness();
@@ -497,7 +497,7 @@ export class ValidationReportGenerator {
   /**
    * NIST評価有効性評価
    */
-  private evaluateNistEvaluationEffectiveness(results: BenchmarkResult[]): FeatureEffectiveness {
+  private evaluateNistEvaluationEffectiveness(results: ExternalBenchmarkResult[]): FeatureEffectiveness {
     const validResults = results.filter(r => r.unifiedAnalysis);
     if (validResults.length === 0) {
       return this.getEmptyFeatureEffectiveness();
@@ -532,7 +532,7 @@ export class ValidationReportGenerator {
   /**
    * 検出事例分析
    */
-  private async analyzeDetectionCases(results: BenchmarkResult[]) {
+  private async analyzeDetectionCases(results: ExternalBenchmarkResult[]) {
     const highValueCases: DetectionCase[] = [];
     const representativeCases: DetectionCase[] = [];
     const potentialFalsePositives: DetectionCase[] = [];
@@ -599,7 +599,7 @@ export class ValidationReportGenerator {
   /**
    * 相関分析の実行
    */
-  private performCorrelationAnalysis(results: BenchmarkResult[]) {
+  private performCorrelationAnalysis(results: ExternalBenchmarkResult[]) {
     return {
       sizeCorrelation: this.analyzeSizeCorrelation(results),
       complexityCorrelation: this.analyzeComplexityCorrelation(results),
@@ -610,7 +610,7 @@ export class ValidationReportGenerator {
   /**
    * 実用性評価の実施
    */
-  private assessPracticality(results: BenchmarkResult[]) {
+  private assessPracticality(results: ExternalBenchmarkResult[]) {
     const validResults = results.filter(r => r.unifiedAnalysis);
 
     if (validResults.length === 0) {
@@ -661,7 +661,7 @@ export class ValidationReportGenerator {
    * 改善提案の生成
    */
   private generateRecommendations(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     featureEffectiveness: ReturnType<typeof this.evaluateFeatureEffectiveness>
   ) {
     const immediate: string[] = [];
@@ -715,7 +715,7 @@ export class ValidationReportGenerator {
   /**
    * ベンチマーク比較データの生成
    */
-  private generateBenchmarkComparison(results: BenchmarkResult[]) {
+  private generateBenchmarkComparison(results: ExternalBenchmarkResult[]) {
     // 業界標準との比較（推定値）
     const industryBenchmark: BenchmarkComparisonData = {
       detectionRate: 0.85, // 推定業界平均
@@ -905,7 +905,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     return (typeRates as any)[type] || 0.3;
   }
 
-  private identifyTaintTyperStrengths(results: BenchmarkResult[]): string[] {
+  private identifyTaintTyperStrengths(results: ExternalBenchmarkResult[]): string[] {
     const strengths = [];
 
     const avgDetections =
@@ -929,7 +929,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     return strengths.length > 0 ? strengths : ['コンパイル時解析による高速実行'];
   }
 
-  private identifyTaintTyperWeaknesses(results: BenchmarkResult[]): string[] {
+  private identifyTaintTyperWeaknesses(results: ExternalBenchmarkResult[]): string[] {
     const weaknesses = [];
 
     const avgDetections =
@@ -951,7 +951,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     return weaknesses.length > 0 ? weaknesses : ['更なる脆弱性パターンの対応が必要'];
   }
 
-  private generateTaintTyperRecommendations(results: BenchmarkResult[]): string[] {
+  private generateTaintTyperRecommendations(results: ExternalBenchmarkResult[]): string[] {
     return [
       'カスタムフィルタリングルールの追加',
       '業界固有の脆弱性パターンの拡充',
@@ -959,15 +959,15 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     ];
   }
 
-  private identifyIntentExtractionStrengths(results: BenchmarkResult[]): string[] {
+  private identifyIntentExtractionStrengths(results: ExternalBenchmarkResult[]): string[] {
     return ['テストコードからの自動意図抽出', 'リスクベースの分類'];
   }
 
-  private identifyIntentExtractionWeaknesses(results: BenchmarkResult[]): string[] {
+  private identifyIntentExtractionWeaknesses(results: ExternalBenchmarkResult[]): string[] {
     return ['自然言語処理の精度向上余地', 'より多様なテストパターンへの対応'];
   }
 
-  private generateIntentExtractionRecommendations(results: BenchmarkResult[]): string[] {
+  private generateIntentExtractionRecommendations(results: ExternalBenchmarkResult[]): string[] {
     return [
       '大規模言語モデルの活用検討',
       'テストコメントの標準化ガイドライン提供',
@@ -975,27 +975,27 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     ];
   }
 
-  private identifyGapAnalysisStrengths(results: BenchmarkResult[]): string[] {
+  private identifyGapAnalysisStrengths(results: ExternalBenchmarkResult[]): string[] {
     return ['意図と実装の自動照合', 'NIST準拠のリスク評価との連携'];
   }
 
-  private identifyGapAnalysisWeaknesses(results: BenchmarkResult[]): string[] {
+  private identifyGapAnalysisWeaknesses(results: ExternalBenchmarkResult[]): string[] {
     return ['複雑なビジネスロジックでの精度', 'ギャップの優先順位付け'];
   }
 
-  private generateGapAnalysisRecommendations(results: BenchmarkResult[]): string[] {
+  private generateGapAnalysisRecommendations(results: ExternalBenchmarkResult[]): string[] {
     return ['ビジネス要件との統合', '開発チームとの協調機能', 'ギャップ解決の自動提案'];
   }
 
-  private identifyNistEvaluationStrengths(results: BenchmarkResult[]): string[] {
+  private identifyNistEvaluationStrengths(results: ExternalBenchmarkResult[]): string[] {
     return ['標準準拠のリスク評価', '定量的なコンプライアンススコア'];
   }
 
-  private identifyNistEvaluationWeaknesses(results: BenchmarkResult[]): string[] {
+  private identifyNistEvaluationWeaknesses(results: ExternalBenchmarkResult[]): string[] {
     return ['業界固有の要件への対応', 'リスク許容度の調整機能'];
   }
 
-  private generateNistEvaluationRecommendations(results: BenchmarkResult[]): string[] {
+  private generateNistEvaluationRecommendations(results: ExternalBenchmarkResult[]): string[] {
     return [
       '業界別評価基準の追加',
       '組織のリスク許容度設定機能',
@@ -1003,7 +1003,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     ];
   }
 
-  private analyzeSizeCorrelation(results: BenchmarkResult[]): CorrelationData {
+  private analyzeSizeCorrelation(results: ExternalBenchmarkResult[]): CorrelationData {
     // プロジェクトサイズ（ファイル数）と検出数の相関を分析
     const sizeDetectionPairs = results
       .filter(r => r.unifiedAnalysis)
@@ -1043,7 +1043,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     };
   }
 
-  private analyzeComplexityCorrelation(results: BenchmarkResult[]): CorrelationData {
+  private analyzeComplexityCorrelation(results: ExternalBenchmarkResult[]): CorrelationData {
     // 複雑度の代理指標として実行時間を使用
     const complexityDetectionPairs = results
       .filter(r => r.unifiedAnalysis)
@@ -1078,7 +1078,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     };
   }
 
-  private analyzeProjectTypeCorrelation(results: BenchmarkResult[]): Record<string, number> {
+  private analyzeProjectTypeCorrelation(results: ExternalBenchmarkResult[]): Record<string, number> {
     // プロジェクト名からプロジェクトタイプを推定
     const typeCorrelation: Record<string, number> = {};
 
@@ -1113,7 +1113,7 @@ ${report.recommendations.longTerm.map(r => `- ${r}`).join('\n')}
     return 'unknown';
   }
 
-  private calculateIndustryGap(results: BenchmarkResult[]): number {
+  private calculateIndustryGap(results: ExternalBenchmarkResult[]): number {
     // 業界平均との差を推定
     const validResults = results.filter(r => r.unifiedAnalysis);
     if (validResults.length === 0) return 0;

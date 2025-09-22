@@ -92,7 +92,7 @@ class CPUAnalysisEngine {
   private functionTimes: Map<string, { totalTime: number; callCount: number; samples: number[] }> =
     new Map();
   private samplingInterval: number;
-  private sampleId: NodeJS.Timer | undefined;
+  private sampleId: NodeJS.Timeout | undefined;
 
   constructor(samplingInterval: number) {
     this.samplingInterval = samplingInterval;
@@ -148,11 +148,22 @@ class CPUAnalysisEngine {
   private captureStackTrace(): string[] {
     // スタックトレースの取得（V8 API使用）
     const originalPrepareStackTrace = Error.prepareStackTrace;
-    Error.prepareStackTrace = (_, stack) => stack;
-    const stack = new Error().stack as V8CallSite[];
-    Error.prepareStackTrace = originalPrepareStackTrace;
+    let callSites: V8CallSite[] = [];
+    
+    try {
+      Error.prepareStackTrace = (_, stack) => stack;
+      const error = new Error();
+      const stackResult = error.stack;
+      
+      // 型ガード: stackがV8CallSite配列かどうかチェック
+      if (Array.isArray(stackResult)) {
+        callSites = stackResult as V8CallSite[];
+      }
+    } finally {
+      Error.prepareStackTrace = originalPrepareStackTrace;
+    }
 
-    return (stack || [])
+    return callSites
       .slice(2) // この関数と呼び出し元を除外
       .map((site: V8CallSite) => {
         const functionName = site.getFunctionName() || '<anonymous>';
@@ -242,7 +253,7 @@ class MemoryAnalysisEngine {
   }[] = [];
   private samplingInterval: number;
   private leakThreshold: number;
-  private sampleId: NodeJS.Timer | undefined;
+  private sampleId: NodeJS.Timeout | undefined;
 
   constructor(samplingInterval: number, leakThreshold: number) {
     this.samplingInterval = samplingInterval;

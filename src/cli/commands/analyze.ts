@@ -16,13 +16,14 @@ import {
   AIJsonOutput,
   AIRisk,
   AnalysisResultWithPlugins,
-  PluginResult,
   Detection,
   TaintFlowData,
   TaintSummaryData,
   convertToAIJson,
 } from './analyze-types';
-import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult, AnalysisResult } from '../../core/types';
+import { PluginResult } from '../../types/analysis';
+import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult } from '../../core/types';
+import { AnalysisResult } from '../../types/analysis';
 import { TaintLevel, AnalysisSummary, QualityScore } from '../../core/types/analysis-types';
 import { CoreTypes } from '../../core/types/core-definitions';
 import { UnifiedAnalysisEngine } from '../../core/UnifiedAnalysisEngine';
@@ -717,7 +718,7 @@ export class AnalyzeCommand {
   private convertToTaintAnalysisResult(pluginResults: PluginResult): TaintAnalysisResult {
     // プラグイン結果からTaintAnalysisResult形式への変換
     const flows: TaintFlow[] =
-      pluginResults.detections?.map(detection => ({
+      pluginResults.detections?.map((detection: Detection) => ({
         id: detection.patternId,
         source: detection.metadata?.source || 'unknown',
         sink: detection.metadata?.sink || 'unknown',
@@ -886,16 +887,10 @@ export class AnalyzeCommand {
           completeness: implementationTruthResult.overallScore || 0,
           correctness: implementationTruthResult.overallScore || 0,
           maintainability: implementationTruthResult.overallScore || 0,
-          reliability: implementationTruthResult.overallScore || 0,
           security: implementationTruthResult.overallScore || 0,
         },
         confidence: 0.8,
-        grade: this.calculateGrade(implementationTruthResult.overallScore || 0),
       } satisfies QualityScore,
-      metadata,
-      // 互換性のための追加プロパティ
-      totalFiles: implementationTruthResult.summary?.totalFiles || 0,
-      executionTime: implementationTruthResult.metadata?.executionTime || 0,
     } satisfies ProjectAnalysisResult;
   }
 

@@ -17,8 +17,8 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { BenchmarkResult, BaselineIntegratedResult } from '../ExternalProjectBenchmarkRunner';
-import { BaselineComparison } from '../BaselineManager';
+import { ExternalExternalBenchmarkResult, BaselineIntegratedResult } from '../ExternalProjectBenchmarkRunner';
+import { BaselineComparison } from '../types';
 
 /**
  * レポート生成設定
@@ -133,7 +133,7 @@ export class BenchmarkReportGenerator {
    * @returns 生成されたレポートファイルパス
    */
   async generateMarkdownReport(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     comparison?: BaselineComparison
   ): Promise<string> {
     // 入力検証（Defensive Programming）
@@ -165,7 +165,7 @@ export class BenchmarkReportGenerator {
    * @returns 生成されたレポートファイルパス
    */
   async generateHTMLReport(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     options: HTMLReportOptions = {}
   ): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -192,7 +192,7 @@ export class BenchmarkReportGenerator {
    * @returns 生成されたCSVファイルパス
    */
   async generateCSVExport(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     options: CSVExportOptions = {}
   ): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -244,7 +244,7 @@ export class BenchmarkReportGenerator {
    * @returns 各フォーマットのファイルパス
    */
   async generateAllFormats(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     formats: AllFormatsOptions = {}
   ): Promise<AllFormatsResult> {
     const allReports: AllFormatsResult = {};
@@ -325,7 +325,7 @@ export class BenchmarkReportGenerator {
    * Markdownコンテンツ生成
    */
   private generateMarkdownContent(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     comparison?: BaselineComparison
   ): string {
     const timestamp = new Date().toLocaleString('ja-JP');
@@ -395,7 +395,7 @@ export class BenchmarkReportGenerator {
    * HTMLコンテンツ生成
    */
   private async generateHTMLContent(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     options: HTMLReportOptions
   ): Promise<string> {
     const timestamp = new Date().toLocaleString('ja-JP');
@@ -505,7 +505,7 @@ export class BenchmarkReportGenerator {
   /**
    * CSVコンテンツ生成
    */
-  private generateCSVContent(results: BenchmarkResult[], options: CSVExportOptions): string {
+  private generateCSVContent(results: ExternalBenchmarkResult[], options: CSVExportOptions): string {
     const delimiter = options.delimiter || ',';
     let csv = '';
 
@@ -671,7 +671,7 @@ export class BenchmarkReportGenerator {
   /**
    * Chart.js JavaScript生成
    */
-  private generateChartJavaScript(results: BenchmarkResult[]): string {
+  private generateChartJavaScript(results: ExternalBenchmarkResult[]): string {
     const projectNames = results.map(r => r.projectName);
     const timePerFile = results.map(r => r.performance.timePerFile);
     const accuracy = results.map(r => r.accuracy.taintTyperSuccessRate * 100);
@@ -872,7 +872,7 @@ export class BenchmarkReportGenerator {
   /**
    * 概要統計の計算
    */
-  private calculateSummaryStatistics(results: BenchmarkResult[]) {
+  private calculateSummaryStatistics(results: ExternalBenchmarkResult[]) {
     if (results.length === 0) {
       return {
         averageTimePerFile: 0,
@@ -902,7 +902,7 @@ export class BenchmarkReportGenerator {
    * 推奨事項の生成
    */
   private generateRecommendations(
-    results: BenchmarkResult[],
+    results: ExternalBenchmarkResult[],
     comparison?: BaselineComparison
   ): string[] {
     const recommendations: string[] = [];
