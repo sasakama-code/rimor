@@ -6,7 +6,27 @@
 
 import { IReporter, ReportOptions, ReportResult, ReportFormat } from '../interfaces/IReporter';
 import { AnalysisResult } from '../interfaces/IAnalysisEngine';
-import { SecurityAuditResult } from '../interfaces/ISecurityAuditor';
+import { SecurityAuditResult, SecurityThreat } from '../interfaces/ISecurityAuditor';
+import { CoreTypes } from '../types/core-definitions';
+
+/**
+ * 下位互換性用の旧式結果型
+ */
+interface LegacyAnalysisResults {
+  summary?: {
+    overallScore?: number;
+    totalIssues?: number;
+  };
+  issues?: CoreTypes.Issue[];
+}
+
+/**
+ * 下位互換性用のオプション型
+ */
+interface LegacyOptions {
+  format?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Reporter Wrapper
@@ -66,7 +86,7 @@ export class ReporterWrapper implements IReporter {
   }
 
   // 下位互換性のため保持
-  async generateReport(analysisResults: any, options?: any): Promise<string> {
+  async generateReport(analysisResults: LegacyAnalysisResults, options?: LegacyOptions): Promise<string> {
     // 基本的なレポート生成の実装
     try {
       const report = this.formatReport(analysisResults, options);
@@ -138,7 +158,7 @@ export class ReporterWrapper implements IReporter {
   /**
    * 分析結果のフォーマット（下位互換性）
    */
-  private formatReport(analysisResults: any, options?: any): string {
+  private formatReport(analysisResults: LegacyAnalysisResults, options?: LegacyOptions): string {
     const format = options?.format || 'text';
 
     switch (format) {
@@ -160,7 +180,7 @@ export class ReporterWrapper implements IReporter {
   /**
    * テキストレポート生成
    */
-  private generateTextReport(results: any): string {
+  private generateTextReport(results: LegacyAnalysisResults): string {
     let report = '分析レポート\n';
     report += '='.repeat(50) + '\n\n';
 
@@ -171,7 +191,7 @@ export class ReporterWrapper implements IReporter {
 
     if (results.issues && Array.isArray(results.issues)) {
       report += '検出された問題:\n';
-      results.issues.forEach((issue: any, index: number) => {
+      results.issues.forEach((issue: CoreTypes.Issue, index: number) => {
         report += `${index + 1}. ${issue.message || 'Unknown issue'}\n`;
         if (issue.severity) {
           report += `   重要度: ${issue.severity}\n`;
@@ -189,7 +209,7 @@ export class ReporterWrapper implements IReporter {
   /**
    * Markdownレポート生成
    */
-  private generateMarkdownReport(results: any): string {
+  private generateMarkdownReport(results: LegacyAnalysisResults): string {
     let report = '# 分析レポート\n\n';
 
     if (results.summary) {
@@ -199,7 +219,7 @@ export class ReporterWrapper implements IReporter {
 
     if (results.issues && Array.isArray(results.issues)) {
       report += '## 検出された問題\n\n';
-      results.issues.forEach((issue: any, index: number) => {
+      results.issues.forEach((issue: CoreTypes.Issue, index: number) => {
         report += `### ${index + 1}. ${issue.message || 'Unknown issue'}\n\n`;
         if (issue.severity) {
           report += `- **重要度:** ${issue.severity}\n`;
@@ -217,7 +237,7 @@ export class ReporterWrapper implements IReporter {
   /**
    * HTMLレポート生成
    */
-  private generateHtmlReport(results: any): string {
+  private generateHtmlReport(results: LegacyAnalysisResults): string {
     let html = `
 <!DOCTYPE html>
 <html>
@@ -252,7 +272,7 @@ export class ReporterWrapper implements IReporter {
 
     if (results.issues && Array.isArray(results.issues)) {
       html += '<div class="issues"><h2>検出された問題</h2>';
-      results.issues.forEach((issue: any, index: number) => {
+      results.issues.forEach((issue: CoreTypes.Issue, index: number) => {
         const severityClass = issue.severity ? issue.severity.toLowerCase() : '';
         html += `
         <div class="issue ${severityClass}">
@@ -275,7 +295,7 @@ export class ReporterWrapper implements IReporter {
   /**
    * エラーレポート生成
    */
-  private generateErrorReport(error: any): string {
+  private generateErrorReport(error: unknown): string {
     return `エラーレポート
 ===================
 
@@ -300,7 +320,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
 
     if (result.issues && Array.isArray(result.issues)) {
       report += '検出された問題:\n';
-      result.issues.forEach((issue: any, index: number) => {
+      result.issues.forEach((issue: CoreTypes.Issue, index: number) => {
         report += `${index + 1}. ${issue.message || 'Unknown issue'}\n`;
         if (issue.severity) {
           report += `   重要度: ${issue.severity}\n`;
@@ -334,7 +354,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
 
     if (result.threats && Array.isArray(result.threats)) {
       report += '検出された脅威:\n';
-      result.threats.forEach((threat: any, index: number) => {
+      result.threats.forEach((threat: SecurityThreat, index: number) => {
         report += `${index + 1}. ${threat.type || 'Unknown threat'}\n`;
         if (threat.severity) {
           report += `   重要度: ${threat.severity}\n`;
@@ -364,7 +384,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
 
     if (result.issues && Array.isArray(result.issues)) {
       report += '## 検出された問題\n\n';
-      result.issues.forEach((issue: any, index: number) => {
+      result.issues.forEach((issue: CoreTypes.Issue, index: number) => {
         report += `### ${index + 1}. ${issue.message || 'Unknown issue'}\n\n`;
         if (issue.severity) {
           report += `- **重要度:** ${issue.severity}\n`;
@@ -400,7 +420,7 @@ ${error instanceof Error && error.stack ? error.stack : 'N/A'}
 
     if (result.threats && Array.isArray(result.threats)) {
       report += '## 検出された脅威\n\n';
-      result.threats.forEach((threat: any, index: number) => {
+      result.threats.forEach((threat: SecurityThreat, index: number) => {
         report += `### ${index + 1}. ${threat.type || 'Unknown threat'}\n\n`;
         if (threat.severity) {
           report += `- **重要度:** ${threat.severity}\n`;

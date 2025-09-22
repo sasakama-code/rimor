@@ -55,6 +55,58 @@ interface Suggestion {
   example?: string;
 }
 
+interface QualityMetrics {
+  testCoverage: number;
+  qualitativeCoverage: number;
+  securityCoverage: number;
+  maintainabilityScore: number;
+  executionTime: number;
+  complexityScore: number;
+  duplicationScore: number;
+}
+
+interface SecurityAssessment {
+  owaspCoverage: unknown[];
+  vulnerabilityPatterns: string[];
+  securityScore: number;
+}
+
+interface RecommendationType {
+  category: string;
+  action: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+}
+
+interface TestScenarioExtracted {
+  given?: string;
+  when?: string;
+  then?: string;
+  description?: string;
+  context?: Record<string, unknown>;
+}
+
+interface SecurityAssessmentResult {
+  overallSecurityRisk: 'low' | 'medium' | 'high' | 'critical';
+  securityTestCoverage: number;
+  untestedSecurityRequirements: string[];
+  securityTestRecommendations: string[];
+  vulnerabilityMitigationCoverage: number;
+  owaspCoverage: unknown[];
+}
+
+interface IntentExtractionResult {
+  intent: TestIntent;
+  gaps: IntentRealizationGap[];
+  qualityMetrics: QualityMetrics;
+  securityAssessment: SecurityAssessmentResult;
+  recommendations: GapRecommendation[];
+  metadata: {
+    extractionVersion: string;
+    analysisDepth: string;
+    confidenceLevel: number;
+  };
+}
+
 // 拡張された型情報評価結果
 interface EnhancedTestRealizationResult extends TestRealizationResult {
   domainRelevance?: {
@@ -260,7 +312,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           untestedBehaviors: [
             {
               method: implementedMethods[0] || this.createDummyMethodBehavior(),
-              reason: 'INCOMPLETE_TEST' as any,
+              reason: 'INCOMPLETE_TEST' as IntentGapType,
               riskLevel: 'medium',
               recommendedTestMethod: `${expectedBehavior}のテストケースを追加`,
               conditionsToTest: [expectedBehavior],
@@ -318,13 +370,13 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           recommendations: [],
           securityImpact: {
             riskLevel: 'high',
-            affectedSecurityDomains: ['INPUT_VALIDATION' as any, 'AUTHENTICATION' as any],
+            affectedSecurityDomains: ['INPUT_VALIDATION', 'AUTHENTICATION'],
             potentialVulnerabilities: vulnerabilities,
             attackVectors: vulnerabilities.map(v => ({
               attackType: v.type,
               description: v.message,
-              exploitability: 'medium' as any,
-              impactScope: 'local' as any,
+              exploitability: 'medium',
+              impactScope: 'local',
               cweId: undefined,
             })),
             impactDescription: 'セキュリティテストの欠如により脆弱性が見過ごされる可能性',
@@ -364,7 +416,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
           affectedImplementation: methodsWithSideEffects,
           untestedBehaviors: methodsWithSideEffects.map(method => ({
             method,
-            reason: 'SIDE_EFFECT_NOT_TESTED' as any,
+            reason: 'SIDE_EFFECT_NOT_TESTED' as IntentGapType,
             riskLevel: 'medium',
             recommendedTestMethod: '副作用の検証テストを追加',
             conditionsToTest: method.sideEffects?.map(se => se.description) || [],
@@ -474,7 +526,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testIntent: TestIntent,
     implementationTruth: ImplementationTruth,
     gaps: IntentRealizationGap[]
-  ): any {
+  ): QualityMetrics {
     const totalMethods = implementationTruth.actualBehaviors.methods.length;
     const testedMethods =
       totalMethods - gaps.filter(g => g.type === IntentGapType.WRONG_TARGET).length;
@@ -523,7 +575,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     testIntent: TestIntent,
     implementationTruth: ImplementationTruth,
     gaps: IntentRealizationGap[]
-  ): any {
+  ): SecurityAssessmentResult {
     const securityGaps = gaps.filter(g => g.type === IntentGapType.MISSING_SECURITY_TEST);
     const vulnerabilityCount = implementationTruth.vulnerabilities.length;
 
@@ -546,10 +598,10 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
    */
   private generateOverallAssessment(
     realizationScore: number,
-    qualityMetrics: any,
-    securityAssessment: any,
+    qualityMetrics: QualityMetrics,
+    securityAssessment: SecurityAssessmentResult,
     recommendations: GapRecommendation[]
-  ): any {
+  ): IntentExtractionResult {
     let grade: 'A' | 'B' | 'C' | 'D' | 'F';
     if (realizationScore >= 90) grade = 'A';
     else if (realizationScore >= 80) grade = 'B';
@@ -710,7 +762,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     return baseRecommendation;
   }
 
-  private mapGapTypeToRecommendationType(gapType: IntentGapType): any {
+  private mapGapTypeToRecommendationType(gapType: IntentGapType): RecommendationType {
     switch (gapType) {
       case IntentGapType.MISSING_SECURITY_TEST:
         return 'ADD_SECURITY_TEST';
@@ -770,7 +822,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     }
   }
 
-  private generateOwaspCoverage(implementationTruth: ImplementationTruth): any[] {
+  private generateOwaspCoverage(implementationTruth: ImplementationTruth): unknown[] {
     return [
       {
         owaspCategory: 'A01:2021 – Broken Access Control',
@@ -791,8 +843,8 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
 
   private identifyStrengths(
     realizationScore: number,
-    qualityMetrics: any,
-    securityAssessment: any
+    qualityMetrics: QualityMetrics,
+    securityAssessment: SecurityAssessmentResult
   ): string[] {
     const strengths: string[] = [];
 
@@ -965,7 +1017,7 @@ export class TestIntentExtractor implements ITestIntentAnalyzer {
     };
   }
 
-  private extractScenario(ast: ASTNode, testNode: ASTNode): any {
+  private extractScenario(ast: ASTNode, testNode: ASTNode): TestScenarioExtracted {
     return {
       description: this.extractTestDescription(testNode),
       context: 'テストコンテキスト',

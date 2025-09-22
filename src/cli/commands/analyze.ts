@@ -22,8 +22,9 @@ import {
   TaintSummaryData,
   convertToAIJson,
 } from './analyze-types';
-import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult } from '../../core/types';
-import { TaintLevel } from '../../core/types/analysis-types';
+import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult, AnalysisResult } from '../../core/types';
+import { TaintLevel, AnalysisSummary, QualityScore } from '../../core/types/analysis-types';
+import { CoreTypes } from '../../core/types/core-definitions';
 import { UnifiedAnalysisEngine } from '../../core/UnifiedAnalysisEngine';
 import { ImplementationTruthReportEngine } from '../../reporting/core/ImplementationTruthReportEngine';
 import * as fs from 'fs';
@@ -65,6 +66,45 @@ export interface AnalyzeOptions {
   productionCode?: boolean; // プロダクションコード分析モード
   aiOutput?: boolean; // AI向け最適化出力
   debug?: boolean; // デバッグモード（詳細なエラー情報を表示）
+}
+
+/**
+ * Implementation Truth分析結果の型定義
+ */
+interface ImplementationTruthResult {
+  implementationTruth?: {
+    vulnerabilities: Array<{
+      type?: string;
+      severity?: string;
+      description?: string;
+      message?: string;
+      location?: {
+        file?: string;
+        line?: number;
+        column?: number;
+      };
+    }>;
+  };
+  intentRealizationResults?: Array<{
+    testFile?: string;
+    gaps?: Array<{
+      type?: string;
+      severity?: string;
+      description?: string;
+      location?: {
+        line?: number;
+        column?: number;
+      };
+    }>;
+  }>;
+  summary?: {
+    totalFiles?: number;
+  };
+  metadata?: {
+    executionTime?: number;
+  };
+  overallScore?: number;
+  totalGapsDetected?: number;
 }
 
 export class AnalyzeCommand {
@@ -273,12 +313,12 @@ export class AnalyzeCommand {
         let result;
         if (securityResult) {
           result = await reporter.generateCombinedReport!(
-            analysisResult as any,
+            analysisResult as AnalysisResult,
             securityResult,
             reportOptions
           );
         } else {
-          result = await reporter.generateAnalysisReport(analysisResult as any, reportOptions);
+          result = await reporter.generateAnalysisReport(analysisResult as AnalysisResult, reportOptions);
         }
 
         if (result.success) {
@@ -305,12 +345,12 @@ export class AnalyzeCommand {
         let result;
         if (securityResult) {
           result = await reporter.generateCombinedReport!(
-            analysisResult as any,
+            analysisResult as AnalysisResult,
             securityResult,
             reportOptions
           );
         } else {
-          result = await reporter.generateAnalysisReport(analysisResult as any, reportOptions);
+          result = await reporter.generateAnalysisReport(analysisResult as AnalysisResult, reportOptions);
         }
 
         if (result.success) {
@@ -337,12 +377,12 @@ export class AnalyzeCommand {
         let result;
         if (securityResult) {
           result = await reporter.generateCombinedReport!(
-            analysisResult as any,
+            analysisResult as AnalysisResult,
             securityResult,
             reportOptions
           );
         } else {
-          result = await reporter.generateAnalysisReport(analysisResult as any, reportOptions);
+          result = await reporter.generateAnalysisReport(analysisResult as AnalysisResult, reportOptions);
         }
 
         if (result.success) {
@@ -388,12 +428,12 @@ export class AnalyzeCommand {
         let result;
         if (securityResult) {
           result = await reporter.generateCombinedReport!(
-            analysisResult as any,
+            analysisResult as AnalysisResult,
             securityResult,
             reportOptions
           );
         } else {
-          result = await reporter.generateAnalysisReport(analysisResult as any, reportOptions);
+          result = await reporter.generateAnalysisReport(analysisResult as AnalysisResult, reportOptions);
         }
 
         if (result.success && result.content) {
@@ -774,22 +814,24 @@ export class AnalyzeCommand {
    * 互換性維持のための変換メソッド
    */
   private convertImplementationTruthToAnalysisResult(
-    implementationTruthResult: any
+    implementationTruthResult: ImplementationTruthResult
   ): ProjectAnalysisResult {
     const issues: Issue[] = [];
 
     // 脆弱性をIssueに変換
     if (implementationTruthResult.implementationTruth?.vulnerabilities) {
       for (const vulnerability of implementationTruthResult.implementationTruth.vulnerabilities) {
-        issues.push({
+        const issue: CoreTypes.Issue = {
           id: `vuln-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: vulnerability.type || 'security',
-          severity: vulnerability.severity || 'medium',
+          severity: (vulnerability.severity as CoreTypes.SeverityLevel) || 'medium',
+          category: 'security',
           message: vulnerability.description || vulnerability.message || '',
           file: vulnerability.location?.file || '',
           line: vulnerability.location?.line || 0,
           column: vulnerability.location?.column || 0,
-        } as any);
+        };
+        issues.push(issue);
       }
     }
 
@@ -797,15 +839,17 @@ export class AnalyzeCommand {
     if (implementationTruthResult.intentRealizationResults) {
       for (const intentResult of implementationTruthResult.intentRealizationResults) {
         for (const gap of intentResult.gaps || []) {
-          issues.push({
+          const gapIssue: CoreTypes.Issue = {
             id: `gap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             type: gap.type || 'intent-gap',
-            severity: gap.severity || 'medium',
+            severity: (gap.severity as CoreTypes.SeverityLevel) || 'medium',
+            category: 'testing',
             message: gap.description || '',
             file: intentResult.testFile || '',
             line: gap.location?.line || 0,
             column: gap.location?.column || 0,
-          } as any);
+          };
+          issues.push(gapIssue);
         }
       }
     }
@@ -828,18 +872,31 @@ export class AnalyzeCommand {
       summary: {
         totalFiles: implementationTruthResult.summary?.totalFiles || 0,
         analyzedFiles: implementationTruthResult.summary?.totalFiles || 0,
+        skippedFiles: 0,
         totalIssues: issues.length,
-      } as any,
+        issuesBySeverity: this.countIssuesBySeverity(issues),
+        totalPatterns: 0,
+        totalImprovements: 0,
+      } satisfies AnalysisSummary,
       issues,
       improvements: [],
       qualityScore: {
         overall: implementationTruthResult.overallScore || 0,
-      } as any,
+        dimensions: {
+          completeness: implementationTruthResult.overallScore || 0,
+          correctness: implementationTruthResult.overallScore || 0,
+          maintainability: implementationTruthResult.overallScore || 0,
+          reliability: implementationTruthResult.overallScore || 0,
+          security: implementationTruthResult.overallScore || 0,
+        },
+        confidence: 0.8,
+        grade: this.calculateGrade(implementationTruthResult.overallScore || 0),
+      } satisfies QualityScore,
       metadata,
       // 互換性のための追加プロパティ
       totalFiles: implementationTruthResult.summary?.totalFiles || 0,
       executionTime: implementationTruthResult.metadata?.executionTime || 0,
-    } as any;
+    } satisfies ProjectAnalysisResult;
   }
 
   /**
@@ -1092,5 +1149,39 @@ export class AnalyzeCommand {
         'この問題をGitHubに報告してください',
       ],
     };
+  }
+
+  /**
+   * 重要度別の問題数をカウント
+   */
+  private countIssuesBySeverity(issues: CoreTypes.Issue[]): Record<CoreTypes.SeverityLevel, number> {
+    const counts: Record<CoreTypes.SeverityLevel, number> = {
+      'critical': 0,
+      'high': 0,
+      'medium': 0,
+      'low': 0,
+      'info': 0,
+      'error': 0,
+      'warning': 0,
+    };
+
+    for (const issue of issues) {
+      if (issue.severity && issue.severity in counts) {
+        counts[issue.severity as CoreTypes.SeverityLevel]++;
+      }
+    }
+
+    return counts;
+  }
+
+  /**
+   * スコアからグレードを計算
+   */
+  private calculateGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 70) return 'C';
+    if (score >= 60) return 'D';
+    return 'F';
   }
 }

@@ -19,6 +19,44 @@ import {
 } from './implementation-truth-analyze-types';
 
 /**
+ * 脆弱性情報の型定義
+ */
+interface Vulnerability {
+  severity: string;
+  [key: string]: unknown;
+}
+
+/**
+ * ギャップ情報の型定義
+ */
+interface Gap {
+  severity: string;
+  [key: string]: unknown;
+}
+
+/**
+ * 意図実現結果の型定義
+ */
+interface IntentResult {
+  gaps: Gap[];
+  [key: string]: unknown;
+}
+
+/**
+ * フィルタリング結果の型定義
+ */
+interface FilteredResult {
+  implementationTruth: {
+    vulnerabilities: Vulnerability[];
+    [key: string]: unknown;
+  };
+  intentRealizationResults: IntentResult[];
+  totalGapsDetected: number;
+  highSeverityGaps: number;
+  [key: string]: unknown;
+}
+
+/**
  * Implementation Truth専用分析コマンド
  */
 export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAnalyzeCommand {
@@ -233,7 +271,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
   /**
    * 重要度によるフィルタリング
    */
-  private filterBySeverity(result: any, minSeverity: string): any {
+  private filterBySeverity(result: FilteredResult, minSeverity: string): FilteredResult {
     const severityOrder = ['low', 'medium', 'high', 'critical'];
     const minIndex = severityOrder.indexOf(minSeverity);
 
@@ -243,16 +281,16 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
 
     // 脆弱性のフィルタリング
     const filteredVulnerabilities = result.implementationTruth.vulnerabilities.filter(
-      (vuln: any) => {
+      (vuln: Vulnerability) => {
         const vulnIndex = severityOrder.indexOf(vuln.severity);
         return vulnIndex >= minIndex;
       }
     );
 
     // ギャップのフィルタリング
-    const filteredIntentResults = result.intentRealizationResults.map((intentResult: any) => ({
+    const filteredIntentResults = result.intentRealizationResults.map((intentResult: IntentResult) => ({
       ...intentResult,
-      gaps: intentResult.gaps.filter((gap: any) => {
+      gaps: intentResult.gaps.filter((gap: Gap) => {
         const gapIndex = severityOrder.indexOf(gap.severity);
         return gapIndex >= minIndex;
       }),
@@ -266,13 +304,13 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
       },
       intentRealizationResults: filteredIntentResults,
       totalGapsDetected: filteredIntentResults.reduce(
-        (total: number, r: any) => total + r.gaps.length,
+        (total: number, r: IntentResult) => total + r.gaps.length,
         0
       ),
       highSeverityGaps: filteredIntentResults.reduce(
-        (total: number, r: any) =>
+        (total: number, r: IntentResult) =>
           total +
-          r.gaps.filter((g: any) => g.severity === 'critical' || g.severity === 'high').length,
+          r.gaps.filter((g: Gap) => g.severity === 'critical' || g.severity === 'high').length,
         0
       ),
     };
@@ -381,15 +419,15 @@ export class ImplementationTruthCliParser {
           break;
         case '--format':
         case '-f':
-          options.format = args[++i] as any;
+          options.format = args[++i] as ImplementationTruthAnalyzeOptions['format'];
           break;
         case '--detail-level':
         case '-d':
-          options.detailLevel = args[++i] as any;
+          options.detailLevel = args[++i] as ImplementationTruthAnalyzeOptions['detailLevel'];
           break;
         case '--min-severity':
         case '-s':
-          options.minSeverity = args[++i] as any;
+          options.minSeverity = args[++i] as ImplementationTruthAnalyzeOptions['minSeverity'];
           break;
         case '--optimize-for-ai':
           options.optimizeForAI = true;
