@@ -16,7 +16,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import { BenchmarkResult } from './ExternalProjectBenchmarkRunner';
+import { BenchmarkResult, BaselineComparison, ProjectComparison } from './types';
 
 /**
  * ベースライン設定インターフェース
@@ -87,51 +87,6 @@ export interface BaselineStatistics {
   };
 }
 
-/**
- * プロジェクト比較結果
- */
-export interface ProjectComparison {
-  /** プロジェクト名 */
-  projectName: string;
-  /** パフォーマンス改善率（%） */
-  performanceImprovement: number;
-  /** 精度改善率（%） */
-  accuracyImprovement: number;
-  /** 5ms/file目標達成状況 */
-  target5msStatus: 'improved' | 'maintained' | 'degraded' | 'new';
-  /** ベースライン値 */
-  baselineMetrics: {
-    timePerFile: number;
-    accuracy: number;
-  };
-  /** 現在値 */
-  currentMetrics: {
-    timePerFile: number;
-    accuracy: number;
-  };
-}
-
-/**
- * ベースライン比較結果
- */
-export interface BaselineComparison {
-  /** 比較実行日時 */
-  comparedAt: string;
-  /** ベースラインID */
-  baselineId: string;
-  /** 全体改善率 */
-  overallImprovement: number;
-  /** プロジェクト別比較結果 */
-  projectComparisons: ProjectComparison[];
-  /** 5ms/file目標達成改善 */
-  target5msImprovements: {
-    improved: string[]; // 新規達成
-    maintained: string[]; // 達成継続
-    degraded: string[]; // 達成から未達成に
-  };
-  /** 推奨事項 */
-  recommendations: string[];
-}
 
 /**
  * 傾向分析結果
@@ -313,11 +268,12 @@ export class BaselineManager {
           projectName: currentResult.projectName,
           performanceImprovement: 0, // 新規のため改善率なし
           accuracyImprovement: 0,
-          target5msStatus: 'new',
-          baselineMetrics: { timePerFile: 0, accuracy: 0 },
-          currentMetrics: {
-            timePerFile: currentResult.performance.timePerFile,
-            accuracy: currentResult.accuracy.taintTyperSuccessRate,
+          target5msAchieved: currentResult.target5ms.achieved,
+          target5msImprovement: 0,
+          significantChanges: [],
+          details: {
+            baseline: { avgTimePerFile: 0, totalExecutionTime: 0, throughput: 0, memoryUsage: 0, cpuUsage: 0, totalIssuesDetected: 0, criticalIssues: 0, highIssues: 0, mediumIssues: 0, lowIssues: 0, precisionRate: 0, recallRate: 0, f1Score: 0 },
+            current: { ...currentResult.performance, ...currentResult.accuracy },
           },
         });
         continue;
@@ -325,42 +281,48 @@ export class BaselineManager {
 
       // パフォーマンス改善率の計算
       const performanceImprovement =
-        ((baselineResult.performance.timePerFile - currentResult.performance.timePerFile) /
-          baselineResult.performance.timePerFile) *
+        ((baselineResult.performance.avgTimePerFile - currentResult.performance.avgTimePerFile) /
+          baselineResult.performance.avgTimePerFile) *
         100;
 
       // 精度改善率の計算
       const accuracyImprovement =
-        ((currentResult.accuracy.taintTyperSuccessRate -
-          baselineResult.accuracy.taintTyperSuccessRate) /
-          baselineResult.accuracy.taintTyperSuccessRate) *
+        ((currentResult.accuracy.f1Score -
+          baselineResult.accuracy.f1Score) /
+          baselineResult.accuracy.f1Score) *
         100;
 
       // 5ms/file目標達成状況
-      let target5msStatus: ProjectComparison['target5msStatus'] = 'maintained';
-      if (baselineResult.target5ms.achieved && currentResult.target5ms.achieved) {
+      const target5msAchieved = currentResult.target5ms.achieved;
+      const baselineAchieved = baselineResult.target5ms.achieved;
+      const target5msImprovement = currentResult.target5ms.improvement - baselineResult.target5ms.improvement;
+      
+      if (baselineAchieved && target5msAchieved) {
         target5msImprovements.maintained.push(currentResult.projectName);
-        target5msStatus = 'maintained';
-      } else if (!baselineResult.target5ms.achieved && currentResult.target5ms.achieved) {
+      } else if (!baselineAchieved && target5msAchieved) {
         target5msImprovements.improved.push(currentResult.projectName);
-        target5msStatus = 'improved';
-      } else if (baselineResult.target5ms.achieved && !currentResult.target5ms.achieved) {
+      } else if (baselineAchieved && !target5msAchieved) {
         target5msImprovements.degraded.push(currentResult.projectName);
-        target5msStatus = 'degraded';
+      }
+
+      const significantChanges: string[] = [];
+      if (Math.abs(performanceImprovement) > 10) {
+        significantChanges.push(`Performance ${performanceImprovement > 0 ? 'improved' : 'degraded'} by ${Math.abs(performanceImprovement).toFixed(1)}%`);
+      }
+      if (Math.abs(accuracyImprovement) > 5) {
+        significantChanges.push(`Accuracy ${accuracyImprovement > 0 ? 'improved' : 'degraded'} by ${Math.abs(accuracyImprovement).toFixed(1)}%`);
       }
 
       projectComparisons.push({
         projectName: currentResult.projectName,
         performanceImprovement,
         accuracyImprovement,
-        target5msStatus,
-        baselineMetrics: {
-          timePerFile: baselineResult.performance.timePerFile,
-          accuracy: baselineResult.accuracy.taintTyperSuccessRate,
-        },
-        currentMetrics: {
-          timePerFile: currentResult.performance.timePerFile,
-          accuracy: currentResult.accuracy.taintTyperSuccessRate,
+        target5msAchieved,
+        target5msImprovement,
+        significantChanges,
+        details: {
+          baseline: { ...baselineResult.performance, ...baselineResult.accuracy },
+          current: { ...currentResult.performance, ...currentResult.accuracy },
         },
       });
     }
@@ -380,6 +342,13 @@ export class BaselineManager {
       projectComparisons,
       target5msImprovements,
       recommendations,
+      summary: {
+        totalProjects: projectComparisons.length,
+        improvedCount: projectComparisons.filter(c => c.performanceImprovement > 0).length,
+        degradedCount: projectComparisons.filter(c => c.performanceImprovement < 0).length,
+        unchangedCount: projectComparisons.filter(c => Math.abs(c.performanceImprovement) < 1).length,
+        avgImprovement: overallImprovement,
+      },
     };
   }
 
@@ -443,8 +412,8 @@ export class BaselineManager {
         // プロジェクト固有のスコア計算
         const score =
           (projectResult.target5ms.achieved ? 40 : 0) +
-          projectResult.accuracy.taintTyperSuccessRate * 30 +
-          (5 - projectResult.performance.timePerFile) * 30;
+          projectResult.accuracy.f1Score * 30 +
+          (5 - projectResult.performance.avgTimePerFile) * 30;
 
         if (score > bestScore) {
           bestScore = score;
@@ -534,8 +503,8 @@ export class BaselineManager {
         const lastResult = projectResults[projectResults.length - 1];
 
         const projectImprovementRate =
-          ((firstResult.performance.timePerFile - lastResult.performance.timePerFile) /
-            firstResult.performance.timePerFile) *
+          ((firstResult.performance.avgTimePerFile - lastResult.performance.avgTimePerFile) /
+            firstResult.performance.avgTimePerFile) *
           100;
 
         let projectTrend: 'improving' | 'stable' | 'degrading' = 'stable';
@@ -696,8 +665,8 @@ export class BaselineManager {
       };
     }
 
-    const timesPerFile = successfulResults.map(r => r.performance.timePerFile);
-    const accuracyRates = successfulResults.map(r => r.accuracy.taintTyperSuccessRate);
+    const timesPerFile = successfulResults.map(r => r.performance.avgTimePerFile);
+    const accuracyRates = successfulResults.map(r => r.accuracy.f1Score);
     const target5msAchieved = successfulResults.filter(r => r.target5ms.achieved).length;
 
     // 基本統計の計算
@@ -752,8 +721,8 @@ export class BaselineManager {
     }
 
     // 5ms/file目標関連の推奨事項
-    const target5msImproved = comparisons.filter(c => c.target5msStatus === 'improved');
-    const target5msDegraded = comparisons.filter(c => c.target5msStatus === 'degraded');
+    const target5msImproved = comparisons.filter(c => c.target5msAchieved && c.target5msImprovement > 0);
+    const target5msDegraded = comparisons.filter(c => !c.target5msAchieved && c.target5msImprovement < 0);
 
     if (target5msImproved.length > 0) {
       recommendations.push(

@@ -8,6 +8,40 @@
 import type { Issue } from '../../core/types/core-definitions';
 
 /**
+ * プラグイン実行結果
+ * プラグインシステムから返される標準的な結果型
+ */
+export interface PluginResult {
+  /** プラグイン名 */
+  name: string;
+  /** 実行ステータス */
+  status: 'success' | 'error' | 'warning' | 'skipped';
+  /** 実行時間（ミリ秒） */
+  executionTime: number;
+  /** 検出された問題 */
+  issues?: Issue[];
+  /** 検出結果（従来コードとの互換性） */
+  detections?: Array<{
+    patternId: string;
+    severity: string;
+    location: {
+      file: string;
+      line: number;
+    };
+    metadata?: {
+      source?: string;
+      sink?: string;
+    };
+  }>;
+  /** メタデータ */
+  metadata?: Record<string, unknown>;
+  /** エラーメッセージ（該当時） */
+  error?: string;
+  /** 警告メッセージ（該当時） */
+  warnings?: string[];
+}
+
+/**
  * 分析結果の基本インターフェース
  * すべての分析結果型の基底となる最小限の構造
  *
@@ -59,7 +93,7 @@ export interface AnalysisResultWithPlugins {
   /** 実行されたプラグインのリスト */
   pluginsExecuted?: string[];
   /** プラグイン固有の結果 */
-  pluginResults?: Record<string, unknown>;
+  pluginResults?: Record<string, PluginResult>;
 }
 
 /**
@@ -107,8 +141,31 @@ export interface FileAnalysisResult extends BaseAnalysisResult {
 }
 
 /**
+ * 従来のAnalysisResult型との互換性のための拡張
+ * 段階的移行をサポート
+ */
+export interface LegacyAnalysisResult extends BaseAnalysisResult {
+  /** ファイルパス（従来コードとの互換性） */
+  filePath?: string;
+  /** 相対パス（従来コードとの互換性） */
+  relativePath?: string;
+  /** プラグイン結果（従来コードとの互換性） */
+  pluginResults?: Record<string, unknown>;
+  /** 分析時間（従来コードとの互換性） */
+  analysisTime?: number;
+  /** プラグインタイミング（従来コードとの互換性） */
+  pluginTimings?: Record<string, number>;
+  /** タイムスタンプ（従来コードとの互換性） */
+  timestamp?: Date;
+  /** アナライザーID（従来コードとの互換性） */
+  analyzerId?: string;
+  /** アナライザーバージョン（従来コードとの互換性） */
+  analyzerVersion?: string;
+}
+
+/**
  * 統一された分析結果型
- * すべてのオプショナル機能を含む包括的な型
+ * 従来コードとの完全互換性を保持
  *
  * DRY原則: 既存の型を組み合わせて重複を避ける
  */
@@ -117,6 +174,79 @@ export interface AnalysisResult
     AnalysisResultWithMetadata,
     AnalysisResultWithPlugins,
     AnalysisResultWithParallelStats {
+  // 従来コードとの互換性（必須フィールド）
+  /** ファイルパス（従来コードとの互換性） */
+  filePath?: string;
+  /** 相対パス（従来コードとの互換性） */
+  relativePath?: string;
+  
+  // 従来の検出結果
+  /** 検出結果（従来コードとの互換性） */
+  detectionResults?: Array<{
+    patternId?: string;
+    pattern?: string;
+    patternName?: string;
+    confidence: number;
+    evidence?: unknown[];
+    severity?: string;
+    securityRelevance?: number;
+    metadata?: Record<string, unknown>;
+  }>;
+  
+  // 従来のメトリクス
+  /** ファイルメトリクス（従来コードとの互換性） */
+  metrics?: {
+    lines: number;
+    statements?: number;
+    functions?: number;
+    classes?: number;
+    complexity?: number;
+    testCount?: number;
+    assertionCount?: number;
+    coverage?: {
+      statements: number;
+      branches: number;
+      functions: number;
+      lines: number;
+    };
+    dependencies?: number;
+    maintainabilityIndex?: number;
+  };
+  
+  // 従来の品質評価
+  /** 品質スコア（従来コードとの互換性） */
+  score?: {
+    overall: number;
+    testCoverage: number;
+    assertionCoverage: number;
+    issueScore: number;
+    details?: Record<string, unknown>;
+  };
+  /** 品質スコア数値（従来コードとの互換性） */
+  qualityScore?: number;
+  /** 品質詳細（従来コードとの互換性） */
+  qualityDetails?: Record<string, unknown>;
+  
+  // 従来のコンテキスト
+  /** プロジェクトコンテキスト（従来コードとの互換性） */
+  context?: Record<string, unknown>;
+  
+  // 従来のパフォーマンスデータ  
+  /** 分析時間（従来コードとの互換性） */
+  analysisTime?: number;
+  /** プラグインタイミング（従来コードとの互換性） */
+  pluginTimings?: Record<string, number>;
+  
+  // 従来のメタデータ
+  /** タイムスタンプ（従来コードとの互換性） */
+  timestamp?: Date;
+  /** アナライザーID（従来コードとの互換性） */
+  analyzerId?: string;
+  /** アナライザーバージョン（従来コードとの互換性） */
+  analyzerVersion?: string;
+  /** 基本メタデータ（従来コードとの互換性） */
+  metadata?: Record<string, unknown>;
+  
   /** ファイル別の詳細結果（オプション） */
   files?: Array<{
     path: string;

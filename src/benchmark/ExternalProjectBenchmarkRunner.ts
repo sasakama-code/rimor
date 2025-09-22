@@ -19,7 +19,8 @@ import { UnifiedAnalysisResult } from '../orchestrator/types';
 import { MetricsCollector } from './collectors/MetricsCollector';
 import { AccuracyCollector } from './collectors/AccuracyCollector';
 import { PerformanceProfiler } from './collectors/PerformanceProfiler';
-import { BaselineManager, BaselineComparison } from './BaselineManager';
+import { BaselineManager } from './BaselineManager';
+import { BaselineComparison } from './types';
 import { ValidationReportGenerator, ValidationReport } from './ValidationReportGenerator';
 
 const execAsync = promisify(exec);
@@ -63,7 +64,7 @@ export interface CloneResult {
 /**
  * パフォーマンスメトリクス
  */
-export interface PerformanceMetrics {
+export interface ExternalPerformanceMetrics {
   /** 実行時間（ミリ秒） */
   executionTime: number;
   /** ファイルあたりの実行時間（ミリ秒） */
@@ -88,7 +89,7 @@ export interface PerformanceMetrics {
 /**
  * 解析精度メトリクス
  */
-export interface AccuracyMetrics {
+export interface ExternalAccuracyMetrics {
   /** TaintTyper成功率 */
   taintTyperSuccessRate: number;
   /** Intent抽出成功率 */
@@ -109,7 +110,7 @@ export interface AccuracyMetrics {
  * 統合分析結果メトリクス
  * Issue #85: Rimorの主要機能の実効性評価
  */
-export interface UnifiedAnalysisMetrics {
+export interface ExternalUnifiedAnalysisMetrics {
   /** セキュリティ分析結果 */
   securityAnalysis: {
     /** TaintTyper検出数（脆弱性タイプ別） */
@@ -159,7 +160,7 @@ export interface UnifiedAnalysisMetrics {
 /**
  * 5ms/file目標検証結果
  */
-export interface Target5msResult {
+export interface ExternalTarget5msResult {
   /** 目標達成フラグ */
   achieved: boolean;
   /** 実際のファイルあたり時間 */
@@ -178,15 +179,15 @@ export interface Target5msResult {
  * ベンチマーク結果
  * Issue #85: 統合分析結果を含む拡充ベンチマーク結果
  */
-export interface BenchmarkResult {
+export interface ExternalBenchmarkResult {
   success: boolean;
   projectName: string;
   timestamp: string;
-  performance: PerformanceMetrics;
-  accuracy: AccuracyMetrics;
-  target5ms: Target5msResult;
+  performance: ExternalPerformanceMetrics;
+  accuracy: ExternalAccuracyMetrics;
+  target5ms: ExternalTarget5msResult;
   /** Issue #85: 統合分析結果メトリクス */
-  unifiedAnalysis?: UnifiedAnalysisMetrics;
+  unifiedAnalysis?: ExternalUnifiedAnalysisMetrics;
   /** Issue #85: 生の統合分析結果 */
   rawUnifiedResult?: UnifiedAnalysisResult;
   systemInfo: {
@@ -198,6 +199,7 @@ export interface BenchmarkResult {
   };
   error?: string;
   retryCount?: number;
+  duration: number;
 }
 
 /**
@@ -222,11 +224,11 @@ export interface ComparisonReport {
   };
   projectComparisons: {
     projectName: string;
-    performance: PerformanceMetrics;
-    accuracy: AccuracyMetrics;
-    target5ms: Target5msResult;
+    performance: ExternalPerformanceMetrics;
+    accuracy: ExternalAccuracyMetrics;
+    target5ms: ExternalTarget5msResult;
     /** Issue #85: 統合分析メトリクス */
-    unifiedAnalysis?: UnifiedAnalysisMetrics;
+    unifiedAnalysis?: ExternalUnifiedAnalysisMetrics;
     rank: number;
   }[];
   recommendations: string[];
@@ -240,7 +242,7 @@ export interface ComparisonReport {
  */
 export interface BaselineIntegratedResult {
   /** ベンチマーク実行結果 */
-  results: BenchmarkResult[];
+  results: ExternalBenchmarkResult[];
   /** ベースライン比較結果（初回実行時はundefined） */
   comparison?: BaselineComparison;
   /** 作成/更新されたベースラインID */
@@ -708,7 +710,7 @@ export class ExternalProjectBenchmarkRunner {
     project: { name: string; path: string; fileCount: number },
     integratedResult?: IntegratedCollectionResult,
     mainAnalysisResult?: MainAnalysisResult
-  ): Promise<PerformanceMetrics> {
+  ): Promise<ExternalPerformanceMetrics> {
     const startTime = performance.now();
     const startMemory = process.memoryUsage();
 
@@ -835,7 +837,7 @@ export class ExternalProjectBenchmarkRunner {
    */
   private extractUnifiedAnalysisMetrics(
     unifiedResult: UnifiedAnalysisResult
-  ): UnifiedAnalysisMetrics {
+  ): ExternalUnifiedAnalysisMetrics {
     if (this.config.verbose) {
       console.log('🔍 DEBUG: Extracting metrics from unified result:', {
         hasUnifiedResult: !!unifiedResult,
@@ -847,7 +849,7 @@ export class ExternalProjectBenchmarkRunner {
       });
     }
 
-    const metrics: UnifiedAnalysisMetrics = {
+    const metrics: ExternalUnifiedAnalysisMetrics = {
       securityAnalysis: {
         detectionsByType: {},
         estimatedAccuracy: 0,
@@ -979,7 +981,7 @@ export class ExternalProjectBenchmarkRunner {
   async collectAccuracyMetrics(
     project: { name: string; path: string; fileCount: number },
     integratedResult?: IntegratedCollectionResult
-  ): Promise<AccuracyMetrics> {
+  ): Promise<ExternalAccuracyMetrics> {
     try {
       // 統合システム結果が提供されている場合はそれを使用（DRY原則適用）
       if (integratedResult?.accuracyAnalysis) {
@@ -1054,9 +1056,9 @@ export class ExternalProjectBenchmarkRunner {
    */
   async verify5msPerFileTarget(
     project: { name: string; path: string; fileCount: number },
-    performanceMetrics?: PerformanceMetrics,
+    performanceMetrics?: ExternalPerformanceMetrics,
     integratedResult?: IntegratedCollectionResult
-  ): Promise<Target5msResult> {
+  ): Promise<ExternalTarget5msResult> {
     // 既に収集されたメトリクスがある場合はそれを使用（DRY原則）
     const metrics =
       performanceMetrics || (await this.collectPerformanceMetrics(project, integratedResult));
@@ -1065,7 +1067,7 @@ export class ExternalProjectBenchmarkRunner {
     const achieved = actualTime <= targetTime;
     const deviationPercent = ((actualTime - targetTime) / targetTime) * 100;
 
-    const result: Target5msResult = {
+    const result: ExternalTarget5msResult = {
       achieved,
       actualTimePerFile: actualTime,
       targetTimePerFile: targetTime,
@@ -1085,7 +1087,7 @@ export class ExternalProjectBenchmarkRunner {
    * Phase 2: 詳細プロファイリング結果を活用した高精度ボトルネック特定
    */
   private identifyBottlenecks(
-    metrics: PerformanceMetrics,
+    metrics: ExternalPerformanceMetrics,
     integratedResult?: IntegratedCollectionResult
   ): string[] {
     const bottlenecks: string[] = [];
@@ -1146,7 +1148,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * 改善推奨事項の生成
    */
-  private generateRecommendations(metrics: PerformanceMetrics, deviationPercent: number): string[] {
+  private generateRecommendations(metrics: ExternalPerformanceMetrics, deviationPercent: number): string[] {
     const recommendations: string[] = [];
 
     if (deviationPercent > 100) {
@@ -1166,7 +1168,7 @@ export class ExternalProjectBenchmarkRunner {
    * Phase 2: 統合メトリクス収集システムによる高精度ベンチマーク
    * SOLID原則適用: 各コレクターが単一責任を持ち、統合システムが協調する
    */
-  async runSingleProjectBenchmark(project: BenchmarkProject): Promise<BenchmarkResult> {
+  async runSingleProjectBenchmark(project: BenchmarkProject): Promise<ExternalBenchmarkResult> {
     const timestamp = new Date().toISOString();
     const sessionId = `benchmark-${project.name}-${Date.now()}`;
     let integratedSessions: IntegratedSessions | null = null;
@@ -1187,6 +1189,7 @@ export class ExternalProjectBenchmarkRunner {
           systemInfo: this.getSystemInfo(),
           error: cloneResult.error,
           retryCount: cloneResult.retryCount,
+          duration: 0,
         };
       }
 
@@ -1352,7 +1355,7 @@ export class ExternalProjectBenchmarkRunner {
         integratedResult
       );
 
-      const result: BenchmarkResult = {
+      const result: ExternalBenchmarkResult = {
         success: true,
         projectName: project.name,
         timestamp,
@@ -1364,6 +1367,7 @@ export class ExternalProjectBenchmarkRunner {
         rawUnifiedResult: unifiedAnalysisResult,
         systemInfo: this.getSystemInfo(),
         retryCount: cloneResult.retryCount,
+        duration: performance.executionTime,
       };
 
       // 結果の保存（詳細メトリクスも併せて保存）
@@ -1394,6 +1398,7 @@ export class ExternalProjectBenchmarkRunner {
         unifiedAnalysis: this.getEmptyUnifiedAnalysisMetrics(),
         systemInfo: this.getSystemInfo(),
         error: error instanceof Error ? error.message : String(error),
+        duration: 0,
       };
     }
   }
@@ -1401,8 +1406,8 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * 複数プロジェクトのベンチマーク実行
    */
-  async runMultiProjectBenchmark(projects: BenchmarkProject[]): Promise<BenchmarkResult[]> {
-    const results: BenchmarkResult[] = [];
+  async runMultiProjectBenchmark(projects: BenchmarkProject[]): Promise<ExternalBenchmarkResult[]> {
+    const results: ExternalBenchmarkResult[] = [];
 
     for (const project of projects) {
       if (this.config.verbose) {
@@ -1425,7 +1430,7 @@ export class ExternalProjectBenchmarkRunner {
    * 比較レポートの生成
    * Issue #85: 統合分析結果を含む拡充レポート生成
    */
-  async generateComparisonReport(results: BenchmarkResult[]): Promise<ComparisonReport> {
+  async generateComparisonReport(results: ExternalBenchmarkResult[]): Promise<ComparisonReport> {
     const successfulResults = results.filter(r => r.success);
 
     // 全体パフォーマンスの計算
@@ -1512,7 +1517,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * Issue #85: 統合分析結果の全体サマリー計算
    */
-  private calculateOverallUnifiedAnalysis(results: BenchmarkResult[]) {
+  private calculateOverallUnifiedAnalysis(results: ExternalBenchmarkResult[]) {
     const resultsWithUnified = results.filter(r => r.unifiedAnalysis);
 
     if (resultsWithUnified.length === 0) {
@@ -1595,7 +1600,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * Issue #85: 統合分析結果に基づく推奨事項の生成
    */
-  private generateUnifiedAnalysisRecommendations(results: BenchmarkResult[]): string[] {
+  private generateUnifiedAnalysisRecommendations(results: ExternalBenchmarkResult[]): string[] {
     const recommendations: string[] = [];
     const resultsWithUnified = results.filter(r => r.unifiedAnalysis);
 
@@ -1658,7 +1663,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * 比較推奨事項の生成
    */
-  private generateComparisonRecommendations(results: BenchmarkResult[]): string[] {
+  private generateComparisonRecommendations(results: ExternalBenchmarkResult[]): string[] {
     const recommendations: string[] = [];
     const successfulResults = results.filter(r => r.success);
 
@@ -1765,7 +1770,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * ベンチマーク結果の保存
    */
-  private async saveBenchmarkResult(result: BenchmarkResult): Promise<void> {
+  private async saveBenchmarkResult(result: ExternalBenchmarkResult): Promise<void> {
     const filename = `benchmark-result-${result.projectName}-${Date.now()}.json`;
     const filepath = path.join(this.config.outputDir, 'reports', filename);
 
@@ -1820,7 +1825,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * 空のメトリクスオブジェクト
    */
-  private getEmptyPerformanceMetrics(): PerformanceMetrics {
+  private getEmptyPerformanceMetrics(): ExternalPerformanceMetrics {
     return {
       executionTime: 0,
       timePerFile: 0,
@@ -1830,7 +1835,7 @@ export class ExternalProjectBenchmarkRunner {
     };
   }
 
-  private getEmptyAccuracyMetrics(): AccuracyMetrics {
+  private getEmptyAccuracyMetrics(): ExternalAccuracyMetrics {
     return {
       taintTyperSuccessRate: 0,
       intentExtractionSuccessRate: 0,
@@ -1842,7 +1847,7 @@ export class ExternalProjectBenchmarkRunner {
     };
   }
 
-  private getEmptyTarget5msResult(): Target5msResult {
+  private getEmptyTarget5msResult(): ExternalTarget5msResult {
     return {
       achieved: false,
       actualTimePerFile: 0,
@@ -1854,7 +1859,7 @@ export class ExternalProjectBenchmarkRunner {
   /**
    * Issue #85: 空の統合分析メトリクス
    */
-  private getEmptyUnifiedAnalysisMetrics(): UnifiedAnalysisMetrics {
+  private getEmptyUnifiedAnalysisMetrics(): ExternalUnifiedAnalysisMetrics {
     return {
       securityAnalysis: {
         detectionsByType: {},
