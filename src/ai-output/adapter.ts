@@ -48,7 +48,7 @@ export class UnifiedAIFormatter {
    */
   formatSync(result: UnifiedAnalysisResult, options?: UnifiedAIFormatterOptions): AIJsonOutput {
     const report = this.engine.generate(result, options);
-    return report as any;
+    return report as unknown as AIJsonOutput;
   }
 }
 
@@ -106,7 +106,7 @@ export class UnifiedAIFormatterParallel extends UnifiedAIFormatter {
  * FormatterStrategyアダプター
  * @deprecated Use IFormattingStrategy from reporting/core/types instead
  */
-export type FormattingStrategy = any; // 後方互換性のための型定義
+export type FormattingStrategy = unknown; // 後方互換性のための型定義（deprecated）
 
 // 後方互換性のためのエクスポート
 export { AIJsonOutput, UnifiedAIFormatterOptions } from './types';

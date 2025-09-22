@@ -49,7 +49,7 @@ export class AIOptimizedFormatter {
     return {
       ...output,
       projectPath,
-      actionableTasks,
+      actionableTasks: actionableTasks as unknown as any[],
     };
   }
 
@@ -132,7 +132,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       actionableTasks: [],
       insights: [],
       instructions: this.generateInstructions(result), // instructionsプロパティを追加
-    } as any; // Type assertion to handle interface differences
+    } as unknown as AIOptimizedOutput; // Type assertion to handle interface differences
   }
 
   /**
@@ -177,7 +177,7 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
       },
       actionableTasks: [],
       insights: [],
-    } as any; // Type assertion to handle interface differences
+    } as unknown as AIOptimizedOutput; // Type assertion to handle interface differences
   }
 
   /**
@@ -486,8 +486,18 @@ ${Array.isArray(output.instructions) ? output.instructions.join('\n') : '- No sp
   /**
    * Generate actionable tasks from issues
    */
-  private generateActionableTasks(result: AnalysisResult): any[] {
-    const tasks: any[] = [];
+  private generateActionableTasks(result: AnalysisResult): Array<{
+    priority: string;
+    description: string;
+    estimatedTime: number;
+    issues: Issue[];
+  }> {
+    const tasks: Array<{
+      priority: string;
+      description: string;
+      estimatedTime: number;
+      issues: Issue[];
+    }> = [];
 
     // Group issues by severity
     const criticalIssues = result.issues.filter(i => i.severity === 'critical');
