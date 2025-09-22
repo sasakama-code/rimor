@@ -26,7 +26,7 @@ import { Issue, TaintAnalysisResult, TaintFlow, ProjectAnalysisResult } from '..
 import { AnalysisResult } from '../../types/analysis';
 import { TaintLevel, AnalysisSummary, QualityScore } from '../../core/types/analysis-types';
 import { CoreTypes } from '../../core/types/core-definitions';
-import { UnifiedAnalysisEngine } from '../../core/UnifiedAnalysisEngine';
+import { UnifiedAnalysisEngine, ImplementationTruthAnalysisResult } from '../../core/UnifiedAnalysisEngine';
 import { ImplementationTruthReportEngine } from '../../reporting/core/ImplementationTruthReportEngine';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -815,7 +815,7 @@ export class AnalyzeCommand {
    * 互換性維持のための変換メソッド
    */
   private convertImplementationTruthToAnalysisResult(
-    implementationTruthResult: ImplementationTruthResult
+    implementationTruthResult: ImplementationTruthAnalysisResult
   ): ProjectAnalysisResult {
     const issues: Issue[] = [];
 
@@ -827,10 +827,10 @@ export class AnalyzeCommand {
           type: vulnerability.type || 'security',
           severity: (vulnerability.severity as CoreTypes.SeverityLevel) || 'medium',
           category: 'security',
-          message: vulnerability.description || vulnerability.message || '',
-          file: vulnerability.location?.file || '',
-          line: vulnerability.location?.line || 0,
-          column: vulnerability.location?.column || 0,
+          message: (vulnerability as any).description || (vulnerability as any).message || (vulnerability as any).title || vulnerability.toString(),
+          file: (vulnerability as any).location?.file || (vulnerability as any).filePath || '',
+          line: (vulnerability as any).location?.line || (vulnerability as any).line || 0,
+          column: (vulnerability as any).location?.column || (vulnerability as any).column || 0,
         };
         issues.push(issue);
       }
@@ -846,9 +846,9 @@ export class AnalyzeCommand {
             severity: (gap.severity as CoreTypes.SeverityLevel) || 'medium',
             category: 'testing',
             message: gap.description || '',
-            file: intentResult.testFile || '',
-            line: gap.location?.line || 0,
-            column: gap.location?.column || 0,
+            file: intentResult.filePath || '',
+            line: 0, // gap doesn't have location in IntentRealizationGap
+            column: 0,
           };
           issues.push(gapIssue);
         }
@@ -867,12 +867,12 @@ export class AnalyzeCommand {
     return {
       projectPath: '.',
       timestamp: new Date(),
-      duration: implementationTruthResult.metadata?.executionTime || 0,
+      duration: implementationTruthResult.executionTime || 0,
       success: true,
       files: [],
       summary: {
-        totalFiles: implementationTruthResult.summary?.totalFiles || 0,
-        analyzedFiles: implementationTruthResult.summary?.totalFiles || 0,
+        totalFiles: (implementationTruthResult.summary?.productionFilesAnalyzed || 0) + (implementationTruthResult.summary?.testFilesAnalyzed || 0),
+        analyzedFiles: (implementationTruthResult.summary?.productionFilesAnalyzed || 0) + (implementationTruthResult.summary?.testFilesAnalyzed || 0),
         skippedFiles: 0,
         totalIssues: issues.length,
         issuesBySeverity: this.countIssuesBySeverity(issues),

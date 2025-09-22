@@ -87,6 +87,9 @@ export interface ImplementationTruthAnalysisResult {
     realizationScore: number;
     topRecommendations: string[];
   };
+  
+  /** Index signature for Record<string, unknown> compatibility */
+  [key: string]: unknown;
 }
 
 // バッチ分析サマリー型

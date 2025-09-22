@@ -9,7 +9,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { UnifiedAnalysisEngine } from '../../core/UnifiedAnalysisEngine';
+import { UnifiedAnalysisEngine, ImplementationTruthAnalysisResult } from '../../core/UnifiedAnalysisEngine';
 import { ImplementationTruthReportEngine } from '../../reporting/core/ImplementationTruthReportEngine';
 import {
   ImplementationTruthAnalyzeOptions,
@@ -136,7 +136,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
         : analysisResult;
 
       this.reportEngine.setFormat(options.format || 'ai-json');
-      const formattedReport = await this.reportEngine.generate(filteredResult, {
+      const formattedReport = await this.reportEngine.generate(filteredResult as ImplementationTruthAnalysisResult, {
         format: options.format,
         detailLevel: options.detailLevel,
         optimizeForAI: options.optimizeForAI,
@@ -173,7 +173,7 @@ export class ImplementationTruthAnalyzeCommand implements IImplementationTruthAn
       }
 
       return {
-        analysisResult: filteredResult,
+        analysisResult: filteredResult as ImplementationTruthAnalysisResult,
         formattedReport,
         metadata: {
           executionTime,
