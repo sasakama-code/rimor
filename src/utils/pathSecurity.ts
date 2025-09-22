@@ -25,10 +25,11 @@ export class PathSecurity {
 
       // Issue #159修正: パストラバーサル攻撃の厳密な検証
       // プロジェクトルート自体、またはその配下のパスのみ許可
-      return (
+      const isValid = (
         normalizedResolvedPath === normalizedProjectRoot ||
         normalizedResolvedPath.startsWith(projectRootWithSeparator)
       );
+      return isValid;
     } catch {
       return false;
     }
@@ -96,6 +97,13 @@ export class PathSecurity {
             { filePath: normalizedFilePath, projectPath, context },
             true
           );
+          return null;
+        }
+      }
+      // Issue修正: テスト環境でもCLIセキュリティテストの場合は境界チェックを必ず実行
+      else if (isTestEnvironment && (isCliSecurityTest || isSecurityTest)) {
+        const isValid = this.validateProjectPath(resolvedPath, projectPath);
+        if (!isValid) {
           return null;
         }
       }
